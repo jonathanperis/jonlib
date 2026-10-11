@@ -20,6 +20,7 @@ def file_kind(kind: J.Image.FileKind) -> U32:
     case J.RasterFile{}: 1
     case J.UnsupportedImageFile{}: 2
     case J.DdsFile{}: 3
+    case J.PngFile{}: 4
 
 def short_read(result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> Bool:
   match result:
@@ -61,8 +62,12 @@ def checks() -> Bool:
     && U32.is_eq(error_code(J.Surface.decode_qoi([113,111,105,102,0,0,0,1,0,0,0,1,4,0,192,0,0,0,0,0,0,0,2])), 4)
     && U32.is_eq(file_kind(J.Image.file.kind(".png")), 2)
     && U32.is_eq(file_kind(J.Image.file.kind(".jpeg")), 2)
-    && U32.is_eq(file_kind(J.Image.file.kind("image.PNG")), 1)
+    && U32.is_eq(file_kind(J.Image.file.kind("image.PNG")), 4)
+    && U32.is_eq(file_kind(J.Image.file.kind("image.png")), 4)
     && U32.is_eq(file_kind(J.Image.file.kind("image.PnG")), 2)
+    && U32.is_eq(file_kind(J.Image.file.kind("image.BMP")), 1)
+    && U32.is_eq(J.Image.file.limit(J.Image.file.kind("image.png")), 2097152)
+    && U32.is_eq(J.Image.file.limit(J.Image.file.kind("image.BMP")), 1048576)
     && U32.is_eq(file_kind(J.Image.file.kind("texture.dds")), 3)
     && U32.is_eq(file_kind(J.Image.file.kind("texture.DDS")), 3)
     && U32.is_eq(file_kind(J.Image.file.kind("texture.Dds")), 2)
