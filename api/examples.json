@@ -5124,7 +5124,7 @@
   {
    "name": "models_animation_blend_custom",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",

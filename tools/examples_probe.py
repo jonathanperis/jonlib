@@ -244,6 +244,7 @@ EXAMPLES = {
     'models_loading_gltf': ('models/models_loading_gltf.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_animation_timing': ('models/models_animation_timing.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_animation_blending': ('models/models_animation_blending.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'models_animation_blend_custom': ('models/models_animation_blend_custom.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -311,6 +312,7 @@ IO_SETUP.add('models_bone_socket'); PERSPECTIVE.add('models_bone_socket')
 IO_SETUP.add('models_loading_gltf'); PERSPECTIVE.add('models_loading_gltf')
 IO_SETUP.add('models_animation_timing'); PERSPECTIVE.add('models_animation_timing')
 IO_SETUP.add('models_animation_blending'); PERSPECTIVE.add('models_animation_blending')
+IO_SETUP.add('models_animation_blend_custom'); PERSPECTIVE.add('models_animation_blend_custom')
 
 
 # -----------------------------------------------------------------------------
@@ -954,6 +956,9 @@ def scripts():
                                                       quick([button(0, False)]), quick([mouse_at(700, 95)]), quick([button(0)]), quick([button(0, False)]),
                                                       quick([mouse_at(90, 44)]), quick([button(0)]), quick([mouse_at(150, 44)]), quick([button(0, False)]),
                                                       quick([key(KEY_P)]), quick([key(KEY_P, False)])]),
+        # The greenman in its bind pose with the names of the two animations the example blends bone by bone;
+        # SPACE switches to uniform blending and back (the text names the mode; the bone matrices are not drawn).
+        script('models_animation_blend_custom', 'modes', [quick(), quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False)]), quick(), quick([key(KEY_SPACE)])]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.
