@@ -3866,7 +3866,7 @@
   {
    "name": "text_unicode_emojis",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",
