@@ -8734,6 +8734,135 @@ def Rlgl.load_draw_cube(frame: Frame) -> Frame:
 def Rlgl.load_draw_quad(frame: Frame) -> Frame:
   frame
 
+# Vertex arrays and buffers, shader objects, compute shaders and shader
+# storage buffers: rlgl compiles their bodies for OpenGL 3.3/ES2 (4.3 for
+# compute and storage) only, so on the software path the loaders answer id 0,
+# the location queries -1 and the rest does nothing. Buffer contents are
+# never read: the functions take the sizes only.
+def Rlgl.load_vertex_array(frame: Frame) -> Frame & U32:
+  (frame, 0)
+
+def Rlgl.load_vertex_buffer(frame: Frame, +size: U32, +dynamic: Bool) -> Frame & U32:
+  (frame, 0)
+
+def Rlgl.load_vertex_buffer_element(frame: Frame, +size: U32, +dynamic: Bool) -> Frame & U32:
+  (frame, 0)
+
+def Rlgl.update_vertex_buffer(frame: Frame, +id: U32, +size: U32, +offset: U32) -> Frame:
+  frame
+
+def Rlgl.update_vertex_buffer_elements(frame: Frame, +id: U32, +size: U32, +offset: U32) -> Frame:
+  frame
+
+def Rlgl.unload_vertex_array(frame: Frame, +id: U32) -> Frame:
+  frame
+
+def Rlgl.unload_vertex_buffer(frame: Frame, +id: U32) -> Frame:
+  frame
+
+def Rlgl.set_vertex_attribute(frame: Frame, +index: U32, +size: U32, +kind: U32, +normalized: Bool, +stride: U32, +offset: U32) -> Frame:
+  frame
+
+def Rlgl.set_vertex_attribute_divisor(frame: Frame, +index: U32, +divisor: U32) -> Frame:
+  frame
+
+def Rlgl.set_vertex_attribute_default(frame: Frame, +location: U32, +kind: U32, +count: U32) -> Frame:
+  frame
+
+def Rlgl.draw_vertex_array_instanced(frame: Frame, +offset: U32, +count: U32, +instances: U32) -> Frame:
+  frame
+
+def Rlgl.draw_vertex_array_elements_instanced(frame: Frame, +offset: U32, +count: U32, +instances: U32) -> Frame:
+  frame
+
+# rlLoadShader, rlLoadShaderProgram (None for a NULL source), rlLoadShaderProgramEx, rlLoadShaderProgramCompute: id 0.
+def Rlgl.load_shader(frame: Frame, code: String, +kind: U32) -> Frame & U32:
+  (frame, 0)
+
+def Rlgl.load_shader_program(frame: Frame, vs: Maybe<String>, fs: Maybe<String>) -> Frame & U32:
+  (frame, 0)
+
+def Rlgl.load_shader_program_ex(frame: Frame, +vs: U32, +fs: U32) -> Frame & U32:
+  (frame, 0)
+
+def Rlgl.load_shader_program_compute(frame: Frame, +shader: U32) -> Frame & U32:
+  (frame, 0)
+
+def Rlgl.unload_shader(frame: Frame, +id: U32) -> Frame:
+  frame
+
+def Rlgl.unload_shader_program(frame: Frame, +id: U32) -> Frame:
+  frame
+
+# rlGetLocationUniform / rlGetLocationAttrib: -1.
+def Rlgl.get_location_uniform(+id: U32, name: String) -> U32:
+  4294967295
+
+def Rlgl.get_location_attrib(+id: U32, name: String) -> U32:
+  4294967295
+
+# rlGetShaderLocsDefault: NULL.
+def Rlgl.get_shader_locs_default() -> Maybe<+List<U32>>:
+  None{}
+
+def Rlgl.compute_shader_dispatch(frame: Frame, +x: U32, +y: U32, +z: U32) -> Frame:
+  frame
+
+# rlLoadShaderBuffer: id 0 (a warning: SSBO not enabled).
+def Rlgl.load_shader_buffer(frame: Frame, +size: U32, +usage: U32) -> Frame & U32:
+  (frame, 0)
+
+def Rlgl.unload_shader_buffer(frame: Frame, +id: U32) -> Frame:
+  frame
+
+def Rlgl.update_shader_buffer(frame: Frame, +id: U32, +size: U32, +offset: U32) -> Frame:
+  frame
+
+def Rlgl.bind_shader_buffer(frame: Frame, +id: U32, +index: U32) -> Frame:
+  frame
+
+# rlReadShaderBuffer leaves its destination as it was.
+def Rlgl.read_shader_buffer(frame: Frame, +id: U32, +count: U32, +offset: U32) -> Frame:
+  frame
+
+def Rlgl.copy_shader_buffer(frame: Frame, +dest: U32, +source: U32, +dest_offset: U32, +source_offset: U32, +count: U32) -> Frame:
+  frame
+
+def Rlgl.get_shader_buffer_size(+id: U32) -> U32:
+  0
+
+def Rlgl.bind_image_texture(frame: Frame, +id: U32, +index: U32, +format: U32, +readonly: Bool) -> Frame:
+  frame
+
+# rlGetPixelFormatName: the pixel format's name, "UNKNOWN" outside 1..24.
+def Rlgl.get_pixel_format_name(format: U32) -> String:
+  match format:
+    case 1: "GRAYSCALE"
+    case 2: "GRAY_ALPHA"
+    case 3: "R5G6B5"
+    case 4: "R8G8B8"
+    case 5: "R5G5B5A1"
+    case 6: "R4G4B4A4"
+    case 7: "R8G8B8A8"
+    case 8: "R32"
+    case 9: "R32G32B32"
+    case 10: "R32G32B32A32"
+    case 11: "R16"
+    case 12: "R16G16B16"
+    case 13: "R16G16B16A16"
+    case 14: "DXT1_RGB"
+    case 15: "DXT1_RGBA"
+    case 16: "DXT3_RGBA"
+    case 17: "DXT5_RGBA"
+    case 18: "ETC1_RGB"
+    case 19: "ETC2_RGB"
+    case 20: "ETC2_RGBA"
+    case 21: "PVRT_RGB"
+    case 22: "PVRT_RGBA"
+    case 23: "ASTC_4x4_RGBA"
+    case 24: "ASTC_8x8_RGBA"
+    case _: "UNKNOWN"
+
 # -----------------------------------------------------------------------------
 # Fonts and text drawing: rtext.c fonts, glyphs, measurement and DrawText*,
 # rtextures.c ImageText*

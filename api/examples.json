@@ -5184,8 +5184,7 @@
    "gui": [],
    "missing": [
     "LoadModelAnimations",
-    "UnloadModelAnimations",
-    "rlUpdateVertexBuffer"
+    "UnloadModelAnimations"
    ]
   },
   {
@@ -6147,7 +6146,6 @@
     "rlEnableFramebuffer",
     "rlFramebufferAttach",
     "rlFramebufferComplete",
-    "rlGetLocationUniform",
     "rlLoadFramebuffer",
     "rlLoadTexture",
     "rlLoadTextureDepth",
@@ -6457,7 +6455,7 @@
   {
    "name": "shaders_lightmap_rendering",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginBlendMode",
     "BeginDrawing",
@@ -6498,10 +6496,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "rlLoadVertexBuffer",
-    "rlSetVertexAttribute"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_rounded_rectangle",
@@ -6643,7 +6638,7 @@
   {
    "name": "shaders_rlgl_compute",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -6686,17 +6681,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "rlBindShaderBuffer",
-    "rlComputeShaderDispatch",
-    "rlLoadShader",
-    "rlLoadShaderBuffer",
-    "rlLoadShaderProgramCompute",
-    "rlUnloadShader",
-    "rlUnloadShaderBuffer",
-    "rlUnloadShaderProgram",
-    "rlUpdateShaderBuffer"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_cel_shading",

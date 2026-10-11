@@ -1622,6 +1622,53 @@ law rlgl_set_shader_unchanged:
   for locations: +List<U32>
   {J.Rlgl.set_shader(frame, id, locations) == frame : J.Frame}
 
+# Vertex arrays, buffers, shader objects, compute shaders and storage buffers
+# have bodies under OpenGL 3.3/ES2 (4.3) only: locations are -1, a storage
+# buffer's size 0, and the frame is the one given.
+law rlgl_location_uniform_absent:
+  for id: U32
+  for name: String
+  {J.Rlgl.get_location_uniform(id, name) == 4294967295 : U32}
+
+law rlgl_location_attrib_absent:
+  for id: U32
+  for name: String
+  {J.Rlgl.get_location_attrib(id, name) == 4294967295 : U32}
+
+law rlgl_shader_buffer_size_zero:
+  for id: U32
+  {J.Rlgl.get_shader_buffer_size(id) == 0 : U32}
+
+law rlgl_set_vertex_attribute_unchanged:
+  for frame: J.Frame
+  for index: U32
+  for size: U32
+  for kind: U32
+  for normalized: Bool
+  for stride: U32
+  for offset: U32
+  {J.Rlgl.set_vertex_attribute(frame, index, size, kind, normalized, stride, offset) == frame : J.Frame}
+
+law rlgl_update_vertex_buffer_unchanged:
+  for frame: J.Frame
+  for id: U32
+  for size: U32
+  for offset: U32
+  {J.Rlgl.update_vertex_buffer(frame, id, size, offset) == frame : J.Frame}
+
+law rlgl_compute_dispatch_unchanged:
+  for frame: J.Frame
+  for x: U32
+  for y: U32
+  for z: U32
+  {J.Rlgl.compute_shader_dispatch(frame, x, y, z) == frame : J.Frame}
+
+law rlgl_pixel_format_name_rgba:
+  {J.Rlgl.get_pixel_format_name(7) == "R8G8B8A8" : String}
+
+law rlgl_pixel_format_name_unknown:
+  {J.Rlgl.get_pixel_format_name(0) == "UNKNOWN" : String}
+
 law rlgl_version_software:
   {J.Rlgl.get_version() == 0 : U32}
 

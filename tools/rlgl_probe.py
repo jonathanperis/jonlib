@@ -494,6 +494,12 @@ static void noops(void)
     Matrix matrices[2] = { MatrixIdentity(), MatrixTranslate(1, 2, 3) };
     rlSetUniform(0, uniform, RL_SHADER_UNIFORM_VEC4, 1); rlSetUniformMatrix(1, MatrixScale(2, 3, 4)); rlSetUniformMatrices(2, matrices, 2);
     rlSetUniformSampler(3, rlGetTextureIdDefault()); rlSetShader(rlGetShaderIdDefault(), rlGetShaderLocsDefault());
+    // Vertex arrays and buffers, shader objects, compute shaders and storage buffers: empty outside OpenGL 3.3/ES2/4.3.
+    rlUpdateVertexBuffer(1, uniform, 16, 0); rlUpdateVertexBufferElements(1, uniform, 16, 0); rlUnloadVertexArray(1); rlUnloadVertexBuffer(1);
+    rlSetVertexAttribute(5, 2, RL_FLOAT, 0, 0, 0); rlSetVertexAttributeDivisor(5, 1); rlSetVertexAttributeDefault(5, uniform, RL_SHADER_ATTRIB_VEC4, 4);
+    rlDrawVertexArrayInstanced(0, 3, 2); rlDrawVertexArrayElementsInstanced(0, 3, uniform, 2); rlUnloadShader(1); rlUnloadShaderProgram(1);
+    rlComputeShaderDispatch(1, 1, 1); rlUnloadShaderBuffer(1); rlUpdateShaderBuffer(1, uniform, 16, 0); rlBindShaderBuffer(1, 0);
+    rlReadShaderBuffer(1, uniform, 16, 0); rlCopyShaderBuffer(1, 2, 0, 0, 16); rlBindImageTexture(1, 0, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8, true);
 }
 static void misc(void)
 {
@@ -502,6 +508,15 @@ static void misc(void)
              rlGetShaderIdDefault(), (int)rlCheckRenderBatchLimit(1000000), (int)rlEnableVertexArray(3));
     note(s);
     Matrix t = rlGetMatrixTransform(); note_m("t", t); note_m("e", rlGetMatrixProjectionStereo(1)); note_m("o", rlGetMatrixViewOffsetStereo(0));
+    float data[4] = { 0 };
+    unsigned int array = rlLoadVertexArray(), buffer = rlLoadVertexBuffer(data, 16, false), elements = rlLoadVertexBufferElement(data, 16, true);
+    unsigned int shader = rlLoadShader("void main() {}", RL_VERTEX_SHADER), program = rlLoadShaderProgram(NULL, "void main() {}");
+    unsigned int linked = rlLoadShaderProgramEx(1, 2), compute = rlLoadShaderProgramCompute(1), storage = rlLoadShaderBuffer(64, NULL, RL_DYNAMIC_COPY);
+    snprintf(s, sizeof s, " y%u,%u,%u,%u,%u,%u,%u,%u,%d,%d,%u,%d", array, buffer, elements, shader, program, linked, compute, storage,
+             rlGetLocationUniform(1, "mvp"), rlGetLocationAttrib(1, "vertexPosition"), rlGetShaderBufferSize(1), (int)(rlGetShaderLocsDefault() == NULL));
+    note(s);
+    note(" n");
+    for (unsigned int format = 0; format <= 25; format++) { note(rlGetPixelFormatName(format)); note("|"); }
 }
 static void dump(int w, int h, int screen)''')
 if 'static void noops(void)' not in C_PREFIX:
@@ -768,13 +783,34 @@ def call.toggle(what: U32, +on: Bool, frame: J.Frame) -> J.Frame:
     case 7: toggle.mask(on, frame)
     case _: toggle.stereo(on, frame)
 
+# The vertex array, buffer, shader object, compute and storage buffer calls (RL_FLOAT is 0x1406; SHADER_ATTRIB_VEC4 is 3).
+def call.noops.buffers(frame: J.Frame) -> J.Frame:
+  f1 = J.Rlgl.update_vertex_buffer(frame, 1, 16, 0)
+  f2 = J.Rlgl.update_vertex_buffer_elements(f1, 1, 16, 0)
+  f3 = J.Rlgl.unload_vertex_array(f2, 1)
+  f4 = J.Rlgl.unload_vertex_buffer(f3, 1)
+  f5 = J.Rlgl.set_vertex_attribute(f4, 5, 2, 5126, False{}, 0, 0)
+  f6 = J.Rlgl.set_vertex_attribute_divisor(f5, 5, 1)
+  f7 = J.Rlgl.set_vertex_attribute_default(f6, 5, 3, 4)
+  f8 = J.Rlgl.draw_vertex_array_instanced(f7, 0, 3, 2)
+  f9 = J.Rlgl.draw_vertex_array_elements_instanced(f8, 0, 3, 2)
+  f10 = J.Rlgl.unload_shader(f9, 1)
+  f11 = J.Rlgl.unload_shader_program(f10, 1)
+  f12 = J.Rlgl.compute_shader_dispatch(f11, 1, 1, 1)
+  f13 = J.Rlgl.unload_shader_buffer(f12, 1)
+  f14 = J.Rlgl.update_shader_buffer(f13, 1, 16, 0)
+  f15 = J.Rlgl.bind_shader_buffer(f14, 1, 0)
+  f16 = J.Rlgl.read_shader_buffer(f15, 1, 16, 0)
+  f17 = J.Rlgl.copy_shader_buffer(f16, 1, 2, 0, 0, 16)
+  J.Rlgl.bind_image_texture(f17, 1, 0, 7, True{})
+
 # The uniform setters and rlSetShader (SHADER_UNIFORM_VEC4 is 3; the default texture is 1; the default shader has no locations).
 def call.noops.uniforms(frame: J.Frame) -> J.Frame:
   f1 = J.Rlgl.set_uniform(frame, 0, [1065353216, 1073741824, 1077936128, 1082130432], 3)
   f2 = J.Rlgl.set_uniform_matrix(f1, 1, M.Matrix.scale(2.0, 3.0, 4.0))
   f3 = J.Rlgl.set_uniform_matrices(f2, 2, [M.Matrix.identity(), M.Matrix.translate(1.0, 2.0, 3.0)])
   f4 = J.Rlgl.set_uniform_sampler(f3, 3, 1)
-  J.Rlgl.set_shader(f4, 0, [])
+  call.noops.buffers(J.Rlgl.set_shader(f4, 0, []))
 
 def call.noops.second(frame: J.Frame) -> J.Frame:
   f1 = J.Rlgl.set_framebuffer_width(frame, 77.0)
@@ -867,10 +903,48 @@ def bool.digit(b: Bool) -> String:
     case True{}: "1"
     case False{}: "0"
 
+def got.id(text: String, r: J.Frame & U32) -> J.Frame & String:
+  (frame, +v) = r
+  (frame, text ++ U32.show(v))
+
+# The ids the loaders answer (VERTEX_SHADER is 0x8B31, RL_DYNAMIC_COPY 0x88EA).
+def ids.load(n: U32, text: String, frame: J.Frame) -> J.Frame & String:
+  match n:
+    case 0: got.id(text ++ " y", J.Rlgl.load_vertex_array(frame))
+    case 1: got.id(text ++ ",", J.Rlgl.load_vertex_buffer(frame, 16, False{}))
+    case 2: got.id(text ++ ",", J.Rlgl.load_vertex_buffer_element(frame, 16, True{}))
+    case 3: got.id(text ++ ",", J.Rlgl.load_shader(frame, "void main() {}", 35633))
+    case 4: got.id(text ++ ",", J.Rlgl.load_shader_program(frame, None{}, Some{"void main() {}"}))
+    case 5: got.id(text ++ ",", J.Rlgl.load_shader_program_ex(frame, 1, 2))
+    case 6: got.id(text ++ ",", J.Rlgl.load_shader_program_compute(frame, 1))
+    case _: got.id(text ++ ",", J.Rlgl.load_shader_buffer(frame, 64, 35050))
+
+def ids.step(n: U32, r: J.Frame & String) -> J.Frame & String:
+  (frame, text) = r
+  ids.load(n, text, frame)
+
+def int.text(+v: U32) -> String:
+  Bool.pick(String, (v >= 2147483648 : U32), "-" ++ U32.show((0 - v : U32)), U32.show(v))
+
+def locs.null(locs: Maybe<+List<U32>>) -> String:
+  match locs:
+    case None{}: "1"
+    case Some{_}: "0"
+
+def names(n: Nat, +format: U32) -> String:
+  match n:
+    case 0n: ""
+    case 1n+p: J.Rlgl.get_pixel_format_name(format) ++ "|" ++ names(p, (format + 1 : U32))
+
+def ids.rest(r: J.Frame & String) -> J.Frame & String:
+  (frame, text) = r
+  (frame, text ++ "," ++ int.text(J.Rlgl.get_location_uniform(1, "mvp")) ++ "," ++ int.text(J.Rlgl.get_location_attrib(1, "vertexPosition")) ++ ","
+    ++ U32.show(J.Rlgl.get_shader_buffer_size(1)) ++ "," ++ locs.null(J.Rlgl.get_shader_locs_default()) ++ " n" ++ names(26n, 0))
+
 def got.misc.e(text: String, r: J.Frame & Bool) -> J.Frame & String:
   (frame, b) = r
-  (frame, text ++ "," ++ bool.digit(b) ++ " t" ++ matrix.text(J.Rlgl.get_matrix_transform()) ++ " e" ++ matrix.text(J.Rlgl.get_matrix_projection_stereo(1))
-    ++ " o" ++ matrix.text(J.Rlgl.get_matrix_view_offset_stereo(0)))
+  ids.rest(ids.step(7, ids.step(6, ids.step(5, ids.step(4, ids.step(3, ids.step(2, ids.step(1, ids.load(0, text ++ "," ++ bool.digit(b) ++ " t" ++ matrix.text(J.Rlgl.get_matrix_transform())
+    ++ " e" ++ matrix.text(J.Rlgl.get_matrix_projection_stereo(1)) ++ " o" ++ matrix.text(J.Rlgl.get_matrix_view_offset_stereo(0)), frame)))))))))
 
 def got.misc.d(text: String, r: J.Frame & Bool) -> J.Frame & String:
   (frame, b) = r
