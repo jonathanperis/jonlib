@@ -4161,8 +4161,6 @@
    "libraries": [],
    "gui": [],
    "missing": [
-    "LoadModelAnimations",
-    "UnloadModelAnimations",
     "UpdateModelAnimation"
    ]
   },
@@ -4490,8 +4488,6 @@
    "libraries": [],
    "gui": [],
    "missing": [
-    "LoadModelAnimations",
-    "UnloadModelAnimations",
     "UpdateModelAnimation"
    ]
   },
@@ -4575,8 +4571,6 @@
    "libraries": [],
    "gui": [],
    "missing": [
-    "LoadModelAnimations",
-    "UnloadModelAnimations",
     "UpdateModelAnimation"
    ]
   },
@@ -4914,8 +4908,6 @@
    "libraries": [],
    "gui": [],
    "missing": [
-    "LoadModelAnimations",
-    "UnloadModelAnimations",
     "UpdateModelAnimation"
    ]
   },
@@ -4956,8 +4948,6 @@
    "libraries": [],
    "gui": [],
    "missing": [
-    "LoadModelAnimations",
-    "UnloadModelAnimations",
     "UpdateModelAnimation"
    ]
   },
@@ -5144,7 +5134,7 @@
   {
    "name": "models_animation_blend_custom",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -5182,10 +5172,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "LoadModelAnimations",
-    "UnloadModelAnimations"
-   ]
+   "missing": []
   },
   {
    "name": "models_animation_blending",
@@ -5233,8 +5220,6 @@
     "GuiSlider"
    ],
    "missing": [
-    "LoadModelAnimations",
-    "UnloadModelAnimations",
     "UpdateModelAnimation",
     "UpdateModelAnimationEx",
     "GuiProgressBar"
@@ -5280,8 +5265,6 @@
     "GuiSlider"
    ],
    "missing": [
-    "LoadModelAnimations",
-    "UnloadModelAnimations",
     "UpdateModelAnimation",
     "GuiProgressBar"
    ]
@@ -6309,8 +6292,6 @@
    "libraries": [],
    "gui": [],
    "missing": [
-    "LoadModelAnimations",
-    "UnloadModelAnimations",
     "UpdateModelAnimation",
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",

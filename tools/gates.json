@@ -1680,6 +1680,21 @@
    "minutes": 1
   },
   {
+   "id": "gltf-anim",
+   "title": "Model skeletons and animations of binary glTF (the bones and bind pose LoadGLTF builds, LoadModelAnimationsGLTF's keyframe poses) against the uncontracted raylib build, with the examples' models and refusal contracts",
+   "run": [
+    "{python}",
+    "tools/gltf_anim_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 20
+  },
+  {
    "id": "gui-icons",
    "title": "raygui's icon set (src/gui_icons.bend, 256 icons of 16x16 bits) against the guiIcons table of every raygui.h in the pinned raylib checkout",
    "run": [

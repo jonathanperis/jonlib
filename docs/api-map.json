@@ -5584,6 +5584,30 @@
     "api_id": "raylib:function:SetModelMeshMaterial",
     "milestone": "materials"
   },
+  "LoadModelAnimations": {
+    "jonlib": "Model.load_animations_for / Model.load_animations",
+    "status": "profile-covered",
+    "scope": "Binary glTF (.glb) through LoadModelAnimationsGLTF: names, bone and keyframe counts and every keyframe pose (STEP and LINEAR channels, QuaternionSlerp under the libm profile, the bone hierarchy applied); no animations without a skin.",
+    "gaps": [
+      "IQM and M3D animations are UnsupportedFileType; glTF as text too",
+      "CUBICSPLINE samplers, non-float key accessors and reads outside an accessor are refused",
+      "Profiles without acosf (Apple, glibc 2.41) refuse rotations more than about 36 degrees apart",
+      "The model's skeleton is loaded separately (Model.load_skeleton): Jonlib's Model has none",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadModelAnimations",
+    "milestone": "animation"
+  },
+  "UnloadModelAnimations": {
+    "jonlib": "Model.unload_animations",
+    "status": "profile-covered",
+    "scope": "Consumes the list.",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:UnloadModelAnimations",
+    "milestone": "animation"
+  },
   "CheckCollisionSpheres": {
     "jonlib": "Collision.spheres_for / Collision.spheres",
     "status": "profile-covered",

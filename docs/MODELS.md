@@ -467,6 +467,57 @@ that is not well formed, and contracted arithmetic. glTF as text (`.gltf`)
 is `UnsupportedFileType`. A missing file gives the empty model, as raylib
 does.
 
+### Skeletons and animations
+
+Jonlib's `Model` has no skeleton, so a model's is loaded beside it:
+
+| raylib | Jonlib | Result |
+|---|---|---|
+| `model.skeleton` after `LoadModel` | `Model.load_skeleton(path)` | `IO(Result<IOError, ModelSkeleton>)`: `ModelSkeleton{bones, bind_pose}` with `BoneInfo{name, parent}` (parent `4294967295` for -1) and `Transform`s; no bones without a skin |
+| `LoadModelAnimations` | `Model.load_animations_for(libm, path)` / `Model.load_animations(path)` | `IO(Result<IOError, List<ModelAnimation>>)`: `ModelAnimation{name, bone_count, keyframe_count, keyframe_poses}`; no animations without a skin |
+| `UnloadModelAnimations` | `Model.unload_animations(animations)` | `Unit` |
+
+For a `.glb` file (`src/gltf_anim.bend`, over the loader's container,
+accessor and node code):
+
+- **Bones**: the first skin's joints, each with its node's name (31 bytes,
+  as `strncpy` keeps) and the place of its parent node among the joints.
+  The bind pose is `MatrixDecompose` of each joint's world matrix.
+- **Animations**: for each one, the channels whose node is a joint (a later
+  channel for the same bone and path replaces an earlier one, and the bone
+  takes the interpolation of the last one listed for it); the duration is
+  the largest last key time of those channels;
+  `keyframeCount = (int)(duration*60) + 1`, frame `j` at `j/60` seconds.
+- **Poses**: each bone starts from its node's translation, rotation and
+  scale and takes its channels' values at the frame's time: the key `i`
+  with `times[i] <= time < times[i + 1]` (key 0 with `t` clamped to 1 at or
+  after the last key, as the reference's loop leaves it), `t = (time -
+  tstart)/max(tend - tstart, EPSILON)` clamped to 0..1, the key's value for
+  STEP or equal key times, else `Vector3Lerp` or `QuaternionSlerp` to the
+  next key. The root bone is then composed with the world transform of the
+  first joint's parent node, and every bone with its parent's
+  (`BuildPoseFromParentJoints`: a bone listed before its parent is left as
+  it is).
+- **libm**: `QuaternionSlerp` calls `acosf` and `sinf` unless the two
+  rotations are within about 36 degrees of each other; `Model.load_animations_for` takes
+  the profile and refuses where it does not answer (the Apple profile and
+  glibc 2.41 have no `acosf` here).
+
+Refused (`OutOfDomain`): CUBICSPLINE samplers, key times or values that are
+not float accessors inside the buffer, a sampler without keys, a pose that
+would read past its output accessor, a first joint without a parent node
+(cgltf reads through a null pointer there), a node with two parents, more
+than 100000 keyframes, and what the loader refuses of the container. Other
+extensions are `UnsupportedFileType`. `UpdateModelAnimation`,
+`UpdateModelAnimationEx` and `IsModelAnimationValid` are not delivered: the
+reference library is built with GPU skinning, so they only fill the model's
+current pose and bone matrices, which Jonlib's `Model` does not have.
+
+Gate `gltf-anim` (`tools/gltf_anim_probe.py`) compares the skeleton words and
+a hash of every keyframe pose of `greenman.glb` (12 bones, 4 animations) and
+`robot.glb` (43 bones, 14 animations) and of generated files for each rule
+above with the native loader.
+
 Gate `gltf` (`tools/gltf_probe.py`) loads generated files covering each of
 those rules, and the models the examples use (`plane.glb`,
 `old_car_new.glb`: 9281 and 24 vertices under a scaled and translated node;
@@ -580,7 +631,8 @@ attribute builders are tail-recursive.
   shapes are verified only under the glibc profile).
 - Shaders (no shader is compiled under OpenGL 1.1), `UploadMesh`/GPU
   buffers, `UpdateMeshBuffer`, `GenMeshCylinder`/`Cone`/`Knot` (above) and
-  model animation (`LoadModelAnimations`, `UpdateModelAnimation*`).
+  `UpdateModelAnimation*` (the reference only fills a pose and bone
+  matrices Jonlib's `Model` does not have).
 - IQM, glTF as text, VOX and M3D files: `LoadModel` answers
   `UnsupportedFileType` (raylib loads them; their parsers and binary formats
   are not ported). Binary glTF is loaded for the slice above: a skinned
