@@ -189,16 +189,75 @@ modes, ortho and frustum projections, viewports, culling of both faces,
 blending toggled, depth-tested overlaps, wire and point modes, thick lines,
 clears and getters, and random immediate scenes.
 
+## Framebuffer objects
+
+rlsw keeps one color and one depth attachment a framebuffer and decides
+completeness from them; a renderbuffer is a texture with depth storage there.
+Jonlib's canvas has no such table (a texture's pixels live in its `Texture`
+value), so the framebuffer object is a value the caller threads, as the
+examples keep the ids in a `RenderTexture2D` they fill by hand.
+
+| rlgl | Jonlib | Result |
+|---|---|---|
+| `rlLoadFramebuffer()` | `Rlgl.load_framebuffer(frame)` | `Frame & Rlgl.Framebuffer` (id 0 when the 7 are in use) |
+| `rlLoadTexture(NULL, w, h, R8G8B8A8, 1)` | `Rlgl.load_texture(frame, w, h, format, mipmaps)` | `Frame & Maybe<Texture>`: zeroed, alpha assumed |
+| `rlLoadTextureDepth(w, h, useRenderBuffer)` | `Rlgl.load_texture_depth(frame, w, h, use_render_buffer)` | `Frame & Maybe<Texture>`: format 19, no texels |
+| `rlFramebufferAttach(id, texId, attachType, texType, mip)` | `Rlgl.framebuffer_attach(frame, fb, texture, attach_type, tex_type, mip)` | `Frame & (Rlgl.Framebuffer & Texture)` |
+| `rlFramebufferComplete(id)` | `Rlgl.framebuffer_complete(frame, fb)`, `Rlgl.Framebuffer.complete(fb)` | `Frame & Bool`, `Bool` |
+| `rlEnableFramebuffer(id)` | `Rlgl.enable_framebuffer(frame, fb)` | `Rlgl.Bound` |
+| `rlDisableFramebuffer()` | `Rlgl.disable_framebuffer(frame)`, `Rlgl.Bound.disable(bound)` | `Frame` |
+| `rlUnloadFramebuffer(id)` | `Rlgl.unload_framebuffer(frame, fb, depth)` | `Frame` |
+| `rlUnloadTexture(id)` | `Rlgl.unload_texture(frame, texture)` | `Frame` |
+| the struct filled by hand | `Rlgl.render_texture(fb, texture, depth_id)` | `Maybe<RenderTexture>` for `BeginTextureMode` |
+
+- **Attachments.** `attachType` 0 with any `texType` of 0 and above (a 2D
+  texture, a renderbuffer or a cubemap face: rlsw ignores the difference)
+  sets the color attachment; `RL_ATTACHMENT_COLOR_CHANNEL1` to 7 and the
+  stencil are an invalid enum for rlsw and change nothing; `attachType` 100
+  with `texType` 100 or 200 sets the depth attachment. Nothing attaches to
+  framebuffer 0.
+- **Completeness.** Framebuffer 0 is complete. Another one needs a color
+  attachment in R8G8B8A8; a depth attachment, if any, must have the depth
+  format and the color attachment's size. A framebuffer with only a depth
+  attachment is incomplete.
+- **Binding.** `rlFramebufferAttach` and `rlFramebufferComplete` bind the
+  framebuffer and then framebuffer 0, so during texture mode they are
+  refused (the render texture would stop being the target), as are
+  `rlLoadFramebuffer` and `rlDisableFramebuffer`. `rlEnableFramebuffer`
+  outside texture mode gives an `Rlgl.Bound`: only `Rlgl.Bound.load_texture`,
+  `load_texture_depth`, `attach`, `complete` and `disable` take it (rlsw would
+  draw into the attachments, which Jonlib reaches through `BeginTextureMode`
+  only), and the last three give the frame back.
+- **A render texture.** `Rlgl.render_texture(fb, texture, depth_id)` is the
+  `RenderTexture` of a complete framebuffer whose attachments are that
+  texture and that depth id; None otherwise, because rlsw draws into what is
+  attached whatever the struct says. The depth values are kept by
+  framebuffer id, as for `LoadRenderTexture`.
+- **Unloading.** `rlUnloadFramebuffer` deletes the depth attachment with the
+  framebuffer: pass its `Texture`, or None when it was unloaded before.
+
+Gate `rlgl-framebuffer` (`tools/rlgl_framebuffer_probe.py`) compares the ids
+and the completeness answers of ten scenarios with the reference: the
+examples' loader with and without `rlEnableFramebuffer`, a depth attachment
+of another size, the ignored channels, texture types, the color texture as
+the depth attachment, framebuffer 0, the ids after an unload, two
+framebuffers, and `LoadRenderTexture` after a hand-built one. Six contracts
+cover the refusals.
+
 ## Gaps
 
 - `rlTextureParameters`, `rlEnableStatePointer`/`rlDisableStatePointer`,
-  `rlDrawVertexArray`/`rlDrawVertexArrayElements` (rlsw's client arrays),
-  `rlEnableFramebuffer`/`rlDisableFramebuffer`/`rlBindFramebuffer` and the
-  texture and framebuffer part of the low-level resource API (`rlLoadTexture`,
-  `rlLoadTextureDepth`, `rlLoadFramebuffer`, `rlFramebufferAttach`, ...) are
-  not exposed. The vertex array, buffer, shader object, compute and storage
-  buffer functions are, as what the software path leaves of them: ids 0,
-  locations -1, nothing else. Their trace-log warnings are not reproduced.
+  `rlDrawVertexArray`/`rlDrawVertexArrayElements` (rlsw's client arrays) and
+  `rlBindFramebuffer` are not exposed. The vertex array, buffer, shader
+  object, compute and storage buffer functions are, as what the software path
+  leaves of them: ids 0, locations -1, nothing else. Their trace-log warnings
+  are not reproduced.
+- Framebuffer objects (below): `rlLoadTexture` with pixel data or another
+  format than R8G8B8A8, more than one color attachment, cubemap faces as
+  separate attachments, and drawing into a framebuffer bound with
+  `rlEnableFramebuffer` (the type `Rlgl.Bound` has no draw function; use
+  `BeginTextureMode`). Drawing a depth attachment as a texture is refused
+  (rlsw draws it untextured).
 - `BeginMode3D` and the
   `rmodels.c` 3D shapes, and meshes and models drawn with
   `DrawMesh`/`DrawModel` (rlgl's vertex arrays into rlsw's

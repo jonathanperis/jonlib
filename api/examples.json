@@ -4826,16 +4826,9 @@
    "libraries": [],
    "gui": [],
    "missing": [
-    "rlDisableFramebuffer",
-    "rlEnableFramebuffer",
-    "rlFramebufferAttach",
-    "rlFramebufferComplete",
     "rlGetCullDistanceFar",
     "rlGetCullDistanceNear",
-    "rlLoadFramebuffer",
-    "rlLoadTextureCubemap",
-    "rlLoadTextureDepth",
-    "rlUnloadFramebuffer"
+    "rlLoadTextureCubemap"
    ]
   },
   {
@@ -6108,22 +6101,13 @@
    "libraries": [],
    "gui": [],
    "missing": [
-    "rlBindFramebuffer",
-    "rlDisableFramebuffer",
-    "rlEnableFramebuffer",
-    "rlFramebufferAttach",
-    "rlFramebufferComplete",
-    "rlLoadFramebuffer",
-    "rlLoadTexture",
-    "rlLoadTextureDepth",
-    "rlUnloadFramebuffer",
-    "rlUnloadTexture"
+    "rlBindFramebuffer"
    ]
   },
   {
    "name": "shaders_hybrid_rendering",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -6166,17 +6150,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "rlDisableFramebuffer",
-    "rlEnableFramebuffer",
-    "rlFramebufferAttach",
-    "rlFramebufferComplete",
-    "rlLoadFramebuffer",
-    "rlLoadTexture",
-    "rlLoadTextureDepth",
-    "rlUnloadFramebuffer",
-    "rlUnloadTexture"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_texture_tiling",
@@ -6219,7 +6193,7 @@
   {
    "name": "shaders_shadowmap_rendering",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -6275,15 +6249,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "rlDisableFramebuffer",
-    "rlEnableFramebuffer",
-    "rlFramebufferAttach",
-    "rlFramebufferComplete",
-    "rlLoadFramebuffer",
-    "rlLoadTextureDepth",
-    "rlUnloadFramebuffer"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_vertex_displacement",
@@ -6330,7 +6296,7 @@
   {
    "name": "shaders_depth_writing",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -6366,17 +6332,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "rlDisableFramebuffer",
-    "rlEnableFramebuffer",
-    "rlFramebufferAttach",
-    "rlFramebufferComplete",
-    "rlLoadFramebuffer",
-    "rlLoadTexture",
-    "rlLoadTextureDepth",
-    "rlUnloadFramebuffer",
-    "rlUnloadTexture"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_basic_pbr",
@@ -6492,7 +6448,7 @@
   {
    "name": "shaders_depth_rendering",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -6537,17 +6493,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "rlDisableFramebuffer",
-    "rlEnableFramebuffer",
-    "rlFramebufferAttach",
-    "rlFramebufferComplete",
-    "rlLoadFramebuffer",
-    "rlLoadTexture",
-    "rlLoadTextureDepth",
-    "rlUnloadFramebuffer",
-    "rlUnloadTexture"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_game_of_life",

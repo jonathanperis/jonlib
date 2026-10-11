@@ -1280,6 +1280,27 @@ def Laws.rlgl_begin_lines():
 def Laws.rlgl_begin_points_ignored():
   {==}
 
+def Laws.rlgl_framebuffer_zero_is_complete():
+  {==}
+
+def Laws.rlgl_framebuffer_zero_takes_no_attachment(id, width, height, format, attach, kind):
+  {==}
+
+def Laws.rlgl_framebuffer_color_alone_is_complete():
+  {==}
+
+def Laws.rlgl_framebuffer_empty_is_incomplete():
+  {==}
+
+def Laws.rlgl_framebuffer_depth_of_other_size_is_incomplete():
+  {==}
+
+def Laws.rlgl_framebuffer_channel_one_is_ignored():
+  {==}
+
+def Laws.rlgl_framebuffer_depth_attaches_as_texture_or_renderbuffer():
+  {==}
+
 def Laws.color_hsv_term_six():
   {==}
 
