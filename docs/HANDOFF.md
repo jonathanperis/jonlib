@@ -182,16 +182,39 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
    (`models_loading_gltf`, `models_animation_gpu_skinning`,
    `models_bone_socket`, `models_animation_blend_custom`,
    `models_animation_blending` and `_timing` with `GuiProgressBar`,
-   `shaders_shadowmap_rendering` with the framebuffer functions). raylib
-   6.0's model has a `ModelSkeleton`, a current pose and bone matrices;
-   Jonlib's `Model` and `Mesh` have none of them, so the additive route is
-   separate types beside the model (a skeleton with its bind pose, the
-   meshes' bone ids and weights, `ModelAnimation` as keyframe poses) and an
-   update that returns the model with skinned vertices
-   (`UpdateModelAnimation` is a pose lerp/slerp per bone, `inverse(bind) *
-   pose` matrices and CPU skinning; `QuaternionSlerp` follows the libm
-   profile's `acosf`/`sinf`). The loader needs skins, `JOINTS_0`/`WEIGHTS_0`
-   and `LoadModelAnimationsGLTF`'s sampling of each channel every 17 ms.
+   `shaders_shadowmap_rendering` with the framebuffer functions). What the
+   reference does (found 2026-10-11, read `rmodels.c` before designing):
+   - The reference library is built with `SUPPORT_GPU_SKINNING` on
+     ([VERIFICATION.md](VERIFICATION.md)), so `animVertices` is never
+     allocated and `UpdateModelAnimationVertexBuffers` skips every mesh: on
+     the software renderer **an animated model is drawn in its bind pose**.
+     `UpdateModelAnimation` only fills `model.currentPose` and
+     `model.boneMatrices`. No CPU skinning is needed.
+   - What reaches the screen is the data the examples read themselves:
+     animation names and `keyframeCount`, `skeleton.bones[i].name`,
+     `skeleton.bindPose[i]` and `anim.keyframePoses[frame][bone]`
+     (`models_bone_socket` places the hat, sword and shield with them).
+   - `greenman.glb` (164 KB; three examples) has one skin of 12 joints, four
+     LINEAR animations, `JOINTS_0` as u8 and `WEIGHTS_0` as float, and its
+     base color texture as an embedded PNG (`images[0].bufferView`); its
+     hat, sword and shield files have a texture each. `robot.glb` (1.6 MB;
+     three examples) has 43 joints, 14 animations, base color factors and no
+     texture. The loader refuses both today (`static` in `src/gltf.bend`:
+     no skins, textures or images).
+   - `LoadModelAnimationsGLTF`: `keyframeCount = (int)(duration*60) + 1`,
+     frame `j` at `j/60` s; each bone starts from its node's TRS and takes
+     `GetPoseAtTimeGLTF` per channel (the keyframe search leaves keyframe 0
+     with `t` clamped to 1 at or after the last key; `Vector3Lerp`,
+     `QuaternionSlerp` under the libm profile); the root pose is composed
+     with the world transform of joint 0's parent (`MatrixDecompose`), then
+     `BuildPoseFromParentJoints`. Jonmath has every raymath function used.
+   - Jonlib's `Model` and `Mesh` have no skeleton, pose or bone data. The
+     additive route: new types (`Transform`, `BoneInfo`, `ModelSkeleton`,
+     `ModelAnimation`) and functions beside the model (the skeleton of a
+     file, its animations, the pose and bone matrices of a frame), in a new
+     module that reuses `src/gltf.bend`'s JSON, accessor and node helpers.
+     Accepting skins and embedded textures changes the loader's existing
+     definitions (a complete run).
    Also:
    textures and images (embedded and external; `shaders_basic_pbr` also needs
    PNG files above Jonlib's 1 MiB input limit), skins and
