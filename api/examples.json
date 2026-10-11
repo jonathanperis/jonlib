@@ -6017,7 +6017,7 @@
   {
    "name": "shaders_normalmap_rendering",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",

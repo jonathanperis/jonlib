@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 153 ported, 20 ready, 39 waiting.
+Totals: 212 examples; 154 ported, 19 ready, 39 waiting.
 
 ## APIs that unblock the most examples
 
@@ -245,7 +245,7 @@ Totals: 212 examples; 153 ported, 20 ready, 39 waiting.
 | `shaders_hot_reloading` | shaders | waiting | `GetFileModTime` |
 | `shaders_mesh_instancing` | shaders | ported |  |
 | `shaders_multi_sample2d` | shaders | ported |  |
-| `shaders_normalmap_rendering` | shaders | ready |  |
+| `shaders_normalmap_rendering` | shaders | ported |  |
 | `shaders_spotlight_rendering` | shaders | ready |  |
 | `shaders_deferred_rendering` | shaders | waiting | `rlBindFramebuffer`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlGetLocationUniform`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
 | `shaders_hybrid_rendering` | shaders | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
