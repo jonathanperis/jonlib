@@ -2101,6 +2101,22 @@
    "minutes": 75
   },
   {
+   "id": "examples-audio",
+   "title": "The ported raylib audio examples replayed frame by frame against the unmodified native examples (clock-injected memory-platform raylib, raudio.c compiled beside them with miniaudio's null backend), framebuffers byte for byte and the presented Image",
+   "run": [
+    "{python}",
+    "tools/examples_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}",
+    "--category=audio"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 8
+  },
+  {
    "id": "quaternion-angle",
    "title": "Glibc239Libm acosf, QuaternionSlerp and QuaternionToAxisAngle against raymath on the pinned glibc 2.39 acosf (and the host libm on Linux x86_64 glibc 2.39)",
    "run": [

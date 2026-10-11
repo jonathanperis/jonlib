@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 195 ported, 7 ready, 10 waiting.
+Totals: 212 examples; 196 ported, 6 ready, 10 waiting.
 
 ## APIs that unblock the most examples
 
@@ -263,7 +263,7 @@ Totals: 212 examples; 195 ported, 7 ready, 10 waiting.
 | `audio_sound_loading` | audio | ready |  |
 | `audio_mixed_processor` | audio | waiting | `AttachAudioMixedProcessor`, `DetachAudioMixedProcessor`, `LoadMusicStream`, `PlayMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
 | `audio_stream_effects` | audio | waiting | `AttachAudioStreamProcessor`, `DetachAudioStreamProcessor`, `GetMusicTimeLength`, `GetMusicTimePlayed`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
-| `audio_sound_multi` | audio | ready |  |
+| `audio_sound_multi` | audio | ported |  |
 | `audio_sound_positioning` | audio | ready |  |
 | `audio_spectrum_visualizer` | audio | waiting | `IsAudioStreamProcessed`, `LoadAudioStream`, `PlayAudioStream`, `SetAudioStreamBufferSizeDefault`, `UnloadAudioStream`, `UpdateAudioStream` |
 | `audio_stream_callback` | audio | waiting | `LoadAudioStream`, `PlayAudioStream`, `SetAudioStreamBufferSizeDefault`, `SetAudioStreamCallback`, `UnloadAudioStream` |
