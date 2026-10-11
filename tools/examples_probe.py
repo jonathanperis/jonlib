@@ -240,6 +240,7 @@ EXAMPLES = {
     'shaders_rlgl_compute': ('shaders/shaders_rlgl_compute.c', 'Ex.setup(core, frame)'),
     'shaders_lightmap_rendering': ('shaders/shaders_lightmap_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_animation_gpu_skinning': ('models/models_animation_gpu_skinning.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'models_bone_socket': ('models/models_bone_socket.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -303,6 +304,7 @@ CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_r
                 'shapes_splines_drawing': 32}
 IO_SETUP.add('shaders_lightmap_rendering'); PERSPECTIVE.add('shaders_lightmap_rendering'); CONFIG_FLAGS['shaders_lightmap_rendering'] = 32
 IO_SETUP.add('models_animation_gpu_skinning'); PERSPECTIVE.add('models_animation_gpu_skinning')
+IO_SETUP.add('models_bone_socket'); PERSPECTIVE.add('models_bone_socket')
 
 
 # -----------------------------------------------------------------------------
@@ -919,6 +921,13 @@ def scripts():
         # before and LEFT again wraps to the last one (the name is drawn; the pose is not: GPU skinning).
         script('models_animation_gpu_skinning', 'switch', [quick(), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), slow([key(KEY_LEFT)]),
                                                            quick([key(KEY_LEFT, False)]), quick([key(KEY_LEFT)]), quick()]),
+        # The greenman with its hat, sword and shield on their socket bones: T plays the next animation, F turns
+        # the character two steps and H one back, 1, 2 and 3 hide the hat, the sword and the shield, the pointer
+        # moves the third person camera, 1 shows the hat again and G goes back to the first animation.
+        script('models_bone_socket', 'equip', [quick(), quick([key(84)]), quick([key(84, False), key(70)]), quick(), quick([key(70, False), key(KEY_H)]),
+                                               slow([key(KEY_H, False), key(KEY_ONE)]), quick([key(KEY_ONE, False), key(KEY_TWO)]),
+                                               quick([key(KEY_TWO, False), key(KEY_THREE), mouse_at(420, 240)]), quick([key(KEY_THREE, False), key(KEY_ONE)]),
+                                               quick([key(KEY_ONE, False), key(KEY_G)]), quick([key(KEY_G, False)])]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.
