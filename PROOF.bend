@@ -872,6 +872,30 @@ def Laws.gui_dropdown_second_item():
 def Laws.gui_dropdown_focus_without_items(mouse, x, y, w, h, pitch, up):
   {==}
 
+def Laws.gui_text_box_insert_at_cursor():
+  {==}
+
+def Laws.gui_text_box_remove_at_cursor():
+  {==}
+
+def Laws.gui_text_box_backspace_whole_codepoint():
+  {==}
+
+def Laws.gui_text_box_nothing_before_start():
+  {==}
+
+def Laws.gui_text_box_paste_fits_size():
+  {==}
+
+def Laws.gui_text_box_paste_stops_at_control():
+  {==}
+
+def Laws.gui_text_box_globals_start_at_zero():
+  {==}
+
+def Laws.gui_text_box_blank_when_normal(gui):
+  {==}
+
 def Laws.shader_load_never_valid(vs, fs):
   {==}
 

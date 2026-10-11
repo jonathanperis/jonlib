@@ -400,7 +400,22 @@
    "status": "not-started"
   },
   "GuiTextBox": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.text_box",
+   "scope": "The box, its text and cursors; edit mode over raygui's two globals (Gui.Editing): typing, paste, HOME/END, DELETE, BACKSPACE, LEFT/RIGHT with key repeat, the pointer, ENTER.",
+   "evidence": [
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "The Ctrl word operations (Ctrl+DELETE/BACKSPACE/LEFT/RIGHT) mark the frame undefined",
+    "A box too narrow for the glyph before the cursor and a cursor inside a UTF-8 sequence mark the frame undefined",
+    "Typed characters, paste and the offset of a text wider than its box are compared with raygui by reading only",
+    "Icon ids above 255, a short '#' line read across lines and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined; icons draw at scale 1",
+    "The default font only (GuiSetFont is not delivered); tooltips are not delivered (off by default)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiSlider": {
    "status": "partial",

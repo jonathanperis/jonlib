@@ -1353,8 +1353,7 @@
     "GuiTextBox"
    ],
    "missing": [
-    "GuiSetIconScale",
-    "GuiTextBox"
+    "GuiSetIconScale"
    ]
   },
   {
@@ -1392,7 +1391,7 @@
   {
    "name": "core_compute_hash",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1420,9 +1419,7 @@
     "GuiSetStyle",
     "GuiTextBox"
    ],
-   "missing": [
-    "GuiTextBox"
-   ]
+   "missing": []
   },
   {
    "name": "core_keyboard_testbed",
@@ -2238,8 +2235,7 @@
     "GuiTextBox"
    ],
    "missing": [
-    "GuiScrollPanel",
-    "GuiTextBox"
+    "GuiScrollPanel"
    ]
   },
   {
