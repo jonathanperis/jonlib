@@ -245,6 +245,7 @@ EXAMPLES = {
     'models_animation_timing': ('models/models_animation_timing.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_animation_blending': ('models/models_animation_blending.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_animation_blend_custom': ('models/models_animation_blend_custom.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'models_waving_cubes': ('models/models_waving_cubes.c', 'Ex.setup(core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -313,6 +314,7 @@ IO_SETUP.add('models_loading_gltf'); PERSPECTIVE.add('models_loading_gltf')
 IO_SETUP.add('models_animation_timing'); PERSPECTIVE.add('models_animation_timing')
 IO_SETUP.add('models_animation_blending'); PERSPECTIVE.add('models_animation_blending')
 IO_SETUP.add('models_animation_blend_custom'); PERSPECTIVE.add('models_animation_blend_custom')
+PERSPECTIVE.add('models_waving_cubes')
 
 
 # -----------------------------------------------------------------------------
@@ -959,6 +961,9 @@ def scripts():
         # The greenman in its bind pose with the names of the two animations the example blends bone by bone;
         # SPACE switches to uniform blending and back (the text names the mode; the bone matrices are not drawn).
         script('models_animation_blend_custom', 'modes', [quick(), quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False)]), quick(), quick([key(KEY_SPACE)])]),
+        # 3375 cubes spread and sized by sin of the clock under a camera circling with cos and sin of it: the
+        # first frame, and one a second and a half later.
+        script('models_waving_cubes', 'wave', [quick(), ([], 0.003, 1.5)]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.
