@@ -300,6 +300,7 @@ EXAMPLES = {
     'audio_stream_callback': ('audio/audio_stream_callback.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'audio_music_stream': ('audio/audio_music_stream.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_stream_effects': ('audio/audio_stream_effects.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'audio_mixed_processor': ('audio/audio_mixed_processor.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'core_vr_simulator': ('core/core_vr_simulator.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shaders_game_of_life': ('shaders/shaders_game_of_life.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
@@ -426,7 +427,7 @@ IO_SETUP.add('models_loading_m3d'); PERSPECTIVE.add('models_loading_m3d')
 AUDIO = {'textures_sprite_button', 'textures_sprite_explosion', 'audio_sound_multi', 'audio_sound_positioning'}
 # Examples whose frames show what the device did: its thread is stopped and the scripted clock asks for its callbacks
 # (tools/reference/audio_clock.c; AudioClock in Jonlib).
-AUDIO_CLOCK = {'audio_raw_stream', 'audio_music_stream', 'audio_stream_effects'}
+AUDIO_CLOCK = {'audio_raw_stream', 'audio_music_stream', 'audio_stream_effects', 'audio_mixed_processor'}
 AUDIO.update(AUDIO_CLOCK)
 IO_SETUP.update(AUDIO)
 # The binary64 sin of its samples and of its wave has no AppleLibm profile (docs/MATH.md): the same contract.
@@ -1234,6 +1235,14 @@ def scripts():
         script('audio_stream_effects', 'toggles', [quick(), quick(), quick([key(KEY_F)]), quick([key(KEY_F, False)]), quick([key(KEY_D)]), quick([key(KEY_D, False)]),
                                                    quick(), long([key(KEY_P)]), quick([key(KEY_P, False)]), quick([key(KEY_P)]), quick([key(KEY_P, False)]),
                                                    slow([key(KEY_F)]), quick([key(KEY_F, False), key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), quick()]),
+        # country.mp3 once more, with the processor on the device's mix: every callback raises its 960 samples to the
+        # exponent and leaves an average, a bar of the frame. The music begins quietly, so space plays coin.wav over it at
+        # once; left lowers the exponent twice (0.95, 0.90: louder), right raises it three times (1.05) over a slow frame
+        # and one of a tenth of a second, whose ten callbacks each leave a bar.
+        script('audio_mixed_processor', 'powers', [quick(), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False), key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]),
+                                                   quick([key(KEY_LEFT)]), slow([key(KEY_LEFT, False), key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]),
+                                                   quick([key(KEY_RIGHT)]), long([key(KEY_RIGHT, False)]), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]),
+                                                   quick()]),
         # Every frame is a refusal (UNDEFINED_NATIVE): the port still runs the clock and the stream's callback, the
         # frequency keys and both wave keys before it refuses.
         script('audio_stream_callback', 'waves', [quick(), quick([key(KEY_UP)]), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), slow([key(KEY_LEFT)]),

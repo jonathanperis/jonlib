@@ -72,7 +72,7 @@ at the branch's head.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 582/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **203/212 ported** with the stack (`audio_music_stream` and `audio_stream_effects` play `country.mp3` through the MP3 decoder), 7 ready (four of them wait for a decoder, an MP3 loader or `powf`, which the plan does not count: `country.mp3` as a wave, `mini1111.xm`, `target.ogg`), 2 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **204/212 ported** with the stack (`audio_music_stream`, `audio_stream_effects` and `audio_mixed_processor` play `country.mp3` through the MP3 decoder), 6 ready (three of them wait for a decoder or an MP3 loader, which the plan does not count: `country.mp3` as a wave, `mini1111.xm`, `target.ogg`), 2 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -428,8 +428,8 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      program's function is called from the glue in `jonlib.bend`, not from
      `src/mixer.bend` (a buffer's runs are its frames split by 512). The
      examples that use them, `audio_stream_effects` and
-     `audio_mixed_processor`, also play `country.mp3`: they wait for the
-     MP3 decoder. Templates (`~answer`, `~process`) must be closed terms:
+     `audio_mixed_processor`, also play `country.mp3` (both ported, see
+     below). Templates (`~answer`, `~process`) must be closed terms:
      everything a callback needs goes in the program state it takes and
      returns. **Music streams are in over WAV** (`Music.*`,
      docs/AUDIO.md): the stream, raudio's `UpdateMusicStream` over the
@@ -562,28 +562,25 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      the device's clock and their frames compared with the native
      examples' (the effects are stream processors computing with
      `src/mixer.bend`'s flush-to-zero operations, which the example
-     imports: there is no public name for them yet). What
-     `audio_mixed_processor` still needs is `powf` for any exponent:
-     its processor is `powf(fabsf(x), exponent)` on every mixed sample,
-     with the exponent moved by keys from 0.5 to 3 in steps of 0.05, and
-     **`M.Libm.powf` is in** (`Power.powf`, gate `powf`, docs/MATH.md):
-     glibc 2.39's `powf` for a non-negative finite base and a finite
-     exponent, computed as both of glibc's builds (the FMA one fuses
-     nine `a*b + c`; read from the library's code) and answered where
-     they agree. What is left for the example is the port itself: a
-     mixed processor (`J.AudioClock.advance_processing`, tag of
-     `AudioDevice.attach_mixed_processor`) that takes
-     `powf(fabsf(x), exponent)` of each sample, times its sign, and the
-     history of 400 averages it draws. The callback flushes subnormals:
-     a subnormal result of `powf` is 0 there. Each `powf` is two
-     software binary64 evaluations, about 1920 a callback: slow on the
-     JavaScript lane, so keep the script short. The builds differ on
-     about 7 pairs in ten billion (measured: 30 billion pairs, the
+     imports: there is no public name for them yet).
+     **`audio_mixed_processor` is ported** too: its processor on the
+     device's mix is `powf(fabsf(x), exponent)` of every sample, times
+     its sign, with the exponent moved by keys from 0.5 to 3 in steps
+     of 0.05, and it keeps the average of each of its last 400 calls,
+     which the frame draws as bars. The power is `M.Libm.powf`
+     (`Power.powf`, gate `powf`, docs/MATH.md): glibc 2.39's `powf` for
+     a non-negative finite base and a finite exponent, computed as both
+     of glibc's builds (the FMA one fuses nine `a*b + c`; read from the
+     library's code) and answered where they agree. The builds differ
+     on about 7 pairs in ten billion (measured: 30 billion pairs, the
      models equal to their builds on all of them); `powf` is `None`
-     there and the example has to refuse that frame, since the port
-     cannot know which build the reference host runs.
-     In the example the base is `fabsf` of a mixed sample: 0 or a
-     normal float (the callback flushes subnormals), never negative.
+     there and the example refuses that frame and every later one,
+     since the port cannot know which build the reference host runs.
+     The base is `fabsf` of a mixed sample: 0 or a normal float (the
+     callback flushes subnormals), never negative, and a subnormal
+     power is 0 there. Each `powf` is two software binary64
+     evaluations, 960 a callback: slow on the JavaScript lane, so the
+     script is twelve frames.
      **`Music` plays MP3** (`MusicMp3{player}` in `jonlib.bend`, cases
      `music-mp3` and `music-mp3-counted` of the sound gate, whose model
      takes the stream's readable frames from the reference and keeps
