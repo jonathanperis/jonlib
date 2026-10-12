@@ -347,7 +347,10 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      .mp3 (dr_mp3), an .ogg (stb_vorbis) or an .xm (jar_xm): decoders not
      ported. **The device and sounds are in** (`AudioDevice.*`, `Sound.*`;
      Base already has an `Audio` type, so the state could not take that name;
-     docs/AUDIO.md, gate `sound`): state only, no mixer and no clock. The
+     docs/AUDIO.md, gate `sound`), and so is the mixer at the device rate
+     (`AudioDevice.mix`, one data callback: the reference asks the stopped
+     device for it with `ma_device_handle_backend_data_callback`); there is
+     no clock. The
      reference of `tools/sound_probe.py` is `#include "raudio.c"` in the
      reference program (the library keeps `SUPPORT_MODULE_RAUDIO=OFF`)
      with `-DMA_ENABLE_ONLY_SPECIFIC_BACKENDS -DMA_ENABLE_NULL`: the null
@@ -364,14 +367,24 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `audio_sound_multi` (the first of the new `examples-audio` gate) and
      `audio_sound_positioning` (it asks `IsSoundPlaying` every frame, but
      draws nothing from it: the port plays the sound once) are in. `audio_sound_loading`
-     is listed ready but also loads an .ogg. Then the mixer, so
-     that `IsSoundPlaying` can end (`audio_sound_positioning`): the
-     program can call `AUDIO.System.device.onData` (raudio's
-     `OnSendAudioDataToDevice`) itself on the stopped device for the
-     frames a scripted clock advanced, and Jonlib needs each buffer's
-     `ma_data_converter` (the resampler of `Wave.format` is ported, but
-     streaming, with state across calls), volume, pan and pitch, and
-     `MixAudioFrames` in binary32.
+     is listed ready but also loads an .ogg. What the mixer
+     still lacks, in the order the remaining examples need it: (1) pitched
+     buffers: `ma_linear_resampler` streaming with a rate that is not 1:1
+     (`inTimeInt`/`inTimeFrac`, the order-4 filter on the input when
+     downsampling and on the output when upsampling, `set_rate` rescaling
+     the timer and keeping the filter's registers, raudio's 8-frame
+     residual and its `(float)in/out` input estimate); `src/resampler.bend`
+     has the arithmetic, for one whole wave from the initial state; (2) a
+     clock: the driver asking for callbacks for the frames the scripted
+     time advanced, natively through a hook that stops the device as the
+     sound probe does (today the native examples' device thread runs free:
+     fine while no frame shows audio state); (3) audio streams
+     (`LoadAudioStream`: the two sub-buffers, `IsAudioStreamProcessed`,
+     looping, converters from any format and rate; `audio_raw_stream`,
+     `audio_stream_callback`, `audio_spectrum_visualizer`); (4) music
+     (`LoadMusicStream`) and its decoders: dr_mp3, stb_vorbis, jar_xm,
+     jar_mod, dr_flac. Subnormals in a callback are refused: miniaudio
+     sets DAZ/FTZ around the callback on x86 only.
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`

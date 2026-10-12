@@ -82,6 +82,11 @@ def fnv(words):
 NAN = 0x7FC00000
 
 
+def odd(word):
+    """A subnormal or a NaN: values the hosts' miniaudio builds do not treat alike in the device callback."""
+    return bool(word & 0x007FFFFF) and (word & 0x7F800000) in (0, 0x7F800000)
+
+
 def s16(values):
     return [v & 0xFFFF for v in values]
 
@@ -104,6 +109,9 @@ def waves():
         'quad16': (4, 48000, 16, 4, s16(ramp[:16]), None),
         'six8up': (6, 22050, 8, 6, [(i * 37 + 11) & 255 for i in range(36)], None),
         'one': (1, 44100, 16, 1, s16([12345]), None),
+        'five32': (5, 48000, 32, 2, floats([0.5, -0.25, 1.5, -3.0, 0.125, 0.75, -1.0, 1.0, 0.0625, -0.0]), None),
+        'long513': (513, 48000, 16, 1, s16([((i * 97) % 2001 - 1000) * 31 for i in range(513)]), None),
+        'tiny32': (3, 48000, 32, 2, floats([0.5, 1e-40, 0.25, 0.5, -0.5, 0.125]), None),
         'zero': (0, 0, 0, 0, [], None),
         'noframes': (0, 48000, 16, 1, [], None),
         'nochannels': (5, 48000, 16, 0, [], None),
@@ -123,7 +131,7 @@ def tiny_wav():
 
 # Steps: ('init',), ('close',), ('master', word), ('load', slot, wave), ('file', slot, name), ('alias', slot, source),
 # ('unload', slot), ('unalias', slot), ('play'|'stop'|'pause'|'resume', slot), ('volume'|'pitch'|'pan', slot, word),
-# ('update', slot, frames, words).
+# ('update', slot, frames, words), ('mix', frames).
 STATE = {'play': 0, 'stop': 1, 'pause': 2, 'resume': 3}
 TUNE = {'volume': 4, 'pitch': 5, 'pan': 6}
 
@@ -172,6 +180,35 @@ def cases():
         ('unalias', 1), ('unalias', 2), ('unalias', 3), ('unload', 0), ('close',))
     add('file-coin', ('init',), ('file', 0, 'coin'), ('volume', 0, bits(0.4)), ('pan', 0, bits(0.6)), ('play', 0), ('unload', 0), ('close',))
 
+    add('mix-silence', ('init',), ('mix', 4), ('load', 0, 'mono16'), ('mix', 3), ('play', 0), ('pause', 0), ('mix', 2), ('master', bits(0.0)), ('mix', 1), ('close',))
+    add('mix-to-the-end', ('init',), ('load', 0, 'mono16'), ('play', 0), ('mix', 3), ('mix', 3), ('mix', 480), ('mix', 4), ('play', 0), ('mix', 8), ('play', 0), ('mix', 7),
+        ('pause', 0), ('mix', 5), ('resume', 0), ('mix', 1), ('mix', 1), ('close',))
+    add('mix-levels', ('init',), ('load', 0, 'stereo16'), ('volume', 0, bits(0.5)), ('play', 0), ('mix', 2), ('pan', 0, bits(-1.0)), ('mix', 1), ('pan', 0, bits(1.0)), ('mix', 1),
+        ('pan', 0, bits(0.25)), ('volume', 0, bits(-2.0)), ('mix', 1), ('master', bits(0.5)), ('mix', 1), ('play', 0), ('volume', 0, bits(400.0)), ('master', bits(3.5)),
+        ('mix', 6), ('close',))
+    add('mix-together', ('init',), ('load', 0, 'stereo16'), ('load', 1, 'mono8up'), ('alias', 2, 0), ('play', 0), ('mix', 2), ('play', 1), ('play', 2), ('pan', 2, bits(-0.5)),
+        ('mix', 3), ('pause', 1), ('mix', 2), ('resume', 1), ('stop', 2), ('mix', 480), ('mix', 2), ('close',))
+    add('mix-odd-size', ('init',), ('load', 0, 'five32'), ('play', 0), ('mix', 4), ('mix', 1), ('play', 0), ('mix', 480), ('play', 0), ('mix', 5), ('play', 0), ('mix', 3), ('mix', 2),
+        ('load', 1, 'one'), ('play', 1), ('mix', 1), ('play', 1), ('mix', 9), ('close',))
+    add('mix-odd-run', ('init',), ('load', 0, 'long513'), ('play', 0), ('mix', 600), ('play', 0), ('mix', 512), ('mix', 2), ('play', 0), ('mix', 100), ('mix', 500), ('play', 0),
+        ('mix', 513), ('play', 0), ('mix', 511), ('mix', 2), ('close',))
+    add('mix-pitch-back', ('init',), ('load', 0, 'stereo16'), ('pitch', 0, bits(2.0)), ('pitch', 0, bits(1.0)), ('play', 0), ('mix', 2), ('pitch', 0, bits(0.9999999)), ('mix', 2),
+        ('pitch', 0, bits(1e9)), ('mix', 480), ('close',))
+    add('mix-update', ('init',), ('load', 0, 'mono16'), ('alias', 1, 0), ('update', 0, 2, floats([0.5, -0.5, 2.0, -2.0])), ('play', 1), ('mix', 3), ('play', 0), ('mix', 480), ('close',))
+    add('mix-file', ('init',), ('file', 0, 'boom'), ('play', 0), ('mix', 480), ('mix', 480), ('volume', 0, bits(0.4)), ('pan', 0, bits(0.6)), ('mix', 480), ('mix', 29000),
+        ('play', 0), ('mix', 30000), ('close',))
+
+    add('refused-mix-unready', ('mix', 4), ('init',), ('load', 0, 'mono16'), ('play', 0), ('close',), ('mix', 4))
+    add('refused-mix-no-frames', ('init',), ('mix', 0))
+    add('refused-mix-too-long', ('init',), ('mix', 1048577))
+    add('refused-mix-pitched', ('init',), ('load', 0, 'stereo16'), ('pitch', 0, bits(2.0)), ('play', 0), ('mix', 2), ('pitch', 0, bits(1.0)), ('mix', 2))
+    add('refused-mix-empty-buffer', ('init',), ('load', 0, 'noframes'), ('play', 0), ('mix', 2))
+    add('refused-mix-freed', ('init',), ('load', 0, 'mono16'), ('alias', 1, 0), ('unload', 0), ('play', 1), ('mix', 2))
+    add('refused-mix-subnormal', ('init',), ('load', 0, 'tiny32'), ('play', 0), ('mix', 1), ('mix', 3))
+    add('refused-mix-subnormal-volume', ('init',), ('load', 0, 'stereo16'), ('volume', 0, bits(1e-40)), ('play', 0), ('mix', 2))
+    add('refused-mix-nan-master', ('init',), ('master', NAN), ('mix', 2))
+    add('refused-mix-nan-pan', ('init',), ('load', 0, 'stereo16'), ('pan', 0, NAN), ('play', 0), ('mix', 2))
+    add('refused-mix-infinite', ('init',), ('load', 0, 'stereo16'), ('update', 0, 1, [bits(math.inf), bits(0.5)]), ('play', 0), ('mix', 2))
     add('refused-unready-load', ('load', 0, 'mono16'), ('file', 1, 'tiny'), ('file', 2, 'missing'), ('init',), ('close',), ('load', 3, 'stereo16'))
     add('refused-waves', ('init',), ('load', 0, 'size24'), ('load', 1, 'short'), ('load', 2, 'nan'), ('load', 3, 'hugerate'), ('load', 0, 'mono16'), ('close',))
     add('refused-stale-handle', ('init',), ('load', 0, 'mono16'), ('load', 1, 'stereo16'), ('unload', 0), ('play', 0), ('volume', 0, bits(0.5)), ('alias', 2, 0),
@@ -214,13 +251,63 @@ class Model:
         return found
 
     def track(self, frames, block):
-        self.buffers.append(dict(id=self.next, block=block, frames=frames, volume=bits(1.0), pitch=bits(1.0), pan=0, playing=False, paused=False))
+        self.buffers.append(dict(id=self.next, block=block, frames=frames, volume=bits(1.0), pitch=bits(1.0), pan=0, playing=False, paused=False,
+                                 rate=48000, cursor=0, taps=[0, 0, 0, 0]))
         self.next += 1
         return self.next - 1
 
     def stop(self, found):
         if found['playing'] and not found['paused']:
-            found['playing'] = False
+            found['playing'], found['cursor'] = False, 0
+
+    def mix(self, frames):
+        """One device callback: the samples, or None (and nothing changed) for what Jonlib refuses."""
+        if not self.ready or frames == 0 or frames > 1 << 20 or odd(self.master):
+            return None
+        out, fine, after = [0] * (2 * frames), True, []
+        for b in self.buffers:
+            if not b['playing'] or b['paused']:
+                after.append(b)
+                continue
+            data = self.blocks.get(b['block'])
+            if data is None or b['rate'] != 48000 or b['frames'] == 0:
+                return None
+            volume, pan = fl(b['volume']), fl(b['pan'])
+            right = f32(f32(pan + 1.0) / 2.0)
+            left = f32(1.0 - right)
+            levels = []
+            fine &= not (odd(b['volume']) or odd(b['pan']) or odd(bits(f32(pan + 1.0))))
+            for side in (left, right):
+                half, square = f32(volume * 0.5), f32(side * side)
+                level = f32(f32(half * side) * f32(3.0 - square))
+                fine &= not any(odd(bits(v)) for v in (side, half, f32(half * side), square, f32(3.0 - square), level))
+                levels.append(level)
+            size, cursor = b['frames'], b['cursor']
+            edge = size - 1 - cursor
+            cut = size % 2 == 1 and size >= 3 and edge % 512 == 0 and edge < frames
+            count = edge if cut else min(frames, size - cursor)
+            ends = cut or frames >= size - cursor
+            taps = list(b['taps'])
+            for j in range(count):
+                for channel in range(2):
+                    before, sample, total = taps[2 + channel], data[2 * (cursor + j) + channel], out[2 * j + channel]
+                    delta = f32(fl(sample) - fl(before))
+                    held = f32(fl(before) + f32(delta * 0.0))
+                    scaled = f32(held * levels[channel])
+                    new = bits(f32(fl(total) + scaled))
+                    fine &= not any(odd(w) for w in (before, sample, total, bits(delta), bits(f32(delta * 0.0)), bits(held), bits(scaled), new))
+                    out[2 * j + channel] = new
+                taps = [taps[2], taps[3], data[2 * (cursor + j)], data[2 * (cursor + j) + 1]]
+            after.append(dict(b, playing=not ends, paused=False, cursor=0 if ends else cursor + count, taps=taps))
+        master, sent = fl(self.master), []
+        for word in out:
+            x = f32(fl(word) * master) if self.master != bits(1.0) else fl(word)
+            fine &= not (odd(word) or odd(bits(x)))
+            sent.append(bits(-1.0 if x < -1 else 1.0 if x > 1 else x))
+        if not fine:
+            return None
+        self.buffers = after
+        return sent
 
     def loaded(self, slot, entry):
         if not self.ready:
@@ -282,7 +369,7 @@ class Model:
             found = self.used(step[1])
             if found is not None:
                 if kind == 'play':
-                    found['playing'], found['paused'] = True, False
+                    found['playing'], found['paused'], found['cursor'] = True, False, 0
                 elif kind == 'stop':
                     self.stop(found)
                 else:
@@ -299,6 +386,7 @@ class Model:
                 elif kind == 'pitch':
                     if value > 0:
                         found['pitch'] = step[2]
+                        found['rate'] = int(f32(48000.0 / value)) or found['rate']
                 else:
                     found['pan'] = bits(-1.0) if value < -1 else bits(1.0) if value > 1 else step[2]
         elif kind == 'update':
@@ -311,6 +399,9 @@ class Model:
                 if valid and held:
                     self.stop(found)
                     self.blocks[found['block']][:len(words)] = words
+        elif kind == 'mix':
+            self.mixed = self.mix(step[1])
+            self.undefined |= self.mixed is None
         else:
             raise ValueError(kind)
         return tag
@@ -324,7 +415,8 @@ class Model:
             parts.append(f'S{number},{frames},{rate},{size},{channels},{valid},{playing}')
         for b in self.buffers:
             samples = '-' if not b['block'] else str(fnv(self.blocks[b['block']])) if b['block'] in self.blocks else 'x'
-            parts.append(f'B{b["id"]},{b["block"]},{b["frames"]},{b["volume"]},{b["pitch"]},{b["pan"]},{int(b["playing"])},{int(b["paused"])},{samples}')
+            parts.append(f'B{b["id"]},{b["block"]},{b["frames"]},{b["volume"]},{b["pitch"]},{b["pan"]},{int(b["playing"])},{int(b["paused"])},{samples},'
+                         f'{b["rate"]},{b["cursor"]},{",".join(map(str, b["taps"]))}')
         return ' '.join(parts)
 
 
@@ -333,7 +425,7 @@ def expected(case, catalog):
     model, tagged, plain = Model(catalog), [], []
     for step in case['steps']:
         tag = model.step(step)
-        state = model.state()
+        state = model.state() + (('' if step[0] != 'mix' else ' X-' if model.mixed is None else f' X{fnv(model.mixed)}'))
         tagged.append(f'E:{tag} {state}')
         plain.append(state)
     return ';'.join(tagged), ';'.join(plain), not model.undefined
@@ -351,6 +443,7 @@ static int slot_id[SLOTS];
 static rAudioBuffer *created[MADE];
 static int owner[MADE], gone[MADE], freed[MADE + 1], made;
 static const char *files[] = { FILES };
+static unsigned mixed_hash;
 
 static unsigned rd(FILE *f) { unsigned v = 0; if (fread(&v, 4, 1, f) != 1) exit(3); return v; }
 static unsigned word(float x) { unsigned v; memcpy(&v, &x, 4); return v; }
@@ -400,6 +493,8 @@ static void state(int first)
         if (owner[id - 1] == 0) printf("-");
         else if (freed[owner[id - 1]]) printf("x");
         else printf("%u", fnv((const unsigned *)b->data, b->sizeInFrames*2));
+        ma_linear_resampler *linear = &b->converter.resampler.state.linear;
+        printf(",%u,%u,%u,%u,%u,%u", b->converter.resampler.sampleRateOut, b->frameCursorPos, word(linear->x0.f32[0]), word(linear->x0.f32[1]), word(linear->x1.f32[0]), word(linear->x1.f32[1]));
     }
 }
 
@@ -468,10 +563,18 @@ int main(void)
                     if ((buffer != NULL) && (buffer->data != NULL)) for (unsigned j = 0; j < buffer->sizeInFrames*2; j++) printf(" %u", ((unsigned *)buffer->data)[j]);
                     printf("\n");
                 } break;
+                case 12:
+                {
+                    float *mixed = (float *)malloc((size_t)a*8 + 8);
+                    if (ma_device_handle_backend_data_callback(&AUDIO.System.device, mixed, NULL, a) != MA_SUCCESS) return 7;
+                    mixed_hash = fnv((const unsigned *)mixed, a*2);
+                    free(mixed);
+                } break;
                 default: return 6;
             }
             free(payload);
             if (!quiet) state(i == 0);
+            if (!quiet && (code == 12)) printf(" X%u", mixed_hash);
         }
         if (!quiet) printf("\n");
         if (AUDIO.System.isReady) CloseAudioDevice();
@@ -496,6 +599,7 @@ type Op is Data:
   OpAct{slot: U32, op: U32}
   OpTune{slot: U32, op: U32, bits: U32}
   OpUpdate{slot: U32, frames: U32, data: +List<U32>}
+  OpMix{frames: U32}
 
 type St is Data:
   St{audio: J.AudioDevice, sounds: +List<J.Sound>, out: String}
@@ -533,11 +637,15 @@ def sounds.text(sounds: +List<J.Sound>, +audio: J.AudioDevice) -> String:
     case Nil{}: ""
     case Con{+sound, rest}: sound.text(audio, sound) ++ sounds.text(rest, audio)
 
+def head.text(head: J.AudioDevice.Head) -> String:
+  J.AudioHead{rate, cursor, a, b, c, d} = head
+  "," ++ U32.show(rate) ++ "," ++ U32.show(cursor) ++ "," ++ U32.show(a) ++ "," ++ U32.show(b) ++ "," ++ U32.show(c) ++ "," ++ U32.show(d)
+
 def buffers.text(buffers: +List<J.AudioDevice.Buffer>, +blocks: +List<J.AudioDevice.Block>) -> String:
   match buffers:
     case Nil{}: ""
-    case Con{J.AudioBuffer{+id, +block, +frames, +volume, +pitch, +pan, +playing, +paused}, rest}:
-      " B" ++ U32.show(id) ++ "," ++ U32.show(block) ++ "," ++ U32.show(frames) ++ "," ++ U32.show(F32.bits(volume)) ++ "," ++ U32.show(F32.bits(pitch)) ++ "," ++ U32.show(F32.bits(pan)) ++ "," ++ flag(playing) ++ "," ++ flag(paused) ++ "," ++ hashed(block, J.AudioDevice.block.find(blocks, block)) ++ buffers.text(rest, blocks)
+    case Con{J.AudioBuffer{+id, +block, +frames, +volume, +pitch, +pan, +playing, +paused, head}, rest}:
+      " B" ++ U32.show(id) ++ "," ++ U32.show(block) ++ "," ++ U32.show(frames) ++ "," ++ U32.show(F32.bits(volume)) ++ "," ++ U32.show(F32.bits(pitch)) ++ "," ++ U32.show(F32.bits(pan)) ++ "," ++ flag(playing) ++ "," ++ flag(paused) ++ "," ++ hashed(block, J.AudioDevice.block.find(blocks, block)) ++ head.text(head) ++ buffers.text(rest, blocks)
 
 def state(+audio: J.AudioDevice, +sounds: +List<J.Sound>) -> String:
   J.AudioDevice{_, _, _, +buffers, +blocks} = audio
@@ -545,6 +653,11 @@ def state(+audio: J.AudioDevice, +sounds: +List<J.Sound>) -> String:
 
 def after(+tag: String, +audio: J.AudioDevice, +sounds: +List<J.Sound>, +out: String) -> St:
   St{audio, sounds, out ++ ";E:" ++ tag ++ " " ++ state(audio, sounds)}
+
+def mixed(result: J.AudioDevice & Maybe<&2, +List<U32>>, +sounds: +List<J.Sound>, +out: String) -> St:
+  match result:
+    case Tuple{+audio, Some{+samples}}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds) ++ " X" ++ U32.show(fnv(samples, 2166136261))}
+    case Tuple{+audio, None{}}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds) ++ " X-"}
 
 def wave.tag(error: J.Wave.Error) -> String:
   match error:
@@ -598,6 +711,7 @@ def step(+st: St, op: Op) -> IO(St):
     case OpAct{slot, code}: IO.pure(St, after("-", acted(code, audio, get(sounds, slot)), sounds, out))
     case OpTune{slot, code, bits}: IO.pure(St, after("-", tuned(code, audio, get(sounds, slot), J.Wave.float_bits(bits)), sounds, out))
     case OpUpdate{slot, frames, data}: IO.pure(St, after("-", J.Sound.update(audio, get(sounds, slot), data, frames), sounds, out))
+    case OpMix{frames}: IO.pure(St, mixed(J.AudioDevice.mix(audio, frames), sounds, out))
 
 def run(ops: +List<Op>, +st: St) -> IO(String):
   match ops:
@@ -643,6 +757,8 @@ def bend_step(step, table, paths):
         return f'OpTune{{{step[1]}, {TUNE[kind]}, {step[2]}}}'
     if kind == 'update':
         return f'OpUpdate{{{step[1]}, {step[2]}, {words_text(step[3])}}}'
+    if kind == 'mix':
+        return f'OpMix{{{step[1]}}}'
     raise ValueError(kind)
 
 
@@ -674,6 +790,8 @@ def native_step(step, table, order):
         return 10, step[1], step[2], 0, list(step[3])
     if kind == 'dump':
         return 11, step[1], 0, 0, []
+    if kind == 'mix':
+        return 12, step[1], 0, 0, []
     raise ValueError(kind)
 
 

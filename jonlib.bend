@@ -6021,13 +6021,20 @@ def Wave.write(+wave: Wave, +path: String) -> IO(Result<&1, &1, Wave.IOError, Un
 # whether the device is ready, miniaudio's master volume factor and the
 # tracked audio buffers in the order raudio tracks them. The device is
 # raylib's 32-bit float, stereo, 48000 Hz playback device; nothing is sent to
-# a host device (Base's Audio is not opened) and no time passes, so a playing
-# sound stays at its start. A Sound is raylib's handle: its stream names a
-# buffer by a number (0 is NULL). Sample memory is a block that a sound and
-# its aliases share. See docs/AUDIO.md.
+# a host device (Base's Audio is not opened) and no clock runs: a playing
+# sound advances when the program asks for a device callback
+# (AudioDevice.mix). A Sound is raylib's handle: its stream names a buffer by
+# a number (0 is NULL). Sample memory is a block that a sound and its aliases
+# share. See docs/AUDIO.md.
+
+# Where a buffer's playback is: the output rate of its converter (the device's
+# 48000 Hz until SetSoundPitch changes it), the frame its cursor is at, and
+# the two frames its resampler holds (x0 and x1, left and right, F32 bits).
+type AudioDevice.Head is Data:
+  AudioHead{rate: U32, cursor: U32, a: U32, b: U32, c: U32, d: U32}
 
 type AudioDevice.Buffer is Data:
-  AudioBuffer{id: U32, block: U32, frames: U32, volume: F32, pitch: F32, pan: F32, playing: Bool, paused: Bool}
+  AudioBuffer{id: U32, block: U32, frames: U32, volume: F32, pitch: F32, pan: F32, playing: Bool, paused: Bool, head: AudioDevice.Head}
 
 type AudioDevice.Block is Data:
   AudioBlock{id: U32, data: +List<U32>}
@@ -6094,7 +6101,7 @@ def AudioDevice.buffer.find(buffers: +List<AudioDevice.Buffer>, +id: U32) -> May
   match buffers:
     case Nil{}: None{}
     case Con{+buffer, rest}:
-      AudioBuffer{+found, _, _, _, _, _, _, _} = buffer
+      AudioBuffer{+found, _, _, _, _, _, _, _, _} = buffer
       Bool.pick(Maybe<&2, AudioDevice.Buffer>, U32.is_eq(found, id), Some{buffer}, AudioDevice.buffer.find(rest, id))
 
 def AudioDevice.block.find(blocks: +List<AudioDevice.Block>, +id: U32) -> Maybe<&2, +List<U32>>:
@@ -6108,7 +6115,7 @@ def AudioDevice.buffer.remove(buffers: +List<AudioDevice.Buffer>, +id: U32) -> +
   match buffers:
     case Nil{}: Nil{}
     case Con{+buffer, +rest}:
-      AudioBuffer{+found, _, _, _, _, _, _, _} = buffer
+      AudioBuffer{+found, _, _, _, _, _, _, _, _} = buffer
       Bool.pick(+List<AudioDevice.Buffer>, U32.is_eq(found, id), rest, Con{buffer, AudioDevice.buffer.remove(rest, id)})
 
 def AudioDevice.block.remove(blocks: +List<AudioDevice.Block>, +id: U32) -> +List<AudioDevice.Block>:
@@ -6134,25 +6141,43 @@ def AudioDevice.block.held(audio: AudioDevice, +id: U32) -> Maybe<&2, +List<U32>
   AudioDevice{_, _, _, _, +blocks} = audio
   AudioDevice.block.find(blocks, id)
 
-# A buffer operation: 0 PlayAudioBuffer, 1 StopAudioBuffer (a paused buffer is
-# not playing and stays as it is), 2 PauseAudioBuffer, 3 ResumeAudioBuffer,
-# 4 volume, 5 pitch, 6 pan.
+# A new buffer's converter: the device's rate, the start, and silence held.
+def AudioDevice.head.new() -> AudioDevice.Head:
+  AudioHead{48000, 0, 0, 0, 0, 0}
+
+# The cursor back at the start (PlayAudioBuffer, and a buffer that stops);
+# the frames the resampler holds stay.
+def AudioDevice.head.rewound(head: AudioDevice.Head) -> AudioDevice.Head:
+  AudioHead{rate, _, a, b, c, d} = head
+  AudioHead{rate, 0, a, b, c, d}
+
+# SetAudioBufferPitch: the converter's output rate is (unsigned int)(48000/pitch),
+# unless that is 0 (ma_data_converter_set_rate refuses it; the pitch is kept
+# all the same).
+def AudioDevice.head.pitched(head: AudioDevice.Head, +pitch: F32) -> AudioDevice.Head:
+  AudioHead{+rate, cursor, a, b, c, d} = head
+  +wanted = F32.to_u32((48000.0 / pitch : F32))
+  AudioHead{Bool.pick(U32, U32.is_eq(wanted, 0), rate, wanted), cursor, a, b, c, d}
+
+# A buffer operation: 0 PlayAudioBuffer (from the start), 1 StopAudioBuffer (a
+# paused buffer is not playing and stays as it is), 2 PauseAudioBuffer,
+# 3 ResumeAudioBuffer, 4 volume, 5 pitch, 6 pan.
 def AudioDevice.buffer.apply(buffer: AudioDevice.Buffer, op: U32, +value: F32) -> AudioDevice.Buffer:
-  AudioBuffer{id, block, frames, +volume, +pitch, +pan, +playing, +paused} = buffer
+  AudioBuffer{id, block, frames, +volume, +pitch, +pan, +playing, +paused, +head} = buffer
   match op:
-    case 0: AudioBuffer{id, block, frames, volume, pitch, pan, True{}, False{}}
-    case 1: AudioBuffer{id, block, frames, volume, pitch, pan, playing && paused, paused}
-    case 2: AudioBuffer{id, block, frames, volume, pitch, pan, playing, True{}}
-    case 3: AudioBuffer{id, block, frames, volume, pitch, pan, playing, False{}}
-    case 4: AudioBuffer{id, block, frames, value, pitch, pan, playing, paused}
-    case 5: AudioBuffer{id, block, frames, volume, value, pan, playing, paused}
-    case _: AudioBuffer{id, block, frames, volume, pitch, value, playing, paused}
+    case 0: AudioBuffer{id, block, frames, volume, pitch, pan, True{}, False{}, AudioDevice.head.rewound(head)}
+    case 1: AudioBuffer{id, block, frames, volume, pitch, pan, playing && paused, paused, Bool.pick(AudioDevice.Head, playing && Bool.not(paused), AudioDevice.head.rewound(head), head)}
+    case 2: AudioBuffer{id, block, frames, volume, pitch, pan, playing, True{}, head}
+    case 3: AudioBuffer{id, block, frames, volume, pitch, pan, playing, False{}, head}
+    case 4: AudioBuffer{id, block, frames, value, pitch, pan, playing, paused, head}
+    case 5: AudioBuffer{id, block, frames, volume, value, pan, playing, paused, AudioDevice.head.pitched(head, value)}
+    case _: AudioBuffer{id, block, frames, volume, pitch, value, playing, paused, head}
 
 def AudioDevice.buffers.apply(buffers: +List<AudioDevice.Buffer>, +id: U32, +op: U32, +value: F32) -> +List<AudioDevice.Buffer>:
   match buffers:
     case Nil{}: Nil{}
     case Con{+buffer, +rest}:
-      AudioBuffer{+found, _, _, _, _, _, _, _} = buffer
+      AudioBuffer{+found, _, _, _, _, _, _, _, _} = buffer
       Bool.pick(+List<AudioDevice.Buffer>, U32.is_eq(found, id), Con{AudioDevice.buffer.apply(buffer, op, value), rest}, Con{buffer, AudioDevice.buffers.apply(rest, id, op, value)})
 
 # A buffer operation on a ready device; an unready device (raylib locks a
@@ -6187,7 +6212,7 @@ def Sound.tracked(audio: AudioDevice, +frames: U32, samples: +List<U32>) -> Audi
   AudioDevice{ready, master, +next, buffers, +blocks} = audio
   +held = (frames > 0 : U32)
   (AudioDevice{ready, master, (next + 1 : U32),
-     List.append(&2, AudioDevice.Buffer, buffers, [AudioBuffer{next, Bool.pick(U32, held, next, 0), frames, 1.0, 1.0, 0.0, False{}, False{}}]),
+     List.append(&2, AudioDevice.Buffer, buffers, [AudioBuffer{next, Bool.pick(U32, held, next, 0), frames, 1.0, 1.0, 0.0, False{}, False{}, AudioDevice.head.new()}]),
      Bool.pick(+List<AudioDevice.Block>, held, Con{AudioBlock{next, samples}, blocks}, blocks)},
    Done{Sound{AudioStream{next, 48000, 32, 2}, frames}})
 
@@ -6243,13 +6268,13 @@ def Sound.alias.block(found: Maybe<&2, +List<U32>>, audio: AudioDevice, +block: 
     case None{}: (audio, Sound.none())
     case Some{_}:
       AudioDevice{ready, master, +next, buffers, blocks} = audio
-      (AudioDevice{ready, master, (next + 1 : U32), List.append(&2, AudioDevice.Buffer, buffers, [AudioBuffer{next, block, size, 1.0, 1.0, 0.0, False{}, False{}}]), blocks},
+      (AudioDevice{ready, master, (next + 1 : U32), List.append(&2, AudioDevice.Buffer, buffers, [AudioBuffer{next, block, size, 1.0, 1.0, 0.0, False{}, False{}, AudioDevice.head.new()}]), blocks},
        Sound{AudioStream{next, 48000, 32, 2}, frames})
 
 def Sound.alias.source(found: Maybe<&2, AudioDevice.Buffer>, +audio: AudioDevice, +frames: U32) -> AudioDevice & Sound:
   match found:
     case None{}: (audio, Sound.none())
-    case Some{AudioBuffer{_, +block, +size, _, _, _, _, _}}: Sound.alias.block(AudioDevice.block.held(audio, block), audio, block, size, frames)
+    case Some{AudioBuffer{_, +block, +size, _, _, _, _, _, _}}: Sound.alias.block(AudioDevice.block.held(audio, block), audio, block, size, frames)
 
 # LoadSoundAlias: a new tracked buffer with its own volume, pitch, pan and
 # playing state over the source's block, and the source's frame count. A
@@ -6262,7 +6287,7 @@ def Sound.load_alias(+audio: AudioDevice, +source: Sound) -> AudioDevice & Sound
 def Sound.unload.found(found: Maybe<&2, AudioDevice.Buffer>, audio: AudioDevice, +data: Bool) -> AudioDevice:
   match found:
     case None{}: audio
-    case Some{AudioBuffer{+id, +block, _, _, _, _, _, _}}:
+    case Some{AudioBuffer{+id, +block, _, _, _, _, _, _, _}}:
       AudioDevice{ready, master, next, +buffers, +blocks} = audio
       AudioDevice{ready, master, next, AudioDevice.buffer.remove(buffers, id), Bool.pick(+List<AudioDevice.Block>, data, AudioDevice.block.remove(blocks, block), blocks)}
 
@@ -6279,12 +6304,13 @@ def Sound.unload(+audio: AudioDevice, +sound: Sound) -> AudioDevice:
 def Sound.unload_alias(+audio: AudioDevice, +alias: Sound) -> AudioDevice:
   Sound.unload.with(audio, alias, False{})
 
-# PlaySound: the buffer plays from its start, unpaused.
+# PlaySound: the buffer plays from its first frame, unpaused.
 def Sound.play(audio: AudioDevice, +sound: Sound) -> AudioDevice:
   AudioDevice.apply(audio, Sound.buffer(sound), 0, 0.0)
 
-# StopSound: a playing buffer stops; a paused one stays paused (raylib stops
-# only buffers that are playing and not paused).
+# StopSound: a playing buffer stops, back at its first frame; a paused one
+# stays paused where it is (raylib stops only buffers that are playing and
+# not paused).
 def Sound.stop(audio: AudioDevice, +sound: Sound) -> AudioDevice:
   AudioDevice.apply(audio, Sound.buffer(sound), 1, 0.0)
 
@@ -6299,10 +6325,10 @@ def Sound.resume(audio: AudioDevice, +sound: Sound) -> AudioDevice:
 def Sound.playing(found: Maybe<&2, AudioDevice.Buffer>) -> Bool:
   match found:
     case None{}: False{}
-    case Some{AudioBuffer{_, _, _, _, _, _, playing, paused}}: playing && Bool.not(paused)
+    case Some{AudioBuffer{_, _, _, _, _, _, playing, paused, _}}: playing && Bool.not(paused)
 
-# IsSoundPlaying: playing and not paused. No time passes in an AudioDevice
-# value, so a sound that plays never reaches its end.
+# IsSoundPlaying: playing and not paused. A sound that plays reaches its end
+# in AudioDevice.mix.
 def Sound.is_playing(audio: AudioDevice, +sound: Sound) -> Bool:
   Sound.playing(AudioDevice.buffer.tracked(audio, Sound.buffer(sound)))
 
@@ -6324,12 +6350,12 @@ def Sound.set_pan(audio: AudioDevice, +sound: Sound, +pan: F32) -> AudioDevice:
 def Sound.block(found: Maybe<&2, AudioDevice.Buffer>) -> U32:
   match found:
     case None{}: 0
-    case Some{AudioBuffer{_, block, _, _, _, _, _, _}}: block
+    case Some{AudioBuffer{_, block, _, _, _, _, _, _, _}}: block
 
 def Sound.size(found: Maybe<&2, AudioDevice.Buffer>) -> U32:
   match found:
     case None{}: 0
-    case Some{AudioBuffer{_, _, frames, _, _, _, _, _}}: frames
+    case Some{AudioBuffer{_, _, frames, _, _, _, _, _, _}}: frames
 
 # The samples a sound's buffer plays (F32 bits, two per frame), or None for
 # an unready device, buffer 0, an untracked buffer, a buffer without frames
@@ -6359,6 +6385,185 @@ def Sound.update(+audio: AudioDevice, +sound: Sound, +data: +List<U32>, +frames:
   +found = AudioDevice.buffer.tracked(audio, Sound.buffer(sound))
   +valid = (frames <= Sound.size(found) : U32) && U32.is_eq(WaveConvert.count(data, 0), (2 * frames : U32))
   Sound.update.checked(valid, audio, Sound.buffer(sound), Sound.block(found), data, frames)
+
+# The mixer: one data callback of the device, as raudio's
+# OnSendAudioDataToDevice mixes it and miniaudio then applies the master
+# volume and clips, in uncontracted f32 arithmetic.
+
+# Values the hosts' miniaudio builds do not treat alike inside the callback
+# (x86 builds flush subnormals to zero there, others do not) or whose bits
+# depend on the host (NaN).
+def AudioDevice.odd(+word: U32) -> Bool:
+  +exponent = (word .&. 2139095040 : U32)
+  U32.is_ne((word .&. 8388607 : U32), 0) && (U32.is_eq(exponent, 0) || U32.is_eq(exponent, 2139095040))
+
+def AudioDevice.odd.f32(value: F32) -> Bool:
+  AudioDevice.odd(F32.bits(value))
+
+# MixAudioFrames' level for a side: volume*0.5*side*(3 - side*side).
+def AudioDevice.level(+volume: F32, +side: F32) -> F32:
+  (((volume * 0.5) * side) * (3.0 - (side * side)) : F32)
+
+def AudioDevice.level.fine(+volume: F32, +side: F32) -> Bool:
+  Bool.not(AudioDevice.odd.f32(side) || AudioDevice.odd.f32((volume * 0.5 : F32)) || AudioDevice.odd.f32(((volume * 0.5) * side : F32)) || AudioDevice.odd.f32((side * side : F32))
+    || AudioDevice.odd.f32((3.0 - (side * side) : F32)) || AudioDevice.odd.f32(AudioDevice.level(volume, side)))
+
+type AudioDevice.Levels is Data:
+  AudioLevels{left: F32, right: F32, fine: Bool}
+
+# right = (pan + 1)/2 and left = 1 - right.
+def AudioDevice.levels(+volume: F32, +pan: F32) -> AudioDevice.Levels:
+  +right = ((pan + 1.0) / 2.0 : F32)
+  +left = (1.0 - right : F32)
+  AudioLevels{AudioDevice.level(volume, left), AudioDevice.level(volume, right),
+    Bool.not(AudioDevice.odd.f32(volume) || AudioDevice.odd.f32(pan) || AudioDevice.odd.f32((pan + 1.0 : F32))) && AudioDevice.level.fine(volume, left) && AudioDevice.level.fine(volume, right)}
+
+# The resampler's output at the device rate: the frame before this one, from
+# which it interpolates by a fraction of 0 (ma_mix_f32_fast(x0, x1, 0)).
+def AudioDevice.mix.held(+before: U32, +sample: U32) -> F32:
+  (Wave.float_bits(before) + ((Wave.float_bits(sample) - Wave.float_bits(before)) * 0.0) : F32)
+
+# frameOut += frameIn*level.
+def AudioDevice.mix.sample(+before: U32, +sample: U32, +level: F32, +sum: U32) -> U32:
+  F32.bits((Wave.float_bits(sum) + (AudioDevice.mix.held(before, sample) * level) : F32))
+
+def AudioDevice.mix.sample.fine(+before: U32, +sample: U32, +level: F32, +sum: U32) -> Bool:
+  +delta = (Wave.float_bits(sample) - Wave.float_bits(before) : F32)
+  Bool.not(AudioDevice.odd(before) || AudioDevice.odd(sample) || AudioDevice.odd(sum) || AudioDevice.odd.f32(delta) || AudioDevice.odd.f32((delta * 0.0 : F32))
+    || AudioDevice.odd.f32(AudioDevice.mix.held(before, sample)) || AudioDevice.odd.f32((AudioDevice.mix.held(before, sample) * level : F32)) || AudioDevice.odd(AudioDevice.mix.sample(before, sample, level, sum)))
+
+type AudioDevice.Mixed is Data:
+  AudioMixed{out: +List<U32>, a: U32, b: U32, c: U32, d: U32, fine: Bool}
+
+# n frames of a buffer added to the start of the mix; the resampler holds the
+# last two.
+def AudioDevice.mix.frames(n: Nat, data: +List<U32>, out: +List<U32>, +left: F32, +right: F32, +a: U32, +b: U32, +c: U32, +d: U32, +fine: Bool, acc: +List<U32>) -> AudioDevice.Mixed:
+  match n:
+    case 0n: AudioMixed{List.reverse.go(&2, U32, acc, out), a, b, c, d, fine}
+    case 1n+k:
+      match data:
+        case Con{+l, Con{+r, rest}}:
+          match out:
+            case Con{+sl, Con{+sr, more}}:
+              AudioDevice.mix.frames(k, rest, more, left, right, c, d, l, r, fine && AudioDevice.mix.sample.fine(c, l, left, sl) && AudioDevice.mix.sample.fine(d, r, right, sr),
+                Con{AudioDevice.mix.sample(d, r, right, sr), Con{AudioDevice.mix.sample(c, l, left, sl), acc}})
+            case _: AudioMixed{Nil{}, a, b, c, d, False{}}
+        case _: AudioMixed{Nil{}, a, b, c, d, False{}}
+
+# raudio reads a static buffer in runs of 512 frames and takes a cursor past
+# two halves of the buffer (size/2 frames each) for its end: a run that starts
+# on the last frame of a buffer of an odd size (3 and more) reads nothing.
+def AudioDevice.mix.cut(+frames: U32, +cursor: U32, +n: U32) -> Bool:
+  +edge = ((frames - 1) - cursor : U32)
+  U32.is_eq((frames % 2 : U32), 1) && (frames >= 3 : U32) && U32.is_eq((edge % 512 : U32), 0) && (edge < n : U32)
+
+# The frames a buffer gives to a callback of n frames.
+def AudioDevice.mix.count(+frames: U32, +cursor: U32, +n: U32) -> U32:
+  Bool.pick(U32, AudioDevice.mix.cut(frames, cursor, n), ((frames - 1) - cursor : U32), U32.min(n, (frames - cursor : U32)))
+
+# Whether it stops there: at its end, or cut short.
+def AudioDevice.mix.ends(+frames: U32, +cursor: U32, +n: U32) -> Bool:
+  AudioDevice.mix.cut(frames, cursor, n) || (n >= (frames - cursor) : U32)
+
+type AudioDevice.Turn is Data:
+  AudioTurn{buffer: AudioDevice.Buffer, out: +List<U32>, fine: Bool}
+
+def AudioDevice.mix.taken(mixed: AudioDevice.Mixed, +id: U32, +block: U32, +frames: U32, +volume: F32, +pitch: F32, +pan: F32, +rate: U32, +cursor: U32, +ends: Bool, +fine: Bool) -> AudioDevice.Turn:
+  AudioMixed{out, a, b, c, d, mixed_fine} = mixed
+  AudioTurn{AudioBuffer{id, block, frames, volume, pitch, pan, Bool.not(ends), False{}, AudioHead{rate, Bool.pick(U32, ends, 0, cursor), a, b, c, d}}, out, fine && mixed_fine}
+
+# A playing buffer's turn. Not mixed (the callback is refused): a buffer
+# whose converter is not at the device rate (not ported yet), a buffer
+# without frames (raudio divides by its size).
+def AudioDevice.mix.leveled(levels: AudioDevice.Levels, head: AudioDevice.Head, +id: U32, +block: U32, +frames: U32, +volume: F32, +pitch: F32, +pan: F32, +data: +List<U32>, +n: U32, out: +List<U32>, +fine: Bool) -> AudioDevice.Turn:
+  AudioLevels{+left, +right, +level_fine} = levels
+  AudioHead{+rate, +cursor, +a, +b, +c, +d} = head
+  +count = AudioDevice.mix.count(frames, cursor, n)
+  AudioDevice.mix.taken(AudioDevice.mix.frames(U32.to_nat(count), List.drop(&2, U32, data, U32.to_nat((2 * cursor : U32))), out, left, right, a, b, c, d, True{}, Nil{}),
+    id, block, frames, volume, pitch, pan, rate, (cursor + count : U32), AudioDevice.mix.ends(frames, cursor, n), fine && level_fine && U32.is_eq(rate, 48000) && (frames > 0 : U32))
+
+def AudioDevice.mix.block(found: Maybe<&2, +List<U32>>, +buffer: AudioDevice.Buffer, +n: U32, out: +List<U32>, +fine: Bool) -> AudioDevice.Turn:
+  match found:
+    case None{}: AudioTurn{buffer, out, False{}}
+    case Some{+data}:
+      AudioBuffer{+id, +block, +frames, +volume, +pitch, +pan, _, _, +head} = buffer
+      AudioDevice.mix.leveled(AudioDevice.levels(volume, pan), head, id, block, frames, volume, pitch, pan, data, n, out, fine)
+
+type AudioDevice.Pass is Data:
+  AudioPass{buffers: +List<AudioDevice.Buffer>, out: +List<U32>, fine: Bool}
+
+def AudioDevice.mix.passed(turn: AudioDevice.Turn, +done: +List<AudioDevice.Buffer>) -> AudioDevice.Pass:
+  AudioTurn{+buffer, out, fine} = turn
+  AudioPass{Con{buffer, done}, out, fine}
+
+def AudioDevice.mix.active(active: Bool, +buffer: AudioDevice.Buffer, +blocks: +List<AudioDevice.Block>, +n: U32, +done: +List<AudioDevice.Buffer>, out: +List<U32>, +fine: Bool) -> AudioDevice.Pass:
+  match active:
+    case False{}: AudioPass{Con{buffer, done}, out, fine}
+    case True{}:
+      AudioBuffer{_, +block, _, _, _, _, _, _, _} = buffer
+      AudioDevice.mix.passed(AudioDevice.mix.block(AudioDevice.block.find(blocks, block), buffer, n, out, fine), done)
+
+# Buffers that are playing and not paused are mixed, in tracked order.
+def AudioDevice.mix.one(pass: AudioDevice.Pass, +buffer: AudioDevice.Buffer, +blocks: +List<AudioDevice.Block>, +n: U32) -> AudioDevice.Pass:
+  AudioPass{+done, out, +fine} = pass
+  AudioBuffer{_, _, _, _, _, _, +playing, +paused, _} = buffer
+  AudioDevice.mix.active(playing && Bool.not(paused), buffer, blocks, n, done, out, fine)
+
+def AudioDevice.mix.all(buffers: +List<AudioDevice.Buffer>, +blocks: +List<AudioDevice.Block>, +n: U32, pass: AudioDevice.Pass) -> AudioDevice.Pass:
+  match buffers:
+    case Nil{}: pass
+    case Con{+buffer, rest}: AudioDevice.mix.all(rest, blocks, n, AudioDevice.mix.one(pass, buffer, blocks, n))
+
+# ma_clip_f32.
+def AudioDevice.clip(+x: F32) -> F32:
+  Bool.pick(F32, (x < F32.neg(1.0) : F32), F32.neg(1.0), Bool.pick(F32, (x > 1.0 : F32), 1.0, x))
+
+type AudioDevice.Sent is Data:
+  AudioSent{out: +List<U32>, fine: Bool}
+
+# The master volume (when it is not 1), then the clip to -1..1.
+def AudioDevice.mix.sent(out: +List<U32>, +master: F32, +scaled: Bool, +fine: Bool, acc: +List<U32>) -> AudioDevice.Sent:
+  match out:
+    case Nil{}: AudioSent{List.reverse(&2, U32, acc), fine}
+    case Con{+v, rest}:
+      +x = Bool.pick(F32, scaled, (Wave.float_bits(v) * master : F32), Wave.float_bits(v))
+      AudioDevice.mix.sent(rest, master, scaled, fine && Bool.not(AudioDevice.odd(v) || AudioDevice.odd.f32(x)), Con{F32.bits(AudioDevice.clip(x)), acc})
+
+def AudioDevice.mix.given(sent: AudioDevice.Sent, +device: AudioDevice, +buffers: +List<AudioDevice.Buffer>) -> AudioDevice & Maybe<&2, +List<U32>>:
+  AudioSent{+out, fine} = sent
+  match fine:
+    case False{}: (device, None{})
+    case True{}:
+      AudioDevice{ready, master, next, _, blocks} = device
+      (AudioDevice{ready, master, next, buffers, blocks}, Some{out})
+
+def AudioDevice.mix.mastered(pass: AudioDevice.Pass, +device: AudioDevice) -> AudioDevice & Maybe<&2, +List<U32>>:
+  AudioPass{+done, out, +fine} = pass
+  +master = AudioDevice.master_volume(device)
+  AudioDevice.mix.given(AudioDevice.mix.sent(out, master, U32.is_ne(F32.bits(master), 1065353216), fine && Bool.not(AudioDevice.odd.f32(master)), Nil{}), device, List.reverse(&2, AudioDevice.Buffer, done))
+
+def AudioDevice.mix.checked(valid: Bool, +device: AudioDevice, +frames: U32) -> AudioDevice & Maybe<&2, +List<U32>>:
+  match valid:
+    case False{}: (device, None{})
+    case True{}:
+      AudioDevice{_, _, _, +buffers, +blocks} = device
+      AudioDevice.mix.mastered(AudioDevice.mix.all(buffers, blocks, frames, AudioPass{Nil{}, Memory.zeros(U32.to_nat((2 * frames : U32)), Nil{}), True{}}), device)
+
+# One data callback of `frames` frames (a device asks for a period at a time:
+# 480 frames on miniaudio's null backend): every buffer that is playing and
+# not paused, in tracked order, gives its next frames through its resampler
+# (which is one frame late), scaled by its volume and pan levels; a buffer
+# stops at its end, back at its start; then the master volume and the clip to
+# -1..1. The result is the device's samples (F32 bits, two per frame).
+#
+# None, and the device as it was: an unready device; no frames or more than
+# 2^20; a playing buffer whose pitch moved its converter off the device rate
+# (not ported yet), without frames (raudio divides by its size) or whose
+# samples were freed; and a callback in which a subnormal or a NaN takes part
+# or results (miniaudio flushes subnormals to zero inside the callback on x86
+# hosts only, and NaN bits are the host's).
+def AudioDevice.mix(+device: AudioDevice, +frames: U32) -> AudioDevice & Maybe<&2, +List<U32>>:
+  AudioDevice.mix.checked(AudioDevice.is_ready(device) && (frames > 0 : U32) && (frames <= 1048576 : U32), device, frames)
 
 # -----------------------------------------------------------------------------
 # Text: rtext.c byte strings and UTF-8 codepoints

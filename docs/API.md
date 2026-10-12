@@ -81,7 +81,7 @@ Trace logging and the memory helpers (`Log.*`, `Memory.*`) are documented in
 Audio waves (`Wave.*`: WAV loading, crop, format conversion, samples and
 export) and the audio device and sounds (`AudioDevice.*`, `Sound.*`: the device
 state, sounds and aliases over shared samples, their playing state, volume,
-pitch and pan; nothing is mixed yet) are documented in [AUDIO.md](AUDIO.md).
+pitch and pan, and the device callback that mixes them) are documented in [AUDIO.md](AUDIO.md).
 Input, automation events, frame timing and gestures (`Core.*`: the CORE state
 with an explicit clock, EndDrawing's timing and polling, GetFPS, automation
 recording/playback; `Input.*`: keyboard, mouse, touch and gamepads;
