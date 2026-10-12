@@ -6484,6 +6484,32 @@ def AudioStream.set_pitch(audio: AudioDevice, +stream: AudioStream, +pitch: F32)
 def AudioStream.set_pan(audio: AudioDevice, +stream: AudioStream, +pan: F32) -> AudioDevice:
   Sound.set_pan(audio, Sound{stream, 0}, pan)
 
+def AudioStream.calling.buffer(buffer: AudioDevice.Buffer, +on: Bool) -> AudioDevice.Buffer:
+  AudioBuffer{id, block, frames, volume, pitch, pan, playing, paused, head} = buffer
+  AudioBuffer{id, block, frames, volume, pitch, pan, playing, paused, Mixer.Head.calling(head, on)}
+
+def AudioStream.calling.buffers(ready: Bool, buffers: +List<AudioDevice.Buffer>, +id: U32, +on: Bool, acc: +List<AudioDevice.Buffer>) -> +List<AudioDevice.Buffer>:
+  match ready:
+    case False{}: buffers
+    case True{}:
+      match buffers:
+        case Nil{}: List.reverse(&2, AudioDevice.Buffer, acc)
+        case Con{+buffer, rest}:
+          AudioBuffer{+found, _, _, _, _, _, _, _, _} = buffer
+          AudioStream.calling.buffers(True{}, rest, id, on, Con{Bool.pick(AudioDevice.Buffer, U32.is_eq(found, id), AudioStream.calling.buffer(buffer, on), buffer), acc})
+
+# SetAudioStreamCallback(stream, callback), for a callback (`on`) or NULL.
+# raylib calls the function from the device's callback whenever the mixer
+# wants frames of the stream: it writes them, and the halves are not read.
+# Jonlib has no function to keep: a stream with a callback takes its frames
+# from the answers the program gives a callback (AudioDevice.asks,
+# AudioDevice.mix_answered, AudioClock.advance_answering). The state as it is
+# on an unready device and for a buffer that is 0 or not tracked; a sound's
+# buffer takes no callback (raylib would call it for the sound's frames).
+def AudioStream.set_callback(audio: AudioDevice, +stream: AudioStream, +on: Bool) -> AudioDevice:
+  AudioDevice{+ready, master, next, buffers, blocks, size} = audio
+  AudioDevice{ready, master, next, AudioStream.calling.buffers(ready, buffers, AudioStream.buffer(stream), on, Nil{}), blocks, size}
+
 def AudioStream.fed.buffer(buffer: AudioDevice.Buffer, +wrote: Bool) -> AudioDevice.Buffer:
   AudioBuffer{id, block, frames, volume, pitch, pan, playing, paused, head} = buffer
   AudioBuffer{id, block, frames, volume, pitch, pan, playing, paused, Mixer.Head.fed(head, wrote)}
@@ -6578,46 +6604,89 @@ def AudioDevice.mix.frames(made: +List<+List<U32>>, out: +List<U32>, +left: F32,
         case _: AudioMixed{Nil{}, False{}}
     case Con{_, _}: AudioMixed{Nil{}, False{}}
 
+# A buffer after its turn, the mix, whether the turn was one Jonlib makes, and
+# the frames its stream's callback was asked for, one count for each time.
 type AudioDevice.Turn is Data:
-  AudioTurn{buffer: AudioDevice.Buffer, out: +List<U32>, fine: Bool}
+  AudioTurn{buffer: AudioDevice.Buffer, out: +List<U32>, fine: Bool, asked: +List<U32>}
 
-def AudioDevice.mix.added(mixed: AudioDevice.Mixed, +buffer: AudioDevice.Buffer, +fine: Bool) -> AudioDevice.Turn:
+def AudioDevice.mix.added(mixed: AudioDevice.Mixed, +buffer: AudioDevice.Buffer, +fine: Bool, +asked: +List<U32>) -> AudioDevice.Turn:
   AudioMixed{out, mixed_fine} = mixed
-  AudioTurn{buffer, out, fine && mixed_fine}
+  AudioTurn{buffer, out, fine && mixed_fine, asked}
 
 # A playing buffer's turn: the frames src/mixer.bend reads through its
 # converter, at the buffer's levels.
 def AudioDevice.mix.leveled(levels: AudioDevice.Levels, turn: Mixer.Turn, +id: U32, +block: U32, +frames: U32, +volume: F32, +pitch: F32, +pan: F32, out: +List<U32>, +fine: Bool) -> AudioDevice.Turn:
   AudioLevels{+left, +right, +level_fine} = levels
-  Mixer.Turn{+head, +playing, +made, +turn_fine} = turn
-  AudioDevice.mix.added(AudioDevice.mix.frames(made, out, left, right, True{}, Nil{}), AudioBuffer{id, block, frames, volume, pitch, pan, playing, False{}, head}, fine && level_fine && turn_fine)
+  Mixer.Turn{+head, +playing, +made, +turn_fine, +asked} = turn
+  AudioDevice.mix.added(AudioDevice.mix.frames(made, out, left, right, True{}, Nil{}), AudioBuffer{id, block, frames, volume, pitch, pan, playing, False{}, head}, fine && level_fine && turn_fine, asked)
 
-def AudioDevice.mix.block(found: Maybe<&2, +List<U32>>, +buffer: AudioDevice.Buffer, +n: U32, out: +List<U32>, +fine: Bool) -> AudioDevice.Turn:
+# What a buffer's turn reads: its samples, or for a stream with a callback
+# the answers that are left.
+def AudioDevice.mix.source(called: Bool, +answers: +List<U32>, +data: +List<U32>) -> +List<U32>:
+  match called:
+    case True{}: answers
+    case False{}: data
+
+def AudioDevice.mix.block(found: Maybe<&2, +List<U32>>, +buffer: AudioDevice.Buffer, +n: U32, out: +List<U32>, +fine: Bool, +answers: +List<U32>) -> AudioDevice.Turn:
   match found:
-    case None{}: AudioTurn{buffer, out, False{}}
+    case None{}: AudioTurn{buffer, out, False{}, Nil{}}
     case Some{+data}:
       AudioBuffer{+id, +block, +frames, +volume, +pitch, +pan, _, _, +head} = buffer
-      AudioDevice.mix.leveled(AudioDevice.levels(volume, pan), Mixer.turn(head, frames, data, n), id, block, frames, volume, pitch, pan, out, fine)
+      AudioDevice.mix.leveled(AudioDevice.levels(volume, pan), Mixer.turn(head, frames, AudioDevice.mix.source(Mixer.Feed.called(Mixer.Head.kind(head)), answers, data), n),
+        id, block, frames, volume, pitch, pan, out, fine)
 
+# What a stream's callback is asked for: the stream's buffer and the frames
+# to write.
+type AudioDevice.Ask is Data:
+  AudioAsk{buffer: U32, frames: U32}
+
+# The buffers mixed so far (last first), the mix, whether every turn was one
+# Jonlib makes, the answers not yet read, what the callbacks were asked for
+# (last first), and whether an answer was missing.
 type AudioDevice.Pass is Data:
-  AudioPass{buffers: +List<AudioDevice.Buffer>, out: +List<U32>, fine: Bool}
+  AudioPass{buffers: +List<AudioDevice.Buffer>, out: +List<U32>, fine: Bool, answers: +List<U32>, asks: +List<AudioDevice.Ask>, starved: Bool}
 
-def AudioDevice.mix.passed(turn: AudioDevice.Turn, +done: +List<AudioDevice.Buffer>) -> AudioDevice.Pass:
-  AudioTurn{+buffer, out, fine} = turn
-  AudioPass{Con{buffer, done}, out, fine}
+def AudioDevice.asks.noted(asked: +List<U32>, +id: U32, asks: +List<AudioDevice.Ask>) -> +List<AudioDevice.Ask>:
+  match asked:
+    case Nil{}: asks
+    case Con{+frames, rest}: AudioDevice.asks.noted(rest, id, Con{AudioAsk{id, frames}, asks})
 
-def AudioDevice.mix.active(active: Bool, +buffer: AudioDevice.Buffer, +blocks: +List<AudioDevice.Block>, +n: U32, +done: +List<AudioDevice.Buffer>, out: +List<U32>, +fine: Bool) -> AudioDevice.Pass:
+def AudioDevice.answers.hold(n: Nat, answers: +List<U32>) -> Bool:
+  match n:
+    case 0n: True{}
+    case 1n+m:
+      match answers:
+        case Nil{}: False{}
+        case Con{_, rest}: AudioDevice.answers.hold(m, rest)
+
+def AudioDevice.buffer.channels(buffer: AudioDevice.Buffer) -> U32:
+  AudioBuffer{_, _, _, _, _, _, _, _, head} = buffer
+  Mixer.Feed.channels(Mixer.Head.kind(head))
+
+# The samples a turn read of the answers: the frames asked for, in the
+# stream's channels.
+def AudioDevice.mix.read(+buffer: AudioDevice.Buffer, +asked: +List<U32>) -> U32:
+  (Mixer.asked.total(asked, 0) * AudioDevice.buffer.channels(buffer) : U32)
+
+def AudioDevice.mix.passed(turn: AudioDevice.Turn, +done: +List<AudioDevice.Buffer>, +answers: +List<U32>, +asks: +List<AudioDevice.Ask>, +starved: Bool) -> AudioDevice.Pass:
+  AudioTurn{+buffer, out, fine, +asked} = turn
+  AudioBuffer{+id, _, _, _, _, _, _, _, _} = buffer
+  AudioPass{Con{buffer, done}, out, fine, List.drop(&2, U32, answers, U32.to_nat(AudioDevice.mix.read(buffer, asked))), AudioDevice.asks.noted(asked, id, asks),
+    starved || Bool.not(AudioDevice.answers.hold(U32.to_nat(AudioDevice.mix.read(buffer, asked)), answers))}
+
+def AudioDevice.mix.active(active: Bool, +buffer: AudioDevice.Buffer, +blocks: +List<AudioDevice.Block>, +n: U32, +done: +List<AudioDevice.Buffer>, out: +List<U32>, +fine: Bool,
+    +answers: +List<U32>, +asks: +List<AudioDevice.Ask>, +starved: Bool) -> AudioDevice.Pass:
   match active:
-    case False{}: AudioPass{Con{buffer, done}, out, fine}
+    case False{}: AudioPass{Con{buffer, done}, out, fine, answers, asks, starved}
     case True{}:
       AudioBuffer{_, +block, _, _, _, _, _, _, _} = buffer
-      AudioDevice.mix.passed(AudioDevice.mix.block(AudioDevice.block.find(blocks, block), buffer, n, out, fine), done)
+      AudioDevice.mix.passed(AudioDevice.mix.block(AudioDevice.block.find(blocks, block), buffer, n, out, fine, answers), done, answers, asks, starved)
 
 # Buffers that are playing and not paused are mixed, in tracked order.
 def AudioDevice.mix.one(pass: AudioDevice.Pass, +buffer: AudioDevice.Buffer, +blocks: +List<AudioDevice.Block>, +n: U32) -> AudioDevice.Pass:
-  AudioPass{+done, out, +fine} = pass
+  AudioPass{+done, out, +fine, +answers, +asks, +starved} = pass
   AudioBuffer{_, _, _, _, _, _, +playing, +paused, _} = buffer
-  AudioDevice.mix.active(playing && Bool.not(paused), buffer, blocks, n, done, out, fine)
+  AudioDevice.mix.active(playing && Bool.not(paused), buffer, blocks, n, done, out, fine, answers, asks, starved)
 
 def AudioDevice.mix.all(buffers: +List<AudioDevice.Buffer>, +blocks: +List<AudioDevice.Block>, +n: U32, pass: AudioDevice.Pass) -> AudioDevice.Pass:
   match buffers:
@@ -6648,16 +6717,27 @@ def AudioDevice.mix.given(sent: AudioDevice.Sent, +device: AudioDevice, +buffers
       (AudioDevice{ready, master, next, buffers, blocks, stream}, Some{out})
 
 def AudioDevice.mix.mastered(pass: AudioDevice.Pass, +device: AudioDevice) -> AudioDevice & Maybe<&2, +List<U32>>:
-  AudioPass{+done, out, +fine} = pass
+  AudioPass{+done, out, +fine, _, _, _} = pass
   +master = AudioDevice.master_volume(device)
   AudioDevice.mix.given(AudioDevice.mix.sent(out, master, U32.is_ne(F32.bits(master), 1065353216), fine && Bool.not(Mixer.nanf(master)), Nil{}), device, List.reverse(&2, AudioDevice.Buffer, done))
 
-def AudioDevice.mix.checked(valid: Bool, +device: AudioDevice, +frames: U32) -> AudioDevice & Maybe<&2, +List<U32>>:
+# Every buffer's turn in a callback of `frames` frames.
+def AudioDevice.mix.passes(+device: AudioDevice, +frames: U32, +answers: +List<U32>) -> AudioDevice.Pass:
+  AudioDevice{_, _, _, +buffers, +blocks, _} = device
+  AudioDevice.mix.all(buffers, blocks, frames, AudioPass{Nil{}, Memory.zeros(U32.to_nat((2 * frames : U32)), Nil{}), True{}, answers, Nil{}, False{}})
+
+# The answers must be what the callbacks were asked for: none missing, none
+# left.
+def AudioDevice.mix.exact(pass: AudioDevice.Pass) -> AudioDevice.Pass:
+  AudioPass{done, out, +fine, answers, asks, +starved} = pass
+  match answers:
+    case Nil{}: AudioPass{done, out, fine && Bool.not(starved), Nil{}, asks, starved}
+    case Con{_, _}: AudioPass{done, out, False{}, Nil{}, asks, starved}
+
+def AudioDevice.mix.checked(valid: Bool, +device: AudioDevice, +frames: U32, +answers: +List<U32>) -> AudioDevice & Maybe<&2, +List<U32>>:
   match valid:
     case False{}: (device, None{})
-    case True{}:
-      AudioDevice{_, _, _, +buffers, +blocks, _} = device
-      AudioDevice.mix.mastered(AudioDevice.mix.all(buffers, blocks, frames, AudioPass{Nil{}, Memory.zeros(U32.to_nat((2 * frames : U32)), Nil{}), True{}}), device)
+    case True{}: AudioDevice.mix.mastered(AudioDevice.mix.exact(AudioDevice.mix.passes(device, frames, answers)), device)
 
 # One data callback of `frames` frames (a device asks for a period at a time:
 # 480 frames on miniaudio's null backend): every buffer that is playing and
@@ -6678,10 +6758,42 @@ def AudioDevice.mix.checked(valid: Bool, +device: AudioDevice, +frames: U32) -> 
 # samples were freed or whose pitch gives a rate Jonlib does not resample
 # (a reduced rate of 2^31 and more, an uncertified filter coefficient); a
 # stream of more than 1024 channels (raudio's input buffer or miniaudio's
-# temporary holds no frame of it); and a callback that makes a NaN (its bits
-# are the host's).
+# temporary holds no frame of it); a playing stream with a callback, whose
+# answers AudioDevice.mix_answered takes; and a callback that makes a NaN
+# (its bits are the host's).
 def AudioDevice.mix(+device: AudioDevice, +frames: U32) -> AudioDevice & Maybe<&2, +List<U32>>:
-  AudioDevice.mix.checked(AudioDevice.is_ready(device) && (frames > 0 : U32) && (frames <= 1048576 : U32), device, frames)
+  AudioDevice.mix.checked(AudioDevice.is_ready(device) && (frames > 0 : U32) && (frames <= 1048576 : U32), device, frames, Nil{})
+
+def AudioDevice.asks.of(pass: AudioDevice.Pass) -> Maybe<&2, +List<AudioDevice.Ask>>:
+  AudioPass{_, _, +fine, _, +asks, _} = pass
+  match fine:
+    case False{}: None{}
+    case True{}: Some{List.reverse(&2, AudioDevice.Ask, asks)}
+
+def AudioDevice.asks.checked(valid: Bool, +device: AudioDevice, +frames: U32) -> Maybe<&2, +List<AudioDevice.Ask>>:
+  match valid:
+    case False{}: None{}
+    case True{}: AudioDevice.asks.of(AudioDevice.mix.passes(device, frames, Nil{}))
+
+# What the stream callbacks will be asked for in one data callback of
+# `frames` frames, in order: each time the mixer wants frames of a playing
+# stream that has a callback (SetAudioStreamCallback), the stream's buffer
+# and the number of frames to write, in the stream's own format. raudio asks
+# for its guess of the input the converter needs, at most the frames its
+# 4096-byte buffer holds, and again while the converter wants more. The
+# counts depend on the rates and on what the converters hold, not on any
+# sample, so they are known before the callback: the device is not changed.
+# None where AudioDevice.mix refuses.
+def AudioDevice.asks(+device: AudioDevice, +frames: U32) -> Maybe<&2, +List<AudioDevice.Ask>>:
+  AudioDevice.asks.checked(AudioDevice.is_ready(device) && (frames > 0 : U32) && (frames <= 1048576 : U32), device, frames)
+
+# AudioDevice.mix for a device whose streams have callbacks: `answers` are
+# the samples the callbacks wrote, one answer after the other in the order of
+# AudioDevice.asks, each of its frames in the stream's format (as
+# AudioStream.update takes them). None too, and the device as it was, when
+# the answers are not exactly the frames asked for.
+def AudioDevice.mix_answered(+device: AudioDevice, +frames: U32, +answers: +List<U32>) -> AudioDevice & Maybe<&2, +List<U32>>:
+  AudioDevice.mix.checked(AudioDevice.is_ready(device) && (frames > 0 : U32) && (frames <= 1048576 : U32), device, frames, answers)
 
 # The device's clock (Jonlib-specific). raylib's device runs on a thread of
 # its own: miniaudio asks it for a callback of one period (480 frames, 10 ms)
@@ -6762,6 +6874,71 @@ def AudioClock.advance.owed(owed: Maybe<U32>, +opened: M.Float64, +periods: U32,
 def AudioClock.advance(clock: AudioClock, +device: AudioDevice, time: M.Float64) -> AudioClock.Step:
   AudioClock{+opened, +periods} = clock
   AudioClock.advance.owed(AudioClock.owed(periods, AudioClock.due(opened, time)), opened, periods, device)
+
+# The answers to what a period's callbacks are asked for, one after the
+# other. `last` is the program's state and the answer just given.
+def AudioClock.answers(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, asks: +List<AudioDevice.Ask>, last: P & +List<U32>, acc: +List<U32>) -> P & +List<U32>:
+  match asks:
+    case Nil{}:
+      (state, +data) = last
+      (state, List.reverse(&2, U32, List.reverse.go(&2, U32, data, acc)))
+    case Con{AudioAsk{+buffer, +frames}, rest}:
+      (state, +data) = last
+      AudioClock.answers(~P, ~answer, rest, answer(buffer, frames, state), List.reverse.go(&2, U32, data, acc))
+
+def AudioClock.period.mixed(~P: Type, answered: P & +List<U32>, +device: AudioDevice) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
+  (state, +answers) = answered
+  (AudioDevice.mix_answered(device, 480, answers), state)
+
+def AudioClock.period.asked(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, asks: Maybe<&2, +List<AudioDevice.Ask>>, +device: AudioDevice, state: P) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
+  match asks:
+    case None{}: ((device, None{}), state)
+    case Some{+list}: AudioClock.period.mixed(~P, AudioClock.answers(~P, ~answer, list, (state, Nil{}), Nil{}), device)
+
+# One period of a device whose streams have callbacks: what they are asked
+# for, the program's answers in that order, and the callback with them.
+def AudioClock.period(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, +device: AudioDevice, state: P) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
+  AudioClock.period.asked(~P, ~answer, AudioDevice.asks(device, 480), device, state)
+
+def AudioClock.pump_answering(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, periods: Nat, last: (AudioDevice & Maybe<&2, +List<U32>>) & P) -> (AudioDevice & Bool) & P:
+  match periods:
+    case 0n:
+      match last:
+        case Tuple{Tuple{+device, None{}}, state}: ((device, False{}), state)
+        case Tuple{Tuple{+device, Some{_}}, state}: ((device, True{}), state)
+    case 1n+rest:
+      match last:
+        case Tuple{Tuple{+device, None{}}, state}: ((device, False{}), state)
+        case Tuple{Tuple{+device, Some{_}}, state}: AudioClock.pump_answering(~P, ~answer, rest, AudioClock.period(~P, ~answer, device, state))
+
+def AudioClock.advance_answering.done(~P: Type, pumped: (AudioDevice & Bool) & P, +opened: M.Float64, +periods: U32, +count: U32) -> AudioClock.Step & P:
+  (result, state) = pumped
+  (AudioClock.advance.done(result, opened, periods, count), state)
+
+def AudioClock.advance_answering.run(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, ready: Bool, within: Bool, +opened: M.Float64, +periods: U32, +count: U32, +device: AudioDevice,
+    state: P) -> AudioClock.Step & P:
+  match ready within:
+    case False{} _: (AudioStep{AudioClock{opened, (periods + count : U32)}, device, True{}}, state)
+    case True{} False{}: (AudioStep{AudioClock{opened, periods}, device, False{}}, state)
+    case True{} True{}: AudioClock.advance_answering.done(~P, AudioClock.pump_answering(~P, ~answer, U32.to_nat(count), ((device, Some{Nil{}}), state)), opened, periods, count)
+
+def AudioClock.advance_answering.owed(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, owed: Maybe<U32>, +opened: M.Float64, +periods: U32, +device: AudioDevice, state: P) -> AudioClock.Step & P:
+  match owed:
+    case None{}: (AudioStep{AudioClock{opened, periods}, device, False{}}, state)
+    case Some{+count}: AudioClock.advance_answering.run(~P, ~answer, AudioDevice.is_ready(device), (count <= 65536 : U32), opened, periods, count, device, state)
+
+# AudioClock.advance for a program whose streams have callbacks
+# (AudioStream.set_callback). `answer` is the program's callback: for a
+# stream's buffer and a number of frames it gives its state after the call
+# and the frames it wrote, in the stream's format (frames*channels samples).
+# It is a template and closes over nothing: what it needs is in the state.
+# Each period it is called once for each AudioDevice.asks of the period, in
+# order, before the period's AudioDevice.mix_answered: as raylib's device
+# thread calls the stream's function from inside its callback. Not fine as
+# AudioClock.advance, and when an answer is not the frames asked for.
+def AudioClock.advance_answering(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, clock: AudioClock, +device: AudioDevice, time: M.Float64, state: P) -> AudioClock.Step & P:
+  AudioClock{+opened, +periods} = clock
+  AudioClock.advance_answering.owed(~P, ~answer, AudioClock.owed(periods, AudioClock.due(opened, time)), opened, periods, device, state)
 
 # -----------------------------------------------------------------------------
 # Text: rtext.c byte strings and UTF-8 codepoints

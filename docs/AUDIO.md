@@ -366,6 +366,7 @@ are at first.
 | `AudioStream.is_processed(device, stream)` | `IsAudioStreamProcessed` | One of the halves is processed. |
 | `AudioStream.play` / `stop` / `pause` / `resume` / `is_playing` | `PlayAudioStream` ... | As for a sound; a play and a stop mark both halves processed. |
 | `AudioStream.set_volume` / `set_pitch` / `set_pan` | `SetAudioStreamVolume` ... | As for a sound; the pitch sets the converter's output rate against the stream's own rate. |
+| `AudioStream.set_callback(device, stream, on)` | `SetAudioStreamCallback` | With a callback (`on`) the stream's frames are the callback's; without one (NULL) its halves' again. See below. |
 
 `AudioStream.load` gives a stream without a buffer (0, with the fields
 given) where miniaudio makes no converter: an unready device, a rate of 0,
@@ -383,6 +384,32 @@ in the other half, and wraps; a half read to its end is processed, and a
 half that is processed gives nothing, so a stream the program does not feed
 plays silence where its cursor waits. A stream that is not fed in time
 underruns exactly as raylib's does.
+
+**Stream callbacks.** raylib keeps the function given to
+`SetAudioStreamCallback` and calls it from inside the device's callback
+whenever the mixer wants frames of the stream: the function writes them,
+and the halves are not read (neither the cursor nor the processed flags
+move; `UpdateAudioStream` still writes the halves, unheard). Jonlib keeps
+no function. A stream with a callback takes its frames from *answers* the
+program gives with the device callback:
+
+| Function | Contract |
+|---|---|
+| `AudioDevice.asks(device, frames) -> Maybe<List<AudioAsk{buffer, frames}>>` | What the stream callbacks will be asked for in a device callback of `frames` frames, in order: the stream's buffer and the frames to write. The device is not changed. None where `AudioDevice.mix` refuses. |
+| `AudioDevice.mix_answered(device, frames, answers)` | `AudioDevice.mix` with the callbacks' answers: the samples they wrote, one answer after the other in the order of the asks, in each stream's own format. None, and the device as it was, when the answers are not exactly the frames asked for. |
+| `AudioClock.advance_answering(~P, ~answer, clock, device, time, state)` | `AudioClock.advance` with the program's callback: `answer(buffer, frames, state)` gives the state after the call and the frames written. It is called once for every ask of each period, in order, before that period is mixed. `answer` is a template (`~`): it closes over nothing, and what it needs is in the state. |
+
+The asks are raudio's: each time a playing stream's converter needs input,
+`(unsigned int)(((float)source/rate)*frames wanted)` frames, at least 1 and
+at most the frames its 4096-byte buffer holds, and again while the
+converter wants more (a 44100 Hz mono float stream is asked for 441 frames
+in a 480-frame period; a 600-frame callback asks for 470, 80 and 1). They
+depend on the rates and on what the converters hold, never on a sample, so
+Jonlib knows them before the callback is made: the program's function runs
+between `asks` and `mix_answered`, with the same counts in the same order
+as raylib's. `AudioDevice.mix` itself refuses a callback in which a
+stream's callback would be asked. A sound's buffer takes no callback
+(raylib would call it for the sound's frames).
 
 ### The mixer
 
@@ -490,7 +517,7 @@ backend, so that the program can read `AUDIO` and the audio buffers, and
 stops the device right after `InitAudioDevice`: its thread mixes nothing,
 and the program asks for each callback itself
 (`ma_device_handle_backend_data_callback`) with the script's frame counts.
-94 scripts of 905 steps over four sound slots run on both sides and on a
+103 scripts of 1012 steps over four sound slots run on both sides and on a
 Python model of raudio's state; after every step the ready flag, the master
 volume bits, every slot's handle fields with `IsSoundValid` and
 `IsSoundPlaying`, and every tracked buffer (its number, block, size, volume,
@@ -523,13 +550,23 @@ at once); 8-bit stereo and mono ones at 22050 and 8000 Hz with a volume and
 a pan; 3 and 6 channels at 32000 and 96000 Hz; 400 channels at a pitch of 6
 (passes of two frames); and a stream beside a pitched sound and its alias.
 Subnormals: samples, volumes, pans and master volumes that are subnormal or
-make subnormal products, in sounds and in a stream. The waves are
+make subnormal products, in sounds and in a stream. Stream callbacks (the
+reference gives raylib a C function per slot that writes a counted pattern
+in the stream's format and notes what it was asked for; the asks are
+compared too): a 44100 Hz float stream in callbacks of 1, 480 and 600
+frames, paused, stopped and played again; 16-bit stereo and 8-bit
+3-channel ones with pitches; a callback set and removed over fed halves;
+two callback streams (one of 6 channels at 96000 Hz, asked 170 frames at a
+time) beside a pitched sound; and `AudioClock.advance_answering` itself over
+3, 2, 1 and no periods with a callback stream, a fed stream and a sound,
+against as many 480-frame callbacks of the reference, and on a closed
+device. The waves are
 8-, 16- and 32-bit, of 1, 2, 4 and 6 channels, at 48000, 8000, 22050, 44100
 and 96000 Hz, with the empty cases above, and the files are the four `.wav`
 files of the examples that only play sounds (`boom`, `buttonfx`, `sound`,
 `coin`; 26522 to 48000 frames each), a small generated one, a missing one,
-one that is not a WAV and another extension. 65 scripts are compared with
-raylib; the 29 with a step raylib has no defined answer for, or a step or
+one that is not a WAV and another extension. 71 scripts are compared with
+raylib; the 32 with a step raylib has no defined answer for, or a step or
 a callback Jonlib refuses, are checked against the model on Jonlib alone. `IsSoundPlaying` is asked of raylib only on
 a ready device and for a tracked buffer, and no script opens the device over
 a playing buffer (raylib would mix it before the reference can stop it). CPU-1,
@@ -555,6 +592,6 @@ callbacks, the stream and the mixer are raylib's own; only their timing is
 the probe's.
 
 Not yet available: the fused (FMA) profile of the mixer, the profile of
-hosts that keep subnormals in the callback, stream callbacks and
-processors, music, and a host device (the clock is a model of its thread).
+hosts that keep subnormals in the callback, stream and mixed processors,
+music, and a host device (the clock is a model of its thread).
 No GPU evidence.

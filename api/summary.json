@@ -6,16 +6,16 @@
     "blocked": 17,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 340,
-    "partial": 1527
+    "not-started": 338,
+    "partial": 1529
   },
   "core_functions": {
     "total": 600,
     "blocked": 17,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 22,
-    "partial": 561
+    "not-started": 21,
+    "partial": 562
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 17,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 43,
-    "partial": 871
+    "not-started": 42,
+    "partial": 872
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 17,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 62,
-      "partial": 958
+      "not-started": 60,
+      "partial": 960
     },
     "raymath.h": {
       "total": 254,
@@ -150,8 +150,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 1,
-      "partial": 11
+      "not-started": 0,
+      "partial": 12
     },
     {
       "id": "files",
@@ -424,8 +424,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 21,
-      "partial": 14
+      "not-started": 20,
+      "partial": 15
     },
     {
       "id": "shaders",

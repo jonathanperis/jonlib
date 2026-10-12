@@ -6963,7 +6963,7 @@
   {
    "name": "audio_stream_callback",
    "category": "audio",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -6987,9 +6987,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "SetAudioStreamCallback"
-   ]
+   "missing": []
   }
  ]
 }

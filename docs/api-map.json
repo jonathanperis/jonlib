@@ -6321,5 +6321,18 @@
     ],
     "api_id": "raylib:function:SetAudioStreamBufferSizeDefault",
     "milestone": "audio-stream"
+  },
+  "SetAudioStreamCallback": {
+    "jonlib": "AudioStream.set_callback",
+    "status": "profile-covered",
+    "scope": "A stream with a callback takes its frames from the callback instead of its halves (the cursor and the halves stay), and gives them back to the halves without one (NULL); the frames each call is asked for (raudio's guess of the converter's input, at most what its 4096-byte buffer holds, and again while the converter wants more) are AudioDevice.asks, and AudioDevice.mix_answered mixes the answers; the asks and every sample compared with raylib.",
+    "gaps": [
+      "No function is kept: the program answers each device callback's asks (AudioDevice.asks, AudioDevice.mix_answered) or gives AudioClock.advance_answering a function of its own state",
+      "A sound's buffer takes no callback (raylib would call it for the sound's frames)",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "AudioDevice.mix refuses a callback in which a stream's callback would be asked: its answers are needed"
+    ],
+    "api_id": "raylib:function:SetAudioStreamCallback",
+    "milestone": "audio-stream"
   }
 }

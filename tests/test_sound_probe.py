@@ -200,8 +200,8 @@ class StreamTests(unittest.TestCase):
         self.assertEqual(model.sounds[:3], [(1, 0, 44100, 16, 1), (2, 0, 22050, 8, 2), (3, 0, 48000, 32, 3)])
         self.assertEqual([(b['frames'], len(model.blocks[b['id']]), b['source'], len(b['x0']), b['coef'] is None) for b in model.buffers],
                          [(25600, 25600, 44100, 1, False), (960, 1920, 22050, 2, False), (1200, 3600, 48000, 2, True)])
-        self.assertEqual((model.buffers[0]['stream'], model.undefined), (dict(size=16, channels=1, first=True, second=True), False))
-        self.assertTrue(model.state().endswith(',0,2166136261,32/3/11'))
+        self.assertEqual((model.buffers[0]['stream'], model.undefined), (dict(size=16, channels=1, first=True, second=True, called=False), False))
+        self.assertTrue(model.state().endswith(',0,2166136261,32/3/110'))
 
     def test_no_buffer_where_raylib_makes_none_and_where_jonlib_refuses(self):
         model, _ = run(('stream', 0, 44100, 16, 1), ('init',), ('stream', 1, 0, 16, 1), ('stream', 2, 44100, 16, 0))
@@ -220,7 +220,7 @@ class StreamTests(unittest.TestCase):
         self.assertEqual((model.blocks[1][:2], model.undefined), ([1, 2], False))
         model.step(('play', 0))                               # both are again
         model.step(('feed', 0, 481, []))                      # too many frames: nothing is written
-        self.assertEqual((b['stream'], model.blocks[1][:2], model.undefined), (dict(size=16, channels=2, first=True, second=True), [1, 2], False))
+        self.assertEqual((b['stream'], model.blocks[1][:2], model.undefined), (dict(size=16, channels=2, first=True, second=True, called=False), [1, 2], False))
         model.step(('feed', 0, 1, [5]))                       # a list that is not frames*channels long
         self.assertEqual((model.blocks[1][:2], model.undefined), ([1, 2], True))
 
@@ -251,6 +251,38 @@ class StreamTests(unittest.TestCase):
         model, _ = run(('default', 480), ('init',), ('stream', 0, 48000, 16, 1), ('play', 0), ('feed', 0, 480, [16384, 0xC000, 8192] + [0] * 477))
         self.assertEqual(model.mix(4), self.words(0.0, 0.0, 0.34375, 0.34375, -0.34375, -0.34375, 0.171875, 0.171875))
 
+    def test_a_stream_with_a_callback_takes_its_frames_from_it(self):
+        model, _ = run(('init',), ('default', 480), ('stream', 0, 48000, 32, 2), ('play', 0), ('callback', 0, 1))
+        self.assertEqual([sp.fl(sp.answer_sample(32, c)) for c in range(4)], [-33 / 64, -2 / 64, 29 / 64, -7 / 64])
+        self.assertEqual((sp.answer_sample(8, 0), sp.answer_sample(8, 7), sp.answer_sample(16, 0), sp.answer_sample(16, 3)), (11, 14, 50986, 873))      # (3*53 - 150)*97
+        self.assertEqual(model.mix(3), self.words(0.0, 0.0, -33 / 64 * 0.6875, -2 / 64 * 0.6875, 29 / 64 * 0.6875, -7 / 64 * 0.6875))    # one frame late
+        b = model.buffers[0]                                  # neither the cursor nor the halves move; the callback wrote 3 frames of 2 samples
+        self.assertEqual((model.asks, model.calls, b['cursor'], b['stream']), ([(1, 3)], [6, 0, 0, 0], 0, dict(size=32, channels=2, first=True, second=True, called=True)))
+        model.step(('callback', 0, 0))                        # without it the halves are read again: both processed, silence
+        self.assertEqual((model.mix(2)[2:], model.asks, model.buffers[0]['stream']['called']), ([0, 0], [], False))
+
+    def test_a_callback_is_asked_for_raudios_guess_and_again(self):
+        model, _ = run(('init',), ('default', 480), ('stream', 0, 44100, 32, 1), ('play', 0), ('callback', 0, 1))
+        asked = []
+        for frames in (480, 480, 1, 600):                     # (unsigned)(0.91875*480) = 441; 600 frames are runs of 512 and 88
+            model.mix(frames)
+            asked.append([count for _, count in model.asks])
+        self.assertEqual(asked, [[441], [441], [1], [470, 80, 1]])
+        model.step(('pause', 0))
+        model.mix(5)
+        self.assertEqual((model.asks, model.undefined), ([], False))
+
+    def test_a_callback_needs_its_answers_and_a_stream(self):
+        model, _ = run(('init',), ('default', 480), ('stream', 0, 44100, 32, 1), ('callback', 0, 1), ('plain', 4))
+        self.assertEqual((model.mixed, model.undefined), ([0] * 8, False))                 # not playing: nothing is asked
+        model.step(('play', 0))
+        model.step(('plain', 4))
+        self.assertEqual((model.mixed, model.undefined, model.calls), (None, True, [0, 0, 0, 0]))
+        model, _ = run(('init',), ('load', 0, 'mono16'), ('callback', 0, 1))
+        self.assertTrue(model.undefined)                      # raylib would call it for the sound's frames
+        model, _ = run(('init',), ('callback', 0, 1))         # no buffer: nothing
+        self.assertFalse(model.undefined)
+
     def test_the_frames_read_at_once_are_those_4096_bytes_hold(self):
         for size, channels, cursor, residual in ((16, 1, 3525, 4), (32, 2, 3527, 6), (8, 1, 3528, 7)):      # 2048, 512 and 4096 frames of the 3528 wanted
             model, _ = run(('default', 4800), ('init',), ('stream', 0, 44100, size, channels), ('pitch', 0, sp.bits(8.0)), ('play', 0),
@@ -266,7 +298,7 @@ class SoundCasesTests(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
         rows = [sp.expected(item, catalog()) for item in items]
         self.assertEqual([item['id'] for item, row in zip(items, rows) if item['id'].startswith('refused-') == row[2]], [])
-        self.assertEqual((len(items), sum(row[2] for row in rows), sum(len(item['steps']) for item in items)), (94, 65, 905))
+        self.assertEqual((len(items), sum(row[2] for row in rows), sum(len(item['steps']) for item in items)), (103, 71, 1012))
         for tagged, plain, _ in rows:
             self.assertEqual(';'.join(part.split(' ', 1)[1] for part in tagged.split(';')), plain)
         used = {step[2] for item in items for step in item['steps'] if step[0] == 'load'}

@@ -69,10 +69,10 @@ at the branch's head.
 `integrate/models-lgpl`, `feature/scoped-ci`, `feature/examples-batch-4` and the stack's branches are merged into `main` and deleted
 (`feature/examples-batch-5` was re-landed as pieces and deleted).
 
-Coverage (`python3 tools/api_plan.py check`): raylib.h 561/600 partial
+Coverage (`python3 tools/api_plan.py check`): raylib.h 562/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **200/212 ported** with the stack, 5 ready, 7 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **200/212 ported** with the stack, 6 ready, 6 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -410,13 +410,27 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      reference): `Mixer.fadd/fsub/fmul/fdiv` flush operands and results,
      and every operation of the callback goes through them (a filter's
      tail reaches exact zeros natively). AArch64 keeps subnormals there:
-     a profile for the macOS validation to settle. `audio_raw_stream` is ported. Next: `SetAudioStreamCallback` (raudio
-     calls it from the callback whenever the stream's read comes to a
-     processed half: a Bend function in the stream's place, which
-     `Mixer.turn` would call; `audio_stream_callback`) and the processors
-     (`AttachAudioStreamProcessor`, `AttachAudioMixedProcessor`:
-     `audio_stream_effects` and `audio_mixed_processor`, which also play
-     music). `audio_spectrum_visualizer` is listed ready but loads
+     a profile for the macOS validation to settle. `audio_raw_stream` is ported. **Stream callbacks are in**
+     (`AudioStream.set_callback`, docs/AUDIO.md): raudio calls the
+     function with its guess of the converter's input each time the
+     stream is read, and those counts depend on rates and converter
+     state only, never on a sample. So no function is kept and the mixer
+     stays first-order: `AudioDevice.asks` runs the turn on zeros to
+     learn the counts (`Mixer.Turn.asked`), the program answers, and
+     `AudioDevice.mix_answered` runs it again on the answers
+     (`AudioClock.advance_answering` does that for each period with a
+     Bend function of the program's state). The sound probe gives raylib
+     a C callback per slot and compares the asks too. The same staging
+     fits the processors (`AttachAudioStreamProcessor`,
+     `AttachAudioMixedProcessor`; `audio_stream_effects` and
+     `audio_mixed_processor`, which also play music): raudio calls a
+     stream's processors on each run of at most 512 mixed-format frames
+     before `MixAudioFrames`, and the mixed ones on the whole output, so
+     the glue in `jonlib.bend` (not `src/mixer.bend`) is where a program
+     function goes. `audio_stream_callback` itself reads
+     `buffer[SAMPLE_RATE]`, one float past its array, for the last
+     column of its wave in every frame: its port has to be a refusal
+     (`UNDEFINED_NATIVE`), the next piece. `audio_spectrum_visualizer` is listed ready but loads
      `country.mp3` with `LoadWave`: it waits for the MP3 decoder;
      (3) music (`LoadMusicStream`) and its decoders:
      dr_mp3, stb_vorbis, jar_xm, jar_mod, dr_flac.
