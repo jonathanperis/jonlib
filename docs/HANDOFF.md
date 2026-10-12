@@ -377,9 +377,19 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `exp` the way the biquads' `sin` is. What the mixer still lacks, in
      the order the remaining examples need it: (2) a
      clock: the driver asking for callbacks for the frames the scripted
-     time advanced, natively through a hook that stops the device as the
-     sound probe does (today the native examples' device thread runs free:
-     fine while no frame shows audio state); (3) audio streams
+     time advanced (today the native examples' device thread runs free:
+     fine while no frame shows audio state). A design that fits the
+     examples probe: compile, instead of raudio.c alone, a unit that
+     includes it and adds two probe functions, one that stops the device
+     after `InitAudioDevice` (a shim macro on `InitAudioDevice` in
+     `tools/reference/example_driver.h`) and one that asks the device for
+     every whole period (480 frames, 10 ms) between the scripted clock at
+     `InitAudioDevice` and now, called from the `WindowShouldClose` hook
+     (the start of each loop pass, before the example reads
+     `IsSoundPlaying` or `IsAudioStreamProcessed`); and in Jonlib an
+     `AudioDevice.advance(device, time)` that makes the same callbacks
+     (the device keeps the time it opened at and the periods it has
+     asked for), which a ported example calls first in its update; (3) audio streams
      (`LoadAudioStream`: the two sub-buffers, `IsAudioStreamProcessed`,
      looping, converters from any format and rate; `audio_raw_stream`,
      `audio_stream_callback`, `audio_spectrum_visualizer`); (4) music
