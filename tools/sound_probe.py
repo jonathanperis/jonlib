@@ -92,19 +92,22 @@ def oddf(*values):
     return any(odd(bits(v)) for v in values)
 
 
-def reduced(rate):
-    g = math.gcd(48000, rate)
-    return 48000 // g, rate // g
+def reduced(source, rate):
+    g = math.gcd(source, rate)
+    return source // g, rate // g
+
+
+def coefficient(rin, rout):
+    """ma_lpf1_reinit: (float)exp(-2*pi*cutoff/rate) with libm exp, the cutoff min*0.5 and the rate max of the reduced rates."""
+    return None if rin == rout or max(rin, rout) >= 1 << 31 else f32(math.exp((-2 * math.pi * (min(rin, rout) * 0.5)) / max(rin, rout)))
 
 
 def set_rate(b, wanted):
     """ma_data_converter_set_rate(48000, wanted): the filter for the reduced rates, the timer in the new output rate."""
-    old = reduced(b['rate'])[1]
-    rin, rout = reduced(wanted)
+    old = reduced(b['source'], b['rate'])[1]
+    rin, rout = reduced(b['source'], wanted)
     frac = ((b['t_frac'] // old) * rout + (((b['t_frac'] % old) * rout) & 0xFFFFFFFF) // old) & 0xFFFFFFFF
-    # ma_lpf1_reinit: (float)exp(-2*pi*cutoff/rate) with libm exp, the cutoff min*0.5 and the rate max of the reduced rates.
-    coef = None if rin == rout or rout >= 1 << 31 else f32(math.exp((-2 * math.pi * (min(rin, rout) * 0.5)) / max(rin, rout)))
-    b.update(rate=wanted, t_int=(b['t_int'] + frac // rout) & 0xFFFFFFFF, t_frac=frac % rout, wide=rout >= 1 << 31, coef=coef)
+    b.update(rate=wanted, t_int=(b['t_int'] + frac // rout) & 0xFFFFFFFF, t_frac=frac % rout, wide=max(rin, rout) >= 1 << 31, coef=coefficient(rin, rout))
 
 
 def lowpass(b, frame):
@@ -121,7 +124,7 @@ def lowpass(b, frame):
 
 def flow(b, frames, remaining):
     """ma_linear_resampler_process_pcm_frames_f32 on a stream: (input frames used, frames made, fine)."""
-    rin, rout = reduced(b['rate'])
+    rin, rout = reduced(b['source'], b['rate'])
     plain, down, used, made, fine = rin == rout, rin > rout, 0, [], True
     while remaining > 0:
         if b['t_int'] > 0:
@@ -151,7 +154,7 @@ def flow(b, frames, remaining):
 
 def turn(b, data, frames):
     """A playing buffer in a callback (raudio's runs of 512 frames over its converter): (frames made, fine)."""
-    size, fine, made, need = b['frames'], not b['wide'] and b['frames'] > 0, [], frames
+    size, fine, made, need = b['frames'], not b['wide'] and b['frames'] > 0 and b['stream'] is None, [], frames
     if not fine:
         return [], False
     while need > 0 and b['playing']:
@@ -162,7 +165,7 @@ def turn(b, data, frames):
                 used, out, ok = flow(b, b['residual'], want)
                 b['residual'] = b['residual'][used:]
             else:
-                estimate = min(512, max(int(f32(f32(48000.0 / f32(float(b['rate']))) * float(want))), 1))
+                estimate = min(512, max(int(f32(f32(f32(float(b['source'])) / f32(float(b['rate']))) * float(want))), 1))
                 half = max(size // 2 if size > 1 else size, 1)
                 count = 0 if not b['playing'] or b['cursor'] // half > 1 else min(estimate, size - b['cursor'])
                 read = [[fl(data[2 * (b['cursor'] + i)]), fl(data[2 * (b['cursor'] + i) + 1])] for i in range(count)]
@@ -225,7 +228,8 @@ def tiny_wav():
 
 # Steps: ('init',), ('close',), ('master', word), ('load', slot, wave), ('file', slot, name), ('alias', slot, source),
 # ('unload', slot), ('unalias', slot), ('play'|'stop'|'pause'|'resume', slot), ('volume'|'pitch'|'pan', slot, word),
-# ('update', slot, frames, words), ('mix', frames).
+# ('update', slot, frames, words), ('mix', frames), ('default', size), ('stream', slot, rate, size, channels),
+# ('feed', slot, frames, words).
 STATE = {'play': 0, 'stop': 1, 'pause': 2, 'resume': 3}
 TUNE = {'volume': 4, 'pitch': 5, 'pan': 6}
 
@@ -309,6 +313,30 @@ def cases():
     add('mix-pitched-then-back', ('init',), ('load', 0, 'stereo16'), ('pitch', 0, bits(2.0)), ('play', 0), ('mix', 2), ('pitch', 0, bits(1.0)), ('mix', 2), ('mix', 480),
         ('close',))
 
+    ramp16 = s16([((i * 53) % 301 - 150) * 97 for i in range(600)])
+    add('stream-load', ('init',), ('stream', 0, 44100, 16, 1), ('stream', 1, 48000, 32, 2), ('stream', 2, 22050, 8, 2), ('stream', 3, 96000, 16, 6), ('play', 0), ('pause', 0),
+        ('resume', 0), ('stop', 0), ('volume', 1, bits(0.5)), ('pan', 2, bits(-0.5)), ('unload', 1), ('unload', 0), ('unload', 3), ('unload', 2), ('close',))
+    add('stream-none', ('stream', 0, 44100, 16, 1), ('default', 480), ('init',), ('stream', 1, 0, 16, 1), ('stream', 2, 44100, 16, 0), ('play', 1), ('feed', 2, 0, []),
+        ('unload', 2), ('stream', 3, 44100, 16, 255), ('stream', 0, 8000, 8, 1000), ('unload', 3), ('close',))
+    add('stream-default', ('default', 100), ('init',), ('stream', 0, 44100, 16, 1), ('default', 600), ('stream', 1, 44100, 16, 2), ('default', 0), ('stream', 2, 48000, 8, 1),
+        ('default', 479), ('stream', 3, 11025, 32, 3), ('close',), ('default', 7))
+    add('stream-feed', ('default', 500), ('init',), ('stream', 0, 44100, 16, 1), ('feed', 0, 100, ramp16[:100]), ('feed', 0, 500, ramp16[100:600]), ('feed', 0, 10, ramp16[:10]),
+        ('play', 0), ('feed', 0, 0, []), ('feed', 0, 501, []), ('feed', 0, 0xFFFFFFFF, []), ('feed', 0, 3, ramp16[5:8]), ('stop', 0), ('feed', 0, 1, ramp16[:1]),
+        ('pause', 0), ('feed', 0, 2, ramp16[:2]), ('unload', 0), ('close',))
+    add('stream-feed-formats', ('default', 480), ('init',), ('stream', 0, 22050, 8, 2), ('stream', 1, 48000, 32, 2), ('stream', 2, 32000, 16, 3),
+        ('feed', 0, 4, [0, 255, 128, 127, 1, 254, 64, 192]), ('feed', 1, 2, floats([0.5, -0.5, 1.5, -0.0])), ('feed', 2, 2, s16([1, -1, 300, -300, 32767, -32768])),
+        ('feed', 0, 480, [(i * 7) & 255 for i in range(960)]), ('feed', 1, 1, [NAN, bits(math.inf)]), ('close',))
+    add('stream-pitch', ('init',), ('default', 480), ('stream', 0, 44100, 16, 1), ('pitch', 0, bits(2.0)), ('pitch', 0, bits(1.0)), ('pitch', 0, bits(0.91875)),
+        ('stream', 1, 48000, 8, 2), ('pitch', 1, bits(0.5)), ('pitch', 1, bits(0.0)), ('stream', 2, 8000, 32, 1), ('pitch', 2, bits(6.0)), ('close',))
+
+    add('refused-stream-size', ('init',), ('stream', 0, 44100, 24, 1), ('stream', 1, 44100, 0, 1))
+    add('refused-stream-negative-default', ('init',), ('default', 0xFFFFFFFF), ('stream', 0, 44100, 16, 1))
+    add('refused-stream-too-large', ('init',), ('default', 3000000), ('stream', 0, 44100, 16, 1), ('default', 20000), ('stream', 1, 44100, 16, 200))
+    add('refused-stream-feed-list', ('init',), ('default', 480), ('stream', 0, 44100, 16, 2), ('feed', 0, 3, s16([1, 2, 3, 4, 5])), ('feed', 0, 2, s16([1, 2, 3, 4, 5])))
+    add('refused-stream-feed-sound', ('init',), ('load', 0, 'mono16'), ('feed', 0, 2, floats([0.5, 0.5, 0.25, 0.25])))
+    add('refused-stream-update-sound', ('init',), ('default', 480), ('stream', 0, 48000, 32, 2), ('update', 0, 1, floats([0.5, 0.5])))
+    add('refused-stream-unready', ('init',), ('default', 480), ('stream', 0, 44100, 16, 1), ('close',), ('feed', 0, 1, s16([1])), ('play', 0))
+    add('refused-mix-stream', ('init',), ('default', 480), ('stream', 0, 44100, 16, 1), ('feed', 0, 4, s16([1, 2, 3, 4])), ('play', 0), ('mix', 2))
     add('refused-mix-unready', ('mix', 4), ('init',), ('load', 0, 'mono16'), ('play', 0), ('close',), ('mix', 4))
     add('refused-mix-no-frames', ('init',), ('mix', 0))
     add('refused-mix-too-long', ('init',), ('mix', 1048577))
@@ -343,7 +371,7 @@ class Model:
     """raudio's state for one case; `undefined` once raylib has no defined answer for a step."""
 
     def __init__(self, catalog):
-        self.catalog, self.ready, self.master, self.next = catalog, False, 0, 1
+        self.catalog, self.ready, self.master, self.next, self.default = catalog, False, 0, 1, 0
         self.buffers, self.blocks, self.sounds, self.undefined = [], {}, [ZERO] * SLOTS, False
 
     def buffer(self, slot):
@@ -360,15 +388,60 @@ class Model:
         self.undefined |= found is None
         return found
 
-    def track(self, frames, block):
-        self.buffers.append(dict(id=self.next, block=block, frames=frames, volume=bits(1.0), pitch=bits(1.0), pan=0, playing=False, paused=False,
-                                 rate=48000, cursor=0, t_int=1, t_frac=0, x0=[0.0, 0.0], x1=[0.0, 0.0], r1=[0.0, 0.0], residual=[], coef=None, wide=False))
+    def track(self, frames, block, source=48000, stream=None):
+        held = 2 if stream is None else min(stream['channels'], 2)
+        rin, rout = reduced(source, 48000)
+        self.buffers.append(dict(id=self.next, block=block, frames=frames, volume=bits(1.0), pitch=bits(1.0), pan=0, playing=False, paused=False, source=source,
+                                 rate=48000, cursor=0, t_int=1, t_frac=0, x0=[0.0] * held, x1=[0.0] * held, r1=[0.0] * held, residual=[], coef=coefficient(rin, rout),
+                                 wide=max(rin, rout) >= 1 << 31, stream=stream))
         self.next += 1
         return self.next - 1
 
+    def rewind(self, found):
+        found['cursor'] = 0
+        if found['stream'] is not None:
+            found['stream'].update(first=True, second=True)
+
     def stop(self, found):
         if found['playing'] and not found['paused']:
-            found['playing'], found['cursor'] = False, 0
+            found['playing'] = False
+            self.rewind(found)
+
+    def stream(self, slot, rate, size, channels):
+        """LoadAudioStream: raylib gives a buffer on a ready device for a rate and channels that are not 0; Jonlib for fewer."""
+        self.sounds[slot] = (0, 0, rate, size, channels)
+        if not (self.ready and rate > 0 and channels > 0):
+            return
+        half = max(self.default or 12800, 480)
+        if size not in (8, 16, 32) or self.default >= 1 << 31 or 2 * half * channels > 1 << 22:
+            self.undefined = True
+            return
+        number = self.track(2 * half, self.next, rate, dict(size=size, channels=channels, first=True, second=True))
+        self.blocks[number] = [0] * (2 * half * channels)
+        self.sounds[slot] = (number, 0, rate, size, channels)
+
+    def feed(self, slot, frames, words):
+        """UpdateAudioStream."""
+        found = self.used(slot)
+        if found is None:
+            return
+        stream = found['stream']
+        if stream is None or found['block'] not in self.blocks:
+            self.undefined = True
+            return
+        target = 0 if stream['first'] else 1 if stream['second'] else None
+        if target is None:
+            return
+        half, channels = found['frames'] // 2, stream['channels']
+        if frames <= half and len(words) != frames * channels:
+            self.undefined = True
+            return
+        if stream['first'] and stream['second']:
+            found['cursor'] = 0
+        if frames <= half:
+            start = target * half * channels
+            self.blocks[found['block']][start:start + half * channels] = list(words) + [0] * ((half - frames) * channels)
+            stream['first' if target == 0 else 'second'] = False
 
     def mix(self, frames):
         """One device callback: the samples, or None (and nothing changed) for what Jonlib refuses."""
@@ -472,7 +545,8 @@ class Model:
             found = self.used(step[1])
             if found is not None:
                 if kind == 'play':
-                    found['playing'], found['paused'], found['cursor'] = True, False, 0
+                    found['playing'], found['paused'] = True, False
+                    self.rewind(found)
                 elif kind == 'stop':
                     self.stop(found)
                 else:
@@ -497,7 +571,7 @@ class Model:
             _, slot, frames, words = step
             found = self.used(slot)
             if found is not None:
-                valid = frames <= found['frames'] and len(words) == 2 * frames
+                valid = frames <= found['frames'] and len(words) == 2 * frames and found['stream'] is None
                 held = found['block'] in self.blocks
                 self.undefined |= not (valid and held)
                 if valid and held:
@@ -506,23 +580,32 @@ class Model:
         elif kind == 'mix':
             self.mixed = self.mix(step[1])
             self.undefined |= self.mixed is None
+        elif kind == 'default':
+            self.default = step[1]
+        elif kind == 'stream':
+            self.stream(*step[1:])
+        elif kind == 'feed':
+            self.feed(*step[1:])
         else:
             raise ValueError(kind)
         return tag
 
     def state(self):
-        parts = [f'R{int(self.ready)} M{self.master}']
+        parts = [f'R{int(self.ready)} M{self.master} D{self.default}']
         for slot, (number, frames, rate, size, channels) in enumerate(self.sounds):
             found = self.buffer(slot)
             valid = int(frames > 0 and number > 0 and rate > 0 and size > 0 and channels > 0)
             playing = int(found is not None and found['playing'] and not found['paused'])
-            parts.append(f'S{number},{frames},{rate},{size},{channels},{valid},{playing}')
+            streams = int(number > 0 and rate > 0 and size > 0 and channels > 0)
+            processed = int(found is not None and (found['stream'] is None or found['stream']['first'] or found['stream']['second']))
+            parts.append(f'S{number},{frames},{rate},{size},{channels},{valid},{playing},{streams},{processed}')
         for b in self.buffers:
             samples = '-' if not b['block'] else str(fnv(self.blocks[b['block']])) if b['block'] in self.blocks else 'x'
             held = [b['t_int'], b['t_frac'], *map(bits, b['x0'] + b['x1'] + b['r1']), 0 if b['coef'] is None else bits(b['coef']), len(b['residual']),
                     fnv(bits(v) for frame in b['residual'] for v in frame)]
+            feed = 's' if b['stream'] is None else f'{b["stream"]["size"]}/{b["stream"]["channels"]}/{int(b["stream"]["first"])}{int(b["stream"]["second"])}'
             parts.append(f'B{b["id"]},{b["block"]},{b["frames"]},{b["volume"]},{b["pitch"]},{b["pan"]},{int(b["playing"])},{int(b["paused"])},{samples},'
-                         f'{b["rate"]},{b["cursor"]},{",".join(map(str, held))}')
+                         f'{b["source"]},{b["rate"]},{b["cursor"]},{",".join(map(str, held))},{feed}')
         return ' '.join(parts)
 
 
@@ -581,15 +664,27 @@ static unsigned fnv(const unsigned *words, unsigned count)
     return h;
 }
 
+// The buffer's samples as unsigned values of its format, hashed.
+static unsigned samples(rAudioBuffer *b)
+{
+    unsigned count = b->sizeInFrames*b->converter.channelsIn, h = 2166136261u;
+    for (unsigned i = 0; i < count; i++)
+    {
+        unsigned v = (b->converter.formatIn == ma_format_u8)? ((unsigned char *)b->data)[i] : ((b->converter.formatIn == ma_format_s16)? ((unsigned short *)b->data)[i] : ((unsigned *)b->data)[i]);
+        h = (h ^ v)*16777619u;
+    }
+    return h;
+}
+
 static void state(int first)
 {
-    printf("%sR%d M%u", first? "" : ";", (int)IsAudioDeviceReady(), word(GetMasterVolume()));
+    printf("%sR%d M%u D%u", first? "" : ";", (int)IsAudioDeviceReady(), word(GetMasterVolume()), (unsigned)AUDIO.Buffer.defaultSize);
     for (int s = 0; s < SLOTS; s++)
     {
         Sound x = slots[s];
         int live = (slot_id[s] > 0) && !gone[slot_id[s] - 1];
-        printf(" S%d,%u,%u,%u,%u,%d,%d", slot_id[s], x.frameCount, x.stream.sampleRate, x.stream.sampleSize, x.stream.channels, (int)IsSoundValid(x),
-               (AUDIO.System.isReady && live)? (int)IsSoundPlaying(x) : 0);
+        printf(" S%d,%u,%u,%u,%u,%d,%d,%d,%d", slot_id[s], x.frameCount, x.stream.sampleRate, x.stream.sampleSize, x.stream.channels, (int)IsSoundValid(x),
+               (AUDIO.System.isReady && live)? (int)IsSoundPlaying(x) : 0, (int)IsAudioStreamValid(x.stream), (AUDIO.System.isReady && live)? (int)IsAudioStreamProcessed(x.stream) : 0);
     }
     for (rAudioBuffer *b = AUDIO.Buffer.first; b != NULL; b = b->next)
     {
@@ -598,14 +693,19 @@ static void state(int first)
         printf(" B%d,%d,%u,%u,%u,%u,%d,%d,", id, owner[id - 1], b->sizeInFrames, word(b->volume), word(b->pitch), word(b->pan), (int)b->playing, (int)b->paused);
         if (owner[id - 1] == 0) printf("-");
         else if (freed[owner[id - 1]]) printf("x");
-        else printf("%u", fnv((const unsigned *)b->data, b->sizeInFrames*2));
+        else printf("%u", samples(b));
         ma_linear_resampler *linear = &b->converter.resampler.state.linear;
-        printf(",%u,%u,%u,%u,%u,%u,%u,%u", b->converter.resampler.sampleRateOut, b->frameCursorPos, linear->inTimeInt, linear->inTimeFrac,
-               word(linear->x0.f32[0]), word(linear->x0.f32[1]), word(linear->x1.f32[0]), word(linear->x1.f32[1]));
-        if ((linear->lpf.lpf1Count != 1) || (linear->lpf.lpf2Count != 0)) exit(8);
-        printf(",%u,%u,%u", word(linear->lpf.pLPF1[0].pR1[0].f32), word(linear->lpf.pLPF1[0].pR1[1].f32),
-               (linear->config.sampleRateIn != linear->config.sampleRateOut)? word(linear->lpf.pLPF1[0].a.f32) : 0);
+        unsigned held = linear->config.channels;
+        printf(",%u,%u,%u,%u,%u", b->converter.resampler.sampleRateIn, b->converter.resampler.sampleRateOut, b->frameCursorPos, linear->inTimeInt, linear->inTimeFrac);
+        for (unsigned c = 0; c < held; c++) printf(",%u", word(linear->x0.f32[c]));
+        for (unsigned c = 0; c < held; c++) printf(",%u", word(linear->x1.f32[c]));
+        if ((linear->lpf.lpf1Count != 1) || (linear->lpf.lpf2Count != 0) || (linear->config.format != ma_format_f32)) exit(8);
+        for (unsigned c = 0; c < held; c++) printf(",%u", word(linear->lpf.pLPF1[0].pR1[c].f32));
+        printf(",%u", (linear->config.sampleRateIn != linear->config.sampleRateOut)? word(linear->lpf.pLPF1[0].a.f32) : 0);
         printf(",%u,%u", b->converterResidualCount, fnv((const unsigned *)b->converterResidual, b->converterResidualCount*2));
+        if (b->usage == AUDIO_BUFFER_USAGE_STATIC) printf(",s");
+        else printf(",%d/%u/%d%d", (b->converter.formatIn == ma_format_u8)? 8 : ((b->converter.formatIn == ma_format_s16)? 16 : 32), b->converter.channelsIn,
+                    (int)b->isSubBufferProcessed[0], (int)b->isSubBufferProcessed[1]);
     }
 }
 
@@ -681,6 +781,26 @@ int main(void)
                     mixed_hash = fnv((const unsigned *)mixed, a*2);
                     free(mixed);
                 } break;
+                case 13:
+                {
+                    Sound sound = { 0 };
+                    sound.stream = LoadAudioStream(b, c, payload[0]);
+                    put(a, sound, -1);
+                } break;
+                case 14:
+                {
+                    unsigned size = slots[a].stream.sampleSize;
+                    void *data = malloc((size_t)n*4 + 4);
+                    for (unsigned j = 0; j < n; j++)
+                    {
+                        if (size == 8) ((unsigned char *)data)[j] = (unsigned char)payload[j];
+                        else if (size == 16) ((unsigned short *)data)[j] = (unsigned short)payload[j];
+                        else ((unsigned *)data)[j] = payload[j];
+                    }
+                    UpdateAudioStream(slots[a].stream, data, (int)b);
+                    free(data);
+                } break;
+                case 15: SetAudioStreamBufferSizeDefault((int)a); break;
                 default: return 6;
             }
             free(payload);
@@ -713,6 +833,9 @@ type Op is Data:
   OpTune{slot: U32, op: U32, bits: U32}
   OpUpdate{slot: U32, frames: U32, data: +List<U32>}
   OpMix{frames: U32}
+  OpDefault{size: U32}
+  OpStream{slot: U32, rate: U32, size: U32, channels: U32}
+  OpFeed{slot: U32, frames: U32, data: +List<U32>}
 
 type St is Data:
   St{audio: J.AudioDevice, sounds: +List<J.Sound>, out: String}
@@ -743,7 +866,7 @@ def flag(value: Bool) -> String:
 def sound.text(+audio: J.AudioDevice, +sound: J.Sound) -> String:
   J.Sound{stream, +frames} = sound
   J.AudioStream{+buffer, +rate, +size, +channels} = stream
-  " S" ++ U32.show(buffer) ++ "," ++ U32.show(frames) ++ "," ++ U32.show(rate) ++ "," ++ U32.show(size) ++ "," ++ U32.show(channels) ++ "," ++ flag(J.Sound.is_valid(sound)) ++ "," ++ flag(J.Sound.is_playing(audio, sound))
+  " S" ++ U32.show(buffer) ++ "," ++ U32.show(frames) ++ "," ++ U32.show(rate) ++ "," ++ U32.show(size) ++ "," ++ U32.show(channels) ++ "," ++ flag(J.Sound.is_valid(sound)) ++ "," ++ flag(J.Sound.is_playing(audio, sound)) ++ "," ++ flag(J.AudioStream.is_valid(J.AudioStream{buffer, rate, size, channels})) ++ "," ++ flag(J.AudioStream.is_processed(audio, J.AudioStream{buffer, rate, size, channels}))
 
 def sounds.text(sounds: +List<J.Sound>, +audio: J.AudioDevice) -> String:
   match sounds:
@@ -774,9 +897,14 @@ def st.text(st: Resampler.St) -> String:
   Resampler.St{t_int, t_frac, x0, x1, chans, _} = st
   "," ++ U32.show(t_int) ++ "," ++ U32.show(t_frac) ++ words.text(x0) ++ words.text(x1) ++ chans.text(chans)
 
+def feed.text(feed: Mixer.Feed) -> String:
+  match feed:
+    case Mixer.HeadStatic{}: ",s"
+    case Mixer.HeadStream{size, channels, first, second}: "," ++ U32.show(size) ++ "/" ++ U32.show(channels) ++ "/" ++ flag(first) ++ flag(second)
+
 def head.text(head: Mixer.Head) -> String:
-  Mixer.Head{rate, +mode, +coef, cursor, st, +residual} = head
-  "," ++ U32.show(rate) ++ "," ++ U32.show(cursor) ++ st.text(st) ++ "," ++ U32.show(Bool.pick(U32, U32.is_eq(mode, 1), coef, 0)) ++ "," ++ U32.show(count(residual, 0)) ++ "," ++ U32.show(fnv.frames(residual, 2166136261))
+  Mixer.Head{source, rate, +mode, +coef, cursor, st, +residual, feed} = head
+  "," ++ U32.show(source) ++ "," ++ U32.show(rate) ++ "," ++ U32.show(cursor) ++ st.text(st) ++ "," ++ U32.show(Bool.pick(U32, U32.is_eq(mode, 1), coef, 0)) ++ "," ++ U32.show(count(residual, 0)) ++ "," ++ U32.show(fnv.frames(residual, 2166136261)) ++ feed.text(feed)
 
 def buffers.text(buffers: +List<J.AudioDevice.Buffer>, +blocks: +List<J.AudioDevice.Block>) -> String:
   match buffers:
@@ -785,8 +913,8 @@ def buffers.text(buffers: +List<J.AudioDevice.Buffer>, +blocks: +List<J.AudioDev
       " B" ++ U32.show(id) ++ "," ++ U32.show(block) ++ "," ++ U32.show(frames) ++ "," ++ U32.show(F32.bits(volume)) ++ "," ++ U32.show(F32.bits(pitch)) ++ "," ++ U32.show(F32.bits(pan)) ++ "," ++ flag(playing) ++ "," ++ flag(paused) ++ "," ++ hashed(block, J.AudioDevice.block.find(blocks, block)) ++ head.text(head) ++ buffers.text(rest, blocks)
 
 def state(+audio: J.AudioDevice, +sounds: +List<J.Sound>) -> String:
-  J.AudioDevice{_, _, _, +buffers, +blocks} = audio
-  "R" ++ flag(J.AudioDevice.is_ready(audio)) ++ " M" ++ U32.show(F32.bits(J.AudioDevice.master_volume(audio))) ++ sounds.text(sounds, audio) ++ buffers.text(buffers, blocks)
+  J.AudioDevice{_, _, _, +buffers, +blocks, +default} = audio
+  "R" ++ flag(J.AudioDevice.is_ready(audio)) ++ " M" ++ U32.show(F32.bits(J.AudioDevice.master_volume(audio))) ++ " D" ++ U32.show(default) ++ sounds.text(sounds, audio) ++ buffers.text(buffers, blocks)
 
 def after(+tag: String, +audio: J.AudioDevice, +sounds: +List<J.Sound>, +out: String) -> St:
   St{audio, sounds, out ++ ";E:" ++ tag ++ " " ++ state(audio, sounds)}
@@ -817,6 +945,14 @@ def loaded(result: J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>, +slot
 def aliased(result: J.AudioDevice & J.Sound, +slot: U32, +sounds: +List<J.Sound>, +out: String) -> St:
   match result:
     case Tuple{+audio, +sound}: after("-", audio, set(sounds, slot, sound), out)
+
+def streamed(result: J.AudioDevice & J.AudioStream, +slot: U32, +sounds: +List<J.Sound>, +out: String) -> St:
+  match result:
+    case Tuple{+audio, +stream}: after("-", audio, set(sounds, slot, J.Sound{stream, 0}), out)
+
+def stream.of(sound: J.Sound) -> J.AudioStream:
+  J.Sound{stream, _} = sound
+  stream
 
 def acted(op: U32, +audio: J.AudioDevice, +sound: J.Sound) -> J.AudioDevice:
   match op:
@@ -849,6 +985,9 @@ def step(+st: St, op: Op) -> IO(St):
     case OpTune{slot, code, bits}: IO.pure(St, after("-", tuned(code, audio, get(sounds, slot), J.Wave.float_bits(bits)), sounds, out))
     case OpUpdate{slot, frames, data}: IO.pure(St, after("-", J.Sound.update(audio, get(sounds, slot), data, frames), sounds, out))
     case OpMix{frames}: IO.pure(St, mixed(J.AudioDevice.mix(audio, frames), sounds, out))
+    case OpDefault{size}: IO.pure(St, after("-", J.AudioDevice.set_stream_buffer_size_default(audio, size), sounds, out))
+    case OpStream{slot, rate, size, channels}: IO.pure(St, streamed(J.AudioStream.load(audio, rate, size, channels), slot, sounds, out))
+    case OpFeed{slot, frames, data}: IO.pure(St, after("-", J.AudioStream.update(audio, stream.of(get(sounds, slot)), data, frames), sounds, out))
 
 def run(ops: +List<Op>, +st: St) -> IO(String):
   match ops:
@@ -896,6 +1035,12 @@ def bend_step(step, table, paths):
         return f'OpUpdate{{{step[1]}, {step[2]}, {words_text(step[3])}}}'
     if kind == 'mix':
         return f'OpMix{{{step[1]}}}'
+    if kind == 'default':
+        return f'OpDefault{{{step[1]}}}'
+    if kind == 'stream':
+        return f'OpStream{{{step[1]}, {step[2]}, {step[3]}, {step[4]}}}'
+    if kind == 'feed':
+        return f'OpFeed{{{step[1]}, {step[2]}, {words_text(step[3])}}}'
     raise ValueError(kind)
 
 
@@ -929,6 +1074,12 @@ def native_step(step, table, order):
         return 11, step[1], 0, 0, []
     if kind == 'mix':
         return 12, step[1], 0, 0, []
+    if kind == 'stream':
+        return 13, step[1], step[2], step[3], [step[4]]
+    if kind == 'feed':
+        return 14, step[1], step[2], 0, list(step[3])
+    if kind == 'default':
+        return 15, step[1], 0, 0, []
     raise ValueError(kind)
 
 

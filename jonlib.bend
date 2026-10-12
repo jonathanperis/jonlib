@@ -6035,7 +6035,7 @@ type AudioDevice.Block is Data:
   AudioBlock{id: U32, data: +List<U32>}
 
 type AudioDevice is Data:
-  AudioDevice{ready: Bool, master: F32, next: U32, buffers: +List<AudioDevice.Buffer>, blocks: +List<AudioDevice.Block>}
+  AudioDevice{ready: Bool, master: F32, next: U32, buffers: +List<AudioDevice.Buffer>, blocks: +List<AudioDevice.Block>, stream_size: U32}
 
 type AudioStream is Data:
   AudioStream{buffer: U32, rate: U32, size: U32, channels: U32}
@@ -6050,46 +6050,46 @@ type Sound.Error is Data:
 # The state before InitAudioDevice: no device, a master volume of 0 and no
 # buffers.
 def AudioDevice.none() -> AudioDevice:
-  AudioDevice{False{}, 0.0, 1, Nil{}, Nil{}}
+  AudioDevice{False{}, 0.0, 1, Nil{}, Nil{}, 0}
 
-def AudioDevice.init.ready(ready: Bool, +master: F32, +next: U32, +buffers: +List<AudioDevice.Buffer>, +blocks: +List<AudioDevice.Block>) -> AudioDevice:
+def AudioDevice.init.ready(ready: Bool, +master: F32, +next: U32, +buffers: +List<AudioDevice.Buffer>, +blocks: +List<AudioDevice.Block>, +stream: U32) -> AudioDevice:
   match ready:
-    case True{}: AudioDevice{True{}, master, next, buffers, blocks}
-    case False{}: AudioDevice{True{}, 1.0, next, buffers, blocks}
+    case True{}: AudioDevice{True{}, master, next, buffers, blocks, stream}
+    case False{}: AudioDevice{True{}, 1.0, next, buffers, blocks, stream}
 
 # InitAudioDevice: the device becomes ready with a master volume of 1. A ready
 # device stays as it is (raylib initializes its mutex and device a second
 # time in place).
 def AudioDevice.init(audio: AudioDevice) -> AudioDevice:
-  AudioDevice{ready, +master, +next, +buffers, +blocks} = audio
-  AudioDevice.init.ready(ready, master, next, buffers, blocks)
+  AudioDevice{ready, +master, +next, +buffers, +blocks, +stream} = audio
+  AudioDevice.init.ready(ready, master, next, buffers, blocks, stream)
 
-def AudioDevice.close.ready(ready: Bool, +master: F32, +next: U32, +buffers: +List<AudioDevice.Buffer>, +blocks: +List<AudioDevice.Block>) -> AudioDevice:
+def AudioDevice.close.ready(ready: Bool, +master: F32, +next: U32, +buffers: +List<AudioDevice.Buffer>, +blocks: +List<AudioDevice.Block>, +stream: U32) -> AudioDevice:
   match ready:
-    case True{}: AudioDevice{False{}, 0.0, next, buffers, blocks}
-    case False{}: AudioDevice{False{}, master, next, buffers, blocks}
+    case True{}: AudioDevice{False{}, 0.0, next, buffers, blocks, stream}
+    case False{}: AudioDevice{False{}, master, next, buffers, blocks, stream}
 
 # CloseAudioDevice: a ready device becomes unready and its master volume 0
 # (miniaudio zeroes the device); the buffers stay tracked, as raylib leaves
 # them.
 def AudioDevice.close(audio: AudioDevice) -> AudioDevice:
-  AudioDevice{ready, +master, +next, +buffers, +blocks} = audio
-  AudioDevice.close.ready(ready, master, next, buffers, blocks)
+  AudioDevice{ready, +master, +next, +buffers, +blocks, +stream} = audio
+  AudioDevice.close.ready(ready, master, next, buffers, blocks, stream)
 
 # IsAudioDeviceReady.
 def AudioDevice.is_ready(audio: AudioDevice) -> Bool:
-  AudioDevice{ready, _, _, _, _} = audio
+  AudioDevice{ready, _, _, _, _, _} = audio
   ready
 
 # SetMasterVolume: miniaudio keeps any volume that is not below 0 (NaN
 # included), ready device or not.
 def AudioDevice.set_master_volume(audio: AudioDevice, +volume: F32) -> AudioDevice:
-  AudioDevice{ready, +master, next, buffers, blocks} = audio
-  AudioDevice{ready, Bool.pick(F32, (volume < 0.0 : F32), master, volume), next, buffers, blocks}
+  AudioDevice{ready, +master, next, buffers, blocks, stream} = audio
+  AudioDevice{ready, Bool.pick(F32, (volume < 0.0 : F32), master, volume), next, buffers, blocks, stream}
 
 # GetMasterVolume.
 def AudioDevice.master_volume(audio: AudioDevice) -> F32:
-  AudioDevice{_, master, _, _, _} = audio
+  AudioDevice{_, master, _, _, _, _} = audio
   master
 
 def AudioDevice.buffer.find(buffers: +List<AudioDevice.Buffer>, +id: U32) -> Maybe<&2, AudioDevice.Buffer>:
@@ -6129,11 +6129,11 @@ def AudioDevice.block.put(blocks: +List<AudioDevice.Block>, +id: U32, +data: +Li
 
 # The tracked buffer a handle names on a ready device.
 def AudioDevice.buffer.tracked(audio: AudioDevice, +id: U32) -> Maybe<&2, AudioDevice.Buffer>:
-  AudioDevice{ready, _, _, +buffers, _} = audio
+  AudioDevice{ready, _, _, +buffers, _, _} = audio
   Bool.pick(Maybe<&2, AudioDevice.Buffer>, ready, AudioDevice.buffer.find(buffers, id), None{})
 
 def AudioDevice.block.held(audio: AudioDevice, +id: U32) -> Maybe<&2, +List<U32>>:
-  AudioDevice{_, _, _, _, +blocks} = audio
+  AudioDevice{_, _, _, _, +blocks, _} = audio
   AudioDevice.block.find(blocks, id)
 
 # SetAudioBufferPitch: the converter's output rate becomes
@@ -6168,8 +6168,8 @@ def AudioDevice.buffers.apply(buffers: +List<AudioDevice.Buffer>, +id: U32, +op:
 # mutex that does not exist), buffer 0 (NULL) and a buffer that is not tracked
 # (raylib uses freed memory) leave the state as it is.
 def AudioDevice.apply(audio: AudioDevice, +id: U32, +op: U32, +value: F32) -> AudioDevice:
-  AudioDevice{+ready, master, next, +buffers, blocks} = audio
-  AudioDevice{ready, master, next, Bool.pick(+List<AudioDevice.Buffer>, ready, AudioDevice.buffers.apply(buffers, id, op, value), buffers), blocks}
+  AudioDevice{+ready, master, next, +buffers, blocks, stream} = audio
+  AudioDevice{ready, master, next, Bool.pick(+List<AudioDevice.Buffer>, ready, AudioDevice.buffers.apply(buffers, id, op, value), buffers), blocks, stream}
 
 def Sound.none() -> Sound:
   Sound{AudioStream{0, 0, 0, 0}, 0}
@@ -6193,11 +6193,11 @@ def Sound.is_valid(sound: Sound) -> Bool:
 # LoadAudioBuffer and TrackAudioBuffer: a buffer of `frames` frames at the end
 # of the tracked list, with its block when it has frames.
 def Sound.tracked(audio: AudioDevice, +frames: U32, samples: +List<U32>) -> AudioDevice & Result<&1, &1, Sound.Error, Sound>:
-  AudioDevice{ready, master, +next, buffers, +blocks} = audio
+  AudioDevice{ready, master, +next, buffers, +blocks, stream} = audio
   +held = (frames > 0 : U32)
   (AudioDevice{ready, master, (next + 1 : U32),
      List.append(&2, AudioDevice.Buffer, buffers, [AudioBuffer{next, Bool.pick(U32, held, next, 0), frames, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}]),
-     Bool.pick(+List<AudioDevice.Block>, held, Con{AudioBlock{next, samples}, blocks}, blocks)},
+     Bool.pick(+List<AudioDevice.Block>, held, Con{AudioBlock{next, samples}, blocks}, blocks), stream},
    Done{Sound{AudioStream{next, 48000, 32, 2}, frames}})
 
 def Sound.converted(outcome: WaveConvert.Outcome, audio: AudioDevice) -> AudioDevice & Result<&1, &1, Sound.Error, Sound>:
@@ -6251,8 +6251,8 @@ def Sound.alias.block(found: Maybe<&2, +List<U32>>, audio: AudioDevice, +block: 
   match found:
     case None{}: (audio, Sound.none())
     case Some{_}:
-      AudioDevice{ready, master, +next, buffers, blocks} = audio
-      (AudioDevice{ready, master, (next + 1 : U32), List.append(&2, AudioDevice.Buffer, buffers, [AudioBuffer{next, block, size, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}]), blocks},
+      AudioDevice{ready, master, +next, buffers, blocks, stream} = audio
+      (AudioDevice{ready, master, (next + 1 : U32), List.append(&2, AudioDevice.Buffer, buffers, [AudioBuffer{next, block, size, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}]), blocks, stream},
        Sound{AudioStream{next, 48000, 32, 2}, frames})
 
 def Sound.alias.source(found: Maybe<&2, AudioDevice.Buffer>, +audio: AudioDevice, +frames: U32) -> AudioDevice & Sound:
@@ -6272,8 +6272,8 @@ def Sound.unload.found(found: Maybe<&2, AudioDevice.Buffer>, audio: AudioDevice,
   match found:
     case None{}: audio
     case Some{AudioBuffer{+id, +block, _, _, _, _, _, _, _}}:
-      AudioDevice{ready, master, next, +buffers, +blocks} = audio
-      AudioDevice{ready, master, next, AudioDevice.buffer.remove(buffers, id), Bool.pick(+List<AudioDevice.Block>, data, AudioDevice.block.remove(blocks, block), blocks)}
+      AudioDevice{ready, master, next, +buffers, +blocks, stream} = audio
+      AudioDevice{ready, master, next, AudioDevice.buffer.remove(buffers, id), Bool.pick(+List<AudioDevice.Block>, data, AudioDevice.block.remove(blocks, block), blocks), stream}
 
 def Sound.unload.with(+audio: AudioDevice, +sound: Sound, +data: Bool) -> AudioDevice:
   Sound.unload.found(AudioDevice.buffer.tracked(audio, Sound.buffer(sound)), audio, data)
@@ -6336,6 +6336,12 @@ def Sound.block(found: Maybe<&2, AudioDevice.Buffer>) -> U32:
     case None{}: 0
     case Some{AudioBuffer{_, block, _, _, _, _, _, _, _}}: block
 
+# A sound's buffer, not an audio stream's.
+def Sound.static(found: Maybe<&2, AudioDevice.Buffer>) -> Bool:
+  match found:
+    case None{}: False{}
+    case Some{AudioBuffer{_, _, _, _, _, _, _, _, head}}: Mixer.Feed.static(Mixer.Head.kind(head))
+
 def Sound.size(found: Maybe<&2, AudioDevice.Buffer>) -> U32:
   match found:
     case None{}: 0
@@ -6351,8 +6357,8 @@ def Sound.update.block(found: Maybe<&2, +List<U32>>, audio: AudioDevice, +id: U3
   match found:
     case None{}: audio
     case Some{+old}:
-      AudioDevice{ready, master, next, +buffers, +blocks} = audio
-      AudioDevice{ready, master, next, AudioDevice.buffers.apply(buffers, id, 1, 0.0), AudioDevice.block.put(blocks, block, List.append(&2, U32, data, List.drop(&2, U32, old, U32.to_nat(count))))}
+      AudioDevice{ready, master, next, +buffers, +blocks, stream} = audio
+      AudioDevice{ready, master, next, AudioDevice.buffers.apply(buffers, id, 1, 0.0), AudioDevice.block.put(blocks, block, Mixer.splice(old, 0, data, 0, count)), stream}
 
 def Sound.update.checked(valid: Bool, +audio: AudioDevice, +id: U32, +block: U32, +data: +List<U32>, +count: U32) -> AudioDevice:
   match valid:
@@ -6363,12 +6369,174 @@ def Sound.update.checked(valid: Bool, +audio: AudioDevice, +id: U32, +block: U32
 # of its block become `data` (F32 bits, two per frame), for every buffer that
 # shares the block. Requests raylib copies outside the block for (more frames
 # than the buffer holds, a negative int) or from outside `data` (a list that
-# is not 2*frames long), an unready device and buffers without a tracked
-# block leave the state as it is.
+# is not 2*frames long), an unready device, buffers without a tracked block
+# and an audio stream's buffer (its frames are in the stream's format) leave
+# the state as it is.
 def Sound.update(+audio: AudioDevice, +sound: Sound, +data: +List<U32>, +frames: U32) -> AudioDevice:
   +found = AudioDevice.buffer.tracked(audio, Sound.buffer(sound))
-  +valid = (frames <= Sound.size(found) : U32) && U32.is_eq(WaveConvert.count(data, 0), (2 * frames : U32))
+  +valid = (frames <= Sound.size(found) : U32) && U32.is_eq(WaveConvert.count(data, 0), (2 * frames : U32)) && Sound.static(found)
   Sound.update.checked(valid, audio, Sound.buffer(sound), Sound.block(found), data, frames)
+
+# Audio streams (raudio.c's AudioStream functions). A stream's buffer holds
+# two halves of `sub` frames each, in the stream's own format: unsigned 8-bit,
+# signed 16-bit (the 16-bit pattern) or F32 bits, one sample per element,
+# channels interleaved. UpdateAudioStream fills a half the device has read
+# through ("processed"; both are at first and after a play or a stop). The
+# mixer does not play streams yet. See docs/AUDIO.md.
+
+# SetAudioStreamBufferSizeDefault(int): the frames of each half of the
+# streams loaded from now on; 0 is raylib's own size.
+def AudioDevice.set_stream_buffer_size_default(audio: AudioDevice, +size: U32) -> AudioDevice:
+  AudioDevice{ready, master, next, buffers, blocks, _} = audio
+  AudioDevice{ready, master, next, buffers, blocks, size}
+
+def AudioDevice.stream_size(audio: AudioDevice) -> U32:
+  AudioDevice{_, _, _, _, _, stream} = audio
+  stream
+
+# The frames of a half: the default size, or the device's rate/30 times its
+# 8 "bits per sample" (raylib's name for 4 capped format bytes times 2
+# channels: 12800), and at least the device's period of 480 frames.
+def AudioStream.sub(+default: U32) -> U32:
+  U32.max(Bool.pick(U32, U32.is_eq(default, 0), 12800, default), 480)
+
+def AudioStream.tracked(audio: AudioDevice, +rate: U32, +size: U32, +channels: U32, +sub: U32) -> AudioDevice & AudioStream:
+  AudioDevice{ready, master, +next, buffers, blocks, stream} = audio
+  (AudioDevice{ready, master, (next + 1 : U32),
+     List.append(&2, AudioDevice.Buffer, buffers, [AudioBuffer{next, next, (2 * sub : U32), 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.stream(rate, size, channels)}]),
+     Con{AudioBlock{next, Memory.zeros(U32.to_nat(((2 * sub) * channels : U32)), Nil{})}, blocks}, stream},
+   AudioStream{next, rate, size, channels})
+
+def AudioStream.loaded(valid: Bool, +audio: AudioDevice, +rate: U32, +size: U32, +channels: U32) -> AudioDevice & AudioStream:
+  match valid:
+    case False{}: (audio, AudioStream{0, rate, size, channels})
+    case True{}: AudioStream.tracked(audio, rate, size, channels, AudioStream.sub(AudioDevice.stream_size(audio)))
+
+# LoadAudioStream: a tracked, looping buffer of two zeroed halves with a
+# converter from the stream's format to the device's. A stream without a
+# buffer (0, with the fields given) where miniaudio makes no converter: an
+# unready device, a rate of 0, no channels. Jonlib also gives none for sample
+# sizes other than 8, 16 and 32 (raylib takes them for 32-bit float and
+# fills part of each sample), a default size that is a negative int, and
+# buffers of more than 2^22 samples.
+def AudioStream.load(+audio: AudioDevice, +rate: U32, +size: U32, +channels: U32) -> AudioDevice & AudioStream:
+  +sub = AudioStream.sub(AudioDevice.stream_size(audio))
+  AudioStream.loaded(AudioDevice.is_ready(audio) && (rate > 0 : U32) && (channels > 0 : U32) && Wave.sized(size)
+    && (sub <= 2097152 : U32) && (channels <= (4194304 / (2 * U32.min(sub, 2097152))) : U32), audio, rate, size, channels)
+
+def AudioStream.buffer(stream: AudioStream) -> U32:
+  AudioStream{buffer, _, _, _} = stream
+  buffer
+
+# IsAudioStreamValid: a buffer and a sample rate, sample size and channels
+# that are not 0.
+def AudioStream.is_valid(stream: AudioStream) -> Bool:
+  AudioStream{buffer, rate, size, channels} = stream
+  ((buffer > 0) && (rate > 0) && (size > 0) && (channels > 0) : U32)
+
+# UnloadAudioStream: the buffer is untracked and its halves freed.
+def AudioStream.unload(+audio: AudioDevice, +stream: AudioStream) -> AudioDevice:
+  Sound.unload.with(audio, Sound{stream, 0}, True{})
+
+def AudioStream.head(found: Maybe<&2, AudioDevice.Buffer>) -> Maybe<&2, Mixer.Head>:
+  match found:
+    case None{}: None{}
+    case Some{AudioBuffer{_, _, _, _, _, _, _, _, head}}: Some{head}
+
+def AudioStream.processed(head: Maybe<&2, Mixer.Head>) -> Bool:
+  match head:
+    case None{}: False{}
+    case Some{h}: Mixer.Feed.processed(Mixer.Head.kind(h))
+
+# IsAudioStreamProcessed: one of the halves is processed. False on an unready
+# device and for a buffer that is 0 or not tracked.
+def AudioStream.is_processed(audio: AudioDevice, +stream: AudioStream) -> Bool:
+  AudioStream.processed(AudioStream.head(AudioDevice.buffer.tracked(audio, AudioStream.buffer(stream))))
+
+# PlayAudioStream: from the first frame, unpaused, both halves processed.
+def AudioStream.play(audio: AudioDevice, +stream: AudioStream) -> AudioDevice:
+  AudioDevice.apply(audio, AudioStream.buffer(stream), 0, 0.0)
+
+# StopAudioStream.
+def AudioStream.stop(audio: AudioDevice, +stream: AudioStream) -> AudioDevice:
+  AudioDevice.apply(audio, AudioStream.buffer(stream), 1, 0.0)
+
+# PauseAudioStream.
+def AudioStream.pause(audio: AudioDevice, +stream: AudioStream) -> AudioDevice:
+  AudioDevice.apply(audio, AudioStream.buffer(stream), 2, 0.0)
+
+# ResumeAudioStream.
+def AudioStream.resume(audio: AudioDevice, +stream: AudioStream) -> AudioDevice:
+  AudioDevice.apply(audio, AudioStream.buffer(stream), 3, 0.0)
+
+# IsAudioStreamPlaying.
+def AudioStream.is_playing(audio: AudioDevice, +stream: AudioStream) -> Bool:
+  Sound.playing(AudioDevice.buffer.tracked(audio, AudioStream.buffer(stream)))
+
+# SetAudioStreamVolume, SetAudioStreamPitch and SetAudioStreamPan, as for a
+# sound; the pitch sets the converter's output rate against the stream's own.
+def AudioStream.set_volume(audio: AudioDevice, +stream: AudioStream, +volume: F32) -> AudioDevice:
+  Sound.set_volume(audio, Sound{stream, 0}, volume)
+
+def AudioStream.set_pitch(audio: AudioDevice, +stream: AudioStream, +pitch: F32) -> AudioDevice:
+  Sound.set_pitch(audio, Sound{stream, 0}, pitch)
+
+def AudioStream.set_pan(audio: AudioDevice, +stream: AudioStream, +pan: F32) -> AudioDevice:
+  Sound.set_pan(audio, Sound{stream, 0}, pan)
+
+def AudioStream.fed.buffer(buffer: AudioDevice.Buffer, +wrote: Bool) -> AudioDevice.Buffer:
+  AudioBuffer{id, block, frames, volume, pitch, pan, playing, paused, head} = buffer
+  AudioBuffer{id, block, frames, volume, pitch, pan, playing, paused, Mixer.Head.fed(head, wrote)}
+
+def AudioStream.fed.buffers(buffers: +List<AudioDevice.Buffer>, +id: U32, +wrote: Bool) -> +List<AudioDevice.Buffer>:
+  match buffers:
+    case Nil{}: Nil{}
+    case Con{+buffer, +rest}:
+      AudioBuffer{+found, _, _, _, _, _, _, _, _} = buffer
+      Bool.pick(+List<AudioDevice.Buffer>, U32.is_eq(found, id), Con{AudioStream.fed.buffer(buffer, wrote), rest}, Con{buffer, AudioStream.fed.buffers(rest, id, wrote)})
+
+# The half's samples become `data` and zeros after it.
+def AudioStream.fed.block(found: Maybe<&2, +List<U32>>, +audio: AudioDevice, +id: U32, +block: U32, +data: +List<U32>, +offset: U32, +count: U32, +width: U32) -> AudioDevice:
+  match found:
+    case None{}: audio
+    case Some{+old}:
+      AudioDevice{ready, master, next, +buffers, +blocks, stream} = audio
+      AudioDevice{ready, master, next, AudioStream.fed.buffers(buffers, id, True{}), AudioDevice.block.put(blocks, block, Mixer.splice(old, offset, data, (width - count : U32), width)), stream}
+
+def AudioStream.fed.cursor(+audio: AudioDevice, +id: U32) -> AudioDevice:
+  AudioDevice{ready, master, next, +buffers, blocks, stream} = audio
+  AudioDevice{ready, master, next, AudioStream.fed.buffers(buffers, id, False{}), blocks, stream}
+
+# 0: nothing; 1: too many frames (only the cursor); 2: the half is written.
+def AudioStream.fed(kind: U32, +audio: AudioDevice, +id: U32, +block: U32, +data: +List<U32>, +target: U32, +sub: U32, +channels: U32, +frames: U32) -> AudioDevice:
+  match kind:
+    case 0: audio
+    case 1: AudioStream.fed.cursor(audio, id)
+    case _: AudioStream.fed.block(AudioDevice.block.held(audio, block), audio, id, block, data, ((target * sub) * channels : U32), (frames * channels : U32), (sub * channels : U32))
+
+def AudioStream.update.feed(+kind: Mixer.Feed, +audio: AudioDevice, +id: U32, +block: U32, +size: U32, +data: +List<U32>, +frames: U32) -> AudioDevice:
+  +target = Mixer.Feed.target(kind)
+  +channels = Mixer.Feed.channels(kind)
+  +sub = (size / 2 : U32)
+  +fits = (frames <= sub : U32)
+  +whole = U32.is_eq(WaveConvert.count(data, 0), (U32.min(frames, sub) * channels : U32))
+  AudioStream.fed(Bool.pick(U32, U32.is_eq(target, 2) || (fits && Bool.not(whole)), 0, Bool.pick(U32, fits, 2, 1)), audio, id, block, data, target, sub, channels, frames)
+
+def AudioStream.update.head(head: Maybe<&2, Mixer.Head>, +audio: AudioDevice, +id: U32, +block: U32, +size: U32, +data: +List<U32>, +frames: U32) -> AudioDevice:
+  match head:
+    case None{}: audio
+    case Some{h}: AudioStream.update.feed(Mixer.Head.kind(h), audio, id, block, size, data, frames)
+
+# UpdateAudioStream: the first processed half takes `frames` frames of `data`
+# (frames*channels samples in the stream's format) and zeros after them, and
+# is no longer processed; with both halves processed the cursor goes back to
+# the first frame. Nothing when no half is processed. More frames than a half
+# holds (a negative int too) only move the cursor, as in raylib. The state as
+# it is: an unready device, a buffer that is 0, not tracked or a sound's, and
+# a `data` that does not hold frames*channels samples.
+def AudioStream.update(+audio: AudioDevice, +stream: AudioStream, +data: +List<U32>, +frames: U32) -> AudioDevice:
+  +found = AudioDevice.buffer.tracked(audio, AudioStream.buffer(stream))
+  AudioStream.update.head(AudioStream.head(found), audio, AudioStream.buffer(stream), Sound.block(found), Sound.size(found), data, frames)
 
 # The mixer: one data callback of the device, as raudio's
 # OnSendAudioDataToDevice mixes it and miniaudio then applies the master
@@ -6489,8 +6657,8 @@ def AudioDevice.mix.given(sent: AudioDevice.Sent, +device: AudioDevice, +buffers
   match fine:
     case False{}: (device, None{})
     case True{}:
-      AudioDevice{ready, master, next, _, blocks} = device
-      (AudioDevice{ready, master, next, buffers, blocks}, Some{out})
+      AudioDevice{ready, master, next, _, blocks, stream} = device
+      (AudioDevice{ready, master, next, buffers, blocks, stream}, Some{out})
 
 def AudioDevice.mix.mastered(pass: AudioDevice.Pass, +device: AudioDevice) -> AudioDevice & Maybe<&2, +List<U32>>:
   AudioPass{+done, out, +fine} = pass
@@ -6501,7 +6669,7 @@ def AudioDevice.mix.checked(valid: Bool, +device: AudioDevice, +frames: U32) -> 
   match valid:
     case False{}: (device, None{})
     case True{}:
-      AudioDevice{_, _, _, +buffers, +blocks} = device
+      AudioDevice{_, _, _, +buffers, +blocks, _} = device
       AudioDevice.mix.mastered(AudioDevice.mix.all(buffers, blocks, frames, AudioPass{Nil{}, Memory.zeros(U32.to_nat((2 * frames : U32)), Nil{}), True{}}), device)
 
 # One data callback of `frames` frames (a device asks for a period at a time:

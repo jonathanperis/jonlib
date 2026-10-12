@@ -6709,7 +6709,7 @@
   {
    "name": "audio_raw_stream",
    "category": "audio",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -6735,15 +6735,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "IsAudioStreamProcessed",
-    "LoadAudioStream",
-    "PlayAudioStream",
-    "SetAudioStreamBufferSizeDefault",
-    "SetAudioStreamPan",
-    "UnloadAudioStream",
-    "UpdateAudioStream"
-   ]
+   "missing": []
   },
   {
    "name": "audio_sound_loading",
@@ -6923,7 +6915,7 @@
   {
    "name": "audio_spectrum_visualizer",
    "category": "audio",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -6966,14 +6958,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "IsAudioStreamProcessed",
-    "LoadAudioStream",
-    "PlayAudioStream",
-    "SetAudioStreamBufferSizeDefault",
-    "UnloadAudioStream",
-    "UpdateAudioStream"
-   ]
+   "missing": []
   },
   {
    "name": "audio_stream_callback",
@@ -7003,11 +6988,7 @@
    "libraries": [],
    "gui": [],
    "missing": [
-    "LoadAudioStream",
-    "PlayAudioStream",
-    "SetAudioStreamBufferSizeDefault",
-    "SetAudioStreamCallback",
-    "UnloadAudioStream"
+    "SetAudioStreamCallback"
    ]
   }
  ]

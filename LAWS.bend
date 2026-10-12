@@ -1948,21 +1948,21 @@ law audio_starts_unready:
   {J.AudioDevice.is_ready(J.AudioDevice.none()) == False{} : Bool}
 
 law audio_init_full_volume:
-  {J.AudioDevice.init(J.AudioDevice.none()) == J.AudioDevice{True{}, 1.0, 1, Nil{}, Nil{}} : J.AudioDevice}
+  {J.AudioDevice.init(J.AudioDevice.none()) == J.AudioDevice{True{}, 1.0, 1, Nil{}, Nil{}, 0} : J.AudioDevice}
 
 law audio_init_ready_unchanged:
   for +master: F32
   for +next: U32
   for +buffers: +List<J.AudioDevice.Buffer>
   for +blocks: +List<J.AudioDevice.Block>
-  {J.AudioDevice.init(J.AudioDevice{True{}, master, next, buffers, blocks}) == J.AudioDevice{True{}, master, next, buffers, blocks} : J.AudioDevice}
+  {J.AudioDevice.init(J.AudioDevice{True{}, master, next, buffers, blocks, 0}) == J.AudioDevice{True{}, master, next, buffers, blocks, 0} : J.AudioDevice}
 
 law audio_close_keeps_buffers:
   for +master: F32
   for +next: U32
   for +buffers: +List<J.AudioDevice.Buffer>
   for +blocks: +List<J.AudioDevice.Block>
-  {J.AudioDevice.close(J.AudioDevice{True{}, master, next, buffers, blocks}) == J.AudioDevice{False{}, 0.0, next, buffers, blocks} : J.AudioDevice}
+  {J.AudioDevice.close(J.AudioDevice{True{}, master, next, buffers, blocks, 0}) == J.AudioDevice{False{}, 0.0, next, buffers, blocks, 0} : J.AudioDevice}
 
 # GetMasterVolume: 0 before the device opens.
 law audio_master_volume_starts_at_zero:
@@ -1976,7 +1976,7 @@ law audio_master_volume_full_when_open:
 # nothing on an unready device; the zero sound for the zero wave; an invalid
 # sound over an empty buffer for a wave without frames.
 law sound_from_device_format_wave:
-  {J.Sound.load_from_wave(J.AudioDevice.init(J.AudioDevice.none()), J.Wave{1, 48000, 32, 2, [1056964608, 3204448256]}) == (J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 1, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1056964608, 3204448256]}]}, Done{J.Sound{J.AudioStream{1, 48000, 32, 2}, 1}}) : J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>}
+  {J.Sound.load_from_wave(J.AudioDevice.init(J.AudioDevice.none()), J.Wave{1, 48000, 32, 2, [1056964608, 3204448256]}) == (J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 1, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1056964608, 3204448256]}], 0}, Done{J.Sound{J.AudioStream{1, 48000, 32, 2}, 1}}) : J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>}
 
 law sound_unready_device_refused:
   {J.Sound.load_from_wave(J.AudioDevice.none(), J.Wave{1, 48000, 16, 1, [16384]}) == (J.AudioDevice.none(), Fail{J.SoundDeviceNotReady{}}) : J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>}
@@ -1985,7 +1985,7 @@ law sound_zero_wave_is_zero_sound:
   {J.Sound.load_from_wave(J.AudioDevice.init(J.AudioDevice.none()), J.Wave{0, 0, 0, 0, Nil{}}) == (J.AudioDevice.init(J.AudioDevice.none()), Done{J.Sound.none()}) : J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>}
 
 law sound_without_frames_has_empty_buffer:
-  {J.Sound.load_from_wave(J.AudioDevice.init(J.AudioDevice.none()), J.Wave{0, 48000, 16, 1, Nil{}}) == (J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 0, 0, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], Nil{}}, Done{J.Sound{J.AudioStream{1, 48000, 32, 2}, 0}}) : J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>}
+  {J.Sound.load_from_wave(J.AudioDevice.init(J.AudioDevice.none()), J.Wave{0, 48000, 16, 1, Nil{}}) == (J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 0, 0, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], Nil{}, 0}, Done{J.Sound{J.AudioStream{1, 48000, 32, 2}, 0}}) : J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>}
 
 law sound_refused_wave_tracks_nothing:
   {J.Sound.load_from_wave(J.AudioDevice.init(J.AudioDevice.none()), J.Wave{1, 48000, 24, 1, [1]}) == (J.AudioDevice.init(J.AudioDevice.none()), Fail{J.SoundWaveError{J.WaveDataError{J.InvalidWaveRequest{}}}}) : J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>}
@@ -2003,67 +2003,67 @@ law sound_with_frames_valid:
 # LoadSoundAlias: a new buffer with its own state over the source's block;
 # the zero sound has none.
 law sound_alias_shares_block:
-  {J.Sound.load_alias(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == (J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}) : J.AudioDevice & J.Sound}
+  {J.Sound.load_alias(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == (J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}) : J.AudioDevice & J.Sound}
 
 law sound_alias_of_zero_sound:
-  {J.Sound.load_alias(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound.none()) == (J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound.none()) : J.AudioDevice & J.Sound}
+  {J.Sound.load_alias(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound.none()) == (J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound.none()) : J.AudioDevice & J.Sound}
 
 # PlaySound plays its own buffer only; StopSound leaves a paused buffer as it
 # is (raylib stops buffers that are playing and not paused).
 law sound_play_only_its_buffer:
-  {J.Sound.play(J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, True{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]} : J.AudioDevice}
+  {J.Sound.play(J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, True{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0} : J.AudioDevice}
 
 law sound_played_is_playing:
-  {J.Sound.is_playing(J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == True{} : Bool}
+  {J.Sound.is_playing(J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == True{} : Bool}
 
 law sound_paused_not_playing:
-  {J.Sound.is_playing(J.Sound.pause(J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == False{} : Bool}
+  {J.Sound.is_playing(J.Sound.pause(J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == False{} : Bool}
 
 law sound_stop_leaves_paused:
-  {J.Sound.stop(J.Sound.pause(J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.Sound.pause(J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) : J.AudioDevice}
+  {J.Sound.stop(J.Sound.pause(J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.Sound.pause(J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) : J.AudioDevice}
 
 law sound_stop_after_play:
-  {J.Sound.stop(J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]} : J.AudioDevice}
+  {J.Sound.stop(J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0} : J.AudioDevice}
 
 # SetSoundVolume sets its own buffer's volume only.
 law sound_volume_only_its_buffer:
-  {J.Sound.set_volume(J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}, 0.25) == J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}, J.AudioBuffer{2, 1, 2, 0.25, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]} : J.AudioDevice}
+  {J.Sound.set_volume(J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}, 0.25) == J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}, J.AudioBuffer{2, 1, 2, 0.25, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0} : J.AudioDevice}
 
 # UnloadSound frees the block its buffer plays, UnloadSoundAlias only
 # untracks the buffer.
 law sound_unload_frees_block:
-  {J.Sound.unload(J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], Nil{}} : J.AudioDevice}
+  {J.Sound.unload(J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], Nil{}, 0} : J.AudioDevice}
 
 law sound_unload_alias_keeps_block:
-  {J.Sound.unload_alias(J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]} : J.AudioDevice}
+  {J.Sound.unload_alias(J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0} : J.AudioDevice}
 
 # UpdateSound writes the block every buffer over it plays; a request past
 # the buffer changes nothing.
 law sound_update_reaches_aliases:
-  {J.Sound.data(J.Sound.update(J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}, [9, 8], 1), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == Some{[9, 8, 3, 4]} : Maybe<&2, +List<U32>>}
+  {J.Sound.data(J.Sound.update(J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}, [9, 8], 1), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == Some{[9, 8, 3, 4]} : Maybe<&2, +List<U32>>}
 
 law sound_update_past_buffer_ignored:
-  {J.Sound.update(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}, [0, 0, 0, 0, 0, 0], 3) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]} : J.AudioDevice}
+  {J.Sound.update(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}, [0, 0, 0, 0, 0, 0], 3) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0} : J.AudioDevice}
 
 # Handles raylib cannot use change nothing: any buffer on an unready device,
 # and a buffer that was unloaded.
 law sound_unready_buffers_untouched:
-  {J.Sound.play(J.AudioDevice.close(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice.close(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}) : J.AudioDevice}
+  {J.Sound.play(J.AudioDevice.close(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice.close(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}) : J.AudioDevice}
 
 law sound_unloaded_handle_ignored:
-  {J.Sound.play(J.Sound.unload(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.Sound.unload(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) : J.AudioDevice}
+  {J.Sound.play(J.Sound.unload(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.Sound.unload(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) : J.AudioDevice}
 
 # The mixer (AudioDevice.mix, docs/AUDIO.md#the-mixer). PlaySound starts a
 # buffer from its first frame and a buffer that stops goes back to it; the
 # frames its resampler holds stay.
 law sound_play_from_the_start:
-  {J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, True{}, Mixer.Head{48000, 0, 0, 1, Resampler.St{1, 0, [5, 6], [7, 8], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, False{}, Mixer.Head{48000, 0, 0, 0, Resampler.St{1, 0, [5, 6], [7, 8], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}]} : J.AudioDevice}
+  {J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, True{}, Mixer.Head{48000, 48000, 0, 0, 1, Resampler.St{1, 0, [5, 6], [7, 8], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, False{}, Mixer.Head{48000, 48000, 0, 0, 0, Resampler.St{1, 0, [5, 6], [7, 8], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0} : J.AudioDevice}
 
 law sound_stop_back_to_the_start:
-  {J.Sound.stop(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, False{}, Mixer.Head{48000, 0, 0, 1, Resampler.St{1, 0, [5, 6], [7, 8], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head{48000, 0, 0, 0, Resampler.St{1, 0, [5, 6], [7, 8], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}]} : J.AudioDevice}
+  {J.Sound.stop(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, False{}, Mixer.Head{48000, 48000, 0, 0, 1, Resampler.St{1, 0, [5, 6], [7, 8], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head{48000, 48000, 0, 0, 0, Resampler.St{1, 0, [5, 6], [7, 8], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0} : J.AudioDevice}
 
 law sound_stop_paused_keeps_its_place:
-  {J.Sound.stop(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, True{}, Mixer.Head{48000, 0, 0, 1, Resampler.St{1, 0, [0, 0], [0, 0], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, True{}, Mixer.Head{48000, 0, 0, 1, Resampler.St{1, 0, [0, 0], [0, 0], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}]} : J.AudioDevice}
+  {J.Sound.stop(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, True{}, Mixer.Head{48000, 48000, 0, 0, 1, Resampler.St{1, 0, [0, 0], [0, 0], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, True{}, Mixer.Head{48000, 48000, 0, 0, 1, Resampler.St{1, 0, [0, 0], [0, 0], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0} : J.AudioDevice}
 
 # raudio's read of a static buffer (src/mixer.bend): the frames left, at most
 # the frames asked for; it ends the buffer with its last frame; nothing when
@@ -2637,6 +2637,53 @@ law material_never_valid:
 law model_from_mesh_material:
   for mesh: J.Mesh
   {J.Model.from_mesh(mesh) == J.Model{M.Matrix.identity(), [mesh], [J.Material.load_default()], [0]} : J.Model}
+
+# Audio streams (docs/AUDIO.md#audio-streams). A half holds the default size,
+# raylib's 12800 frames without one, and the device's period of 480 at least.
+law stream_half_default:
+  {J.AudioStream.sub(0) == 12800 : U32}
+
+law stream_half_at_least_a_period:
+  {J.AudioStream.sub(100) == 480 : U32}
+
+law stream_half_set:
+  {J.AudioStream.sub(600) == 600 : U32}
+
+law stream_size_default_kept:
+  {J.AudioDevice.stream_size(J.AudioDevice.set_stream_buffer_size_default(J.AudioDevice.none(), 600)) == 600 : U32}
+
+# No buffer on an unready device: the stream keeps its fields and is not valid.
+law stream_unready_without_buffer:
+  {J.AudioStream.load(J.AudioDevice.none(), 44100, 16, 1) == (J.AudioDevice.none(), J.AudioStream{0, 44100, 16, 1}) : J.AudioDevice & J.AudioStream}
+
+law stream_without_buffer_invalid:
+  {J.AudioStream.is_valid(J.AudioStream{0, 44100, 16, 1}) == False{} : Bool}
+
+law stream_with_buffer_valid:
+  {J.AudioStream.is_valid(J.AudioStream{1, 44100, 16, 1}) == True{} : Bool}
+
+# UpdateAudioStream fills the first processed half; a play or a stop marks both.
+law stream_first_half_first:
+  {Mixer.Feed.target(Mixer.HeadStream{16, 1, True{}, True{}}) == 0 : U32}
+
+law stream_second_half_next:
+  {Mixer.Feed.target(Mixer.HeadStream{16, 1, False{}, True{}}) == 1 : U32}
+
+law stream_no_half_left:
+  {Mixer.Feed.target(Mixer.HeadStream{16, 1, False{}, False{}}) == 2 : U32}
+
+law stream_filled_half_unprocessed:
+  {Mixer.Feed.filled(Mixer.HeadStream{16, 1, True{}, True{}}, 0) == Mixer.HeadStream{16, 1, False{}, True{}} : Mixer.Feed}
+
+law stream_play_marks_both:
+  {Mixer.Feed.fresh(Mixer.HeadStream{8, 2, False{}, False{}}) == Mixer.HeadStream{8, 2, True{}, True{}} : Mixer.Feed}
+
+law stream_sound_always_processed:
+  {Mixer.Feed.processed(Mixer.HeadStatic{}) == True{} : Bool}
+
+# A half's samples are replaced in place, zeros after the frames given.
+law stream_half_written_in_place:
+  {Mixer.splice([1, 2, 3, 4, 5, 6], 2, [9], 1, 2) == [1, 2, 9, 0, 5, 6] : +List<U32>}
 
 # VR stereo on the software renderer (docs/VR.md): the stereo mode leaves the
 # frame as it is, and a configuration holds nothing to unload.
