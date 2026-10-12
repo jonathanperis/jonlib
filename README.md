@@ -92,14 +92,14 @@ refuse every frame, because the native example is undefined behavior in C.
   audio device's state, sounds, aliases and audio streams, a mixer whose
   device callbacks match raylib's sample for sample, pitched playback and
   streams of any format, stream callbacks and audio processors included,
-  music streams over WAV files, and a clock that makes those callbacks from
-  the program's time.
+  music streams over WAV and QOA files, and a clock that makes those
+  callbacks from the program's time.
 - **Jongui** ([GUI.md](docs/GUI.md)): raygui's controls.
 - **Execution**: native CPU, JavaScript and (with the declared compiler overlay)
   forced Metal; see [VERIFICATION.md](docs/VERIFICATION.md).
 
-Not yet there: music from MP3, OGG, QOA, FLAC, XM and MOD files (WAV music
-plays); a host window, input devices and audio output
+Not yet there: music from MP3, OGG, FLAC, XM and MOD files (WAV and QOA
+music plays); a host window, input devices and audio output
 (everything runs headless); images beyond 4096 pixels on a side; directory
 listing. macOS is off the merge path for now and owes a full validation. The
 [master plan](docs/MASTER-PLAN.md) and [HANDOFF.md](docs/HANDOFF.md) order

@@ -1541,6 +1541,27 @@ def Laws.music_buffered_looping():
 def Laws.music_buffered_one_half():
   {==}
 
+def Laws.music_qoa_declared_frames():
+  {==}
+
+def Laws.music_qoa_seek_to_its_frame():
+  {==}
+
+def Laws.music_qoa_seek_last_frame():
+  {==}
+
+def Laws.music_qoa_seek_gives_its_frame():
+  {==}
+
+def Laws.music_wav_seek_gives_the_position():
+  {==}
+
+def Laws.music_qoa_stop_rewinds():
+  {==}
+
+def Laws.qoa_frame_samples_gathered():
+  {==}
+
 def Laws.music_float_bits_as_they_are():
   {==}
 

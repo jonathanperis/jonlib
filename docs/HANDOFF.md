@@ -438,9 +438,49 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      at}`: the whole file decoded at load, by `Wav.decode` for 16/24-bit
      files and `Wav.decode.wide` for 32-bit ones). A new format is a new
      constructor with its read (`Music.read`), rewind and seek, and a
-     `case` in `Music.load_from_memory`; QOA is the next and smallest
-     (`qoaplay.c` decodes frame by frame, loops by itself and seeks to
-     QOA frames of 5120 samples). `audio_stream_callback` itself reads
+     `case` in `Music.load_from_memory`: QOA went in that way
+     (`MusicQoa`; `qoaplay.c` reads like dr_wav once the file is decoded
+     whole, and seeks to QOA frames of 5120 samples). MP3 is next and is
+     not small: `dr_mp3.h` (minimp3) in float, whose frames must be
+     decoded as the music asks for them (`country.mp3` is 1.4 MiB, about
+     a minute and a half: too long to decode whole in the JavaScript
+     lane, so `LoadWave` of it, which `audio_spectrum_visualizer` does,
+     needs more than the decoder). **A plan for it, in pieces that each
+     have their own reference dump** (surveyed 2026-10-12; nothing is
+     written yet): `country.mp3` is MPEG-1 Layer III, 128 kbit/s, 44100
+     Hz, joint stereo, and starts with an Info/LAME frame, so
+     `drmp3_init_internal`'s tag handling matters (ID3v1/APE at the end,
+     ID3v2 at the start, the Xing/Info frame skipped, LAME's delay and
+     padding trimmed; lines 2943-3297). (a) headers and sync:
+     `drmp3_hdr_*`, `drmp3d_match_frame`, `drmp3d_find_frame`, and the
+     scan that gives `drmp3_get_pcm_frame_count` (what
+     `music.frameCount` is); integers only. (b) Layer III side info, the
+     bit reservoir, scalefactors and Huffman: `drmp3_L3_read_side_info`
+     to `drmp3_L3_huffman`, which already writes floats (`pow_43`,
+     `ldexp_q2`). (c) stereo, reorder, antialias and the IMDCT
+     (`drmp3_L3_midside_stereo` to `drmp3_L3_imdct_gr`). (d) the
+     polyphase synthesis (`drmp3d_DCT_II`, `drmp3d_synth`), then
+     `drmp3_read_pcm_frames_f32` and seeking. raylib does not define
+     `DR_MP3_NO_SIMD`: the reference runs the SSE paths, so each float
+     stage has to be compared with the reference as built, not with the
+     scalar C. Layers I and II decode in dr_mp3 too and can be refused
+     at first. The tables (Huffman, scalefactor bands,
+     windows, `g_win`, `g_sec`) are float and integer literals to carry
+     over as bit patterns. There is no MP3 encoder here: test files are
+     `country.mp3`, slices of its frames and mutations of them. Measured
+     with a small C program over dr_mp3 (2026-10-12): `country.mp3` is
+     4125934 frames (3583 MP3 frames of 1152, less LAME's delay of 1105
+     and padding of 577, both from the Info frame: with a Xing/Info
+     `FRAMES` field the count is that product and no scan is made;
+     without one `drmp3_get_pcm_frame_count` decodes every header); and
+     the float samples of the SSE build and of `-DDR_MP3_NO_SIMD`
+     **differ** (the reference is the SSE build; `-ffp-contract` changes
+     nothing there), so the port follows the SSE branches' operation
+     order. `drmp3_init` decodes the first frame whole, and the file path
+     reads through a 64 KiB window refilled below 16 KiB
+     (`drmp3_decode_next_frame_ex__callbacks`), which only matters for
+     how far `drmp3d_match_frame` can look on a damaged stream. The
+     bitstream is read forward only, so lists do (no `Array`). `audio_stream_callback` itself reads
      `buffer[SAMPLE_RATE]`, one float past its array, for the last
      column of its wave in every frame (AddressSanitizer agrees): its
      port is a refusal (`UNDEFINED_NATIVE`, docs/AUDIO.md). `audio_spectrum_visualizer` is listed ready but loads
@@ -488,6 +528,12 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
   your own (`either` in `src/wav.bend` and `src/mixer.bend`). The JavaScript
   lane is right, so a probe whose first lane passes and whose native lane
   differs in one flag is this (it cost the stream reads an hour).
+- **Long files on the JavaScript lane:** a decoder whose gate only saw short
+  files can still overflow there on a real one. `Qoa.decode` did on
+  raylib's `target.qoa` (44100 stereo frames): `List.append` onto the
+  samples so far and `List.take` of a frame's 10240 samples both recurse to
+  the list's length. Base's `List.take` and `List.append` are not tail
+  calls: use `Mixer.take.rev` / an accumulator for anything a file sizes.
 - **Long list literals** in a generated program overflow the JavaScript
   parser's stack around 2000 elements: pass them in chunks of 64
   (`words.joined` in `tools/sound_probe.py`, `input_bytes` in

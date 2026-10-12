@@ -7211,10 +7211,14 @@ def AudioClock.advance_processing(~P: Type, ~answer: U32 -> U32 -> P -> P & +Lis
 # program copies while its ctxData points at the decoder's state; here the
 # decoder's state is in the Music value, so what changes it (an update, a
 # stop, a seek) gives the Music back. `kind` is raylib's ctxType (1:
-# MUSIC_AUDIO_WAV) and `looping` a field the program sets, as in raylib.
+# MUSIC_AUDIO_WAV, 5: MUSIC_AUDIO_QOA) and `looping` a field the program
+# sets, as in raylib. A decoder is the file's frames as the stream holds
+# them and the frame it is at (dr_wav's read cursor, qoaplay's
+# sample_position).
 type Music.Context is Data:
   MusicNone{}
   MusicWav{samples: +List<U32>, at: U32}
+  MusicQoa{samples: +List<U32>, at: U32}
 
 type Music is Data:
   Music{stream: AudioStream, frames: U32, looping: Bool, kind: U32, context: Music.Context}
@@ -7253,21 +7257,60 @@ def Music.decode.wav(bits: U32, +audio: AudioDevice, +bytes: +List<U32>) -> Audi
     case 32: Music.loaded(Wav.decode.wide(bytes), audio, 32)
     case _: Music.loaded.refused(Wav.decode(bytes), audio)
 
-def Music.decode.selected(wav: Bool, +audio: AudioDevice, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
-  match wav:
-    case True{}: Music.decode.wav(Wav.bits(bytes), audio, bytes)
-    case False{}: (audio, Fail{UnsupportedWaveFormat{}})
+# qoaplay's sample: a 16-bit sample over 32768.0, as a float (exact).
+def Music.qoa.float(+word: U32) -> U32:
+  +negative = (word >= 32768 : U32)
+  +magnitude = (U32.to_f32(Bool.pick(U32, negative, (65536 - word : U32), word)) / 32768.0 : F32)
+  F32.bits(Bool.pick(F32, negative, F32.neg(magnitude), magnitude))
 
-# LoadMusicStreamFromMemory for ".wav" (".WAV") data: every file Wave.decode
+def Music.qoa.floats(samples: +List<U32>, acc: +List<U32>) -> +List<U32>:
+  match samples:
+    case Nil{}: List.reverse(&2, U32, acc)
+    case Con{+sample, rest}: Music.qoa.floats(rest, Con{Music.qoa.float(sample), acc})
+
+def Music.loaded.qoa(loaded: AudioDevice & AudioStream, +frames: U32, +samples: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  (+audio, +stream) = loaded
+  (audio, Done{Music{stream, frames, True{}, 5, MusicQoa{Music.qoa.floats(samples, Nil{}), 0}}})
+
+# qoaplay_open reads the header and decodes a frame at a time; the music's
+# frames are the header's count. Jonlib decodes the file at once, and takes
+# it only when every frame the header counts is there.
+def Music.decode.qoa.whole(whole: Bool, +audio: AudioDevice, +rate: U32, +channels: U32, +frames: U32, +samples: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  match whole:
+    case True{}: Music.loaded.qoa(AudioStream.load(audio, rate, 32, channels), frames, samples)
+    case False{}: (audio, Fail{InvalidWaveData{}})
+
+def Music.decode.qoa(outcome: Qoa.Outcome, +audio: AudioDevice, +declared: U32) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  match outcome:
+    case Qoa.Decoded{+rate, +channels, +frames, +samples}: Music.decode.qoa.whole(U32.is_eq(frames, declared), audio, rate, channels, frames, samples)
+    case Qoa.Invalid{False{}}: (audio, Fail{InvalidWaveHeader{}})
+    case Qoa.Invalid{True{}}: (audio, Fail{InvalidWaveData{}})
+
+# The header's sample count: bytes 4..7, big-endian.
+def Music.qoa.declared(bytes: +List<U32>) -> U32:
+  match bytes:
+    case Con{_, Con{_, Con{_, Con{_, Con{+a, Con{+b, Con{+c, Con{+d, _}}}}}}}}: ((((a << 24n) .|. (b << 16n)) .|. (c << 8n)) .|. d : U32)
+    case _: 0
+
+def Music.decode.selected(kind: U32, +audio: AudioDevice, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  match kind:
+    case 1: Music.decode.wav(Wav.bits(bytes), audio, bytes)
+    case 5: Music.decode.qoa(Qoa.decode(bytes), audio, Music.qoa.declared(bytes))
+    case _: (audio, Fail{UnsupportedWaveFormat{}})
+
+# LoadMusicStreamFromMemory. ".wav" (".WAV") data: every file Wave.decode
 # reads whose samples are 16, 24 or 32 bits wide, with a stream of the file's
-# rate and channels (16-bit samples, or floats for 32 bits) and looping on,
+# rate and channels (16-bit samples, or floats for 32 bits). ".qoa" (".QOA")
+# data: every file Wave.decode reads that holds all the frames its header
+# counts, with a float stream (qoaplay gives sample/32768.0). Looping is on,
 # as raylib sets it. The stream has no buffer where AudioStream.load gives
 # none (an unready device), and the music is still loaded. Fail, and no
-# stream: other tokens (OGG, MP3, QOA, FLAC, XM and MOD music are not
-# ported), other sample sizes, and what Wave.decode refuses (raylib would
-# read such a file again and again).
+# stream: other tokens (OGG, MP3, FLAC, XM and MOD music are not ported),
+# other WAV sample sizes, and what Wave.decode refuses (raylib would read
+# such a file again and again).
 def Music.load_from_memory(+audio: AudioDevice, +file_type: String, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
-  Music.decode.selected(String.eq(file_type, ".wav") || String.eq(file_type, ".WAV"), audio, bytes)
+  Music.decode.selected(Bool.pick(U32, String.eq(file_type, ".wav") || String.eq(file_type, ".WAV"), 1, Bool.pick(U32, String.eq(file_type, ".qoa") || String.eq(file_type, ".QOA"), 5, 0)),
+    audio, bytes)
 
 def Music.load.decoded(result: AudioDevice & Result<&1, &1, Wave.Error, Music>) -> AudioDevice & Result<&1, &1, Wave.IOError, Music>:
   match result:
@@ -7288,6 +7331,7 @@ def Music.context.loaded(context: Music.Context) -> Bool:
   match context:
     case MusicNone{}: False{}
     case MusicWav{_, _}: True{}
+    case MusicQoa{_, _}: True{}
 
 # IsMusicValid: a decoder, frames, and a rate, sample size and channels that
 # are not 0.
@@ -7329,6 +7373,7 @@ def Music.context.rewound(context: Music.Context) -> Music.Context:
   match context:
     case MusicNone{}: MusicNone{}
     case MusicWav{samples, _}: MusicWav{samples, 0}
+    case MusicQoa{samples, _}: MusicQoa{samples, 0}
 
 # StopMusicStream: the stream stops and the decoder goes back to its first
 # frame (whether the stream was playing or not).
@@ -7354,7 +7399,7 @@ def Music.wav.read(fuel: Nat, done: Bool, +samples: +List<U32>, +channels: U32, 
         case False{}:
           +count = U32.min(need, (total - at : U32))
           Music.wav.read(rest, U32.is_eq(count, need), samples, channels, total, Bool.pick(U32, U32.is_eq(count, need), (at + count : U32), 0), (need - count : U32),
-            List.reverse.go(&2, U32, List.take(&2, U32, List.drop(&2, U32, samples, U32.to_nat((at * channels : U32))), U32.to_nat((count * channels : U32))), acc))
+            Mixer.take.rev(U32.to_nat((count * channels : U32)), List.drop(&2, U32, samples, U32.to_nat((at * channels : U32))), acc))
 
 type Music.Read is Data:
   MusicRead{data: +List<U32>, context: Music.Context}
@@ -7363,10 +7408,17 @@ def Music.read.wav(read: +List<U32> & U32, +samples: +List<U32>) -> Music.Read:
   (+data, +at) = read
   MusicRead{List.reverse(&2, U32, data), MusicWav{samples, at}}
 
+def Music.read.qoa(read: +List<U32> & U32, +samples: +List<U32>) -> Music.Read:
+  (+data, +at) = read
+  MusicRead{List.reverse(&2, U32, data), MusicQoa{samples, at}}
+
+# qoaplay_decode reads the same way: at the end of the file it goes back to
+# the first frame (qoaplay_rewind) for the next sample.
 def Music.read(context: Music.Context, +channels: U32, +total: U32, +need: U32) -> Music.Read:
   match context:
     case MusicNone{}: MusicRead{Nil{}, MusicNone{}}
     case MusicWav{+samples, +at}: Music.read.wav(Music.wav.read(U32.to_nat(((need / U32.max(total, 1)) + 3 : U32)), False{}, samples, channels, total, U32.min(at, total), need, Nil{}), samples)
+    case MusicQoa{+samples, +at}: Music.read.qoa(Music.wav.read(U32.to_nat(((need / U32.max(total, 1)) + 3 : U32)), False{}, samples, channels, total, U32.min(at, total), need, Nil{}), samples)
 
 def Music.fed(read: Music.Read, +audio: AudioDevice, +stream: AudioStream, +frames: U32, +looping: Bool, +kind: U32, +count: U32) -> AudioDevice & Music:
   MusicRead{+data, context} = read
@@ -7430,12 +7482,26 @@ def Music.update(+audio: AudioDevice, music: Music) -> AudioDevice & Music:
   Music.update.second(Music.update.half(Music.update.playing(AudioDevice.buffer.tracked(audio, AudioStream.buffer(stream))) && (frames > 0 : U32),
     AudioDevice.buffer.tracked(audio, AudioStream.buffer(stream)), 0, audio, stream, frames, looping, kind, context))
 
+# qoaplay_seek_frame(positionInFrames/QOA_FRAME_LEN): the start of the QOA
+# frame (5120 samples) the position is in, at most that of frame
+# samples/5120.
+def Music.qoa.sought(+position: U32, +total: U32) -> U32:
+  (U32.min((position / 5120 : U32), (total / 5120 : U32)) * 5120 : U32)
+
 # drwav_seek_to_pcm_frame: the frame sought, at most the file's last (a file
 # without frames stays where it is).
 def Music.context.sought(context: Music.Context, +position: U32, +total: U32) -> Music.Context:
   match context:
     case MusicNone{}: MusicNone{}
     case MusicWav{samples, +at}: MusicWav{samples, Bool.pick(U32, U32.is_eq(total, 0), at, U32.min(position, total))}
+    case MusicQoa{samples, _}: MusicQoa{samples, Music.qoa.sought(position, total)}
+
+# What SeekMusicStream writes to the stream's framesProcessed: the frame
+# sought, or for QOA the frame its decoder went to.
+def Music.context.given(context: Music.Context, +position: U32, +total: U32) -> U32:
+  match context:
+    case MusicQoa{_, _}: Music.qoa.sought(position, total)
+    case _: position
 
 def Music.seek.buffers(buffers: +List<AudioDevice.Buffer>, +id: U32, +done: U32, acc: +List<AudioDevice.Buffer>) -> +List<AudioDevice.Buffer>:
   match buffers:
@@ -7448,7 +7514,8 @@ def Music.seek.checked(valid: Bool, +audio: AudioDevice, +stream: AudioStream, +
     case False{}: (audio, Music{stream, frames, looping, kind, context})
     case True{}:
       AudioDevice{ready, master, next, +buffers, blocks, size} = audio
-      (AudioDevice{ready, master, next, Music.seek.buffers(buffers, AudioStream.buffer(stream), position, Nil{}), blocks, size}, Music{stream, frames, looping, kind, Music.context.sought(context, position, frames)})
+      (AudioDevice{ready, master, next, Music.seek.buffers(buffers, AudioStream.buffer(stream), Music.context.given(context, position, frames), Nil{}), blocks, size},
+        Music{stream, frames, looping, kind, Music.context.sought(context, position, frames)})
 
 # The frame of a position in seconds: (unsigned int)(position*sampleRate).
 def Music.seek.frame(+position: F32, +rate: U32) -> F32:
@@ -7457,7 +7524,8 @@ def Music.seek.frame(+position: F32, +rate: U32) -> F32:
 # SeekMusicStream(music, position): the decoder goes to the frame of the
 # position (dr_wav stops at the file's last frame), the stream's
 # framesProcessed is that frame, not clamped, and both halves are processed,
-# so the next update fills them from there. Nothing, and the music as it is:
+# so the next update fills them from there. A QOA music goes to the start of
+# the QOA frame the position is in, and that is its framesProcessed. Nothing, and the music as it is:
 # a position whose frame is not an unsigned int (negative from -1 down, 2^32
 # and more, NaN), a stream without a tracked buffer (raylib writes through
 # the pointer) and an unready device.

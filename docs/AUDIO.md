@@ -539,13 +539,13 @@ what moves it gives the music back.
 
 | Function | raylib | Contract |
 |---|---|---|
-| `Music.load(device, path)` / `Music.load_from_memory(device, type, bytes)` | `LoadMusicStream` / `LoadMusicStreamFromMemory` | A WAV file: a stream of the file's rate and channels, the frame count, looping on. 16- and 24-bit files play as 16-bit samples (`drwav_read_pcm_frames_s16`), 32-bit ones as floats (`drwav_read_pcm_frames_f32`: a PCM sample `x` is `(float)(x/2147483648.0)`, an IEEE float its own bits). The stream has no buffer on an unready device; the music is still loaded. |
+| `Music.load(device, path)` / `Music.load_from_memory(device, type, bytes)` | `LoadMusicStream` / `LoadMusicStreamFromMemory` | A WAV or QOA file: a stream of the file's rate and channels, the frame count, looping on. 16- and 24-bit WAV files play as 16-bit samples (`drwav_read_pcm_frames_s16`), 32-bit ones as floats (`drwav_read_pcm_frames_f32`: a PCM sample `x` is `(float)(x/2147483648.0)`, an IEEE float its own bits). A QOA file plays as floats, `sample/32768.0` (`qoaplay_decode`), and its frames are the header's count. The stream has no buffer on an unready device; the music is still loaded. |
 | `Music.is_valid(music)` | `IsMusicValid` | A decoder, frames, and a rate, sample size and channels that are not 0. |
 | `Music.unload(device, music)` | `UnloadMusicStream` | The stream's buffer is untracked. |
 | `Music.play` / `pause` / `resume` / `is_playing` / `set_volume` / `set_pitch` / `set_pan` | `PlayMusicStream` ... | The stream's. |
 | `Music.update(device, music) -> AudioDevice & Music` | `UpdateMusicStream` | Each processed half of a playing music's stream takes the decoder's next frames, the first half then the second. The frames to stream are a whole half while the music loops or has as many left (`frameCount - framesProcessed`, unsigned), else what is left (zeros after them); a read past the file's end goes on from its first frame. With none left, the music stops once both halves are processed, its decoder back at the first frame. |
 | `Music.stop(device, music) -> AudioDevice & Music` | `StopMusicStream` | The stream stops and the decoder goes back to its first frame, playing or not. |
-| `Music.seek(device, music, position) -> AudioDevice & Music` | `SeekMusicStream` | The decoder goes to frame `(unsigned int)(position*sampleRate)`, at most the file's last; the stream's `framesProcessed` is that frame, not clamped, and both halves are processed. |
+| `Music.seek(device, music, position) -> AudioDevice & Music` | `SeekMusicStream` | The decoder goes to frame `(unsigned int)(position*sampleRate)`, at most the file's last; the stream's `framesProcessed` is that frame, not clamped, and both halves are processed. A QOA music goes to the start of the QOA frame (5120 samples) the position is in, at most that of frame `samples/5120` (`qoaplay_seek_frame`), and that is its `framesProcessed`. |
 | `Music.time_length(music)` | `GetMusicTimeLength` | `(float)frameCount/sampleRate`. |
 | `Music.time_played(device, music) -> Maybe<F32>` | `GetMusicTimePlayed` | `framesProcessed`, less the frames still in the halves (no more than the music has unless it loops), plus those of the half being played that went to the mix, modulo `frameCount` as C ints (plus `frameCount` when negative), over the rate. 0 without a buffer. |
 
@@ -555,16 +555,18 @@ is `Music{stream, frames, False{}, kind, context}`). A program calls
 `UpdateMusicStream`: the halves the device read through in between are
 filled again.
 
-Not loaded (a typed error, and no stream): sample sizes other than 16, 24
-and 32 bits (raylib streams whatever its shared buffer holds for them),
-what `Wave.decode` refuses, and every other format. OGG, MP3, QOA, FLAC, XM
-and MOD music are not ported yet. Left as they are: `Music.update` for a
+Not loaded (a typed error, and no stream): WAV sample sizes other than 16,
+24 and 32 bits (raylib streams whatever its shared buffer holds for them),
+what `Wave.decode` refuses, a QOA file that does not hold every frame its
+header counts (qoaplay decodes a frame at a time and would play what is
+there), and every other format. OGG, MP3, FLAC, XM and MOD music are not
+ported yet. Left as they are: `Music.update` for a
 music without frames (raylib reads it for ever when it loops);
 `Music.seek` for a position whose frame is not an unsigned int, a stream
 without a tracked buffer (raylib writes through the pointer) and an unready
 device. `Music.time_played` is None for a music without frames (raylib
 divides by them), counts that do not fit an int, an untracked buffer and an
-unready device. A WAV file's frames are all decoded when it is loaded.
+unready device. A file's frames are all decoded when it is loaded.
 
 ### The clock
 
@@ -600,7 +602,7 @@ backend, so that the program can read `AUDIO` and the audio buffers, and
 stops the device right after `InitAudioDevice`: its thread mixes nothing,
 and the program asks for each callback itself
 (`ma_device_handle_backend_data_callback`) with the script's frame counts.
-122 scripts of 1223 steps over four sound slots run on both sides and on a
+124 scripts of 1260 steps over four sound slots run on both sides and on a
 Python model of raudio's state; after every step the ready flag, the master
 volume bits, every slot's handle fields with `IsSoundValid` and
 `IsSoundPlaying`, and every tracked buffer (its number, block, size, volume,
@@ -659,12 +661,17 @@ music's validity, frame count, looping flag, decoder position
 halves and wrap round the file, a music that does not loop to its end and
 its stop, seeks inside, past the end and to a frame between -1 and 0, a
 stop and a play, pauses, a music loaded before the device, a missing file,
-a processor on a music under the clock, and an unload. The waves are
+a processor on a music under the clock, and an unload; and the QOA music of
+raylib's examples (`target.qoa`, 44100 stereo frames at 22050 Hz, which the
+reference also decodes with `LoadWave` for the model): updates of 2000-frame
+halves, seeks to QOA frames inside, into the last one and past the end, the
+read that goes round the end of the file, a stop and a play that does not
+loop, and raylib's own 12800-frame halves. The waves are
 8-, 16- and 32-bit, of 1, 2, 4 and 6 channels, at 48000, 8000, 22050, 44100
 and 96000 Hz, with the empty cases above, and the files are the four `.wav`
 files of the examples that only play sounds (`boom`, `buttonfx`, `sound`,
 `coin`; 26522 to 48000 frames each), a small generated one, a missing one,
-one that is not a WAV and another extension. 81 scripts are compared with
+one that is not a WAV and another extension. 83 scripts are compared with
 raylib; the 41 with a step raylib has no defined answer for, or a step or
 a callback Jonlib refuses, are checked against the model on Jonlib alone. `IsSoundPlaying` is asked of raylib only on
 a ready device and for a tracked buffer, and no script opens the device over
@@ -692,5 +699,5 @@ the probe's.
 
 Not yet available: the fused (FMA) profile of the mixer, the profile of
 hosts that keep subnormals in the callback, music from files other than
-WAV, and a host device (the clock is a model of its thread).
+WAV and QOA, and a host device (the clock is a model of its thread).
 No GPU evidence.

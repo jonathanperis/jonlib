@@ -217,17 +217,22 @@ def frame.states(n: Nat, +bytes: +List<U32>, +p: U32, +acc: +List<Lms>) -> +List
     case 0n: List.reverse(&2, Lms, acc)
     case 1n+k: frame.states(k, bytes, (p + 16 : U32), Con{lms.read(be64(bytes, p), be64(bytes, (p + 8 : U32))), acc})
 
-def plus(values: List<U32>, acc: +List<U32>) -> +List<U32>:
-  match values:
-    case Nil{}: List.reverse(&2, U32, acc)
-    case Con{value, rest}: plus(rest, Con{value, acc})
+# The first n values onto acc, the last of them first (a file has more
+# samples than a recursion that builds its list on the way back can hold).
+def take.onto(n: Nat, values: List<U32>, +acc: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: acc
+    case 1n+k:
+      match values:
+        case Nil{}: acc
+        case Con{value, rest}: take.onto(k, rest, Con{value, acc})
 
 def capacity(+count: U32) -> Nat:
   Bool.pick(Nat, (count <= 1 : U32), 0n, 1n+U32.log2((count - 1 : U32)))
 
-# The file's decoding state: position, frames decoded, samples, and whether
-# raylib's behavior became undefined (writes past its buffer, reads past the
-# data, more than 8 channels).
+# The file's decoding state: position, frames decoded, samples (the last
+# first), and whether raylib's behavior became undefined (writes past its
+# buffer, reads past the data, more than 8 channels).
 type Run is Data:
   Run{p: U32, frames: U32, samples: +List<U32>, done: Bool, undefined: Bool}
 
@@ -235,8 +240,7 @@ def run.frame(frame: Frame, +start: U32, +decoded: U32, +samples: +List<U32>, +c
   match frame:
     case Frame{p, _, _, True{}}: Run{p, decoded, samples, True{}, True{}}
     case Frame{+p, _, out, False{}}:
-      +more = List.append(&2, U32, samples, List.take(&2, U32, plus(Array.to_list(~U32, out), Nil{}), U32.to_nat((count * channels : U32))))
-      Run{p, (decoded + count : U32), more, ((decoded + count) >= total : U32), ((decoded + count) > total : U32)}
+      Run{p, (decoded + count : U32), take.onto(U32.to_nat((count * channels : U32)), Array.to_list(~U32, out), samples), ((decoded + count) >= total : U32), ((decoded + count) > total : U32)}
 
 # qoa_decode_frame at p; a failed frame ends the file with what was decoded.
 def run.step(+bytes: +List<U32>, +len: U32, +channels: U32, +rate: U32, +total: U32, +p: U32, +decoded: U32, +samples: +List<U32>) -> Run:
@@ -265,7 +269,7 @@ type Outcome is Type:
 def run.result(run: Run, +rate: U32, +channels: U32) -> Outcome:
   match run:
     case Run{_, _, _, _, True{}}: Invalid{True{}}
-    case Run{_, decoded, samples, _, False{}}: Decoded{rate, channels, decoded, samples}
+    case Run{_, decoded, samples, _, False{}}: Decoded{rate, channels, decoded, List.reverse(&2, U32, samples)}
 
 def byte_count(data: +List<U32>, +count: U32) -> U32:
   match data:
