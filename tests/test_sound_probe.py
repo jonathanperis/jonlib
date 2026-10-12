@@ -200,8 +200,8 @@ class StreamTests(unittest.TestCase):
         self.assertEqual(model.sounds[:3], [(1, 0, 44100, 16, 1), (2, 0, 22050, 8, 2), (3, 0, 48000, 32, 3)])
         self.assertEqual([(b['frames'], len(model.blocks[b['id']]), b['source'], len(b['x0']), b['coef'] is None) for b in model.buffers],
                          [(25600, 25600, 44100, 1, False), (960, 1920, 22050, 2, False), (1200, 3600, 48000, 2, True)])
-        self.assertEqual((model.buffers[0]['stream'], model.undefined), (dict(size=16, channels=1, first=True, second=True, called=False), False))
-        self.assertTrue(model.state().endswith(',0,2166136261,32/3/110,p'))
+        self.assertEqual((model.buffers[0]['stream'], model.undefined), (dict(size=16, channels=1, first=True, second=True, called=False, done=0), False))
+        self.assertTrue(model.state().endswith(',0,2166136261,32/3/110/0,p'))
 
     def test_no_buffer_where_raylib_makes_none_and_where_jonlib_refuses(self):
         model, _ = run(('stream', 0, 44100, 16, 1), ('init',), ('stream', 1, 0, 16, 1), ('stream', 2, 44100, 16, 0))
@@ -216,11 +216,11 @@ class StreamTests(unittest.TestCase):
         self.assertEqual((model.blocks[1][:6], b['stream']['first'], b['stream']['second']), ([1, 2, 3, 4, 0, 0], False, True))
         model.step(('feed', 0, 480, [7] * 960))
         self.assertEqual((model.blocks[1][958:962], b['stream']['first'], b['stream']['second']), ([0, 0, 7, 7], False, False))
-        model.step(('feed', 0, 1, [9, 9]))                    # no half is processed: nothing
-        self.assertEqual((model.blocks[1][:2], model.undefined), ([1, 2], False))
+        model.step(('feed', 0, 1, [9, 9]))                    # no half is processed: nothing, and its frame is not counted
+        self.assertEqual((model.blocks[1][:2], b['stream']['done'], model.undefined), ([1, 2], 482, False))
         model.step(('play', 0))                               # both are again
         model.step(('feed', 0, 481, []))                      # too many frames: nothing is written
-        self.assertEqual((b['stream'], model.blocks[1][:2], model.undefined), (dict(size=16, channels=2, first=True, second=True, called=False), [1, 2], False))
+        self.assertEqual((b['stream'], model.blocks[1][:2], model.undefined), (dict(size=16, channels=2, first=True, second=True, called=False, done=481), [1, 2], False))
         model.step(('feed', 0, 1, [5]))                       # a list that is not frames*channels long
         self.assertEqual((model.blocks[1][:2], model.undefined), ([1, 2], True))
 
@@ -257,7 +257,7 @@ class StreamTests(unittest.TestCase):
         self.assertEqual((sp.answer_sample(8, 0), sp.answer_sample(8, 7), sp.answer_sample(16, 0), sp.answer_sample(16, 3)), (11, 14, 50986, 873))      # (3*53 - 150)*97
         self.assertEqual(model.mix(3), self.words(0.0, 0.0, -33 / 64 * 0.6875, -2 / 64 * 0.6875, 29 / 64 * 0.6875, -7 / 64 * 0.6875))    # one frame late
         b = model.buffers[0]                                  # neither the cursor nor the halves move; the callback wrote 3 frames of 2 samples
-        self.assertEqual((model.asks, model.calls, b['cursor'], b['stream']), ([(1, 3)], [6, 0, 0, 0], 0, dict(size=32, channels=2, first=True, second=True, called=True)))
+        self.assertEqual((model.asks, model.calls, b['cursor'], b['stream']), ([(1, 3)], [6, 0, 0, 0], 0, dict(size=32, channels=2, first=True, second=True, called=True, done=3)))
         model.step(('callback', 0, 0))                        # without it the halves are read again: both processed, silence
         self.assertEqual((model.mix(2)[2:], model.asks, model.buffers[0]['stream']['called']), ([0, 0], [], False))
 

@@ -6510,35 +6510,35 @@ def AudioStream.set_callback(audio: AudioDevice, +stream: AudioStream, +on: Bool
   AudioDevice{+ready, master, next, buffers, blocks, size} = audio
   AudioDevice{ready, master, next, AudioStream.calling.buffers(ready, buffers, AudioStream.buffer(stream), on, Nil{}), blocks, size}
 
-def AudioStream.fed.buffer(buffer: AudioDevice.Buffer, +wrote: Bool) -> AudioDevice.Buffer:
+def AudioStream.fed.buffer(buffer: AudioDevice.Buffer, +wrote: Bool, +given: U32) -> AudioDevice.Buffer:
   AudioBuffer{id, block, frames, volume, pitch, pan, playing, paused, head} = buffer
-  AudioBuffer{id, block, frames, volume, pitch, pan, playing, paused, Mixer.Head.fed(head, wrote)}
+  AudioBuffer{id, block, frames, volume, pitch, pan, playing, paused, Mixer.Head.fed(head, wrote, given)}
 
-def AudioStream.fed.buffers(buffers: +List<AudioDevice.Buffer>, +id: U32, +wrote: Bool) -> +List<AudioDevice.Buffer>:
+def AudioStream.fed.buffers(buffers: +List<AudioDevice.Buffer>, +id: U32, +wrote: Bool, +given: U32) -> +List<AudioDevice.Buffer>:
   match buffers:
     case Nil{}: Nil{}
     case Con{+buffer, +rest}:
       AudioBuffer{+found, _, _, _, _, _, _, _, _} = buffer
-      Bool.pick(+List<AudioDevice.Buffer>, U32.is_eq(found, id), Con{AudioStream.fed.buffer(buffer, wrote), rest}, Con{buffer, AudioStream.fed.buffers(rest, id, wrote)})
+      Bool.pick(+List<AudioDevice.Buffer>, U32.is_eq(found, id), Con{AudioStream.fed.buffer(buffer, wrote, given), rest}, Con{buffer, AudioStream.fed.buffers(rest, id, wrote, given)})
 
 # The half's samples become `data` and zeros after it.
-def AudioStream.fed.block(found: Maybe<&2, +List<U32>>, +audio: AudioDevice, +id: U32, +block: U32, +data: +List<U32>, +offset: U32, +count: U32, +width: U32) -> AudioDevice:
+def AudioStream.fed.block(found: Maybe<&2, +List<U32>>, +audio: AudioDevice, +id: U32, +block: U32, +data: +List<U32>, +offset: U32, +count: U32, +width: U32, +given: U32) -> AudioDevice:
   match found:
     case None{}: audio
     case Some{+old}:
       AudioDevice{ready, master, next, +buffers, +blocks, stream} = audio
-      AudioDevice{ready, master, next, AudioStream.fed.buffers(buffers, id, True{}), AudioDevice.block.put(blocks, block, Mixer.splice(old, offset, data, (width - count : U32), width)), stream}
+      AudioDevice{ready, master, next, AudioStream.fed.buffers(buffers, id, True{}, given), AudioDevice.block.put(blocks, block, Mixer.splice(old, offset, data, (width - count : U32), width)), stream}
 
-def AudioStream.fed.cursor(+audio: AudioDevice, +id: U32) -> AudioDevice:
+def AudioStream.fed.cursor(+audio: AudioDevice, +id: U32, +given: U32) -> AudioDevice:
   AudioDevice{ready, master, next, +buffers, blocks, stream} = audio
-  AudioDevice{ready, master, next, AudioStream.fed.buffers(buffers, id, False{}), blocks, stream}
+  AudioDevice{ready, master, next, AudioStream.fed.buffers(buffers, id, False{}, given), blocks, stream}
 
 # 0: nothing; 1: too many frames (only the cursor); 2: the half is written.
 def AudioStream.fed(kind: U32, +audio: AudioDevice, +id: U32, +block: U32, +data: +List<U32>, +target: U32, +sub: U32, +channels: U32, +frames: U32) -> AudioDevice:
   match kind:
     case 0: audio
-    case 1: AudioStream.fed.cursor(audio, id)
-    case _: AudioStream.fed.block(AudioDevice.block.held(audio, block), audio, id, block, data, ((target * sub) * channels : U32), (frames * channels : U32), (sub * channels : U32))
+    case 1: AudioStream.fed.cursor(audio, id, frames)
+    case _: AudioStream.fed.block(AudioDevice.block.held(audio, block), audio, id, block, data, ((target * sub) * channels : U32), (frames * channels : U32), (sub * channels : U32), frames)
 
 def AudioStream.update.feed(+kind: Mixer.Feed, +audio: AudioDevice, +id: U32, +block: U32, +size: U32, +data: +List<U32>, +frames: U32) -> AudioDevice:
   +target = Mixer.Feed.target(kind)
@@ -6557,7 +6557,8 @@ def AudioStream.update.head(head: Maybe<&2, Mixer.Head>, +audio: AudioDevice, +i
 # (frames*channels samples in the stream's format) and zeros after them, and
 # is no longer processed; with both halves processed the cursor goes back to
 # the first frame. Nothing when no half is processed. More frames than a half
-# holds (a negative int too) only move the cursor, as in raylib. The state as
+# holds (a negative int too) only move the cursor, as in raylib. Either way
+# the frames count as given (framesProcessed). The state as
 # it is: an unready device, a buffer that is 0, not tracked or a sound's, and
 # a `data` that does not hold frames*channels samples.
 def AudioStream.update(+audio: AudioDevice, +stream: AudioStream, +data: +List<U32>, +frames: U32) -> AudioDevice:

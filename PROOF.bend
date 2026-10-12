@@ -1937,6 +1937,18 @@ def Laws.processors_sample_added():
 def Laws.processors_chained():
   {==}
 
+def Laws.stream_frames_given_counted():
+  {==}
+
+def Laws.stream_frames_given_wrap():
+  {==}
+
+def Laws.stream_play_forgets_frames_given():
+  {==}
+
+def Laws.stream_sound_counts_no_frames():
+  {==}
+
 def Laws.stream_sound_always_processed():
   {==}
 

@@ -151,20 +151,23 @@ def flow(fuel: Nat, phase: U32, input: +List<+List<U32>>, +st: R.St, +acc: +List
 # `channels` channels), each half marked once the device has read it through
 # (isSubBufferProcessed). `called`: the stream has a callback
 # (SetAudioStreamCallback), which gives its frames in place of the halves.
+# `done`: framesProcessed, the frames the stream was given since it was last
+# played or stopped (by UpdateAudioStream and by its callback; an unsigned
+# int that wraps), which the music functions read.
 type Feed is Data:
   HeadStatic{}
-  HeadStream{size: U32, channels: U32, first: Bool, second: Bool, called: Bool}
+  HeadStream{size: U32, channels: U32, first: Bool, second: Bool, called: Bool, done: U32}
 
 def Feed.static(kind: Feed) -> Bool:
   match kind:
     case HeadStatic{}: True{}
-    case HeadStream{_, _, _, _, _}: False{}
+    case HeadStream{_, _, _, _, _, _}: False{}
 
-# PlayAudioBuffer and a stop mark both halves processed.
+# PlayAudioBuffer and a stop mark both halves processed, and no frame given.
 def Feed.fresh(kind: Feed) -> Feed:
   match kind:
     case HeadStatic{}: HeadStatic{}
-    case HeadStream{size, channels, _, _, called}: HeadStream{size, channels, True{}, True{}, called}
+    case HeadStream{size, channels, _, _, called, _}: HeadStream{size, channels, True{}, True{}, called, 0}
 
 # A buffer's place: its converter's input rate (48000 Hz for a sound, a
 # stream's own) and output rate (the device's 48000 Hz until
@@ -223,47 +226,59 @@ def Head.pitched(head: Head, +wanted: U32) -> Head:
 # the channels first when there are more), and both halves are processed.
 def Head.stream(+source: U32, +size: U32, +channels: U32) -> Head:
   +g = C.gcd(64n, source, 48000)
-  Head.rated(rating((source / g : U32), (48000 / g : U32)), (source / g : U32), (48000 / g : U32), source, 48000, 0, R.start(U32.min(channels, 2)), Nil{}, HeadStream{size, channels, True{}, True{}, False{}})
+  Head.rated(rating((source / g : U32), (48000 / g : U32)), (source / g : U32), (48000 / g : U32), source, 48000, 0, R.start(U32.min(channels, 2)), Nil{}, HeadStream{size, channels, True{}, True{}, False{}, 0})
 
 # UpdateAudioStream's half: 0 or 1, the first that is processed; 2 when
 # neither is (or for a sound).
 def Feed.target(kind: Feed) -> U32:
   match kind:
     case HeadStatic{}: 2
-    case HeadStream{_, _, first, second, _}: Bool.pick(U32, first, 0, Bool.pick(U32, second, 1, 2))
+    case HeadStream{_, _, first, second, _, _}: Bool.pick(U32, first, 0, Bool.pick(U32, second, 1, 2))
 
 def Feed.both(kind: Feed) -> Bool:
   match kind:
     case HeadStatic{}: False{}
-    case HeadStream{_, _, first, second, _}: first && second
+    case HeadStream{_, _, first, second, _, _}: first && second
 
 # IsAudioStreamProcessed: a half is processed (a sound's always are).
 def Feed.processed(kind: Feed) -> Bool:
   match kind:
     case HeadStatic{}: True{}
-    case HeadStream{_, _, first, second, _}: first || second
+    case HeadStream{_, _, first, second, _, _}: first || second
 
 def Feed.channels(kind: Feed) -> U32:
   match kind:
     case HeadStatic{}: 2
-    case HeadStream{_, channels, _, _, _}: channels
+    case HeadStream{_, channels, _, _, _, _}: channels
 
 def Feed.filled(kind: Feed, +target: U32) -> Feed:
   match kind:
     case HeadStatic{}: HeadStatic{}
-    case HeadStream{size, channels, first, second, called}: HeadStream{size, channels, first && U32.is_ne(target, 0), second && U32.is_ne(target, 1), called}
+    case HeadStream{size, channels, first, second, called, done}: HeadStream{size, channels, first && U32.is_ne(target, 0), second && U32.is_ne(target, 1), called, done}
 
 def Feed.called(kind: Feed) -> Bool:
   match kind:
     case HeadStatic{}: False{}
-    case HeadStream{_, _, _, _, called}: called
+    case HeadStream{_, _, _, _, called, _}: called
 
 # SetAudioStreamCallback: with a callback or without (NULL); nothing for a
 # sound.
 def Feed.calling(kind: Feed, +on: Bool) -> Feed:
   match kind:
     case HeadStatic{}: HeadStatic{}
-    case HeadStream{size, channels, first, second, _}: HeadStream{size, channels, first, second, on}
+    case HeadStream{size, channels, first, second, _, done}: HeadStream{size, channels, first, second, on, done}
+
+# framesProcessed (0 for a sound, which nothing asks).
+def Feed.done(kind: Feed) -> U32:
+  match kind:
+    case HeadStatic{}: 0
+    case HeadStream{_, _, _, _, _, done}: done
+
+# `frames` more frames given (unsigned int arithmetic).
+def Feed.given(kind: Feed, +frames: U32) -> Feed:
+  match kind:
+    case HeadStatic{}: HeadStatic{}
+    case HeadStream{size, channels, first, second, called, done}: HeadStream{size, channels, first, second, called, (done + frames : U32)}
 
 def Head.kind(head: Head) -> Feed:
   Head{_, _, _, _, _, _, _, kind} = head
@@ -275,10 +290,11 @@ def Head.calling(head: Head, +on: Bool) -> Head:
 
 # UpdateAudioStreamInLockedState on the head: with both halves processed the
 # cursor goes back to the first frame; a half that was written (`wrote`) is no
-# longer processed.
-def Head.fed(head: Head, +wrote: Bool) -> Head:
+# longer processed; and the `frames` asked for count as given, written or
+# not.
+def Head.fed(head: Head, +wrote: Bool, +frames: U32) -> Head:
   Head{source, rate, mode, coef, +cursor, st, residual, +kind} = head
-  Head{source, rate, mode, coef, Bool.pick(U32, Feed.both(kind), 0, cursor), st, residual, Bool.pick(Feed, wrote, Feed.filled(kind, Feed.target(kind)), kind)}
+  Head{source, rate, mode, coef, Bool.pick(U32, Feed.both(kind), 0, cursor), st, residual, Feed.given(Bool.pick(Feed, wrote, Feed.filled(kind, Feed.target(kind)), kind), frames)}
 
 # A list with `data`, then `pad` zeros, in place of the `skip` elements after
 # its first `offset` (the lists are long: no depth grows with them).
@@ -386,7 +402,7 @@ def take.padded(n: Nat, xs: +List<U32>, acc: +List<U32>) -> +List<U32>:
 
 # A stream with a callback is not read: the callback writes the frames asked
 # for, whatever the halves hold, and neither the cursor nor the halves
-# change. Here `data` is what the program's callback answered for this turn,
+# change (the frames count as given: framesProcessed). Here `data` is what the program's callback answered for this turn,
 # one answer after the other, and `taken` the frames of it already used;
 # where the answers end the frames are zeros (a turn made to learn what the
 # callback will be asked for).
@@ -646,26 +662,27 @@ def both(frames: +List<+List<U32>>, acc: +List<+List<U32>>) -> +List<+List<U32>>
 def Feed.flagged(feed: Feed, +first: Bool, +second: Bool) -> Feed:
   match feed:
     case HeadStatic{}: HeadStatic{}
-    case HeadStream{size, channels, _, _, called}: HeadStream{size, channels, first, second, called}
+    case HeadStream{size, channels, _, _, called, done}: HeadStream{size, channels, first, second, called, done}
 
 def turn.done(s: S, +source: U32, +rate: U32, +mode: U32, +coef: U32, feed: Feed) -> Turn:
-  S{need, _, _, cursor, playing, +first, +second, st, residual, acc, fine, _, asked} = s
-  Turn{Head{source, rate, mode, coef, cursor, st, residual, Feed.flagged(feed, first, second)}, playing, both(acc, Nil{}), fine && U32.is_eq(need, 0), List.reverse(&2, U32, asked)}
+  S{need, _, _, cursor, playing, +first, +second, st, residual, acc, fine, _, +asked} = s
+  Turn{Head{source, rate, mode, coef, cursor, st, residual, Feed.given(Feed.flagged(feed, first, second), asked.total(asked, 0))}, playing, both(acc, Nil{}), fine && U32.is_eq(need, 0),
+    List.reverse(&2, U32, asked)}
 
 def Feed.bits(feed: Feed) -> U32:
   match feed:
     case HeadStatic{}: 32
-    case HeadStream{size, _, _, _, _}: size
+    case HeadStream{size, _, _, _, _, _}: size
 
 def Feed.first(feed: Feed) -> Bool:
   match feed:
     case HeadStatic{}: True{}
-    case HeadStream{_, _, first, _, _}: first
+    case HeadStream{_, _, first, _, _, _}: first
 
 def Feed.second(feed: Feed) -> Bool:
   match feed:
     case HeadStatic{}: True{}
-    case HeadStream{_, _, _, second, _}: second
+    case HeadStream{_, _, _, second, _, _}: second
 
 # A playing buffer of `size` frames in a callback of n frames. Not fine: a
 # rate Jonlib does not resample (mode 2), a buffer without frames (raudio
