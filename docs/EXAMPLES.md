@@ -23,10 +23,6 @@ Totals: 212 examples; 201 ported, 5 ready, 6 waiting.
 | `ResumeMusicStream` | 3 |
 | `StopMusicStream` | 3 |
 | `GuiProgressBar` | 2 |
-| `AttachAudioMixedProcessor` | 1 |
-| `AttachAudioStreamProcessor` | 1 |
-| `DetachAudioMixedProcessor` | 1 |
-| `DetachAudioStreamProcessor` | 1 |
 | `GetApplicationDirectory` | 1 |
 | `GetFileModTime` | 1 |
 | `GetWorkingDirectory` | 1 |
@@ -249,8 +245,8 @@ Totals: 212 examples; 201 ported, 5 ready, 6 waiting.
 | `audio_music_stream` | audio | waiting | `GetMusicTimeLength`, `GetMusicTimePlayed`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `SetMusicPan`, `SetMusicVolume`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
 | `audio_raw_stream` | audio | ported |  |
 | `audio_sound_loading` | audio | ready |  |
-| `audio_mixed_processor` | audio | waiting | `AttachAudioMixedProcessor`, `DetachAudioMixedProcessor`, `LoadMusicStream`, `PlayMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
-| `audio_stream_effects` | audio | waiting | `AttachAudioStreamProcessor`, `DetachAudioStreamProcessor`, `GetMusicTimeLength`, `GetMusicTimePlayed`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
+| `audio_mixed_processor` | audio | waiting | `LoadMusicStream`, `PlayMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
+| `audio_stream_effects` | audio | waiting | `GetMusicTimeLength`, `GetMusicTimePlayed`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
 | `audio_sound_multi` | audio | ported |  |
 | `audio_sound_positioning` | audio | ported |  |
 | `audio_spectrum_visualizer` | audio | ready |  |

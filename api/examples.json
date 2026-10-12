@@ -6793,8 +6793,6 @@
    "libraries": [],
    "gui": [],
    "missing": [
-    "AttachAudioMixedProcessor",
-    "DetachAudioMixedProcessor",
     "LoadMusicStream",
     "PlayMusicStream",
     "UnloadMusicStream",
@@ -6835,8 +6833,6 @@
    "libraries": [],
    "gui": [],
    "missing": [
-    "AttachAudioStreamProcessor",
-    "DetachAudioStreamProcessor",
     "GetMusicTimeLength",
     "GetMusicTimePlayed",
     "LoadMusicStream",

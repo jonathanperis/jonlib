@@ -69,7 +69,7 @@ at the branch's head.
 `integrate/models-lgpl`, `feature/scoped-ci`, `feature/examples-batch-4` and the stack's branches are merged into `main` and deleted
 (`feature/examples-batch-5` was re-landed as pieces and deleted).
 
-Coverage (`python3 tools/api_plan.py check`): raylib.h 562/600 partial
+Coverage (`python3 tools/api_plan.py check`): raylib.h 566/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
 [EXAMPLES.md](EXAMPLES.md)): **201/212 ported** with the stack, 5 ready, 6 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
@@ -420,14 +420,18 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `AudioDevice.mix_answered` runs it again on the answers
      (`AudioClock.advance_answering` does that for each period with a
      Bend function of the program's state). The sound probe gives raylib
-     a C callback per slot and compares the asks too. The same staging
-     fits the processors (`AttachAudioStreamProcessor`,
-     `AttachAudioMixedProcessor`; `audio_stream_effects` and
-     `audio_mixed_processor`, which also play music): raudio calls a
-     stream's processors on each run of at most 512 mixed-format frames
-     before `MixAudioFrames`, and the mixed ones on the whole output, so
-     the glue in `jonlib.bend` (not `src/mixer.bend`) is where a program
-     function goes. `audio_stream_callback` itself reads
+     a C callback per slot and compares the asks too. **Processors are
+     in** the same way (`AudioProcessors`, `AudioDevice.mix_processed`,
+     `AudioClock.advance_processing`): raudio calls a stream's processors
+     on each run of at most 512 mixed-format frames before
+     `MixAudioFrames`, and the mixed ones on the whole output, so the
+     program's function is called from the glue in `jonlib.bend`, not from
+     `src/mixer.bend` (a buffer's runs are its frames split by 512). The
+     examples that use them, `audio_stream_effects` and
+     `audio_mixed_processor`, also play `country.mp3`: they wait for the
+     music stream and the MP3 decoder. Templates (`~answer`, `~process`)
+     must be closed terms: everything a callback needs goes in the
+     program state it takes and returns. `audio_stream_callback` itself reads
      `buffer[SAMPLE_RATE]`, one float past its array, for the last
      column of its wave in every frame (AddressSanitizer agrees): its
      port is a refusal (`UNDEFINED_NATIVE`, docs/AUDIO.md). `audio_spectrum_visualizer` is listed ready but loads

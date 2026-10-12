@@ -5296,8 +5296,7 @@
       "mapping_state": "implemented",
       "scope": "A tracked buffer's number (0 is NULL), sample rate, sample size and channels, as a Sound holds it.",
       "gaps": [
-        "No processor field",
-        "Stream callbacks and processors are not ported"
+        "No processor field: the processors attached are in an AudioProcessors value, and whether the stream has a callback in its buffer"
       ],
       "blocker": null,
       "gates": {
@@ -58733,7 +58732,7 @@
       "gaps": [
         "No void* buffer written in place: the frames are returned",
         "The program's state is an argument and a result, not globals",
-        "Stream callbacks only: processors are not ported"
+        "As a processor it is U32 -> +List<U32> -> P -> P & +List<U32>: a tag and the samples to write over"
       ],
       "blocker": null,
       "gates": {
@@ -62439,23 +62438,29 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.attach_audio_stream_processor",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "AudioStream.attach_processor",
+      "mapping_state": "implemented",
+      "scope": "The processor becomes the last of the stream's (or sound's) buffer: in a device callback it is called, after those attached before it, on each run of at most 512 frames the buffer gives (stereo f32, after the converter and before the volume and pan); the calls, their order and every sample compared with raylib.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No function is kept: a processor is a number (tag) in an AudioProcessors value, and AudioDevice.mix_processed or AudioClock.advance_processing calls the program's one function with it",
+        "The processor returns the samples it wrote instead of writing in place, and must give back as many as it was given",
+        "An unready device leaves the list as it is (raylib locks a mutex that does not exist)",
+        "A stream without a tracked buffer leaves the list as it is (raylib reads through the pointer)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -62469,7 +62474,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive AttachAudioStreamProcessor semantics from the linked source, add a reference fixture, then implement Audio.attach_audio_stream_processor.",
+      "next_step": "Close documented gaps and unverified gates for AttachAudioStreamProcessor.",
       "priority": 521
     },
     {
@@ -62495,23 +62500,28 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.detach_audio_stream_processor",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "AudioStream.detach_processor",
+      "mapping_state": "implemented",
+      "scope": "Every processor of the buffer with the tag goes; the others keep their order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No function is kept: a processor is a number (tag) in an AudioProcessors value, and AudioDevice.mix_processed or AudioClock.advance_processing calls the program's one function with it",
+        "An unready device leaves the list as it is (raylib locks a mutex that does not exist)",
+        "A stream without a tracked buffer leaves the list as it is (raylib reads through the pointer)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -62525,7 +62535,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive DetachAudioStreamProcessor semantics from the linked source, add a reference fixture, then implement Audio.detach_audio_stream_processor.",
+      "next_step": "Close documented gaps and unverified gates for DetachAudioStreamProcessor.",
       "priority": 521
     },
     {
@@ -62551,23 +62561,28 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.attach_audio_mixed_processor",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "AudioDevice.attach_mixed_processor",
+      "mapping_state": "implemented",
+      "scope": "The processor becomes the last of the mixed output's: it is called on the whole mix of every device callback, after every buffer and before the master volume and the clip; the list outlives CloseAudioDevice; calls and samples compared with raylib.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No function is kept: a processor is a number (tag) in an AudioProcessors value, and AudioDevice.mix_processed or AudioClock.advance_processing calls the program's one function with it",
+        "The processor returns the samples it wrote instead of writing in place, and must give back as many as it was given",
+        "An unready device leaves the list as it is (raylib locks a mutex that does not exist)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -62580,7 +62595,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive AttachAudioMixedProcessor semantics from the linked source, add a reference fixture, then implement Audio.attach_audio_mixed_processor.",
+      "next_step": "Close documented gaps and unverified gates for AttachAudioMixedProcessor.",
       "priority": 521
     },
     {
@@ -62606,23 +62621,27 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.detach_audio_mixed_processor",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "AudioDevice.detach_mixed_processor",
+      "mapping_state": "implemented",
+      "scope": "Every mixed processor with the tag goes; the others keep their order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No function is kept: a processor is a number (tag) in an AudioProcessors value, and AudioDevice.mix_processed or AudioClock.advance_processing calls the program's one function with it",
+        "An unready device leaves the list as it is (raylib locks a mutex that does not exist)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -62635,7 +62654,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive DetachAudioMixedProcessor semantics from the linked source, add a reference fixture, then implement Audio.detach_audio_mixed_processor.",
+      "next_step": "Close documented gaps and unverified gates for DetachAudioMixedProcessor.",
       "priority": 521
     },
     {

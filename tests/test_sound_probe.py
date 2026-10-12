@@ -58,8 +58,8 @@ class SoundModelTests(unittest.TestCase):
         self.assertEqual(model.sounds, [(1, 8, 48000, 32, 2), sp.ZERO, (2, 0, 48000, 32, 2), (3, 8, 48000, 32, 2)])
         self.assertEqual([(b['id'], b['block'], b['frames']) for b in model.buffers], [(1, 1, 8), (2, 0, 0), (3, 1, 8)])
         self.assertEqual((list(model.blocks), model.undefined), ([1], False))
-        head = ',48000,48000,0,1,0,0,0,0,0,0,0,0,0,2166136261,s'
-        self.assertEqual(model.state(), 'R1 M%d D0 S1,8,48000,32,2,1,0,1,1 S0,0,0,0,0,0,0,0,0 S2,0,48000,32,2,0,0,1,1 S3,8,48000,32,2,1,0,1,1 B1,1,8,%d,%d,0,0,0,%d%s B2,0,0,%d,%d,0,0,0,-%s B3,1,8,%d,%d,0,0,0,%d%s'
+        head = ',48000,48000,0,1,0,0,0,0,0,0,0,0,0,2166136261,s,p'
+        self.assertEqual(model.state(), 'R1 M%d D0 Q S1,8,48000,32,2,1,0,1,1 S0,0,0,0,0,0,0,0,0 S2,0,48000,32,2,0,0,1,1 S3,8,48000,32,2,1,0,1,1 B1,1,8,%d,%d,0,0,0,%d%s B2,0,0,%d,%d,0,0,0,-%s B3,1,8,%d,%d,0,0,0,%d%s'
                          % (ONE, ONE, ONE, sp.fnv(fake(8)), head, ONE, ONE, head, ONE, ONE, sp.fnv(fake(8)), head))
 
     def test_stop_leaves_a_paused_buffer(self):
@@ -82,7 +82,7 @@ class SoundModelTests(unittest.TestCase):
         self.assertEqual(([b['id'] for b in model.buffers], list(model.blocks), model.undefined), ([1], [1], False))
         model, _ = run(('init',), ('load', 0, 'mono16'), ('alias', 1, 0), ('unload', 1))
         self.assertEqual(([b['id'] for b in model.buffers], list(model.blocks), model.undefined), ([1], [], False))
-        self.assertTrue(model.state().endswith(',x,48000,48000,0,1,0,0,0,0,0,0,0,0,0,2166136261,s'))
+        self.assertTrue(model.state().endswith(',x,48000,48000,0,1,0,0,0,0,0,0,0,0,0,2166136261,s,p'))
         model.step(('alias', 2, 0))
         self.assertEqual((model.sounds[2], model.undefined), (sp.ZERO, True))
 
@@ -201,7 +201,7 @@ class StreamTests(unittest.TestCase):
         self.assertEqual([(b['frames'], len(model.blocks[b['id']]), b['source'], len(b['x0']), b['coef'] is None) for b in model.buffers],
                          [(25600, 25600, 44100, 1, False), (960, 1920, 22050, 2, False), (1200, 3600, 48000, 2, True)])
         self.assertEqual((model.buffers[0]['stream'], model.undefined), (dict(size=16, channels=1, first=True, second=True, called=False), False))
-        self.assertTrue(model.state().endswith(',0,2166136261,32/3/110'))
+        self.assertTrue(model.state().endswith(',0,2166136261,32/3/110,p'))
 
     def test_no_buffer_where_raylib_makes_none_and_where_jonlib_refuses(self):
         model, _ = run(('stream', 0, 44100, 16, 1), ('init',), ('stream', 1, 0, 16, 1), ('stream', 2, 44100, 16, 0))
@@ -291,6 +291,53 @@ class StreamTests(unittest.TestCase):
             self.assertEqual((b['rate'], b['cursor'], len(b['residual']), model.undefined), (6000, cursor, residual, False), (size, channels))
 
 
+class ProcessorTests(unittest.TestCase):
+    def words(self, *values):
+        return [sp.bits(v) for v in values]
+
+    def test_a_buffers_processors_see_its_frames_before_its_levels(self):
+        model, _ = run(('init',), ('load', 0, 'five32'), ('attach', 0, 1), ('play', 0))
+        self.assertEqual(model.mix(2), self.words(0.0, 0.0, 0.5 * 0.5 * 0.6875, -0.25 * 0.5 * 0.6875))       # half the level, then the center's 0.6875
+        self.assertEqual((model.log, model.attached), ([(1, 2)], [(1, 1)]))
+        model, _ = run(('init',), ('load', 0, 'five32'), ('attach', 0, 2), ('play', 0))
+        self.assertEqual(model.mix(3), self.words(0.0, 0.0, -0.25 * 0.6875, (0.5 + 1 / 8) * 0.6875, -1.0, 1.0))   # swapped, and count/8 more on the right; clipped
+        self.assertEqual((model.log, model.proc['count']), ([(2, 3)], 3))
+
+    def test_a_processor_keeps_its_state_between_callbacks(self):
+        model, _ = run(('init',), ('load', 0, 'five32'), ('attach', 0, 3), ('play', 0))
+        self.assertEqual(model.mix(2), [0, 0, 0, 0])                                # the resampler's frame late, the processor's too
+        self.assertEqual(model.mix(2), self.words(0.5 * 0.6875, -0.25 * 0.6875, 1.0, -1.0))
+        self.assertEqual(model.proc['prev'], self.words(0.125, 0.75))
+
+    def test_the_mixed_processors_come_after_every_buffer_and_before_the_master_volume(self):
+        model, _ = run(('init',), ('load', 0, 'five32'), ('attachmixed', 1), ('master', sp.bits(4.0)), ('play', 0))
+        self.assertEqual(model.mix(2), self.words(0.0, 0.0, 0.5 * 0.6875 * 0.5 * 4, -0.25 * 0.6875 * 0.5 * 4))
+        self.assertEqual((model.log, model.state().split()[3]), ([(1, 2)], 'Q1'))
+        model.step(('stop', 0))
+        model.step(('close',))
+        model.step(('init',))                                                      # the list is not the device's to close
+        self.assertEqual((model.attached, model.state().split()[3], model.undefined), ([(0, 1)], 'Q1', False))
+
+    def test_order_runs_and_detach(self):
+        model, _ = run(('init',), ('load', 0, 'five32'), ('attach', 0, 1), ('attach', 0, 2), ('attach', 0, 1), ('play', 0), ('mix', 1))
+        self.assertEqual((model.log, model.state().rsplit(',', 1)[1]), ([(1, 1), (2, 1), (1, 1)], 'p1.2.1'))
+        model.step(('detach', 0, 1))                                               # every one with the function
+        self.assertEqual((model.attached, model.state().rsplit(',', 1)[1]), ([(1, 2)], 'p2'))
+        model, _ = run(('init',), ('load', 0, 'long513'), ('attach', 0, 1), ('play', 0), ('mix', 600))
+        self.assertEqual(model.log, [(1, 512)])                                     # a run of 512, then the run that reads nothing: no call
+        model, _ = run(('init',), ('default', 600), ('stream', 0, 48000, 32, 2), ('attach', 0, 1), ('play', 0), ('mix', 600))
+        self.assertEqual(model.log, [(1, 512), (1, 88)])
+
+    def test_what_is_refused(self):
+        model, _ = run(('init',), ('load', 0, 'five32'), ('attach', 0, 9), ('play', 0), ('mix', 2))
+        self.assertEqual((model.mixed, model.undefined, model.buffers[0]['cursor']), (None, True, 0))       # a processor that loses a sample
+        model, _ = run(('init',), ('attachmixed', 9), ('mix', 2))
+        self.assertEqual((model.mixed, model.undefined), (None, True))
+        for steps in ((('init',), ('attach', 0, 1)), (('init',), ('detach', 0, 1)), (('attachmixed', 1),), (('detachmixed', 1),)):
+            model, _ = run(*steps)
+            self.assertEqual((model.undefined, model.attached), (True, []), steps)
+
+
 class SoundCasesTests(unittest.TestCase):
     def test_every_case_is_named_for_whether_raylib_runs_it(self):
         items = sp.cases()
@@ -298,7 +345,7 @@ class SoundCasesTests(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
         rows = [sp.expected(item, catalog()) for item in items]
         self.assertEqual([item['id'] for item, row in zip(items, rows) if item['id'].startswith('refused-') == row[2]], [])
-        self.assertEqual((len(items), sum(row[2] for row in rows), sum(len(item['steps']) for item in items)), (103, 71, 1012))
+        self.assertEqual((len(items), sum(row[2] for row in rows), sum(len(item['steps']) for item in items)), (111, 74, 1090))
         for tagged, plain, _ in rows:
             self.assertEqual(';'.join(part.split(' ', 1)[1] for part in tagged.split(';')), plain)
         used = {step[2] for item in items for step in item['steps'] if step[0] == 'load'}
