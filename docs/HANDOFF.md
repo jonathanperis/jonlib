@@ -419,6 +419,12 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Known pitfalls (save time)
 
+- **`jonlib.bend` ends with the generated enumerations** ("Header
+  enumerations", `tools/enums_probe.py --write`): a section appended after
+  them fails the `enums` gate ("the generated jonlib.bend section is
+  stale") and nothing else (2026-10-12: the VR section passed the proof,
+  its probe and `conformance` locally and failed CI shard 4). New sections
+  go above that rule; run `--only enums` after adding one.
 - **A background lander lives two hours at most**: a complete run that
   queues behind another one can outlast it (2026-10-11: the run finished
   green as the lander was stopped). Check the run and land by hand.
