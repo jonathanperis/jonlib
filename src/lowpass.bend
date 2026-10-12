@@ -372,3 +372,47 @@ def coefficients(+f32: Bool, +rin: U32, +rout: U32) -> Maybe<+List<U32>>:
   +s = window(w)
   +c = window(sub(pi_half(), w))
   pair(biquad.at(f32, s, c, window(sub(pi_half(), mul(one(), pi_eighth())))), biquad.at(f32, s, c, window(sub(pi_half(), mul(three(), pi_eighth())))))
+
+# -----------------------------------------------------------------------------
+# The first-order filter (ma_lpf1) of a data converter's resampler, which
+# raudio's audio buffers use (ma_data_converter_config_init leaves the filter
+# order at 1): its coefficient is (float)exp(-2*pi*cutoff/rate) with the same
+# cutoff and rate as above, through libm exp() in binary64.
+
+def fx.one() -> +List<U32>:
+  [0, 0, 0, 0, 0, 0, 0, 0, 1]
+
+# exp(-t) for 0 < t < 4 as the even terms of its series less the odd ones (52
+# terms after the 1, each truncated: within 2^-110 of exp(-t)).
+def fx.exp.series(n: Nat, +k: U32, +t: +List<U32>, +term: +List<U32>, +even: +List<U32>, +odd: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: fx.difference(even, odd, 0)
+    case 1n+m:
+      +next = fx.divide(fx.mul(term, t), k)
+      fx.exp.series(m, (k + 1 : U32), t, next, Bool.pick(+List<U32>, U32.is_eq((k .&. 1 : U32), 0), fx.sum(even, next, 0), even),
+        Bool.pick(+List<U32>, U32.is_eq((k .&. 1 : U32), 1), fx.sum(odd, next, 0), odd))
+
+def fx.exp_neg(+t: +List<U32>) -> +List<U32>:
+  fx.exp.series(52n, 1, t, fx.one(), fx.one(), fx.zeros(9n, Nil{}))
+
+def lpf1.window(kind: U32, +high: U32, +low: U32) -> Window:
+  match kind:
+    case 1:
+      +e = fx.exp_neg(fx.from_words(high, low))
+      window.signed(False{}, fx.rounded(e, fx.top.go(e, 0, 0)))
+    case _: Window{Bad{}, Bad{}}
+
+# Doubles bracketing every faithful exp(-w) for 2^-60 <= w < 4.
+def lpf1.of(w: V) -> Window:
+  match w:
+    case Ok{+high, +low}: lpf1.window(Bool.pick(U32, ((stored(high) >= 963) && (stored(high) <= 1024) : U32), 1, 2), high, low)
+    case Bad{}: Window{Bad{}, Bad{}}
+
+def lpf1.certified(window: Window) -> Maybe<U32>:
+  Window{lo, hi} = window
+  agree(final(True{}, lo), final(True{}, hi))
+
+# The binary32 coefficient of the first-order low-pass filter for reduced
+# rates rin != rout below 2^31. None when it is not certified.
+def coefficient1(+rin: U32, +rout: U32) -> Maybe<U32>:
+  lpf1.certified(lpf1.of(div(mul(two_pi(), mul(from_u32(U32.min(rin, rout)), half())), from_u32(U32.max(rin, rout)))))

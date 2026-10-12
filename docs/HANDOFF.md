@@ -367,14 +367,15 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `audio_sound_multi` (the first of the new `examples-audio` gate) and
      `audio_sound_positioning` (it asks `IsSoundPlaying` every frame, but
      draws nothing from it: the port plays the sound once) are in. `audio_sound_loading`
-     is listed ready but also loads an .ogg. What the mixer
-     still lacks, in the order the remaining examples need it: (1) pitched
-     buffers: `ma_linear_resampler` streaming with a rate that is not 1:1
-     (`inTimeInt`/`inTimeFrac`, the order-4 filter on the input when
-     downsampling and on the output when upsampling, `set_rate` rescaling
-     the timer and keeping the filter's registers, raudio's 8-frame
-     residual and its `(float)in/out` input estimate); `src/resampler.bend`
-     has the arithmetic, for one whole wave from the initial state; (2) a
+     is listed ready but also loads an .ogg. Pitched buffers are mixed too
+     (`src/mixer.bend`: raudio's read loop with its input estimate and its
+     8-frame residual over the resampler as a stream). **A buffer's
+     converter has the first-order filter** (`ma_lpf1`, coefficient
+     `(float)exp(-pi*min/max)`: `ma_data_converter_config_init` leaves
+     `lpfOrder` at 1; only `ma_convert_frames`, so `WaveFormat` and
+     `LoadSoundFromWave`, raises it to 4). `Lowpass.coefficient1` brackets
+     `exp` the way the biquads' `sin` is. What the mixer still lacks, in
+     the order the remaining examples need it: (2) a
      clock: the driver asking for callbacks for the frames the scripted
      time advanced, natively through a hook that stops the device as the
      sound probe does (today the native examples' device thread runs free:
