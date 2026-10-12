@@ -555,12 +555,22 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      are of bits. **(d)'s decoder is in**: `Mp3L3.decode` gives the
      frame's 16-bit PCM (`synth.granule`), equal to dr_mp3's on every
      frame of `country.mp3` and on the synthetic corpus. Left of the
-     plan: `drmp3_read_pcm_frames_f32` over `Mp3.Stream` (the delay and
-     padding trimmed, the s16 to f32 division), seeking
-     (`drmp3_seek_to_pcm_frame` without a seek table decodes from the
-     start; `drmp3_seek_to_start_of_stream` only clears the header, so
-     the next frame zeroes the decoder), then `MusicMp3` and the
-     `Wave`/`Sound` loaders, and Layers I and II (refused now).
+     plan: `MusicMp3` and the `Wave`/`Sound` loaders, and Layers I and
+     II (refused now). **The stream is in** (`src/mp3_stream.bend`, gate
+     `mp3-stream`, docs/AUDIO.md): `Mp3S.open`, `read.s16`/`read.f32`,
+     `rewind`, `seek`, `total`, each returning the player after it. For
+     the music: `LoadMusicStream` is `drmp3_init_file`, a stream of
+     (sample rate, 32, channels) and `frameCount` from
+     `drmp3_get_pcm_frame_count` (which moves an untagged stream:
+     `Mp3S.total` returns the player); `UpdateMusicStream` reads
+     `drmp3_read_pcm_frames_f32` and at the end of a looping music
+     calls `drmp3_seek_to_start_of_stream`; `StopMusicStream` the same;
+     `SeekMusicStream` is `drmp3_seek_to_pcm_frame(positionInFrames)`,
+     whose frame is counted with the delay (docs/AUDIO.md). `LoadWave`
+     is `drmp3_open_memory_and_read_pcm_frames_f32`: the whole file,
+     about six minutes for `country.mp3` on the JavaScript target at 95
+     ms a frame, so `audio_spectrum_visualizer` needs the faster
+     floats first.
      **Speed on the JavaScript target.** The module keeps floats in
      lists as U32 bits and converts at each use with `float(bits)`.
      Written `U32{word} = value; F32{word}` that compiles there to a

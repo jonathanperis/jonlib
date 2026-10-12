@@ -141,8 +141,9 @@ samples is not encoded (`InvalidWaveRequest`).
 `src/external/dr_mp3.h`; its decoder is minimp3). It reads a file's frames
 without decoding their samples, which is what opening a stream and counting
 its frames take; `src/mp3_layer3.bend` decodes a Layer III frame to its
-16-bit samples (below). Nothing in `jonlib.bend` uses them yet: no `Wave`,
-`Sound` or `Music` loads an MP3.
+16-bit samples; `src/mp3_stream.bend` is the two together, a stream read
+and sought as raylib's music and waves do it (all below). Nothing in
+`jonlib.bend` uses them yet: no `Wave`, `Sound` or `Music` loads an MP3.
 
 - **Headers** (`drmp3_hdr_*`): validity, whether two headers are of one
   stream, bit rate, sample rate, samples and bytes of a frame, padding.
@@ -304,8 +305,8 @@ channel. Both are equal to dr_mp3's bit for bit.
   is refused (`status` 2).
 
 `drmp3_read_pcm_frames_f32`, which raylib's music and waves call, converts
-the 16-bit samples to floats afterwards (a division by 32768); that and
-the stream's reading and seeking are the next piece.
+the 16-bit samples to floats afterwards (a division by 32768): see the
+stream, below.
 
 `tools/mp3_layer3_probe.py` (gate `mp3-layer3`) runs dr_mp3's frame
 function over each file, with the three functions on the way to the values
@@ -344,9 +345,65 @@ products are multiples of 2^-149 below 2^128), so no result changes, and a
 frame takes about 95 ms there. Keeping floats as floats in the lists would
 save the rest of the conversions; that is a larger change to the module.
 
-Still to come: reading and seeking (`drmp3_read_pcm_frames_f32`,
-`drmp3_seek_to_pcm_frame`), Layers I and II, and the loaders that use
-them.
+### The stream: reading and seeking
+
+`src/mp3_stream.bend` is dr_mp3's `drmp3` as raylib uses it. `Mp3S.Player`
+holds the file through dr_mp3's buffer (`Mp3.Stream`), the decoder, the
+samples of the MP3 frame at hand and how many of them were handed out.
+
+- **`Mp3S.open`** is `drmp3_init_file`: `Mp3.open`, with the first frame
+  decoded to its samples. An Xing/Info frame is not played.
+- **`Mp3S.read.s16` and `Mp3S.read.f32`** are `drmp3_read_pcm_frames_s16`
+  and `_f32` (`drmp3_read_pcm_frames_raw`). A read first passes the frames
+  of the LAME delay; then it hands out the frame at hand's samples and
+  decodes the next, until it has what was asked, the stream ends, or, with
+  an Xing/Info total, the count reaches the total less the padding. The
+  floats are the 16-bit samples over 32768.
+- **`Mp3S.rewind`** is `drmp3_seek_to_start_of_stream`, which raylib calls
+  to stop and to loop a music: the file's position, an empty buffer, no
+  frame at hand and the decoder's header cleared, so that the next frame
+  is searched for in a zeroed decoder.
+- **`Mp3S.seek`** is `drmp3_seek_to_pcm_frame` without a seek table: frame
+  0 is the start; a frame past the count is read up to; one before it is
+  read up to from the start. Every frame on the way is decoded.
+- **`Mp3S.total`** is `drmp3_get_pcm_frame_count`, raylib's
+  `music.frameCount`: the tag's count less the delay and the padding, or
+  every frame counted.
+
+Three things dr_mp3 does that follow from its bookkeeping and are kept:
+
+- `currentPCMFrame` counts the delay's frames and a read does not. A seek
+  compares the frame asked for with that count and then reads that many
+  frames more: in a file with a LAME delay of 1105, a seek to frame 500
+  from the start leaves the count at 1605, and it is the 500th frame read,
+  not the stream's 500th.
+- Without an Xing/Info count, `drmp3_get_pcm_frame_count` scans the stream
+  and then seeks back from the start to the count it found: the frame at
+  hand is dropped and decoded again by the next read.
+- A read copies as many samples a frame as the stream has channels, from
+  where the MP3 frame's own channel count puts it: where a mono frame is
+  in a stereo stream, what follows its samples in dr_mp3's buffer (the
+  frame before's) is read too. `Player.pcm` is that buffer.
+
+A stream stops (`Player.status`) at a frame the decoder refuses: 1 where
+dr_mp3 leaves one of its arrays, 2 at a Layer I or II frame, which is not
+decoded yet.
+
+`tools/mp3_stream_probe.py` (gate `mp3-stream`) runs one script on each of
+the `mp3` gate's 85 files through dr_mp3's functions and through
+`Mp3S`: a count, reads of 100 16-bit, 1000 float and 2000 16-bit frames,
+a seek back to 500, a read, a seek to where the count stands, the start, a
+float read, a seek forward to 3000, a read, a count, and a last read (of
+20000 frames in 18 of the files: 17 of them end before that). After each
+operation both sides
+give its result (frames read and a hash of the samples, of the floats'
+bits for a float read) and `currentPCMFrame`, the frames left and consumed
+of the frame at hand and its channels. 64 files run the script (832
+operations) and 21 do not open, on both sides. CPU-1, CPU-2 and
+JavaScript.
+
+Still to come: Layers I and II, and the loaders that use the stream
+(`Music`, `Wave`, `Sound`).
 
 raylib builds dr_mp3 with its SSE paths, whose samples differ from the
 scalar ones: the reference for the samples is the build as it is.

@@ -1929,6 +1929,21 @@
    "minutes": 14
   },
   {
+   "id": "mp3-stream",
+   "title": "MP3 streams read and sought (dr_mp3: the first frame, drmp3_get_pcm_frame_count, 16-bit and float reads across frames, the LAME delay and padding, seeks back and forward, the start) against dr_mp3 through the functions raylib calls",
+   "run": [
+    "{python}",
+    "tools/mp3_stream_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 10
+  },
+  {
    "id": "wave-format",
    "title": "WaveFormat (miniaudio ma_convert_frames: formats, channel maps, linear resampling and its low-pass filter) against raylib with its audio module and the host contraction profile",
    "run": [
