@@ -13,9 +13,12 @@ maps every public release-header API and supporting declaration to a work
 package, Bend target, dependencies and verification status. Current limited
 profiles remain explicitly partial.
 
-The first implementation is a headless, owned image library. Its drawing
-algorithms are Bend source. A separate C executable runs pinned raylib as a
-differential test reference.
+The library is Bend source throughout. It runs headless: windows, input,
+frames and audio are values a program threads through its loop, drawn by a
+port of raylib's software renderer. Pinned, unmodified raylib is the
+reference: each gate runs it natively and compares results exactly, and
+every ported upstream example is replayed frame by frame against the
+native one.
 
 ## Modules
 
@@ -35,9 +38,12 @@ import ./jonmath.bend as M
 
 Everything below is a **partial, scoped profile** compared exactly with pinned
 raylib; each API's domain and gaps are in [`api/progress.json`](api/progress.json)
-and the [progress dashboard](docs/PROGRESS.md). At the time of writing the ledger
-marks 117 of raylib.h's 600 functions and 142 of raymath.h's 146 as partial and
-none as complete; the dashboard always has the current counts.
+and the [progress dashboard](docs/PROGRESS.md). At the time of writing
+(2026-10-12) the ledger marks 547 of raylib.h's 600 functions, all 146 of
+raymath.h's, 142 of rlgl.h's 163 and all of rcamera.h's 12 and rgestures.h's
+10 as partial, and none as complete (no API is complete before the platform
+phase); the dashboard always has the current counts. 198 of raylib's 212
+examples are ported ([EXAMPLES.md](docs/EXAMPLES.md)).
 
 - **Images** ([API](docs/API.md)): owned `Surface` creation in any raylib pixel format, pixel access and
   copies; clipped pixels, rectangles, circles, lines, triangles, fans/strips and
@@ -67,12 +73,33 @@ none as complete; the dashboard always has the current counts.
   for libm-dependent results ([ANGLES.md](docs/ANGLES.md)), 2D/3D
   [collisions](docs/COLLISION.md), [splines](docs/SPLINES.md) and owned
   [random streams](docs/RANDOM.md).
+- **Window, input and frames** ([DRIVER.md](docs/DRIVER.md),
+  [INPUT.md](docs/INPUT.md), [FRAME.md](docs/FRAME.md)): raylib's core state
+  with an explicit clock, keyboard, mouse, gamepad, touch and gestures,
+  automation events, and the frame loop on a memory platform.
+- **Drawing** ([RLGL.md](docs/RLGL.md), [TEXTURES.md](docs/TEXTURES.md),
+  [FONTS.md](docs/FONTS.md), [TEXT.md](docs/TEXT.md)): rlgl's matrices and
+  immediate mode over a port of the software renderer; 2D shapes and
+  splines, textures and render textures, bitmap and TrueType fonts, text.
+- **3D** ([MODELS.md](docs/MODELS.md), [CAMERA.md](docs/CAMERA.md),
+  [SHADERS.md](docs/SHADERS.md), [VR.md](docs/VR.md)): meshes and their
+  generators, models and animations from OBJ, glTF/GLB, VOX, IQM and M3D
+  files, materials, cameras, shader uniforms and the VR stereo
+  configuration (shaders and stereo change nothing on the software
+  renderer, as in raylib).
+- **Audio** ([AUDIO.md](docs/AUDIO.md)): WAV and QOA waves, `WaveFormat`, the
+  audio device's state, sounds and aliases, and a mixer whose device
+  callbacks match raylib's sample for sample, pitched playback included.
+- **Jongui** ([GUI.md](docs/GUI.md)): raygui's controls.
 - **Execution**: native CPU, JavaScript and (with the declared compiler overlay)
   forced Metal; see [VERIFICATION.md](docs/VERIFICATION.md).
 
-Not yet started: windows and input, textures and fonts, audio, 3D, shaders and
-platforms beyond headless CPU/JS/Metal. The [master plan](docs/MASTER-PLAN.md)
-orders that work.
+Not yet there: audio streams and music with their MP3, OGG, FLAC, XM and MOD
+decoders; a host window, input devices and audio output (everything runs
+headless); images beyond 4096 pixels on a side; directory listing. macOS is
+off the merge path for now and owes a full validation. The
+[master plan](docs/MASTER-PLAN.md) and [HANDOFF.md](docs/HANDOFF.md) order
+that work.
 
 ## Requirements
 
