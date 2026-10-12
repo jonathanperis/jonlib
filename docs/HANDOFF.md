@@ -538,12 +538,21 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      reorder is ported. **The stereo step is in too** (same module and
      gate; the gate's hash is taken after it): what was listed for (c)
      above about mono frames and the stale slot is done
-     (`Decoder.compress`, `stereo.mode`). Left of (c): the reorder, the
-     alias reduction, the IMDCT with its overlap (two more arrays of
-     decoder state, 288 floats a channel) and the sign change. Their SSE
-     paths compute each element with the scalar formula, so nothing in
-     (c) depends on the vector order; that begins in (d)
-     (`drmp3d_DCT_II`, `drmp3d_synth`).
+     (`Decoder.compress`, `stereo.mode`). **And (c) is complete**: the
+     reorder, the alias reduction, the IMDCT with its overlap (two more
+     arrays of decoder state, 288 floats a channel) and the sign change
+     (`Mp3L3.filter`); `Mp3L3.decode` gives 32 subbands of 18 samples a
+     channel a granule, and the gate hashes them. Their SSE paths
+     compute each element with the scalar formula, so nothing in (c)
+     depended on the vector order; that begins in (d): `drmp3d_DCT_II`
+     (the SSE branch works on four time columns, each alone), then
+     `drmp3d_synth_pair` and `drmp3d_synth` with `g_win`, 16-bit output
+     through `drmp3d_scale_pcm` or the SSE `_mm_cvtps_epi32` and packs
+     (rounding to nearest even, saturating), and `qmf_state` (960
+     floats) as the last decoder state. For (d) the per-frame output to
+     compare is the int16 PCM itself. Negation must turn the sign bit
+     (`neg` in the module): `0 - x` loses a zero's sign and the hashes
+     are of bits.
      Measured: scalefactors and Huffman take about 12 ms a frame in the
      JavaScript lane (list steps through the trampoline). `audio_stream_callback` itself reads
      `buffer[SAMPLE_RATE]`, one float past its array, for the last

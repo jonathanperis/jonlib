@@ -318,10 +318,14 @@ frame count (`drmp3_get_pcm_frame_count`), with their bit rate tables.
 (`drmp3_L3_pow_43`, `drmp3_L3_huffman`), its stereo step
 (`drmp3_L3_midside_stereo`, `drmp3_L3_intensity_stereo`,
 `drmp3_L3_stereo_top_band`, `drmp3_L3_stereo_process`,
-`drmp3_L3_intensity_stereo_band`) and the frame around them
-(`drmp3dec_decode_frame`). `src/mp3_tables.bend` is the
+`drmp3_L3_intensity_stereo_band`), the first half of its filter bank
+(`drmp3_L3_reorder`, `drmp3_L3_antialias`, `drmp3_L3_dct3_9`,
+`drmp3_L3_imdct36`, `drmp3_L3_idct3`, `drmp3_L3_imdct12`,
+`drmp3_L3_imdct_short`, `drmp3_L3_change_sign`, `drmp3_L3_imdct_gr`) and
+the frame around them (`drmp3dec_decode_frame`). `src/mp3_tables.bend` is the
 header's constant tables (scalefactor bands and partitions, `g_drmp3_pow43`, the
-Huffman tables, `g_pan`), generated from its text by `tools/mp3_tables.py`. dr_mp3 is public domain or MIT No Attribution;
+Huffman tables, `g_pan`, `g_aa`, `g_twid9`, `g_twid3`, `g_mdct_window`, and
+the cosine literals of `drmp3_L3_dct3_9`), generated from its text by `tools/mp3_tables.py`. dr_mp3 is public domain or MIT No Attribution;
 Jonlib uses the MIT-0 alternative, retained with minimp3's CC0 notice in
 [LICENSES/dr_mp3.txt](LICENSES/dr_mp3.txt).
 

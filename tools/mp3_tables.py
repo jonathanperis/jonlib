@@ -32,7 +32,15 @@ TABLES = {
     'g_preamp': ('drmp3_uint8', 10), 'g_expfrac': ('float', 4), 'g_drmp3_pow43': ('float', 145), 'tabs': ('drmp3_int16', 2164),
     'tab32': ('drmp3_uint8', 28), 'tab33': ('drmp3_uint8', 16), 'tabindex': ('drmp3_int16', 32), 'g_linbits': ('drmp3_uint8', 32),
     'g_pan': ('float', 14),
+    'g_aa': ('float', 16), 'g_twid9': ('float', 18), 'g_twid3': ('float', 6), 'g_mdct_window': ('float', 36),
 }
+
+# The float literals of drmp3_L3_dct3_9 and drmp3_L3_idct3 (cosines of 10 to
+# 80 degrees), by the name they get in the module. They are in the functions'
+# bodies, not in tables: each must be in the header's text, and the C
+# compiler converts them like the tables' floats.
+CONSTANTS = {'cos10': '0.98480775f', 'cos20': '0.93969262f', 'cos30': '0.86602540f', 'cos40': '0.76604444f', 'cos50': '0.64278761f', 'cos70': '0.34202014f',
+             'cos80': '0.17364818f'}
 
 DECLARATION = re.compile(r'static const (float|drmp3_uint8|drmp3_int16)\s+(\w+)((?:\[[^\]]*\])+)\s*=\s*\{(.*?)\};', re.S)
 
@@ -66,18 +74,23 @@ def program(header):
             lines.append('      for (unsigned i = 0; i < n; i++) { unsigned w; memcpy(&w, &p[i], 4); printf(" %u", w); } printf("\\n"); }')
         else:
             lines.append('      for (unsigned i = 0; i < n; i++) printf(" %d", (int)p[i]); printf("\\n"); }')
+    absent = sorted(literal for literal in CONSTANTS.values() if literal not in header)
+    if absent:
+        raise ValueError(f'mp3 tables: dr_mp3.h does not have the literal {", ".join(absent)}')
+    lines.append(f'    {{ static const float t[] = {{{", ".join(CONSTANTS.values())}}}; printf("constants {len(CONSTANTS)}");')
+    lines.append(f'      for (unsigned i = 0; i < {len(CONSTANTS)}; i++) {{ unsigned w; memcpy(&w, &t[i], 4); printf(" %u", w); }} printf("\\n"); }}')
     return '\n'.join(lines + ['    return 0;', '}']) + '\n'
 
 
 def parse(text):
-    """name -> values, from the program's output; every table of TABLES with its count."""
-    tables = {}
+    """name -> values, from the program's output; every table of TABLES with its count, and `constants`."""
+    tables, sizes = {}, dict({name: count for name, (_, count) in TABLES.items()}, constants=len(CONSTANTS))
     for line in text.splitlines():
         name, count, *values = line.split()
-        if name not in TABLES or len(values) != int(count) or int(count) != TABLES[name][1]:
-            raise ValueError(f'mp3 tables: {name} has {count} elements, not the {TABLES.get(name, ("", "?"))[1]} of dr_mp3 v0.7.4')
+        if name not in sizes or len(values) != int(count) or int(count) != sizes[name]:
+            raise ValueError(f'mp3 tables: {name} has {count} elements, not the {sizes.get(name, "?")} of dr_mp3 v0.7.4')
         tables[name] = [int(v) for v in values]
-    if set(tables) != set(TABLES):
+    if set(tables) != set(sizes):
         raise ValueError('mp3 tables: the program did not print every table')
     return tables
 
@@ -182,6 +195,12 @@ def render(tables):
     table('tab33', 'tab33.', '+List<U32>', flat(tables['tab33']))
     table('linbits', 'g_linbits.', '+List<U32>', flat(tables['g_linbits']))
     table('pan', 'g_pan (floats): kl and kr of the seven MPEG-1 intensity positions.', '+List<U32>', flat(tables['g_pan']))
+    table('aa', 'g_aa (floats): two rows of eight.', '+List<+List<U32>>', rows(tables['g_aa'], 8))
+    table('twid9', 'g_twid9 (floats).', '+List<U32>', flat(tables['g_twid9']))
+    table('twid3', 'g_twid3 (floats).', '+List<U32>', flat(tables['g_twid3']))
+    table('mdct.window', "g_mdct_window (floats): the long window and the stop block's, eighteen each.", '+List<+List<U32>>', rows(tables['g_mdct_window'], 18))
+    for name, value in zip(CONSTANTS, tables['constants']):
+        out.append(f'# {CONSTANTS[name]} (a float) of drmp3_L3_dct3_9 and drmp3_L3_idct3.\ndef c.{name}() -> U32:\n  {value}\n')
     return '\n'.join(out)
 
 
@@ -212,7 +231,7 @@ def main(argv=None):
         print('mp3 tables: src/mp3_tables.bend is current')
         return 0
     MODULE.write_text(text)
-    print(f'mp3 tables: wrote {MODULE.relative_to(ROOT)} ({len(TABLES)} tables)')
+    print(f'mp3 tables: wrote {MODULE.relative_to(ROOT)} ({len(TABLES)} tables, {len(CONSTANTS)} constants)')
     return 0
 
 

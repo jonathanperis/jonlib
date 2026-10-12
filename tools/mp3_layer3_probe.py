@@ -6,8 +6,9 @@ as raylib builds it: SSE, 16-bit output). Its frame function is run over a
 file's bytes the way a caller does, a frame after a frame. The three
 functions on the way to a granule's values (drmp3dec_decode_frame,
 drmp3_L3_decode, drmp3_L3_huffman) are copied from the header's text with
-three lines put in, and the header is not changed: after a granule's
-stereo step each channel's 576 values are hashed; the Huffman reader records
+three lines put in, and the header is not changed: after a channel's
+IMDCT and sign change its 576 subband samples are hashed; the Huffman
+reader records
 whether it read past the main data's array (it reads the granule
 information that follows in the struct); and before a granule's short
 bands are reordered their end is added up, because a mixed block at 8000 Hz
@@ -20,9 +21,10 @@ After every frame the row is
 
 where `state` hashes what the decoder keeps for the next frame (its header,
 free format size, the reservoir, the whole main data array with what earlier
-frames left in it, the 40 scales, the intensity positions and the second
-granule slot's scalefac_compress) and `values` hashes the floats of every
-channel of every granule after the stereo step, bit for bit. A file's
+frames left in it, the 40 scales, the intensity positions, the second
+granule slot's scalefac_compress and both channels' IMDCT overlap) and
+`values` hashes the subband samples of every channel of every granule, bit
+for bit. A file's
 walk ends at `refused` (undefined, on both sides) or `layer12` (a Layer I
 or II frame, which the port does not decode yet).
 
@@ -71,7 +73,9 @@ static unsigned probe_state(const drmp3dec *dec)
     h = probe_words(h, dec->scratch.scf, 40);
     h = probe_bytes(h, dec->scratch.ist_pos[0], 39);
     h = probe_bytes(h, dec->scratch.ist_pos[1], 39);
-    return (h ^ (unsigned)dec->scratch.gr_info[1].scalefac_compress)*16777619u;
+    h = (h ^ (unsigned)dec->scratch.gr_info[1].scalefac_compress)*16777619u;
+    h = probe_words(h, dec->mdct_overlap[0], 288);
+    return probe_words(h, dec->mdct_overlap[1], 288);
 }
 
 static unsigned char data[1 << 21];
@@ -125,8 +129,8 @@ def fnv.rows(rows: +List<+List<U32>>, +h: U32) -> U32:
     case Con{+row, rest}: fnv.rows(rest, fnv(row, h))
 
 def state(+decoder: L.Decoder) -> U32:
-  L.Decoder{H.Dec{+header, +free, +reserv}, +main, +scf, +ist0, +ist1, +compress} = decoder
-  fnv([compress], fnv(ist1, fnv(ist0, fnv(scf, fnv(main, fnv(reserv, fnv([H.b0(header), H.b1(header), H.b2(header), H.b3(header), free, H.count(reserv, 0)], 2166136261)))))))
+  L.Decoder{H.Dec{+header, +free, +reserv}, +main, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1} = decoder
+  fnv(overlap1, fnv(overlap0, fnv([compress], fnv(ist1, fnv(ist0, fnv(scf, fnv(main, fnv(reserv, fnv([H.b0(header), H.b1(header), H.b2(header), H.b3(header), free, H.count(reserv, 0)], 2166136261)))))))))
 
 def shown(status: U32, +decoder: L.Decoder, +samples: U32, +bytes: U32, +spectra: +List<+List<U32>>) -> String:
   match status:
@@ -194,9 +198,9 @@ def reference(header, paths):
         ('static void drmp3_L3_decode(', 'static void probe_L3_decode('),
         ('        drmp3_L3_huffman(s->grbuf[ch], &s->bs, gr_info + ch, s->scf, layer3gr_limit);\n',
          '        probe_L3_huffman(s->grbuf[ch], &s->bs, gr_info + ch, s->scf, layer3gr_limit);\n'),
-        ('    for (ch = 0; ch < nch; ch++, gr_info++)\n    {\n        int aa_bands = 31;\n',
-         '    for (ch = 0; ch < nch; ch++) probe_values = probe_words(probe_values, s->grbuf[ch], 576);\n'
-         '    for (ch = 0; ch < nch; ch++, gr_info++)\n    {\n        int aa_bands = 31;\n'),
+        ('        drmp3_L3_change_sign(s->grbuf[ch]);\n',
+         '        drmp3_L3_change_sign(s->grbuf[ch]);\n'
+         '        probe_values = probe_words(probe_values, s->grbuf[ch], 576);\n'),
         ('            drmp3_L3_reorder(s->grbuf[ch] + n_long_bands*18, s->syn[0], gr_info->sfbtab + gr_info->n_long_sfb);\n',
          REORDER + '            drmp3_L3_reorder(s->grbuf[ch] + n_long_bands*18, s->syn[0], gr_info->sfbtab + gr_info->n_long_sfb);\n'),
     ])
