@@ -411,6 +411,20 @@ as raylib's. `AudioDevice.mix` itself refuses a callback in which a
 stream's callback would be asked. A sound's buffer takes no callback
 (raylib would call it for the sound's frames).
 
+**`audio_stream_callback`.** The example keeps the last second its callback
+wrote in `static float buffer[SAMPLE_RATE]` and draws the last 10 ms as 800
+columns; the end of column 799 is `buffer[SAMPLE_RATE - SAMPLE_RATE/100 +
+800*SAMPLE_RATE/100/screenWidth]`, which is `buffer[44100]`: one float past
+the array, in every frame (AddressSanitizer: a global-buffer-overflow read
+of 4 bytes at line 137, 0 bytes after `buffer`, in the first frame). Its
+behavior is undefined from there. `examples/audio_stream_callback.bend`
+runs the clock, the stream's callback as the `answer` of
+`AudioClock.advance_answering` (the four waves, the frequency taken at a
+wave's next period, the wavelength of each call fixed when it begins), the
+keys, the texts and the 799 columns whose samples are in the buffer, and
+then refuses the frame, every frame; the reference is not run
+(`UNDEFINED_NATIVE` in `tools/examples_probe.py`).
+
 ### The mixer
 
 `AudioDevice.mix(device, frames)` is one data callback of the device, as

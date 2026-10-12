@@ -107,6 +107,7 @@ TARGET_FPS['shaders_rlgl_compute'] = 10**9
 TARGET_FPS['core_custom_frame_control'] = 10**9
 OWN_WAIT = {'core_custom_frame_control': 60}
 TARGET_FPS['audio_raw_stream'] = 30
+TARGET_FPS['audio_stream_callback'] = 30
 
 (KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, INPUT_GESTURE, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 17, 18)
 # Gamepad events: (gamepad), (gamepad, button), (gamepad, axis, value/32768).
@@ -294,6 +295,7 @@ EXAMPLES = {
     'audio_sound_multi': ('audio/audio_sound_multi.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_sound_positioning': ('audio/audio_sound_positioning.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_raw_stream': ('audio/audio_raw_stream.c', 'Ex.setup(core, frame)'),
+    'audio_stream_callback': ('audio/audio_stream_callback.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'core_vr_simulator': ('core/core_vr_simulator.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shaders_game_of_life': ('shaders/shaders_game_of_life.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
@@ -425,6 +427,7 @@ AUDIO.update(AUDIO_CLOCK)
 IO_SETUP.update(AUDIO)
 # The binary64 sin of its samples and of its wave has no AppleLibm profile (docs/MATH.md): the same contract.
 PERSPECTIVE.add('audio_raw_stream')
+IO_SETUP.add('audio_stream_callback')
 PERSPECTIVE.add('audio_sound_positioning')
 PERSPECTIVE.add('core_vr_simulator')
 IO_SETUP.add('shaders_game_of_life'); SEEDED.add('shaders_game_of_life')
@@ -1213,6 +1216,11 @@ def scripts():
         script('audio_raw_stream', 'sine', [quick(), quick(), quick([key(KEY_UP)]), quick(), quick([key(KEY_RIGHT)]), slow(),
                                             quick([key(KEY_UP, False), key(KEY_DOWN)]), long([key(KEY_RIGHT, False), key(KEY_LEFT)]), quick(),
                                             quick([key(KEY_DOWN, False)]), quick([key(KEY_LEFT, False)]), quick()]),
+        # Every frame is a refusal (UNDEFINED_NATIVE): the port still runs the clock and the stream's callback, the
+        # frequency keys and both wave keys before it refuses.
+        script('audio_stream_callback', 'waves', [quick(), quick([key(KEY_UP)]), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), slow([key(KEY_LEFT)]),
+                                                  quick([key(KEY_UP, False), key(KEY_LEFT, False)])]),
+        # The mouse on the character shows the placement cube; two clicks splat two decals (the table lists them);
         # RMB with a move turns the camera; a click on "Clear Decals" removes them.
         script('models_decals', 'splat', [quick(), quick([mouse_at(400, 230)]), quick([button(0)]), quick([button(0, False), mouse_at(400, 150)]), quick([button(0)]),
                                           quick([button(0, False), button(1), mouse_at(430, 160)]), slow([mouse_at(460, 170)]), quick([button(1, False), mouse_at(150, 380)]), quick([button(0)]),
@@ -1497,6 +1505,10 @@ UNDEFINED_NATIVE = {
     # k = count - 1 at the first repeated codepoint: one int read past the codepointCount ints allocated. The
     # text repeats U+3000 and its line break, so the read happens before the first frame. docs/TEXT.md.
     'text_codepoints_loading': 'CodepointRemoveDuplicates reads one int past its array',
+    # It draws the last 441 samples of its one-second buffer as 800 columns, and the end of the last column is
+    # buffer[SAMPLE_RATE - SAMPLE_RATE/100 + 800*SAMPLE_RATE/100/screenWidth] = buffer[SAMPLE_RATE]: one float
+    # past the array, in every frame. docs/AUDIO.md.
+    'audio_stream_callback': 'the last column of its wave reads one float past its buffer',
 }
 REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
             'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass',
