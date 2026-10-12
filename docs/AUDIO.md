@@ -142,8 +142,9 @@ samples is not encoded (`InvalidWaveRequest`).
 without decoding their samples, which is what opening a stream and counting
 its frames take; `src/mp3_layer3.bend` decodes a Layer III frame to its
 16-bit samples; `src/mp3_stream.bend` is the two together, a stream read
-and sought as raylib's music and waves do it (all below). Nothing in
-`jonlib.bend` uses them yet: no `Wave`, `Sound` or `Music` loads an MP3.
+and sought as raylib's music and waves do it (all below). `Music` plays
+MP3 files through it (see Music streams); `Wave` and `Sound` do not load
+them yet.
 
 - **Headers** (`drmp3_hdr_*`): validity, whether two headers are of one
   stream, bit rate, sample rate, samples and bytes of a frame, padding.
@@ -402,8 +403,7 @@ of the frame at hand and its channels. 64 files run the script (832
 operations) and 21 do not open, on both sides. CPU-1, CPU-2 and
 JavaScript.
 
-Still to come: Layers I and II, and the loaders that use the stream
-(`Music`, `Wave`, `Sound`).
+Still to come: Layers I and II, and `Wave` and `Sound` from MP3 files.
 
 raylib builds dr_mp3 with its SSE paths, whose samples differ from the
 scalar ones: the reference for the samples is the build as it is.
@@ -812,7 +812,7 @@ what moves it gives the music back.
 
 | Function | raylib | Contract |
 |---|---|---|
-| `Music.load(device, path)` / `Music.load_from_memory(device, type, bytes)` | `LoadMusicStream` / `LoadMusicStreamFromMemory` | A WAV or QOA file: a stream of the file's rate and channels, the frame count, looping on. 16- and 24-bit WAV files play as 16-bit samples (`drwav_read_pcm_frames_s16`), 32-bit ones as floats (`drwav_read_pcm_frames_f32`: a PCM sample `x` is `(float)(x/2147483648.0)`, an IEEE float its own bits). A QOA file plays as floats, `sample/32768.0` (`qoaplay_decode`), and its frames are the header's count. The stream has no buffer on an unready device; the music is still loaded. |
+| `Music.load(device, path)` / `Music.load_from_memory(device, type, bytes)` | `LoadMusicStream` / `LoadMusicStreamFromMemory` | A WAV, QOA or MP3 file: a stream of the file's rate and channels, the frame count, looping on. 16- and 24-bit WAV files play as 16-bit samples (`drwav_read_pcm_frames_s16`), 32-bit ones as floats (`drwav_read_pcm_frames_f32`: a PCM sample `x` is `(float)(x/2147483648.0)`, an IEEE float its own bits). A QOA file plays as floats, `sample/32768.0` (`qoaplay_decode`), and its frames are the header's count. An MP3 file plays as floats too, its 16-bit samples over 32768 (`drmp3_read_pcm_frames_f32`), at its first frame's rate and channels; its frames are `drmp3_get_pcm_frame_count`: an Xing/Info frame's count less the LAME delay and padding, or every frame counted. The stream has no buffer on an unready device; the music is still loaded. |
 | `Music.is_valid(music)` | `IsMusicValid` | A decoder, frames, and a rate, sample size and channels that are not 0. |
 | `Music.unload(device, music)` | `UnloadMusicStream` | The stream's buffer is untracked. |
 | `Music.play` / `pause` / `resume` / `is_playing` / `set_volume` / `set_pitch` / `set_pan` | `PlayMusicStream` ... | The stream's. |
@@ -832,14 +832,35 @@ Not loaded (a typed error, and no stream): WAV sample sizes other than 16,
 24 and 32 bits (raylib streams whatever its shared buffer holds for them),
 what `Wave.decode` refuses, a QOA file that does not hold every frame its
 header counts (qoaplay decodes a frame at a time and would play what is
-there), and every other format. OGG, MP3, FLAC, XM and MOD music are not
-ported yet. Left as they are: `Music.update` for a
+there), an MP3 file dr_mp3 does not open or whose first frame is of Layer I
+or II (not decoded yet), and every other format. OGG, FLAC, XM and MOD
+music are not ported yet. Left as they are: `Music.update` for a
 music without frames (raylib reads it for ever when it loops);
 `Music.seek` for a position whose frame is not an unsigned int, a stream
 without a tracked buffer (raylib writes through the pointer) and an unready
 device. `Music.time_played` is None for a music without frames (raylib
 divides by them), counts that do not fit an int, an untracked buffer and an
-unready device. A file's frames are all decoded when it is loaded.
+unready device. A WAV or QOA file's frames are all decoded when it is
+loaded.
+
+An MP3 music is decoded as it plays (`MusicMp3`, a stream of
+`src/mp3_stream.bend`). `Music.update` reads the frames a half needs
+(`drmp3_read_pcm_frames_f32`) and, whenever a read comes short, takes the
+stream back to its start and reads on, as raylib does whether the music
+loops or not. `Music.stop` takes it to its start
+(`drmp3_seek_to_start_of_stream`). `Music.seek` is
+`drmp3_seek_to_pcm_frame`, which goes by dr_mp3's own count of frames: the
+LAME delay is in that count and not in the frames read, so in a file with
+a delay the frame reached is not the one the position names (see the
+stream, above); the stream's `framesProcessed` is the frame asked for, as
+for the other formats. `frameCount` can be more than the stream holds (a
+cut file keeps its Info frame's count): the music then goes round at the
+stream's end. A stream that gives no frame from its start would keep
+raylib in its read loop for ever; the update ends there with zeros. A
+stream that stops at a frame the decoder refuses plays what came before
+it, round and round: that differs from raylib, which decodes Layer I and
+II frames. On the JavaScript target a frame takes about 95 ms to decode,
+3.6 times its 26 ms of sound.
 
 ### The clock
 

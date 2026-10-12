@@ -35,6 +35,9 @@ def catalog():
     for name in sp.FILE_ERRORS:
         out['file', name] = (0, [])
     out['raw', 'target'] = (12000, 22050, 16, 2, [(i * 911) & 65535 for i in range(24000)])
+    # the MP3 cuts as the reference reads them: (frameCount, rate, channels, delay, readable frames, their samples)
+    out['mp3', 'mp3tag'] = (4125934, 44100, 2, 1105, 11567, [(i * 131) & 65535 for i in range(2 * 11567)])
+    out['mp3', 'mp3plain'] = (13824, 44100, 2, 0, 13824, [(i * 137) & 65535 for i in range(2 * 13824)])
     return out
 
 
@@ -416,7 +419,7 @@ class SoundCasesTests(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
         rows = [sp.expected(item, catalog()) for item in items]
         self.assertEqual([item['id'] for item, row in zip(items, rows) if item['id'].startswith('refused-') == row[2]], [])
-        self.assertEqual((len(items), sum(row[2] for row in rows), sum(len(item['steps']) for item in items)), (124, 83, 1260))
+        self.assertEqual((len(items), sum(row[2] for row in rows), sum(len(item['steps']) for item in items)), (126, 85, 1363))
         for tagged, plain, _ in rows:
             self.assertEqual(';'.join(part.split(' ', 1)[1] for part in tagged.split(';')), plain)
         used = {step[2] for item in items for step in item['steps'] if step[0] == 'load'}
@@ -437,8 +440,21 @@ class SoundCasesTests(unittest.TestCase):
                          ['OpClose{}', 'OpMaster{7}', 'OpLoad{1, 1, 44100, 16, 1, [12345]}', 'OpFile{2, "/work/tiny.wav"}', 'OpAlias{1, 0}', 'OpUnalias{3}', 'OpAct{2, 3}',
                           'OpTune{0, 5, 9}', 'OpUpdate{1, 1, [4, 5]}'])
         keys, steps = sp.catalog_steps(table, order)
-        self.assertEqual((len(keys), len(steps), keys[-2:], steps[:4], steps[-1]),          # the last step: the reference's LoadWave of the QOA music
-                         (20, 62, [('file', 'boom'), ('file', 'tiny')], [('init',), ('load', 0, 'mono16'), ('dump', 0), ('unload', 0)], ('raw', 'target')))
+        self.assertEqual((len(keys), len(steps), keys[-2:], steps[:4], steps[-3:]),         # the last steps: the reference's LoadWave of the QOA music and its reads of the MP3 cuts
+                         (20, 64, [('file', 'boom'), ('file', 'tiny')], [('init',), ('load', 0, 'mono16'), ('dump', 0), ('unload', 0)],
+                          [('raw', 'target'), ('mp3', 'mp3tag'), ('mp3', 'mp3plain')]))
+        self.assertEqual(sp.native_step(('mp3', 'tiny'), table, order)[:2], (29, order.index('tiny')))
+
+    def test_an_mp3_music_is_read_by_its_stream_s_count(self):
+        m = dict(samples=list(range(40)), channels=2, at=0, mp3=dict(delay=5, readable=20, read=0, started=False))
+        self.assertEqual((sp.Model.mp3_read(m, 8), m['at']), ((8, list(range(16))), 13))                 # the count has the delay once a frame was read
+        self.assertEqual((sp.Model.mp3_read(m, 30)[0], m['at'], m['mp3']['read']), (12, 25, 20))           # no more than the stream has
+        self.assertEqual((sp.Model.mp3_read(m, 4), m['at']), ((0, []), 25))
+        sp.Model.mp3_rewind(m)
+        self.assertEqual((m['at'], m['mp3']), (0, dict(delay=5, readable=20, read=0, started=False)))
+        steps = [item for item in sp.cases() if item['id'] in ('music-mp3', 'music-mp3-counted')]
+        self.assertEqual([sum(step[0] == 'seek' for step in item['steps']) for item in steps], [2, 3])
+        self.assertEqual(set(sp.MP3_FILES.values()), {'first12', 'noinfo'})
 
     def test_the_small_wav_file(self):
         data = sp.tiny_wav()

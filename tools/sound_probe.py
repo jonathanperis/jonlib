@@ -28,6 +28,16 @@ coin), a small generated .wav, a missing file, a .wav that is not one and
 another extension. raylib's converted samples for each wave come from a first
 reference pass.
 
+The musics are WAV files written here, the examples' target.qoa and two
+cuts of raylib's country.mp3 (the mp3 gate's): its Info frame with eleven
+frames, whose count is the whole file's and whose LAME delay is 1105
+frames, and twelve frames without a tag, which dr_mp3 counts. The
+reference's first pass also reads each MP3 cut's frames through dr_mp3,
+and the model plays those: it keeps dr_mp3's count of frames, which a seek
+goes by, and takes the stream back to its start whenever a read comes
+short. The cases play a cut round its end, stop it, seek forward, back and
+to 0, and let one end without looping.
+
 A Python model of raudio's state gives the expected rows for both sides and
 finds the steps raylib has no defined answer for. Cases with such a step are
 contracts (the reference does not run them): sounds loaded on an unready
@@ -47,6 +57,7 @@ import json
 import math
 import struct
 
+import mp3_probe
 import probekit
 from probekit import ProbeFailure
 import wave_format_probe as wf
@@ -59,6 +70,10 @@ FILES = {'boom': 'examples/textures/resources/boom.wav', 'buttonfx': 'examples/t
 FILE_ERRORS = {'missing': 'file', 'text': 'header', 'other': 'unsupported'}
 # Files the reference decodes for the model (LoadWave): the QOA music of raylib's examples.
 RAW_FILES = {'target': 'examples/audio/resources/target.qoa'}
+# MP3 musics: the mp3 gate's cuts of raylib's country.mp3. `first12` is its Info frame (a LAME delay of 1105 frames, and the
+# whole file's count) and eleven frames; `noinfo` twelve frames with no tag, which dr_mp3 counts.
+MP3_SOURCE = 'examples/audio/resources/country.mp3'
+MP3_FILES = {'mp3tag': 'first12', 'mp3plain': 'noinfo'}
 
 
 def bits(x):
@@ -530,6 +545,12 @@ def cases():
         ('close',))
     add('music-qoa-whole-halves', ('init',), ('music', 0, 'target'), ('play', 0), ('musicupdate', 0), ('mix', 480), ('musicupdate', 0), ('seek', 0, bits(1.5)),
         ('musicupdate', 0), ('mix', 480), ('close',))
+    turn = [('musicupdate', 0), ('mix', 480), ('mix', 480)]
+    add('music-mp3', ('init',), ('default', 2000), ('music', 0, 'mp3tag'), ('play', 0), *(turn * 14), ('musicstop', 0), ('play', 0), ('musicupdate', 0), ('mix', 480),
+        ('seek', 0, bits(0.1)), ('musicupdate', 0), ('mix', 480), ('seek', 0, bits(0.02)), ('musicupdate', 0), ('mix', 200), ('close',))
+    add('music-mp3-counted', ('init',), ('default', 2000), ('music', 0, 'mp3plain'), ('play', 0), ('musicupdate', 0), ('mix', 480), ('seek', 0, bits(0.05)), ('musicupdate', 0),
+        ('mix', 480), ('seek', 0, bits(0.01)), ('musicupdate', 0), ('mix', 480), ('seek', 0, bits(0.0)), ('musicupdate', 0), ('mix', 300), ('looping', 0, 0), *(turn * 9),
+        ('musicupdate', 0), ('musicunload', 0), ('close',))
     add('refused-music-8-bit', ('init',), ('music', 0, 'm8'))
     add('refused-music-seek-negative', ('init',), ('default', 480), ('music', 0, 'm16'), ('seek', 0, bits(-1.0)))
     add('refused-music-seek-no-buffer', ('music', 0, 'm16'), ('seek', 0, bits(0.5)))
@@ -697,6 +718,12 @@ class Model:
             self.stream(slot, rate, 32, channels)
             self.musics[slot] = dict(frames=frames, looping=True, at=0, samples=[bits((w - 65536 if w >= 32768 else w) / 32768.0) for w in words], rate=rate, channels=channels, qoa=True)
             return '-'
+        if name in MP3_FILES:               # dr_mp3: a float stream of sample/32768.0, read through the stream's count of frames
+            frames, rate, channels, delay, readable, words = self.catalog['mp3', name]
+            self.stream(slot, rate, 32, channels)
+            self.musics[slot] = dict(frames=frames, looping=True, at=0, samples=[bits((w - 65536 if w >= 32768 else w) / 32768.0) for w in words], rate=rate, channels=channels, qoa=False,
+                                     mp3=dict(delay=delay, readable=readable, read=0, started=False))
+            return '-'
         if name not in self.music_files:
             return FILE_ERRORS[name]
         _, rate, size, channels, frames, samples = self.music_files[name]
@@ -715,6 +742,25 @@ class Model:
             self.stop(found)
         if self.musics[slot] is not None:
             self.musics[slot]['at'] = 0
+            if 'mp3' in self.musics[slot]:
+                self.musics[slot]['mp3'].update(read=0, started=False)
+
+    @staticmethod
+    def mp3_read(m, need):
+        """drmp3_read_pcm_frames: `need` frames or what the stream has left (its readable frames are those after the LAME delay, up to
+        its end). currentPCMFrame, which is what a seek goes by, counts the delay once a frame was read."""
+        state = m['mp3']
+        take = min(need, state['readable'] - state['read'])
+        data = m['samples'][state['read'] * m['channels']:(state['read'] + take) * m['channels']]
+        state['read'] += take
+        state['started'] = state['started'] or state['readable'] > 0
+        m['at'] = (state['delay'] if state['started'] else 0) + state['read']
+        return take, data
+
+    @staticmethod
+    def mp3_rewind(m):
+        m['mp3'].update(read=0, started=False)
+        m['at'] = 0
 
     def music_update(self, slot):
         """UpdateMusicStream."""
@@ -733,6 +779,11 @@ class Model:
             if not stream[half]:
                 continue
             data, need = [], count
+            while need and 'mp3' in m:                      # the stream again from its start while more are needed
+                take, more = self.mp3_read(m, need)
+                data, need = data + more, need - take
+                if need:
+                    self.mp3_rewind(m)
             while need:                                     # the file again from its first frame while more are needed
                 take = min(need, m['frames'] - m['at'])
                 data += m['samples'][m['at'] * m['channels']:(m['at'] + take) * m['channels']]
@@ -750,6 +801,16 @@ class Model:
         frame = f32(fl(word) * float(m['rate']))
         if not -1.0 < frame < 4294967296.0:
             self.undefined = True
+            return
+        if 'mp3' in m:                      # drmp3_seek_to_pcm_frame: by its count, reading up to the frame (from the start when the count passed it)
+            if int(frame) == 0:
+                self.mp3_rewind(m)
+            elif int(frame) > m['at']:
+                self.mp3_read(m, int(frame) - m['at'])
+            elif int(frame) < m['at']:
+                self.mp3_rewind(m)
+                self.mp3_read(m, int(frame))
+            found['stream'].update(first=True, second=True, done=int(frame))
             return
         if m['qoa']:                        # qoaplay_seek_frame, and its sample_position is the frames given
             m['at'] = min(int(frame) // 5120, m['frames'] // 5120) * 5120
@@ -1147,9 +1208,10 @@ static void state(int first)
         Music m = musics[s];
         int live = (slot_id[s] > 0) && !gone[slot_id[s] - 1];
         if (m.ctxData == NULL) { printf(" U-"); continue; }
-        if ((m.ctxType != MUSIC_AUDIO_WAV) && (m.ctxType != MUSIC_AUDIO_QOA)) exit(10);
+        if ((m.ctxType != MUSIC_AUDIO_WAV) && (m.ctxType != MUSIC_AUDIO_QOA) && (m.ctxType != MUSIC_AUDIO_MP3)) exit(10);
         printf(" U%d,%u,%d,%u,%u,", (int)IsMusicValid(m), m.frameCount, (int)m.looping,
-               (m.ctxType == MUSIC_AUDIO_WAV)? (unsigned)((drwav *)m.ctxData)->readCursorInPCMFrames : ((qoaplay_desc *)m.ctxData)->sample_position, word(GetMusicTimeLength(m)));
+               (m.ctxType == MUSIC_AUDIO_WAV)? (unsigned)((drwav *)m.ctxData)->readCursorInPCMFrames :
+               (m.ctxType == MUSIC_AUDIO_MP3)? (unsigned)((drmp3 *)m.ctxData)->currentPCMFrame : ((qoaplay_desc *)m.ctxData)->sample_position, word(GetMusicTimeLength(m)));
         if ((m.stream.buffer == NULL) || (AUDIO.System.isReady && live)) printf("%u", word(GetMusicTimePlayed(m)));
         else printf("-");
     }
@@ -1300,6 +1362,19 @@ int main(void)
                     printf("\n");
                     UnloadWave(wave);
                 } break;
+                case 29:
+                {
+                    static drmp3 mp3;
+                    static drmp3_int16 all[1 << 16];
+                    unsigned count, got;
+                    if (!drmp3_init_file(&mp3, files[a], NULL)) return 12;
+                    count = (unsigned)drmp3_get_pcm_frame_count(&mp3);
+                    got = (unsigned)drmp3_read_pcm_frames_s16(&mp3, (1 << 16)/2, all);
+                    printf("M %u %u %u %u %u", count, mp3.sampleRate, mp3.channels, mp3.delayInPCMFrames, got);
+                    for (unsigned j = 0; j < got*mp3.channels; j++) printf(" %u", (unsigned)(unsigned short)all[j]);
+                    printf("\n");
+                    drmp3_uninit(&mp3);
+                } break;
                 case 18: AttachAudioStreamProcessor(slots[a].stream, processes[b]); break;
                 case 19: DetachAudioStreamProcessor(slots[a].stream, processes[b]); break;
                 case 20: AttachAudioMixedProcessor(processes[a]); break;
@@ -1340,6 +1415,7 @@ import ../../jonlib.bend as J
 import ../../jonmath.bend as M
 import ../../src/mixer.bend as Mixer
 import ../../src/resampler.bend as Resampler
+import ../../src/mp3_stream.bend as Mp3S
 
 type Op is Data:
   OpInit{}
@@ -1479,6 +1555,7 @@ def music.at(context: J.Music.Context) -> String:
     case J.MusicNone{}: "-"
     case J.MusicWav{_, at}: U32.show(at)
     case J.MusicQoa{_, at}: U32.show(at)
+    case J.MusicMp3{player}: U32.show(Mp3S.Player.current(player))
 
 def played.text(played: Maybe<F32>) -> String:
   match played:
@@ -1935,6 +2012,8 @@ def native_step(step, table, order):
         return 22, step[1], order.index(step[2]), 0, []
     if kind == 'raw':
         return 28, order.index(step[1]), 0, 0, []
+    if kind == 'mp3':
+        return 29, order.index(step[1]), 0, 0, []
     if kind in ('musicupdate', 'musicstop', 'musicunload'):
         return {'musicupdate': 23, 'musicstop': 24, 'musicunload': 27}[kind], step[1], 0, 0, []
     if kind in ('seek', 'looping'):
@@ -1968,7 +2047,7 @@ def catalog_steps(table, order):
     for name in order:
         keys.append(('file', name))
         steps += [('file', 0, name), ('dump', 0), ('unload', 0)]
-    return keys, steps + [('raw', name) for name in RAW_FILES]
+    return keys, steps + [('raw', name) for name in RAW_FILES] + [('mp3', name) for name in MP3_FILES]
 
 
 def render_for(table, paths):
@@ -1990,11 +2069,14 @@ def main():
     paths = {name: raylib / relative for name, relative in FILES.items()}
     written = {'tiny.wav': tiny_wav(), 'text.wav': b'This is not a RIFF file, whatever its name says.\n', 'other.xyz': tiny_wav()}
     written.update({f'{name}.wav': entry[0] for name, entry in music_files().items()})
+    cuts = mp3_probe.cases((raylib / MP3_SOURCE).read_bytes())
+    written.update({f'{name}.mp3': cuts[cut] for name, cut in MP3_FILES.items()})
     for name, data in written.items():
         (work / name).write_bytes(data)
     paths.update(tiny=work / 'tiny.wav', text=work / 'text.wav', other=work / 'other.xyz', missing=work / 'missing.wav')
     paths.update({name: work / f'{name}.wav' for name in music_files()})
     paths.update({name: raylib / relative for name, relative in RAW_FILES.items()})
+    paths.update({name: work / f'{name}.mp3' for name in MP3_FILES})
     order = list(paths)
     table, items = waves(), cases()
     keys, steps = catalog_steps(table, order)
@@ -2008,14 +2090,19 @@ def main():
     cataloged = reference([(True, steps)], 'catalog')
     dumps = [line.split()[1:] for line in cataloged if line[:2] == 'D ']
     raws = [[int(w) for w in line.split()[1:]] for line in cataloged if line[:2] == 'W ']
-    if len(dumps) != len(keys) or len(raws) != len(RAW_FILES):
-        raise ProbeFailure(f'sound: the reference converted {len(dumps)} of {len(keys)} waves and decoded {len(raws)} of {len(RAW_FILES)} files')
+    streams = [[int(w) for w in line.split()[1:]] for line in cataloged if line[:2] == 'M ']
+    if len(dumps) != len(keys) or len(raws) != len(RAW_FILES) or len(streams) != len(MP3_FILES):
+        raise ProbeFailure(f'sound: the reference converted {len(dumps)} of {len(keys)} waves and decoded {len(raws)} of {len(RAW_FILES)} and {len(streams)} of {len(MP3_FILES)} files')
     catalog = {('wave', name): wave[5] for name, wave in table.items() if wave[5] is not None}
     for key, (frames, *words) in zip(keys, dumps):
         catalog[key] = (int(frames), [int(w) for w in words])
     catalog['wave', 'zero'] = None
     for name, (frames, rate, size, channels, *words) in zip(RAW_FILES, raws):
         catalog['raw', name] = (frames, rate, size, channels, words)
+    for name, (frames, rate, channels, delay, readable, *words) in zip(MP3_FILES, streams):
+        catalog['mp3', name] = (frames, rate, channels, delay, readable, words)
+    if catalog['mp3', 'mp3tag'][:5] != (4125934, 44100, 2, 1105, 11567) or catalog['mp3', 'mp3plain'][:5] != (13824, 44100, 2, 0, 13824):
+        raise ProbeFailure(f'sound: the reference read the MP3 cuts as {catalog["mp3", "mp3tag"][:5]} and {catalog["mp3", "mp3plain"][:5]}')
     if catalog['raw', 'target'][:4] != (44100, 22050, 16, 2):
         raise ProbeFailure(f'sound: the reference decoded target.qoa as {catalog["raw", "target"][:4]}')
     sizes = {name: catalog['file', name][0] for name in FILES}

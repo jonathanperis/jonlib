@@ -5419,7 +5419,7 @@
       "scope": "The stream, the frame count, the looping flag, the context type, and the decoder (the file's frames as the stream holds them and the frame it is at).",
       "gaps": [
         "The decoder is a value in the Music, not a pointer: copies do not share it",
-        "WAV and QOA files only: OGG, MP3, FLAC, XM and MOD music are not ported",
+        "WAV, QOA and MP3 (Layer III) files only: OGG, FLAC, XM and MOD music are not ported, nor MP3 files of Layer I or II frames",
         "A file's frames are all decoded when it is loaded"
       ],
       "blocker": null,
@@ -60676,9 +60676,9 @@
       "status": "partial",
       "jonlib": "Music.load",
       "mapping_state": "implemented",
-      "scope": "A WAV or QOA file's music: a stream of the file's rate and channels (16-bit samples for 16- and 24-bit WAV files, floats for 32-bit ones and for QOA), the frame count and looping on; the stream has no buffer on an unready device and the music is still loaded; fields, stream and decoder position compared with raylib.",
+      "scope": "A WAV, QOA or MP3 file's music: a stream of the file's rate and channels (16-bit samples for 16- and 24-bit WAV files, floats for 32-bit ones, for QOA and for MP3), the frame count (an MP3's is drmp3_get_pcm_frame_count) and looping on; the stream has no buffer on an unready device and the music is still loaded; fields, stream and decoder position compared with raylib.",
       "gaps": [
-        "WAV and QOA files only: OGG, MP3, FLAC, XM and MOD music are not ported",
+        "WAV, QOA and MP3 (Layer III) files only: OGG, FLAC, XM and MOD music are not ported, nor MP3 files of Layer I or II frames",
         "Fail for WAV sample sizes other than 16, 24 and 32 bits (raylib streams what its shared buffer holds) and for what Wave.decode refuses",
         "Fail for a QOA file that does not hold every frame its header counts (qoaplay decodes a frame at a time)",
         "A typed error instead of a zero Music for a file that is not loaded"
@@ -60737,10 +60737,10 @@
       "status": "partial",
       "jonlib": "Music.load_from_memory",
       "mapping_state": "implemented",
-      "scope": "As Music.load, from the file's bytes and the \".wav\" or \".qoa\" token.",
+      "scope": "As Music.load, from the file's bytes and the \".wav\", \".qoa\" or \".mp3\" token.",
       "gaps": [
-        "WAV and QOA files only: OGG, MP3, FLAC, XM and MOD music are not ported",
-        "\".WAV\" and \".QOA\" are taken too (raylib compares the token in lower case only)",
+        "WAV, QOA and MP3 (Layer III) files only: OGG, FLAC, XM and MOD music are not ported, nor MP3 files of Layer I or II frames",
+        "\".WAV\", \".QOA\" and \".MP3\" are taken too (raylib compares the token in lower case only)",
         "Fail for sample sizes other than 16, 24 and 32 bits and for what Wave.decode refuses"
       ],
       "blocker": null,
@@ -61032,10 +61032,10 @@
       "status": "partial",
       "jonlib": "Music.update",
       "mapping_state": "implemented",
-      "scope": "Each processed half of a playing music's stream takes the decoder's next frames, the first half then the second: a whole half while the music loops (the file again from its first frame) or has as many left, else what is left; with none left and both halves processed the music stops, its decoder at the first frame; halves, counts and decoder position compared with raylib.",
+      "scope": "Each processed half of a playing music's stream takes the decoder's next frames, the first half then the second: a whole half while the music loops (the file again from its first frame; an MP3's stream from its start whenever a read comes short) or has as many left, else what is left; with none left and both halves processed the music stops, its decoder at the first frame; halves, counts and decoder position compared with raylib.",
       "gaps": [
         "The decoder's state is in the Music value, which the function gives back: no shared ctxData pointer",
-        "WAV and QOA files only: OGG, MP3, FLAC, XM and MOD music are not ported",
+        "WAV, QOA and MP3 (Layer III) files only: OGG, FLAC, XM and MOD music are not ported, nor MP3 files of Layer I or II frames",
         "Nothing for a music without frames (raylib reads it for ever when it loops)",
         "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
       ],
@@ -61270,7 +61270,7 @@
       "status": "partial",
       "jonlib": "Music.seek",
       "mapping_state": "implemented",
-      "scope": "The decoder goes to frame (unsigned int)(position*sampleRate), at most the file's last; the stream's framesProcessed is that frame, not clamped, and both halves are processed. A QOA music goes to the start of the QOA frame (5120 samples) the position is in, which is also its framesProcessed. Compared with raylib.",
+      "scope": "The decoder goes to frame (unsigned int)(position*sampleRate), at most the file's last; the stream's framesProcessed is that frame, not clamped, and both halves are processed. A QOA music goes to the start of the QOA frame (5120 samples) the position is in, which is also its framesProcessed. An MP3 music seeks as drmp3_seek_to_pcm_frame does without a seek table: by dr_mp3's count of frames, which has the LAME delay in it, reading up to the frame. Compared with raylib.",
       "gaps": [
         "The decoder's state is in the Music value, which the function gives back: no shared ctxData pointer",
         "Nothing for a position whose frame is not an unsigned int, a stream without a tracked buffer (raylib writes through the pointer) and an unready device"
