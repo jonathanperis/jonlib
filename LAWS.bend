@@ -42,6 +42,7 @@ import ./src/wav.bend as Wav
 import ./src/mp3.bend as Mp3
 import ./src/mp3_layer3.bend as Mp3L3
 import ./src/mp3_tables.bend as Mp3T
+import ./src/mp3_stream.bend as Mp3S
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -2702,6 +2703,64 @@ law mp3_calls_joined_in_order:
 
 law mp3_history_of_the_newest_rows:
   {Mp3L3.rows.newest(1n, [[1], [2]], Nil{}) == [[1]] : +List<+List<U32>>}
+
+# MP3 streams (src/mp3_stream.bend, dr_mp3's drmp3). A read first passes the
+# frames of the LAME delay, which count in currentPCMFrame and not in what
+# is read; it takes what the frame at hand has, no more than is wanted, and
+# with an Xing/Info total no further than the total less the padding. A
+# frame's samples are written over the start of those before, and a seek
+# forward passes samples without keeping them. A seek goes by the count:
+# frame 0 is the start, the count itself is no move, a later frame is read
+# up to and an earlier one read up to from the start. A file too short to
+# open has no stream, a read of no frame changes nothing, and a stream that
+# stopped gives no frame.
+law mp3_delay_passed_before_a_read:
+  {Mp3S.turn.skip(0, 1105, 1152) == 1105 : U32}
+
+law mp3_delay_longer_than_a_frame:
+  {Mp3S.turn.skip(0, 1105, 576) == 576 : U32}
+
+law mp3_no_delay_left:
+  {Mp3S.turn.skip(1105, 1105, 47) == 0 : U32}
+
+law mp3_read_takes_what_the_frame_has:
+  {Mp3S.turn.take(47, 100, False{}, 0, 1105) == 47 : U32}
+
+law mp3_read_takes_what_is_wanted:
+  {Mp3S.turn.take(1152, 100, False{}, 0, 0) == 100 : U32}
+
+law mp3_read_ends_at_the_padding:
+  {Mp3S.turn.take(1152, 100, True{}, 4127039, 4127000) == 39 : U32}
+
+law mp3_frame_written_over_the_samples_before:
+  {Mp3S.pcm.written([1, 2], [9, 8, 7, 6]) == [1, 2, 7, 6] : +List<U32>}
+
+law mp3_samples_taken_from_the_frame:
+  {Mp3S.pcm.copied(True{}, [5, 6, 7, 8], 1, 2) == [6, 7] : +List<U32>}
+
+law mp3_samples_passed_by_a_seek:
+  {Mp3S.pcm.copied(False{}, [5, 6, 7, 8], 1, 2) == Nil{} : +List<U32>}
+
+law mp3_seek_to_frame_0_is_the_start:
+  {Mp3S.seek.which(0, 500) == 0 : U32}
+
+law mp3_seek_to_the_count_stays:
+  {Mp3S.seek.which(500, 500) == 1 : U32}
+
+law mp3_seek_forward_reads_on:
+  {Mp3S.seek.which(600, 500) == 2 : U32}
+
+law mp3_seek_back_reads_from_the_start:
+  {Mp3S.seek.which(400, 500) == 3 : U32}
+
+law mp3_stream_of_a_short_file_does_not_open:
+  {Mp3S.open([255, 251, 144, 68]) == None{} : Maybe<Mp3S.Player>}
+
+law mp3_read_of_no_frame:
+  {Mp3S.read.raw(Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 0, True{}) == Mp3S.Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 0, Nil{}} : Mp3S.Read}
+
+law mp3_stopped_stream_gives_no_frame:
+  {Mp3S.read.raw(Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 2}, 100, True{}) == Mp3S.Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 2}, 0, Nil{}} : Mp3S.Read}
 
 # Frame: InitWindow sizes are 1..4096; a zero or oversized width has no frame
 # whatever the height.

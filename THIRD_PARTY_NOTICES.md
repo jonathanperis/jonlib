@@ -324,7 +324,13 @@ frame count (`drmp3_get_pcm_frame_count`), with their bit rate tables.
 `drmp3_L3_imdct_short`, `drmp3_L3_change_sign`, `drmp3_L3_imdct_gr`), the
 synthesis filter (`drmp3d_DCT_II`, `drmp3d_synth_pair`, `drmp3d_synth`,
 `drmp3d_synth_granule`, `drmp3d_scale_pcm`, in the SSE branches' order)
-and the frame around them (`drmp3dec_decode_frame`). `src/mp3_tables.bend` is the
+and the frame around them (`drmp3dec_decode_frame`). `src/mp3_stream.bend`
+adapts the stream's reading and seeking
+(`drmp3_decode_next_frame_ex__callbacks` with its samples,
+`drmp3_read_pcm_frames_raw`, `drmp3_read_pcm_frames_s16`,
+`drmp3_read_pcm_frames_f32`, `drmp3_s16_to_f32`, `drmp3_reset`,
+`drmp3_seek_to_start_of_stream`, `drmp3_seek_to_pcm_frame` and its brute
+force, `drmp3_get_mp3_and_pcm_frame_count`). `src/mp3_tables.bend` is the
 header's constant tables (scalefactor bands and partitions, `g_drmp3_pow43`, the
 Huffman tables, `g_pan`, `g_aa`, `g_twid9`, `g_twid3`, `g_mdct_window`,
 `g_sec`, `g_win`, and the float literals of `drmp3_L3_dct3_9` and

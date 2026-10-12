@@ -1925,6 +1925,54 @@ def Laws.mp3_calls_joined_in_order():
 def Laws.mp3_history_of_the_newest_rows():
   {==}
 
+def Laws.mp3_delay_passed_before_a_read():
+  {==}
+
+def Laws.mp3_delay_longer_than_a_frame():
+  {==}
+
+def Laws.mp3_no_delay_left():
+  {==}
+
+def Laws.mp3_read_takes_what_the_frame_has():
+  {==}
+
+def Laws.mp3_read_takes_what_is_wanted():
+  {==}
+
+def Laws.mp3_read_ends_at_the_padding():
+  {==}
+
+def Laws.mp3_frame_written_over_the_samples_before():
+  {==}
+
+def Laws.mp3_samples_taken_from_the_frame():
+  {==}
+
+def Laws.mp3_samples_passed_by_a_seek():
+  {==}
+
+def Laws.mp3_seek_to_frame_0_is_the_start():
+  {==}
+
+def Laws.mp3_seek_to_the_count_stays():
+  {==}
+
+def Laws.mp3_seek_forward_reads_on():
+  {==}
+
+def Laws.mp3_seek_back_reads_from_the_start():
+  {==}
+
+def Laws.mp3_stream_of_a_short_file_does_not_open():
+  {==}
+
+def Laws.mp3_read_of_no_frame():
+  {==}
+
+def Laws.mp3_stopped_stream_gives_no_frame():
+  {==}
+
 def Laws.audio_clock_periods_owed():
   {==}
 
