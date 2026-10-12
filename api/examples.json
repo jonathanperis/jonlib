@@ -6774,7 +6774,7 @@
   {
    "name": "audio_stream_effects",
    "category": "audio",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "AttachAudioStreamProcessor",
     "BeginDrawing",

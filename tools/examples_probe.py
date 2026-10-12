@@ -117,6 +117,7 @@ KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_A, KEY_H, KEY_R, KEY_S = 262, 263, 26
 KEY_G, KEY_SPACE, KEY_C, KEY_ENTER = 71, 32, 67, 257
 KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR = 49, 50, 51, 52
 KEY_P, KEY_W, KEY_D, KEY_TAB = 80, 87, 68, 258
+KEY_F = 70
 
 # name: (raylib source, setup expression, State is Data, needs the logo image)
 EXAMPLES = {
@@ -298,6 +299,7 @@ EXAMPLES = {
     'audio_raw_stream': ('audio/audio_raw_stream.c', 'Ex.setup(core, frame)'),
     'audio_stream_callback': ('audio/audio_stream_callback.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'audio_music_stream': ('audio/audio_music_stream.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'audio_stream_effects': ('audio/audio_stream_effects.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_vr_simulator': ('core/core_vr_simulator.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shaders_game_of_life': ('shaders/shaders_game_of_life.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
@@ -424,7 +426,7 @@ IO_SETUP.add('models_loading_m3d'); PERSPECTIVE.add('models_loading_m3d')
 AUDIO = {'textures_sprite_button', 'textures_sprite_explosion', 'audio_sound_multi', 'audio_sound_positioning'}
 # Examples whose frames show what the device did: its thread is stopped and the scripted clock asks for its callbacks
 # (tools/reference/audio_clock.c; AudioClock in Jonlib).
-AUDIO_CLOCK = {'audio_raw_stream', 'audio_music_stream'}
+AUDIO_CLOCK = {'audio_raw_stream', 'audio_music_stream', 'audio_stream_effects'}
 AUDIO.update(AUDIO_CLOCK)
 IO_SETUP.update(AUDIO)
 # The binary64 sin of its samples and of its wave has no AppleLibm profile (docs/MATH.md): the same contract.
@@ -1226,6 +1228,12 @@ def scripts():
                                               quick([key(KEY_UP, False), key(KEY_P)]), quick([key(KEY_P, False)]), quick([key(KEY_P)]),
                                               quick([key(KEY_P, False), key(KEY_LEFT)]), long([key(KEY_LEFT, False), key(KEY_DOWN)]),
                                               quick([key(KEY_DOWN, False), key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), quick()]),
+        # country.mp3 again, at 60 FPS (one or two callbacks a frame). F puts the low-pass filter on the music's stream and
+        # D the delay after it: both run in the callbacks of the frames that follow; P pauses and resumes; F takes the
+        # filter off over a slow frame; space restarts the music with the delay still on.
+        script('audio_stream_effects', 'toggles', [quick(), quick(), quick([key(KEY_F)]), quick([key(KEY_F, False)]), quick([key(KEY_D)]), quick([key(KEY_D, False)]),
+                                                   quick(), long([key(KEY_P)]), quick([key(KEY_P, False)]), quick([key(KEY_P)]), quick([key(KEY_P, False)]),
+                                                   slow([key(KEY_F)]), quick([key(KEY_F, False), key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), quick()]),
         # Every frame is a refusal (UNDEFINED_NATIVE): the port still runs the clock and the stream's callback, the
         # frequency keys and both wave keys before it refuses.
         script('audio_stream_callback', 'waves', [quick(), quick([key(KEY_UP)]), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), slow([key(KEY_LEFT)]),

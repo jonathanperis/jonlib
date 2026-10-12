@@ -72,7 +72,7 @@ at the branch's head.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 582/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **202/212 ported** with the stack (`audio_music_stream` plays `country.mp3` through the MP3 decoder), 8 ready (four of them wait for a decoder or an MP3 loader, which the plan does not count: `country.mp3` as a wave, `mini1111.xm`, `target.ogg`), 2 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **203/212 ported** with the stack (`audio_music_stream` and `audio_stream_effects` play `country.mp3` through the MP3 decoder), 7 ready (four of them wait for a decoder, an MP3 loader or `powf`, which the plan does not count: `country.mp3` as a wave, `mini1111.xm`, `target.ogg`), 2 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -556,12 +556,20 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      frame's 16-bit PCM (`synth.granule`), equal to dr_mp3's on every
      frame of `country.mp3` and on the synthetic corpus. Left of the
      plan: the `Wave`/`Sound` loaders (`LoadWave` is
-     `drmp3_open_memory_and_read_pcm_frames_f32`), the two other
-     examples that play `country.mp3` (`audio_mixed_processor` and
-     `audio_stream_effects`: processors over a music's stream;
-     `audio_music_stream` is ported, with the device's clock and its
-     frames compared with the native example's), and Layers I and II
-     (refused now).
+     `drmp3_open_memory_and_read_pcm_frames_f32`), the last example
+     that plays `country.mp3`, and Layers I and II (refused now).
+     `audio_music_stream` and `audio_stream_effects` are ported, with
+     the device's clock and their frames compared with the native
+     examples' (the effects are stream processors computing with
+     `src/mixer.bend`'s flush-to-zero operations, which the example
+     imports: there is no public name for them yet). What
+     `audio_mixed_processor` still needs is `powf` for any exponent:
+     its processor is `powf(fabsf(x), exponent)` on every mixed sample,
+     with the exponent moved by keys from 0.5 to 3 in steps of 0.05, and
+     `M.Libm.pow` only has glibc's kernel for exponents 2 and 3 on
+     [0, 1]. glibc 2.39's `powf` is `log2_inline` and `exp2_inline` in
+     binary64 (`src/power.bend` already has the second); the first is a
+     16-entry table and a degree-4 polynomial.
      **`Music` plays MP3** (`MusicMp3{player}` in `jonlib.bend`, cases
      `music-mp3` and `music-mp3-counted` of the sound gate, whose model
      takes the stream's readable frames from the reference and keeps
