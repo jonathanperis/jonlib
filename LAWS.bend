@@ -2178,6 +2178,31 @@ law audio_mix_unready_refused:
 law audio_mix_no_frames_refused:
   {J.AudioDevice.mix(J.AudioDevice.init(J.AudioDevice.none()), 0) == (J.AudioDevice.init(J.AudioDevice.none()), None{}) : J.AudioDevice & Maybe<&2, +List<U32>>}
 
+# The device's clock: the periods still to ask for are those due less those
+# already asked for, none twice; a time before the device was opened and an
+# unknown count are refused. No period, no callback; and a callback Jonlib
+# does not make (here: an unready device) ends the catching up.
+law audio_clock_periods_owed:
+  {J.AudioClock.owed(3, Some{7}) == Some{4} : Maybe<U32>}
+
+law audio_clock_no_period_twice:
+  {J.AudioClock.owed(7, Some{7}) == Some{0} : Maybe<U32>}
+
+law audio_clock_earlier_time_owes_nothing:
+  {J.AudioClock.owed(7, Some{5}) == Some{0} : Maybe<U32>}
+
+law audio_clock_before_opening_refused:
+  {J.AudioClock.owed(0, Some{4294967295}) == None{} : Maybe<U32>}
+
+law audio_clock_unknown_time_refused:
+  {J.AudioClock.owed(0, None{}) == None{} : Maybe<U32>}
+
+law audio_clock_no_period_no_callback:
+  {J.AudioClock.pump(0n, (J.AudioDevice.none(), Some{Nil{}})) == (J.AudioDevice.none(), True{}) : J.AudioDevice & Bool}
+
+law audio_clock_refused_callback_stops:
+  {J.AudioClock.pump(3n, (J.AudioDevice.none(), Some{Nil{}})) == (J.AudioDevice.none(), False{}) : J.AudioDevice & Bool}
+
 # Frame: InitWindow sizes are 1..4096; a zero or oversized width has no frame
 # whatever the height.
 law frame_init_window_zero_width:

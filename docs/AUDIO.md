@@ -456,6 +456,32 @@ subnormal volume is silence, and a subnormal sample is not heard. Hosts
 where miniaudio leaves subnormals alone (AArch64) are a different profile
 that is not ported.
 
+### The clock
+
+raylib's device runs on a thread of its own: as the device plays, miniaudio
+asks it for one callback per period (480 frames, 10 ms). Jonlib has no
+thread and no host device. Time is the program's (`Core.get_time`), and an
+`AudioClock` makes the callbacks that were due by a time when the program
+says so:
+
+| Function | Contract |
+|---|---|
+| `AudioClock.at(time)` | The clock of a device opened at `time` (`InitAudioDevice` then): no period asked for yet. |
+| `AudioClock.advance(clock, device, time) -> AudioStep{clock, device, fine}` | Every whole period between the opening and `time` that was not asked for yet is one `AudioDevice.mix(device, 480)`, in order: `(int)((time - opened)*100.0)` periods in all, in binary64. The samples go nowhere. An unready device makes no callback and its periods pass. |
+
+A program calls `AudioClock.advance` with the frame's time at the start of
+its update, before it asks `IsSoundPlaying` or `IsAudioStreamProcessed`:
+what it then sees is what raylib shows once its thread has caught up with
+that time. `fine` is false, with the clock as it was, for a time before the
+opening or outside the binary64 helpers' domain, for more than 65536 periods
+at once (about eleven minutes) and when a callback is one Jonlib does not
+mix (the device is then as that callback found it).
+
+This is a model of the device thread, not a measurement of it: a real
+device's callbacks come when the host schedules them, a little later than
+their period and not always one period at a time. The reference of the
+examples that need the clock is built the same way (below).
+
 ### How it is verified
 
 `tools/sound_probe.py` (gate `sound`) compiles `raudio.c` itself into the
@@ -515,7 +541,20 @@ The examples that play sounds without showing audio state
 `raudio.c` compiled beside it the same way (`tools/examples_probe.py`): its
 device mixes on its own thread there, and no frame depends on it.
 
+The examples whose frames do show what the device did (`audio_raw_stream`:
+the time its sine's last period began, which depends on when the device had
+read a half of the stream through) are replayed against a reference with
+the same clock (`tools/reference/audio_clock.c`): raudio.c with two probe
+functions, one that stops the device's thread as soon as `InitAudioDevice`
+has opened it (no buffer exists yet, so the thread mixed nothing) and one
+that asks the stopped device for callbacks of 480 frames through
+miniaudio's own entry point. The example's `InitAudioDevice` notes the
+scripted clock, and the start of every loop pass (`WindowShouldClose`) asks
+for the periods due since, `(int)((clock - opened)*100.0)` in all. The
+callbacks, the stream and the mixer are raylib's own; only their timing is
+the probe's.
+
 Not yet available: the fused (FMA) profile of the mixer, the profile of
-hosts that keep subnormals in the callback, a clock (the program asks for
-each callback), stream callbacks and processors, music, and a host device.
+hosts that keep subnormals in the callback, stream callbacks and
+processors, music, and a host device (the clock is a model of its thread).
 No GPU evidence.

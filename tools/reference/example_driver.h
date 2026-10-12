@@ -31,6 +31,11 @@
  * - GetFileModTime: an example's own call (shaders_hot_reloading) answers
  *   the script's seed for every file, a modification time that does not
  *   depend on the checkout.
+ * - InitAudioDevice (with JONLIB_EXAMPLE_AUDIO_CLOCK only, for the examples
+ *   whose frames show what the audio device did): opens the device, stops
+ *   its thread and notes the scripted clock; WindowShouldClose then asks the
+ *   device for every whole period of 10 ms since
+ *   (tools/reference/audio_clock.c).
  */
 #ifndef JONLIB_EXAMPLE_DRIVER_H
 #define JONLIB_EXAMPLE_DRIVER_H
@@ -41,6 +46,9 @@
 #define WindowShouldClose JonlibExampleWindowShouldClose
 #define BeginDrawing JonlibExampleBeginDrawing
 #define EndDrawing JonlibExampleEndDrawing
+#ifdef JONLIB_EXAMPLE_AUDIO_CLOCK
+#define InitAudioDevice JonlibExampleInitAudioDevice
+#endif
 
 double JonlibProbeTime(void);
 #define JONLIB_EXAMPLE_CLOCK_CAT(a, b) a ## b

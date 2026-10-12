@@ -58959,7 +58959,7 @@
       "mapping_state": "implemented",
       "scope": "miniaudio's master volume factor: any volume that is not below 0 is kept (NaN included), on a ready device or not.",
       "gaps": [
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device"
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
       ],
       "blocker": null,
       "gates": {
@@ -59262,7 +59262,7 @@
         "SoundWaveError where raylib returns the zero sound (missing or bad files)",
         "OGG, MP3, FLAC, XM and MOD files",
         "SoundDeviceNotReady on an unready device",
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device"
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
       ],
       "blocker": null,
       "gates": {
@@ -59327,7 +59327,7 @@
         "SoundDeviceNotReady on an unready device (raylib converts to the zeroed device rate)",
         "SoundWaveError for the waves WaveFormat refuses",
         "A wave without frames has no NULL/non-NULL data distinction beyond the zero wave",
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device"
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
       ],
       "blocker": null,
       "gates": {
@@ -59389,7 +59389,7 @@
       "gaps": [
         "The zero sound where raylib reads NULL or freed memory: buffer 0, an unloaded buffer, a freed block",
         "The zero sound on an unready device",
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device"
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
       ],
       "blocker": null,
       "gates": {
@@ -59876,7 +59876,7 @@
       "mapping_state": "implemented",
       "scope": "The buffer plays from its first frame, unpaused; AudioDevice.mix then mixes it as raudio's device callback does (its resampler one frame late, volume and pan levels, master volume, clip) until its end, every sample compared with raylib.",
       "gaps": [
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device",
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
         "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
         "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)",
         "The callback computes as on x86-64, where miniaudio disables denormals (a subnormal is a zero); the fused (FMA) profile and hosts that keep subnormals are not ported"
@@ -59938,7 +59938,7 @@
       "mapping_state": "implemented",
       "scope": "A playing buffer stops; a paused buffer stays as it is, as raylib only stops buffers that are playing and not paused.",
       "gaps": [
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device",
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
         "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
         "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
       ],
@@ -59999,7 +59999,7 @@
       "mapping_state": "implemented",
       "scope": "The buffer is paused, playing or not.",
       "gaps": [
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device",
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
         "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
         "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
       ],
@@ -60060,7 +60060,7 @@
       "mapping_state": "implemented",
       "scope": "The buffer is not paused.",
       "gaps": [
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device",
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
         "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
         "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
       ],
@@ -60121,7 +60121,7 @@
       "mapping_state": "implemented",
       "scope": "Playing and not paused; false again once AudioDevice.mix has mixed the buffer to its end.",
       "gaps": [
-        "No clock: a sound ends when AudioDevice.mix reaches its end",
+        "No device thread: a sound ends when a callback the program asks for (AudioDevice.mix, AudioClock.advance) reaches its end",
         "False on an unready device and for an unloaded buffer"
       ],
       "blocker": null,
@@ -60182,7 +60182,7 @@
       "mapping_state": "implemented",
       "scope": "The buffer's volume: any float.",
       "gaps": [
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device",
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
         "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
         "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
       ],
@@ -60305,7 +60305,7 @@
       "mapping_state": "implemented",
       "scope": "The buffer's pan, clamped to -1..1 (NaN stays).",
       "gaps": [
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device",
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
         "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
         "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
       ],
@@ -61552,7 +61552,7 @@
       "scope": "A tracked buffer of two zeroed halves in the stream's format (the default size, raylib's 12800 frames, at least the 480-frame period) with a converter from the stream's rate on min(channels, 2) channels; a stream without a buffer where miniaudio makes no converter (unready device, rate 0, no channels); buffer, converter state and fields compared with raylib.",
       "gaps": [
         "No buffer for sample sizes other than 8, 16 and 32, a negative default size, or more than 2^22 samples",
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device"
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
       ],
       "blocker": null,
       "gates": {
@@ -61786,7 +61786,7 @@
       "mapping_state": "implemented",
       "scope": "One of the halves is processed (a sound's buffer always is).",
       "gaps": [
-        "No clock: a half becomes processed only when an AudioDevice.mix the program asks for reads it through",
+        "No device thread: a half becomes processed when a callback the program asks for (AudioDevice.mix, AudioClock.advance) reads it through",
         "False on an unready device and for an unloaded buffer"
       ],
       "blocker": null,
@@ -61846,7 +61846,7 @@
       "mapping_state": "implemented",
       "scope": "Playing from the first frame, unpaused, both halves processed; AudioDevice.mix then plays it as raudio's device callback does (the two halves read in turn and marked processed, silence where the program did not feed it, the data converter from the stream's format, channels and rate with miniaudio's passes and raudio's residual), every sample compared with raylib.",
       "gaps": [
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device",
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
         "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
         "A playing stream of more than 1024 channels makes AudioDevice.mix refuse (raudio's input buffer or miniaudio's temporary holds no frame of it)",
         "The callback computes as on x86-64, where miniaudio disables denormals (a subnormal is a zero); the fused (FMA) profile and hosts that keep subnormals are not ported"
@@ -61907,7 +61907,7 @@
       "mapping_state": "implemented",
       "scope": "The buffer is paused.",
       "gaps": [
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device",
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
         "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
       ],
       "blocker": null,
@@ -61966,7 +61966,7 @@
       "mapping_state": "implemented",
       "scope": "The buffer is not paused.",
       "gaps": [
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device",
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
         "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
       ],
       "blocker": null,
@@ -62084,7 +62084,7 @@
       "mapping_state": "implemented",
       "scope": "A playing stream stops, back at its first frame with both halves processed; a paused one stays as it is.",
       "gaps": [
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device",
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
         "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
       ],
       "blocker": null,
@@ -62143,7 +62143,7 @@
       "mapping_state": "implemented",
       "scope": "The buffer's volume: any float.",
       "gaps": [
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device",
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
         "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
       ],
       "blocker": null,
@@ -62203,7 +62203,7 @@
       "scope": "The buffer's pitch and its converter's output rate (unsigned int)(48000/pitch) against the stream's own rate: the reduced rates, the timer and the filter's coefficient compared with raylib.",
       "gaps": [
         "A pitch whose rate does not fit an unsigned int changes nothing (the cast is undefined)",
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device",
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
         "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
       ],
       "blocker": null,
@@ -62262,7 +62262,7 @@
       "mapping_state": "implemented",
       "scope": "The buffer's pan, clamped to -1..1 (NaN stays).",
       "gaps": [
-        "Heard only through AudioDevice.mix, a device callback the program asks for: no clock and no host device",
+        "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
         "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
       ],
       "blocker": null,

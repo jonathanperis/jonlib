@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 199 ported, 6 ready, 7 waiting.
+Totals: 212 examples; 200 ported, 5 ready, 7 waiting.
 
 ## APIs that unblock the most examples
 
@@ -248,7 +248,7 @@ Totals: 212 examples; 199 ported, 6 ready, 7 waiting.
 | `shaders_cel_shading` | shaders | ported |  |
 | `audio_module_playing` | audio | waiting | `GetMusicTimeLength`, `GetMusicTimePlayed`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `SetMusicPitch`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
 | `audio_music_stream` | audio | waiting | `GetMusicTimeLength`, `GetMusicTimePlayed`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `SetMusicPan`, `SetMusicVolume`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
-| `audio_raw_stream` | audio | ready |  |
+| `audio_raw_stream` | audio | ported |  |
 | `audio_sound_loading` | audio | ready |  |
 | `audio_mixed_processor` | audio | waiting | `AttachAudioMixedProcessor`, `DetachAudioMixedProcessor`, `LoadMusicStream`, `PlayMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
 | `audio_stream_effects` | audio | waiting | `AttachAudioStreamProcessor`, `DetachAudioStreamProcessor`, `GetMusicTimeLength`, `GetMusicTimePlayed`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
