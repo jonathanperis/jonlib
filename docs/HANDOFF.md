@@ -72,7 +72,7 @@ at the branch's head.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 561/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **199/212 ported** with the stack, 6 ready (two of them waiting for the mixer to play streams), 7 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **199/212 ported** with the stack, 6 ready (two of them waiting for the audio clock), 7 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -395,22 +395,28 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `IsSoundPlaying` or `IsAudioStreamProcessed`); and in Jonlib an
      `AudioDevice.advance(device, time)` that makes the same callbacks
      (the device keeps the time it opened at and the periods it has
-     asked for), which a ported example calls first in its update; (3) playing audio streams. Their state is in
-     (`AudioStream.*`: the two halves, the processed flags,
-     `UpdateAudioStream`, the converter's rates from the stream's own; a
-     head's `Mixer.Feed` says what a buffer plays). Missing in
-     `Mixer.turn`: raudio's stream branch of
+     asked for), which a ported example calls first in its update. **Audio streams play**
+     (`AudioStream.*`; a head's `Mixer.Feed` says what a buffer plays):
+     `Mixer.turn` has raudio's stream branch of
      `ReadAudioBufferFramesInInternalFormat` (the halves, looping, the
      zero fill that counts as frames read) and `ma_data_converter`'s
-     pipeline as a stream for formats and channels other than the
-     device's (format first, then the resampler on min(channels, 2)
-     channels before or after `ma_channel_converter`, through 4096-byte
-     temporaries; `src/convert.bend` has it for one whole wave). Then `audio_raw_stream`,
-     `audio_stream_callback` (needs `SetAudioStreamCallback`),
-     `audio_spectrum_visualizer`; (4) music
-     (`LoadMusicStream`) and its decoders: dr_mp3, stb_vorbis, jar_xm,
-     jar_mod, dr_flac. Subnormals in a callback are refused: miniaudio
-     sets DAZ/FTZ around the callback on x86 only.
+     pipeline as a stream (format first, then the resampler on
+     min(channels, 2) channels before or after `ma_channel_converter`,
+     in passes through 4096-byte temporaries). Three things cost time
+     there: raudio reads at most the frames its 4096-byte input buffer
+     holds, so 512 only for a sound (2048 of a 16-bit mono stream: the
+     residual differs by a frame otherwise); with one channel or more
+     than two a pass takes no more input than
+     `ma_linear_resampler_get_required_input_frame_count`; and the
+     callback runs with **denormals disabled** (DAZ/FTZ on x86-64, the
+     reference): `Mixer.fadd/fsub/fmul/fdiv` flush operands and results,
+     and every operation of the callback goes through them (a filter's
+     tail reaches exact zeros natively). AArch64 keeps subnormals there:
+     a profile for the macOS validation to settle. Then
+     `audio_raw_stream`, `audio_stream_callback` (needs
+     `SetAudioStreamCallback`), `audio_spectrum_visualizer`, all waiting
+     for the clock; (3) music (`LoadMusicStream`) and its decoders:
+     dr_mp3, stb_vorbis, jar_xm, jar_mod, dr_flac.
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`
@@ -448,7 +454,14 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
   non-ASCII text as UTF-8 bytes (`"I\u{c3}\u{b1}igo"`).
 - **Bend native miscompile:** a `Bool.pick(Bool, …)` result feeding `||` in the
   same def is wrong on native lanes (repro `tests/compiler/bool_pick_or.bend`,
-  diagnostic gate `bend-defects`). Never write it.
+  diagnostic gate `bend-defects`). Never write it: choose Bools with a def of
+  your own (`either` in `src/wav.bend` and `src/mixer.bend`). The JavaScript
+  lane is right, so a probe whose first lane passes and whose native lane
+  differs in one flag is this (it cost the stream reads an hour).
+- **Long list literals** in a generated program overflow the JavaScript
+  parser's stack around 2000 elements: pass them in chunks of 64
+  (`words.joined` in `tools/sound_probe.py`, `input_bytes` in
+  `tools/bmp_probe.py`).
 - **Apple clang 21 crashes** compiling very large Bend defs: keep defs small and
   probes data-driven ("scenes as data through one interpreter def").
 - **Memory:** one Bend compile at a time on an 8 GiB machine (exit -9 is the

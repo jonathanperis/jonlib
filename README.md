@@ -88,16 +88,17 @@ examples are ported ([EXAMPLES.md](docs/EXAMPLES.md)).
   configuration (shaders and stereo change nothing on the software
   renderer, as in raylib).
 - **Audio** ([AUDIO.md](docs/AUDIO.md)): WAV and QOA waves, `WaveFormat`, the
-  audio device's state, sounds and aliases, and a mixer whose device
-  callbacks match raylib's sample for sample, pitched playback included.
+  audio device's state, sounds, aliases and audio streams, and a mixer whose
+  device callbacks match raylib's sample for sample, pitched playback and
+  streams of any format included.
 - **Jongui** ([GUI.md](docs/GUI.md)): raygui's controls.
 - **Execution**: native CPU, JavaScript and (with the declared compiler overlay)
   forced Metal; see [VERIFICATION.md](docs/VERIFICATION.md).
 
-Not yet there: audio streams and music with their MP3, OGG, FLAC, XM and MOD
-decoders; a host window, input devices and audio output (everything runs
-headless); images beyond 4096 pixels on a side; directory listing. macOS is
-off the merge path for now and owes a full validation. The
+Not yet there: an audio clock, stream callbacks and music with their MP3,
+OGG, FLAC, XM and MOD decoders; a host window, input devices and audio output
+(everything runs headless); images beyond 4096 pixels on a side; directory
+listing. macOS is off the merge path for now and owes a full validation. The
 [master plan](docs/MASTER-PLAN.md) and [HANDOFF.md](docs/HANDOFF.md) order
 that work.
 

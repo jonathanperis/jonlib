@@ -377,9 +377,12 @@ buffer that is 0, not tracked or a sound's (raylib writes the sound's
 samples as if they were a stream's), and for a `data` that does not hold
 `frames*channels` samples. `Sound.update` leaves a stream's buffer as it is.
 
-**The mixer does not play streams yet**: a callback with a playing stream is
-refused. What is missing is raudio's reading of the two halves and the
-converter from the stream's format and channels.
+A playing stream takes part in the mixer's callbacks (below). It never
+ends: the device reads the frames left in the half its cursor is in, goes on
+in the other half, and wraps; a half read to its end is processed, and a
+half that is processed gives nothing, so a stream the program does not feed
+plays silence where its cursor waits. A stream that is not fed in time
+underruns exactly as raylib's does.
 
 ### The mixer
 
@@ -407,11 +410,23 @@ at a time (480 frames on miniaudio's null backend); the program chooses.
   converter's resampler has order 1, not the order 4 that `WaveFormat` gets
   through `ma_convert_frames`. It filters the input when the pitch is above
   1 and the output when it is below, and not at 1:1.
-- raudio asks the buffer for `(unsigned int)(((float)48000/rate)*frames)`
-  input frames (at least 1, at most the 512 of its input buffer) each time
-  the converter needs more; frames the converter did not take wait in a
-  residual of at most 8 frames (more are lost), which is fed first the next
-  time, on the next `PlaySound` too.
+- raudio asks the buffer for `(unsigned int)(((float)source/rate)*frames)`
+  input frames (the buffer's own rate over the converter's output rate; at
+  least 1, at most the frames its 4096-byte input buffer holds: 512 of a
+  sound's, 2048 of a 16-bit mono stream's) each time the converter needs
+  more; frames the converter did not take wait in a residual of at most 8
+  frames (more are lost), which is fed first the next time, on the next
+  `PlaySound` too.
+- A stream's frames go through the whole data converter, in miniaudio's
+  order: the samples to f32 (`(x - 128)/128` for 8-bit ones, `x/32768` for
+  16-bit ones), more than two channels mixed to stereo with the default
+  channel maps' weights before the resampler, and one channel resampled and
+  then copied to both sides. miniaudio converts through 4096-byte
+  temporaries, so one conversion is several passes whose sizes depend on the
+  format and channels, and for one channel or more than two a pass takes no
+  more input than `ma_linear_resampler_get_required_input_frame_count` says:
+  what is left over is raudio's residual. All of it is reproduced, because
+  it decides which frames the residual loses.
 - raudio reads a static buffer in runs of 512 frames and takes a cursor past
   two halves of the buffer (`size/2` frames each) for its end: a run that
   starts on the last frame of a buffer of an odd size (3 frames and more)
@@ -427,10 +442,19 @@ frames (raudio divides by its size), one whose samples were freed, or one
 whose rate Jonlib does not resample (a reduced output rate of 2^31 and more;
 a filter coefficient that is not certified: `exp` is bracketed by a
 fixed-point series between the two neighbours of the nearest double, and
-both must give the same binary32); and a callback in which a subnormal or a
-NaN takes part or results
-(inside the callback miniaudio flushes subnormals to zero on x86 hosts only,
-and the bits of a NaN are the host's).
+both must give the same binary32); a playing stream of more than 1024
+channels (raudio's input buffer or miniaudio's temporary holds no frame of
+it); and a callback in which a NaN results (its bits are the host's).
+
+**Subnormals.** miniaudio runs the callback with denormals disabled
+(`ma_device_disable_denormals`). On x86-64, the reference here, that is
+MXCSR's denormals-are-zero and flush-to-zero: every operation of the
+callback takes a subnormal operand for the zero of its sign and gives a
+zero for a result that would be subnormal. Jonlib's callback computes that
+way on every host and target: a filter's tail decays to exact zeros, a
+subnormal volume is silence, and a subnormal sample is not heard. Hosts
+where miniaudio leaves subnormals alone (AArch64) are a different profile
+that is not ported.
 
 ### How it is verified
 
@@ -440,7 +464,7 @@ backend, so that the program can read `AUDIO` and the audio buffers, and
 stops the device right after `InitAudioDevice`: its thread mixes nothing,
 and the program asks for each callback itself
 (`ma_device_handle_backend_data_callback`) with the script's frame counts.
-86 scripts of 785 steps over four sound slots run on both sides and on a
+94 scripts of 905 steps over four sound slots run on both sides and on a
 Python model of raudio's state; after every step the ready flag, the master
 volume bits, every slot's handle fields with `IsSoundValid` and
 `IsSoundPlaying`, and every tracked buffer (its number, block, size, volume,
@@ -466,13 +490,20 @@ unready device, a rate of 0 and no channels; updates of each format into
 each half, of no frames, of a whole half, of one frame too many and of a
 negative count, with no half left, after a play, a stop and a pause; and
 pitches against 44100, 48000 and 8000 Hz streams (147:80, 147:160, 1:2,
-1:1). The waves are
+1:1). Playing streams: silence from unfed ones, a 48000 Hz float stream fed
+and mixed across both halves with an underrun, a pause, a stop and a replay;
+a 44100 Hz 16-bit mono one with pitches of 1.5 and 0.25 (reads of 661 frames
+at once); 8-bit stereo and mono ones at 22050 and 8000 Hz with a volume and
+a pan; 3 and 6 channels at 32000 and 96000 Hz; 400 channels at a pitch of 6
+(passes of two frames); and a stream beside a pitched sound and its alias.
+Subnormals: samples, volumes, pans and master volumes that are subnormal or
+make subnormal products, in sounds and in a stream. The waves are
 8-, 16- and 32-bit, of 1, 2, 4 and 6 channels, at 48000, 8000, 22050, 44100
 and 96000 Hz, with the empty cases above, and the files are the four `.wav`
 files of the examples that only play sounds (`boom`, `buttonfx`, `sound`,
 `coin`; 26522 to 48000 frames each), a small generated one, a missing one,
-one that is not a WAV and another extension. 55 scripts are compared with
-raylib; the 31 with a step raylib has no defined answer for, or a step or
+one that is not a WAV and another extension. 65 scripts are compared with
+raylib; the 29 with a step raylib has no defined answer for, or a step or
 a callback Jonlib refuses, are checked against the model on Jonlib alone. `IsSoundPlaying` is asked of raylib only on
 a ready device and for a tracked buffer, and no script opens the device over
 a playing buffer (raylib would mix it before the reference can stop it). CPU-1,
@@ -484,8 +515,7 @@ The examples that play sounds without showing audio state
 `raudio.c` compiled beside it the same way (`tools/examples_probe.py`): its
 device mixes on its own thread there, and no frame depends on it.
 
-Not yet available: the fused (FMA) profile of the mixer, the hosts'
-subnormal profiles (a filter's tail that decays into subnormals is refused),
-a clock (the program asks for each callback), playing audio streams
-(their state is here), stream callbacks and processors, music, and a host
-device. No GPU evidence.
+Not yet available: the fused (FMA) profile of the mixer, the profile of
+hosts that keep subnormals in the callback, a clock (the program asks for
+each callback), stream callbacks and processors, music, and a host device.
+No GPU evidence.
