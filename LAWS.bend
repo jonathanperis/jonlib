@@ -2100,6 +2100,42 @@ law audio_read_even_last_frame:
 law audio_read_one_frame:
   {Mixer.read.count(1, 0, True{}, 4) == 1 : U32}
 
+# raudio's read of a playing stream (src/mixer.bend): the frames left in the
+# half the cursor is in, then the other half's from its start, each only
+# while the device has not read that half through; the rest is silence. One
+# read takes at most the frames 4096 bytes hold.
+law audio_stream_read_to_the_end_of_the_half:
+  {Mixer.read.here(960, 100, False{}, False{}, 480) == 380 : U32}
+
+law audio_stream_read_goes_on_in_the_other_half:
+  {Mixer.read.there(960, 100, False{}, False{}, 480) == 100 : U32}
+
+law audio_stream_read_wraps_from_the_second_half:
+  {(Mixer.read.here(960, 900, False{}, False{}, 480), Mixer.read.there(960, 900, False{}, False{}, 480)) == (60, 420) : U32 & U32}
+
+law audio_stream_read_processed_half_gives_nothing:
+  {(Mixer.read.here(960, 100, True{}, False{}, 480), Mixer.read.there(960, 100, True{}, False{}, 480)) == (0, 0) : U32 & U32}
+
+law audio_stream_read_stops_at_a_processed_half:
+  {Mixer.read.there(960, 100, False{}, True{}, 480) == 0 : U32}
+
+law audio_stream_read_within_the_half:
+  {(Mixer.read.here(960, 100, False{}, False{}, 200), Mixer.read.there(960, 100, False{}, False{}, 200)) == (200, 0) : U32 & U32}
+
+law audio_read_cap_of_a_sound:
+  {Mixer.read.cap(32, 2) == 512 : U32}
+
+law audio_read_cap_of_a_16_bit_mono_stream:
+  {Mixer.read.cap(16, 1) == 2048 : U32}
+
+law audio_read_cap_of_a_wide_stream:
+  {Mixer.read.cap(8, 1000) == 4 : U32}
+
+# miniaudio's count of the input frames a converter needs carries the
+# fractions of the output frames: floor((54 + 3*67)/80) whole frames here.
+law audio_required_input_carries_fractions:
+  {Mixer.carried(3n, 54, 67, 80, 0) == 3 : U32}
+
 # A rate change keeps the resampler's place: the fraction of an input frame,
 # counted in the old reduced output rate, becomes one in the new rate, and its
 # whole frames move to the frames due.
@@ -2117,19 +2153,23 @@ law audio_rate_unchanged_at_the_device_rate:
 law audio_first_order_series_at_zero:
   {Lowpass.fx.exp_neg(Lowpass.fx.zeros(9n, Nil{})) == Lowpass.fx.one() : +List<U32>}
 
-# Subnormals and NaNs are the values a callback is refused for; zeros,
-# normal values and infinities are not.
-law audio_mix_subnormal_refused:
-  {J.AudioDevice.odd(1) == True{} : Bool}
+# The callback runs with denormals disabled, as miniaudio sets it on x86: a
+# subnormal is the zero of its sign there, and the smallest normal number is
+# itself. A NaN (not an infinity) is what a callback is refused for.
+law audio_mix_subnormal_is_zero:
+  {Mixer.zero.word(1) == 0 : U32}
+
+law audio_mix_negative_subnormal_is_negative_zero:
+  {Mixer.zero.word(2155872255) == 2147483648 : U32}
+
+law audio_mix_smallest_normal_kept:
+  {Mixer.zero.word(8388608) == 8388608 : U32}
 
 law audio_mix_nan_refused:
-  {J.AudioDevice.odd(2143289344) == True{} : Bool}
+  {Mixer.nan(2143289344) == True{} : Bool}
 
 law audio_mix_infinity_itself_fine:
-  {J.AudioDevice.odd(2139095040) == False{} : Bool}
-
-law audio_mix_negative_zero_fine:
-  {J.AudioDevice.odd(2147483648) == False{} : Bool}
+  {Mixer.nan(2139095040) == False{} : Bool}
 
 # No callback on an unready device, and none of no frames.
 law audio_mix_unready_refused:

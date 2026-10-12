@@ -1439,6 +1439,36 @@ def Laws.audio_read_even_last_frame():
 def Laws.audio_read_one_frame():
   {==}
 
+def Laws.audio_stream_read_to_the_end_of_the_half():
+  {==}
+
+def Laws.audio_stream_read_goes_on_in_the_other_half():
+  {==}
+
+def Laws.audio_stream_read_wraps_from_the_second_half():
+  {==}
+
+def Laws.audio_stream_read_processed_half_gives_nothing():
+  {==}
+
+def Laws.audio_stream_read_stops_at_a_processed_half():
+  {==}
+
+def Laws.audio_stream_read_within_the_half():
+  {==}
+
+def Laws.audio_read_cap_of_a_sound():
+  {==}
+
+def Laws.audio_read_cap_of_a_16_bit_mono_stream():
+  {==}
+
+def Laws.audio_read_cap_of_a_wide_stream():
+  {==}
+
+def Laws.audio_required_input_carries_fractions():
+  {==}
+
 def Laws.audio_rate_change_keeps_the_fraction():
   {==}
 
@@ -1451,16 +1481,19 @@ def Laws.audio_rate_unchanged_at_the_device_rate():
 def Laws.audio_first_order_series_at_zero():
   {==}
 
-def Laws.audio_mix_subnormal_refused():
+def Laws.audio_mix_subnormal_is_zero():
   {==}
 
 def Laws.audio_mix_nan_refused():
   {==}
 
+def Laws.audio_mix_smallest_normal_kept():
+  {==}
+
 def Laws.audio_mix_infinity_itself_fine():
   {==}
 
-def Laws.audio_mix_negative_zero_fine():
+def Laws.audio_mix_negative_subnormal_is_negative_zero():
   {==}
 
 def Laws.audio_mix_unready_refused():

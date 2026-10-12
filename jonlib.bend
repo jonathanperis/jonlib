@@ -6381,8 +6381,8 @@ def Sound.update(+audio: AudioDevice, +sound: Sound, +data: +List<U32>, +frames:
 # two halves of `sub` frames each, in the stream's own format: unsigned 8-bit,
 # signed 16-bit (the 16-bit pattern) or F32 bits, one sample per element,
 # channels interleaved. UpdateAudioStream fills a half the device has read
-# through ("processed"; both are at first and after a play or a stop). The
-# mixer does not play streams yet. See docs/AUDIO.md.
+# through ("processed"; both are at first and after a play or a stop). See
+# docs/AUDIO.md.
 
 # SetAudioStreamBufferSizeDefault(int): the frames of each half of the
 # streams loaded from now on; 0 is raylib's own size.
@@ -6542,39 +6542,26 @@ def AudioStream.update(+audio: AudioDevice, +stream: AudioStream, +data: +List<U
 # OnSendAudioDataToDevice mixes it and miniaudio then applies the master
 # volume and clips, in uncontracted f32 arithmetic.
 
-# Values the hosts' miniaudio builds do not treat alike inside the callback
-# (x86 builds flush subnormals to zero there, others do not) or whose bits
-# depend on the host (NaN).
-def AudioDevice.odd(+word: U32) -> Bool:
-  Mixer.odd(word)
-
-def AudioDevice.odd.f32(value: F32) -> Bool:
-  AudioDevice.odd(F32.bits(value))
-
-# MixAudioFrames' level for a side: volume*0.5*side*(3 - side*side).
+# MixAudioFrames' level for a side: volume*0.5*side*(3 - side*side), in the
+# callback's arithmetic (subnormals are zeros there, src/mixer.bend).
 def AudioDevice.level(+volume: F32, +side: F32) -> F32:
-  (((volume * 0.5) * side) * (3.0 - (side * side)) : F32)
-
-def AudioDevice.level.fine(+volume: F32, +side: F32) -> Bool:
-  Bool.not(AudioDevice.odd.f32(side) || AudioDevice.odd.f32((volume * 0.5 : F32)) || AudioDevice.odd.f32(((volume * 0.5) * side : F32)) || AudioDevice.odd.f32((side * side : F32))
-    || AudioDevice.odd.f32((3.0 - (side * side) : F32)) || AudioDevice.odd.f32(AudioDevice.level(volume, side)))
+  Mixer.fmul(Mixer.fmul(Mixer.fmul(volume, 0.5), side), Mixer.fsub(3.0, Mixer.fmul(side, side)))
 
 type AudioDevice.Levels is Data:
   AudioLevels{left: F32, right: F32, fine: Bool}
 
-# right = (pan + 1)/2 and left = 1 - right.
+# right = (pan + 1)/2 and left = 1 - right. Not fine: a level that is NaN.
 def AudioDevice.levels(+volume: F32, +pan: F32) -> AudioDevice.Levels:
-  +right = ((pan + 1.0) / 2.0 : F32)
-  +left = (1.0 - right : F32)
-  AudioLevels{AudioDevice.level(volume, left), AudioDevice.level(volume, right),
-    Bool.not(AudioDevice.odd.f32(volume) || AudioDevice.odd.f32(pan) || AudioDevice.odd.f32((pan + 1.0 : F32))) && AudioDevice.level.fine(volume, left) && AudioDevice.level.fine(volume, right)}
+  +right = Mixer.fdiv(Mixer.fadd(pan, 1.0), 2.0)
+  +left = Mixer.fsub(1.0, right)
+  AudioLevels{AudioDevice.level(volume, left), AudioDevice.level(volume, right), Bool.not(Mixer.nanf(AudioDevice.level(volume, left)) || Mixer.nanf(AudioDevice.level(volume, right)))}
 
 # frameOut += frameIn*level.
 def AudioDevice.mix.sample(+sample: U32, +level: F32, +sum: U32) -> U32:
-  F32.bits((Wave.float_bits(sum) + (Wave.float_bits(sample) * level) : F32))
+  F32.bits(Mixer.fadd(Wave.float_bits(sum), Mixer.fmul(Wave.float_bits(sample), level)))
 
 def AudioDevice.mix.sample.fine(+sample: U32, +level: F32, +sum: U32) -> Bool:
-  Bool.not(AudioDevice.odd(sample) || AudioDevice.odd(sum) || AudioDevice.odd.f32((Wave.float_bits(sample) * level : F32)) || AudioDevice.odd(AudioDevice.mix.sample(sample, level, sum)))
+  Bool.not(Mixer.nan(AudioDevice.mix.sample(sample, level, sum)))
 
 type AudioDevice.Mixed is Data:
   AudioMixed{out: +List<U32>, fine: Bool}
@@ -6649,8 +6636,8 @@ def AudioDevice.mix.sent(out: +List<U32>, +master: F32, +scaled: Bool, +fine: Bo
   match out:
     case Nil{}: AudioSent{List.reverse(&2, U32, acc), fine}
     case Con{+v, rest}:
-      +x = Bool.pick(F32, scaled, (Wave.float_bits(v) * master : F32), Wave.float_bits(v))
-      AudioDevice.mix.sent(rest, master, scaled, fine && Bool.not(AudioDevice.odd(v) || AudioDevice.odd.f32(x)), Con{F32.bits(AudioDevice.clip(x)), acc})
+      +x = Bool.pick(F32, scaled, Mixer.fmul(Wave.float_bits(v), master), Wave.float_bits(v))
+      AudioDevice.mix.sent(rest, master, scaled, fine && Bool.not(Mixer.nanf(x)), Con{F32.bits(AudioDevice.clip(x)), acc})
 
 def AudioDevice.mix.given(sent: AudioDevice.Sent, +device: AudioDevice, +buffers: +List<AudioDevice.Buffer>) -> AudioDevice & Maybe<&2, +List<U32>>:
   AudioSent{+out, fine} = sent
@@ -6663,7 +6650,7 @@ def AudioDevice.mix.given(sent: AudioDevice.Sent, +device: AudioDevice, +buffers
 def AudioDevice.mix.mastered(pass: AudioDevice.Pass, +device: AudioDevice) -> AudioDevice & Maybe<&2, +List<U32>>:
   AudioPass{+done, out, +fine} = pass
   +master = AudioDevice.master_volume(device)
-  AudioDevice.mix.given(AudioDevice.mix.sent(out, master, U32.is_ne(F32.bits(master), 1065353216), fine && Bool.not(AudioDevice.odd.f32(master)), Nil{}), device, List.reverse(&2, AudioDevice.Buffer, done))
+  AudioDevice.mix.given(AudioDevice.mix.sent(out, master, U32.is_ne(F32.bits(master), 1065353216), fine && Bool.not(Mixer.nanf(master)), Nil{}), device, List.reverse(&2, AudioDevice.Buffer, done))
 
 def AudioDevice.mix.checked(valid: Bool, +device: AudioDevice, +frames: U32) -> AudioDevice & Maybe<&2, +List<U32>>:
   match valid:
@@ -6674,20 +6661,25 @@ def AudioDevice.mix.checked(valid: Bool, +device: AudioDevice, +frames: U32) -> 
 
 # One data callback of `frames` frames (a device asks for a period at a time:
 # 480 frames on miniaudio's null backend): every buffer that is playing and
-# not paused, in tracked order, gives its next frames through its converter's
-# resampler (at the device rate it is one frame late; a pitch resamples, and
-# filters, at 48000:(unsigned int)(48000/pitch)), scaled by its volume and
-# pan levels; a buffer stops at its end, back at its first frame; then the
-# master volume and the clip to -1..1. The result is the device's samples
+# not paused, in tracked order, gives its next frames through its converter
+# (a stream's samples become f32 and stereo; the resampler is one frame late
+# at 1:1 and resamples, and filters, a pitch or a stream's own rate), scaled
+# by its volume and pan levels; a sound stops at its end, back at its first
+# frame, and a stream goes from half to half, silent where no half is filled;
+# then the master volume and the clip to -1..1. The result is the device's samples
 # (F32 bits, two per frame).
+#
+# The arithmetic is the callback's on x86-64: miniaudio disables denormals
+# around it, so a subnormal operand counts as zero and a subnormal result is
+# zero (other hosts keep them: not ported).
 #
 # None, and the device as it was: an unready device; no frames or more than
 # 2^20; a playing buffer without frames (raudio divides by its size), whose
 # samples were freed or whose pitch gives a rate Jonlib does not resample
-# (a reduced output rate of 2^31 and more, uncertified filter coefficients);
-# and a callback in which a subnormal or a NaN takes part or results
-# (miniaudio flushes subnormals to zero inside the callback on x86 hosts
-# only, and NaN bits are the host's).
+# (a reduced rate of 2^31 and more, an uncertified filter coefficient); a
+# stream of more than 1024 channels (raudio's input buffer or miniaudio's
+# temporary holds no frame of it); and a callback that makes a NaN (its bits
+# are the host's).
 def AudioDevice.mix(+device: AudioDevice, +frames: U32) -> AudioDevice & Maybe<&2, +List<U32>>:
   AudioDevice.mix.checked(AudioDevice.is_ready(device) && (frames > 0 : U32) && (frames <= 1048576 : U32), device, frames)
 
