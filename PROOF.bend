@@ -1973,6 +1973,27 @@ def Laws.mp3_read_of_no_frame():
 def Laws.mp3_stopped_stream_gives_no_frame():
   {==}
 
+def Laws.music_mp3_read_with_every_frame_is_over():
+  {==}
+
+def Laws.music_mp3_short_read_goes_back_to_the_start():
+  {==}
+
+def Laws.music_mp3_stream_without_frames_ends_the_read():
+  {==}
+
+def Laws.music_mp3_reads_joined_in_order():
+  {==}
+
+def Laws.music_mp3_is_a_loaded_context():
+  {==}
+
+def Laws.music_mp3_stream_channels():
+  {==}
+
+def Laws.music_mp3_stream_rate():
+  {==}
+
 def Laws.audio_clock_periods_owed():
   {==}
 

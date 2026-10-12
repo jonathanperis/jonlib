@@ -2762,6 +2762,33 @@ law mp3_read_of_no_frame:
 law mp3_stopped_stream_gives_no_frame:
   {Mp3S.read.raw(Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 2}, 100, True{}) == Mp3S.Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 2}, 0, Nil{}} : Mp3S.Read}
 
+# MP3 music (Music.mp3.read, raylib's loop in UpdateMusicStream). A read
+# that brings every frame needed ends the loop; a short one takes the
+# stream back to its start for the rest; and a stream that gives no frame
+# from its start ends it, where raylib would go round for ever. The reads
+# are joined in the order they were made, an MP3 context counts as a loaded
+# decoder, and the music's stream has the MP3 stream's channels and rate.
+law music_mp3_read_with_every_frame_is_over:
+  {J.Music.mp3.turn(Mp3S.Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 5, [1, 2]}, 5, Nil{}, False{}) == J.MusicMp3Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 0, [[1, 2]], True{}, True{}} : J.Music.Mp3}
+
+law music_mp3_short_read_goes_back_to_the_start:
+  {J.Music.mp3.turn(Mp3S.Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 3, [1, 2]}, 5, Nil{}, False{}) == J.MusicMp3Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 2, [[1, 2]], True{}, False{}} : J.Music.Mp3}
+
+law music_mp3_stream_without_frames_ends_the_read:
+  {J.Music.mp3.turn(Mp3S.Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 0, Nil{}}, 5, Nil{}, True{}) == J.MusicMp3Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 5, [Nil{}], True{}, True{}} : J.Music.Mp3}
+
+law music_mp3_reads_joined_in_order:
+  {J.Music.mp3.joined([[3, 4], [1, 2]], Nil{}) == [1, 2, 3, 4] : +List<U32>}
+
+law music_mp3_is_a_loaded_context:
+  {J.Music.context.loaded(J.MusicMp3{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}}) == True{} : Bool}
+
+law music_mp3_stream_channels:
+  {Mp3S.Player.channels(Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}) == 2 : U32}
+
+law music_mp3_stream_rate:
+  {Mp3S.Player.rate(Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}) == 44100 : U32}
+
 # Frame: InitWindow sizes are 1..4096; a zero or oversized width has no frame
 # whatever the height.
 law frame_init_window_zero_width:

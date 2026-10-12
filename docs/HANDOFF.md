@@ -555,8 +555,13 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      are of bits. **(d)'s decoder is in**: `Mp3L3.decode` gives the
      frame's 16-bit PCM (`synth.granule`), equal to dr_mp3's on every
      frame of `country.mp3` and on the synthetic corpus. Left of the
-     plan: `MusicMp3` and the `Wave`/`Sound` loaders, and Layers I and
-     II (refused now). **The stream is in** (`src/mp3_stream.bend`, gate
+     plan: the `Wave`/`Sound` loaders (`LoadWave` is
+     `drmp3_open_memory_and_read_pcm_frames_f32`), the three examples
+     that play `country.mp3`, and Layers I and II (refused now).
+     **`Music` plays MP3** (`MusicMp3{player}` in `jonlib.bend`, cases
+     `music-mp3` and `music-mp3-counted` of the sound gate, whose model
+     takes the stream's readable frames from the reference and keeps
+     dr_mp3's count for the seeks). **The stream is in** (`src/mp3_stream.bend`, gate
      `mp3-stream`, docs/AUDIO.md): `Mp3S.open`, `read.s16`/`read.f32`,
      `rewind`, `seek`, `total`, each returning the player after it. For
      the music: `LoadMusicStream` is `drmp3_init_file`, a stream of

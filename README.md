@@ -98,8 +98,8 @@ refuse every frame, because the native example is undefined behavior in C.
 - **Execution**: native CPU, JavaScript and (with the declared compiler overlay)
   forced Metal; see [VERIFICATION.md](docs/VERIFICATION.md).
 
-Not yet there: music from MP3, OGG, FLAC, XM and MOD files (WAV and QOA
-music plays); a host window, input devices and audio output
+Not yet there: music from OGG, FLAC, XM and MOD files (WAV, QOA and MP3
+music plays); sounds and waves from MP3 files; a host window, input devices and audio output
 (everything runs headless); images beyond 4096 pixels on a side; directory
 listing. macOS is off the merge path for now and owes a full validation. The
 [master plan](docs/MASTER-PLAN.md) and [HANDOFF.md](docs/HANDOFF.md) order

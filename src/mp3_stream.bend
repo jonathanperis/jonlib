@@ -127,6 +127,15 @@ def Player.stream(player: Player) -> H.Stream:
   Player{stream, _, _, _, _, _, _, _} = player
   stream
 
+# The stream's channels and sample rate: its first frame's.
+def Player.channels(player: Player) -> U32:
+  Player{H.Stream{_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, channels, _}, _, _, _, _, _, _, _} = player
+  channels
+
+def Player.rate(player: Player) -> U32:
+  Player{H.Stream{_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, rate}, _, _, _, _, _, _, _} = player
+  rate
+
 def advance(+player: Player) -> Player:
   next.go(U32.is_ne(Player.status(player), 0), player)
 

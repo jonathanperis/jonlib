@@ -2467,7 +2467,7 @@
   },
   {
    "id": "sound",
-   "title": "The audio device and sounds (InitAudioDevice to UpdateSound: raudio.c compiled into the reference with miniaudio's null backend and its device stopped) against raylib's AUDIO state and buffers, with the examples' .wav files and refused-step contracts",
+   "title": "The audio device and sounds (InitAudioDevice to UpdateSound: raudio.c compiled into the reference with miniaudio's null backend and its device stopped) against raylib's AUDIO state and buffers, with the examples' .wav files, WAV, QOA and MP3 musics and refused-step contracts",
    "run": [
     "{python}",
     "tools/sound_probe.py",
@@ -2478,7 +2478,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 35
+   "minutes": 40
   },
   {
    "id": "vr",
