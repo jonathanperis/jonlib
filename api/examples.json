@@ -6709,7 +6709,7 @@
   {
    "name": "audio_raw_stream",
    "category": "audio",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",

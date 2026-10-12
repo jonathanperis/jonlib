@@ -6683,6 +6683,86 @@ def AudioDevice.mix.checked(valid: Bool, +device: AudioDevice, +frames: U32) -> 
 def AudioDevice.mix(+device: AudioDevice, +frames: U32) -> AudioDevice & Maybe<&2, +List<U32>>:
   AudioDevice.mix.checked(AudioDevice.is_ready(device) && (frames > 0 : U32) && (frames <= 1048576 : U32), device, frames)
 
+# The device's clock (Jonlib-specific). raylib's device runs on a thread of
+# its own: miniaudio asks it for a callback of one period (480 frames, 10 ms)
+# as the device plays. Jonlib has no thread and no host device: time is the
+# program's (Core.get_time), and the callbacks due by then are made when the
+# program says so. A clock is the time the device was opened at and the
+# periods it has asked for. The samples go nowhere; what the callbacks change
+# (cursors, a sound that ends, the halves of a stream that are processed) is
+# what the program then sees, as with raylib once its thread has caught up.
+type AudioClock is Data:
+  AudioClock{opened: M.Float64, periods: U32}
+
+# The clock, the device, and whether every callback was one Jonlib makes.
+type AudioClock.Step is Data:
+  AudioStep{clock: AudioClock, device: AudioDevice, fine: Bool}
+
+# InitAudioDevice at `time`.
+def AudioClock.at(time: M.Float64) -> AudioClock:
+  AudioClock{time, 0}
+
+def AudioClock.due.count(scaled: Maybe<M.Float64>) -> Maybe<U32>:
+  match scaled:
+    case None{}: None{}
+    case Some{value}: M.Float64.to_int(value)
+
+def AudioClock.due.scaled(elapsed: Maybe<M.Float64>) -> Maybe<U32>:
+  match elapsed:
+    case None{}: None{}
+    case Some{value}: AudioClock.due.count(M.Float64.internal.multiply(value, M.Float64.from_f32(100.0)))
+
+# The whole periods between `opened` and `time`: (int)((time - opened)*100.0)
+# in binary64. None outside the binary64 helpers' domain and the int range.
+def AudioClock.due(opened: M.Float64, time: M.Float64) -> Maybe<U32>:
+  AudioClock.due.scaled(M.Float64.internal.subtract(time, opened))
+
+# The periods still to ask for when `done` were and `due` are due. None for
+# an unknown count and for a time before the device was opened.
+def AudioClock.owed(+done: U32, due: Maybe<U32>) -> Maybe<U32>:
+  match due:
+    case None{}: None{}
+    case Some{+count}: Bool.pick(Maybe<U32>, (count >= 2147483648 : U32), None{}, Some{Bool.pick(U32, (count > done : U32), (count - done : U32), 0)})
+
+# `periods` callbacks of one period each, after the callback that gave
+# `last`: the device, and whether every one was made.
+def AudioClock.pump(periods: Nat, last: AudioDevice & Maybe<&2, +List<U32>>) -> AudioDevice & Bool:
+  match periods:
+    case 0n:
+      match last:
+        case Tuple{+device, None{}}: (device, False{})
+        case Tuple{+device, Some{_}}: (device, True{})
+    case 1n+rest:
+      match last:
+        case Tuple{+device, None{}}: (device, False{})
+        case Tuple{+device, Some{_}}: AudioClock.pump(rest, AudioDevice.mix(device, 480))
+
+def AudioClock.advance.done(pumped: AudioDevice & Bool, +opened: M.Float64, +periods: U32, +count: U32) -> AudioClock.Step:
+  (+device, +fine) = pumped
+  AudioStep{AudioClock{opened, Bool.pick(U32, fine, (periods + count : U32), periods)}, device, fine}
+
+# An unready device makes no callback: its periods pass.
+def AudioClock.advance.run(ready: Bool, within: Bool, +opened: M.Float64, +periods: U32, +count: U32, +device: AudioDevice) -> AudioClock.Step:
+  match ready within:
+    case False{} _: AudioStep{AudioClock{opened, (periods + count : U32)}, device, True{}}
+    case True{} False{}: AudioStep{AudioClock{opened, periods}, device, False{}}
+    case True{} True{}: AudioClock.advance.done(AudioClock.pump(U32.to_nat(count), (device, Some{Nil{}})), opened, periods, count)
+
+def AudioClock.advance.owed(owed: Maybe<U32>, +opened: M.Float64, +periods: U32, +device: AudioDevice) -> AudioClock.Step:
+  match owed:
+    case None{}: AudioStep{AudioClock{opened, periods}, device, False{}}
+    case Some{+count}: AudioClock.advance.run(AudioDevice.is_ready(device), (count <= 65536 : U32), opened, periods, count, device)
+
+# The device at `time`: every whole period since the last one asked for is a
+# callback (AudioDevice.mix of 480 frames), in order. Not fine, with the clock
+# as it was: a time before the device was opened or outside the binary64
+# helpers' domain, more than 65536 periods at once (about eleven minutes), and
+# a callback Jonlib does not mix (the device is then as that callback found
+# it).
+def AudioClock.advance(clock: AudioClock, +device: AudioDevice, time: M.Float64) -> AudioClock.Step:
+  AudioClock{+opened, +periods} = clock
+  AudioClock.advance.owed(AudioClock.owed(periods, AudioClock.due(opened, time)), opened, periods, device)
+
 # -----------------------------------------------------------------------------
 # Text: rtext.c byte strings and UTF-8 codepoints
 #

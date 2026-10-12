@@ -2102,7 +2102,7 @@
   },
   {
    "id": "examples-audio",
-   "title": "The ported raylib audio examples replayed frame by frame against the unmodified native examples (clock-injected memory-platform raylib, raudio.c compiled beside them with miniaudio's null backend), framebuffers byte for byte and the presented Image",
+   "title": "The ported raylib audio examples replayed frame by frame against the unmodified native examples (clock-injected memory-platform raylib, raudio.c compiled beside them with miniaudio's null backend, its callbacks asked for from the scripted clock where frames show what the device did), framebuffers byte for byte and the presented Image",
    "run": [
     "{python}",
     "tools/examples_probe.py",
@@ -2114,7 +2114,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 8
+   "minutes": 13
   },
   {
    "id": "quaternion-angle",

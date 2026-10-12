@@ -72,7 +72,7 @@ at the branch's head.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 561/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **199/212 ported** with the stack, 6 ready (two of them waiting for the audio clock), 7 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **200/212 ported** with the stack, 5 ready, 7 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -380,22 +380,20 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `(float)exp(-pi*min/max)`: `ma_data_converter_config_init` leaves
      `lpfOrder` at 1; only `ma_convert_frames`, so `WaveFormat` and
      `LoadSoundFromWave`, raises it to 4). `Lowpass.coefficient1` brackets
-     `exp` the way the biquads' `sin` is. What the mixer still lacks, in
-     the order the remaining examples need it: (2) a
-     clock: the driver asking for callbacks for the frames the scripted
-     time advanced (today the native examples' device thread runs free:
-     fine while no frame shows audio state). A design that fits the
-     examples probe: compile, instead of raudio.c alone, a unit that
-     includes it and adds two probe functions, one that stops the device
-     after `InitAudioDevice` (a shim macro on `InitAudioDevice` in
-     `tools/reference/example_driver.h`) and one that asks the device for
-     every whole period (480 frames, 10 ms) between the scripted clock at
-     `InitAudioDevice` and now, called from the `WindowShouldClose` hook
-     (the start of each loop pass, before the example reads
-     `IsSoundPlaying` or `IsAudioStreamProcessed`); and in Jonlib an
-     `AudioDevice.advance(device, time)` that makes the same callbacks
-     (the device keeps the time it opened at and the periods it has
-     asked for), which a ported example calls first in its update. **Audio streams play**
+     `exp` the way the biquads' `sin` is. **The clock is in** (`AudioClock`, docs/AUDIO.md): for
+     the examples in `AUDIO_CLOCK` (`tools/examples_probe.py`) the
+     reference compiles `tools/reference/audio_clock.c` (raudio.c plus two
+     probe functions) instead of raudio.c alone; the example's
+     `InitAudioDevice` (a shim macro under `-DJONLIB_EXAMPLE_AUDIO_CLOCK`)
+     stops the device's thread and notes the scripted clock, and the
+     `WindowShouldClose` hook (the start of each loop pass, before the
+     example reads `IsSoundPlaying` or `IsAudioStreamProcessed`) asks for
+     every whole period (480 frames, 10 ms) since. A ported example keeps a
+     `J.AudioClock` beside its device and calls `AudioClock.advance` with
+     `Core.get_time(core)` first in its update (`audio_raw_stream`; halving
+     the clock's rate in Jonlib makes its replay fail at frame 4, so the
+     frames do depend on it). The examples that never show audio state
+     still let the native device thread run free. **Audio streams play**
      (`AudioStream.*`; a head's `Mixer.Feed` says what a buffer plays):
      `Mixer.turn` has raudio's stream branch of
      `ReadAudioBufferFramesInInternalFormat` (the halves, looping, the
@@ -412,10 +410,15 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      reference): `Mixer.fadd/fsub/fmul/fdiv` flush operands and results,
      and every operation of the callback goes through them (a filter's
      tail reaches exact zeros natively). AArch64 keeps subnormals there:
-     a profile for the macOS validation to settle. Then
-     `audio_raw_stream`, `audio_stream_callback` (needs
-     `SetAudioStreamCallback`), `audio_spectrum_visualizer`, all waiting
-     for the clock; (3) music (`LoadMusicStream`) and its decoders:
+     a profile for the macOS validation to settle. `audio_raw_stream` is ported. Next: `SetAudioStreamCallback` (raudio
+     calls it from the callback whenever the stream's read comes to a
+     processed half: a Bend function in the stream's place, which
+     `Mixer.turn` would call; `audio_stream_callback`) and the processors
+     (`AttachAudioStreamProcessor`, `AttachAudioMixedProcessor`:
+     `audio_stream_effects` and `audio_mixed_processor`, which also play
+     music). `audio_spectrum_visualizer` is listed ready but loads
+     `country.mp3` with `LoadWave`: it waits for the MP3 decoder;
+     (3) music (`LoadMusicStream`) and its decoders:
      dr_mp3, stb_vorbis, jar_xm, jar_mod, dr_flac.
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of

@@ -88,6 +88,7 @@ import probekit
 from probekit import ROOT, ProbeFailure
 
 SHIM = ROOT / 'tools/reference/example_driver.h'
+AUDIO_CLOCK_UNIT = ROOT / 'tools/reference/audio_clock.c'
 WIDTH, HEIGHT = 800, 450
 # Examples whose InitWindow is not 800x450.
 SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation': (720, 400)}
@@ -105,6 +106,7 @@ TARGET_FPS['shaders_rlgl_compute'] = 10**9
 # core_custom_frame_control never calls SetTargetFPS either; after EndDrawing it waits itself (OWN_WAIT: its target).
 TARGET_FPS['core_custom_frame_control'] = 10**9
 OWN_WAIT = {'core_custom_frame_control': 60}
+TARGET_FPS['audio_raw_stream'] = 30
 
 (KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, INPUT_GESTURE, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 17, 18)
 # Gamepad events: (gamepad), (gamepad, button), (gamepad, axis, value/32768).
@@ -291,6 +293,7 @@ EXAMPLES = {
     'textures_sprite_explosion': ('textures/textures_sprite_explosion.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_sound_multi': ('audio/audio_sound_multi.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_sound_positioning': ('audio/audio_sound_positioning.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'audio_raw_stream': ('audio/audio_raw_stream.c', 'Ex.setup(core, frame)'),
     'core_vr_simulator': ('core/core_vr_simulator.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shaders_game_of_life': ('shaders/shaders_game_of_life.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
@@ -415,7 +418,13 @@ IO_SETUP.add('models_loading_m3d'); PERSPECTIVE.add('models_loading_m3d')
 # Examples that call raudio.c: it is compiled beside them with miniaudio's null backend only (the reference library
 # has no audio module). The device opens on every host and mixes on its own thread; no frame depends on it.
 AUDIO = {'textures_sprite_button', 'textures_sprite_explosion', 'audio_sound_multi', 'audio_sound_positioning'}
+# Examples whose frames show what the device did: its thread is stopped and the scripted clock asks for its callbacks
+# (tools/reference/audio_clock.c; AudioClock in Jonlib).
+AUDIO_CLOCK = {'audio_raw_stream'}
+AUDIO.update(AUDIO_CLOCK)
 IO_SETUP.update(AUDIO)
+# The binary64 sin of its samples and of its wave has no AppleLibm profile (docs/MATH.md): the same contract.
+PERSPECTIVE.add('audio_raw_stream')
 PERSPECTIVE.add('audio_sound_positioning')
 PERSPECTIVE.add('core_vr_simulator')
 IO_SETUP.add('shaders_game_of_life'); SEEDED.add('shaders_game_of_life')
@@ -1198,7 +1207,12 @@ def scripts():
                                                      quick([(MOUSE_WHEEL, 0, 2, 0)]), quick([(MOUSE_WHEEL, 0, -1, 0)]), quick([button(2)]),
                                                      quick([mouse_at(420, 250)]), quick([mouse_at(470, 280), button(2, False)]), quick([key(87)]),
                                                      slow(), quick([key(87, False), key(68)]), quick([key(68, False)]), quick()]),
-        # The mouse on the character shows the placement cube; two clicks splat two decals (the table lists them);
+        # The device's clock asks for 3 or 4 callbacks a frame at 30 FPS: both halves are filled in the first two
+        # frames and each again once the device has read it through (93 ms); up, then down, move the frequency, which
+        # the wave takes at its next period; right, then left, the pan; a slow frame and one of a tenth of a second.
+        script('audio_raw_stream', 'sine', [quick(), quick(), quick([key(KEY_UP)]), quick(), quick([key(KEY_RIGHT)]), slow(),
+                                            quick([key(KEY_UP, False), key(KEY_DOWN)]), long([key(KEY_RIGHT, False), key(KEY_LEFT)]), quick(),
+                                            quick([key(KEY_DOWN, False)]), quick([key(KEY_LEFT, False)]), quick()]),
         # RMB with a move turns the camera; a click on "Clear Decals" removes them.
         script('models_decals', 'splat', [quick(), quick([mouse_at(400, 230)]), quick([button(0)]), quick([button(0, False), mouse_at(400, 150)]), quick([button(0)]),
                                           quick([button(0, False), button(1), mouse_at(430, 160)]), slow([mouse_at(460, 170)]), quick([button(1, False), mouse_at(150, 380)]), quick([button(0)]),
@@ -1616,6 +1630,25 @@ long JonlibExampleFileModTime(const char *fileName) { (void)fileName; return (lo
 // An example's own WaitTime: its sleep ends at raylib's destination, GetTime() + seconds.
 void JonlibExampleWaitTime(double seconds) { if (!(seconds < 0)) probe_after = probe_clock + seconds; WaitTime(seconds); }
 
+// The audio clock (tools/reference/audio_clock.c): the device's thread is stopped once it is open, and every whole
+// period of 10 ms since then on the scripted clock is one callback, asked for at the start of each loop pass.
+#ifdef JONLIB_EXAMPLE_AUDIO_CLOCK
+void JonlibAudioClockStop(void);
+void JonlibAudioClockPump(unsigned periods);
+static double audio_opened = 0.0;
+static unsigned audio_periods = 0;
+static int audio_open = 0;
+void JonlibExampleInitAudioDevice(void) { InitAudioDevice(); JonlibAudioClockStop(); audio_opened = probe_clock; audio_periods = 0; audio_open = 1; }
+static void audio_tick(void)
+{
+    if (!audio_open) return;
+    unsigned due = (unsigned)(int)((probe_clock - audio_opened)*100.0);
+    if (due > audio_periods) { JonlibAudioClockPump(due - audio_periods); audio_periods = due; }
+}
+#else
+static void audio_tick(void) {}
+#endif
+
 #define MAX_FRAMES 1024
 #define MAX_EVENTS 64
 typedef struct { double begin, end, after; int count; int events[MAX_EVENTS][4]; } Frame;
@@ -1676,6 +1709,7 @@ void JonlibExampleInitWindow(int w, int h, const char *title)
 bool JonlibExampleWindowShouldClose(void)
 {
     if (frame_index >= frame_count) return true;
+    audio_tick();
     Frame *fr = &frames[frame_index];
     for (int i = 0; i < fr->count; i++)
     {
@@ -1722,14 +1756,16 @@ def build_reference(probe, name):
     binary = probe.work / f'reference-{name}'
     include = '-I' + str(probe.args.raylib_source / 'src')
     # -D_DEFAULT_SOURCE as raylib's examples/Makefile passes it (strnlen in shapes_penrose_tile).
-    probekit.run(['clang', '-std=c11', '-D_DEFAULT_SOURCE', '-O2', '-ffp-contract=off', '-include', SHIM, include, '-c',
+    clock = ['-DJONLIB_EXAMPLE_AUDIO_CLOCK'] if name in AUDIO_CLOCK else []
+    probekit.run(['clang', '-std=c11', '-D_DEFAULT_SOURCE', '-O2', '-ffp-contract=off', *clock, '-include', SHIM, include, '-c',
                   probe.args.raylib_source / 'examples' / source, '-o', probe.work / f'{name}.o'])
-    probekit.run(['clang', '-std=c11', '-O2', '-ffp-contract=off', include, '-c', driver, '-o', probe.work / 'driver.o'])
+    probekit.run(['clang', '-std=c11', '-O2', '-ffp-contract=off', *clock, include, '-c', driver, '-o', probe.work / 'driver.o'])
     objects = [probe.work / f'{name}.o', probe.work / 'driver.o']
     if name in AUDIO:
         objects.append(probe.work / 'raudio.o')
+        unit = AUDIO_CLOCK_UNIT if name in AUDIO_CLOCK else probe.args.raylib_source / 'src/raudio.c'
         probekit.run(['clang', '-std=c11', '-D_DEFAULT_SOURCE', '-O2', '-ffp-contract=off', '-w', '-DMA_ENABLE_ONLY_SPECIFIC_BACKENDS', '-DMA_ENABLE_NULL', include,
-                      '-c', probe.args.raylib_source / 'src/raudio.c', '-o', objects[-1]])
+                      '-c', unit, '-o', objects[-1]])
     probekit.run(['clang', *objects, probe.library, '-lm', '-o', binary])
     return binary
 

@@ -1502,6 +1502,27 @@ def Laws.audio_mix_unready_refused():
 def Laws.audio_mix_no_frames_refused():
   {==}
 
+def Laws.audio_clock_periods_owed():
+  {==}
+
+def Laws.audio_clock_no_period_twice():
+  {==}
+
+def Laws.audio_clock_earlier_time_owes_nothing():
+  {==}
+
+def Laws.audio_clock_before_opening_refused():
+  {==}
+
+def Laws.audio_clock_unknown_time_refused():
+  {==}
+
+def Laws.audio_clock_no_period_no_callback():
+  {==}
+
+def Laws.audio_clock_refused_callback_stops():
+  {==}
+
 def Laws.frame_init_window_zero_width(height):
   {==}
 
