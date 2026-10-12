@@ -135,6 +135,66 @@ more than 8 channels (past its LMS state) or more than 2^24 samples are
 `InvalidWaveData`; a wave whose sample list does not hold `frames * channels`
 samples is not encoded (`InvalidWaveRequest`).
 
+## MP3 (in progress)
+
+`src/mp3.bend` is the start of an adaptation of dr_mp3 (pinned raylib's
+`src/external/dr_mp3.h`; its decoder is minimp3). What is there reads a
+file's frames without decoding their samples, which is what opening a
+stream and counting its frames take. Nothing in `jonlib.bend` uses it yet:
+no `Wave`, `Sound` or `Music` loads an MP3.
+
+- **Headers** (`drmp3_hdr_*`): validity, whether two headers are of one
+  stream, bit rate, sample rate, samples and bytes of a frame, padding.
+- **The search for a frame** (`drmp3d_find_frame`, `drmp3d_match_frame`):
+  the first header from which up to ten frames of its stream follow one
+  another in the bytes at hand, or that fills them exactly; a free-format
+  frame's size is found by looking for the next two headers.
+- **Layer III side information** (`drmp3_L3_read_side_info`) and the **bit
+  reservoir**'s bytes (`drmp3_L3_restore_reservoir`,
+  `drmp3_L3_save_reservoir`): a frame whose main data begins in bytes the
+  reservoir does not hold decodes nothing, as in dr_mp3.
+- **The stream** (`drmp3_init`, `drmp3_decode_next_frame_ex__callbacks`): an
+  ID3v1 tag and an APE tag at the end are left out, an ID3v2 tag at the
+  start is passed, the file is read through dr_mp3's buffer (filled to
+  64 KiB when below 16 KiB: it bounds how far the search can look), and the
+  first frame that decodes gives the channels and the sample rate. An Xing
+  or Info frame is not played: the stream starts after it, with the frames
+  it counts and LAME's delay and padding.
+- **The count** (`drmp3_get_pcm_frame_count`): the tag's frames times the
+  first frame's samples, less the delay and the padding; without a tag,
+  every frame of the stream.
+
+dr_mp3 keeps its own idea of the read position (`streamCursor`), which goes
+back to the stream's start after an Xing/Info frame while the file does
+not: until a seek, its reads may then go that far past a tag at the file's
+end. `Mp3.Stream` keeps both positions. It reads the first frame as Layer
+III side information whatever its layer, and from the first byte it used
+rather than from the frame's header when bytes were skipped before it: so
+does `Mp3.info.first`.
+
+`tools/mp3_probe.py` (gate `mp3`) compares with dr_mp3 itself, per file:
+whether it opens, channels, sample rate, delay, padding, the offset the
+frames start at, the tag's count, whether the first frame stays to be
+played, `drmp3_get_pcm_frame_count` and `drmp3_get_mp3_and_pcm_frame_count`.
+There is no MP3 encoder here, so the 85 files are raylib's `country.mp3`
+(MPEG-1 Layer III, 128 kbit/s, 44100 Hz, joint stereo, an Info frame with a
+LAME tag; 3583 frames, 4125934 PCM frames) and edits of its first frames:
+without the Info frame, cut inside a frame, one and two frames, bytes that
+are no frame before and inside the stream, ID3v2 tags with and without a
+footer and one longer than the file, ID3v1 and APE tags (one claiming a
+megabyte), another sample rate in one header, every header rewritten (free
+format, with a CRC, mono, MPEG-2, MPEG-2.5, Layers I and II, the reserved
+layer, bit rate and sample rate), an Xing name, an Info frame without
+flags and without a LAME tag, files too short to open, 5000 zeros, and 48
+seeded edits (bytes changed, removed and inserted). 64 open and 21 do not,
+on both sides. CPU-1, CPU-2 and JavaScript.
+
+Still to come: scalefactors and Huffman decoding, stereo processing, the
+IMDCT and the synthesis filter (the samples), reading and seeking, Layers I
+and II, and the loaders that use them. raylib builds dr_mp3 with its SSE
+paths, whose samples differ from the scalar ones: the reference for the
+samples is the build as it is.
+
 ## WaveFormat
 
 `Wave.format_for` follows the miniaudio v0.11.24 code raylib's `WaveFormat`
@@ -281,7 +341,7 @@ wave's length does not grow their depth: the examples' sounds (up to 48000
 stereo frames out) convert on every lane, JavaScript included, through
 `Sound.load` (gate `sound`, below).
 
-Not yet available: OGG, MP3, FLAC, XM and MOD data. Gaps of `WaveFormat`:
+Not yet available: OGG, MP3 (above), FLAC, XM and MOD data. Gaps of `WaveFormat`:
 the refusals above, and no GPU evidence.
 
 ## Audio device and sounds

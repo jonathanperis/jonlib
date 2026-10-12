@@ -1568,6 +1568,90 @@ def Laws.music_float_bits_as_they_are():
 def Laws.music_float_bits_big_endian():
   {==}
 
+def Laws.mp3_header_valid():
+  {==}
+
+def Laws.mp3_header_bit_rate():
+  {==}
+
+def Laws.mp3_header_sample_rate():
+  {==}
+
+def Laws.mp3_header_samples():
+  {==}
+
+def Laws.mp3_header_frame_bytes():
+  {==}
+
+def Laws.mp3_header_padding_byte():
+  {==}
+
+def Laws.mp3_header_free_format_size():
+  {==}
+
+def Laws.mp3_header_mpeg2_rate():
+  {==}
+
+def Laws.mp3_header_mpeg2_samples():
+  {==}
+
+def Laws.mp3_header_layer1_samples():
+  {==}
+
+def Laws.mp3_header_reserved_layer():
+  {==}
+
+def Laws.mp3_header_reserved_sample_rate():
+  {==}
+
+def Laws.mp3_header_reserved_bit_rate():
+  {==}
+
+def Laws.mp3_header_same_stream_with_padding():
+  {==}
+
+def Laws.mp3_header_other_sample_rate_other_stream():
+  {==}
+
+def Laws.mp3_bits_by_position():
+  {==}
+
+def Laws.mp3_bits_past_the_limit():
+  {==}
+
+def Laws.mp3_word_first_byte_highest():
+  {==}
+
+def Laws.mp3_id3v2_size():
+  {==}
+
+def Laws.mp3_id3v2_footer():
+  {==}
+
+def Laws.mp3_no_id3v2():
+  {==}
+
+def Laws.mp3_info_every_field():
+  {==}
+
+def Laws.mp3_info_no_field():
+  {==}
+
+def Laws.mp3_total_less_delay_and_padding():
+  {==}
+
+def Laws.mp3_total_delay_too_large_ignored():
+  {==}
+
+def Laws.mp3_read_clamped_to_the_stream():
+  {==}
+
+def Laws.mp3_read_clamped_to_the_file():
+  {==}
+
+def Laws.mp3_short_file_does_not_open():
+  {==}
+
 def Laws.audio_clock_periods_owed():
   {==}
 

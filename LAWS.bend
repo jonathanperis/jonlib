@@ -39,6 +39,7 @@ import ./jongui.bend as JG
 import ./src/gui_icons.bend as GuiIcons
 import ./src/binary64_sqrt.bend as Sqrt
 import ./src/wav.bend as Wav
+import ./src/mp3.bend as Mp3
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -2279,6 +2280,104 @@ law music_float_bits_as_they_are:
 
 law music_float_bits_big_endian:
   {Wav.wide.sample(13, [63, 128, 0, 0]) == 1065353216 : U32}
+
+# MP3 (src/mp3.bend, dr_mp3). The header of raylib's country.mp3, FF FB 90 44,
+# is MPEG-1 Layer III at 128 kbit/s and 44100 Hz: 1152 samples in 417 bytes,
+# one more with the padding bit; without a bit rate the frame's size is the
+# free format's; MPEG-2 halves the rate and the samples, and Layer I has 384.
+# A reserved layer, bit rate or sample rate is no header, and two headers are
+# of one stream when their version, layer and sample rate agree.
+law mp3_header_valid:
+  {Mp3.hdr.valid(4294676548) == True{} : Bool}
+
+law mp3_header_bit_rate:
+  {Mp3.hdr.kbps(4294676548) == 128 : U32}
+
+law mp3_header_sample_rate:
+  {Mp3.hdr.hz(4294676548) == 44100 : U32}
+
+law mp3_header_samples:
+  {Mp3.hdr.samples(4294676548) == 1152 : U32}
+
+law mp3_header_frame_bytes:
+  {Mp3.hdr.bytes(4294676548, 0) == 417 : U32}
+
+law mp3_header_padding_byte:
+  {Mp3.hdr.padding(4294677060) == 1 : U32}
+
+law mp3_header_free_format_size:
+  {Mp3.hdr.bytes(4294639684, 300) == 300 : U32}
+
+law mp3_header_mpeg2_rate:
+  {Mp3.hdr.hz(4294152260) == 22050 : U32}
+
+law mp3_header_mpeg2_samples:
+  {Mp3.hdr.samples(4294152260) == 576 : U32}
+
+law mp3_header_layer1_samples:
+  {Mp3.hdr.samples(4294938692) == 384 : U32}
+
+law mp3_header_reserved_layer:
+  {Mp3.hdr.valid(4294545476) == False{} : Bool}
+
+law mp3_header_reserved_sample_rate:
+  {Mp3.hdr.valid(4294679620) == False{} : Bool}
+
+law mp3_header_reserved_bit_rate:
+  {Mp3.hdr.valid(4294701124) == False{} : Bool}
+
+law mp3_header_same_stream_with_padding:
+  {Mp3.hdr.compare(4294676548, 4294677060) == True{} : Bool}
+
+law mp3_header_other_sample_rate_other_stream:
+  {Mp3.hdr.compare(4294676548, 4294677572) == False{} : Bool}
+
+# Bits are read by position, the first the highest, and are 0 past the limit
+# (dr_mp3's reader gives 0 once its position is past it).
+law mp3_bits_by_position:
+  {Mp3.bits([171, 205], 16, 4, 8) == 188 : U32}
+
+law mp3_bits_past_the_limit:
+  {Mp3.bits([171, 205], 16, 12, 8) == 0 : U32}
+
+law mp3_word_first_byte_highest:
+  {Mp3.word([1, 2, 3, 4, 5]) == 16909060 : U32}
+
+# The stream's tags: an ID3v2 tag is ten bytes and its size in four bytes of
+# seven bits, ten more with a footer; an Xing/Info frame's fields are where
+# its flags say; and the frames it counts lose LAME's delay and padding, each
+# only when no more than what is left.
+law mp3_id3v2_size:
+  {Mp3.tags.id3v2([73, 68, 51, 4, 0, 0, 0, 0, 0, 21]) == 31 : U32}
+
+law mp3_id3v2_footer:
+  {Mp3.tags.id3v2([73, 68, 51, 4, 0, 16, 0, 0, 0, 5]) == 25 : U32}
+
+law mp3_no_id3v2:
+  {Mp3.tags.id3v2([255, 251, 144, 68, 0, 0, 0, 0, 0, 0]) == 0 : U32}
+
+law mp3_info_every_field:
+  {Mp3.info.fields(15) == 120 : U32}
+
+law mp3_info_no_field:
+  {Mp3.info.fields(0) == 8 : U32}
+
+law mp3_total_less_delay_and_padding:
+  {Mp3.total.tagged(4127616, 1105, 577) == 4125934 : U32}
+
+law mp3_total_delay_too_large_ignored:
+  {Mp3.total.tagged(1000, 1105, 577) == 423 : U32}
+
+# dr_mp3 reads no more than it thinks is left of the stream, and no more than
+# the file has; and a file of fewer than ten bytes does not open.
+law mp3_read_clamped_to_the_stream:
+  {Mp3.stream.read(1000, 900, 100, 100, 65536) == 800 : U32}
+
+law mp3_read_clamped_to_the_file:
+  {Mp3.stream.read(1000, 900, 950, 500, 65536) == 50 : U32}
+
+law mp3_short_file_does_not_open:
+  {Mp3.open([255, 251, 144, 68]) == None{} : Maybe<Mp3.Opened>}
 
 # Frame: InitWindow sizes are 1..4096; a zero or oversized width has no frame
 # whatever the height.

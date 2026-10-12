@@ -301,6 +301,20 @@ public domain or MIT No Attribution; Jonlib uses the MIT-0 alternative,
 retained in [LICENSES/dr_wav.txt](LICENSES/dr_wav.txt).
 `Wave.*` in `jonlib.bend` adapts the Wave functions of raylib's `raudio.c`.
 
+## dr_mp3 and minimp3
+
+`src/mp3.bend` is an altered Bend adaptation of pinned raylib's
+`src/external/dr_mp3.h` (dr_mp3 v0.7.4 by David Reid, whose decoder is
+minimp3 by lieff): the frame header functions (`drmp3_hdr_*`), the search
+for a frame (`drmp3d_match_frame`, `drmp3d_find_frame`), Layer III's side
+information and bit reservoir (`drmp3_L3_read_side_info`,
+`drmp3_L3_restore_reservoir`, `drmp3_L3_save_reservoir`), `drmp3_init`'s
+tags (ID3v1, APE, ID3v2, the Xing/Info frame with LAME's delay and padding),
+the buffered frame loop (`drmp3_decode_next_frame_ex__callbacks`) and the
+frame count (`drmp3_get_pcm_frame_count`), with their bit rate tables. dr_mp3 is public domain or MIT No Attribution;
+Jonlib uses the MIT-0 alternative, retained with minimp3's CC0 notice in
+[LICENSES/dr_mp3.txt](LICENSES/dr_mp3.txt).
+
 ## miniaudio
 
 `src/convert.bend`, `src/resampler.bend` and `src/lowpass.bend` are altered
