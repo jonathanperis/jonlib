@@ -2434,6 +2434,37 @@
     "macos"
    ],
    "minutes": 12
+  },
+  {
+   "id": "vr",
+   "title": "LoadVrStereoConfig (lens centers, distortion scales and both eyes' projection and view offset matrices) against the uncontracted software-renderer raylib, with refusal contracts",
+   "run": [
+    "{python}",
+    "tools/vr_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 6
+  },
+  {
+   "id": "vr-apple",
+   "title": "LoadVrStereoConfig under M.AppleLibm: every device refused (the profile's binary64 tan is not reproduced)",
+   "run": [
+    "{python}",
+    "tools/vr_probe.py",
+    "--apple-contract",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 4
   }
  ]
 }

@@ -14854,3 +14854,108 @@ def TouchAction.TOUCH_ACTION_MOVE() -> U32:
   2
 def TouchAction.TOUCH_ACTION_CANCEL() -> U32:
   3
+
+# -----------------------------------------------------------------------------
+# VR stereo: rcore.c's LoadVrStereoConfig and stereo mode
+#
+# LoadVrStereoConfig computes, in f32, the lens centers and the distortion
+# scales the distortion shader takes, and the two eyes' projection and view
+# offset matrices from the device's screen and lenses. raylib's software
+# renderer does not draw in stereo (rlEnableStereoRender and the stereo
+# matrices exist on OpenGL 3.3 and ES 2 only) and its shaders change nothing
+# (docs/SHADERS.md): the stereo mode leaves the frame as it is and the scene
+# is drawn once. See docs/VR.md.
+
+type VrDeviceInfo is Data:
+  VrDeviceInfo{h_resolution: U32, v_resolution: U32, h_screen_size: F32, v_screen_size: F32, eye_to_screen_distance: F32, lens_separation_distance: F32,
+    interpupillary_distance: F32, lens_distortion_values: M.Vector4, chroma_ab_correction: M.Vector4}
+
+type VrStereoConfig is Data:
+  VrStereoConfig{left_projection: M.Matrix, right_projection: M.Matrix, left_view_offset: M.Matrix, right_view_offset: M.Matrix,
+    left_lens_center: M.Vector2, right_lens_center: M.Vector2, left_screen_center: M.Vector2, right_screen_center: M.Vector2, scale: M.Vector2, scale_in: M.Vector2}
+
+def Vr.finite(x: F32) -> Bool:
+  U32.is_ne((F32.bits(x) .&. 2139095040 : U32), 2139095040)
+
+def Vr.finite.vector(vector: M.Vector2) -> Bool:
+  M.Vector2{x, y} = vector
+  Vr.finite(x) && Vr.finite(y)
+
+def Vr.finite.matrix(matrix: M.Matrix) -> Bool:
+  M.Matrix{m0, m4, m8, m12, m1, m5, m9, m13, m2, m6, m10, m14, m3, m7, m11, m15} = matrix
+  Vr.finite(m0) && Vr.finite(m4) && Vr.finite(m8) && Vr.finite(m12) && Vr.finite(m1) && Vr.finite(m5) && Vr.finite(m9) && Vr.finite(m13)
+    && Vr.finite(m2) && Vr.finite(m6) && Vr.finite(m10) && Vr.finite(m14) && Vr.finite(m3) && Vr.finite(m7) && Vr.finite(m11) && Vr.finite(m15)
+
+# aspect = ((float)hResolution*0.5f)/(float)vResolution (C ints).
+def Vr.aspect(+h: U32, +v: U32) -> F32:
+  ((Signed.to_f32(h) * 0.5) / Signed.to_f32(v) : F32)
+
+# lensShift = (hScreenSize*0.25f - lensSeparationDistance*0.5f)/hScreenSize.
+def Vr.lens_shift(+width: F32, +separation: F32) -> F32:
+  (((width * 0.25) - (separation * 0.5)) / width : F32)
+
+# distortionScale: the lens distortion polynomial in lensRadius^2, with
+# lensRadius = fabsf(-1.0f - 4.0f*lensShift), summed and multiplied in C's
+# order.
+def Vr.distortion_scale(values: M.Vector4, +shift: F32) -> F32:
+  M.Vector4{d0, d1, d2, d3} = values
+  +radius = F32.abs((F32.neg(1.0) - (4.0 * shift) : F32))
+  +r2 = (radius * radius : F32)
+  (((d0 + (d1 * r2)) + ((d2 * r2) * r2)) + (((d3 * r2) * r2) * r2) : F32)
+
+def Vr.config.checked(+config: VrStereoConfig) -> Maybe<&2, VrStereoConfig>:
+  VrStereoConfig{pl, pr, vl, vr, ll, rl, ls, rs, scale, scale_in} = config
+  Bool.pick(Maybe<&2, VrStereoConfig>, Vr.finite.matrix(pl) && Vr.finite.matrix(pr) && Vr.finite.matrix(vl) && Vr.finite.matrix(vr) && Vr.finite.vector(ll) && Vr.finite.vector(rl)
+    && Vr.finite.vector(ls) && Vr.finite.vector(rs) && Vr.finite.vector(scale) && Vr.finite.vector(scale_in), Some{config}, None{})
+
+# The projections are MatrixPerspective's matrix times a translation by
+# +-4*lensShift, the view offsets translations by +-IPD/2 (and 0.075, 0.045),
+# the lens centers 0.25 + lensShift and 0.75 - lensShift.
+def Vr.config(proj: Maybe<M.Matrix>, +shift: F32, +aspect: F32, +ds: F32, +ipd: F32) -> Maybe<&2, VrStereoConfig>:
+  match proj:
+    case None{}: None{}
+    case Some{+p}:
+      Vr.config.checked(VrStereoConfig{M.Matrix.multiply(p, M.Matrix.translate((4.0 * shift : F32), 0.0, 0.0)), M.Matrix.multiply(p, M.Matrix.translate(F32.neg((4.0 * shift : F32)), 0.0, 0.0)),
+        M.Matrix.translate((ipd * 0.5 : F32), 0.075, 0.045), M.Matrix.translate((F32.neg(ipd) * 0.5 : F32), 0.075, 0.045),
+        M.Vector2{(0.25 + shift : F32), 0.5}, M.Vector2{(0.75 - shift : F32), 0.5}, M.Vector2{0.25, 0.5}, M.Vector2{0.75, 0.5},
+        M.Vector2{((0.5 * 0.5) / ds : F32), (((1.0 * 0.5) * aspect) / ds : F32)}, M.Vector2{(2.0 / 0.5 : F32), ((2.0 / 1.0) / aspect : F32)}})
+
+# fovy = 2.0f*atan2f(vScreenSize*0.5f*distortionScale, eyeToScreenDistance),
+# then MatrixPerspective(fovy, aspect, rlGetCullDistanceNear(),
+# rlGetCullDistanceFar()).
+def Vr.angled(angle: Maybe<F32>, +libm: M.Libm, +shift: F32, +aspect: F32, +ds: F32, +ipd: F32) -> Maybe<&2, VrStereoConfig>:
+  match angle:
+    case None{}: None{}
+    case Some{+negated}:
+      Vr.config(M.Matrix.perspective_for(libm, M.Float64.from_f32((2.0 * F32.neg(negated) : F32)), M.Float64.from_f32(aspect), Rlgl.get_cull_distance_near(), Rlgl.get_cull_distance_far()),
+        shift, aspect, ds, ipd)
+
+def Vr.loaded(valid: Bool, +libm: M.Libm, +shift: F32, +aspect: F32, +ds: F32, +ipd: F32, +height: F32, +eye: F32) -> Maybe<&2, VrStereoConfig>:
+  match valid:
+    case False{}: None{}
+    case True{}: Vr.angled(M.Vector2.line_angle_for(libm, M.Vector2{0.0, 0.0}, M.Vector2{eye, ((height * 0.5) * ds : F32)}), libm, shift, aspect, ds, ipd)
+
+# LoadVrStereoConfig on raylib's software renderer, in uncontracted f32
+# arithmetic with a libm profile's atan2f and binary64 tan. None where a
+# result is not finite (a zero screen size or resolution: the bits of a NaN
+# are the host's), where the profile's atan2f or tan is refused, and for
+# M.AppleLibm (its binary64 tan is not reproduced, docs/PERSPECTIVE.md).
+def Vr.load_stereo_config_for(+libm: M.Libm, device: VrDeviceInfo) -> Maybe<&2, VrStereoConfig>:
+  VrDeviceInfo{+hres, +vres, +hsize, +vsize, +eye, +separation, +ipd, +distortion, _} = device
+  +aspect = Vr.aspect(hres, vres)
+  +shift = Vr.lens_shift(hsize, separation)
+  +ds = Vr.distortion_scale(distortion, shift)
+  Vr.loaded(Vr.finite(aspect) && Vr.finite(shift) && Vr.finite(ds), libm, shift, aspect, ds, ipd, vsize, eye)
+
+# UnloadVrStereoConfig.
+def Vr.unload_stereo_config(config: VrStereoConfig) -> Unit:
+  Unit{}
+
+# BeginVrStereoMode: nothing on the software renderer, which draws the scene
+# once, with the camera's own matrices.
+def Frame.begin_vr_stereo_mode(frame: Frame, config: VrStereoConfig) -> Frame:
+  frame
+
+# EndVrStereoMode.
+def Frame.end_vr_stereo_mode(frame: Frame) -> Frame:
+  frame

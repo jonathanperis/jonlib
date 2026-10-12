@@ -768,6 +768,48 @@
     "api_id": "raylib:function:EndScissorMode",
     "milestone": "shapes"
   },
+  "BeginVrStereoMode": {
+    "jonlib": "Frame.begin_vr_stereo_mode",
+    "status": "profile-covered",
+    "scope": "The frame as it is: raylib's software renderer has no stereo rendering (rlEnableStereoRender and the stereo matrices exist on OpenGL 3.3 and ES 2 only), so the scene is drawn once.",
+    "gaps": [
+      "No stereo rendering: no renderer Jonlib reproduces has it"
+    ],
+    "api_id": "raylib:function:BeginVrStereoMode",
+    "milestone": "vr"
+  },
+  "EndVrStereoMode": {
+    "jonlib": "Frame.end_vr_stereo_mode",
+    "status": "profile-covered",
+    "scope": "The frame as it is.",
+    "gaps": [
+      "No stereo rendering: no renderer Jonlib reproduces has it"
+    ],
+    "api_id": "raylib:function:EndVrStereoMode",
+    "milestone": "vr"
+  },
+  "LoadVrStereoConfig": {
+    "jonlib": "Vr.load_stereo_config_for",
+    "status": "profile-covered",
+    "scope": "The software renderer's configuration (rlGetVersion is not RL_OPENGL_11 there): lens and screen centers, the distortion scales, and both eyes' projection (MatrixPerspective times a translation by 4*lensShift) and view offset matrices, in uncontracted binary32 with the libm profile's atan2f and binary64 tan; every word compared with raylib on 40 devices.",
+    "gaps": [
+      "None where a result is not finite (zero resolutions or screen width, a zero distortion scale, NaN or infinite fields)",
+      "M.AppleLibm is refused (binary64 tan not reproduced)",
+      "Only the uncontracted profile"
+    ],
+    "api_id": "raylib:function:LoadVrStereoConfig",
+    "milestone": "vr"
+  },
+  "UnloadVrStereoConfig": {
+    "jonlib": "Vr.unload_stereo_config",
+    "status": "profile-covered",
+    "scope": "Consumes the configuration; raylib frees nothing either.",
+    "gaps": [
+      "No native allocation ABI"
+    ],
+    "api_id": "raylib:function:UnloadVrStereoConfig",
+    "milestone": "vr"
+  },
   "LoadShader": {
     "jonlib": "Shader.load",
     "status": "profile-covered",

@@ -5478,23 +5478,26 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "VrDeviceInfo",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "raylib's fields: two C int resolutions as U32 words, five floats, and the lens distortion and chromatic aberration values as M.Vector4.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The chromatic aberration values are not read (raylib passes them to the shader only)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/vr_probe.py",
+        "docs/VR.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -5503,7 +5506,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive VrDeviceInfo semantics from the linked source, add a reference fixture, then implement VrDeviceInfo.",
+      "next_step": "Close documented gaps and unverified gates for VrDeviceInfo.",
       "priority": 100
     },
     {
@@ -5538,23 +5541,26 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "VrStereoConfig",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Each eye's projection and view offset matrix and the six pairs the distortion shader takes as M.Vector2.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Named fields for the two-element arrays"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/vr_probe.py",
+        "docs/VR.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -5565,7 +5571,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive VrStereoConfig semantics from the linked source, add a reference fixture, then implement VrStereoConfig.",
+      "next_step": "Close documented gaps and unverified gates for VrStereoConfig.",
       "priority": 100
     },
     {
@@ -29604,23 +29610,27 @@
       "milestone": "vr",
       "phase": 5,
       "sequence": 27,
-      "status": "not-started",
-      "jonlib": "Vr.begin_vr_stereo_mode",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.begin_vr_stereo_mode",
+      "mapping_state": "implemented",
+      "scope": "The frame as it is: raylib's software renderer has no stereo rendering (rlEnableStereoRender and the stereo matrices exist on OpenGL 3.3 and ES 2 only), so the scene is drawn once.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No stereo rendering: no renderer Jonlib reproduces has it"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/vr_probe.py",
+        "docs/VR.md",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -29634,7 +29644,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Device/config values, eye transforms/projections, stereo rendering and configuration lifecycle.",
-      "next_step": "Derive BeginVrStereoMode semantics from the linked source, add a reference fixture, then implement Vr.begin_vr_stereo_mode.",
+      "next_step": "Close documented gaps and unverified gates for BeginVrStereoMode.",
       "priority": 627
     },
     {
@@ -29660,23 +29670,27 @@
       "milestone": "vr",
       "phase": 5,
       "sequence": 27,
-      "status": "not-started",
-      "jonlib": "Vr.end_vr_stereo_mode",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.end_vr_stereo_mode",
+      "mapping_state": "implemented",
+      "scope": "The frame as it is.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No stereo rendering: no renderer Jonlib reproduces has it"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/vr_probe.py",
+        "docs/VR.md",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -29688,7 +29702,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Device/config values, eye transforms/projections, stereo rendering and configuration lifecycle.",
-      "next_step": "Derive EndVrStereoMode semantics from the linked source, add a reference fixture, then implement Vr.end_vr_stereo_mode.",
+      "next_step": "Close documented gaps and unverified gates for EndVrStereoMode.",
       "priority": 627
     },
     {
@@ -29714,23 +29728,28 @@
       "milestone": "vr",
       "phase": 5,
       "sequence": 27,
-      "status": "not-started",
-      "jonlib": "Vr.load_vr_stereo_config",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Vr.load_stereo_config_for",
+      "mapping_state": "implemented",
+      "scope": "The software renderer's configuration (rlGetVersion is not RL_OPENGL_11 there): lens and screen centers, the distortion scales, and both eyes' projection (MatrixPerspective times a translation by 4*lensShift) and view offset matrices, in uncontracted binary32 with the libm profile's atan2f and binary64 tan; every word compared with raylib on 40 devices.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "None where a result is not finite (zero resolutions or screen width, a zero distortion scale, NaN or infinite fields)",
+        "M.AppleLibm is refused (binary64 tan not reproduced)",
+        "Only the uncontracted profile"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/vr_probe.py",
+        "docs/VR.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -29745,7 +29764,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Device/config values, eye transforms/projections, stereo rendering and configuration lifecycle.",
-      "next_step": "Derive LoadVrStereoConfig semantics from the linked source, add a reference fixture, then implement Vr.load_vr_stereo_config.",
+      "next_step": "Close documented gaps and unverified gates for LoadVrStereoConfig.",
       "priority": 627
     },
     {
@@ -29771,23 +29790,26 @@
       "milestone": "vr",
       "phase": 5,
       "sequence": 27,
-      "status": "not-started",
-      "jonlib": "Vr.unload_vr_stereo_config",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Vr.unload_stereo_config",
+      "mapping_state": "implemented",
+      "scope": "Consumes the configuration; raylib frees nothing either.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No native allocation ABI"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/vr_probe.py",
+        "docs/VR.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -29801,7 +29823,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Device/config values, eye transforms/projections, stereo rendering and configuration lifecycle.",
-      "next_step": "Derive UnloadVrStereoConfig semantics from the linked source, add a reference fixture, then implement Vr.unload_vr_stereo_config.",
+      "next_step": "Close documented gaps and unverified gates for UnloadVrStereoConfig.",
       "priority": 627
     },
     {
