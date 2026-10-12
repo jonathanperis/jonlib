@@ -1790,6 +1790,54 @@ def Laws.mp3_second_slot_compress_left_by_too_many_big_values():
 def Laws.mp3_second_slot_compress_left_by_a_mono_frame():
   {==}
 
+def Laws.mp3_long_subbands_of_a_mixed_block():
+  {==}
+
+def Laws.mp3_long_subbands_at_8000_hz():
+  {==}
+
+def Laws.mp3_no_long_subbands_without_the_mixed_flag():
+  {==}
+
+def Laws.mp3_values_moved_last_first():
+  {==}
+
+def Laws.mp3_short_windows_interleaved():
+  {==}
+
+def Laws.mp3_alias_reduction_between_all_long_subbands():
+  {==}
+
+def Laws.mp3_alias_reduction_inside_a_mixed_block_long_part():
+  {==}
+
+def Laws.mp3_no_alias_reduction_in_short_blocks():
+  {==}
+
+def Laws.mp3_no_boundary_no_alias_reduction():
+  {==}
+
+def Laws.mp3_mixed_block_long_part_transformed_long():
+  {==}
+
+def Laws.mp3_short_block_transformed_short():
+  {==}
+
+def Laws.mp3_stop_block_window():
+  {==}
+
+def Laws.mp3_start_block_long_window():
+  {==}
+
+def Laws.mp3_sign_change_in_odd_subbands():
+  {==}
+
+def Laws.mp3_no_sign_change_in_even_subbands():
+  {==}
+
+def Laws.mp3_mono_frame_keeps_the_right_overlap():
+  {==}
+
 def Laws.audio_clock_periods_owed():
   {==}
 

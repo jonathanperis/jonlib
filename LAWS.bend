@@ -2546,6 +2546,63 @@ law mp3_second_slot_compress_left_by_too_many_big_values:
 law mp3_second_slot_compress_left_by_a_mono_frame:
   {Mp3L3.slot.compress(Nil{}, 9) == 9 : U32}
 
+# The filter bank's first half (the second loop of drmp3_L3_decode). A
+# granule with the mixed block flag has two long subbands, four at 8000 Hz.
+# A short band's three windows, one after another in the values, are
+# interleaved from the end of the long part on. The alias reduction crosses
+# all 31 boundaries of a granule without short bands, only those inside the
+# long subbands of a mixed block, none in short blocks. A subband is
+# transformed long in the long part, else by the block type (the start block
+# with the long window). The sign change turns the odd values of the odd
+# subbands, and a mono frame leaves the right channel's overlap alone.
+law mp3_long_subbands_of_a_mixed_block:
+  {Mp3L3.long.subbands(4294676548, 1) == 2 : U32}
+
+law mp3_long_subbands_at_8000_hz:
+  {Mp3L3.long.subbands(4293072896, 1) == 4 : U32}
+
+law mp3_no_long_subbands_without_the_mixed_flag:
+  {Mp3L3.long.subbands(4294676548, 0) == 0 : U32}
+
+law mp3_values_moved_last_first:
+  {Mp3L3.moved(2n, [1, 2, 3], [9]) == Mp3L3.Moved{[3], [2, 1, 9]} : Mp3L3.Moved}
+
+law mp3_short_windows_interleaved:
+  {Mp3L3.reorder([0, 1, 10, 11, 20, 21, 30, 31, 99], 2, [2, 2, 2, 0]) == [0, 1, 10, 20, 30, 11, 21, 31, 99] : +List<U32>}
+
+law mp3_alias_reduction_between_all_long_subbands:
+  {Mp3L3.alias.count(0, 0) == 31 : U32}
+
+law mp3_alias_reduction_inside_a_mixed_block_long_part:
+  {Mp3L3.alias.count(30, 2) == 1 : U32}
+
+law mp3_no_alias_reduction_in_short_blocks:
+  {Mp3L3.alias.count(39, 0) == 0 : U32}
+
+law mp3_no_boundary_no_alias_reduction:
+  {Mp3L3.antialias([1, 2, 3], 0) == [1, 2, 3] : +List<U32>}
+
+law mp3_mixed_block_long_part_transformed_long:
+  {Mp3L3.imdct.mode(1, 2, 2) == 0 : U32}
+
+law mp3_short_block_transformed_short:
+  {Mp3L3.imdct.mode(2, 2, 2) == 2 : U32}
+
+law mp3_stop_block_window:
+  {Mp3L3.imdct.mode(5, 0, 3) == 1 : U32}
+
+law mp3_start_block_long_window:
+  {Mp3L3.imdct.mode(5, 0, 1) == 0 : U32}
+
+law mp3_sign_change_in_odd_subbands:
+  {Mp3L3.signs([5, 4, 3], 20, Nil{}) == [3, 2147483652, 5] : +List<U32>}
+
+law mp3_no_sign_change_in_even_subbands:
+  {Mp3L3.signs([5, 4, 3], 2, Nil{}) == [3, 4, 5] : +List<U32>}
+
+law mp3_mono_frame_keeps_the_right_overlap:
+  {Mp3L3.filter.right(True{}, Nil{}, [1, 2], 4294676692, Mp3.Gr{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 22, 0}) == Mp3L3.Out{Nil{}, [1, 2]} : Mp3L3.Out}
+
 # Frame: InitWindow sizes are 1..4096; a zero or oversized width has no frame
 # whatever the height.
 law frame_init_window_zero_width:

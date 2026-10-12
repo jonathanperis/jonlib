@@ -1915,7 +1915,7 @@
   },
   {
    "id": "mp3-layer3",
-   "title": "MP3 Layer III frames as far as their granules' values (dr_mp3: the bit reservoir and the main data array, scalefactors, Huffman-coded values, the intensity positions; undefined reads and reorders refused) against dr_mp3's own frame function, with generated tables checked against the header",
+   "title": "MP3 Layer III frames as far as their subband samples (dr_mp3: the bit reservoir and the main data array, scalefactors, Huffman-coded values, stereo processing, reorder, alias reduction, IMDCT; undefined reads and reorders refused) against dr_mp3's own frame function, with generated tables checked against the header",
    "run": [
     "{python}",
     "tools/mp3_layer3_probe.py",
@@ -1926,7 +1926,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 8
+   "minutes": 14
   },
   {
    "id": "wave-format",

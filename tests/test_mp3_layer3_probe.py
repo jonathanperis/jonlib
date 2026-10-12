@@ -23,6 +23,7 @@ static void drmp3_L3_decode(drmp3dec *h, drmp3dec_scratch *s, drmp3_L3_gr_info *
     {
         int aa_bands = 31;
             drmp3_L3_reorder(s->grbuf[ch] + n_long_bands*18, s->syn[0], gr_info->sfbtab + gr_info->n_long_sfb);
+        drmp3_L3_change_sign(s->grbuf[ch]);
     }
 }
 
@@ -38,12 +39,12 @@ class ReferenceTests(unittest.TestCase):
         source = lp.reference(HEADER, ['/tmp/a.mp3', '/tmp/b.mp3'])
         self.assertEqual((source.count('static void probe_L3_huffman('), source.count('static void probe_L3_decode('), source.count('static int probe_decode_frame(')), (1, 1, 1))
         self.assertIn('probe_outside = 1;\n    bs->pos = layer3gr_limit;\n}\n', source)
-        self.assertIn('        probe_L3_huffman(s->grbuf[ch], &s->bs, gr_info + ch, s->scf, layer3gr_limit);\n'
-                      '    for (ch = 0; ch < nch; ch++) probe_values = probe_words(probe_values, s->grbuf[ch], 576);\n    for (ch = 0; ch < nch; ch++, gr_info++)\n', source)
+        self.assertIn('        probe_L3_huffman(s->grbuf[ch], &s->bs, gr_info + ch, s->scf, layer3gr_limit);\n    for (ch = 0; ch < nch; ch++, gr_info++)\n', source)
+        self.assertIn('        drmp3_L3_change_sign(s->grbuf[ch]);\n        probe_values = probe_words(probe_values, s->grbuf[ch], 576);\n', source)
         self.assertIn('if (probe_end > 576) probe_outside = 1; }\n            drmp3_L3_reorder(s->grbuf[ch] + n_long_bands*18, ', source)
         self.assertIn('                probe_L3_decode(dec, &dec->scratch, ', source)
         self.assertIn('{ "/tmp/a.mp3", "/tmp/b.mp3" }', source)
-        self.assertEqual(lp.function(HEADER, 'static void drmp3_L3_decode(drmp3dec *h, drmp3dec_scratch *s, drmp3_L3_gr_info *gr_info, int nch)').count('\n'), 9)
+        self.assertEqual(lp.function(HEADER, 'static void drmp3_L3_decode(drmp3dec *h, drmp3dec_scratch *s, drmp3_L3_gr_info *gr_info, int nch)').count('\n'), 10)
 
     def test_another_header_is_refused(self):
         with self.assertRaises(ProbeFailure):

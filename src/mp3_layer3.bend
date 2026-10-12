@@ -5,8 +5,11 @@
 # (drmp3_L3_read_scalefactors, drmp3_L3_ldexp_q2,
 # drmp3_L3_decode_scalefactors), its Huffman-coded values (drmp3_L3_pow_43,
 # drmp3_L3_huffman), its stereo step (drmp3_L3_midside_stereo,
-# drmp3_L3_intensity_stereo, drmp3_L3_stereo_process) and the frame around
-# them (drmp3_L3_restore_reservoir, drmp3_L3_save_reservoir,
+# drmp3_L3_intensity_stereo, drmp3_L3_stereo_process), its filter bank's
+# first half (drmp3_L3_reorder, drmp3_L3_antialias, drmp3_L3_imdct_gr with
+# drmp3_L3_imdct36, drmp3_L3_dct3_9, drmp3_L3_imdct_short, drmp3_L3_imdct12,
+# drmp3_L3_idct3, and drmp3_L3_change_sign) and the frame around them
+# (drmp3_L3_restore_reservoir, drmp3_L3_save_reservoir,
 # drmp3dec_decode_frame). See THIRD_PARTY_NOTICES.md and LICENSES/dr_mp3.txt.
 #
 # Floats are binary32, computed in dr_mp3's order, and kept in lists as
@@ -466,7 +469,7 @@ def Spectrum.fine(spectrum: Spectrum) -> Bool:
 
 # -----------------------------------------------------------------------------
 # Frames (drmp3dec_decode_frame with its samples wanted), as far as the
-# granules' values after the stereo step.
+# granules' values after the IMDCT: 32 subbands of 18 samples in time.
 
 # The decoder between frames: drmp3dec's header, free format size and
 # reservoir (H.Dec), and what its scratch keeps from a frame to the next:
@@ -475,19 +478,20 @@ def Spectrum.fine(spectrum: Spectrum) -> Bool:
 # go), the 40 scales (a granule writes its bands'; a table of more bands
 # reads what is past them), the channels' intensity positions (39 each) and
 # scalefac_compress of the second slot of the granule information, which a
-# mono frame does not write and whose stereo step reads (stereo.shift).
+# mono frame does not write and whose stereo step reads; and the IMDCT's
+# overlap for each channel (mdct_overlap: nine floats a subband, 288).
 type Decoder is Data:
-  Decoder{dec: H.Dec, main: +List<U32>, scf: +List<U32>, ist0: +List<U32>, ist1: +List<U32>, compress: U32}
+  Decoder{dec: H.Dec, main: +List<U32>, scf: +List<U32>, ist0: +List<U32>, ist1: +List<U32>, compress: U32, overlap0: +List<U32>, overlap1: +List<U32>}
 
 # A decoder zeroed: what drmp3dec_decode_frame makes of it before it
 # searches for a frame.
 def Decoder.zero() -> Decoder:
-  Decoder{H.Dec.zero(), zeros.onto(2815n, Nil{}), zeros.onto(40n, Nil{}), zeros.onto(39n, Nil{}), zeros.onto(39n, Nil{}), 0}
+  Decoder{H.Dec.zero(), zeros.onto(2815n, Nil{}), zeros.onto(40n, Nil{}), zeros.onto(39n, Nil{}), zeros.onto(39n, Nil{}), 0, zeros.onto(288n, Nil{}), zeros.onto(288n, Nil{})}
 
 # What a frame gives: the decoder after it, its samples for a channel (0:
-# none decoded), the bytes it used, the granules' values after the stereo
-# step (576 float bits for a channel of a granule, in the frame's order) and
-# `status`: 0, or why the
+# none decoded), the bytes it used, the granules' values after the IMDCT
+# and its sign change (576 float bits for a channel of a granule, in the
+# frame's order: 32 subbands of 18 samples) and `status`: 0, or why the
 # frame is refused. 1: dr_mp3 leaves one of its arrays, which is undefined:
 # a granule's values were read past the main data's (it reads whatever
 # follows in its struct), or a granule is a mixed block at 8000 Hz
@@ -501,6 +505,11 @@ def total(xs: +List<U32>, +sum: U32) -> U32:
     case Nil{}: sum
     case Con{+x, rest}: total(rest, (sum + x : U32))
 
+# n_long_bands of drmp3_L3_decode: the subbands a granule with the mixed
+# block flag transforms as long ones, two, or four at 8000 Hz.
+def long.subbands(+h: U32, +mixed: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(mixed, 0), 0, Bool.pick(U32, U32.is_eq(rate.index(h), 2), 4, 2))
+
 # Whether drmp3_L3_reorder stays inside a granule's 576 values. It moves a
 # granule's short bands, which begin after the long part: 18 values for each
 # of a mixed block's long subbands, two of them, or four at 8000 Hz. There
@@ -510,8 +519,7 @@ def total(xs: +List<U32>, +sum: U32) -> U32:
 # refused. Every other table ends at 576.
 def reorder.inside(+h: U32, +gr: H.Gr) -> Bool:
   H.Gr{_, _, _, _, _, +mixed, _, _, _, _, _, _, _, _, _, _, _, _, _, +kind, +long, +short} = gr
-  +subbands = Bool.pick(U32, U32.is_eq(mixed, 0), 0, Bool.pick(U32, U32.is_eq(rate.index(h), 2), 4, 2))
-  U32.is_eq(short, 0) || (((subbands * 18) + total(List.drop(&2, U32, bands(h, kind), U32.to_nat(long)), 0)) <= 576 : U32)
+  U32.is_eq(short, 0) || (((long.subbands(h, mixed) * 18) + total(List.drop(&2, U32, bands(h, kind), U32.to_nat(long)), 0)) <= 576 : U32)
 
 # A channel of a granule: the bit after it, the channel's intensity
 # positions and the scales as its scalefactors leave them, whether dr_mp3
@@ -764,6 +772,291 @@ def stereo.mode(+h: U32) -> U32:
 def granule(mono: Bool, +gr0: H.Gr, +gr1: H.Gr, +main: +List<U32>, +limit: U32, +pos: U32, +h: U32, +ist0: +List<U32>, +ist1: +List<U32>, +scf: +List<U32>, +sh: U32) -> Channels:
   stereo(stereo.mode(h), granule.channels(mono, gr0, gr1, main, limit, pos, h, ist0, ist1, scf), gr0, h, sh)
 
+# -----------------------------------------------------------------------------
+# Reorder, alias reduction, IMDCT (drmp3_L3_reorder, drmp3_L3_antialias,
+# drmp3_L3_imdct_gr, drmp3_L3_change_sign)
+
+# -x: the sign bit turned, as C negates a float (0 - x would keep a zero's sign).
+def neg(x: F32) -> F32:
+  float((F32.bits(x) .^. 2147483648 : U32))
+
+# `n` values moved from a list onto another (the last first), and the rest.
+type Moved is Data:
+  Moved{rest: +List<U32>, done: +List<U32>}
+
+def moved(n: Nat, xs: +List<U32>, acc: +List<U32>) -> Moved:
+  match n:
+    case 0n: Moved{xs, acc}
+    case 1n+k:
+      match xs:
+        case Nil{}: Moved{Nil{}, acc}
+        case Con{+x, rest}: moved(k, rest, Con{x, acc})
+
+# drmp3_L3_reorder for one band of three windows: the windows' values are one
+# after another (a, then b, then c, `n` each) and become a0 b0 c0 a1 b1 c1...
+def reorder.band(n: Nat, a: +List<U32>, +b: +List<U32>, +c: +List<U32>, acc: +List<U32>) -> Moved:
+  match n:
+    case 0n: Moved{c, acc}
+    case 1n+k:
+      match a:
+        case Nil{}: Moved{Nil{}, acc}
+        case Con{+x, rest}: reorder.band(k, rest, List.drop(&2, U32, b, 1n), List.drop(&2, U32, c, 1n), Con{H.first(c), Con{H.first(b), Con{x, acc}}})
+
+# The short bands from the first on, three windows of a width at a time, to
+# the table's 0. `state` is what is left and what is done.
+def reorder.bands(n: Nat, stop: Bool, sfb: +List<U32>, state: Moved) -> Moved:
+  match n:
+    case 0n: state
+    case 1n+k:
+      match stop:
+        case True{}: state
+        case False{}:
+          match sfb:
+            case Con{+width, Con{_, Con{_, +rest}}}:
+              Moved{+values, acc} = state
+              reorder.bands(k, U32.is_eq(H.first(rest), 0), rest,
+                reorder.band(U32.to_nat(width), values, List.drop(&2, U32, values, U32.to_nat(width)), List.drop(&2, U32, values, U32.to_nat((2 * width : U32))), acc))
+            case _: state
+
+def moved.whole(state: Moved) -> +List<U32>:
+  Moved{rest, done} = state
+  List.reverse.go(&2, U32, done, rest)
+
+# drmp3_L3_reorder: a short or mixed granule's values with the short bands'
+# windows interleaved; `start` values of long bands come first as they are.
+def reorder(+values: +List<U32>, +start: U32, +sfb: +List<U32>) -> +List<U32>:
+  moved.whole(reorder.bands(14n, U32.is_eq(H.first(sfb), 0), sfb, moved(U32.to_nat(start), values, Nil{})))
+
+# One boundary of drmp3_L3_antialias: `d` is the eight values below it, the
+# nearest first, and `u` the eight above it. The new values below go onto
+# `down` (so the nearest ends last: the order they have in the granule) and
+# those above onto `up` (the nearest first: reversed).
+type Alias is Data:
+  Alias{down: +List<U32>, up: +List<U32>}
+
+def alias.pairs(d: +List<U32>, +u: +List<U32>, +c0: +List<U32>, +c1: +List<U32>, down: +List<U32>, up: +List<U32>) -> Alias:
+  match d:
+    case Nil{}: Alias{down, up}
+    case Con{+low, rest}:
+      alias.pairs(rest, List.drop(&2, U32, u, 1n), List.drop(&2, U32, c0, 1n), List.drop(&2, U32, c1, 1n),
+        Con{F32.bits(((float(H.first(u)) * float(H.first(c1))) + (float(low) * float(H.first(c0))) : F32)), down},
+        Con{F32.bits(((float(H.first(u)) * float(H.first(c0))) - (float(low) * float(H.first(c1))) : F32)), up})
+
+# What a boundary leaves: the values past it and what is done, with the
+# sixteen new values in their places (the list done is the last first).
+def alias.joined(alias: Alias, +rest: +List<U32>, +below: +List<U32>) -> Moved:
+  Alias{down, up} = alias
+  Moved{rest, List.append(&2, U32, up, List.reverse.go(&2, U32, down, below))}
+
+# The ten values after a boundary's eight: the upper subband's others.
+def alias.next(state: Moved) -> Moved:
+  Moved{rest, done} = state
+  moved(10n, rest, done)
+
+# drmp3_L3_antialias, a boundary between two subbands at a time: the state
+# has the lower subband done, so its last eight values are the first eight
+# of the list done, the nearest first; ten more values follow each boundary.
+def alias.bands(n: Nat, state: Moved, +c0: +List<U32>, +c1: +List<U32>) -> Moved:
+  match n:
+    case 0n: state
+    case 1n+k:
+      Moved{+rest, +done} = state
+      alias.bands(k, alias.next(alias.joined(alias.pairs(H.take(8, done), rest, c0, c1, Nil{}, Nil{}), List.drop(&2, U32, rest, 8n), List.drop(&2, U32, done, 8n))), c0, c1)
+
+# aa_bands of drmp3_L3_decode: the boundaries the alias reduction crosses.
+# All 31 without short bands; with them, those inside the long subbands.
+def alias.count(+short: U32, +nlong: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(short, 0), 31, (nlong - U32.min(nlong, 1) : U32))
+
+# drmp3_L3_antialias over `n` boundaries from the granule's first subband.
+def antialias(+values: +List<U32>, +n: U32) -> +List<U32>:
+  moved.whole(alias.bands(U32.to_nat(n), moved(18n, values, Nil{}), row(T.aa(), 0), row(T.aa(), 1)))
+
+# Nine floats: a column of drmp3_L3_imdct36.
+type Nine is Data:
+  Nine{a0: F32, a1: F32, a2: F32, a3: F32, a4: F32, a5: F32, a6: F32, a7: F32, a8: F32}
+
+# drmp3_L3_dct3_9, in its order of operations.
+def dct3.nine(y: Nine) -> Nine:
+  Nine{+y0, +y1, +y2, +y3, +y4, +y5, +y6, +y7, +y8} = y
+  +t0 = (y0 + (y6 * 0.5) : F32)
+  +s0 = (y0 - y6 : F32)
+  +t4 = ((y4 + y2) * float(T.c.cos20()) : F32)
+  +t2 = ((y8 + y2) * float(T.c.cos40()) : F32)
+  +s6 = ((y4 - y8) * float(T.c.cos80()) : F32)
+  +s4 = (y4 + (y8 - y2) : F32)
+  +s2 = (s0 - (s4 * 0.5) : F32)
+  +s8 = ((t0 - t2) + s6 : F32)
+  +e0 = ((t0 - t4) + t2 : F32)
+  +e4 = ((t0 + t4) - s6 : F32)
+  +s3 = (y3 * float(T.c.cos30()) : F32)
+  +u0 = ((y5 + y1) * float(T.c.cos10()) : F32)
+  +u4 = ((y5 - y7) * float(T.c.cos70()) : F32)
+  +u2 = ((y1 + y7) * float(T.c.cos50()) : F32)
+  +s1 = (((y1 - y5) - y7) * float(T.c.cos30()) : F32)
+  +s5 = ((u0 - s3) - u2 : F32)
+  +s7 = ((u4 - s3) - u0 : F32)
+  +e3 = ((u4 + s3) - u2 : F32)
+  Nine{(e4 - s7 : F32), (s2 + s1 : F32), (e0 - e3 : F32), (s8 + s5 : F32), (s4 + s0 : F32), (s8 - s5 : F32), (e0 + e3 : F32), (s2 - s1 : F32), (e4 + s7 : F32)}
+
+# A column as a list of float bits; the sine column's odd entries change sign.
+def nine.cos(nine: Nine) -> +List<U32>:
+  Nine{a0, a1, a2, a3, a4, a5, a6, a7, a8} = nine
+  [F32.bits(a0), F32.bits(a1), F32.bits(a2), F32.bits(a3), F32.bits(a4), F32.bits(a5), F32.bits(a6), F32.bits(a7), F32.bits(a8)]
+
+def nine.sin(nine: Nine) -> +List<U32>:
+  Nine{a0, a1, a2, a3, a4, a5, a6, a7, a8} = nine
+  [F32.bits(a0), F32.bits(neg(a1)), F32.bits(a2), F32.bits(neg(a3)), F32.bits(a4), F32.bits(neg(a5)), F32.bits(a6), F32.bits(neg(a7)), F32.bits(a8)]
+
+# What a subband's transform leaves: the granule's values done (the last
+# first) and the overlap done (the last first).
+type Out is Data:
+  Out{values: +List<U32>, overlap: +List<U32>}
+
+# The nine steps that end drmp3_L3_imdct36 for a subband: with the overlap
+# `ovl`, the columns co and si, g_twid9's halves and the window's,
+# overlap[i] = co*twid[i] - si*twid[9 + i], and the outputs i and 17 - i
+# from the old overlap and sum = co*twid[9 + i] + si*twid[i]. `back` takes
+# the outputs 17 - i, which end in order.
+def imdct36.steps(co: +List<U32>, +si: +List<U32>, +ovl: +List<U32>, +t0: +List<U32>, +t1: +List<U32>, +w0: +List<U32>, +w1: +List<U32>, values: +List<U32>, back: +List<U32>, over: +List<U32>) -> Out:
+  match co:
+    case Nil{}: Out{List.reverse.go(&2, U32, back, values), over}
+    case Con{+c, rest}:
+      +s = float(H.first(si))
+      +sum = ((float(c) * float(H.first(t1))) + (s * float(H.first(t0))) : F32)
+      +old = float(H.first(ovl))
+      imdct36.steps(rest, List.drop(&2, U32, si, 1n), List.drop(&2, U32, ovl, 1n), List.drop(&2, U32, t0, 1n), List.drop(&2, U32, t1, 1n), List.drop(&2, U32, w0, 1n), List.drop(&2, U32, w1, 1n),
+        Con{F32.bits(((old * float(H.first(w0))) - (sum * float(H.first(w1))) : F32)), values},
+        Con{F32.bits(((old * float(H.first(w1))) + (sum * float(H.first(w0))) : F32)), back},
+        Con{F32.bits(((float(c) * float(H.first(t0))) - (s * float(H.first(t1))) : F32)), over})
+
+# drmp3_L3_imdct36 for one subband of eighteen values: `window` is a row of
+# g_mdct_window and `twid` g_twid9.
+def imdct36(+g0: F32, +g1: F32, +g2: F32, +g3: F32, +g4: F32, +g5: F32, +g6: F32, +g7: F32, +g8: F32, +g9: F32, +g10: F32, +g11: F32, +g12: F32, +g13: F32, +g14: F32, +g15: F32, +g16: F32, +g17: F32, +ovl: +List<U32>, +twid: +List<U32>, +window: +List<U32>, values: +List<U32>, over: +List<U32>) -> Out:
+  imdct36.steps(
+    nine.cos(dct3.nine(Nine{neg(g0), (g1 + g2 : F32), neg((g3 + g4 : F32)), (g5 + g6 : F32), neg((g7 + g8 : F32)), (g9 + g10 : F32), neg((g11 + g12 : F32)), (g13 + g14 : F32), neg((g15 + g16 : F32))})),
+    nine.sin(dct3.nine(Nine{g17, (g16 - g15 : F32), (g13 - g14 : F32), (g12 - g11 : F32), (g9 - g10 : F32), (g8 - g7 : F32), (g5 - g6 : F32), (g4 - g3 : F32), (g1 - g2 : F32)})),
+    ovl, twid, List.drop(&2, U32, twid, 9n), window, List.drop(&2, U32, window, 9n), values, Nil{}, over)
+
+# drmp3_L3_imdct12 for a window of a short block: six outputs and the three
+# values that become the overlap. x0 to x15 are the window's six values,
+# v0 to v2 the overlap it reads, t0 to t5 g_twid3.
+type Twelve is Data:
+  Twelve{d0: F32, d1: F32, d2: F32, d3: F32, d4: F32, d5: F32, n0: F32, n1: F32, n2: F32}
+
+def imdct12.sums(+c0: F32, +c1: F32, +c2: F32, +s0: F32, +s1: F32, +s2: F32, +v0: F32, +v1: F32, +v2: F32, +t0: F32, +t1: F32, +t2: F32, +t3: F32, +t4: F32, +t5: F32) -> Twelve:
+  +sum0 = ((c0 * t3) + (s0 * t0) : F32)
+  +sum1 = ((c1 * t4) + (s1 * t1) : F32)
+  +sum2 = ((c2 * t5) + (s2 * t2) : F32)
+  Twelve{((v0 * t2) - (sum0 * t5) : F32), ((v1 * t1) - (sum1 * t4) : F32), ((v2 * t0) - (sum2 * t3) : F32), ((v2 * t3) + (sum2 * t0) : F32), ((v1 * t4) + (sum1 * t1) : F32), ((v0 * t5) + (sum0 * t2) : F32),
+    ((c0 * t0) - (s0 * t3) : F32), ((c1 * t1) - (s1 * t4) : F32), ((c2 * t2) - (s2 * t5) : F32)}
+
+# drmp3_L3_idct3 twice: co from (-x0, x6 + x3, x12 + x9) and si from
+# (x15, x12 - x9, x6 - x3), whose middle changes sign.
+def imdct12(+x0: F32, +x3: F32, +x6: F32, +x9: F32, +x12: F32, +x15: F32, +v0: F32, +v1: F32, +v2: F32, +t0: F32, +t1: F32, +t2: F32, +t3: F32, +t4: F32, +t5: F32) -> Twelve:
+  +cm = ((x6 + x3) * float(T.c.cos30()) : F32)
+  +ca = (neg(x0) - ((x12 + x9) * 0.5) : F32)
+  +sm = ((x12 - x9) * float(T.c.cos30()) : F32)
+  +sa = (x15 - ((x6 - x3) * 0.5) : F32)
+  imdct12.sums((ca + cm : F32), (neg(x0) + (x12 + x9) : F32), (ca - cm : F32), (sa + sm : F32), neg((x15 + (x6 - x3) : F32)), (sa - sm : F32), v0, v1, v2, t0, t1, t2, t3, t4, t5)
+
+# drmp3_L3_imdct_short for one subband: its three windows are every third
+# value. The first six outputs are the overlap's first six; the first
+# window's transform reads the overlap's last three and gives the next six
+# outputs, the second reads what the first left there and gives the last
+# six, and the third gives the new overlap whole.
+def short.last(c: Twelve, values: +List<U32>, over: +List<U32>) -> Out:
+  Twelve{d0, d1, d2, d3, d4, d5, n0, n1, n2} = c
+  Out{values, Con{F32.bits(n2), Con{F32.bits(n1), Con{F32.bits(n0), Con{F32.bits(d5), Con{F32.bits(d4), Con{F32.bits(d3), Con{F32.bits(d2), Con{F32.bits(d1), Con{F32.bits(d0), over}}}}}}}}}}
+
+def short.third(b: Twelve, +g2: F32, +g5: F32, +g8: F32, +g11: F32, +g14: F32, +g17: F32, +t0: F32, +t1: F32, +t2: F32, +t3: F32, +t4: F32, +t5: F32, values: +List<U32>, over: +List<U32>) -> Out:
+  Twelve{d0, d1, d2, d3, d4, d5, +n0, +n1, +n2} = b
+  short.last(imdct12(g2, g5, g8, g11, g14, g17, n0, n1, n2, t0, t1, t2, t3, t4, t5), Con{F32.bits(d5), Con{F32.bits(d4), Con{F32.bits(d3), Con{F32.bits(d2), Con{F32.bits(d1), Con{F32.bits(d0), values}}}}}}, over)
+
+def short.second(a: Twelve, +g1: F32, +g2: F32, +g4: F32, +g5: F32, +g7: F32, +g8: F32, +g10: F32, +g11: F32, +g13: F32, +g14: F32, +g16: F32, +g17: F32, +t0: F32, +t1: F32, +t2: F32, +t3: F32, +t4: F32, +t5: F32, values: +List<U32>, over: +List<U32>) -> Out:
+  Twelve{d0, d1, d2, d3, d4, d5, +n0, +n1, +n2} = a
+  short.third(imdct12(g1, g4, g7, g10, g13, g16, n0, n1, n2, t0, t1, t2, t3, t4, t5), g2, g5, g8, g11, g14, g17, t0, t1, t2, t3, t4, t5, Con{F32.bits(d5), Con{F32.bits(d4), Con{F32.bits(d3), Con{F32.bits(d2), Con{F32.bits(d1), Con{F32.bits(d0), values}}}}}}, over)
+
+def imdct.short(ovl: +List<U32>, +g0: F32, +g1: F32, +g2: F32, +g3: F32, +g4: F32, +g5: F32, +g6: F32, +g7: F32, +g8: F32, +g9: F32, +g10: F32, +g11: F32, +g12: F32, +g13: F32, +g14: F32, +g15: F32, +g16: F32, +g17: F32, +t0: F32, +t1: F32, +t2: F32, +t3: F32, +t4: F32, +t5: F32, values: +List<U32>, over: +List<U32>) -> Out:
+  match ovl:
+    case Con{+o0, Con{+o1, Con{+o2, Con{+o3, Con{+o4, Con{+o5, Con{+o6, Con{+o7, Con{+o8, _}}}}}}}}}:
+      short.second(imdct12(g0, g3, g6, g9, g12, g15, float(o6), float(o7), float(o8), t0, t1, t2, t3, t4, t5), g1, g2, g4, g5, g7, g8, g10, g11, g13, g14, g16, g17, t0, t1, t2, t3, t4, t5,
+        Con{o5, Con{o4, Con{o3, Con{o2, Con{o1, Con{o0, values}}}}}}, over)
+    case _: Out{values, over}
+
+# A subband's transform. 0: drmp3_L3_imdct36 with the long window; 1: with
+# the stop block's window; 2: drmp3_L3_imdct_short.
+def imdct.band(mode: U32, +g0: F32, +g1: F32, +g2: F32, +g3: F32, +g4: F32, +g5: F32, +g6: F32, +g7: F32, +g8: F32, +g9: F32, +g10: F32, +g11: F32, +g12: F32, +g13: F32, +g14: F32, +g15: F32, +g16: F32, +g17: F32, +ovl: +List<U32>, +twid: +List<U32>, +w0: +List<U32>, +w1: +List<U32>, +t0: F32, +t1: F32, +t2: F32, +t3: F32, +t4: F32, +t5: F32, values: +List<U32>, over: +List<U32>) -> Out:
+  match mode:
+    case 0: imdct36(g0, g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, g11, g12, g13, g14, g15, g16, g17, ovl, twid, w0, values, over)
+    case 1: imdct36(g0, g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, g11, g12, g13, g14, g15, g16, g17, ovl, twid, w1, values, over)
+    case _: imdct.short(ovl, g0, g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, g11, g12, g13, g14, g15, g16, g17, t0, t1, t2, t3, t4, t5, values, over)
+
+# How subband `b` is transformed (imdct.band): the first `nlong` as long
+# blocks; the others by the granule's block type, 2 short and 3 stop. A
+# start block (1) has the long window.
+def imdct.mode(+b: U32, +nlong: U32, +block: U32) -> U32:
+  Bool.pick(U32, (b < nlong : U32), 0, Bool.pick(U32, U32.is_eq(block, 2), 2, Bool.pick(U32, U32.is_eq(block, 3), 1, 0)))
+
+# drmp3_L3_imdct_gr, a subband of eighteen values and nine of overlap at a
+# time: the first `nlong` subbands take the long window, the others their
+# block type's transform (2 short, 3 stop, else long).
+def imdct.bands(n: Nat, values: +List<U32>, +overlap: +List<U32>, +b: U32, +nlong: U32, +block: U32, +twid: +List<U32>, +w0: +List<U32>, +w1: +List<U32>, +t0: F32, +t1: F32, +t2: F32, +t3: F32, +t4: F32, +t5: F32, acc: Out) -> Out:
+  match n:
+    case 0n: acc
+    case 1n+k:
+      match values:
+        case Con{+g0, Con{+g1, Con{+g2, Con{+g3, Con{+g4, Con{+g5, Con{+g6, Con{+g7, Con{+g8, Con{+g9, Con{+g10, Con{+g11, Con{+g12, Con{+g13, Con{+g14, Con{+g15, Con{+g16, Con{+g17, +rest}}}}}}}}}}}}}}}}}}:
+          Out{done, over} = acc
+          imdct.bands(k, rest, List.drop(&2, U32, overlap, 9n), (b + 1 : U32), nlong, block, twid, w0, w1, t0, t1, t2, t3, t4, t5,
+            imdct.band(imdct.mode(b, nlong, block),
+              float(g0), float(g1), float(g2), float(g3), float(g4), float(g5), float(g6), float(g7), float(g8), float(g9), float(g10), float(g11), float(g12), float(g13), float(g14), float(g15), float(g16), float(g17), overlap, twid, w0, w1, t0, t1, t2, t3, t4, t5, done, over))
+        case _: acc
+
+# drmp3_L3_change_sign while the values done (the last first, `i` the
+# first's index) are put in order: in the odd subbands the odd values
+# change sign.
+def signs(xs: +List<U32>, +i: U32, acc: +List<U32>) -> +List<U32>:
+  match xs:
+    case Nil{}: acc
+    case Con{+x, rest}: signs(rest, (i - 1 : U32), Con{(x .^. ((((i / 18) .&. (i % 18)) .&. 1) << 31n) : U32), acc})
+
+def filter.reordered(short: Bool, +values: +List<U32>, +start: U32, +sfb: +List<U32>) -> +List<U32>:
+  match short:
+    case False{}: values
+    case True{}: reorder(values, start, sfb)
+
+def filter.out(out: Out) -> Out:
+  Out{values, over} = out
+  Out{signs(values, 575, Nil{}), List.reverse(&2, U32, over)}
+
+# The second loop of drmp3_L3_decode for a channel: its short bands
+# reordered, the alias reduction between its long subbands (all 31
+# boundaries, or those of a mixed block's long part), the IMDCT over the
+# channel's overlap, and the sign change. The 576 values are then 32
+# subbands of 18 samples in time.
+def filter(+values: +List<U32>, +overlap: +List<U32>, +h: U32, +gr: H.Gr) -> Out:
+  H.Gr{_, _, _, _, +block, +mixed, _, _, _, _, _, _, _, _, _, _, _, _, _, +kind, +long, +short} = gr
+  +nlong = long.subbands(h, mixed)
+  +twid3 = T.twid3()
+  filter.out(imdct.bands(32n, antialias(filter.reordered(U32.is_ne(short, 0), values, (nlong * 18 : U32), List.drop(&2, U32, bands(h, kind), U32.to_nat(long))), alias.count(short, nlong)),
+    overlap, 0, nlong, block, T.twid9(), row(T.mdct.window(), 0), row(T.mdct.window(), 1),
+    float(H.nth(twid3, 0)), float(H.nth(twid3, 1)), float(H.nth(twid3, 2)), float(H.nth(twid3, 3)), float(H.nth(twid3, 4)), float(H.nth(twid3, 5)), Out{Nil{}, Nil{}}))
+
+def Out.values(out: Out) -> +List<U32>:
+  Out{values, _} = out
+  values
+
+def Out.overlap(out: Out) -> +List<U32>:
+  Out{_, overlap} = out
+  overlap
+
+# A mono frame has no right channel: its overlap stays.
+def filter.right(mono: Bool, +values: +List<U32>, +overlap: +List<U32>, +h: U32, +gr: H.Gr) -> Out:
+  match mono:
+    case True{}: Out{Nil{}, overlap}
+    case False{}: filter(values, overlap, h, gr)
+
 def Gr.first(grs: +List<H.Gr>, +or: H.Gr) -> H.Gr:
   match grs:
     case Nil{}: or
@@ -773,7 +1066,7 @@ def Gr.first(grs: +List<H.Gr>, +or: H.Gr) -> H.Gr:
 # positions, the scales, whether every read was inside the array, and the
 # values, a channel after a channel (the last first).
 type Granules is Data:
-  Granules{pos: U32, ist0: +List<U32>, ist1: +List<U32>, scf: +List<U32>, fine: Bool, spectra: +List<+List<U32>>}
+  Granules{pos: U32, ist0: +List<U32>, ist1: +List<U32>, scf: +List<U32>, overlap0: +List<U32>, overlap1: +List<U32>, fine: Bool, spectra: +List<+List<U32>>}
 
 def granules.pushed(mono: Bool, +left: +List<U32>, +right: +List<U32>, +out: +List<+List<U32>>) -> +List<+List<U32>>:
   match mono:
@@ -783,23 +1076,25 @@ def granules.pushed(mono: Bool, +left: +List<U32>, +right: +List<U32>, +out: +Li
 # `grs` is the side information's granules, a channel after a channel: one
 # or two granules of one or two channels. `limit` is the main data's bits
 # and `pos` the granule's first.
-def granules(n: Nat, grs: +List<H.Gr>, +mono: Bool, +main: +List<U32>, +limit: U32, +pos: U32, +h: U32, +ist0: +List<U32>, +ist1: +List<U32>, +scf: +List<U32>, +sh: U32, +fine: Bool,
-    +out: +List<+List<U32>>) -> Granules:
+def granules(n: Nat, grs: +List<H.Gr>, +mono: Bool, +main: +List<U32>, +limit: U32, +pos: U32, +h: U32, +ist0: +List<U32>, +ist1: +List<U32>, +scf: +List<U32>, +sh: U32, +overlap0: +List<U32>,
+    +overlap1: +List<U32>, +fine: Bool, +out: +List<+List<U32>>) -> Granules:
   match n:
-    case 0n: Granules{pos, ist0, ist1, scf, fine, out}
+    case 0n: Granules{pos, ist0, ist1, scf, overlap0, overlap1, fine, out}
     case 1n+k:
       match grs:
-        case Nil{}: Granules{pos, ist0, ist1, scf, fine, out}
+        case Nil{}: Granules{pos, ist0, ist1, scf, overlap0, overlap1, fine, out}
         case Con{+gr0, +rest}:
           +done = granule(mono, gr0, Gr.first(rest, gr0), main, limit, pos, h, ist0, ist1, scf, sh)
+          +left = filter(Channels.left(done), overlap0, h, gr0)
+          +right = filter.right(mono, Channels.right(done), overlap1, h, Gr.first(rest, gr0))
           granules(k, Bool.pick(+List<H.Gr>, mono, rest, List.drop(&2, H.Gr, rest, 1n)), mono, main, limit, Channels.pos(done), h, Channels.ist0(done), Channels.ist1(done), Channels.scf(done),
-            sh, fine && Channels.fine(done), granules.pushed(mono, Channels.left(done), Channels.right(done), out))
+            sh, Out.overlap(left), Out.overlap(right), fine && Channels.fine(done), granules.pushed(mono, Out.values(left), Out.values(right), out))
 
 # drmp3_L3_save_reservoir after the granules: what was not read of the main
 # data is the next frames' reservoir.
 def decoded.granules(grans: Granules, +h: U32, +free: U32, +main: +List<U32>, +len: U32, +array: +List<U32>, +bytes: U32, +compress: U32) -> Decoded:
-  Granules{+pos, ist0, ist1, scf, +fine, spectra} = grans
-  Decoded{Decoder{H.Dec{h, free, H.layer3.kept(main, len, ((pos + 7) / 8 : U32))}, array, scf, ist0, ist1, compress}, H.hdr.samples(h), bytes, Bool.pick(U32, fine, 0, 1),
+  Granules{+pos, ist0, ist1, scf, overlap0, overlap1, +fine, spectra} = grans
+  Decoded{Decoder{H.Dec{h, free, H.layer3.kept(main, len, ((pos + 7) / 8 : U32))}, array, scf, ist0, ist1, compress, overlap0, overlap1}, H.hdr.samples(h), bytes, Bool.pick(U32, fine, 0, 1),
     List.reverse(&2, +List<U32>, spectra)}
 
 # drmp3_L3_restore_reservoir: the frame's main data after the reservoir's
@@ -820,7 +1115,7 @@ def Side.grs(side: H.Side) -> +List<H.Gr>:
 
 # The reservoir's bytes.
 def Decoder.reserv(decoder: Decoder) -> +List<U32>:
-  Decoder{H.Dec{_, _, reserv}, _, _, _, _, _} = decoder
+  Decoder{H.Dec{_, _, reserv}, _, _, _, _, _, _, _} = decoder
   reserv
 
 # scalefac_compress of the granule information's second slot once
@@ -833,21 +1128,21 @@ def slot.compress(grs: +List<H.Gr>, +old: U32) -> U32:
     case Con{H.Gr{_, +big, _, +compress, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _}, _}: Bool.pick(U32, (big > 288 : U32), old, compress)
 
 def Decoder.slot(decoder: Decoder, +side: H.Side) -> Decoder:
-  Decoder{dec, main, scf, ist0, ist1, +compress} = decoder
-  Decoder{dec, main, scf, ist0, ist1, slot.compress(List.drop(&2, H.Gr, Side.grs(side), 1n), compress)}
+  Decoder{dec, main, scf, ist0, ist1, +compress, overlap0, overlap1} = decoder
+  Decoder{dec, main, scf, ist0, ist1, slot.compress(List.drop(&2, H.Gr, Side.grs(side), 1n), compress), overlap0, overlap1}
 
 # A frame whose reservoir is short of main_data_begin: its main data is
 # written and kept for the next frames, and nothing is decoded.
 def frame.short(mained: +List<U32> & U32, +h: U32, +free: U32, +bytes: U32, decoder: Decoder) -> Decoded:
   (+main, +len) = mained
-  Decoder{_, +array, scf, ist0, ist1, +compress} = decoder
-  Decoded{Decoder{H.Dec{h, free, H.layer3.kept(main, len, 0)}, frame.array(main, len, array), scf, ist0, ist1, compress}, 0, bytes, 0, Nil{}}
+  Decoder{_, +array, scf, ist0, ist1, +compress, overlap0, overlap1} = decoder
+  Decoded{Decoder{H.Dec{h, free, H.layer3.kept(main, len, 0)}, frame.array(main, len, array), scf, ist0, ist1, compress, overlap0, overlap1}, 0, bytes, 0, Nil{}}
 
 def frame.full(mained: +List<U32> & U32, +grs: +List<H.Gr>, +h: U32, +free: U32, +bytes: U32, decoder: Decoder) -> Decoded:
   (+main, +len) = mained
-  Decoder{_, +array, +scf, +ist0, +ist1, +compress} = decoder
+  Decoder{_, +array, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1} = decoder
   +whole = frame.array(main, len, array)
-  decoded.granules(granules(2n, grs, H.hdr.mono(h), whole, (len * 8 : U32), 0, h, ist0, ist1, scf, (compress .&. 1 : U32), True{}, Nil{}), h, free, main, len, whole, bytes, compress)
+  decoded.granules(granules(2n, grs, H.hdr.mono(h), whole, (len * 8 : U32), 0, h, ist0, ist1, scf, (compress .&. 1 : U32), overlap0, overlap1, True{}, Nil{}), h, free, main, len, whole, bytes, compress)
 
 # A Layer III frame by what its side information allows. 0: the side
 # information failed or the frame is too short for it, which clears the
@@ -856,8 +1151,8 @@ def frame.full(mained: +List<U32> & U32, +grs: +List<H.Gr>, +h: U32, +free: U32,
 def frame.side(state: U32, +side: H.Side, +h: U32, +free: U32, +payload: +List<U32>, +limit: U32, +bytes: U32, +decoder: Decoder) -> Decoded:
   match state:
     case 0:
-      Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1, +compress} = decoder
-      Decoded{Decoder{H.Dec{(h .&. 16777215 : U32), free, reserv}, array, scf, ist0, ist1, compress}, 0, bytes, 0, Nil{}}
+      Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1} = decoder
+      Decoded{Decoder{H.Dec{(h .&. 16777215 : U32), free, reserv}, array, scf, ist0, ist1, compress, overlap0, overlap1}, 0, bytes, 0, Nil{}}
     case 1: frame.short(frame.main(side, Decoder.reserv(decoder), payload, limit), h, free, bytes, decoder)
     case _: frame.full(frame.main(side, Decoder.reserv(decoder), payload, limit), Side.grs(side), h, free, bytes, decoder)
 
@@ -878,14 +1173,14 @@ def frame.at(layer3: Bool, +at: +List<U32>, +size: U32, +skip: U32, +free: U32, 
   match layer3:
     case True{}: frame.layer3(at, size, skip, free, decoder)
     case False{}:
-      Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1, +compress} = decoder
-      Decoded{Decoder{H.Dec{H.word(at), free, reserv}, array, scf, ist0, ist1, compress}, 0, (skip + size : U32), 2, Nil{}}
+      Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1} = decoder
+      Decoded{Decoder{H.Dec{H.word(at), free, reserv}, array, scf, ist0, ist1, compress, overlap0, overlap1}, 0, (skip + size : U32), 2, Nil{}}
 
 # The frame the search found in a zeroed decoder, or none: every byte
 # searched is used.
 def frame.found(found: H.Found, +window: +List<U32>) -> Decoded:
   match found:
-    case H.Found{+skip, 0, +free}: Decoded{Decoder{H.Dec{0, free, Nil{}}, zeros.onto(2815n, Nil{}), zeros.onto(40n, Nil{}), zeros.onto(39n, Nil{}), zeros.onto(39n, Nil{}), 0}, 0, skip, 0, Nil{}}
+    case H.Found{+skip, 0, +free}: Decoded{Decoder{H.Dec{0, free, Nil{}}, zeros.onto(2815n, Nil{}), zeros.onto(40n, Nil{}), zeros.onto(39n, Nil{}), zeros.onto(39n, Nil{}), 0, zeros.onto(288n, Nil{}), zeros.onto(288n, Nil{})}, 0, skip, 0, Nil{}}
     case H.Found{+skip, +size, +free}:
       +at = List.drop(&2, U32, window, U32.to_nat(skip))
       frame.at(U32.is_eq(H.hdr.layer(H.word(at)), 1), at, size, skip, free, Decoder.zero())
@@ -894,14 +1189,14 @@ def frame.next(follows: Bool, +decoder: Decoder, +window: +List<U32>, +bytes: U3
   match follows:
     case False{}: frame.found(H.find(window, bytes, 0), window)
     case True{}:
-      Decoder{H.Dec{_, +free, _}, _, _, _, _, _} = decoder
+      Decoder{H.Dec{_, +free, _}, _, _, _, _, _, _, _} = decoder
       frame.at(U32.is_eq(H.hdr.layer(H.word(window)), 1), window, (H.hdr.bytes(H.word(window), free) + H.hdr.padding(H.word(window)) : U32), 0, free, decoder)
 
 # drmp3dec_decode_frame on `bytes` bytes, as far as this module goes: the
-# granules' values after the stereo step. A frame that follows the last
-# one's header is taken
+# granules' subband samples, before the synthesis filter. A frame that
+# follows the last one's header is taken
 # where it stands (H.decode.follows); otherwise the decoder is zeroed, its
 # scratch too, and a frame is searched for.
 def decode(+decoder: Decoder, +window: +List<U32>, +bytes: U32) -> Decoded:
-  Decoder{H.Dec{+header, +free, _}, _, _, _, _, _} = decoder
+  Decoder{H.Dec{+header, +free, _}, _, _, _, _, _, _, _} = decoder
   frame.next(H.decode.follows(header, free, window, bytes), decoder, window, bytes)
