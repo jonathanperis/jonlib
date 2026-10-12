@@ -310,9 +310,15 @@ v0.11.24 by David Reid): `ma_data_converter` path selection, the u8/s16/f32
 `ma_pcm_*` conversions, `ma_channel_converter` with the default channel maps
 and rectangular weights, and `ma_linear_resampler` with its order-4
 `ma_lpf`/`ma_biquad` low-pass filter. The filter coefficients use Jonlib's own
-fixed-point sine bracket instead of libm `sin`. miniaudio is public domain or
-MIT No Attribution; Jonlib uses the MIT-0 alternative, retained in
-[LICENSES/miniaudio.txt](LICENSES/miniaudio.txt).
+fixed-point sine bracket instead of libm `sin`. `src/mixer.bend` adapts the
+same resampler as a stream, as raudio's audio buffers run it
+(`ma_linear_resampler_process_pcm_frames_f32`, `ma_linear_resampler_set_rate`
+and the first-order `ma_lpf1` a data converter's resampler has; its
+coefficient uses a fixed-point bracket of `exp` in `src/lowpass.bend`),
+under raudio.c's reading and mixing of a static buffer (`AudioDevice.*` and
+`Sound.*` in `jonlib.bend` adapt raudio.c's device and Sound functions).
+miniaudio is public domain or MIT No Attribution; Jonlib uses the MIT-0
+alternative, retained in [LICENSES/miniaudio.txt](LICENSES/miniaudio.txt).
 
 ## QOA
 

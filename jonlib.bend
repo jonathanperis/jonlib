@@ -75,6 +75,7 @@ import ./src/binary64_fma.bend as Binary64Words
 import ./src/binary64_scaled.bend as Binary64Scaled
 import ./src/binary64_narrow.bend as Binary64Narrow
 import ./src/convert.bend as WaveConvert
+import ./src/mixer.bend as Mixer
 import ./src/decimal.bend as Decimal
 import ./src/text.bend as TextCore
 import ./src/frame.bend as FrameCore
@@ -6027,14 +6028,8 @@ def Wave.write(+wave: Wave, +path: String) -> IO(Result<&1, &1, Wave.IOError, Un
 # a number (0 is NULL). Sample memory is a block that a sound and its aliases
 # share. See docs/AUDIO.md.
 
-# Where a buffer's playback is: the output rate of its converter (the device's
-# 48000 Hz until SetSoundPitch changes it), the frame its cursor is at, and
-# the two frames its resampler holds (x0 and x1, left and right, F32 bits).
-type AudioDevice.Head is Data:
-  AudioHead{rate: U32, cursor: U32, a: U32, b: U32, c: U32, d: U32}
-
 type AudioDevice.Buffer is Data:
-  AudioBuffer{id: U32, block: U32, frames: U32, volume: F32, pitch: F32, pan: F32, playing: Bool, paused: Bool, head: AudioDevice.Head}
+  AudioBuffer{id: U32, block: U32, frames: U32, volume: F32, pitch: F32, pan: F32, playing: Bool, paused: Bool, head: Mixer.Head}
 
 type AudioDevice.Block is Data:
   AudioBlock{id: U32, data: +List<U32>}
@@ -6141,23 +6136,12 @@ def AudioDevice.block.held(audio: AudioDevice, +id: U32) -> Maybe<&2, +List<U32>
   AudioDevice{_, _, _, _, +blocks} = audio
   AudioDevice.block.find(blocks, id)
 
-# A new buffer's converter: the device's rate, the start, and silence held.
-def AudioDevice.head.new() -> AudioDevice.Head:
-  AudioHead{48000, 0, 0, 0, 0, 0}
-
-# The cursor back at the start (PlayAudioBuffer, and a buffer that stops);
-# the frames the resampler holds stay.
-def AudioDevice.head.rewound(head: AudioDevice.Head) -> AudioDevice.Head:
-  AudioHead{rate, _, a, b, c, d} = head
-  AudioHead{rate, 0, a, b, c, d}
-
-# SetAudioBufferPitch: the converter's output rate is (unsigned int)(48000/pitch),
-# unless that is 0 (ma_data_converter_set_rate refuses it; the pitch is kept
-# all the same).
-def AudioDevice.head.pitched(head: AudioDevice.Head, +pitch: F32) -> AudioDevice.Head:
-  AudioHead{+rate, cursor, a, b, c, d} = head
+# SetAudioBufferPitch: the converter's output rate becomes
+# (unsigned int)(48000/pitch), unless that is 0 (ma_data_converter_set_rate
+# refuses it; the pitch is kept all the same).
+def AudioDevice.head.pitched(+head: Mixer.Head, +pitch: F32) -> Mixer.Head:
   +wanted = F32.to_u32((48000.0 / pitch : F32))
-  AudioHead{Bool.pick(U32, U32.is_eq(wanted, 0), rate, wanted), cursor, a, b, c, d}
+  Bool.pick(Mixer.Head, U32.is_eq(wanted, 0), head, Mixer.Head.pitched(head, U32.max(wanted, 1)))
 
 # A buffer operation: 0 PlayAudioBuffer (from the start), 1 StopAudioBuffer (a
 # paused buffer is not playing and stays as it is), 2 PauseAudioBuffer,
@@ -6165,8 +6149,8 @@ def AudioDevice.head.pitched(head: AudioDevice.Head, +pitch: F32) -> AudioDevice
 def AudioDevice.buffer.apply(buffer: AudioDevice.Buffer, op: U32, +value: F32) -> AudioDevice.Buffer:
   AudioBuffer{id, block, frames, +volume, +pitch, +pan, +playing, +paused, +head} = buffer
   match op:
-    case 0: AudioBuffer{id, block, frames, volume, pitch, pan, True{}, False{}, AudioDevice.head.rewound(head)}
-    case 1: AudioBuffer{id, block, frames, volume, pitch, pan, playing && paused, paused, Bool.pick(AudioDevice.Head, playing && Bool.not(paused), AudioDevice.head.rewound(head), head)}
+    case 0: AudioBuffer{id, block, frames, volume, pitch, pan, True{}, False{}, Mixer.Head.rewound(head)}
+    case 1: AudioBuffer{id, block, frames, volume, pitch, pan, playing && paused, paused, Bool.pick(Mixer.Head, playing && Bool.not(paused), Mixer.Head.rewound(head), head)}
     case 2: AudioBuffer{id, block, frames, volume, pitch, pan, playing, True{}, head}
     case 3: AudioBuffer{id, block, frames, volume, pitch, pan, playing, False{}, head}
     case 4: AudioBuffer{id, block, frames, value, pitch, pan, playing, paused, head}
@@ -6212,7 +6196,7 @@ def Sound.tracked(audio: AudioDevice, +frames: U32, samples: +List<U32>) -> Audi
   AudioDevice{ready, master, +next, buffers, +blocks} = audio
   +held = (frames > 0 : U32)
   (AudioDevice{ready, master, (next + 1 : U32),
-     List.append(&2, AudioDevice.Buffer, buffers, [AudioBuffer{next, Bool.pick(U32, held, next, 0), frames, 1.0, 1.0, 0.0, False{}, False{}, AudioDevice.head.new()}]),
+     List.append(&2, AudioDevice.Buffer, buffers, [AudioBuffer{next, Bool.pick(U32, held, next, 0), frames, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}]),
      Bool.pick(+List<AudioDevice.Block>, held, Con{AudioBlock{next, samples}, blocks}, blocks)},
    Done{Sound{AudioStream{next, 48000, 32, 2}, frames}})
 
@@ -6268,7 +6252,7 @@ def Sound.alias.block(found: Maybe<&2, +List<U32>>, audio: AudioDevice, +block: 
     case None{}: (audio, Sound.none())
     case Some{_}:
       AudioDevice{ready, master, +next, buffers, blocks} = audio
-      (AudioDevice{ready, master, (next + 1 : U32), List.append(&2, AudioDevice.Buffer, buffers, [AudioBuffer{next, block, size, 1.0, 1.0, 0.0, False{}, False{}, AudioDevice.head.new()}]), blocks},
+      (AudioDevice{ready, master, (next + 1 : U32), List.append(&2, AudioDevice.Buffer, buffers, [AudioBuffer{next, block, size, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}]), blocks},
        Sound{AudioStream{next, 48000, 32, 2}, frames})
 
 def Sound.alias.source(found: Maybe<&2, AudioDevice.Buffer>, +audio: AudioDevice, +frames: U32) -> AudioDevice & Sound:
@@ -6394,8 +6378,7 @@ def Sound.update(+audio: AudioDevice, +sound: Sound, +data: +List<U32>, +frames:
 # (x86 builds flush subnormals to zero there, others do not) or whose bits
 # depend on the host (NaN).
 def AudioDevice.odd(+word: U32) -> Bool:
-  +exponent = (word .&. 2139095040 : U32)
-  U32.is_ne((word .&. 8388607 : U32), 0) && (U32.is_eq(exponent, 0) || U32.is_eq(exponent, 2139095040))
+  Mixer.odd(word)
 
 def AudioDevice.odd.f32(value: F32) -> Bool:
   AudioDevice.odd(F32.bits(value))
@@ -6418,76 +6401,48 @@ def AudioDevice.levels(+volume: F32, +pan: F32) -> AudioDevice.Levels:
   AudioLevels{AudioDevice.level(volume, left), AudioDevice.level(volume, right),
     Bool.not(AudioDevice.odd.f32(volume) || AudioDevice.odd.f32(pan) || AudioDevice.odd.f32((pan + 1.0 : F32))) && AudioDevice.level.fine(volume, left) && AudioDevice.level.fine(volume, right)}
 
-# The resampler's output at the device rate: the frame before this one, from
-# which it interpolates by a fraction of 0 (ma_mix_f32_fast(x0, x1, 0)).
-def AudioDevice.mix.held(+before: U32, +sample: U32) -> F32:
-  (Wave.float_bits(before) + ((Wave.float_bits(sample) - Wave.float_bits(before)) * 0.0) : F32)
-
 # frameOut += frameIn*level.
-def AudioDevice.mix.sample(+before: U32, +sample: U32, +level: F32, +sum: U32) -> U32:
-  F32.bits((Wave.float_bits(sum) + (AudioDevice.mix.held(before, sample) * level) : F32))
+def AudioDevice.mix.sample(+sample: U32, +level: F32, +sum: U32) -> U32:
+  F32.bits((Wave.float_bits(sum) + (Wave.float_bits(sample) * level) : F32))
 
-def AudioDevice.mix.sample.fine(+before: U32, +sample: U32, +level: F32, +sum: U32) -> Bool:
-  +delta = (Wave.float_bits(sample) - Wave.float_bits(before) : F32)
-  Bool.not(AudioDevice.odd(before) || AudioDevice.odd(sample) || AudioDevice.odd(sum) || AudioDevice.odd.f32(delta) || AudioDevice.odd.f32((delta * 0.0 : F32))
-    || AudioDevice.odd.f32(AudioDevice.mix.held(before, sample)) || AudioDevice.odd.f32((AudioDevice.mix.held(before, sample) * level : F32)) || AudioDevice.odd(AudioDevice.mix.sample(before, sample, level, sum)))
+def AudioDevice.mix.sample.fine(+sample: U32, +level: F32, +sum: U32) -> Bool:
+  Bool.not(AudioDevice.odd(sample) || AudioDevice.odd(sum) || AudioDevice.odd.f32((Wave.float_bits(sample) * level : F32)) || AudioDevice.odd(AudioDevice.mix.sample(sample, level, sum)))
 
 type AudioDevice.Mixed is Data:
-  AudioMixed{out: +List<U32>, a: U32, b: U32, c: U32, d: U32, fine: Bool}
+  AudioMixed{out: +List<U32>, fine: Bool}
 
-# n frames of a buffer added to the start of the mix; the resampler holds the
-# last two.
-def AudioDevice.mix.frames(n: Nat, data: +List<U32>, out: +List<U32>, +left: F32, +right: F32, +a: U32, +b: U32, +c: U32, +d: U32, +fine: Bool, acc: +List<U32>) -> AudioDevice.Mixed:
-  match n:
-    case 0n: AudioMixed{List.reverse.go(&2, U32, acc, out), a, b, c, d, fine}
-    case 1n+k:
-      match data:
-        case Con{+l, Con{+r, rest}}:
-          match out:
-            case Con{+sl, Con{+sr, more}}:
-              AudioDevice.mix.frames(k, rest, more, left, right, c, d, l, r, fine && AudioDevice.mix.sample.fine(c, l, left, sl) && AudioDevice.mix.sample.fine(d, r, right, sr),
-                Con{AudioDevice.mix.sample(d, r, right, sr), Con{AudioDevice.mix.sample(c, l, left, sl), acc}})
-            case _: AudioMixed{Nil{}, a, b, c, d, False{}}
-        case _: AudioMixed{Nil{}, a, b, c, d, False{}}
-
-# raudio reads a static buffer in runs of 512 frames and takes a cursor past
-# two halves of the buffer (size/2 frames each) for its end: a run that starts
-# on the last frame of a buffer of an odd size (3 and more) reads nothing.
-def AudioDevice.mix.cut(+frames: U32, +cursor: U32, +n: U32) -> Bool:
-  +edge = ((frames - 1) - cursor : U32)
-  U32.is_eq((frames % 2 : U32), 1) && (frames >= 3 : U32) && U32.is_eq((edge % 512 : U32), 0) && (edge < n : U32)
-
-# The frames a buffer gives to a callback of n frames.
-def AudioDevice.mix.count(+frames: U32, +cursor: U32, +n: U32) -> U32:
-  Bool.pick(U32, AudioDevice.mix.cut(frames, cursor, n), ((frames - 1) - cursor : U32), U32.min(n, (frames - cursor : U32)))
-
-# Whether it stops there: at its end, or cut short.
-def AudioDevice.mix.ends(+frames: U32, +cursor: U32, +n: U32) -> Bool:
-  AudioDevice.mix.cut(frames, cursor, n) || (n >= (frames - cursor) : U32)
+# A buffer's frames added to the start of the mix.
+def AudioDevice.mix.frames(made: +List<+List<U32>>, out: +List<U32>, +left: F32, +right: F32, +fine: Bool, acc: +List<U32>) -> AudioDevice.Mixed:
+  match made:
+    case Nil{}: AudioMixed{List.reverse.go(&2, U32, acc, out), fine}
+    case Con{Con{+l, Con{+r, _}}, rest}:
+      match out:
+        case Con{+sl, Con{+sr, more}}:
+          AudioDevice.mix.frames(rest, more, left, right, fine && AudioDevice.mix.sample.fine(l, left, sl) && AudioDevice.mix.sample.fine(r, right, sr),
+            Con{AudioDevice.mix.sample(r, right, sr), Con{AudioDevice.mix.sample(l, left, sl), acc}})
+        case _: AudioMixed{Nil{}, False{}}
+    case Con{_, _}: AudioMixed{Nil{}, False{}}
 
 type AudioDevice.Turn is Data:
   AudioTurn{buffer: AudioDevice.Buffer, out: +List<U32>, fine: Bool}
 
-def AudioDevice.mix.taken(mixed: AudioDevice.Mixed, +id: U32, +block: U32, +frames: U32, +volume: F32, +pitch: F32, +pan: F32, +rate: U32, +cursor: U32, +ends: Bool, +fine: Bool) -> AudioDevice.Turn:
-  AudioMixed{out, a, b, c, d, mixed_fine} = mixed
-  AudioTurn{AudioBuffer{id, block, frames, volume, pitch, pan, Bool.not(ends), False{}, AudioHead{rate, Bool.pick(U32, ends, 0, cursor), a, b, c, d}}, out, fine && mixed_fine}
+def AudioDevice.mix.added(mixed: AudioDevice.Mixed, +buffer: AudioDevice.Buffer, +fine: Bool) -> AudioDevice.Turn:
+  AudioMixed{out, mixed_fine} = mixed
+  AudioTurn{buffer, out, fine && mixed_fine}
 
-# A playing buffer's turn. Not mixed (the callback is refused): a buffer
-# whose converter is not at the device rate (not ported yet), a buffer
-# without frames (raudio divides by its size).
-def AudioDevice.mix.leveled(levels: AudioDevice.Levels, head: AudioDevice.Head, +id: U32, +block: U32, +frames: U32, +volume: F32, +pitch: F32, +pan: F32, +data: +List<U32>, +n: U32, out: +List<U32>, +fine: Bool) -> AudioDevice.Turn:
+# A playing buffer's turn: the frames src/mixer.bend reads through its
+# converter, at the buffer's levels.
+def AudioDevice.mix.leveled(levels: AudioDevice.Levels, turn: Mixer.Turn, +id: U32, +block: U32, +frames: U32, +volume: F32, +pitch: F32, +pan: F32, out: +List<U32>, +fine: Bool) -> AudioDevice.Turn:
   AudioLevels{+left, +right, +level_fine} = levels
-  AudioHead{+rate, +cursor, +a, +b, +c, +d} = head
-  +count = AudioDevice.mix.count(frames, cursor, n)
-  AudioDevice.mix.taken(AudioDevice.mix.frames(U32.to_nat(count), List.drop(&2, U32, data, U32.to_nat((2 * cursor : U32))), out, left, right, a, b, c, d, True{}, Nil{}),
-    id, block, frames, volume, pitch, pan, rate, (cursor + count : U32), AudioDevice.mix.ends(frames, cursor, n), fine && level_fine && U32.is_eq(rate, 48000) && (frames > 0 : U32))
+  Mixer.Turn{+head, +playing, +made, +turn_fine} = turn
+  AudioDevice.mix.added(AudioDevice.mix.frames(made, out, left, right, True{}, Nil{}), AudioBuffer{id, block, frames, volume, pitch, pan, playing, False{}, head}, fine && level_fine && turn_fine)
 
 def AudioDevice.mix.block(found: Maybe<&2, +List<U32>>, +buffer: AudioDevice.Buffer, +n: U32, out: +List<U32>, +fine: Bool) -> AudioDevice.Turn:
   match found:
     case None{}: AudioTurn{buffer, out, False{}}
     case Some{+data}:
       AudioBuffer{+id, +block, +frames, +volume, +pitch, +pan, _, _, +head} = buffer
-      AudioDevice.mix.leveled(AudioDevice.levels(volume, pan), head, id, block, frames, volume, pitch, pan, data, n, out, fine)
+      AudioDevice.mix.leveled(AudioDevice.levels(volume, pan), Mixer.turn(head, frames, data, n), id, block, frames, volume, pitch, pan, out, fine)
 
 type AudioDevice.Pass is Data:
   AudioPass{buffers: +List<AudioDevice.Buffer>, out: +List<U32>, fine: Bool}
@@ -6551,17 +6506,20 @@ def AudioDevice.mix.checked(valid: Bool, +device: AudioDevice, +frames: U32) -> 
 
 # One data callback of `frames` frames (a device asks for a period at a time:
 # 480 frames on miniaudio's null backend): every buffer that is playing and
-# not paused, in tracked order, gives its next frames through its resampler
-# (which is one frame late), scaled by its volume and pan levels; a buffer
-# stops at its end, back at its start; then the master volume and the clip to
-# -1..1. The result is the device's samples (F32 bits, two per frame).
+# not paused, in tracked order, gives its next frames through its converter's
+# resampler (at the device rate it is one frame late; a pitch resamples, and
+# filters, at 48000:(unsigned int)(48000/pitch)), scaled by its volume and
+# pan levels; a buffer stops at its end, back at its first frame; then the
+# master volume and the clip to -1..1. The result is the device's samples
+# (F32 bits, two per frame).
 #
 # None, and the device as it was: an unready device; no frames or more than
-# 2^20; a playing buffer whose pitch moved its converter off the device rate
-# (not ported yet), without frames (raudio divides by its size) or whose
-# samples were freed; and a callback in which a subnormal or a NaN takes part
-# or results (miniaudio flushes subnormals to zero inside the callback on x86
-# hosts only, and NaN bits are the host's).
+# 2^20; a playing buffer without frames (raudio divides by its size), whose
+# samples were freed or whose pitch gives a rate Jonlib does not resample
+# (a reduced output rate of 2^31 and more, uncertified filter coefficients);
+# and a callback in which a subnormal or a NaN takes part or results
+# (miniaudio flushes subnormals to zero inside the callback on x86 hosts
+# only, and NaN bits are the host's).
 def AudioDevice.mix(+device: AudioDevice, +frames: U32) -> AudioDevice & Maybe<&2, +List<U32>>:
   AudioDevice.mix.checked(AudioDevice.is_ready(device) && (frames > 0 : U32) && (frames <= 1048576 : U32), device, frames)
 

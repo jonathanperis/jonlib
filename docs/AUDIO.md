@@ -359,11 +359,25 @@ at a time (480 frames on miniaudio's null backend); the program chooses.
 - Every buffer that is playing and not paused takes part, in tracked order.
   It gives the frames left before its end, at most `frames`, then stops
   (not playing, back at its first frame).
-- Its frames go through its converter's resampler, which holds two frames
-  and, at the device rate, gives the frame *before* the one it just read: a
-  sound comes out one frame late, its last frame is never heard, and the
-  held frames stay for the next `PlaySound` (its first output is the last
-  frame the buffer read before, not silence).
+- Its frames go through its converter's resampler (`src/mixer.bend`), which
+  holds two frames and, at the device rate, gives the frame *before* the one
+  it just read: a sound comes out one frame late, its last frame is never
+  heard, and the held frames stay for the next `PlaySound` (its first output
+  is the last frame the buffer read before, not silence).
+- A pitch resamples: `SetSoundPitch` sets the converter's output rate to
+  `(unsigned int)(48000/pitch)` (a rate of 0 is refused and the last one
+  stays), the rates reduced by their divisor, the resampler's timer rescaled
+  to the new rate, and the filter's coefficient changed with its register
+  kept. The filter is miniaudio's **first-order** low-pass,
+  `y = (1 - a)*x + a*y1` with `a = (float)exp(-2*pi*(min*0.5)/max)`: a data
+  converter's resampler has order 1, not the order 4 that `WaveFormat` gets
+  through `ma_convert_frames`. It filters the input when the pitch is above
+  1 and the output when it is below, and not at 1:1.
+- raudio asks the buffer for `(unsigned int)(((float)48000/rate)*frames)`
+  input frames (at least 1, at most the 512 of its input buffer) each time
+  the converter needs more; frames the converter did not take wait in a
+  residual of at most 8 frames (more are lost), which is fed first the next
+  time, on the next `PlaySound` too.
 - raudio reads a static buffer in runs of 512 frames and takes a cursor past
   two halves of the buffer (`size/2` frames each) for its end: a run that
   starts on the last frame of a buffer of an odd size (3 frames and more)
@@ -374,11 +388,13 @@ at a time (480 frames on miniaudio's null backend); the program chooses.
 - Then the master volume, when it is not 1, and miniaudio's clip to -1..1.
 
 A callback Jonlib does not mix returns `None` and the device as it was: an
-unready device; no frames, or more than 2^20; a playing buffer whose pitch
-moved its converter off the device rate (`(unsigned int)(48000/pitch)` is
-not 48000: the filtered resampling of pitched buffers is not ported yet),
-one without frames (raudio divides by its size) or one whose samples were
-freed; and a callback in which a subnormal or a NaN takes part or results
+unready device; no frames, or more than 2^20; a playing buffer without
+frames (raudio divides by its size), one whose samples were freed, or one
+whose rate Jonlib does not resample (a reduced output rate of 2^31 and more;
+a filter coefficient that is not certified: `exp` is bracketed by a
+fixed-point series between the two neighbours of the nearest double, and
+both must give the same binary32); and a callback in which a subnormal or a
+NaN takes part or results
 (inside the callback miniaudio flushes subnormals to zero on x86 hosts only,
 and the bits of a NaN are the host's).
 
@@ -390,25 +406,29 @@ backend, so that the program can read `AUDIO` and the audio buffers, and
 stops the device right after `InitAudioDevice`: its thread mixes nothing,
 and the program asks for each callback itself
 (`ma_device_handle_backend_data_callback`) with the script's frame counts.
-64 scripts of 570 steps over four sound slots run on both sides and on a
+72 scripts of 671 steps over four sound slots run on both sides and on a
 Python model of raudio's state; after every step the ready flag, the master
 volume bits, every slot's handle fields with `IsSoundValid` and
 `IsSoundPlaying`, and every tracked buffer (its number, block, size, volume,
 pitch and pan bits, flags, an FNV-1a hash of its samples, its converter's
-output rate, its cursor and the two frames its resampler holds) must be
-equal, and after a callback the hash of its samples. The callbacks cover
+output rate, its cursor, the resampler's timer, the two frames it holds, the
+filter's register and coefficient, and the residual) must be equal, and
+after a callback the hash of its samples. The callbacks cover
 silence, sounds mixed to their end in callbacks of 1 to 30000 frames,
 replays over the held frames, pauses, levels for volumes and pans (negative
 and above 1), the master volume and the clip, three buffers at once with an
 alias, odd sizes (the lost last frame, at the start of a callback and of a
 512-frame run), pitches that leave the converter at the device rate, an
-updated block and a 29647-frame file. The waves are
+updated block and a 29647-frame file; and pitched buffers: 2:1 and 1:2,
+3:2, 4:5, 9600:9599, 3.7 and 0.07 (48000:12972 and 48000:685714), pitches
+changed in the middle of a sound and while it is paused, three buffers at
+three pitches, a 513-frame buffer at 2.5 and 0.4, and the file at 1.25. The waves are
 8-, 16- and 32-bit, of 1, 2, 4 and 6 channels, at 48000, 8000, 22050, 44100
 and 96000 Hz, with the empty cases above, and the files are the four `.wav`
 files of the examples that only play sounds (`boom`, `buttonfx`, `sound`,
 `coin`; 26522 to 48000 frames each), a small generated one, a missing one,
-one that is not a WAV and another extension. 40 scripts are compared with
-raylib; the 24 with a step raylib has no defined answer for, or a callback
+one that is not a WAV and another extension. 49 scripts are compared with
+raylib; the 23 with a step raylib has no defined answer for, or a callback
 Jonlib refuses, are checked against the model on Jonlib alone. `IsSoundPlaying` is asked of raylib only on
 a ready device and for a tracked buffer, and no script opens the device over
 a playing buffer (raylib would mix it before the reference can stop it). CPU-1,
@@ -420,6 +440,7 @@ The examples that play sounds without showing audio state
 `raudio.c` compiled beside it the same way (`tools/examples_probe.py`): its
 device mixes on its own thread there, and no frame depends on it.
 
-Not yet available: mixing pitched buffers, the fused (FMA) profile of the
-mixer, a clock (the program asks for each callback), audio streams and
+Not yet available: the fused (FMA) profile of the mixer, the hosts'
+subnormal profiles (a filter's tail that decays into subnormals is refused),
+a clock (the program asks for each callback), audio streams and
 music, and a host device. No GPU evidence.

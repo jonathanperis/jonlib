@@ -41,6 +41,7 @@ does not fit an unsigned int. IsSoundPlaying is only asked of the reference
 on a ready device and for a tracked buffer. CPU-1, CPU-2 and JavaScript
 lanes.
 """
+import copy
 import hashlib
 import json
 import math
@@ -87,6 +88,98 @@ def odd(word):
     return bool(word & 0x007FFFFF) and (word & 0x7F800000) in (0, 0x7F800000)
 
 
+def oddf(*values):
+    return any(odd(bits(v)) for v in values)
+
+
+def reduced(rate):
+    g = math.gcd(48000, rate)
+    return 48000 // g, rate // g
+
+
+def set_rate(b, wanted):
+    """ma_data_converter_set_rate(48000, wanted): the filter for the reduced rates, the timer in the new output rate."""
+    old = reduced(b['rate'])[1]
+    rin, rout = reduced(wanted)
+    frac = ((b['t_frac'] // old) * rout + (((b['t_frac'] % old) * rout) & 0xFFFFFFFF) // old) & 0xFFFFFFFF
+    # ma_lpf1_reinit: (float)exp(-2*pi*cutoff/rate) with libm exp, the cutoff min*0.5 and the rate max of the reduced rates.
+    coef = None if rin == rout or rout >= 1 << 31 else f32(math.exp((-2 * math.pi * (min(rin, rout) * 0.5)) / max(rin, rout)))
+    b.update(rate=wanted, t_int=(b['t_int'] + frac // rout) & 0xFFFFFFFF, t_frac=frac % rout, wide=rout >= 1 << 31, coef=coef)
+
+
+def lowpass(b, frame):
+    """ma_lpf1_process_pcm_frame_f32 on a frame: (the filtered frame, whether the hosts agree on every value)."""
+    a, out, fine = b['coef'], [], True
+    for channel, x in enumerate(frame):
+        r1, c = b['r1'][channel], f32(1.0 - a)
+        y = f32(f32(c * x) + f32(a * r1))
+        fine &= not oddf(a, x, r1, c, f32(c * x), f32(a * r1), y)
+        out.append(y)
+    b['r1'] = list(out)
+    return out, fine
+
+
+def flow(b, frames, remaining):
+    """ma_linear_resampler_process_pcm_frames_f32 on a stream: (input frames used, frames made, fine)."""
+    rin, rout = reduced(b['rate'])
+    plain, down, used, made, fine = rin == rout, rin > rout, 0, [], True
+    while remaining > 0:
+        if b['t_int'] > 0:
+            if used >= len(frames):
+                break
+            frame = list(frames[used])
+            used += 1
+            fine &= not oddf(*frame)
+            if not plain and down:
+                frame, ok = lowpass(b, frame)
+                fine &= ok
+            b['x0'], b['x1'], b['t_int'] = b['x1'], frame, b['t_int'] - 1
+        else:
+            a = f32(f32(float(b['t_frac'])) / f32(float(rout)))
+            y = [f32(p + f32(f32(q - p) * a)) for p, q in zip(b['x0'], b['x1'])]
+            fine &= not oddf(a) and not any(oddf(p, q, f32(q - p), f32(f32(q - p) * a), v) for p, q, v in zip(b['x0'], b['x1'], y))
+            if not plain and not down:
+                y, ok = lowpass(b, y)
+                fine &= ok
+            made.append(y)
+            remaining -= 1
+            b['t_int'], b['t_frac'] = b['t_int'] + rin // rout, b['t_frac'] + rin % rout
+            if b['t_frac'] >= rout:
+                b['t_int'], b['t_frac'] = b['t_int'] + 1, b['t_frac'] - rout
+    return used, made, fine
+
+
+def turn(b, data, frames):
+    """A playing buffer in a callback (raudio's runs of 512 frames over its converter): (frames made, fine)."""
+    size, fine, made, need = b['frames'], not b['wide'] and b['frames'] > 0, [], frames
+    if not fine:
+        return [], False
+    while need > 0 and b['playing']:
+        now, total, broke = min(need, 512), 0, False
+        while total < now and not broke:
+            want = now - total
+            if b['residual']:
+                used, out, ok = flow(b, b['residual'], want)
+                b['residual'] = b['residual'][used:]
+            else:
+                estimate = min(512, max(int(f32(f32(48000.0 / f32(float(b['rate']))) * float(want))), 1))
+                half = max(size // 2 if size > 1 else size, 1)
+                count = 0 if not b['playing'] or b['cursor'] // half > 1 else min(estimate, size - b['cursor'])
+                read = [[fl(data[2 * (b['cursor'] + i)]), fl(data[2 * (b['cursor'] + i) + 1])] for i in range(count)]
+                if count and count == size - b['cursor']:
+                    b['playing'], b['cursor'] = False, 0
+                else:
+                    b['cursor'] += count
+                used, out, ok = flow(b, read, want)
+                b['residual'], broke = read[used:used + 8], count < estimate
+            total, fine = total + len(out), fine and ok
+            made += out
+        if b['playing'] and total < now:
+            b['playing'], b['cursor'] = False, 0
+        need = need - total if b['playing'] else 0
+    return made, fine
+
+
 def s16(values):
     return [v & 0xFFFF for v in values]
 
@@ -112,6 +205,7 @@ def waves():
         'five32': (5, 48000, 32, 2, floats([0.5, -0.25, 1.5, -3.0, 0.125, 0.75, -1.0, 1.0, 0.0625, -0.0]), None),
         'long513': (513, 48000, 16, 1, s16([((i * 97) % 2001 - 1000) * 31 for i in range(513)]), None),
         'tiny32': (3, 48000, 32, 2, floats([0.5, 1e-40, 0.25, 0.5, -0.5, 0.125]), None),
+        'tone': (40, 48000, 32, 2, floats([((i * 29) % 61 - 30) / 32 for i in range(80)]), None),
         'zero': (0, 0, 0, 0, [], None),
         'noframes': (0, 48000, 16, 1, [], None),
         'nochannels': (5, 48000, 16, 0, [], None),
@@ -198,10 +292,26 @@ def cases():
     add('mix-file', ('init',), ('file', 0, 'boom'), ('play', 0), ('mix', 480), ('mix', 480), ('volume', 0, bits(0.4)), ('pan', 0, bits(0.6)), ('mix', 480), ('mix', 29000),
         ('play', 0), ('mix', 30000), ('close',))
 
+    add('mix-pitched-down', ('init',), ('load', 0, 'tone'), ('pitch', 0, bits(2.0)), ('play', 0), ('mix', 3), ('mix', 5), ('mix', 480), ('play', 0), ('mix', 480), ('close',))
+    add('mix-pitched-up', ('init',), ('load', 0, 'tone'), ('pitch', 0, bits(0.5)), ('play', 0), ('mix', 7), ('mix', 30), ('mix', 480), ('play', 0), ('mix', 1), ('mix', 600),
+        ('close',))
+    add('mix-pitched-ratios', ('init',), ('load', 0, 'tone'), ('pitch', 0, bits(1.5)), ('play', 0), ('mix', 480), ('pitch', 0, bits(0.8)), ('play', 0), ('mix', 480),
+        ('pitch', 0, bits(1.0001)), ('play', 0), ('mix', 480), ('pitch', 0, bits(3.7)), ('play', 0), ('mix', 480), ('pitch', 0, bits(0.07)), ('play', 0), ('mix', 600),
+        ('close',))
+    add('mix-pitch-midway', ('init',), ('load', 0, 'tone'), ('play', 0), ('mix', 5), ('pitch', 0, bits(2.0)), ('mix', 4), ('pitch', 0, bits(1.0)), ('mix', 3),
+        ('pitch', 0, bits(0.5)), ('mix', 9), ('pitch', 0, bits(1.3)), ('mix', 6), ('pause', 0), ('pitch', 0, bits(0.75)), ('resume', 0), ('mix', 4), ('pitch', 0, bits(1.0)),
+        ('mix', 480), ('play', 0), ('mix', 480), ('close',))
+    add('mix-pitched-together', ('init',), ('load', 0, 'tone'), ('alias', 1, 0), ('alias', 2, 0), ('pitch', 1, bits(1.25)), ('pitch', 2, bits(0.6)), ('volume', 1, bits(0.5)),
+        ('pan', 2, bits(-0.75)), ('play', 0), ('play', 1), ('play', 2), ('mix', 10), ('mix', 20), ('mix', 480), ('close',))
+    add('mix-pitched-long', ('init',), ('load', 0, 'long513'), ('pitch', 0, bits(2.5)), ('play', 0), ('mix', 480), ('play', 0), ('pitch', 0, bits(0.4)), ('mix', 2000),
+        ('close',))
+    add('mix-pitched-file', ('init',), ('file', 0, 'boom'), ('pitch', 0, bits(1.25)), ('play', 0), ('mix', 480), ('mix', 480), ('mix', 30000), ('close',))
+    add('mix-pitched-then-back', ('init',), ('load', 0, 'stereo16'), ('pitch', 0, bits(2.0)), ('play', 0), ('mix', 2), ('pitch', 0, bits(1.0)), ('mix', 2), ('mix', 480),
+        ('close',))
+
     add('refused-mix-unready', ('mix', 4), ('init',), ('load', 0, 'mono16'), ('play', 0), ('close',), ('mix', 4))
     add('refused-mix-no-frames', ('init',), ('mix', 0))
     add('refused-mix-too-long', ('init',), ('mix', 1048577))
-    add('refused-mix-pitched', ('init',), ('load', 0, 'stereo16'), ('pitch', 0, bits(2.0)), ('play', 0), ('mix', 2), ('pitch', 0, bits(1.0)), ('mix', 2))
     add('refused-mix-empty-buffer', ('init',), ('load', 0, 'noframes'), ('play', 0), ('mix', 2))
     add('refused-mix-freed', ('init',), ('load', 0, 'mono16'), ('alias', 1, 0), ('unload', 0), ('play', 1), ('mix', 2))
     add('refused-mix-subnormal', ('init',), ('load', 0, 'tiny32'), ('play', 0), ('mix', 1), ('mix', 3))
@@ -252,7 +362,7 @@ class Model:
 
     def track(self, frames, block):
         self.buffers.append(dict(id=self.next, block=block, frames=frames, volume=bits(1.0), pitch=bits(1.0), pan=0, playing=False, paused=False,
-                                 rate=48000, cursor=0, taps=[0, 0, 0, 0]))
+                                 rate=48000, cursor=0, t_int=1, t_frac=0, x0=[0.0, 0.0], x1=[0.0, 0.0], r1=[0.0, 0.0], residual=[], coef=None, wide=False))
         self.next += 1
         return self.next - 1
 
@@ -270,7 +380,7 @@ class Model:
                 after.append(b)
                 continue
             data = self.blocks.get(b['block'])
-            if data is None or b['rate'] != 48000 or b['frames'] == 0:
+            if data is None:
                 return None
             volume, pan = fl(b['volume']), fl(b['pan'])
             right = f32(f32(pan + 1.0) / 2.0)
@@ -282,23 +392,16 @@ class Model:
                 level = f32(f32(half * side) * f32(3.0 - square))
                 fine &= not any(odd(bits(v)) for v in (side, half, f32(half * side), square, f32(3.0 - square), level))
                 levels.append(level)
-            size, cursor = b['frames'], b['cursor']
-            edge = size - 1 - cursor
-            cut = size % 2 == 1 and size >= 3 and edge % 512 == 0 and edge < frames
-            count = edge if cut else min(frames, size - cursor)
-            ends = cut or frames >= size - cursor
-            taps = list(b['taps'])
-            for j in range(count):
+            b = copy.deepcopy(b)
+            made, ok = turn(b, data, frames)
+            fine &= ok
+            for j, frame in enumerate(made):
                 for channel in range(2):
-                    before, sample, total = taps[2 + channel], data[2 * (cursor + j) + channel], out[2 * j + channel]
-                    delta = f32(fl(sample) - fl(before))
-                    held = f32(fl(before) + f32(delta * 0.0))
-                    scaled = f32(held * levels[channel])
+                    total, scaled = out[2 * j + channel], f32(frame[channel] * levels[channel])
                     new = bits(f32(fl(total) + scaled))
-                    fine &= not any(odd(w) for w in (before, sample, total, bits(delta), bits(f32(delta * 0.0)), bits(held), bits(scaled), new))
+                    fine &= not any(odd(w) for w in (bits(frame[channel]), total, bits(scaled), new))
                     out[2 * j + channel] = new
-                taps = [taps[2], taps[3], data[2 * (cursor + j)], data[2 * (cursor + j) + 1]]
-            after.append(dict(b, playing=not ends, paused=False, cursor=0 if ends else cursor + count, taps=taps))
+            after.append(b)
         master, sent = fl(self.master), []
         for word in out:
             x = f32(fl(word) * master) if self.master != bits(1.0) else fl(word)
@@ -386,7 +489,8 @@ class Model:
                 elif kind == 'pitch':
                     if value > 0:
                         found['pitch'] = step[2]
-                        found['rate'] = int(f32(48000.0 / value)) or found['rate']
+                        if int(f32(48000.0 / value)):
+                            set_rate(found, int(f32(48000.0 / value)))
                 else:
                     found['pan'] = bits(-1.0) if value < -1 else bits(1.0) if value > 1 else step[2]
         elif kind == 'update':
@@ -415,8 +519,10 @@ class Model:
             parts.append(f'S{number},{frames},{rate},{size},{channels},{valid},{playing}')
         for b in self.buffers:
             samples = '-' if not b['block'] else str(fnv(self.blocks[b['block']])) if b['block'] in self.blocks else 'x'
+            held = [b['t_int'], b['t_frac'], *map(bits, b['x0'] + b['x1'] + b['r1']), 0 if b['coef'] is None else bits(b['coef']), len(b['residual']),
+                    fnv(bits(v) for frame in b['residual'] for v in frame)]
             parts.append(f'B{b["id"]},{b["block"]},{b["frames"]},{b["volume"]},{b["pitch"]},{b["pan"]},{int(b["playing"])},{int(b["paused"])},{samples},'
-                         f'{b["rate"]},{b["cursor"]},{",".join(map(str, b["taps"]))}')
+                         f'{b["rate"]},{b["cursor"]},{",".join(map(str, held))}')
         return ' '.join(parts)
 
 
@@ -494,7 +600,12 @@ static void state(int first)
         else if (freed[owner[id - 1]]) printf("x");
         else printf("%u", fnv((const unsigned *)b->data, b->sizeInFrames*2));
         ma_linear_resampler *linear = &b->converter.resampler.state.linear;
-        printf(",%u,%u,%u,%u,%u,%u", b->converter.resampler.sampleRateOut, b->frameCursorPos, word(linear->x0.f32[0]), word(linear->x0.f32[1]), word(linear->x1.f32[0]), word(linear->x1.f32[1]));
+        printf(",%u,%u,%u,%u,%u,%u,%u,%u", b->converter.resampler.sampleRateOut, b->frameCursorPos, linear->inTimeInt, linear->inTimeFrac,
+               word(linear->x0.f32[0]), word(linear->x0.f32[1]), word(linear->x1.f32[0]), word(linear->x1.f32[1]));
+        if ((linear->lpf.lpf1Count != 1) || (linear->lpf.lpf2Count != 0)) exit(8);
+        printf(",%u,%u,%u", word(linear->lpf.pLPF1[0].pR1[0].f32), word(linear->lpf.pLPF1[0].pR1[1].f32),
+               (linear->config.sampleRateIn != linear->config.sampleRateOut)? word(linear->lpf.pLPF1[0].a.f32) : 0);
+        printf(",%u,%u", b->converterResidualCount, fnv((const unsigned *)b->converterResidual, b->converterResidualCount*2));
     }
 }
 
@@ -586,6 +697,8 @@ int main(void)
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
 import ../../jonmath.bend as M
+import ../../src/mixer.bend as Mixer
+import ../../src/resampler.bend as Resampler
 
 type Op is Data:
   OpInit{}
@@ -637,9 +750,33 @@ def sounds.text(sounds: +List<J.Sound>, +audio: J.AudioDevice) -> String:
     case Nil{}: ""
     case Con{+sound, rest}: sound.text(audio, sound) ++ sounds.text(rest, audio)
 
-def head.text(head: J.AudioDevice.Head) -> String:
-  J.AudioHead{rate, cursor, a, b, c, d} = head
-  "," ++ U32.show(rate) ++ "," ++ U32.show(cursor) ++ "," ++ U32.show(a) ++ "," ++ U32.show(b) ++ "," ++ U32.show(c) ++ "," ++ U32.show(d)
+def words.text(words: +List<U32>) -> String:
+  match words:
+    case Nil{}: ""
+    case Con{+word, rest}: "," ++ U32.show(word) ++ words.text(rest)
+
+def chans.text(chans: +List<Resampler.Chan>) -> String:
+  match chans:
+    case Nil{}: ""
+    case Con{Resampler.Chan{r1a, _, _, _}, rest}: "," ++ U32.show(r1a) ++ chans.text(rest)
+
+def count(frames: +List<+List<U32>>, +n: U32) -> U32:
+  match frames:
+    case Nil{}: n
+    case Con{_, rest}: count(rest, (n + 1 : U32))
+
+def fnv.frames(frames: +List<+List<U32>>, +h: U32) -> U32:
+  match frames:
+    case Nil{}: h
+    case Con{+frame, rest}: fnv.frames(rest, fnv(frame, h))
+
+def st.text(st: Resampler.St) -> String:
+  Resampler.St{t_int, t_frac, x0, x1, chans, _} = st
+  "," ++ U32.show(t_int) ++ "," ++ U32.show(t_frac) ++ words.text(x0) ++ words.text(x1) ++ chans.text(chans)
+
+def head.text(head: Mixer.Head) -> String:
+  Mixer.Head{rate, +mode, +coef, cursor, st, +residual} = head
+  "," ++ U32.show(rate) ++ "," ++ U32.show(cursor) ++ st.text(st) ++ "," ++ U32.show(Bool.pick(U32, U32.is_eq(mode, 1), coef, 0)) ++ "," ++ U32.show(count(residual, 0)) ++ "," ++ U32.show(fnv.frames(residual, 2166136261))
 
 def buffers.text(buffers: +List<J.AudioDevice.Buffer>, +blocks: +List<J.AudioDevice.Block>) -> String:
   match buffers:

@@ -6052,10 +6052,10 @@
   "SetSoundPitch": {
     "jonlib": "Sound.set_pitch",
     "status": "profile-covered",
-    "scope": "The buffer's pitch: any pitch above 0; others change nothing.",
+    "scope": "The buffer's pitch, for any pitch above 0, and its converter's output rate (unsigned int)(48000/pitch): the resampler's timer in the new rate and its first-order filter's coefficient; AudioDevice.mix resamples and filters with them, every sample, timer, register and residual compared with raylib.",
     "gaps": [
       "A pitch whose rate 48000/pitch does not fit an unsigned int changes nothing (the cast is undefined)",
-      "A buffer whose pitch moved its converter off 48000 Hz is not mixed yet (AudioDevice.mix refuses the callback)",
+      "A rate Jonlib does not resample makes AudioDevice.mix refuse: a reduced output rate from 2^31, an uncertified filter coefficient",
       "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
       "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
     ],

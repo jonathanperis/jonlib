@@ -1409,34 +1409,46 @@ def Laws.sound_stop_back_to_the_start():
 def Laws.sound_stop_paused_keeps_its_place():
   {==}
 
-def Laws.audio_mix_count_within():
+def Laws.audio_read_within():
   {==}
 
-def Laws.audio_mix_count_to_the_end():
+def Laws.audio_read_to_the_end():
   {==}
 
-def Laws.audio_mix_ends_at_the_end():
+def Laws.audio_read_ends_at_the_end():
   {==}
 
-def Laws.audio_mix_goes_on_before_the_end():
+def Laws.audio_read_goes_on_before_the_end():
   {==}
 
-def Laws.audio_mix_odd_last_frame_lost():
+def Laws.audio_read_stopped_buffer():
   {==}
 
-def Laws.audio_mix_odd_last_frame_stops():
+def Laws.audio_read_odd_last_frame_lost():
   {==}
 
-def Laws.audio_mix_odd_read_whole():
+def Laws.audio_read_odd_last_frame_not_an_end():
   {==}
 
-def Laws.audio_mix_odd_cut_at_a_run():
+def Laws.audio_read_odd_whole():
   {==}
 
-def Laws.audio_mix_even_last_frame_read():
+def Laws.audio_read_even_last_frame():
   {==}
 
-def Laws.audio_mix_one_frame_read():
+def Laws.audio_read_one_frame():
+  {==}
+
+def Laws.audio_rate_change_keeps_the_fraction():
+  {==}
+
+def Laws.audio_rate_change_carries_whole_frames():
+  {==}
+
+def Laws.audio_rate_unchanged_at_the_device_rate():
+  {==}
+
+def Laws.audio_first_order_series_at_zero():
   {==}
 
 def Laws.audio_mix_subnormal_refused():

@@ -1,3 +1,4 @@
+import math
 import struct
 import sys
 import unittest
@@ -57,7 +58,7 @@ class SoundModelTests(unittest.TestCase):
         self.assertEqual(model.sounds, [(1, 8, 48000, 32, 2), sp.ZERO, (2, 0, 48000, 32, 2), (3, 8, 48000, 32, 2)])
         self.assertEqual([(b['id'], b['block'], b['frames']) for b in model.buffers], [(1, 1, 8), (2, 0, 0), (3, 1, 8)])
         self.assertEqual((list(model.blocks), model.undefined), ([1], False))
-        head = ',48000,0,0,0,0,0'
+        head = ',48000,0,1,0,0,0,0,0,0,0,0,0,2166136261'
         self.assertEqual(model.state(), 'R1 M%d S1,8,48000,32,2,1,0 S0,0,0,0,0,0,0 S2,0,48000,32,2,0,0 S3,8,48000,32,2,1,0 B1,1,8,%d,%d,0,0,0,%d%s B2,0,0,%d,%d,0,0,0,-%s B3,1,8,%d,%d,0,0,0,%d%s'
                          % (ONE, ONE, ONE, sp.fnv(fake(8)), head, ONE, ONE, head, ONE, ONE, sp.fnv(fake(8)), head))
 
@@ -81,7 +82,7 @@ class SoundModelTests(unittest.TestCase):
         self.assertEqual(([b['id'] for b in model.buffers], list(model.blocks), model.undefined), ([1], [1], False))
         model, _ = run(('init',), ('load', 0, 'mono16'), ('alias', 1, 0), ('unload', 1))
         self.assertEqual(([b['id'] for b in model.buffers], list(model.blocks), model.undefined), ([1], [], False))
-        self.assertTrue(model.state().endswith(',x,48000,0,0,0,0,0'))
+        self.assertTrue(model.state().endswith(',x,48000,0,1,0,0,0,0,0,0,0,0,0,2166136261'))
         model.step(('alias', 2, 0))
         self.assertEqual((model.sounds[2], model.undefined), (sp.ZERO, True))
 
@@ -105,6 +106,10 @@ class SoundModelTests(unittest.TestCase):
             run(('init',), ('load', 0, 'mono16'), ('play', 0), ('close',), ('init',))
 
 
+def taps(buffer):
+    return [sp.bits(v) for v in buffer['x0'] + buffer['x1']]
+
+
 class SoundMixTests(unittest.TestCase):
     def words(self, *values):
         return [sp.bits(v) for v in values]
@@ -114,9 +119,9 @@ class SoundMixTests(unittest.TestCase):
         data = sp.waves()['five32'][4]
         level = [sp.bits(max(-1.0, min(1.0, sp.fl(word) * 0.6875))) for word in data]    # volume 1 at the center: 0.5*0.5*(3 - 0.25), then the clip
         self.assertEqual(model.mix(2), [0, 0] + level[:2])
-        self.assertEqual((model.buffers[0]['cursor'], model.buffers[0]['taps'], model.buffers[0]['playing']), (2, data[:4], True))
+        self.assertEqual((model.buffers[0]['cursor'], taps(model.buffers[0]), model.buffers[0]['playing']), (2, data[:4], True))
         self.assertEqual(model.mix(480), level[2:8] + [0] * 954)
-        self.assertEqual((model.buffers[0]['cursor'], model.buffers[0]['taps'], model.buffers[0]['playing']), (0, data[6:10], False))
+        self.assertEqual((model.buffers[0]['cursor'], taps(model.buffers[0]), model.buffers[0]['playing']), (0, data[6:10], False))
         model.step(('play', 0))
         self.assertEqual(model.mix(1), [level[8], sp.bits(0.0)])
 
@@ -128,7 +133,7 @@ class SoundMixTests(unittest.TestCase):
         self.assertEqual((model.buffers[0]['cursor'], model.buffers[0]['playing']), (0, False))
         model, _ = run(('init',), ('load', 0, 'long513'), ('play', 0))
         model.mix(600)
-        self.assertEqual((model.buffers[0]['cursor'], model.buffers[0]['playing'], model.buffers[0]['taps']), (0, False, model.blocks[1][2 * 510:2 * 512]))
+        self.assertEqual((model.buffers[0]['cursor'], model.buffers[0]['playing'], taps(model.buffers[0])), (0, False, model.blocks[1][2 * 510:2 * 512]))
 
     def test_levels_master_and_clip(self):
         model, _ = run(('init',), ('load', 0, 'five32'), ('play', 0), ('mix', 1), ('pan', 0, sp.bits(1.0)), ('volume', 0, sp.bits(2.0)))
@@ -141,7 +146,7 @@ class SoundMixTests(unittest.TestCase):
         self.assertEqual(model.mix(1), self.words(0.0859375, 0.515625))  # (0.125, 0.75) at the center: 0.6875 each
 
     def test_what_the_mixer_refuses(self):
-        for steps in ((('mix', 1),), (('init',), ('mix', 0)), (('init',), ('mix', (1 << 20) + 1)), (('init',), ('load', 0, 'five32'), ('pitch', 0, sp.bits(2.0)), ('play', 0), ('mix', 1)),
+        for steps in ((('mix', 1),), (('init',), ('mix', 0)), (('init',), ('mix', (1 << 20) + 1)),
                       (('init',), ('load', 0, 'noframes'), ('play', 0), ('mix', 1)), (('init',), ('load', 0, 'tiny32'), ('play', 0), ('mix', 1), ('mix', 1)),
                       (('init',), ('master', sp.NAN), ('mix', 1)), (('init',), ('load', 0, 'five32'), ('volume', 0, 1), ('play', 0), ('mix', 1))):
             model, _ = run(*steps)
@@ -151,6 +156,31 @@ class SoundMixTests(unittest.TestCase):
         self.assertEqual([sp.odd(w) for w in (0, 1, 0x80000001, 0x00800000, 0x7F800000, 0x7FC00000, 0xFF800001, sp.bits(-0.0))], [False, True, True, False, False, True, True, False])
 
 
+class SoundPitchTests(unittest.TestCase):
+    def test_a_pitch_sets_the_rate_the_filter_and_the_timer(self):
+        model, _ = run(('init',), ('load', 0, 'tone'), ('pitch', 0, sp.bits(2.0)))
+        b = model.buffers[0]
+        self.assertEqual((b['rate'], sp.reduced(b['rate']), b['coef'], b['t_int'], b['t_frac']), (24000, (2, 1), sp.f32(math.exp(-math.pi / 2)), 1, 0))
+        for pitch, rate in ((0.5, 96000), (1.5, 32000), (1.0001, 47995), (0.9999999, 48000), (1e9, 48000)):    # a rate of 0 is refused: the last one stays
+            model.step(('pitch', 0, sp.bits(pitch)))
+            self.assertEqual(b['rate'], rate, pitch)
+        b.update(rate=96000, t_frac=1)
+        sp.set_rate(b, 32000)          # half an input frame at 1:2 is one and a half thirds at 3:2
+        self.assertEqual((sp.reduced(32000), b['t_int'], b['t_frac']), ((3, 2), 1, 1))
+
+    def test_a_pitched_buffer_reads_ahead_and_keeps_a_residual(self):
+        model, _ = run(('init',), ('load', 0, 'tone'), ('pitch', 0, sp.bits(2.0)), ('play', 0))
+        mixed = model.mix(3)
+        b = model.buffers[0]
+        self.assertEqual((len(mixed), b['cursor'], b['t_int'], len(b['residual']), model.undefined), (6, 6, 2, 1, False))   # 6 frames read for 3: 5 used
+        self.assertNotEqual(b['r1'], [0.0, 0.0])
+        self.assertEqual(len(model.mix(480)), 960)
+        self.assertEqual((b['playing'], model.buffers[0]['playing'], model.buffers[0]['cursor']), (True, False, 0))
+        model, _ = run(('init',), ('load', 0, 'tone'), ('pitch', 0, sp.bits(0.5)), ('play', 0))
+        model.mix(7)
+        self.assertEqual((model.buffers[0]['cursor'], len(model.buffers[0]['residual']), model.buffers[0]['t_frac']), (4, 0, 1))        # (float)48000/96000*7 = 3.5: 3 frames, then 1 more
+
+
 class SoundCasesTests(unittest.TestCase):
     def test_every_case_is_named_for_whether_raylib_runs_it(self):
         items = sp.cases()
@@ -158,7 +188,7 @@ class SoundCasesTests(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
         rows = [sp.expected(item, catalog()) for item in items]
         self.assertEqual([item['id'] for item, row in zip(items, rows) if item['id'].startswith('refused-') == row[2]], [])
-        self.assertEqual((len(items), sum(row[2] for row in rows), sum(len(item['steps']) for item in items)), (64, 40, 570))
+        self.assertEqual((len(items), sum(row[2] for row in rows), sum(len(item['steps']) for item in items)), (72, 49, 671))
         for tagged, plain, _ in rows:
             self.assertEqual(';'.join(part.split(' ', 1)[1] for part in tagged.split(';')), plain)
         used = {step[2] for item in items for step in item['steps'] if step[0] == 'load'}
@@ -180,7 +210,7 @@ class SoundCasesTests(unittest.TestCase):
                           'OpTune{0, 5, 9}', 'OpUpdate{1, 1, [4, 5]}'])
         keys, steps = sp.catalog_steps(table, order)
         self.assertEqual((len(keys), len(steps), keys[-2:], steps[:4]),
-                         (19, 58, [('file', 'boom'), ('file', 'tiny')], [('init',), ('load', 0, 'mono16'), ('dump', 0), ('unload', 0)]))
+                         (20, 61, [('file', 'boom'), ('file', 'tiny')], [('init',), ('load', 0, 'mono16'), ('dump', 0), ('unload', 0)]))
 
     def test_the_small_wav_file(self):
         data = sp.tiny_wav()
