@@ -84,7 +84,7 @@ stereo mode, which the software renderer does not draw, are documented in
 Audio waves (`Wave.*`: WAV loading, crop, format conversion, samples and
 export) and the audio device and sounds (`AudioDevice.*`, `Sound.*`: the device
 state, sounds and aliases over shared samples, their playing state, volume,
-pitch and pan, and the device callback that mixes them) are documented in [AUDIO.md](AUDIO.md).
+pitch and pan, the device callback that mixes them, and audio streams' buffers) are documented in [AUDIO.md](AUDIO.md).
 Input, automation events, frame timing and gestures (`Core.*`: the CORE state
 with an explicit clock, EndDrawing's timing and polling, GetFPS, automation
 recording/playback; `Input.*`: keyboard, mouse, touch and gamepads;

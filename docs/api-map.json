@@ -6167,5 +6167,156 @@
     ],
     "api_id": "raylib:function:UnloadWaveSamples",
     "milestone": "audio-codecs"
+  },
+  "LoadAudioStream": {
+    "jonlib": "AudioStream.load",
+    "status": "profile-covered",
+    "scope": "A tracked buffer of two zeroed halves in the stream's format (the default size, raylib's 12800 frames, at least the 480-frame period) with a converter from the stream's rate on min(channels, 2) channels; a stream without a buffer where miniaudio makes no converter (unready device, rate 0, no channels); buffer, converter state and fields compared with raylib.",
+    "gaps": [
+      "No buffer for sample sizes other than 8, 16 and 32, a negative default size, or more than 2^22 samples",
+      "The mixer does not play streams yet: AudioDevice.mix refuses a callback with a playing stream"
+    ],
+    "api_id": "raylib:function:LoadAudioStream",
+    "milestone": "audio-stream"
+  },
+  "IsAudioStreamValid": {
+    "jonlib": "AudioStream.is_valid",
+    "status": "profile-covered",
+    "scope": "A buffer and a sample rate, sample size and channels that are not 0.",
+    "gaps": [
+      "A buffer is a number (0 is NULL), not a pointer"
+    ],
+    "api_id": "raylib:function:IsAudioStreamValid",
+    "milestone": "audio-stream"
+  },
+  "UnloadAudioStream": {
+    "jonlib": "AudioStream.unload",
+    "status": "profile-covered",
+    "scope": "The buffer is untracked and its halves freed.",
+    "gaps": [
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:UnloadAudioStream",
+    "milestone": "audio-stream"
+  },
+  "UpdateAudioStream": {
+    "jonlib": "AudioStream.update",
+    "status": "profile-covered",
+    "scope": "The first processed half takes the frames and zeros after them and is no longer processed; with both processed the cursor goes back to the first frame; nothing when no half is processed; too many frames (a negative int too) only move the cursor; every sample and flag compared with raylib for 8-, 16- and 32-bit streams.",
+    "gaps": [
+      "The state as it is for a sound's buffer (raylib writes it as a stream's) and for a data list that is not frames*channels long",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:UpdateAudioStream",
+    "milestone": "audio-stream"
+  },
+  "IsAudioStreamProcessed": {
+    "jonlib": "AudioStream.is_processed",
+    "status": "profile-covered",
+    "scope": "One of the halves is processed (a sound's buffer always is).",
+    "gaps": [
+      "No clock: a half becomes processed only when the mixer reads it through, which it does not do for streams yet",
+      "False on an unready device and for an unloaded buffer"
+    ],
+    "api_id": "raylib:function:IsAudioStreamProcessed",
+    "milestone": "audio-stream"
+  },
+  "PlayAudioStream": {
+    "jonlib": "AudioStream.play",
+    "status": "profile-covered",
+    "scope": "Playing from the first frame, unpaused, both halves processed.",
+    "gaps": [
+      "The mixer does not play streams yet: AudioDevice.mix refuses a callback with a playing stream",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:PlayAudioStream",
+    "milestone": "audio-stream"
+  },
+  "PauseAudioStream": {
+    "jonlib": "AudioStream.pause",
+    "status": "profile-covered",
+    "scope": "The buffer is paused.",
+    "gaps": [
+      "The mixer does not play streams yet: AudioDevice.mix refuses a callback with a playing stream",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:PauseAudioStream",
+    "milestone": "audio-stream"
+  },
+  "ResumeAudioStream": {
+    "jonlib": "AudioStream.resume",
+    "status": "profile-covered",
+    "scope": "The buffer is not paused.",
+    "gaps": [
+      "The mixer does not play streams yet: AudioDevice.mix refuses a callback with a playing stream",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:ResumeAudioStream",
+    "milestone": "audio-stream"
+  },
+  "IsAudioStreamPlaying": {
+    "jonlib": "AudioStream.is_playing",
+    "status": "profile-covered",
+    "scope": "Playing and not paused.",
+    "gaps": [
+      "False on an unready device and for an unloaded buffer"
+    ],
+    "api_id": "raylib:function:IsAudioStreamPlaying",
+    "milestone": "audio-stream"
+  },
+  "StopAudioStream": {
+    "jonlib": "AudioStream.stop",
+    "status": "profile-covered",
+    "scope": "A playing stream stops, back at its first frame with both halves processed; a paused one stays as it is.",
+    "gaps": [
+      "The mixer does not play streams yet: AudioDevice.mix refuses a callback with a playing stream",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:StopAudioStream",
+    "milestone": "audio-stream"
+  },
+  "SetAudioStreamVolume": {
+    "jonlib": "AudioStream.set_volume",
+    "status": "profile-covered",
+    "scope": "The buffer's volume: any float.",
+    "gaps": [
+      "The mixer does not play streams yet: AudioDevice.mix refuses a callback with a playing stream",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:SetAudioStreamVolume",
+    "milestone": "audio-stream"
+  },
+  "SetAudioStreamPitch": {
+    "jonlib": "AudioStream.set_pitch",
+    "status": "profile-covered",
+    "scope": "The buffer's pitch and its converter's output rate (unsigned int)(48000/pitch) against the stream's own rate: the reduced rates, the timer and the filter's coefficient compared with raylib.",
+    "gaps": [
+      "A pitch whose rate does not fit an unsigned int changes nothing (the cast is undefined)",
+      "The mixer does not play streams yet: AudioDevice.mix refuses a callback with a playing stream",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:SetAudioStreamPitch",
+    "milestone": "audio-stream"
+  },
+  "SetAudioStreamPan": {
+    "jonlib": "AudioStream.set_pan",
+    "status": "profile-covered",
+    "scope": "The buffer's pan, clamped to -1..1 (NaN stays).",
+    "gaps": [
+      "The mixer does not play streams yet: AudioDevice.mix refuses a callback with a playing stream",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:SetAudioStreamPan",
+    "milestone": "audio-stream"
+  },
+  "SetAudioStreamBufferSizeDefault": {
+    "jonlib": "AudioDevice.set_stream_buffer_size_default",
+    "status": "profile-covered",
+    "scope": "The frames of each half of the streams loaded from now on (a C int as a U32 word; 0 is raylib's own size), on a ready device or not.",
+    "gaps": [
+      "A negative size makes AudioStream.load give no buffer (raylib allocates from it as an unsigned int)"
+    ],
+    "api_id": "raylib:function:SetAudioStreamBufferSizeDefault",
+    "milestone": "audio-stream"
   }
 }

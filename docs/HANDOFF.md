@@ -69,10 +69,10 @@ at the branch's head.
 `integrate/models-lgpl`, `feature/scoped-ci`, `feature/examples-batch-4` and the stack's branches are merged into `main` and deleted
 (`feature/examples-batch-5` was re-landed as pieces and deleted).
 
-Coverage (`python3 tools/api_plan.py check`): raylib.h 547/600 partial
+Coverage (`python3 tools/api_plan.py check`): raylib.h 561/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **199/212 ported** with the stack, 4 ready, 9 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **199/212 ported** with the stack, 6 ready (two of them waiting for the mixer to play streams), 7 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -395,10 +395,19 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `IsSoundPlaying` or `IsAudioStreamProcessed`); and in Jonlib an
      `AudioDevice.advance(device, time)` that makes the same callbacks
      (the device keeps the time it opened at and the periods it has
-     asked for), which a ported example calls first in its update; (3) audio streams
-     (`LoadAudioStream`: the two sub-buffers, `IsAudioStreamProcessed`,
-     looping, converters from any format and rate; `audio_raw_stream`,
-     `audio_stream_callback`, `audio_spectrum_visualizer`); (4) music
+     asked for), which a ported example calls first in its update; (3) playing audio streams. Their state is in
+     (`AudioStream.*`: the two halves, the processed flags,
+     `UpdateAudioStream`, the converter's rates from the stream's own; a
+     head's `Mixer.Feed` says what a buffer plays). Missing in
+     `Mixer.turn`: raudio's stream branch of
+     `ReadAudioBufferFramesInInternalFormat` (the halves, looping, the
+     zero fill that counts as frames read) and `ma_data_converter`'s
+     pipeline as a stream for formats and channels other than the
+     device's (format first, then the resampler on min(channels, 2)
+     channels before or after `ma_channel_converter`, through 4096-byte
+     temporaries; `src/convert.bend` has it for one whole wave). Then `audio_raw_stream`,
+     `audio_stream_callback` (needs `SetAudioStreamCallback`),
+     `audio_spectrum_visualizer`; (4) music
      (`LoadMusicStream`) and its decoders: dr_mp3, stb_vorbis, jar_xm,
      jar_mod, dr_flac. Subnormals in a callback are refused: miniaudio
      sets DAZ/FTZ around the callback on x86 only.

@@ -1780,3 +1780,45 @@ def Laws.vr_stereo_mode_ends_unchanged(frame):
 
 def Laws.vr_unload_stereo_config(config):
   {==}
+
+def Laws.stream_half_default():
+  {==}
+
+def Laws.stream_half_at_least_a_period():
+  {==}
+
+def Laws.stream_half_set():
+  {==}
+
+def Laws.stream_size_default_kept():
+  {==}
+
+def Laws.stream_unready_without_buffer():
+  {==}
+
+def Laws.stream_without_buffer_invalid():
+  {==}
+
+def Laws.stream_with_buffer_valid():
+  {==}
+
+def Laws.stream_first_half_first():
+  {==}
+
+def Laws.stream_second_half_next():
+  {==}
+
+def Laws.stream_no_half_left():
+  {==}
+
+def Laws.stream_filled_half_unprocessed():
+  {==}
+
+def Laws.stream_play_marks_both():
+  {==}
+
+def Laws.stream_sound_always_processed():
+  {==}
+
+def Laws.stream_half_written_in_place():
+  {==}

@@ -131,22 +131,43 @@ def flow(fuel: Nat, phase: U32, input: +List<+List<U32>>, +st: R.St, +acc: +List
         case _: Flow{st, acc, input, count, fine}
 
 # -----------------------------------------------------------------------------
-# A buffer's place: its converter's output rate (the device's 48000 Hz until
-# SetAudioBufferPitch changes it), how that rate is resampled (0: 1:1, no
+# What a buffer plays: a sound's frames in the device format, or an audio
+# stream's two halves in the stream's own format (`size` bits a sample,
+# `channels` channels), each half marked once the device has read it through
+# (isSubBufferProcessed).
+type Feed is Data:
+  HeadStatic{}
+  HeadStream{size: U32, channels: U32, first: Bool, second: Bool}
+
+def Feed.static(kind: Feed) -> Bool:
+  match kind:
+    case HeadStatic{}: True{}
+    case HeadStream{_, _, _, _}: False{}
+
+# PlayAudioBuffer and a stop mark both halves processed.
+def Feed.fresh(kind: Feed) -> Feed:
+  match kind:
+    case HeadStatic{}: HeadStatic{}
+    case HeadStream{size, channels, _, _}: HeadStream{size, channels, True{}, True{}}
+
+# A buffer's place: its converter's input rate (48000 Hz for a sound, a
+# stream's own) and output rate (the device's 48000 Hz until
+# SetAudioBufferPitch changes it), how those rates are resampled (0: 1:1, no
 # filter; 1: with the filter's coefficient; 2: not reproduced), its cursor,
-# the resampler's state and raudio's residual input frames (at most 8).
+# the resampler's state, raudio's residual input frames (at most 8) and what
+# it plays.
 
 type Head is Data:
-  Head{rate: U32, mode: U32, coef: U32, cursor: U32, st: R.St, residual: +List<+List<U32>>}
+  Head{source: U32, rate: U32, mode: U32, coef: U32, cursor: U32, st: R.St, residual: +List<+List<U32>>, kind: Feed}
 
 def Head.new() -> Head:
-  Head{48000, 0, 0, 0, R.start(2), Nil{}}
+  Head{48000, 48000, 0, 0, 0, R.start(2), Nil{}, HeadStatic{}}
 
 # The cursor back at the first frame (PlayAudioBuffer, and a buffer that
 # stops); what the converter holds stays.
 def Head.rewound(head: Head) -> Head:
-  Head{rate, mode, coef, _, st, residual} = head
-  Head{rate, mode, coef, 0, st, residual}
+  Head{source, rate, mode, coef, _, st, residual, kind} = head
+  Head{source, rate, mode, coef, 0, st, residual, Feed.fresh(kind)}
 
 # ma_linear_resampler_adjust_timer_for_new_rate: the fraction of an input
 # frame, counted in the old reduced output rate, in the new one (unsigned int
@@ -156,29 +177,99 @@ def retimed(st: R.St, +old: U32, +new: U32) -> R.St:
   +frac = (((t_frac / old) * new) + (((t_frac % old) * new) / old) : U32)
   R.St{(t_int + (frac / new) : U32), (frac % new : U32), x0, x1, chans, ok}
 
-def Head.filtered(found: Maybe<U32>, +rate: U32, +cursor: U32, +st: R.St, +residual: +List<+List<U32>>) -> Head:
+def Head.filtered(found: Maybe<U32>, +source: U32, +rate: U32, +cursor: U32, +st: R.St, +residual: +List<+List<U32>>, +kind: Feed) -> Head:
   match found:
-    case None{}: Head{rate, 2, 0, cursor, st, residual}
-    case Some{+a}: Head{rate, 1, a, cursor, st, residual}
+    case None{}: Head{source, rate, 2, 0, cursor, st, residual, kind}
+    case Some{+a}: Head{source, rate, 1, a, cursor, st, residual, kind}
 
-# 0: 1:1; 1: a reduced output rate of 2^31 and more; else the filter's
-# coefficient, when it is certified.
-def Head.rated(kind: U32, +rin: U32, +rout: U32, +rate: U32, +cursor: U32, +st: R.St, +residual: +List<+List<U32>>) -> Head:
-  match kind:
-    case 0: Head{rate, 0, 0, cursor, st, residual}
-    case 1: Head{rate, 2, 0, cursor, st, residual}
-    case _: Head.filtered(L.coefficient1(rin, rout), rate, cursor, st, residual)
+# 0: 1:1; 1: a reduced rate of 2^31 and more; else the filter's coefficient,
+# when it is certified.
+def Head.rated(mode: U32, +rin: U32, +rout: U32, +source: U32, +rate: U32, +cursor: U32, +st: R.St, +residual: +List<+List<U32>>, +kind: Feed) -> Head:
+  match mode:
+    case 0: Head{source, rate, 0, 0, cursor, st, residual, kind}
+    case 1: Head{source, rate, 2, 0, cursor, st, residual, kind}
+    case _: Head.filtered(L.coefficient1(rin, rout), source, rate, cursor, st, residual, kind)
 
-# ma_data_converter_set_rate(48000, wanted) for a wanted rate that is not 0:
+def rating(+rin: U32, +rout: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(rin, rout), 0, Bool.pick(U32, (rin >= 2147483648 : U32) || (rout >= 2147483648 : U32), 1, 2))
+
+# ma_data_converter_set_rate(source, wanted) for a wanted rate that is not 0:
 # the rates reduced by their divisor, the filter for them (its registers
 # stay) and the timer in the new rate.
 def Head.pitched(head: Head, +wanted: U32) -> Head:
-  Head{+rate, _, _, cursor, +st, residual} = head
-  +old = (rate / C.gcd(64n, 48000, rate) : U32)
-  +g = C.gcd(64n, 48000, wanted)
-  +rin = (48000 / g : U32)
-  +rout = (wanted / g : U32)
-  Head.rated(Bool.pick(U32, U32.is_eq(rin, rout), 0, Bool.pick(U32, (rout >= 2147483648 : U32), 1, 2)), rin, rout, wanted, cursor, retimed(st, old, rout), residual)
+  Head{+source, +rate, _, _, cursor, +st, residual, kind} = head
+  +old = (rate / C.gcd(64n, source, rate) : U32)
+  +g = C.gcd(64n, source, wanted)
+  Head.rated(rating((source / g : U32), (wanted / g : U32)), (source / g : U32), (wanted / g : U32), source, wanted, cursor, retimed(st, old, (wanted / g : U32)), residual, kind)
+
+# An audio stream's converter, from its rate (not 0) to the device's: the
+# resampler runs on the stream's channels, two at most (miniaudio converts
+# the channels first when there are more), and both halves are processed.
+def Head.stream(+source: U32, +size: U32, +channels: U32) -> Head:
+  +g = C.gcd(64n, source, 48000)
+  Head.rated(rating((source / g : U32), (48000 / g : U32)), (source / g : U32), (48000 / g : U32), source, 48000, 0, R.start(U32.min(channels, 2)), Nil{}, HeadStream{size, channels, True{}, True{}})
+
+# UpdateAudioStream's half: 0 or 1, the first that is processed; 2 when
+# neither is (or for a sound).
+def Feed.target(kind: Feed) -> U32:
+  match kind:
+    case HeadStatic{}: 2
+    case HeadStream{_, _, first, second}: Bool.pick(U32, first, 0, Bool.pick(U32, second, 1, 2))
+
+def Feed.both(kind: Feed) -> Bool:
+  match kind:
+    case HeadStatic{}: False{}
+    case HeadStream{_, _, first, second}: first && second
+
+# IsAudioStreamProcessed: a half is processed (a sound's always are).
+def Feed.processed(kind: Feed) -> Bool:
+  match kind:
+    case HeadStatic{}: True{}
+    case HeadStream{_, _, first, second}: first || second
+
+def Feed.channels(kind: Feed) -> U32:
+  match kind:
+    case HeadStatic{}: 2
+    case HeadStream{_, channels, _, _}: channels
+
+def Feed.filled(kind: Feed, +target: U32) -> Feed:
+  match kind:
+    case HeadStatic{}: HeadStatic{}
+    case HeadStream{size, channels, first, second}: HeadStream{size, channels, first && U32.is_ne(target, 0), second && U32.is_ne(target, 1)}
+
+def Head.kind(head: Head) -> Feed:
+  Head{_, _, _, _, _, _, _, kind} = head
+  kind
+
+# UpdateAudioStreamInLockedState on the head: with both halves processed the
+# cursor goes back to the first frame; a half that was written (`wrote`) is no
+# longer processed.
+def Head.fed(head: Head, +wrote: Bool) -> Head:
+  Head{source, rate, mode, coef, +cursor, st, residual, +kind} = head
+  Head{source, rate, mode, coef, Bool.pick(U32, Feed.both(kind), 0, cursor), st, residual, Bool.pick(Feed, wrote, Feed.filled(kind, Feed.target(kind)), kind)}
+
+# A list with `data`, then `pad` zeros, in place of the `skip` elements after
+# its first `offset` (the lists are long: no depth grows with them).
+def take.rev(n: Nat, xs: +List<U32>, acc: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: acc
+    case 1n+k:
+      match xs:
+        case Nil{}: acc
+        case Con{+x, rest}: take.rev(k, rest, Con{x, acc})
+
+def push.rev(xs: +List<U32>, acc: +List<U32>) -> +List<U32>:
+  match xs:
+    case Nil{}: acc
+    case Con{+x, rest}: push.rev(rest, Con{x, acc})
+
+def zeros.rev(n: Nat, acc: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: acc
+    case 1n+k: zeros.rev(k, Con{0, acc})
+
+def splice(+block: +List<U32>, +offset: U32, data: +List<U32>, +pad: U32, +skip: U32) -> +List<U32>:
+  List.reverse.go(&2, U32, zeros.rev(U32.to_nat(pad), push.rev(data, take.rev(U32.to_nat(offset), block, Nil{}))), List.drop(&2, U32, block, U32.to_nat((offset + skip : U32))))
 
 # -----------------------------------------------------------------------------
 # ReadAudioBufferFramesInInternalFormat for a static buffer of `size` frames
@@ -203,10 +294,10 @@ def read.frames(+data: +List<U32>, +cursor: U32, +count: U32) -> +List<+List<U32
   pairs(List.take(&2, U32, List.drop(&2, U32, data, U32.to_nat((2 * cursor : U32))), U32.to_nat((2 * count : U32))), Nil{})
 
 # raudio's guess of the input frames `want` output frames need:
-# (unsigned int)(((float)48000/rate)*want), at least 1 and at most the 512
+# (unsigned int)(((float)source/rate)*want), at least 1 and at most the 512
 # frames of its input buffer.
-def estimate(+rate: U32, +want: U32) -> U32:
-  U32.min(512, U32.max(F32.to_u32(((U32.to_f32(48000) / U32.to_f32(rate)) * U32.to_f32(want) : F32)), 1))
+def estimate(+source: U32, +rate: U32, +want: U32) -> U32:
+  U32.min(512, U32.max(F32.to_u32(((U32.to_f32(source) / U32.to_f32(rate)) * U32.to_f32(want) : F32)), 1))
 
 # A buffer's turn in a callback: the frames it still owes (`need`), the run
 # of at most 512 it is in (`now`) and how many of it are made (`total`), its
@@ -237,11 +328,11 @@ def step.read(flow: Flow, +need: U32, +now: U32, +total: U32, +cursor: U32, +pla
 # One pass of ReadAudioBufferFramesInMixingFormat's loop: the residual goes
 # through the converter first; without one, the estimated input is read from
 # the buffer, and a short read ends the run.
-def step(s: S, +size: U32, +data: +List<U32>, +rate: U32, +plain: Bool, +p: R.Params, +a: U32) -> S:
+def step(s: S, +size: U32, +data: +List<U32>, +source: U32, +rate: U32, +plain: Bool, +p: R.Params, +a: U32) -> S:
   S{+need, +now, +total, +cursor, +playing, +st, residual, +acc, +fine, _} = s
   match residual:
     case Nil{}:
-      +est = estimate(rate, (now - total : U32))
+      +est = estimate(source, rate, (now - total : U32))
       +count = read.count(size, cursor, playing, est)
       +ends = read.ends(size, cursor, playing, est)
       step.read(flow(U32.to_nat((count + (now - total) + 2 : U32)), R.next_phase(st, (now - total : U32)), read.frames(data, cursor, count), st, acc, 0, (now - total : U32), plain, p, a, fine),
@@ -249,15 +340,15 @@ def step(s: S, +size: U32, +data: +List<U32>, +rate: U32, +plain: Bool, +p: R.Pa
     case Con{+first, +more}:
       step.residual(flow(U32.to_nat((10 + (now - total) : U32)), R.next_phase(st, (now - total : U32)), Con{first, more}, st, acc, 0, (now - total : U32), plain, p, a, fine), need, now, total, cursor, playing)
 
-def run(fuel: Nat, done: Bool, +s: S, +size: U32, +data: +List<U32>, +rate: U32, +plain: Bool, +p: R.Params, +a: U32) -> S:
+def run(fuel: Nat, done: Bool, +s: S, +size: U32, +data: +List<U32>, +source: U32, +rate: U32, +plain: Bool, +p: R.Params, +a: U32) -> S:
   match fuel:
     case 0n: s
     case 1n+k:
       match done:
         case True{}: s
         case False{}:
-          +next = step(s, size, data, rate, plain, p, a)
-          run(k, S.over(next), next, size, data, rate, plain, p, a)
+          +next = step(s, size, data, source, rate, plain, p, a)
+          run(k, S.over(next), next, size, data, source, rate, plain, p, a)
 
 def begin(s: S) -> S:
   S{+need, _, _, cursor, playing, st, residual, acc, fine, _} = s
@@ -271,30 +362,31 @@ def after(s: S) -> S:
   +short = playing && (total < now : U32)
   S{Bool.pick(U32, playing && Bool.not(short), (need - total : U32), 0), now, total, Bool.pick(U32, short, 0, cursor), playing && Bool.not(short), st, residual, acc, fine, broke}
 
-def runs(fuel: Nat, done: Bool, +s: S, +size: U32, +data: +List<U32>, +rate: U32, +plain: Bool, +p: R.Params, +a: U32) -> S:
+def runs(fuel: Nat, done: Bool, +s: S, +size: U32, +data: +List<U32>, +source: U32, +rate: U32, +plain: Bool, +p: R.Params, +a: U32) -> S:
   match fuel:
     case 0n: s
     case 1n+k:
       match done:
         case True{}: s
         case False{}:
-          +next = after(run(U32.to_nat(2048), False{}, begin(s), size, data, rate, plain, p, a))
-          runs(k, S.finished(next), next, size, data, rate, plain, p, a)
+          +next = after(run(U32.to_nat(2048), False{}, begin(s), size, data, source, rate, plain, p, a))
+          runs(k, S.finished(next), next, size, data, source, rate, plain, p, a)
 
 # The buffer after a callback, whether it still plays, the frames it gave (in
 # order) and whether the hosts agree on them.
 type Turn is Data:
   Turn{head: Head, playing: Bool, made: +List<+List<U32>>, fine: Bool}
 
-def turn.done(s: S, +rate: U32, +mode: U32, +coef: U32) -> Turn:
+def turn.done(s: S, +source: U32, +rate: U32, +mode: U32, +coef: U32, +kind: Feed) -> Turn:
   S{need, _, _, cursor, playing, st, residual, acc, fine, _} = s
-  Turn{Head{rate, mode, coef, cursor, st, residual}, playing, List.reverse(&2, +List<U32>, acc), fine && U32.is_eq(need, 0)}
+  Turn{Head{source, rate, mode, coef, cursor, st, residual, kind}, playing, List.reverse(&2, +List<U32>, acc), fine && U32.is_eq(need, 0)}
 
 # A playing buffer of `size` frames in a callback of n frames. Not fine: a
-# rate Jonlib does not resample (mode 2) and a buffer without frames (raudio
-# divides by its size).
+# rate Jonlib does not resample (mode 2), a buffer without frames (raudio
+# divides by its size) and an audio stream (its two halves and its converter
+# from the stream's format are not ported yet).
 def turn(head: Head, +size: U32, +data: +List<U32>, +n: U32) -> Turn:
-  Head{+rate, +mode, +coef, cursor, st, residual} = head
-  +g = C.gcd(64n, 48000, rate)
-  turn.done(runs(U32.to_nat((n + 2 : U32)), False{}, S{n, 0, 0, cursor, True{}, st, residual, Nil{}, U32.is_ne(mode, 2) && (size > 0 : U32), False{}},
-    size, data, rate, U32.is_eq(mode, 0), R.params(True{}, False{}, Nil{}, (48000 / g : U32), (rate / g : U32)), coef), rate, mode, coef)
+  Head{+source, +rate, +mode, +coef, cursor, st, residual, +kind} = head
+  +g = C.gcd(64n, source, rate)
+  turn.done(runs(U32.to_nat((n + 2 : U32)), False{}, S{n, 0, 0, cursor, True{}, st, residual, Nil{}, U32.is_ne(mode, 2) && (size > 0 : U32) && Feed.static(kind), False{}},
+    size, data, source, rate, U32.is_eq(mode, 0), R.params(True{}, False{}, Nil{}, (source / g : U32), (rate / g : U32)), coef), source, rate, mode, coef, kind)

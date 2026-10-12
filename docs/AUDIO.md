@@ -347,6 +347,40 @@ was unloaded (freed memory); an alias of a buffer whose block was freed;
 whose output rate `48000/pitch` does not fit an unsigned int (raylib's cast is
 undefined).
 
+### Audio streams
+
+An audio stream is a tracked buffer of two halves in the stream's own format
+(unsigned 8-bit, signed 16-bit as its 16-bit pattern, or F32 bits; one sample
+per element, channels interleaved), with a converter from that format and
+rate to the device's. The device plays one half while the program fills the
+other: a half is *processed* once the device has read it through, and both
+are at first.
+
+| Function | raylib | Contract |
+|---|---|---|
+| `AudioDevice.set_stream_buffer_size_default(device, size)` | `SetAudioStreamBufferSizeDefault` | The frames of each half of streams loaded from now on (a C int as a U32 word); 0 is raylib's own size. |
+| `AudioStream.load(device, rate, size, channels)` | `LoadAudioStream` | A buffer of two zeroed halves, each of the default size, or 12800 frames without one (the device rate/30 times raylib's 8 "bits per sample"), and at least the device's period of 480. The resampler runs from the stream's rate, on the stream's channels (two at most). |
+| `AudioStream.is_valid(stream)` | `IsAudioStreamValid` | A buffer and a rate, size and channels that are not 0. |
+| `AudioStream.unload(device, stream)` | `UnloadAudioStream` | The buffer is untracked and its halves freed. |
+| `AudioStream.update(device, stream, data, frames)` | `UpdateAudioStream` | The first processed half takes `frames` frames of `data` and zeros after them, and is no longer processed; with both halves processed the cursor goes back to the first frame. Nothing when no half is processed. More frames than a half holds (a negative int too) only move the cursor. |
+| `AudioStream.is_processed(device, stream)` | `IsAudioStreamProcessed` | One of the halves is processed. |
+| `AudioStream.play` / `stop` / `pause` / `resume` / `is_playing` | `PlayAudioStream` ... | As for a sound; a play and a stop mark both halves processed. |
+| `AudioStream.set_volume` / `set_pitch` / `set_pan` | `SetAudioStreamVolume` ... | As for a sound; the pitch sets the converter's output rate against the stream's own rate. |
+
+`AudioStream.load` gives a stream without a buffer (0, with the fields
+given) where miniaudio makes no converter: an unready device, a rate of 0,
+no channels. Jonlib also gives none for sample sizes other than 8, 16 and 32
+(raylib takes them for 32-bit float and fills part of each sample), a
+default size that is a negative int, and buffers of more than 2^22 samples.
+`AudioStream.update` leaves the state as it is on an unready device, for a
+buffer that is 0, not tracked or a sound's (raylib writes the sound's
+samples as if they were a stream's), and for a `data` that does not hold
+`frames*channels` samples. `Sound.update` leaves a stream's buffer as it is.
+
+**The mixer does not play streams yet**: a callback with a playing stream is
+refused. What is missing is raudio's reading of the two halves and the
+converter from the stream's format and channels.
+
 ### The mixer
 
 `AudioDevice.mix(device, frames)` is one data callback of the device, as
@@ -406,14 +440,17 @@ backend, so that the program can read `AUDIO` and the audio buffers, and
 stops the device right after `InitAudioDevice`: its thread mixes nothing,
 and the program asks for each callback itself
 (`ma_device_handle_backend_data_callback`) with the script's frame counts.
-72 scripts of 671 steps over four sound slots run on both sides and on a
+86 scripts of 785 steps over four sound slots run on both sides and on a
 Python model of raudio's state; after every step the ready flag, the master
 volume bits, every slot's handle fields with `IsSoundValid` and
 `IsSoundPlaying`, and every tracked buffer (its number, block, size, volume,
 pitch and pan bits, flags, an FNV-1a hash of its samples, its converter's
-output rate, its cursor, the resampler's timer, the two frames it holds, the
-filter's register and coefficient, and the residual) must be equal, and
-after a callback the hash of its samples. The callbacks cover
+input and output rates, its cursor, the resampler's timer, the two frames it
+holds, the filter's register and coefficient, the residual, and for a
+stream its format, channels and the two processed flags) must be equal,
+with the default stream size, `IsAudioStreamValid` and
+`IsAudioStreamProcessed` for every slot, and after a callback the hash of
+its samples. The callbacks cover
 silence, sounds mixed to their end in callbacks of 1 to 30000 frames,
 replays over the held frames, pauses, levels for volumes and pans (negative
 and above 1), the master volume and the clip, three buffers at once with an
@@ -422,14 +459,21 @@ alias, odd sizes (the lost last frame, at the start of a callback and of a
 updated block and a 29647-frame file; and pitched buffers: 2:1 and 1:2,
 3:2, 4:5, 9600:9599, 3.7 and 0.07 (48000:12972 and 48000:685714), pitches
 changed in the middle of a sound and while it is paused, three buffers at
-three pitches, a 513-frame buffer at 2.5 and 0.4, and the file at 1.25. The waves are
+three pitches, a 513-frame buffer at 2.5 and 0.4, and the file at 1.25.
+The streams: 8-, 16- and 32-bit ones of 1, 2, 3, 6, 255 and 1000 channels
+at 8000 to 96000 Hz; default sizes of 100, 479, 480, 500, 600 and 0; an
+unready device, a rate of 0 and no channels; updates of each format into
+each half, of no frames, of a whole half, of one frame too many and of a
+negative count, with no half left, after a play, a stop and a pause; and
+pitches against 44100, 48000 and 8000 Hz streams (147:80, 147:160, 1:2,
+1:1). The waves are
 8-, 16- and 32-bit, of 1, 2, 4 and 6 channels, at 48000, 8000, 22050, 44100
 and 96000 Hz, with the empty cases above, and the files are the four `.wav`
 files of the examples that only play sounds (`boom`, `buttonfx`, `sound`,
 `coin`; 26522 to 48000 frames each), a small generated one, a missing one,
-one that is not a WAV and another extension. 49 scripts are compared with
-raylib; the 23 with a step raylib has no defined answer for, or a callback
-Jonlib refuses, are checked against the model on Jonlib alone. `IsSoundPlaying` is asked of raylib only on
+one that is not a WAV and another extension. 55 scripts are compared with
+raylib; the 31 with a step raylib has no defined answer for, or a step or
+a callback Jonlib refuses, are checked against the model on Jonlib alone. `IsSoundPlaying` is asked of raylib only on
 a ready device and for a tracked buffer, and no script opens the device over
 a playing buffer (raylib would mix it before the reference can stop it). CPU-1,
 CPU-2 and JavaScript.
@@ -442,5 +486,6 @@ device mixes on its own thread there, and no frame depends on it.
 
 Not yet available: the fused (FMA) profile of the mixer, the hosts'
 subnormal profiles (a filter's tail that decays into subnormals is refused),
-a clock (the program asks for each callback), audio streams and
-music, and a host device. No GPU evidence.
+a clock (the program asks for each callback), playing audio streams
+(their state is here), stream callbacks and processors, music, and a host
+device. No GPU evidence.

@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 199 ported, 4 ready, 9 waiting.
+Totals: 212 examples; 199 ported, 6 ready, 7 waiting.
 
 ## APIs that unblock the most examples
 
@@ -19,16 +19,10 @@ Totals: 212 examples; 199 ported, 4 ready, 9 waiting.
 | `UpdateMusicStream` | 4 |
 | `GetMusicTimeLength` | 3 |
 | `GetMusicTimePlayed` | 3 |
-| `LoadAudioStream` | 3 |
 | `PauseMusicStream` | 3 |
-| `PlayAudioStream` | 3 |
 | `ResumeMusicStream` | 3 |
-| `SetAudioStreamBufferSizeDefault` | 3 |
 | `StopMusicStream` | 3 |
-| `UnloadAudioStream` | 3 |
 | `GuiProgressBar` | 2 |
-| `IsAudioStreamProcessed` | 2 |
-| `UpdateAudioStream` | 2 |
 | `AttachAudioMixedProcessor` | 1 |
 | `AttachAudioStreamProcessor` | 1 |
 | `DetachAudioMixedProcessor` | 1 |
@@ -41,7 +35,6 @@ Totals: 212 examples; 199 ported, 4 ready, 9 waiting.
 | `LoadDirectoryFiles` | 1 |
 | `LoadDirectoryFilesEx` | 1 |
 | `SetAudioStreamCallback` | 1 |
-| `SetAudioStreamPan` | 1 |
 | `SetMusicPan` | 1 |
 | `SetMusicPitch` | 1 |
 | `SetMusicVolume` | 1 |
@@ -255,11 +248,11 @@ Totals: 212 examples; 199 ported, 4 ready, 9 waiting.
 | `shaders_cel_shading` | shaders | ported |  |
 | `audio_module_playing` | audio | waiting | `GetMusicTimeLength`, `GetMusicTimePlayed`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `SetMusicPitch`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
 | `audio_music_stream` | audio | waiting | `GetMusicTimeLength`, `GetMusicTimePlayed`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `SetMusicPan`, `SetMusicVolume`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
-| `audio_raw_stream` | audio | waiting | `IsAudioStreamProcessed`, `LoadAudioStream`, `PlayAudioStream`, `SetAudioStreamBufferSizeDefault`, `SetAudioStreamPan`, `UnloadAudioStream`, `UpdateAudioStream` |
+| `audio_raw_stream` | audio | ready |  |
 | `audio_sound_loading` | audio | ready |  |
 | `audio_mixed_processor` | audio | waiting | `AttachAudioMixedProcessor`, `DetachAudioMixedProcessor`, `LoadMusicStream`, `PlayMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
 | `audio_stream_effects` | audio | waiting | `AttachAudioStreamProcessor`, `DetachAudioStreamProcessor`, `GetMusicTimeLength`, `GetMusicTimePlayed`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
 | `audio_sound_multi` | audio | ported |  |
 | `audio_sound_positioning` | audio | ported |  |
-| `audio_spectrum_visualizer` | audio | waiting | `IsAudioStreamProcessed`, `LoadAudioStream`, `PlayAudioStream`, `SetAudioStreamBufferSizeDefault`, `UnloadAudioStream`, `UpdateAudioStream` |
-| `audio_stream_callback` | audio | waiting | `LoadAudioStream`, `PlayAudioStream`, `SetAudioStreamBufferSizeDefault`, `SetAudioStreamCallback`, `UnloadAudioStream` |
+| `audio_spectrum_visualizer` | audio | ready |  |
+| `audio_stream_callback` | audio | waiting | `SetAudioStreamCallback` |
