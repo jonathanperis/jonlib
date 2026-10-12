@@ -561,17 +561,20 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      start; `drmp3_seek_to_start_of_stream` only clears the header, so
      the next frame zeroes the decoder), then `MusicMp3` and the
      `Wave`/`Sound` loaders, and Layers I and II (refused now).
-     **Do next, before those: floats as floats.** The module keeps
-     floats in lists as U32 bits and converts at each use with
-     `float(bits)` (`U32{word} = value; F32{word}`), which the
-     JavaScript target compiles to a 32-node bit list and two typed
-     arrays per call: about 50000 of them a frame, 185 ms a frame, 11
-     minutes for `country.mp3` (the C lanes are much faster). Lists of
+     **Speed on the JavaScript target.** The module keeps floats in
+     lists as U32 bits and converts at each use with `float(bits)`.
+     Written `U32{word} = value; F32{word}` that compiles there to a
+     32-node bit list and two typed arrays per call: about 50000 a
+     frame, 185 ms a frame, 11 minutes for `country.mp3` (the C lanes
+     are much faster). `float` now builds a finite float by exact
+     arithmetic (`float.scaled`: significand times a power of two) and
+     a frame takes about 95 ms. The rest is `F32.bits` (two typed
+     arrays a call there) and list walking. The larger fix is lists of
      `F32` (`+List<F32>`) for the values, the scales, the overlap and
      the rows, with the tables converted once a frame and `F32.bits`
      only where integers are needed (the sample conversion, the
-     probe's hashes), should bring it near the 12 ms a frame the
-     Huffman stage alone took. Then the gate can take the whole file
+     probe's hashes); `F32.neg` is a true negation on both targets and
+     would replace `neg`. Then the gate can take the whole file
      again (it has two 200-frame slices now), and music examples
      become practical in the JavaScript lane. `List.drop(xs, 1n)` in a
      loop is also slow there (a big-integer count): the module has

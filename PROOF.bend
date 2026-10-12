@@ -1865,6 +1865,30 @@ def Laws.mp3_tie_rounded_to_even_up():
 def Laws.mp3_half_rounded_to_zero():
   {==}
 
+def Laws.mp3_float_power_of_one():
+  {==}
+
+def Laws.mp3_float_one_scaled_down():
+  {==}
+
+def Laws.mp3_float_power_of_a_subnormal():
+  {==}
+
+def Laws.mp3_float_subnormal_without_hidden_bit():
+  {==}
+
+def Laws.mp3_float_power_of_the_largest():
+  {==}
+
+def Laws.mp3_float_largest_scaled_up():
+  {==}
+
+def Laws.mp3_float_integer_significand_at_2_to_23():
+  {==}
+
+def Laws.mp3_float_sign_not_in_the_power():
+  {==}
+
 def Laws.mp3_float_significand():
   {==}
 

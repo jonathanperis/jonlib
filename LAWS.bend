@@ -2638,6 +2638,35 @@ law mp3_tie_rounded_to_even_up:
 law mp3_half_rounded_to_zero:
   {Mp3L3.int.nearest(8388608, 24) == 0 : U32}
 
+# A float is made from its bits by arithmetic: its significand as an integer
+# times two to the power of its exponent field less 150. 1.0 is 2^23 times
+# 2^-23; the smallest subnormal 1 times 2^-149 (its field counts as 1 and it
+# has no hidden bit); the largest float a significand times 2^104; 2^23 its
+# significand as it is. The sign is apart.
+law mp3_float_power_of_one:
+  {Mp3L3.float.power(1065353216) == 23 : U32}
+
+law mp3_float_one_scaled_down:
+  {Mp3L3.float.down(1065353216) == True{} : Bool}
+
+law mp3_float_power_of_a_subnormal:
+  {Mp3L3.float.power(1) == 149 : U32}
+
+law mp3_float_subnormal_without_hidden_bit:
+  {Mp3L3.float.significand(1) == 1 : U32}
+
+law mp3_float_power_of_the_largest:
+  {Mp3L3.float.power(2139095039) == 104 : U32}
+
+law mp3_float_largest_scaled_up:
+  {Mp3L3.float.down(2139095039) == False{} : Bool}
+
+law mp3_float_integer_significand_at_2_to_23:
+  {Mp3L3.float.power(1258291200) == 0 : U32}
+
+law mp3_float_sign_not_in_the_power:
+  {Mp3L3.float.power(3212836864) == 23 : U32}
+
 law mp3_float_significand:
   {Mp3L3.float.significand(1065353216) == 8388608 : U32}
 

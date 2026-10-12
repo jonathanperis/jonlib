@@ -23,9 +23,56 @@ import Base
 import ./mp3.bend as H
 import ./mp3_tables.bend as T
 
-def float(value: U32) -> F32:
+# A float from its bits. The constructor's way (U32{word} to F32{word})
+# goes through a list of 32 bits on the JavaScript target, and this module
+# converts tens of thousands of floats a frame; so a finite float is made by
+# arithmetic instead, which is exact: its significand as an integer (below
+# 2^24) times the power of two of its exponent, a factor for each bit of the
+# power, every partial product being a multiple of 2^-149 below 2^128.
+# Infinities and NaNs, which the decoder does not produce, go the first way.
+def float.exact(value: U32) -> F32:
   U32{word} = value
   F32{word}
+
+# 2^k or 2^-k for k below 256, as the product of the factors of k's bits
+# (2^1, 2^2, 2^4 ... or their inverses), times `x`.
+def float.scaled(+x: F32, +k: U32, +down: Bool) -> F32:
+  +f4 = Bool.pick(F32, down, (1.0 / 65536.0 : F32), 65536.0)
+  +f5 = (f4 * f4 : F32)
+  +f6 = (f5 * f5 : F32)
+  +f7 = (f6 * f6 : F32)
+  +x0 = (x * Bool.pick(F32, U32.is_ne((k .&. 1 : U32), 0), Bool.pick(F32, down, 0.5, 2.0), 1.0) : F32)
+  +x1 = (x0 * Bool.pick(F32, U32.is_ne((k .&. 2 : U32), 0), Bool.pick(F32, down, 0.25, 4.0), 1.0) : F32)
+  +x2 = (x1 * Bool.pick(F32, U32.is_ne((k .&. 4 : U32), 0), Bool.pick(F32, down, 0.0625, 16.0), 1.0) : F32)
+  +x3 = (x2 * Bool.pick(F32, U32.is_ne((k .&. 8 : U32), 0), Bool.pick(F32, down, 0.00390625, 256.0), 1.0) : F32)
+  +x4 = (x3 * Bool.pick(F32, U32.is_ne((k .&. 16 : U32), 0), f4, 1.0) : F32)
+  +x5 = (x4 * Bool.pick(F32, U32.is_ne((k .&. 32 : U32), 0), f5, 1.0) : F32)
+  +x6 = (x5 * Bool.pick(F32, U32.is_ne((k .&. 64 : U32), 0), f6, 1.0) : F32)
+  (x6 * Bool.pick(F32, U32.is_ne((k .&. 128 : U32), 0), f7, 1.0) : F32)
+
+# A float's significand with its hidden bit (a subnormal has none).
+def float.significand(+bits: U32) -> U32:
+  ((bits .&. 8388607) .|. Bool.pick(U32, U32.is_eq(((bits >> 23n) .&. 255 : U32), 0), 0, 8388608) : U32)
+
+# The power of two the significand is multiplied by is its exponent field
+# less 150 (a subnormal's field counts as 1): whether that is below zero,
+# and how far from zero it is.
+def float.down(+bits: U32) -> Bool:
+  (((bits >> 23n) .&. 255) < 150 : U32)
+
+def float.power(+bits: U32) -> U32:
+  +p = U32.max(((bits >> 23n) .&. 255 : U32), 1)
+  Bool.pick(U32, (p >= 150 : U32), (p - 150 : U32), (150 - p : U32))
+
+def float.finite(special: Bool, +value: U32) -> F32:
+  match special:
+    case True{}: float.exact(value)
+    case False{}:
+      +x = float.scaled(U32.to_f32(float.significand(value)), float.power(value), float.down(value))
+      Bool.pick(F32, (value >= 2147483648 : U32), F32.neg(x), x)
+
+def float(+value: U32) -> F32:
+  float.finite(U32.is_eq(((value >> 23n) .&. 255 : U32), 255), value)
 
 # A list after its first element. (List.drop counts with a Nat, which the
 # JavaScript target makes a big integer: this is the loops' step.)
@@ -1218,11 +1265,8 @@ def int.nearest(+m: U32, +shift: U32) -> U32:
   +half = (1 << U32.to_nat((shift - 1 : U32)) : U32)
   (q + Bool.to_u32((rem > half : U32) || (U32.is_eq(rem, half) && U32.is_eq((q .&. 1 : U32), 1))) : U32)
 
-# A float's significand with its hidden bit, and the bits to cut for its
-# integer part (0 when the float is 2^23 or more, which the samples are not).
-def float.significand(+bits: U32) -> U32:
-  ((bits .&. 8388607) .|. Bool.pick(U32, U32.is_eq(((bits >> 23n) .&. 255 : U32), 0), 0, 8388608) : U32)
-
+# The bits to cut from a float's significand for its integer part (0 when
+# the float is 2^23 or more, which the samples are not).
 def float.cut(+bits: U32) -> U32:
   (150 - U32.min(((bits >> 23n) .&. 255 : U32), 150) : U32)
 
