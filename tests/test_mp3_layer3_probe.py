@@ -127,8 +127,9 @@ class RowsTests(unittest.TestCase):
     def test_a_file_is_its_lines_joined(self):
         text = lp.render([('a', 'x/a.mp3'), ('b', 'x/b.mp3')], False)
         self.assertEqual((text.count('J.Files.load_data('), text.count('"x/b.mp3"'), text.rstrip().endswith('IO.print("done")')), (2, 1, True))
-        rows = lp.parse('frames\n1152:417:1:2\n0:5:3:4\nframes\nunread\nframes\nrefused\ndone\n', [1, 2, 3, 4])
-        self.assertEqual(rows, ['frames 1152:417:1:2 0:5:3:4', 'frames', 'unread', 'frames refused'])
+        rows = lp.parse('frames\n1152:417:1:2:9\n0:5:3:4:8\nframes\nunread\nframes\nrefused\ndone\n', [1, 2, 3, 4])
+        self.assertEqual(rows, ['frames 1152:417:1:2:9 0:5:3:4:8', 'frames', 'unread', 'frames refused'])
+        self.assertIn('U32.show(fnv(pcm, 2166136261))', text)
         with self.assertRaises(ValueError):
             lp.parse('frames\n', [1])
         with self.assertRaises(ValueError):

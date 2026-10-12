@@ -552,7 +552,30 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      floats) as the last decoder state. For (d) the per-frame output to
      compare is the int16 PCM itself. Negation must turn the sign bit
      (`neg` in the module): `0 - x` loses a zero's sign and the hashes
-     are of bits.
+     are of bits. **(d)'s decoder is in**: `Mp3L3.decode` gives the
+     frame's 16-bit PCM (`synth.granule`), equal to dr_mp3's on every
+     frame of `country.mp3` and on the synthetic corpus. Left of the
+     plan: `drmp3_read_pcm_frames_f32` over `Mp3.Stream` (the delay and
+     padding trimmed, the s16 to f32 division), seeking
+     (`drmp3_seek_to_pcm_frame` without a seek table decodes from the
+     start; `drmp3_seek_to_start_of_stream` only clears the header, so
+     the next frame zeroes the decoder), then `MusicMp3` and the
+     `Wave`/`Sound` loaders, and Layers I and II (refused now).
+     **Do next, before those: floats as floats.** The module keeps
+     floats in lists as U32 bits and converts at each use with
+     `float(bits)` (`U32{word} = value; F32{word}`), which the
+     JavaScript target compiles to a 32-node bit list and two typed
+     arrays per call: about 50000 of them a frame, 185 ms a frame, 11
+     minutes for `country.mp3` (the C lanes are much faster). Lists of
+     `F32` (`+List<F32>`) for the values, the scales, the overlap and
+     the rows, with the tables converted once a frame and `F32.bits`
+     only where integers are needed (the sample conversion, the
+     probe's hashes), should bring it near the 12 ms a frame the
+     Huffman stage alone took. Then the gate can take the whole file
+     again (it has two 200-frame slices now), and music examples
+     become practical in the JavaScript lane. `List.drop(xs, 1n)` in a
+     loop is also slow there (a big-integer count): the module has
+     `tail`.
      Measured: scalefactors and Huffman take about 12 ms a frame in the
      JavaScript lane (list steps through the trampoline). `audio_stream_callback` itself reads
      `buffer[SAMPLE_RATE]`, one float past its array, for the last

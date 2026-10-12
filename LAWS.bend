@@ -2487,7 +2487,7 @@ law mp3_side_information_refused:
   {Mp3L3.side.state(Mp3.Side{True{}, 0, Nil{}, 136}, 3336, 511) == 0 : U32}
 
 law mp3_no_frame_in_no_bytes:
-  {Mp3L3.decode(Mp3L3.Decoder.zero(), Nil{}, 0) == Mp3L3.Decoded{Mp3L3.Decoder.zero(), 0, 0, 0, Nil{}} : Mp3L3.Decoded}
+  {Mp3L3.decode(Mp3L3.Decoder.zero(), Nil{}, 0) == Mp3L3.Decoded{Mp3L3.Decoder.zero(), 0, 0, 0, Nil{}, Nil{}} : Mp3L3.Decoded}
 
 law mp3_mixed_block_reordered_inside_the_granule:
   {Mp3L3.reorder.inside(4294676548, Mp3.Gr{0, 0, 0, 0, 2, 1, 0, 0, 0, 7, 255, 255, 0, 0, 0, 0, 0, 0, 0, 2, 8, 30}) == True{} : Bool}
@@ -2602,6 +2602,77 @@ law mp3_no_sign_change_in_even_subbands:
 
 law mp3_mono_frame_keeps_the_right_overlap:
   {Mp3L3.filter.right(True{}, Nil{}, [1, 2], 4294676692, Mp3.Gr{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 22, 0}) == Mp3L3.Out{Nil{}, [1, 2]} : Mp3L3.Out}
+
+# The synthesis filter (drmp3d_synth_granule). A time slot is the next
+# sample of each subband, which are eighteen samples each. The window's sums
+# become 16-bit samples by the processor's rounding (to nearest, a tie to
+# the even integer), computed from the float's significand and the bits to
+# cut from it. A row of the filter's buffer is fifteen groups of four
+# entries, two of which the next call writes; a mono frame keeps the right
+# channel's entries of the rows before it. A frame's samples are a channel
+# after a channel, and a granule's nine calls in order.
+law mp3_time_slot_takes_each_subband_next_sample:
+  {Mp3L3.slot.heads([[1, 2], [3, 4]], Nil{}, Nil{}) == Mp3L3.Slot{[1, 3], [[2], [4]]} : Mp3L3.Slot}
+
+law mp3_subbands_of_eighteen_samples:
+  {Mp3L3.row.first(Mp3L3.subbands(2n, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], Nil{})) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] : +List<U32>}
+
+law mp3_second_subband_begins_eighteen_later:
+  {Mp3L3.row(Mp3L3.subbands(2n, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], Nil{}), 1) == [18, 19] : +List<U32>}
+
+law mp3_sum_rounded_to_nearest:
+  {Mp3L3.int.nearest(14680064, 23) == 2 : U32}
+
+law mp3_one_and_a_half_rounded_to_two:
+  {Mp3L3.int.nearest(12582912, 23) == 2 : U32}
+
+law mp3_sum_rounded_down:
+  {Mp3L3.int.nearest(10485760, 23) == 1 : U32}
+
+law mp3_tie_rounded_to_even_down:
+  {Mp3L3.int.nearest(10485760, 22) == 2 : U32}
+
+law mp3_tie_rounded_to_even_up:
+  {Mp3L3.int.nearest(14680064, 22) == 4 : U32}
+
+law mp3_half_rounded_to_zero:
+  {Mp3L3.int.nearest(8388608, 24) == 0 : U32}
+
+law mp3_float_significand:
+  {Mp3L3.float.significand(1065353216) == 8388608 : U32}
+
+law mp3_float_integer_cut:
+  {Mp3L3.float.cut(1191181824) == 9 : U32}
+
+law mp3_negative_sample_bits:
+  {Mp3L3.int16(True{}, 1) == 65535 : U32}
+
+law mp3_lowest_sample_bits:
+  {Mp3L3.int16(True{}, 32768) == 32768 : U32}
+
+law mp3_row_groups_of_four:
+  {Mp3L3.row.groups(2n, [1, 2], [3, 4], [5, 6], [7, 8], Nil{}) == [8, 6, 4, 2, 7, 5, 3, 1] : +List<U32>}
+
+law mp3_row_completed_by_the_next_call:
+  {Mp3L3.row.completed(2n, [1, 2, 0, 0, 5, 6, 0, 0, 9], [7, 8], [3, 4], Nil{}) == [1, 2, 7, 3, 5, 6, 8, 4, 9] : +List<U32>}
+
+law mp3_mono_row_keeps_the_right_entries:
+  {Mp3L3.row.merged([1, 2, 3, 4], [9, 8, 7, 6], Nil{}) == [1, 8, 3, 6] : +List<U32>}
+
+law mp3_stereo_samples_left_then_right:
+  {Mp3L3.onto(False{}, 1, 2, [9]) == [1, 2, 9] : +List<U32>}
+
+law mp3_mono_samples_left_only:
+  {Mp3L3.onto(True{}, 1, 2, [9]) == [1, 9] : +List<U32>}
+
+law mp3_samples_built_backwards:
+  {Mp3L3.onto.back(False{}, 1, 2, [9]) == [2, 1, 9] : +List<U32>}
+
+law mp3_calls_joined_in_order:
+  {Mp3L3.blocks.joined([[3, 4], [1, 2]], Nil{}) == [1, 2, 3, 4] : +List<U32>}
+
+law mp3_history_of_the_newest_rows:
+  {Mp3L3.rows.newest(1n, [[1], [2]], Nil{}) == [[1]] : +List<+List<U32>>}
 
 # Frame: InitWindow sizes are 1..4096; a zero or oversized width has no frame
 # whatever the height.

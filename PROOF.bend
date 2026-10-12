@@ -1838,6 +1838,69 @@ def Laws.mp3_no_sign_change_in_even_subbands():
 def Laws.mp3_mono_frame_keeps_the_right_overlap():
   {==}
 
+def Laws.mp3_time_slot_takes_each_subband_next_sample():
+  {==}
+
+def Laws.mp3_subbands_of_eighteen_samples():
+  {==}
+
+def Laws.mp3_second_subband_begins_eighteen_later():
+  {==}
+
+def Laws.mp3_sum_rounded_to_nearest():
+  {==}
+
+def Laws.mp3_one_and_a_half_rounded_to_two():
+  {==}
+
+def Laws.mp3_sum_rounded_down():
+  {==}
+
+def Laws.mp3_tie_rounded_to_even_down():
+  {==}
+
+def Laws.mp3_tie_rounded_to_even_up():
+  {==}
+
+def Laws.mp3_half_rounded_to_zero():
+  {==}
+
+def Laws.mp3_float_significand():
+  {==}
+
+def Laws.mp3_float_integer_cut():
+  {==}
+
+def Laws.mp3_negative_sample_bits():
+  {==}
+
+def Laws.mp3_lowest_sample_bits():
+  {==}
+
+def Laws.mp3_row_groups_of_four():
+  {==}
+
+def Laws.mp3_row_completed_by_the_next_call():
+  {==}
+
+def Laws.mp3_mono_row_keeps_the_right_entries():
+  {==}
+
+def Laws.mp3_stereo_samples_left_then_right():
+  {==}
+
+def Laws.mp3_mono_samples_left_only():
+  {==}
+
+def Laws.mp3_samples_built_backwards():
+  {==}
+
+def Laws.mp3_calls_joined_in_order():
+  {==}
+
+def Laws.mp3_history_of_the_newest_rows():
+  {==}
+
 def Laws.audio_clock_periods_owed():
   {==}
 
