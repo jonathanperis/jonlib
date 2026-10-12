@@ -1652,6 +1652,105 @@ def Laws.mp3_read_clamped_to_the_file():
 def Laws.mp3_short_file_does_not_open():
   {==}
 
+def Laws.mp3_long_bands_of_44100():
+  {==}
+
+def Laws.mp3_short_bands_of_44100():
+  {==}
+
+def Laws.mp3_mixed_bands_begin_long():
+  {==}
+
+def Laws.mp3_codebooks_share_a_table():
+  {==}
+
+def Laws.mp3_codebook_without_values():
+  {==}
+
+def Laws.mp3_codebook_entries():
+  {==}
+
+def Laws.mp3_scalefactor_sizes_mpeg1():
+  {==}
+
+def Laws.mp3_scalefactor_sizes_mpeg2():
+  {==}
+
+def Laws.mp3_scalefactor_sizes_mpeg2_second_row():
+  {==}
+
+def Laws.mp3_scalefactor_sizes_intensity_halved():
+  {==}
+
+def Laws.mp3_scalefactors_read_in_groups():
+  {==}
+
+def Laws.mp3_scalefactors_kept_by_scfsi():
+  {==}
+
+def Laws.mp3_intensity_position_of_all_ones_mpeg2():
+  {==}
+
+def Laws.mp3_cache_filled_by_bytes():
+  {==}
+
+def Laws.mp3_cache_past_the_bytes_counts():
+  {==}
+
+def Laws.mp3_quad_signs():
+  {==}
+
+def Laws.mp3_quad_value_absent():
+  {==}
+
+def Laws.mp3_count1_quad():
+  {==}
+
+def Laws.mp3_granule_576_values():
+  {==}
+
+def Laws.mp3_values_read_inside_the_array():
+  {==}
+
+def Laws.mp3_values_read_past_the_array_refused():
+  {==}
+
+def Laws.mp3_top_bands_by_window():
+  {==}
+
+def Laws.mp3_intensity_position_default():
+  {==}
+
+def Laws.mp3_intensity_position_of_the_band_before():
+  {==}
+
+def Laws.mp3_intensity_positions_of_the_windows():
+  {==}
+
+def Laws.mp3_array_keeps_what_was_there():
+  {==}
+
+def Laws.mp3_reservoir_short_decodes_nothing():
+  {==}
+
+def Laws.mp3_reservoir_reached_decodes():
+  {==}
+
+def Laws.mp3_side_information_refused():
+  {==}
+
+def Laws.mp3_no_frame_in_no_bytes():
+  {==}
+
+def Laws.mp3_mixed_block_reordered_inside_the_granule():
+  {==}
+
+def Laws.mp3_mixed_block_at_8000_hz_refused():
+  {==}
+
+def Laws.mp3_short_block_at_8000_hz_inside():
+  {==}
+
 def Laws.audio_clock_periods_owed():
   {==}
 
