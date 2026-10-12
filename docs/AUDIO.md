@@ -334,10 +334,15 @@ synthesis: every frame's state and subband samples matched on the three
 lanes. With the synthesis it was decoded once more on the JavaScript
 target, by hand (2026-10-12): all 3584 frames' PCM equal dr_mp3's. That
 took eleven minutes, about 185 ms a frame, which is why the gate now has
-slices. Nearly all of that time is one thing: the module keeps floats in
-lists as their bits, and turning bits into a float is very slow on that
-target (the compiler goes through a list of 32 bits). Keeping floats as
-floats is the next change to the module; it does not change a result.
+slices. Most of that time was one thing: the module keeps floats in lists
+as their bits, and turning bits into a float through the type's
+constructor is very slow on that target (the compiler goes through a list
+of 32 bits). `Mp3L3.float` now makes a finite float by arithmetic instead:
+its significand as an integer times the power of two of its exponent, a
+factor for each bit of the power. Every step is exact (the partial
+products are multiples of 2^-149 below 2^128), so no result changes, and a
+frame takes about 95 ms there. Keeping floats as floats in the lists would
+save the rest of the conversions; that is a larger change to the module.
 
 Still to come: reading and seeking (`drmp3_read_pcm_frames_f32`,
 `drmp3_seek_to_pcm_frame`), Layers I and II, and the loaders that use
