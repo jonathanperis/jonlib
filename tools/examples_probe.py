@@ -292,6 +292,7 @@ EXAMPLES = {
     'audio_sound_multi': ('audio/audio_sound_multi.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_sound_positioning': ('audio/audio_sound_positioning.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_vr_simulator': ('core/core_vr_simulator.c', 'Ex.setup(M.LIBM{}, core, frame)'),
+    'shaders_game_of_life': ('shaders/shaders_game_of_life.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
     'core_custom_frame_control': ('core/core_custom_frame_control.c', 'Ex.setup(core, frame)'),
     'shapes_digital_clock': ('shapes/shapes_digital_clock.c', 'Ex.setup(seed, core, frame)'),
@@ -417,6 +418,7 @@ AUDIO = {'textures_sprite_button', 'textures_sprite_explosion', 'audio_sound_mul
 IO_SETUP.update(AUDIO)
 PERSPECTIVE.add('audio_sound_positioning')
 PERSPECTIVE.add('core_vr_simulator')
+IO_SETUP.add('shaders_game_of_life'); SEEDED.add('shaders_game_of_life')
 
 
 def scratch(probe, index, native=False):
@@ -1183,6 +1185,12 @@ def scripts():
         # SPACE twelve times: the ten sounds and around to the first two again (held, it plays once).
         script('audio_sound_multi', 'spaces', [quick(), *[frame for _ in range(12) for frame in (quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]))],
                                                quick([key(KEY_SPACE)]), slow(), quick(), quick([key(KEY_SPACE, False)])]),
+        # Two steps (each a 2048x2048 blit: Pause is pressed on the first frame and takes on the third), the Glider preset, Draw mode with
+        # a painted cell, and the wheel zooming in. Nine frames: each costs the JavaScript lane about a minute (22- and 18-frame scripts
+        # with the zoom buttons, Slower and a run every second frame passed too, 2026-10-12).
+        script('shaders_game_of_life', 'menu', [quick([mouse_at(750, 284), button(0)]), quick([button(0, False)]), quick([mouse_at(750, 78), button(0)]),
+                                                quick([button(0, False)]), slow(), quick([mouse_at(750, 302), button(0)]), quick([button(0, False)]),
+                                                quick([mouse_at(300, 200), button(0)]), quick([(MOUSE_WHEEL, 0, 1, 0), button(0, False)])], seed=7),
         # The first-person camera looks around the cube and walks (W, then A) while the scene goes through the 2160x1200 render texture.
         script('core_vr_simulator', 'walk', [quick(), quick([mouse_at(430, 240)]), slow([key(87)]), quick([key(87, False), key(65), mouse_at(380, 215)]), quick([key(65, False)])]),
         # The sphere circles at the clock's angle while the free camera turns, zooms, pans and moves (W, then D).
