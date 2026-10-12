@@ -357,6 +357,17 @@ under raudio.c's reading and mixing of a static buffer (`AudioDevice.*` and
 miniaudio is public domain or MIT No Attribution; Jonlib uses the MIT-0
 alternative, retained in [LICENSES/miniaudio.txt](LICENSES/miniaudio.txt).
 
+## msf_gif
+
+`src/msf_gif.bend` is an altered Bend adaptation of `msf_gif_begin`,
+`msf_gif_frame` and `msf_gif_end` (frame cooking with its ordered dither,
+the local palette and the LZW writer) from msf_gif.h 2.2 by Miles Fogle, as
+pinned raylib ships it beside its examples (`examples/core/msf_gif.h`). It
+follows the header's scalar loop with the library's defaults and refuses
+the frames the C code writes past its buffer. msf_gif is MIT or public
+domain; Jonlib uses the MIT alternative, retained with its notice in
+[LICENSES/msf_gif.txt](LICENSES/msf_gif.txt).
+
 ## QOA
 
 `src/qoa.bend` is an altered Bend adaptation of `qoa_decode` and `qoa_encode`

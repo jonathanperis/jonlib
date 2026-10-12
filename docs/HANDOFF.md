@@ -303,7 +303,8 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      modification time as a setup argument (`GetFileModTime` stays blocked
      on Base, like the directory functions `core_directory_files` needs).
      `core_screen_recording`
-     needs a GIF encoder (msf_gif) besides `GetApplicationDirectory`, and
+     needs `GetApplicationDirectory` (its GIF encoder, msf_gif, is in:
+     `src/msf_gif.bend`, gate `msf-gif`, docs/GIF-ENCODER.md), and
      `shaders_game_of_life` draws 2048x2048 worlds each frame;
    - how the four "ready" examples left are blocked (surveyed 2026-10-11):
      `shaders_basic_pbr` is ported: its PNGs of up to 1.68 MiB needed the
@@ -625,6 +626,24 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `country.mp3` with `LoadWave`: it waits for the MP3 decoder;
      (3) music (`LoadMusicStream`) and its decoders:
      dr_mp3, stb_vorbis, jar_xm, jar_mod, dr_flac.
+   - **`core_screen_recording` (next).** Its encoder is in
+     (`src/msf_gif.bend`: `begin`, `frame`, `finish`; gate `msf-gif`;
+     docs/GIF-ENCODER.md). The port left: Ctrl+R starts and ends a
+     recording; every sixth frame `LoadImageFromScreen` goes to
+     `msf_gif_frame` with a delay of 0 and a depth of 16; the end saves
+     `screenrecording.gif` with `Files.save_data`. Three things differ
+     from the reference build and have to be settled in the probe's
+     shim (`tools/reference/example_driver.h`), as `GetFileModTime` was:
+     the memory platform's `LoadImageFromScreen` gives the rows
+     bottom-up with red and blue swapped (docs/FRAME.md), where the
+     desktop one, which `Frame.load_image_from_screen` follows, gives
+     them top-down; `GetApplicationDirectory` is not in Base (the
+     example takes the directory as a setup argument, and the hook
+     answers the script's directory); and the file is compared as the
+     other examples' files are (`SCRATCH` in `tools/examples_probe.py`).
+     The example calls `LoadImageFromScreen` before `BeginDrawing`: it
+     records the frame drawn before (an effects program's update takes
+     the frame, as `core_storage_values` does).
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`

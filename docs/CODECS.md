@@ -21,6 +21,7 @@ selection and the shared bounded file boundary are documented in
 | KTX, PKM, PVR, ASTC | Configuration-gated single-level loaders as `Image.Stored` | [IMAGE-FILES.md](IMAGE-FILES.md#compressed-and-multi-level-images) | `gputex` |
 | GIF (first frame) | Rectangles, interlacing, palettes, transparency, bounded LZW; R8G8B8A8 | [GIF.md](GIF.md) | `gif` |
 | GIF animation | Owned frames, retain/restore disposal, budgets; memory and files | [GIF-ANIMATION.md](GIF-ANIMATION.md) | `gif-animation`, `animation-file` |
+| GIF recording (msf_gif) | Encoder: dither, lowered depths, local palettes, LZW, frame differences | [GIF-ENCODER.md](GIF-ENCODER.md) | `msf-gif` |
 | HDR | Raw/RLE Radiance RGBE to exact F32 (format 9); files | [HDR.md](HDR.md) | `hdr`, `hdr-file` |
 | JPEG | stb baseline/progressive decoding as raylib with `SUPPORT_FILEFORMAT_JPG`; GRAYSCALE or R8G8B8; files | [JPEG.md](JPEG.md) | `jpeg` |
 | Raw headerless | `LoadImageRaw`/`.raw` export for formats 1..13 (checked R32/R16) | [RAW-FILES.md](RAW-FILES.md) | `raw-file`, `r32-raw-file`, `float-rgb-raw-file` |

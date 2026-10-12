@@ -25,6 +25,7 @@ import ./src/lgpl/tanf.bend as GlibcTanf
 import ./src/lgpl/sin.bend as GlibcSin
 import ./src/sincosf.bend as Sincosf
 import ./src/power.bend as Power
+import ./src/msf_gif.bend as MsfGif
 import ./src/libc_rand.bend as CRand
 import ./src/hypot.bend as Hypot
 import ./src/strtod.bend as Strtod
@@ -3529,3 +3530,122 @@ law window_monitor_count_one:
 law window_no_dropped_files:
   for core: J.Core
   {J.Core.is_file_dropped(core) == False{} : Bool}
+
+# msf_gif (src/msf_gif.bend): the GIF encoder of raylib's screen recording
+# example. A depth gives each channel its bits (5, 6 and 5 at 16), a pixel
+# is cooked with the 4x4 ordered dither into those bits whatever its alpha,
+# a pass lists the colors it marked in ascending order, a channel's bits are
+# spread over a byte for the palette, codes go to the stream low bits first,
+# the stream is cut in sub-blocks of 255 bytes, and a frame the C code
+# writes past its buffer is not answered. A frame equal to the one before it
+# is written as the transparent index (the second 1x1 frame below differs
+# from the first in its codes only: 4, 0, 5 instead of 4, 1, 5).
+
+law msf_gif_bits_of_depth_16:
+  {((MsfGif.red.bits(16) * 10000) + (MsfGif.green.bits(16) * 100) + MsfGif.blue.bits(16) : U32) == 50605 : U32}
+
+law msf_gif_bits_of_depth_1:
+  {((MsfGif.red.bits(1) * 10000) + (MsfGif.green.bits(1) * 100) + MsfGif.blue.bits(1) : U32) == 100 : U32}
+
+law msf_gif_bits_add_up_to_the_depth:
+  {(MsfGif.red.bits(11) + MsfGif.green.bits(11) + MsfGif.blue.bits(11) : U32) == 11 : U32}
+
+law msf_gif_multiplier_five_bits:
+  {MsfGif.multiplier(5) == 249 : U32}
+
+law msf_gif_multiplier_no_bits:
+  {MsfGif.multiplier(0) == 0 : U32}
+
+law msf_gif_dither_second_column:
+  {MsfGif.dither(1, 0) == 8 : U32}
+
+law msf_gif_dither_last_corner:
+  {MsfGif.dither(3, 3) == 5 : U32}
+
+law msf_gif_dither_repeats_every_four:
+  {MsfGif.dither(4, 6) == 3 : U32}
+
+law msf_gif_white_cooks_to_all_bits:
+  {MsfGif.cook.pixel(4294967295, 15, MsfGif.cook.scales(16)) == 65535 : U32}
+
+law msf_gif_black_cooks_to_zero:
+  {MsfGif.cook.pixel(255, 15, MsfGif.cook.scales(16)) == 0 : U32}
+
+law msf_gif_alpha_is_not_cooked:
+  {MsfGif.cook.pixel(3861460736, 9, MsfGif.cook.scales(16)) == MsfGif.cook.pixel(3861460991, 9, MsfGif.cook.scales(16)) : U32}
+
+law msf_gif_pass_marks_colors_ascending:
+  {MsfGif.cook.pass([4294967295, 255], 2, 3) == MsfGif.Pass{[7, 0], 2, [0, 7]} : MsfGif.Pass}
+
+law msf_gif_channel_five_bits:
+  {MsfGif.channel(31, 5) == 255 : U32}
+
+law msf_gif_channel_one_bit:
+  {MsfGif.channel(1, 1) == 240 : U32}
+
+law msf_gif_channel_no_bits:
+  {MsfGif.channel(0, 0) == 0 : U32}
+
+law msf_gif_put_keeps_bits_below_a_byte:
+  {MsfGif.put(5, 8, MsfGif.Bits{0, 1, Nil{}, 0}) == MsfGif.Bits{5, 8, Nil{}, 0} : MsfGif.Bits}
+
+law msf_gif_put_fills_a_byte:
+  {MsfGif.put(4095, 4096, MsfGif.Bits{1, 2, Nil{}, 0}) == MsfGif.Bits{31, 32, [255], 1} : MsfGif.Bits}
+
+law msf_gif_put_fills_two_bytes:
+  {MsfGif.put(4095, 4096, MsfGif.Bits{127, 128, [9], 1}) == MsfGif.Bits{7, 8, [255, 255, 9], 3} : MsfGif.Bits}
+
+law msf_gif_kid_found:
+  {MsfGif.kid(MsfGif.kid.added(MsfGif.kid.added(MsfGif.Kids{Nil{}}, 7, 300), 2, 301), 7) == 300 : U32}
+
+law msf_gif_kid_missing:
+  {MsfGif.kid(MsfGif.kid.added(MsfGif.Kids{Nil{}}, 7, 300), 6) == 0 : U32}
+
+law msf_gif_minimum_code_size_two:
+  {(MsfGif.lzw.minimum(1) + MsfGif.lzw.minimum(3) : U32) == 4 : U32}
+
+law msf_gif_minimum_code_size_grows:
+  {((MsfGif.lzw.minimum(4) * 100) + (MsfGif.lzw.minimum(127) * 10) + MsfGif.lzw.minimum(128) : U32) == 378 : U32}
+
+law msf_gif_chunk_writes_size_first:
+  {MsfGif.chunk([1, 2, 3], 0, 3, Nil{}) == [3, 2, 1, 3] : +List<U32>}
+
+law msf_gif_buffer_holds_one_more_block:
+  {MsfGif.blocks.flushed(256, Nil{}, MsfGif.Bits{0, 1, Nil{}, 255}) == MsfGif.Written{True{}, [0]} : MsfGif.Written}
+
+law msf_gif_buffer_lacks_a_byte:
+  {MsfGif.blocks.flushed(255, Nil{}, MsfGif.Bits{0, 1, Nil{}, 255}) == MsfGif.Written{False{}, [0]} : MsfGif.Written}
+
+law msf_gif_depth_asked_zero:
+  {MsfGif.asked.depth(0) == 1 : U32}
+
+law msf_gif_depth_asked_negative:
+  {MsfGif.asked.depth(4294967293) == 1 : U32}
+
+law msf_gif_depth_asked_above:
+  {MsfGif.asked.depth(20) == 16 : U32}
+
+law msf_gif_begin_writes_the_screen:
+  {MsfGif.begin(800, 450) == Some{MsfGif.Gif{800, 450, Nil{}, 0, 0, [0, 0, 0, 1, 3, 48, 46, 50, 69, 80, 65, 67, 83, 84, 69, 78, 11, 255, 33, 0, 0, 112, 1, 194, 3, 32, 97, 57, 56, 70, 73, 71]}} : Maybe<MsfGif.Gif>}
+
+law msf_gif_begin_without_width_none:
+  {MsfGif.begin(0, 4) == None{} : Maybe<MsfGif.Gif>}
+
+law msf_gif_begin_above_the_limit_none:
+  {MsfGif.begin(4, 4097) == None{} : Maybe<MsfGif.Gif>}
+
+# The frames below are asked a depth of 3 (one bit a channel, 8 colors).
+law msf_gif_frame_of_one_white_pixel:
+  {MsfGif.frame(MsfGif.Gif{1, 1, Nil{}, 0, 0, Nil{}}, [4294967295], 5, 3) == Some{MsfGif.Gif{1, 1, [7], 3, 1, [0, 1, 76, 2, 2, 0, 0, 0, 0, 0, 0, 240, 240, 240, 0, 0, 0, 129, 0, 1, 0, 1, 0, 0, 0, 0, 44, 0, 0, 0, 5, 5, 4, 249, 33]}} : Maybe<MsfGif.Gif>}
+
+law msf_gif_frame_equal_to_the_one_before_is_transparent:
+  {MsfGif.frame(MsfGif.Gif{1, 1, [7], 3, 1, Nil{}}, [4294967295], 0, 3) == Some{MsfGif.Gif{1, 1, [7], 3, 1, [0, 1, 68, 2, 2, 0, 0, 0, 0, 0, 0, 240, 240, 240, 0, 0, 0, 129, 0, 1, 0, 1, 0, 0, 0, 0, 44, 0, 0, 0, 0, 5, 4, 249, 33]}} : Maybe<MsfGif.Gif>}
+
+law msf_gif_frame_with_a_pixel_missing_none:
+  {MsfGif.frame(MsfGif.Gif{2, 1, Nil{}, 0, 0, Nil{}}, [4294967295], 0, 16) == None{} : Maybe<MsfGif.Gif>}
+
+law msf_gif_frame_with_a_pixel_more_none:
+  {MsfGif.frame(MsfGif.Gif{1, 1, Nil{}, 0, 0, Nil{}}, [4294967295, 255], 0, 16) == None{} : Maybe<MsfGif.Gif>}
+
+law msf_gif_finish_adds_the_trailer:
+  {MsfGif.finish(MsfGif.Gif{1, 1, Nil{}, 0, 0, [2, 1]}) == [1, 2, 59] : +List<U32>}
