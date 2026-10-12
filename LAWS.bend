@@ -2249,6 +2249,31 @@ law music_buffered_looping:
 law music_buffered_one_half:
   {J.Music.played.buffered(True{}, False{}, 480, 700, False{}) == 480 : U32}
 
+# QOA music: the header counts the frames; a seek goes to the start of the
+# QOA frame (5120 samples) the position is in, at most the last frame's, and
+# that is what the stream is told it was given (a WAV music: the position).
+law music_qoa_declared_frames:
+  {J.Music.qoa.declared([113, 111, 97, 102, 0, 0, 172, 68, 1]) == 44100 : U32}
+
+law music_qoa_seek_to_its_frame:
+  {J.Music.qoa.sought(11025, 44100) == 10240 : U32}
+
+law music_qoa_seek_last_frame:
+  {J.Music.qoa.sought(1102500, 44100) == 40960 : U32}
+
+law music_qoa_seek_gives_its_frame:
+  {J.Music.context.given(J.MusicQoa{Nil{}, 0}, 11025, 44100) == 10240 : U32}
+
+law music_wav_seek_gives_the_position:
+  {J.Music.context.given(J.MusicWav{Nil{}, 0}, 11025, 700) == 11025 : U32}
+
+law music_qoa_stop_rewinds:
+  {J.Music.context.rewound(J.MusicQoa{[1, 2], 1}) == J.MusicQoa{[1, 2], 0} : J.Music.Context}
+
+# A QOA file's samples are gathered frame by frame, the last first.
+law qoa_frame_samples_gathered:
+  {Qoa.take.onto(2n, [7, 8, 9], [1]) == [8, 7, 1] : +List<U32>}
+
 law music_float_bits_as_they_are:
   {Wav.wide.sample(12, [0, 0, 128, 63]) == 1065353216 : U32}
 

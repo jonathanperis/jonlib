@@ -34,6 +34,7 @@ def catalog():
         out['file', name] = (3, fake(3))
     for name in sp.FILE_ERRORS:
         out['file', name] = (0, [])
+    out['raw', 'target'] = (12000, 22050, 16, 2, [(i * 911) & 65535 for i in range(24000)])
     return out
 
 
@@ -388,6 +389,26 @@ class MusicTests(unittest.TestCase):
         self.assertTrue(model.undefined)
 
 
+class QoaMusicTests(unittest.TestCase):
+    def test_a_qoa_music_is_floats_and_seeks_to_qoa_frames(self):
+        model, tags = run(('init',), ('default', 2000), ('music', 0, 'target'), ('play', 0), ('musicupdate', 0))
+        words = catalog()['raw', 'target'][4]
+        self.assertEqual((tags[2], model.sounds[0], model.musics[0]['frames'], model.musics[0]['at']), ('-', (1, 0, 22050, 32, 2), 12000, 4000))
+        self.assertEqual(model.blocks[1][:3], [sp.bits(0.0), sp.bits(911 / 32768.0), sp.bits(1822 / 32768.0)])
+        self.assertEqual(model.blocks[1][36], sp.bits((36 * 911 - 65536) / 32768.0))                     # a negative 16-bit sample
+        model.step(('seek', 0, sp.bits(0.5)))                 # frame 11025: the QOA frame from 10240
+        self.assertEqual((model.musics[0]['at'], model.buffers[0]['stream']['done']), (10240, 10240))
+        model.step(('musicupdate', 0))                        # 4000 frames from 10240: 1760 to the end, then 2240 from the start
+        self.assertEqual((model.musics[0]['at'], model.blocks[1][:2], model.blocks[1][2 * 1760:2 * 1760 + 2]), (2240, [sp.bits(fl16(words[20480])), sp.bits(fl16(words[20481]))], model.blocks[1][2 * 1760:2 * 1760 + 2]))
+        self.assertEqual(model.blocks[1][2 * 1760], sp.bits(0.0))
+        model.step(('seek', 0, sp.bits(50.0)))                # past the end: frame 12000/5120 = 2
+        self.assertEqual((model.musics[0]['at'], model.undefined), (10240, False))
+
+
+def fl16(word):
+    return (word - 65536 if word >= 32768 else word) / 32768.0
+
+
 class SoundCasesTests(unittest.TestCase):
     def test_every_case_is_named_for_whether_raylib_runs_it(self):
         items = sp.cases()
@@ -395,7 +416,7 @@ class SoundCasesTests(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
         rows = [sp.expected(item, catalog()) for item in items]
         self.assertEqual([item['id'] for item, row in zip(items, rows) if item['id'].startswith('refused-') == row[2]], [])
-        self.assertEqual((len(items), sum(row[2] for row in rows), sum(len(item['steps']) for item in items)), (122, 81, 1223))
+        self.assertEqual((len(items), sum(row[2] for row in rows), sum(len(item['steps']) for item in items)), (124, 83, 1260))
         for tagged, plain, _ in rows:
             self.assertEqual(';'.join(part.split(' ', 1)[1] for part in tagged.split(';')), plain)
         used = {step[2] for item in items for step in item['steps'] if step[0] == 'load'}
@@ -416,8 +437,8 @@ class SoundCasesTests(unittest.TestCase):
                          ['OpClose{}', 'OpMaster{7}', 'OpLoad{1, 1, 44100, 16, 1, [12345]}', 'OpFile{2, "/work/tiny.wav"}', 'OpAlias{1, 0}', 'OpUnalias{3}', 'OpAct{2, 3}',
                           'OpTune{0, 5, 9}', 'OpUpdate{1, 1, [4, 5]}'])
         keys, steps = sp.catalog_steps(table, order)
-        self.assertEqual((len(keys), len(steps), keys[-2:], steps[:4]),
-                         (20, 61, [('file', 'boom'), ('file', 'tiny')], [('init',), ('load', 0, 'mono16'), ('dump', 0), ('unload', 0)]))
+        self.assertEqual((len(keys), len(steps), keys[-2:], steps[:4], steps[-1]),          # the last step: the reference's LoadWave of the QOA music
+                         (20, 62, [('file', 'boom'), ('file', 'tiny')], [('init',), ('load', 0, 'mono16'), ('dump', 0), ('unload', 0)], ('raw', 'target')))
 
     def test_the_small_wav_file(self):
         data = sp.tiny_wav()

@@ -57,6 +57,8 @@ FLAGS = ['-ffp-contract=off', '-DMA_ENABLE_ONLY_SPECIFIC_BACKENDS', '-DMA_ENABLE
 FILES = {'boom': 'examples/textures/resources/boom.wav', 'buttonfx': 'examples/textures/resources/buttonfx.wav',
          'sound': 'examples/audio/resources/sound.wav', 'coin': 'examples/audio/resources/coin.wav'}
 FILE_ERRORS = {'missing': 'file', 'text': 'header', 'other': 'unsupported'}
+# Files the reference decodes for the model (LoadWave): the QOA music of raylib's examples.
+RAW_FILES = {'target': 'examples/audio/resources/target.qoa'}
 
 
 def bits(x):
@@ -520,6 +522,14 @@ def cases():
         ('musicupdate', 1), ('mix', 480), ('musicupdate', 0), ('musicstop', 1), ('close',))
     add('music-processed', ('init',), ('default', 480), ('music', 0, 'mi32'), ('attach', 0, 1), ('play', 0), ('musicupdate', 0), ('periods', 2), ('musicupdate', 0),
         ('periods', 1), ('close',))
+    # QOA music: floats of sample/32768.0; a seek goes to the QOA frame (5120 samples) the position is in, at most the
+    # last one's start; a read past the file's end goes on from its first frame.
+    add('music-qoa', ('init',), ('default', 2000), ('music', 0, 'target'), ('play', 0), ('musicupdate', 0), ('mix', 480), ('musicupdate', 0), ('seek', 0, bits(0.5)),
+        ('musicupdate', 0), ('mix', 100), ('seek', 0, bits(1.99)), ('musicupdate', 0), ('mix', 480), ('mix', 480), ('mix', 480), ('mix', 480), ('mix', 480),
+        ('musicupdate', 0), ('seek', 0, bits(50.0)), ('musicupdate', 0), ('mix', 480), ('musicstop', 0), ('looping', 0, 0), ('play', 0), ('musicupdate', 0), ('mix', 50),
+        ('close',))
+    add('music-qoa-whole-halves', ('init',), ('music', 0, 'target'), ('play', 0), ('musicupdate', 0), ('mix', 480), ('musicupdate', 0), ('seek', 0, bits(1.5)),
+        ('musicupdate', 0), ('mix', 480), ('close',))
     add('refused-music-8-bit', ('init',), ('music', 0, 'm8'))
     add('refused-music-seek-negative', ('init',), ('default', 480), ('music', 0, 'm16'), ('seek', 0, bits(-1.0)))
     add('refused-music-seek-no-buffer', ('music', 0, 'm16'), ('seek', 0, bits(0.5)))
@@ -682,6 +692,11 @@ class Model:
     def music(self, slot, name):
         """LoadMusicStream: a stream of the file's format, looping; no music for a file raylib does not open."""
         self.musics[slot], self.sounds[slot] = None, ZERO
+        if name in RAW_FILES:               # QOA: a float stream of sample/32768.0, and seeks to QOA frames of 5120 samples
+            frames, rate, _, channels, words = self.catalog['raw', name]
+            self.stream(slot, rate, 32, channels)
+            self.musics[slot] = dict(frames=frames, looping=True, at=0, samples=[bits((w - 65536 if w >= 32768 else w) / 32768.0) for w in words], rate=rate, channels=channels, qoa=True)
+            return '-'
         if name not in self.music_files:
             return FILE_ERRORS[name]
         _, rate, size, channels, frames, samples = self.music_files[name]
@@ -689,7 +704,7 @@ class Model:
             self.undefined = True          # raylib streams what its shared buffer holds
             return 'unsupported'
         self.stream(slot, rate, size, channels)
-        self.musics[slot] = dict(frames=frames, looping=True, at=0, samples=samples, rate=rate, channels=channels)
+        self.musics[slot] = dict(frames=frames, looping=True, at=0, samples=samples, rate=rate, channels=channels, qoa=False)
         return '-'
 
     def music_stop(self, slot):
@@ -735,6 +750,10 @@ class Model:
         frame = f32(fl(word) * float(m['rate']))
         if not -1.0 < frame < 4294967296.0:
             self.undefined = True
+            return
+        if m['qoa']:                        # qoaplay_seek_frame, and its sample_position is the frames given
+            m['at'] = min(int(frame) // 5120, m['frames'] // 5120) * 5120
+            found['stream'].update(first=True, second=True, done=m['at'])
             return
         m['at'] = min(int(frame), m['frames']) if m['frames'] else m['at']
         found['stream'].update(first=True, second=True, done=int(frame))
@@ -1128,8 +1147,9 @@ static void state(int first)
         Music m = musics[s];
         int live = (slot_id[s] > 0) && !gone[slot_id[s] - 1];
         if (m.ctxData == NULL) { printf(" U-"); continue; }
-        if (m.ctxType != MUSIC_AUDIO_WAV) exit(10);
-        printf(" U%d,%u,%d,%u,%u,", (int)IsMusicValid(m), m.frameCount, (int)m.looping, (unsigned)((drwav *)m.ctxData)->readCursorInPCMFrames, word(GetMusicTimeLength(m)));
+        if ((m.ctxType != MUSIC_AUDIO_WAV) && (m.ctxType != MUSIC_AUDIO_QOA)) exit(10);
+        printf(" U%d,%u,%d,%u,%u,", (int)IsMusicValid(m), m.frameCount, (int)m.looping,
+               (m.ctxType == MUSIC_AUDIO_WAV)? (unsigned)((drwav *)m.ctxData)->readCursorInPCMFrames : ((qoaplay_desc *)m.ctxData)->sample_position, word(GetMusicTimeLength(m)));
         if ((m.stream.buffer == NULL) || (AUDIO.System.isReady && live)) printf("%u", word(GetMusicTimePlayed(m)));
         else printf("-");
     }
@@ -1271,6 +1291,15 @@ int main(void)
                     UnloadMusicStream(musics[a]);
                     memset(&musics[a], 0, sizeof(Music));
                     break;
+                case 28:
+                {
+                    Wave wave = LoadWave(files[a]);
+                    if (wave.sampleSize != 16) return 11;
+                    printf("W %u %u %u %u", wave.frameCount, wave.sampleRate, wave.sampleSize, wave.channels);
+                    for (unsigned j = 0; j < wave.frameCount*wave.channels; j++) printf(" %u", (unsigned)((unsigned short *)wave.data)[j]);
+                    printf("\n");
+                    UnloadWave(wave);
+                } break;
                 case 18: AttachAudioStreamProcessor(slots[a].stream, processes[b]); break;
                 case 19: DetachAudioStreamProcessor(slots[a].stream, processes[b]); break;
                 case 20: AttachAudioMixedProcessor(processes[a]); break;
@@ -1449,6 +1478,7 @@ def music.at(context: J.Music.Context) -> String:
   match context:
     case J.MusicNone{}: "-"
     case J.MusicWav{_, at}: U32.show(at)
+    case J.MusicQoa{_, at}: U32.show(at)
 
 def played.text(played: Maybe<F32>) -> String:
   match played:
@@ -1459,8 +1489,8 @@ def music.text(+audio: J.AudioDevice, +music: J.Music) -> String:
   J.Music{_, +frames, +looping, _, +context} = music
   match context:
     case J.MusicNone{}: " U-"
-    case J.MusicWav{_, +at}:
-      " U" ++ flag(J.Music.is_valid(music)) ++ "," ++ U32.show(frames) ++ "," ++ flag(looping) ++ "," ++ U32.show(at) ++ "," ++ U32.show(F32.bits(J.Music.time_length(music))) ++ "," ++ played.text(J.Music.time_played(audio, music))
+    case +loaded:
+      " U" ++ flag(J.Music.is_valid(music)) ++ "," ++ U32.show(frames) ++ "," ++ flag(looping) ++ "," ++ music.at(loaded) ++ "," ++ U32.show(F32.bits(J.Music.time_length(music))) ++ "," ++ played.text(J.Music.time_played(audio, music))
 
 def musics.text(musics: +List<J.Music>, +audio: J.AudioDevice) -> String:
   match musics:
@@ -1903,6 +1933,8 @@ def native_step(step, table, order):
         return 20 + (kind == 'detachmixed'), step[1], 0, 0, []
     if kind == 'music':
         return 22, step[1], order.index(step[2]), 0, []
+    if kind == 'raw':
+        return 28, order.index(step[1]), 0, 0, []
     if kind in ('musicupdate', 'musicstop', 'musicunload'):
         return {'musicupdate': 23, 'musicstop': 24, 'musicunload': 27}[kind], step[1], 0, 0, []
     if kind in ('seek', 'looping'):
@@ -1936,7 +1968,7 @@ def catalog_steps(table, order):
     for name in order:
         keys.append(('file', name))
         steps += [('file', 0, name), ('dump', 0), ('unload', 0)]
-    return keys, steps
+    return keys, steps + [('raw', name) for name in RAW_FILES]
 
 
 def render_for(table, paths):
@@ -1962,6 +1994,7 @@ def main():
         (work / name).write_bytes(data)
     paths.update(tiny=work / 'tiny.wav', text=work / 'text.wav', other=work / 'other.xyz', missing=work / 'missing.wav')
     paths.update({name: work / f'{name}.wav' for name in music_files()})
+    paths.update({name: raylib / relative for name, relative in RAW_FILES.items()})
     order = list(paths)
     table, items = waves(), cases()
     keys, steps = catalog_steps(table, order)
@@ -1972,13 +2005,19 @@ def main():
         source = NATIVE.replace('PATH', str(path)).replace('FILES', ', '.join(json.dumps(str(paths[n])) for n in order))
         return probe.native(source, name, extra_flags=FLAGS).splitlines()
 
-    dumps = [line.split()[1:] for line in reference([(True, steps)], 'catalog') if line[:2] == 'D ']
-    if len(dumps) != len(keys):
-        raise ProbeFailure(f'sound: the reference converted {len(dumps)} of {len(keys)} waves')
+    cataloged = reference([(True, steps)], 'catalog')
+    dumps = [line.split()[1:] for line in cataloged if line[:2] == 'D ']
+    raws = [[int(w) for w in line.split()[1:]] for line in cataloged if line[:2] == 'W ']
+    if len(dumps) != len(keys) or len(raws) != len(RAW_FILES):
+        raise ProbeFailure(f'sound: the reference converted {len(dumps)} of {len(keys)} waves and decoded {len(raws)} of {len(RAW_FILES)} files')
     catalog = {('wave', name): wave[5] for name, wave in table.items() if wave[5] is not None}
     for key, (frames, *words) in zip(keys, dumps):
         catalog[key] = (int(frames), [int(w) for w in words])
     catalog['wave', 'zero'] = None
+    for name, (frames, rate, size, channels, *words) in zip(RAW_FILES, raws):
+        catalog['raw', name] = (frames, rate, size, channels, words)
+    if catalog['raw', 'target'][:4] != (44100, 22050, 16, 2):
+        raise ProbeFailure(f'sound: the reference decoded target.qoa as {catalog["raw", "target"][:4]}')
     sizes = {name: catalog['file', name][0] for name in FILES}
     if sizes != dict(boom=29647, buttonfx=48000, sound=26522, coin=39334) or catalog['file', 'tiny'][0] != 44:
         raise ProbeFailure(f'sound: the reference loaded the files as {sizes}')

@@ -6172,10 +6172,11 @@
   "LoadMusicStream": {
     "jonlib": "Music.load",
     "status": "profile-covered",
-    "scope": "A WAV file's music: a stream of the file's rate and channels (16-bit samples for 16- and 24-bit files, floats for 32-bit ones), the frame count and looping on; the stream has no buffer on an unready device and the music is still loaded; fields, stream and decoder position compared with raylib.",
+    "scope": "A WAV or QOA file's music: a stream of the file's rate and channels (16-bit samples for 16- and 24-bit WAV files, floats for 32-bit ones and for QOA), the frame count and looping on; the stream has no buffer on an unready device and the music is still loaded; fields, stream and decoder position compared with raylib.",
     "gaps": [
-      "WAV files only: OGG, MP3, QOA, FLAC, XM and MOD music are not ported",
-      "Fail for sample sizes other than 16, 24 and 32 bits (raylib streams what its shared buffer holds) and for what Wave.decode refuses",
+      "WAV and QOA files only: OGG, MP3, FLAC, XM and MOD music are not ported",
+      "Fail for WAV sample sizes other than 16, 24 and 32 bits (raylib streams what its shared buffer holds) and for what Wave.decode refuses",
+      "Fail for a QOA file that does not hold every frame its header counts (qoaplay decodes a frame at a time)",
       "A typed error instead of a zero Music for a file that is not loaded"
     ],
     "api_id": "raylib:function:LoadMusicStream",
@@ -6184,10 +6185,10 @@
   "LoadMusicStreamFromMemory": {
     "jonlib": "Music.load_from_memory",
     "status": "profile-covered",
-    "scope": "As Music.load, from the file's bytes and the \".wav\" token.",
+    "scope": "As Music.load, from the file's bytes and the \".wav\" or \".qoa\" token.",
     "gaps": [
-      "WAV files only: OGG, MP3, QOA, FLAC, XM and MOD music are not ported",
-      "\".WAV\" is taken too (raylib compares the token with \".wav\" only)",
+      "WAV and QOA files only: OGG, MP3, FLAC, XM and MOD music are not ported",
+      "\".WAV\" and \".QOA\" are taken too (raylib compares the token in lower case only)",
       "Fail for sample sizes other than 16, 24 and 32 bits and for what Wave.decode refuses"
     ],
     "api_id": "raylib:function:LoadMusicStreamFromMemory",
@@ -6240,7 +6241,7 @@
     "scope": "Each processed half of a playing music's stream takes the decoder's next frames, the first half then the second: a whole half while the music loops (the file again from its first frame) or has as many left, else what is left; with none left and both halves processed the music stops, its decoder at the first frame; halves, counts and decoder position compared with raylib.",
     "gaps": [
       "The decoder's state is in the Music value, which the function gives back: no shared ctxData pointer",
-      "WAV files only: OGG, MP3, QOA, FLAC, XM and MOD music are not ported",
+      "WAV and QOA files only: OGG, MP3, FLAC, XM and MOD music are not ported",
       "Nothing for a music without frames (raylib reads it for ever when it loops)",
       "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
@@ -6283,7 +6284,7 @@
   "SeekMusicStream": {
     "jonlib": "Music.seek",
     "status": "profile-covered",
-    "scope": "The decoder goes to frame (unsigned int)(position*sampleRate), at most the file's last; the stream's framesProcessed is that frame, not clamped, and both halves are processed; compared with raylib.",
+    "scope": "The decoder goes to frame (unsigned int)(position*sampleRate), at most the file's last; the stream's framesProcessed is that frame, not clamped, and both halves are processed. A QOA music goes to the start of the QOA frame (5120 samples) the position is in, which is also its framesProcessed. Compared with raylib.",
     "gaps": [
       "The decoder's state is in the Music value, which the function gives back: no shared ctxData pointer",
       "Nothing for a position whose frame is not an unsigned int, a stream without a tracked buffer (raylib writes through the pointer) and an unready device"
