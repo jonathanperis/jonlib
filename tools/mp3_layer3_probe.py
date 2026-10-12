@@ -17,18 +17,22 @@ values where its reorder begins at 72) and is written over the other
 channel or the scales. Both are undefined in C and the port refuses them.
 After every frame the row is
 
-  samples:bytes:state:values
+  samples:bytes:state:values:pcm
 
 where `state` hashes what the decoder keeps for the next frame (its header,
 free format size, the reservoir, the whole main data array with what earlier
 frames left in it, the 40 scales, the intensity positions, the second
-granule slot's scalefac_compress and both channels' IMDCT overlap) and
-`values` hashes the subband samples of every channel of every granule, bit
-for bit. A file's
+granule slot's scalefac_compress, both channels' IMDCT overlap and the
+synthesis filter's rows), `values` hashes the subband samples of every
+channel of every granule, bit for bit, and `pcm` hashes the frame's 16-bit
+samples. Thirty floats of the filter's newest row are left out of `state`:
+the next call writes them before anything reads them, and until then
+dr_mp3 has there whatever its scratch held. A file's
 walk ends at `refused` (undefined, on both sides) or `layer12` (a Layer I
 or II frame, which the port does not decode yet).
 
-The files: raylib's country.mp3 whole (3584 frames of real music), the mp3
+The files: 400 frames of raylib's country.mp3 (its first 200 and 200 from
+the middle of the song, which begin without their reservoir), the mp3
 gate's edits of its first frames (tags, holes, cuts, rewritten headers,
 seeded corruptions), and synthetic streams. There is no MP3 encoder here;
 a synthetic frame is a valid header, side information written field by
@@ -75,7 +79,20 @@ static unsigned probe_state(const drmp3dec *dec)
     h = probe_bytes(h, dec->scratch.ist_pos[1], 39);
     h = (h ^ (unsigned)dec->scratch.gr_info[1].scalefac_compress)*16777619u;
     h = probe_words(h, dec->mdct_overlap[0], 288);
-    return probe_words(h, dec->mdct_overlap[1], 288);
+    h = probe_words(h, dec->mdct_overlap[1], 288);
+    for (int i = 0; i < 15*64; i++)
+    {
+        /* the newest row's third and fourth entries of a group are written by the next call before anything reads them */
+        if ((i >= 14*64) && (i < 14*64 + 60) && (i & 2)) continue;
+        h = probe_words(h, &dec->qmf_state[i], 1);
+    }
+    return h;
+}
+
+static unsigned probe_shorts(unsigned h, const drmp3d_sample_t *values, int count)
+{
+    for (int i = 0; i < count; i++) h = (h ^ (unsigned short)values[i])*16777619u;
+    return h;
 }
 
 static unsigned char data[1 << 21];
@@ -103,7 +120,7 @@ int main(void)
             int samples = probe_decode_frame(&dec, data + pos, size - pos, pcm, &info);
             if (probe_outside) { printf(" refused"); break; }
             if ((info.layer == 1) || (info.layer == 2)) { printf(" layer12"); break; }
-            printf(" %d:%d:%u:%u", samples, info.frame_bytes, probe_state(&dec), probe_values);
+            printf(" %d:%d:%u:%u:%u", samples, info.frame_bytes, probe_state(&dec), probe_values, probe_shorts(2166136261u, pcm, samples*info.channels));
             if (info.frame_bytes == 0) break;
             pos += info.frame_bytes;
         }
@@ -128,13 +145,23 @@ def fnv.rows(rows: +List<+List<U32>>, +h: U32) -> U32:
     case Nil{}: h
     case Con{+row, rest}: fnv.rows(rest, fnv(row, h))
 
-def state(+decoder: L.Decoder) -> U32:
-  L.Decoder{H.Dec{+header, +free, +reserv}, +main, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1} = decoder
-  fnv(overlap1, fnv(overlap0, fnv([compress], fnv(ist1, fnv(ist0, fnv(scf, fnv(main, fnv(reserv, fnv([H.b0(header), H.b1(header), H.b2(header), H.b3(header), free, H.count(reserv, 0)], 2166136261)))))))))
+def fnv.live(row: +List<U32>, +e: U32, +h: U32) -> U32:
+  match row:
+    case Nil{}: h
+    case Con{+x, rest}: fnv.live(rest, (e + 1 : U32), Bool.pick(U32, (e < 60 : U32) && U32.is_ne((e .&. 2 : U32), 0), h, ((h .^. x) * 16777619 : U32)))
 
-def shown(status: U32, +decoder: L.Decoder, +samples: U32, +bytes: U32, +spectra: +List<+List<U32>>) -> String:
+def fnv.qmf(qmf: +List<+List<U32>>, +h: U32) -> U32:
+  match qmf:
+    case Nil{}: h
+    case Con{+newest, +older}: fnv.live(newest, 0, fnv.rows(List.reverse(&2, +List<U32>, older), h))
+
+def state(+decoder: L.Decoder) -> U32:
+  L.Decoder{H.Dec{+header, +free, +reserv}, +main, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1, +qmf} = decoder
+  fnv.qmf(qmf, fnv(overlap1, fnv(overlap0, fnv([compress], fnv(ist1, fnv(ist0, fnv(scf, fnv(main, fnv(reserv, fnv([H.b0(header), H.b1(header), H.b2(header), H.b3(header), free, H.count(reserv, 0)], 2166136261))))))))))
+
+def shown(status: U32, +decoder: L.Decoder, +samples: U32, +bytes: U32, +spectra: +List<+List<U32>>, +pcm: +List<U32>) -> String:
   match status:
-    case 0: U32.show(samples) ++ ":" ++ U32.show(bytes) ++ ":" ++ U32.show(state(decoder)) ++ ":" ++ U32.show(fnv.rows(spectra, 2166136261))
+    case 0: U32.show(samples) ++ ":" ++ U32.show(bytes) ++ ":" ++ U32.show(state(decoder)) ++ ":" ++ U32.show(fnv.rows(spectra, 2166136261)) ++ ":" ++ U32.show(fnv(pcm, 2166136261))
     case 1: "refused"
     case _: "layer12"
 
@@ -145,10 +172,10 @@ def frames(n: Nat, stop: Bool, last: L.Decoded, +window: +List<U32>, +bytes: U32
       match stop:
         case True{}: acc
         case False{}:
-          L.Decoded{+decoder, +samples, +used, +status, +spectra} = last
+          L.Decoded{+decoder, +samples, +used, +status, +spectra, +pcm} = last
           +left = (bytes - U32.min(used, bytes) : U32)
           +next = List.drop(&2, U32, window, U32.to_nat(used))
-          frames(rest, U32.is_eq(used, 0) || U32.is_eq(left, 0) || U32.is_ne(status, 0), L.decode(decoder, next, left), next, left, Con{shown(status, decoder, samples, used, spectra), acc})
+          frames(rest, U32.is_eq(used, 0) || U32.is_eq(left, 0) || U32.is_ne(status, 0), L.decode(decoder, next, left), next, left, Con{shown(status, decoder, samples, used, spectra, pcm), acc})
 
 def printed(lines: +List<String>) -> IO(Unit):
   match lines:
@@ -390,7 +417,8 @@ def other_layer(rng, layer1):
 def corpus(source):
     """name -> bytes, and what the synthetic streams drew."""
     edits = mp3_probe.cases(source)
-    files = {'whole': source}
+    offsets = mp3_probe.frame_offsets(source)
+    files = {'start': source[:offsets[200]], 'middle': source[offsets[1500]:offsets[1700]]}
     files.update((name, data) for name, data in edits.items() if name != 'whole')
     rng, drawn = random.Random(0x4C33), {}
     for version, label in ((3, 'mpeg1'), (2, 'mpeg2'), (0, 'mpeg25')):
@@ -460,8 +488,9 @@ def main():
     tokens = [token for row in expected for token in row.split()[1:]]
     decoded = sum(token.split(':')[0] not in ('0', 'refused', 'layer12') for token in tokens)
     synthetic_decoded = sum(token.split(':')[0] not in ('0', 'refused', 'layer12') for name, row in rows.items() if name.startswith('mpeg') for token in row.split()[1:])
-    if len(rows['whole'].split()) != 3585 or not rows['outside'].endswith(' refused') or len(rows['outside'].split()) != 3:
-        raise ProbeFailure(f'mp3-layer3: the reference did not walk country.mp3 and the stream built to leave the array as expected: {rows["whole"][:80]} / {rows["outside"][:200]}')
+    music = [token.split(':')[0] for name in ('start', 'middle') for token in rows[name].split()[1:]]
+    if len(music) != 400 or music.count('1152') < 395 or not rows['outside'].endswith(' refused') or len(rows['outside'].split()) != 3:
+        raise ProbeFailure(f'mp3-layer3: the reference did not walk country.mp3 and the stream built to leave the array as expected: {rows["start"][:80]} / {rows["outside"][:200]}')
     if synthetic_decoded < 120 or tokens.count('layer12') < 2 or min(drawn[key] for key in ('short', 'mixed', 'start_stop', 'linbits', 'mono', 'intensity', 'mono_intensity', 'midside', 'crc', 'reaching')) < 20:
         raise ProbeFailure(f'mp3-layer3: the corpus lost coverage: {synthetic_decoded} synthetic frames decoded, {tokens.count("layer12")} Layer I/II files, drew {drawn}')
     lanes = probe.candidates(render, items, batch=40, parse=parse, timeout=1500)

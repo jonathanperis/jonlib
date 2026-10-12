@@ -33,14 +33,18 @@ TABLES = {
     'tab32': ('drmp3_uint8', 28), 'tab33': ('drmp3_uint8', 16), 'tabindex': ('drmp3_int16', 32), 'g_linbits': ('drmp3_uint8', 32),
     'g_pan': ('float', 14),
     'g_aa': ('float', 16), 'g_twid9': ('float', 18), 'g_twid3': ('float', 6), 'g_mdct_window': ('float', 36),
+    'g_sec': ('float', 24), 'g_win': ('float', 240),
 }
 
-# The float literals of drmp3_L3_dct3_9 and drmp3_L3_idct3 (cosines of 10 to
-# 80 degrees), by the name they get in the module. They are in the functions'
-# bodies, not in tables: each must be in the header's text, and the C
-# compiler converts them like the tables' floats.
+# The float literals in the bodies of the transforms, by the name they get in
+# the module: the cosines of 10 to 80 degrees of drmp3_L3_dct3_9 and
+# drmp3_L3_idct3, and the eight-point step of drmp3d_DCT_II (its rotations,
+# then the scale of each output). They are not in tables: each must be in
+# the header's text, and the C compiler converts them like the tables'
+# floats.
 CONSTANTS = {'cos10': '0.98480775f', 'cos20': '0.93969262f', 'cos30': '0.86602540f', 'cos40': '0.76604444f', 'cos50': '0.64278761f', 'cos70': '0.34202014f',
-             'cos80': '0.17364818f'}
+             'cos80': '0.17364818f', 'dct.half': '0.70710677f', 'dct.tan': '0.198912367f', 'dct.sin': '0.382683432f', 'dct.out1': '0.50979561f',
+             'dct.out2': '0.54119611f', 'dct.out3': '0.60134488f', 'dct.out5': '0.89997619f', 'dct.out6': '1.30656302f', 'dct.out7': '2.56291556f'}
 
 DECLARATION = re.compile(r'static const (float|drmp3_uint8|drmp3_int16)\s+(\w+)((?:\[[^\]]*\])+)\s*=\s*\{(.*?)\};', re.S)
 
@@ -200,7 +204,9 @@ def render(tables):
     table('twid3', 'g_twid3 (floats).', '+List<U32>', flat(tables['g_twid3']))
     table('mdct.window', "g_mdct_window (floats): the long window and the stop block's, eighteen each.", '+List<+List<U32>>', rows(tables['g_mdct_window'], 18))
     for name, value in zip(CONSTANTS, tables['constants']):
-        out.append(f'# {CONSTANTS[name]} (a float) of drmp3_L3_dct3_9 and drmp3_L3_idct3.\ndef c.{name}() -> U32:\n  {value}\n')
+        out.append(f'# {CONSTANTS[name]} (a float), a literal of {"drmp3d_DCT_II" if name.startswith("dct.") else "drmp3_L3_dct3_9 and drmp3_L3_idct3"}.\ndef c.{name}() -> U32:\n  {value}\n')
+    table('sec', 'g_sec (floats): three for each of the eight butterflies of drmp3d_DCT_II.', '+List<U32>', flat(tables['g_sec']))
+    table('win', 'g_win (floats): the synthesis window, fifteen rows of sixteen.', '+List<+List<U32>>', rows(tables['g_win'], 16))
     return '\n'.join(out)
 
 

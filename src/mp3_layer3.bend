@@ -8,9 +8,11 @@
 # drmp3_L3_intensity_stereo, drmp3_L3_stereo_process), its filter bank's
 # first half (drmp3_L3_reorder, drmp3_L3_antialias, drmp3_L3_imdct_gr with
 # drmp3_L3_imdct36, drmp3_L3_dct3_9, drmp3_L3_imdct_short, drmp3_L3_imdct12,
-# drmp3_L3_idct3, and drmp3_L3_change_sign) and the frame around them
-# (drmp3_L3_restore_reservoir, drmp3_L3_save_reservoir,
-# drmp3dec_decode_frame). See THIRD_PARTY_NOTICES.md and LICENSES/dr_mp3.txt.
+# drmp3_L3_idct3, and drmp3_L3_change_sign), its synthesis filter
+# (drmp3d_DCT_II, drmp3d_synth_pair, drmp3d_synth, drmp3d_synth_granule,
+# drmp3d_scale_pcm) and the frame around them (drmp3_L3_restore_reservoir,
+# drmp3_L3_save_reservoir, drmp3dec_decode_frame). See
+# THIRD_PARTY_NOTICES.md and LICENSES/dr_mp3.txt.
 #
 # Floats are binary32, computed in dr_mp3's order, and kept in lists as
 # their bits. C ints are U32 two's-complement words. The tables are
@@ -24,6 +26,13 @@ import ./mp3_tables.bend as T
 def float(value: U32) -> F32:
   U32{word} = value
   F32{word}
+
+# A list after its first element. (List.drop counts with a Nat, which the
+# JavaScript target makes a big integer: this is the loops' step.)
+def tail(xs: +List<U32>) -> +List<U32>:
+  match xs:
+    case Nil{}: Nil{}
+    case Con{_, rest}: rest
 
 def row.first(rows: +List<+List<U32>>) -> +List<U32>:
   match rows:
@@ -67,7 +76,7 @@ def read.values(n: Nat, +bytes: +List<U32>, +limit: U32, +size: U32, +limited: B
       Read{+scf, +ist, old, +pos} = read
       +s = H.bits(bytes, limit, pos, size)
       read.values(rest, bytes, limit, size, limited,
-        Read{Con{s, scf}, Con{Bool.pick(U32, limited && U32.is_eq(s, ((1 << U32.to_nat(size)) - 1 : U32)), 255, s), ist}, List.drop(&2, U32, old, 1n), (pos + size : U32)})
+        Read{Con{s, scf}, Con{Bool.pick(U32, limited && U32.is_eq(s, ((1 << U32.to_nat(size)) - 1 : U32)), 255, s), ist}, tail(old), (pos + size : U32)})
 
 # A group kept from the granule before (scfsi): the positions as they were.
 def read.kept(n: Nat, read: Read) -> Read:
@@ -75,7 +84,7 @@ def read.kept(n: Nat, read: Read) -> Read:
     case 0n: read
     case 1n+rest:
       Read{+scf, +ist, +old, pos} = read
-      read.kept(rest, Read{Con{H.first(old), scf}, Con{H.first(old), ist}, List.drop(&2, U32, old, 1n), pos})
+      read.kept(rest, Read{Con{H.first(old), scf}, Con{H.first(old), ist}, tail(old), pos})
 
 # A group of no bits: zeros.
 def read.zeros(n: Nat, read: Read) -> Read:
@@ -83,7 +92,7 @@ def read.zeros(n: Nat, read: Read) -> Read:
     case 0n: read
     case 1n+rest:
       Read{+scf, +ist, +old, pos} = read
-      read.zeros(rest, Read{Con{0, scf}, Con{0, ist}, List.drop(&2, U32, old, 1n), pos})
+      read.zeros(rest, Read{Con{0, scf}, Con{0, ist}, tail(old), pos})
 
 def read.group(kept: Bool, empty: Bool, +count: U32, +bytes: +List<U32>, +limit: U32, +size: U32, +limited: Bool, read: Read) -> Read:
   match kept empty:
@@ -349,7 +358,7 @@ def big.bands(n: Nat, more: Bool, sfb: +List<U32>, +scf: +List<U32>, +big: U32, 
               +codes = book.turned(fresh, tab, book)
               +turn = U32.is_eq(cnt, 0)
               +after = Bool.pick(U32, turn, (ireg + 1 : U32), ireg)
-              big.bands(k, (big > half : U32), rest, List.drop(&2, U32, scf, 1n), (big - pairs : U32), after, Bool.pick(U32, turn, pick3(after, 0, region1, region2), (cnt - 1 : U32)), turn, codes, gr,
+              big.bands(k, (big > half : U32), rest, tail(scf), (big - pairs : U32), after, Bool.pick(U32, turn, pick3(after, 0, region1, region2), (cnt - 1 : U32)), turn, codes, gr,
                 ((1 + half) - pairs : U32), scale, pow, huff.pairs(U32.to_nat(pairs), codes, H.nth(T.linbits(), tab), float(scale), pow, run))
 
 # The band a pair of the count1 region is in: the one before while it has
@@ -364,7 +373,7 @@ def band.next(last: Bool, sfb: +List<U32>, +scf: +List<U32>, +np: U32, +one: U32
     case True{}:
       match sfb:
         case Nil{}: Band{Nil{}, scf, 0, one, True{}}
-        case Con{+width, rest}: Band{rest, List.drop(&2, U32, scf, 1n), (width / 2 : U32), Bool.pick(U32, (width < 2 : U32), one, H.first(scf)), (width < 2 : U32)}
+        case Con{+width, rest}: Band{rest, tail(scf), (width / 2 : U32), Bool.pick(U32, (width < 2 : U32), one, H.first(scf)), (width < 2 : U32)}
 
 # Two of a quad's values (DRMP3_DEQ_COUNT1 twice): plus or minus `one` (the
 # cache's first bit, flushed) where the leaf has the value's bit (`hi`, `lo`:
@@ -468,8 +477,7 @@ def Spectrum.fine(spectrum: Spectrum) -> Bool:
   fine
 
 # -----------------------------------------------------------------------------
-# Frames (drmp3dec_decode_frame with its samples wanted), as far as the
-# granules' values after the IMDCT: 32 subbands of 18 samples in time.
+# Frames (drmp3dec_decode_frame with its samples wanted).
 
 # The decoder between frames: drmp3dec's header, free format size and
 # reservoir (H.Dec), and what its scratch keeps from a frame to the next:
@@ -478,27 +486,36 @@ def Spectrum.fine(spectrum: Spectrum) -> Bool:
 # go), the 40 scales (a granule writes its bands'; a table of more bands
 # reads what is past them), the channels' intensity positions (39 each) and
 # scalefac_compress of the second slot of the granule information, which a
-# mono frame does not write and whose stereo step reads; and the IMDCT's
-# overlap for each channel (mdct_overlap: nine floats a subband, 288).
+# mono frame does not write and whose stereo step reads; the IMDCT's
+# overlap for each channel (mdct_overlap: nine floats a subband, 288); and
+# the synthesis filter's last fifteen rows (qmf_state, the newest first).
 type Decoder is Data:
-  Decoder{dec: H.Dec, main: +List<U32>, scf: +List<U32>, ist0: +List<U32>, ist1: +List<U32>, compress: U32, overlap0: +List<U32>, overlap1: +List<U32>}
+  Decoder{dec: H.Dec, main: +List<U32>, scf: +List<U32>, ist0: +List<U32>, ist1: +List<U32>, compress: U32, overlap0: +List<U32>, overlap1: +List<U32>, qmf: +List<+List<U32>>}
+
+# qmf_state zeroed: fifteen rows of 64.
+def rows.zero(n: Nat, acc: +List<+List<U32>>) -> +List<+List<U32>>:
+  match n:
+    case 0n: acc
+    case 1n+k: rows.zero(k, Con{zeros.onto(64n, Nil{}), acc})
 
 # A decoder zeroed: what drmp3dec_decode_frame makes of it before it
 # searches for a frame.
 def Decoder.zero() -> Decoder:
-  Decoder{H.Dec.zero(), zeros.onto(2815n, Nil{}), zeros.onto(40n, Nil{}), zeros.onto(39n, Nil{}), zeros.onto(39n, Nil{}), 0, zeros.onto(288n, Nil{}), zeros.onto(288n, Nil{})}
+  Decoder{H.Dec.zero(), zeros.onto(2815n, Nil{}), zeros.onto(40n, Nil{}), zeros.onto(39n, Nil{}), zeros.onto(39n, Nil{}), 0, zeros.onto(288n, Nil{}), zeros.onto(288n, Nil{}), rows.zero(15n, Nil{})}
 
 # What a frame gives: the decoder after it, its samples for a channel (0:
-# none decoded), the bytes it used, the granules' values after the IMDCT
-# and its sign change (576 float bits for a channel of a granule, in the
-# frame's order: 32 subbands of 18 samples) and `status`: 0, or why the
+# none decoded), the bytes it used, `status`, the granules' subband samples
+# (576 float bits for a channel of a granule, in the frame's order: 32
+# subbands of 18 samples after the IMDCT and its sign change) and the
+# frame's PCM (an int16's 16 bits a sample, a frame a channel after a
+# channel). `status` is 0, or why the
 # frame is refused. 1: dr_mp3 leaves one of its arrays, which is undefined:
 # a granule's values were read past the main data's (it reads whatever
 # follows in its struct), or a granule is a mixed block at 8000 Hz
 # (reorder.inside). 2: a Layer I or II frame, which this port does not
 # decode yet.
 type Decoded is Data:
-  Decoded{decoder: Decoder, samples: U32, bytes: U32, status: U32, spectra: +List<+List<U32>>}
+  Decoded{decoder: Decoder, samples: U32, bytes: U32, status: U32, spectra: +List<+List<U32>>, pcm: +List<U32>}
 
 def total(xs: +List<U32>, +sum: U32) -> U32:
   match xs:
@@ -604,7 +621,7 @@ def pair.kept(n: Nat, left: +List<U32>, +right: +List<U32>, al: +List<U32>, ar: 
     case 1n+k:
       match left:
         case Nil{}: Both{Nil{}, right, al, ar}
-        case Con{+a, rest}: pair.kept(k, rest, List.drop(&2, U32, right, 1n), Con{a, al}, Con{H.first(right), ar})
+        case Con{+a, rest}: pair.kept(k, rest, tail(right), Con{a, al}, Con{H.first(right), ar})
 
 # drmp3_L3_midside_stereo on `n` values: left a + b, right a - b.
 def pair.midside(n: Nat, left: +List<U32>, +right: +List<U32>, al: +List<U32>, ar: +List<U32>) -> Both:
@@ -614,7 +631,7 @@ def pair.midside(n: Nat, left: +List<U32>, +right: +List<U32>, al: +List<U32>, a
       match left:
         case Nil{}: Both{Nil{}, right, al, ar}
         case Con{+a, rest}:
-          pair.midside(k, rest, List.drop(&2, U32, right, 1n), Con{F32.bits((float(a) + float(H.first(right)) : F32)), al}, Con{F32.bits((float(a) - float(H.first(right)) : F32)), ar})
+          pair.midside(k, rest, tail(right), Con{F32.bits((float(a) + float(H.first(right)) : F32)), al}, Con{F32.bits((float(a) - float(H.first(right)) : F32)), ar})
 
 # drmp3_L3_intensity_stereo_band on `n` values: right is left times kr, then
 # left is left times kl.
@@ -624,7 +641,7 @@ def pair.intensity(n: Nat, left: +List<U32>, +right: +List<U32>, +kl: F32, +kr: 
     case 1n+k:
       match left:
         case Nil{}: Both{Nil{}, right, al, ar}
-        case Con{+a, rest}: pair.intensity(k, rest, List.drop(&2, U32, right, 1n), kl, kr, Con{F32.bits((float(a) * kl : F32)), al}, Con{F32.bits((float(a) * kr : F32)), ar})
+        case Con{+a, rest}: pair.intensity(k, rest, tail(right), kl, kr, Con{F32.bits((float(a) * kl : F32)), al}, Con{F32.bits((float(a) * kr : F32)), ar})
 
 # The channels after their bands: what is done, then what no band covered.
 def pair.left(pair: Both) -> +List<U32>:
@@ -681,7 +698,7 @@ def stereo.bands(n: Nat, stop: Bool, sfb: +List<U32>, +ist: +List<U32>, +i: U32,
               Tops{+a, +b, +c} = tops
               +ipos = H.first(ist)
               +intense = (i >= pick3((i % 3 : U32), a, b, c) : U32) && (ipos < Bool.pick(U32, mpeg1, 7, 64) : U32)
-              stereo.bands(k, U32.is_eq(H.first(rest), 0), rest, List.drop(&2, U32, ist, 1n), (i + 1 : U32), tops, mpeg1, sh, ms, table,
+              stereo.bands(k, U32.is_eq(H.first(rest), 0), rest, tail(ist), (i + 1 : U32), tops, mpeg1, sh, ms, table,
                 stereo.band(Bool.pick(U32, intense, 1, Bool.pick(U32, ms, 2, 0)), U32.to_nat(width), ipos, mpeg1, sh, Bool.pick(F32, ms, float(1068827891), 1.0), table, pair))
 
 # A granule's channels (the first loop of drmp3_L3_decode, and the positions
@@ -800,7 +817,7 @@ def reorder.band(n: Nat, a: +List<U32>, +b: +List<U32>, +c: +List<U32>, acc: +Li
     case 1n+k:
       match a:
         case Nil{}: Moved{Nil{}, acc}
-        case Con{+x, rest}: reorder.band(k, rest, List.drop(&2, U32, b, 1n), List.drop(&2, U32, c, 1n), Con{H.first(c), Con{H.first(b), Con{x, acc}}})
+        case Con{+x, rest}: reorder.band(k, rest, tail(b), tail(c), Con{H.first(c), Con{H.first(b), Con{x, acc}}})
 
 # The short bands from the first on, three windows of a width at a time, to
 # the table's 0. `state` is what is left and what is done.
@@ -838,7 +855,7 @@ def alias.pairs(d: +List<U32>, +u: +List<U32>, +c0: +List<U32>, +c1: +List<U32>,
   match d:
     case Nil{}: Alias{down, up}
     case Con{+low, rest}:
-      alias.pairs(rest, List.drop(&2, U32, u, 1n), List.drop(&2, U32, c0, 1n), List.drop(&2, U32, c1, 1n),
+      alias.pairs(rest, tail(u), tail(c0), tail(c1),
         Con{F32.bits(((float(H.first(u)) * float(H.first(c1))) + (float(low) * float(H.first(c0))) : F32)), down},
         Con{F32.bits(((float(H.first(u)) * float(H.first(c0))) - (float(low) * float(H.first(c1))) : F32)), up})
 
@@ -925,7 +942,7 @@ def imdct36.steps(co: +List<U32>, +si: +List<U32>, +ovl: +List<U32>, +t0: +List<
       +s = float(H.first(si))
       +sum = ((float(c) * float(H.first(t1))) + (s * float(H.first(t0))) : F32)
       +old = float(H.first(ovl))
-      imdct36.steps(rest, List.drop(&2, U32, si, 1n), List.drop(&2, U32, ovl, 1n), List.drop(&2, U32, t0, 1n), List.drop(&2, U32, t1, 1n), List.drop(&2, U32, w0, 1n), List.drop(&2, U32, w1, 1n),
+      imdct36.steps(rest, tail(si), tail(ovl), tail(t0), tail(t1), tail(w0), tail(w1),
         Con{F32.bits(((old * float(H.first(w0))) - (sum * float(H.first(w1))) : F32)), values},
         Con{F32.bits(((old * float(H.first(w1))) + (sum * float(H.first(w0))) : F32)), back},
         Con{F32.bits(((float(c) * float(H.first(t0))) - (s * float(H.first(t1))) : F32)), over})
@@ -1057,6 +1074,453 @@ def filter.right(mono: Bool, +values: +List<U32>, +overlap: +List<U32>, +h: U32,
     case True{}: Out{Nil{}, overlap}
     case False{}: filter(values, overlap, h, gr)
 
+# -----------------------------------------------------------------------------
+# Synthesis (drmp3d_DCT_II, drmp3d_synth_pair, drmp3d_synth,
+# drmp3d_synth_granule): a granule's subband samples to 16-bit PCM.
+#
+# raylib builds dr_mp3 with SSE and 16-bit output, and the SSE branches are
+# the ones followed where they differ from the scalar code: the last sums
+# of the DCT are associated otherwise, and the window's sums are rounded to
+# integers by the processor's rule (to nearest, ties to even) where the two
+# samples a subband pair computes alone (drmp3d_synth_pair) are rounded by
+# drmp3d_scale_pcm (half added, truncated, one less below zero).
+
+# Four floats.
+type Four is Data:
+  Four{a: F32, b: F32, c: F32, d: F32}
+
+def Four.a(four: Four) -> F32:
+  Four{a, _, _, _} = four
+  a
+
+def Four.b(four: Four) -> F32:
+  Four{_, b, _, _} = four
+  b
+
+def Four.c(four: Four) -> F32:
+  Four{_, _, c, _} = four
+  c
+
+def Four.d(four: Four) -> F32:
+  Four{_, _, _, d} = four
+  d
+
+# Eight floats: a row of drmp3d_DCT_II.
+type Eight is Data:
+  Eight{a0: F32, a1: F32, a2: F32, a3: F32, a4: F32, a5: F32, a6: F32, a7: F32}
+
+# The first step of drmp3d_DCT_II for one i: from the subbands i, 15 - i,
+# 16 + i and 31 - i of a time slot and g_sec's three, the i-th entry of each
+# of its four rows.
+def dct.butterfly(+x0: F32, +x1: F32, +x2: F32, +x3: F32, +s0: F32, +s1: F32, +s2: F32) -> Four:
+  +t0 = (x0 + x3 : F32)
+  +t1 = (x1 + x2 : F32)
+  +t2 = ((x1 - x2) * s0 : F32)
+  +t3 = ((x0 - x3) * s1 : F32)
+  Four{(t0 + t1 : F32), ((t0 - t1) * s2 : F32), (t3 + t2 : F32), ((t3 - t2) * s2 : F32)}
+
+# The second step: a row's eight values, in its order of operations.
+def dct.eight(x: Eight) -> Eight:
+  Eight{+x0, +x1, +x2, +x3, +x4, +x5, +x6, +x7} = x
+  +half = float(T.c.dct.half())
+  +tan = float(T.c.dct.tan())
+  +xt = (x0 - x7 : F32)
+  +p0 = (x0 + x7 : F32)
+  +q7 = (x1 - x6 : F32)
+  +p1 = (x1 + x6 : F32)
+  +q6 = (x2 - x5 : F32)
+  +p2 = (x2 + x5 : F32)
+  +q5 = (x3 - x4 : F32)
+  +p3 = (x3 + x4 : F32)
+  +q4 = (p0 - p3 : F32)
+  +r0 = (p0 + p3 : F32)
+  +q3 = (p1 - p2 : F32)
+  +r1 = (p1 + p2 : F32)
+  +s5 = (q5 + q6 : F32)
+  +s6 = ((q6 + q7) * half : F32)
+  +s7 = (q7 + xt : F32)
+  +s3 = ((q3 + q4) * half : F32)
+  +t5 = (s5 - (s7 * tan) : F32)
+  +t7 = (s7 + (t5 * float(T.c.dct.sin())) : F32)
+  +u5 = (t5 - (t7 * tan) : F32)
+  +v0 = (xt - s6 : F32)
+  +vt = (xt + s6 : F32)
+  Eight{(r0 + r1 : F32), ((vt + t7) * float(T.c.dct.out1()) : F32), ((q4 + s3) * float(T.c.dct.out2()) : F32), ((v0 - u5) * float(T.c.dct.out3()) : F32), ((r0 - r1) * half : F32),
+    ((v0 + u5) * float(T.c.dct.out5()) : F32), ((q4 - s3) * float(T.c.dct.out6()) : F32), ((vt - t7) * float(T.c.dct.out7()) : F32)}
+
+# The last step, as the SSE branch adds: the 32 outputs, four for each entry
+# of the rows, with d[i] + d[i + 1] added first where three values meet.
+def dct.out(r0: Eight, r1: Eight, r2: Eight, r3: Eight) -> +List<U32>:
+  Eight{a0, a1, a2, a3, a4, a5, a6, a7} = r0
+  Eight{+b0, +b1, +b2, +b3, +b4, +b5, +b6, +b7} = r1
+  Eight{+c0, +c1, +c2, +c3, +c4, +c5, +c6, +c7} = r2
+  Eight{+d0, +d1, +d2, +d3, +d4, +d5, +d6, +d7} = r3
+  [F32.bits(a0), F32.bits((c0 + (d0 + d1) : F32)), F32.bits((b0 + b1 : F32)), F32.bits((c1 + (d0 + d1) : F32)), F32.bits(a1), F32.bits((c1 + (d1 + d2) : F32)), F32.bits((b1 + b2 : F32)), F32.bits((c2 + (d1 + d2) : F32)), F32.bits(a2), F32.bits((c2 + (d2 + d3) : F32)), F32.bits((b2 + b3 : F32)), F32.bits((c3 + (d2 + d3) : F32)), F32.bits(a3), F32.bits((c3 + (d3 + d4) : F32)), F32.bits((b3 + b4 : F32)), F32.bits((c4 + (d3 + d4) : F32)), F32.bits(a4), F32.bits((c4 + (d4 + d5) : F32)), F32.bits((b4 + b5 : F32)), F32.bits((c5 + (d4 + d5) : F32)), F32.bits(a5), F32.bits((c5 + (d5 + d6) : F32)), F32.bits((b5 + b6 : F32)), F32.bits((c6 + (d5 + d6) : F32)), F32.bits(a6), F32.bits((c6 + (d6 + d7) : F32)), F32.bits((b6 + b7 : F32)), F32.bits((c7 + (d6 + d7) : F32)), F32.bits(a7), F32.bits((c7 + d7 : F32)), F32.bits(b7), F32.bits(d7)]
+
+def dct.rows(+sec: +List<U32>, +y0: U32, +y1: U32, +y2: U32, +y3: U32, +y4: U32, +y5: U32, +y6: U32, +y7: U32, +y8: U32, +y9: U32, +y10: U32, +y11: U32, +y12: U32, +y13: U32, +y14: U32, +y15: U32, +y16: U32, +y17: U32, +y18: U32, +y19: U32, +y20: U32, +y21: U32, +y22: U32, +y23: U32, +y24: U32, +y25: U32, +y26: U32, +y27: U32, +y28: U32, +y29: U32, +y30: U32, +y31: U32) -> +List<U32>:
+  match sec:
+    case Con{+s0, Con{+s1, Con{+s2, Con{+s3, Con{+s4, Con{+s5, Con{+s6, Con{+s7, Con{+s8, Con{+s9, Con{+s10, Con{+s11, Con{+s12, Con{+s13, Con{+s14, Con{+s15, Con{+s16, Con{+s17, Con{+s18, Con{+s19, Con{+s20, Con{+s21, Con{+s22, Con{+s23, _}}}}}}}}}}}}}}}}}}}}}}}}:
+      +f0 = dct.butterfly(float(y0), float(y15), float(y16), float(y31), float(s0), float(s1), float(s2))
+      +f1 = dct.butterfly(float(y1), float(y14), float(y17), float(y30), float(s3), float(s4), float(s5))
+      +f2 = dct.butterfly(float(y2), float(y13), float(y18), float(y29), float(s6), float(s7), float(s8))
+      +f3 = dct.butterfly(float(y3), float(y12), float(y19), float(y28), float(s9), float(s10), float(s11))
+      +f4 = dct.butterfly(float(y4), float(y11), float(y20), float(y27), float(s12), float(s13), float(s14))
+      +f5 = dct.butterfly(float(y5), float(y10), float(y21), float(y26), float(s15), float(s16), float(s17))
+      +f6 = dct.butterfly(float(y6), float(y9), float(y22), float(y25), float(s18), float(s19), float(s20))
+      +f7 = dct.butterfly(float(y7), float(y8), float(y23), float(y24), float(s21), float(s22), float(s23))
+      dct.out(dct.eight(Eight{Four.a(f0), Four.a(f1), Four.a(f2), Four.a(f3), Four.a(f4), Four.a(f5), Four.a(f6), Four.a(f7)}), dct.eight(Eight{Four.b(f0), Four.b(f1), Four.b(f2), Four.b(f3), Four.b(f4), Four.b(f5), Four.b(f6), Four.b(f7)}), dct.eight(Eight{Four.c(f0), Four.c(f1), Four.c(f2), Four.c(f3), Four.c(f4), Four.c(f5), Four.c(f6), Four.c(f7)}), dct.eight(Eight{Four.d(f0), Four.d(f1), Four.d(f2), Four.d(f3), Four.d(f4), Four.d(f5), Four.d(f6), Four.d(f7)}))
+    case _: Nil{}
+
+# drmp3d_DCT_II for one time slot: its 32 subband samples to 32 values.
+def dct.slot(slot: +List<U32>, +sec: +List<U32>) -> +List<U32>:
+  match slot:
+    case Con{+y0, Con{+y1, Con{+y2, Con{+y3, Con{+y4, Con{+y5, Con{+y6, Con{+y7, Con{+y8, Con{+y9, Con{+y10, Con{+y11, Con{+y12, Con{+y13, Con{+y14, Con{+y15, Con{+y16, Con{+y17, Con{+y18, Con{+y19, Con{+y20, Con{+y21, Con{+y22, Con{+y23, Con{+y24, Con{+y25, Con{+y26, Con{+y27, Con{+y28, Con{+y29, Con{+y30, Con{+y31, _}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}: dct.rows(sec, y0, y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13, y14, y15, y16, y17, y18, y19, y20, y21, y22, y23, y24, y25, y26, y27, y28, y29, y30, y31)
+    case _: Nil{}
+
+# The subbands of a channel's samples: where each begins in the list.
+def subbands(n: Nat, +values: +List<U32>, acc: +List<+List<U32>>) -> +List<+List<U32>>:
+  match n:
+    case 0n: List.reverse(&2, +List<U32>, acc)
+    case 1n+k: subbands(k, List.drop(&2, U32, values, 18n), Con{values, acc})
+
+# A time slot: the next sample of each subband, and the subbands after it.
+type Slot is Data:
+  Slot{now: +List<U32>, later: +List<+List<U32>>}
+
+def slot.heads(subs: +List<+List<U32>>, now: +List<U32>, later: +List<+List<U32>>) -> Slot:
+  match subs:
+    case Nil{}: Slot{List.reverse(&2, U32, now), List.reverse(&2, +List<U32>, later)}
+    case Con{+sub, rest}: slot.heads(rest, Con{H.first(sub), now}, Con{tail(sub), later})
+
+def Slot.now(slot: Slot) -> +List<U32>:
+  Slot{now, _} = slot
+  now
+
+def Slot.later(slot: Slot) -> +List<+List<U32>>:
+  Slot{_, later} = slot
+  later
+
+# drmp3d_DCT_II over a channel's granule: its 18 time slots' values, a slot
+# after a slot. (dr_mp3's SSE branch loads four slots at a time and for the
+# last two reads two floats past the channel's 576, which it does not use.)
+def dct.slots(n: Nat, +subs: +List<+List<U32>>, +sec: +List<U32>, acc: +List<+List<U32>>) -> +List<+List<U32>>:
+  match n:
+    case 0n: List.reverse(&2, +List<U32>, acc)
+    case 1n+k:
+      +slot = slot.heads(subs, Nil{}, Nil{})
+      dct.slots(k, Slot.later(slot), sec, Con{dct.slot(Slot.now(slot), sec), acc})
+
+# The magnitude of a float below 2^24 as an integer: `shift` bits are cut
+# from its 24-bit significand `m`. Rounded to nearest, ties to even.
+def int.nearest(+m: U32, +shift: U32) -> U32:
+  +q = (m >> U32.to_nat(shift) : U32)
+  +rem = (m - (q << U32.to_nat(shift)) : U32)
+  +half = (1 << U32.to_nat((shift - 1 : U32)) : U32)
+  (q + Bool.to_u32((rem > half : U32) || (U32.is_eq(rem, half) && U32.is_eq((q .&. 1 : U32), 1))) : U32)
+
+# A float's significand with its hidden bit, and the bits to cut for its
+# integer part (0 when the float is 2^23 or more, which the samples are not).
+def float.significand(+bits: U32) -> U32:
+  ((bits .&. 8388607) .|. Bool.pick(U32, U32.is_eq(((bits >> 23n) .&. 255 : U32), 0), 0, 8388608) : U32)
+
+def float.cut(+bits: U32) -> U32:
+  (150 - U32.min(((bits >> 23n) .&. 255 : U32), 150) : U32)
+
+# An integer of a given sign as an int16's 16 bits.
+def int16(+negative: Bool, +magnitude: U32) -> U32:
+  Bool.pick(U32, negative, ((0 - magnitude) .&. 65535 : U32), magnitude)
+
+# The SSE branch's conversion of a sum: _mm_min_ps and _mm_max_ps keep it
+# within -32768 and 32767, _mm_cvtps_epi32 rounds it to nearest, ties to
+# even, and the pack saturates what cannot be out of range.
+def sample.packed(+x: F32) -> U32:
+  +low = Bool.pick(F32, (x < 32767.0 : F32), x, 32767.0)
+  +bits = F32.bits(Bool.pick(F32, (low > F32.neg(32768.0) : F32), low, F32.neg(32768.0)))
+  +cut = float.cut(bits)
+  int16((bits >= 2147483648 : U32), Bool.pick(U32, (cut > 24 : U32), 0, int.nearest(float.significand(bits), U32.max(U32.min(cut, 24), 1))))
+
+# drmp3d_scale_pcm: 32767 from 32766.5 up and -32768 from -32767.5 down;
+# else half added (a float sum), truncated, and one less when negative.
+def sample.scaled(+x: F32) -> U32:
+  +bits = F32.bits((x + 0.5 : F32))
+  +cut = float.cut(bits)
+  +magnitude = Bool.pick(U32, (cut > 23 : U32), 0, (float.significand(bits) >> U32.to_nat(U32.min(cut, 23)) : U32))
+  +negative = (bits >= 2147483648 : U32) && U32.is_ne(magnitude, 0)
+  Bool.pick(U32, (x >= 32766.5 : F32), 32767, Bool.pick(U32, (x <= F32.neg(32767.5) : F32), 32768, int16(negative, (magnitude + Bool.to_u32(negative) : U32))))
+
+# drmp3d_synth_pair's first sum, of fifteen rows' value for a channel (the
+# newest first in the list): sample 0 of a time slot.
+def pair.first(z: +List<U32>) -> F32:
+  match z:
+    case Con{+z14, Con{+z13, Con{+z12, Con{+z11, Con{+z10, Con{+z9, Con{+z8, Con{+z7, Con{+z6, Con{+z5, Con{+z4, Con{+z3, Con{+z2, Con{+z1, Con{+z0, _}}}}}}}}}}}}}}}:
+      +a0 = ((float(z14) - float(z0)) * 29.0 : F32)
+      +a1 = (a0 + ((float(z1) + float(z13)) * 213.0) : F32)
+      +a2 = (a1 + ((float(z12) - float(z2)) * 459.0) : F32)
+      +a3 = (a2 + ((float(z3) + float(z11)) * 2037.0) : F32)
+      +a4 = (a3 + ((float(z10) - float(z4)) * 5153.0) : F32)
+      +a5 = (a4 + ((float(z5) + float(z9)) * 6574.0) : F32)
+      +a6 = (a5 + ((float(z8) - float(z6)) * 37489.0) : F32)
+      (a6 + (float(z7) * 75038.0) : F32)
+    case _: 0.0
+
+# Its second sum: sample 16.
+def pair.second(z: +List<U32>) -> F32:
+  match z:
+    case Con{+z14, Con{+z13, Con{+z12, Con{+z11, Con{+z10, Con{+z9, Con{+z8, Con{+z7, Con{+z6, Con{+z5, Con{+z4, Con{+z3, Con{+z2, Con{+z1, Con{+z0, _}}}}}}}}}}}}}}}:
+      +a0 = (float(z14) * 104.0 : F32)
+      +a1 = (a0 + (float(z12) * 1567.0) : F32)
+      +a2 = (a1 + (float(z10) * 9727.0) : F32)
+      +a3 = (a2 + (float(z8) * 64019.0) : F32)
+      +a4 = (a3 + (float(z6) * F32.neg(9975.0)) : F32)
+      +a5 = (a4 + (float(z4) * F32.neg(45.0)) : F32)
+      +a6 = (a5 + (float(z2) * 146.0) : F32)
+      (a6 + (float(z0) * F32.neg(5.0)) : F32)
+    case _: 0.0
+
+# The sums of the window for one output pair of a subband pair, for one
+# channel of one time slot: `v` is sixteen rows' value, the newest first,
+# `r` the same the oldest first, `w` a row of g_win. Step k takes
+# vz = v[k], vy = r[k] and two weights: b grows by vz*w1 + vy*w0 and a by
+# vz*w0 - vy*w1, or by vy*w1 - vz*w0 at the odd steps. The result is the two
+# samples' 16 bits, a's above b's.
+def window.sums(n: Nat, v: +List<U32>, +r: +List<U32>, +w: +List<U32>, +odd: Bool, +a: F32, +b: F32) -> U32:
+  match n:
+    case 0n: ((sample.packed(a) << 16n) .|. sample.packed(b) : U32)
+    case 1n+k:
+      match v:
+        case Nil{}: ((sample.packed(a) << 16n) .|. sample.packed(b) : U32)
+        case Con{+z, rest}:
+          +vz = float(z)
+          +vy = float(H.first(r))
+          +w0 = float(H.first(w))
+          +w1 = float(H.first(tail(w)))
+          window.sums(k, rest, tail(r), tail(tail(w)), Bool.not(odd),
+            (a + Bool.pick(F32, odd, ((vy * w1) - (vz * w0) : F32), ((vz * w0) - (vy * w1) : F32)) : F32), (b + ((vz * w1) + (vy * w0)) : F32))
+
+# The first step sets the sums; seven more follow.
+def window(+v: +List<U32>, +r: +List<U32>, +w: +List<U32>) -> U32:
+  +vz = float(H.first(v))
+  +vy = float(H.first(r))
+  +w0 = float(H.first(w))
+  +w1 = float(H.first(tail(w)))
+  window.sums(7n, tail(v), tail(r), tail(tail(w)), True{}, ((vz * w0) - (vy * w1) : F32), ((vz * w1) + (vy * w0) : F32))
+
+# Rows of the synthesis buffer (zlin): 64 floats each. Entries 4i to 4i + 3,
+# for i below 15, are a subband's value for the left and right channels of
+# a time slot and of the next; the last four are two subbands' of one slot.
+
+# Sixteen rows' next four entries, a list for each of the four (the oldest
+# row first), and the rows after them.
+type Lanes is Data:
+  Lanes{l0: +List<U32>, l1: +List<U32>, l2: +List<U32>, l3: +List<U32>, rows: +List<+List<U32>>}
+
+def lanes(rows: +List<+List<U32>>, l0: +List<U32>, l1: +List<U32>, l2: +List<U32>, l3: +List<U32>, later: +List<+List<U32>>) -> Lanes:
+  match rows:
+    case Nil{}: Lanes{l0, l1, l2, l3, List.reverse(&2, +List<U32>, later)}
+    case Con{Con{+a, Con{+b, Con{+c, Con{+d, +rest}}}}, more}: lanes(more, Con{a, l0}, Con{b, l1}, Con{c, l2}, Con{d, l3}, Con{rest, later})
+    case Con{_, more}: lanes(more, Con{0, l0}, Con{0, l1}, Con{0, l2}, Con{0, l3}, Con{Nil{}, later})
+
+def Lanes.l0(lanes: Lanes) -> +List<U32>:
+  Lanes{l0, _, _, _, _} = lanes
+  l0
+
+def Lanes.l1(lanes: Lanes) -> +List<U32>:
+  Lanes{_, l1, _, _, _} = lanes
+  l1
+
+def Lanes.l2(lanes: Lanes) -> +List<U32>:
+  Lanes{_, _, l2, _, _} = lanes
+  l2
+
+def Lanes.l3(lanes: Lanes) -> +List<U32>:
+  Lanes{_, _, _, l3, _} = lanes
+  l3
+
+def Lanes.rows(lanes: Lanes) -> +List<+List<U32>>:
+  Lanes{_, _, _, _, rows} = lanes
+  rows
+
+# What the fifteen subband pairs of a call give: samples 1 to 15 and 17 to
+# 31 of its two time slots, each as it is laid in the output (a frame a
+# channel after a channel; the lists of 17 to 31 the last first).
+type Blocks is Data:
+  Blocks{ax: +List<U32>, bx: +List<U32>, ay: +List<U32>, by: +List<U32>}
+
+# A sample of a channel or of two onto a list: left then right as read.
+def onto(mono: Bool, +left: U32, +right: U32, acc: +List<U32>) -> +List<U32>:
+  match mono:
+    case True{}: Con{left, acc}
+    case False{}: Con{left, Con{right, acc}}
+
+def onto.back(mono: Bool, +left: U32, +right: U32, acc: +List<U32>) -> +List<U32>:
+  match mono:
+    case True{}: Con{left, acc}
+    case False{}: Con{right, Con{left, acc}}
+
+# The window over the rows, four entries at a time: entry 4i's sums are
+# samples 15 - i and 17 + i, with g_win's row 14 - i (`wins` is g_win the
+# last row first).
+def window.rows(n: Nat, wins: +List<+List<U32>>, +rows: +List<+List<U32>>, +mono: Bool, blocks: Blocks) -> Blocks:
+  match n:
+    case 0n: blocks
+    case 1n+k:
+      match wins:
+        case Nil{}: blocks
+        case Con{+w, more}:
+          Blocks{ax, bx, ay, by} = blocks
+          +now = lanes(rows, Nil{}, Nil{}, Nil{}, Nil{}, Nil{})
+          +s0 = window(List.reverse(&2, U32, Lanes.l0(now)), Lanes.l0(now), w)
+          +s1 = window(List.reverse(&2, U32, Lanes.l1(now)), Lanes.l1(now), w)
+          +s2 = window(List.reverse(&2, U32, Lanes.l2(now)), Lanes.l2(now), w)
+          +s3 = window(List.reverse(&2, U32, Lanes.l3(now)), Lanes.l3(now), w)
+          window.rows(k, more, Lanes.rows(now), mono, Blocks{onto(mono, (s0 >> 16n : U32), (s1 >> 16n : U32), ax), onto.back(mono, (s0 .&. 65535 : U32), (s1 .&. 65535 : U32), bx),
+            onto(mono, (s2 >> 16n : U32), (s3 >> 16n : U32), ay), onto.back(mono, (s2 .&. 65535 : U32), (s3 .&. 65535 : U32), by)})
+
+# Fifteen groups of four entries from four lists walked together (a missing
+# entry is 0), onto `acc` the last first.
+def row.groups(n: Nat, +a: +List<U32>, +b: +List<U32>, +c: +List<U32>, +d: +List<U32>, acc: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: acc
+    case 1n+k: row.groups(k, tail(a), tail(b), tail(c), tail(d), Con{H.first(d), Con{H.first(c), Con{H.first(b), Con{H.first(a), acc}}}})
+
+# A row: fifteen groups, then four entries.
+def row.made(+a: +List<U32>, +b: +List<U32>, +c: +List<U32>, +d: +List<U32>, +e0: U32, +e1: U32, +e2: U32, +e3: U32) -> +List<U32>:
+  List.reverse.go(&2, U32, row.groups(15n, a, b, c, d, Nil{}), [e0, e1, e2, e3])
+
+# The row before the newest gets the third and fourth entry of its fifteen
+# groups from the call after the one that made it.
+def row.completed(n: Nat, row: +List<U32>, +l: +List<U32>, +r: +List<U32>, acc: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: List.reverse.go(&2, U32, acc, row)
+    case 1n+k:
+      match row:
+        case Con{+a, Con{+b, Con{_, Con{_, rest}}}}: row.completed(k, rest, tail(l), tail(r), Con{H.first(r), Con{H.first(l), Con{b, Con{a, acc}}}})
+        case +short: List.reverse.go(&2, U32, acc, short)
+
+# The four last entries of each of sixteen rows, a list for each (the
+# newest row first).
+def rows.ends(rows: +List<+List<U32>>, e0: +List<U32>, e1: +List<U32>, e2: +List<U32>, e3: +List<U32>) -> Lanes:
+  match rows:
+    case Nil{}: Lanes{List.reverse(&2, U32, e0), List.reverse(&2, U32, e1), List.reverse(&2, U32, e2), List.reverse(&2, U32, e3), Nil{}}
+    case Con{+row, more}:
+      +end = List.drop(&2, U32, row, 60n)
+      rows.ends(more, Con{H.nth(end, 0), e0}, Con{H.nth(end, 1), e1}, Con{H.nth(end, 2), e2}, Con{H.nth(end, 3), e3})
+
+# The first `n` rows of a list.
+def rows.newest(n: Nat, rows: +List<+List<U32>>, acc: +List<+List<U32>>) -> +List<+List<U32>>:
+  match n:
+    case 0n: List.reverse(&2, +List<U32>, acc)
+    case 1n+k:
+      match rows:
+        case Nil{}: List.reverse(&2, +List<U32>, acc)
+        case Con{+row, rest}: rows.newest(k, rest, Con{row, acc})
+
+# A call's 64 samples a channel (two time slots), and the fifteen rows the
+# next call begins with (the newest first; its third and fourth entries of
+# each group are the next call's to write).
+type Call is Data:
+  Call{pcm: +List<U32>, history: +List<+List<U32>>}
+
+def Call.pcm(call: Call) -> +List<U32>:
+  Call{pcm, _} = call
+  pcm
+
+def Call.history(call: Call) -> +List<+List<U32>>:
+  Call{_, history} = call
+  history
+
+# The samples of a call in order: for each of its two slots sample 0 (the
+# first sum of drmp3d_synth_pair), 1 to 15, 16 (its second sum), 17 to 31.
+# `e` has the rows' last four entries; the first slot's pair reads the
+# fifteen rows before the newest, the second's the newest fifteen.
+def call.samples(blocks: Blocks, +e: Lanes, +mono: Bool) -> +List<U32>:
+  Blocks{ax, bx, ay, by} = blocks
+  Lanes{+e0, +e1, +e2, +e3, _} = e
+  onto(mono, sample.scaled(pair.first(tail(e0))), sample.scaled(pair.first(tail(e1))), List.append(&2, U32, ax,
+    onto(mono, sample.scaled(pair.second(tail(e2))), sample.scaled(pair.second(tail(e3))), List.reverse.go(&2, U32, bx,
+      onto(mono, sample.scaled(pair.first(e0)), sample.scaled(pair.first(e1)), List.append(&2, U32, ay,
+        onto(mono, sample.scaled(pair.second(e2)), sample.scaled(pair.second(e3)), List.reverse(&2, U32, by))))))))
+
+def call.rows(+rows: +List<+List<U32>>, +ly: +List<U32>, +ry: +List<U32>, +mono: Bool, +wins: +List<+List<U32>>) -> Call:
+  Call{call.samples(window.rows(15n, wins, rows, mono, Blocks{Nil{}, Nil{}, Nil{}, Nil{}}), rows.ends(rows, Nil{}, Nil{}, Nil{}, Nil{}), mono),
+    Con{row.made(tail(ly), tail(ry), Nil{}, Nil{}, H.nth(ly, 16), H.nth(ry, 16), H.first(ly), H.first(ry)), rows.newest(14n, rows, Nil{})}}
+
+# drmp3d_synth for two time slots: `lx`, `rx` are the first slot's 32 values
+# of each channel after the DCT, `ly`, `ry` the second's (a mono frame's
+# right is its left), `history` the fifteen rows before, the newest first.
+# The newest of them is completed with the first slot's subbands 1 to 15; a
+# row is made of both slots' subbands 31 down to 17, with the first slot's
+# 16 and 0; the window and the pairs read those sixteen rows; and a row of
+# the second slot's subbands 1 to 15, with its 16 and 0, begins the next.
+def synth.call(history: +List<+List<U32>>, +lx: +List<U32>, +rx: +List<U32>, +ly: +List<U32>, +ry: +List<U32>, +mono: Bool, +wins: +List<+List<U32>>) -> Call:
+  match history:
+    case Nil{}: Call{Nil{}, Nil{}}
+    case Con{+newest, +older}:
+      call.rows(Con{row.made(List.reverse(&2, U32, lx), List.reverse(&2, U32, rx), List.reverse(&2, U32, ly), List.reverse(&2, U32, ry), H.nth(lx, 16), H.nth(rx, 16), H.first(lx), H.first(rx)),
+        Con{row.completed(15n, newest, tail(lx), tail(rx), Nil{}), older}}, ly, ry, mono, wins)
+
+# The loop of drmp3d_synth_granule: nine calls over a granule's eighteen
+# slots. `blocks` takes each call's samples, the last call first.
+type Synth is Data:
+  Synth{pcm: +List<U32>, history: +List<+List<U32>>}
+
+def blocks.joined(blocks: +List<+List<U32>>, acc: +List<U32>) -> +List<U32>:
+  match blocks:
+    case Nil{}: acc
+    case Con{+block, rest}: blocks.joined(rest, List.append(&2, U32, block, acc))
+
+def synth.calls(n: Nat, left: +List<+List<U32>>, +right: +List<+List<U32>>, +mono: Bool, +wins: +List<+List<U32>>, +history: +List<+List<U32>>, +blocks: +List<+List<U32>>) -> Synth:
+  match n:
+    case 0n: Synth{blocks.joined(blocks, Nil{}), history}
+    case 1n+k:
+      match left:
+        case Con{+lx, Con{+ly, +later}}:
+          +done = synth.call(history, lx, row.first(right), ly, row.first(List.drop(&2, +List<U32>, right, 1n)), mono, wins)
+          synth.calls(k, later, List.drop(&2, +List<U32>, right, 2n), mono, wins, Call.history(done), Con{Call.pcm(done), blocks})
+        case _: Synth{blocks.joined(blocks, Nil{}), history}
+
+# A mono frame's rows keep the entries of the right channel that the frames
+# before left in the decoder (drmp3d_synth_granule copies back every other
+# float): the odd entries of `old` at the same place.
+def row.merged(row: +List<U32>, +old: +List<U32>, acc: +List<U32>) -> +List<U32>:
+  match row:
+    case Con{+even, Con{_, rest}}: row.merged(rest, tail(tail(old)), Con{H.first(tail(old)), Con{even, acc}})
+    case +short: List.reverse.go(&2, U32, acc, short)
+
+def rows.merged(rows: +List<+List<U32>>, +old: +List<+List<U32>>, acc: +List<+List<U32>>) -> +List<+List<U32>>:
+  match rows:
+    case Nil{}: List.reverse(&2, +List<U32>, acc)
+    case Con{+row, rest}: rows.merged(rest, List.drop(&2, +List<U32>, old, 1n), Con{row.merged(row, row.first(old), Nil{}), acc})
+
+def synth.kept(mono: Bool, synth: Synth, +old: +List<+List<U32>>) -> Synth:
+  match mono:
+    case False{}: synth
+    case True{}:
+      Synth{pcm, history} = synth
+      Synth{pcm, rows.merged(history, old, Nil{})}
+
+def dct.right(mono: Bool, +left: +List<+List<U32>>, +values: +List<U32>, +sec: +List<U32>) -> +List<+List<U32>>:
+  match mono:
+    case True{}: left
+    case False{}: dct.slots(18n, subbands(32n, values, Nil{}), sec, Nil{})
+
+# drmp3d_synth_granule: the channels' subband samples (576 each) through
+# the DCT and the window to 576 samples a channel, a frame a channel after a
+# channel, each an int16's 16 bits; and the fifteen rows (qmf_state) the
+# next granule begins with.
+def synth.granule(+left: +List<U32>, +right: +List<U32>, +mono: Bool, +history: +List<+List<U32>>) -> Synth:
+  +sec = T.sec()
+  +slots = dct.slots(18n, subbands(32n, left, Nil{}), sec, Nil{})
+  synth.kept(mono, synth.calls(9n, slots, dct.right(mono, slots, right, sec), mono, List.reverse(&2, +List<U32>, T.win()), history, Nil{}), history)
+
+def Synth.pcm(synth: Synth) -> +List<U32>:
+  Synth{pcm, _} = synth
+  pcm
+
+def Synth.history(synth: Synth) -> +List<+List<U32>>:
+  Synth{_, history} = synth
+  history
+
 def Gr.first(grs: +List<H.Gr>, +or: H.Gr) -> H.Gr:
   match grs:
     case Nil{}: or
@@ -1066,7 +1530,7 @@ def Gr.first(grs: +List<H.Gr>, +or: H.Gr) -> H.Gr:
 # positions, the scales, whether every read was inside the array, and the
 # values, a channel after a channel (the last first).
 type Granules is Data:
-  Granules{pos: U32, ist0: +List<U32>, ist1: +List<U32>, scf: +List<U32>, overlap0: +List<U32>, overlap1: +List<U32>, fine: Bool, spectra: +List<+List<U32>>}
+  Granules{pos: U32, ist0: +List<U32>, ist1: +List<U32>, scf: +List<U32>, overlap0: +List<U32>, overlap1: +List<U32>, qmf: +List<+List<U32>>, fine: Bool, spectra: +List<+List<U32>>, pcm: +List<+List<U32>>}
 
 def granules.pushed(mono: Bool, +left: +List<U32>, +right: +List<U32>, +out: +List<+List<U32>>) -> +List<+List<U32>>:
   match mono:
@@ -1077,25 +1541,26 @@ def granules.pushed(mono: Bool, +left: +List<U32>, +right: +List<U32>, +out: +Li
 # or two granules of one or two channels. `limit` is the main data's bits
 # and `pos` the granule's first.
 def granules(n: Nat, grs: +List<H.Gr>, +mono: Bool, +main: +List<U32>, +limit: U32, +pos: U32, +h: U32, +ist0: +List<U32>, +ist1: +List<U32>, +scf: +List<U32>, +sh: U32, +overlap0: +List<U32>,
-    +overlap1: +List<U32>, +fine: Bool, +out: +List<+List<U32>>) -> Granules:
+    +overlap1: +List<U32>, +qmf: +List<+List<U32>>, +fine: Bool, +out: +List<+List<U32>>, +pcm: +List<+List<U32>>) -> Granules:
   match n:
-    case 0n: Granules{pos, ist0, ist1, scf, overlap0, overlap1, fine, out}
+    case 0n: Granules{pos, ist0, ist1, scf, overlap0, overlap1, qmf, fine, out, pcm}
     case 1n+k:
       match grs:
-        case Nil{}: Granules{pos, ist0, ist1, scf, overlap0, overlap1, fine, out}
+        case Nil{}: Granules{pos, ist0, ist1, scf, overlap0, overlap1, qmf, fine, out, pcm}
         case Con{+gr0, +rest}:
           +done = granule(mono, gr0, Gr.first(rest, gr0), main, limit, pos, h, ist0, ist1, scf, sh)
           +left = filter(Channels.left(done), overlap0, h, gr0)
           +right = filter.right(mono, Channels.right(done), overlap1, h, Gr.first(rest, gr0))
+          +made = synth.granule(Out.values(left), Out.values(right), mono, qmf)
           granules(k, Bool.pick(+List<H.Gr>, mono, rest, List.drop(&2, H.Gr, rest, 1n)), mono, main, limit, Channels.pos(done), h, Channels.ist0(done), Channels.ist1(done), Channels.scf(done),
-            sh, Out.overlap(left), Out.overlap(right), fine && Channels.fine(done), granules.pushed(mono, Out.values(left), Out.values(right), out))
+            sh, Out.overlap(left), Out.overlap(right), Synth.history(made), fine && Channels.fine(done), granules.pushed(mono, Out.values(left), Out.values(right), out), Con{Synth.pcm(made), pcm})
 
 # drmp3_L3_save_reservoir after the granules: what was not read of the main
 # data is the next frames' reservoir.
 def decoded.granules(grans: Granules, +h: U32, +free: U32, +main: +List<U32>, +len: U32, +array: +List<U32>, +bytes: U32, +compress: U32) -> Decoded:
-  Granules{+pos, ist0, ist1, scf, overlap0, overlap1, +fine, spectra} = grans
-  Decoded{Decoder{H.Dec{h, free, H.layer3.kept(main, len, ((pos + 7) / 8 : U32))}, array, scf, ist0, ist1, compress, overlap0, overlap1}, H.hdr.samples(h), bytes, Bool.pick(U32, fine, 0, 1),
-    List.reverse(&2, +List<U32>, spectra)}
+  Granules{+pos, ist0, ist1, scf, overlap0, overlap1, qmf, +fine, spectra, pcm} = grans
+  Decoded{Decoder{H.Dec{h, free, H.layer3.kept(main, len, ((pos + 7) / 8 : U32))}, array, scf, ist0, ist1, compress, overlap0, overlap1, qmf}, H.hdr.samples(h), bytes, Bool.pick(U32, fine, 0, 1),
+    List.reverse(&2, +List<U32>, spectra), blocks.joined(pcm, Nil{})}
 
 # drmp3_L3_restore_reservoir: the frame's main data after the reservoir's
 # last main_data_begin bytes, and how many bytes that is.
@@ -1115,7 +1580,7 @@ def Side.grs(side: H.Side) -> +List<H.Gr>:
 
 # The reservoir's bytes.
 def Decoder.reserv(decoder: Decoder) -> +List<U32>:
-  Decoder{H.Dec{_, _, reserv}, _, _, _, _, _, _, _} = decoder
+  Decoder{H.Dec{_, _, reserv}, _, _, _, _, _, _, _, _} = decoder
   reserv
 
 # scalefac_compress of the granule information's second slot once
@@ -1128,21 +1593,21 @@ def slot.compress(grs: +List<H.Gr>, +old: U32) -> U32:
     case Con{H.Gr{_, +big, _, +compress, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _}, _}: Bool.pick(U32, (big > 288 : U32), old, compress)
 
 def Decoder.slot(decoder: Decoder, +side: H.Side) -> Decoder:
-  Decoder{dec, main, scf, ist0, ist1, +compress, overlap0, overlap1} = decoder
-  Decoder{dec, main, scf, ist0, ist1, slot.compress(List.drop(&2, H.Gr, Side.grs(side), 1n), compress), overlap0, overlap1}
+  Decoder{dec, main, scf, ist0, ist1, +compress, overlap0, overlap1, qmf} = decoder
+  Decoder{dec, main, scf, ist0, ist1, slot.compress(List.drop(&2, H.Gr, Side.grs(side), 1n), compress), overlap0, overlap1, qmf}
 
 # A frame whose reservoir is short of main_data_begin: its main data is
 # written and kept for the next frames, and nothing is decoded.
 def frame.short(mained: +List<U32> & U32, +h: U32, +free: U32, +bytes: U32, decoder: Decoder) -> Decoded:
   (+main, +len) = mained
-  Decoder{_, +array, scf, ist0, ist1, +compress, overlap0, overlap1} = decoder
-  Decoded{Decoder{H.Dec{h, free, H.layer3.kept(main, len, 0)}, frame.array(main, len, array), scf, ist0, ist1, compress, overlap0, overlap1}, 0, bytes, 0, Nil{}}
+  Decoder{_, +array, scf, ist0, ist1, +compress, overlap0, overlap1, qmf} = decoder
+  Decoded{Decoder{H.Dec{h, free, H.layer3.kept(main, len, 0)}, frame.array(main, len, array), scf, ist0, ist1, compress, overlap0, overlap1, qmf}, 0, bytes, 0, Nil{}, Nil{}}
 
 def frame.full(mained: +List<U32> & U32, +grs: +List<H.Gr>, +h: U32, +free: U32, +bytes: U32, decoder: Decoder) -> Decoded:
   (+main, +len) = mained
-  Decoder{_, +array, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1} = decoder
+  Decoder{_, +array, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1, +qmf} = decoder
   +whole = frame.array(main, len, array)
-  decoded.granules(granules(2n, grs, H.hdr.mono(h), whole, (len * 8 : U32), 0, h, ist0, ist1, scf, (compress .&. 1 : U32), overlap0, overlap1, True{}, Nil{}), h, free, main, len, whole, bytes, compress)
+  decoded.granules(granules(2n, grs, H.hdr.mono(h), whole, (len * 8 : U32), 0, h, ist0, ist1, scf, (compress .&. 1 : U32), overlap0, overlap1, qmf, True{}, Nil{}, Nil{}), h, free, main, len, whole, bytes, compress)
 
 # A Layer III frame by what its side information allows. 0: the side
 # information failed or the frame is too short for it, which clears the
@@ -1151,8 +1616,8 @@ def frame.full(mained: +List<U32> & U32, +grs: +List<H.Gr>, +h: U32, +free: U32,
 def frame.side(state: U32, +side: H.Side, +h: U32, +free: U32, +payload: +List<U32>, +limit: U32, +bytes: U32, +decoder: Decoder) -> Decoded:
   match state:
     case 0:
-      Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1} = decoder
-      Decoded{Decoder{H.Dec{(h .&. 16777215 : U32), free, reserv}, array, scf, ist0, ist1, compress, overlap0, overlap1}, 0, bytes, 0, Nil{}}
+      Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1, +qmf} = decoder
+      Decoded{Decoder{H.Dec{(h .&. 16777215 : U32), free, reserv}, array, scf, ist0, ist1, compress, overlap0, overlap1, qmf}, 0, bytes, 0, Nil{}, Nil{}}
     case 1: frame.short(frame.main(side, Decoder.reserv(decoder), payload, limit), h, free, bytes, decoder)
     case _: frame.full(frame.main(side, Decoder.reserv(decoder), payload, limit), Side.grs(side), h, free, bytes, decoder)
 
@@ -1173,14 +1638,14 @@ def frame.at(layer3: Bool, +at: +List<U32>, +size: U32, +skip: U32, +free: U32, 
   match layer3:
     case True{}: frame.layer3(at, size, skip, free, decoder)
     case False{}:
-      Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1} = decoder
-      Decoded{Decoder{H.Dec{H.word(at), free, reserv}, array, scf, ist0, ist1, compress, overlap0, overlap1}, 0, (skip + size : U32), 2, Nil{}}
+      Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1, +qmf} = decoder
+      Decoded{Decoder{H.Dec{H.word(at), free, reserv}, array, scf, ist0, ist1, compress, overlap0, overlap1, qmf}, 0, (skip + size : U32), 2, Nil{}, Nil{}}
 
 # The frame the search found in a zeroed decoder, or none: every byte
 # searched is used.
 def frame.found(found: H.Found, +window: +List<U32>) -> Decoded:
   match found:
-    case H.Found{+skip, 0, +free}: Decoded{Decoder{H.Dec{0, free, Nil{}}, zeros.onto(2815n, Nil{}), zeros.onto(40n, Nil{}), zeros.onto(39n, Nil{}), zeros.onto(39n, Nil{}), 0, zeros.onto(288n, Nil{}), zeros.onto(288n, Nil{})}, 0, skip, 0, Nil{}}
+    case H.Found{+skip, 0, +free}: Decoded{Decoder{H.Dec{0, free, Nil{}}, zeros.onto(2815n, Nil{}), zeros.onto(40n, Nil{}), zeros.onto(39n, Nil{}), zeros.onto(39n, Nil{}), 0, zeros.onto(288n, Nil{}), zeros.onto(288n, Nil{}), rows.zero(15n, Nil{})}, 0, skip, 0, Nil{}, Nil{}}
     case H.Found{+skip, +size, +free}:
       +at = List.drop(&2, U32, window, U32.to_nat(skip))
       frame.at(U32.is_eq(H.hdr.layer(H.word(at)), 1), at, size, skip, free, Decoder.zero())
@@ -1189,14 +1654,13 @@ def frame.next(follows: Bool, +decoder: Decoder, +window: +List<U32>, +bytes: U3
   match follows:
     case False{}: frame.found(H.find(window, bytes, 0), window)
     case True{}:
-      Decoder{H.Dec{_, +free, _}, _, _, _, _, _, _, _} = decoder
+      Decoder{H.Dec{_, +free, _}, _, _, _, _, _, _, _, _} = decoder
       frame.at(U32.is_eq(H.hdr.layer(H.word(window)), 1), window, (H.hdr.bytes(H.word(window), free) + H.hdr.padding(H.word(window)) : U32), 0, free, decoder)
 
-# drmp3dec_decode_frame on `bytes` bytes, as far as this module goes: the
-# granules' subband samples, before the synthesis filter. A frame that
+# drmp3dec_decode_frame on `bytes` bytes, its samples wanted. A frame that
 # follows the last one's header is taken
 # where it stands (H.decode.follows); otherwise the decoder is zeroed, its
 # scratch too, and a frame is searched for.
 def decode(+decoder: Decoder, +window: +List<U32>, +bytes: U32) -> Decoded:
-  Decoder{H.Dec{+header, +free, _}, _, _, _, _, _, _, _} = decoder
+  Decoder{H.Dec{+header, +free, _}, _, _, _, _, _, _, _, _} = decoder
   frame.next(H.decode.follows(header, free, window, bytes), decoder, window, bytes)
