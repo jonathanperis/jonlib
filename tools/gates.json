@@ -1958,6 +1958,21 @@
    "minutes": 10
   },
   {
+   "id": "msf-gif",
+   "title": "The GIF encoder of raylib's screen recording example (msf_gif.h: msf_gif_begin, msf_gif_frame, msf_gif_end) against the header's SSE2 and scalar builds: cooking with the dither and the lowered depths, palettes, LZW with table resets, sub-blocks, frames equal to the one before, the asked depths and delays, and the frames the C code writes past its buffer (refused)",
+   "run": [
+    "{python}",
+    "tools/msf_gif_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1
+  },
+  {
    "id": "wave-format",
    "title": "WaveFormat (miniaudio ma_convert_frames: formats, channel maps, linear resampling and its low-pass filter) against raylib with its audio module and the host contraction profile",
    "run": [

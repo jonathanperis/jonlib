@@ -2497,3 +2497,111 @@ def Laws.stream_sound_always_processed():
 
 def Laws.stream_half_written_in_place():
   {==}
+
+def Laws.msf_gif_bits_of_depth_16():
+  {==}
+
+def Laws.msf_gif_bits_of_depth_1():
+  {==}
+
+def Laws.msf_gif_bits_add_up_to_the_depth():
+  {==}
+
+def Laws.msf_gif_multiplier_five_bits():
+  {==}
+
+def Laws.msf_gif_multiplier_no_bits():
+  {==}
+
+def Laws.msf_gif_dither_second_column():
+  {==}
+
+def Laws.msf_gif_dither_last_corner():
+  {==}
+
+def Laws.msf_gif_dither_repeats_every_four():
+  {==}
+
+def Laws.msf_gif_white_cooks_to_all_bits():
+  {==}
+
+def Laws.msf_gif_black_cooks_to_zero():
+  {==}
+
+def Laws.msf_gif_alpha_is_not_cooked():
+  {==}
+
+def Laws.msf_gif_pass_marks_colors_ascending():
+  {==}
+
+def Laws.msf_gif_channel_five_bits():
+  {==}
+
+def Laws.msf_gif_channel_one_bit():
+  {==}
+
+def Laws.msf_gif_channel_no_bits():
+  {==}
+
+def Laws.msf_gif_put_keeps_bits_below_a_byte():
+  {==}
+
+def Laws.msf_gif_put_fills_a_byte():
+  {==}
+
+def Laws.msf_gif_put_fills_two_bytes():
+  {==}
+
+def Laws.msf_gif_kid_found():
+  {==}
+
+def Laws.msf_gif_kid_missing():
+  {==}
+
+def Laws.msf_gif_minimum_code_size_two():
+  {==}
+
+def Laws.msf_gif_minimum_code_size_grows():
+  {==}
+
+def Laws.msf_gif_chunk_writes_size_first():
+  {==}
+
+def Laws.msf_gif_buffer_holds_one_more_block():
+  {==}
+
+def Laws.msf_gif_buffer_lacks_a_byte():
+  {==}
+
+def Laws.msf_gif_depth_asked_zero():
+  {==}
+
+def Laws.msf_gif_depth_asked_negative():
+  {==}
+
+def Laws.msf_gif_depth_asked_above():
+  {==}
+
+def Laws.msf_gif_begin_writes_the_screen():
+  {==}
+
+def Laws.msf_gif_begin_without_width_none():
+  {==}
+
+def Laws.msf_gif_begin_above_the_limit_none():
+  {==}
+
+def Laws.msf_gif_frame_of_one_white_pixel():
+  {==}
+
+def Laws.msf_gif_frame_equal_to_the_one_before_is_transparent():
+  {==}
+
+def Laws.msf_gif_frame_with_a_pixel_missing_none():
+  {==}
+
+def Laws.msf_gif_frame_with_a_pixel_more_none():
+  {==}
+
+def Laws.msf_gif_finish_adds_the_trailer():
+  {==}
