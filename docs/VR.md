@@ -73,5 +73,9 @@ whose perspective has no height are refused on Jonlib alone. On a host whose
 libm is `M.AppleLibm` every device must be refused (`--apple-contract`
 checks that on any host). CPU-1, CPU-2 and JavaScript.
 
+`core_vr_simulator` (its 2160x1200 render texture drawn to the window through
+the shader) replays frame by frame against the native example in the
+`examples-core` gate.
+
 Gaps: no stereo rendering (no renderer Jonlib reproduces has it); only the
 uncontracted profile; `M.AppleLibm` is refused; no GPU evidence.
