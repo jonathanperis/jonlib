@@ -31,6 +31,14 @@
  * - GetFileModTime: an example's own call (shaders_hot_reloading) answers
  *   the script's seed for every file, a modification time that does not
  *   depend on the checkout.
+ * - GetApplicationDirectory: an example's own call (core_screen_recording)
+ *   answers "./", the script's directory: the file the example saves there
+ *   is left where the probe compares files.
+ * - LoadImageFromScreen: an example's own call (core_screen_recording) gets
+ *   the image a desktop host reads, the rows from the top as R8G8B8A8. The
+ *   memory platform's own answer has the rows from the bottom with red and
+ *   blue swapped (rlReadScreenPixels over rlsw's BGRA buffer, which is
+ *   already top-down); the hook turns it back.
  * - InitAudioDevice (with JONLIB_EXAMPLE_AUDIO_CLOCK only, for the examples
  *   whose frames show what the audio device did): opens the device, stops
  *   its thread and notes the scripted clock; WindowShouldClose then asks the
@@ -43,6 +51,8 @@
 #define InitWindow JonlibExampleInitWindow
 #define WaitTime JonlibExampleWaitTime
 #define GetFileModTime JonlibExampleFileModTime
+#define GetApplicationDirectory JonlibExampleApplicationDirectory
+#define LoadImageFromScreen JonlibExampleLoadImageFromScreen
 #define WindowShouldClose JonlibExampleWindowShouldClose
 #define BeginDrawing JonlibExampleBeginDrawing
 #define EndDrawing JonlibExampleEndDrawing

@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 204 ported, 6 ready, 2 waiting.
+Totals: 212 examples; 205 ported, 6 ready, 1 waiting.
 
 ## APIs that unblock the most examples
 
@@ -70,7 +70,7 @@ Totals: 212 examples; 204 ported, 6 ready, 2 waiting.
 | `core_input_actions` | core | ported |  |
 | `core_directory_files` | core | waiting | `GetWorkingDirectory`, `LoadDirectoryFiles`, `LoadDirectoryFilesEx`, `UnloadDirectoryFiles`, `GuiGetFont`, `GuiListViewEx` |
 | `core_highdpi_testbed` | core | ported |  |
-| `core_screen_recording` | core | waiting | `GetApplicationDirectory` |
+| `core_screen_recording` | core | ported | `GetApplicationDirectory` |
 | `core_clipboard_text` | core | ported |  |
 | `core_text_file_loading` | core | ported |  |
 | `core_compute_hash` | core | ported |  |

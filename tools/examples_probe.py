@@ -118,6 +118,7 @@ KEY_G, KEY_SPACE, KEY_C, KEY_ENTER = 71, 32, 67, 257
 KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR = 49, 50, 51, 52
 KEY_P, KEY_W, KEY_D, KEY_TAB = 80, 87, 68, 258
 KEY_F = 70
+KEY_LEFT_CONTROL = 341
 
 # name: (raylib source, setup expression, State is Data, needs the logo image)
 EXAMPLES = {
@@ -301,6 +302,7 @@ EXAMPLES = {
     'audio_music_stream': ('audio/audio_music_stream.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_stream_effects': ('audio/audio_stream_effects.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_mixed_processor': ('audio/audio_mixed_processor.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'core_screen_recording': ('core/core_screen_recording.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'core_vr_simulator': ('core/core_vr_simulator.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shaders_game_of_life': ('shaders/shaders_game_of_life.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
@@ -436,6 +438,9 @@ IO_SETUP.add('audio_stream_callback')
 PERSPECTIVE.add('audio_sound_positioning')
 PERSPECTIVE.add('core_vr_simulator')
 IO_SETUP.add('shaders_game_of_life'); SEEDED.add('shaders_game_of_life')
+# core_screen_recording: the recording is saved in the loop, in the application's directory, which the reference's hook
+# and the port's setup argument both make the script's own. Its sines have no AppleLibm profile (docs/MATH.md).
+IO_SETUP.add('core_screen_recording'); EFFECTS.add('core_screen_recording'); SCRATCH.add('core_screen_recording'); PERSPECTIVE.add('core_screen_recording')
 
 
 def scratch(probe, index, native=False):
@@ -1243,6 +1248,13 @@ def scripts():
                                                    quick([key(KEY_LEFT)]), slow([key(KEY_LEFT, False), key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]),
                                                    quick([key(KEY_RIGHT)]), long([key(KEY_RIGHT, False)]), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]),
                                                    quick()]),
+        # Ctrl+R begins a recording: the sixth frame after it and the twelfth go to the encoder (the screen read is the
+        # frame drawn before, with the circle further along its wave the second time); Ctrl+R again writes
+        # screenrecording.gif, which both sides must leave with the same bytes. R without Ctrl does nothing. The circle
+        # reaches the right side after 180 frames: that branch is not scripted.
+        script('core_screen_recording', 'record', [quick(), quick([key(KEY_LEFT_CONTROL)]), quick([key(KEY_R)]), quick([key(KEY_R, False)]), quick(), slow(), quick(),
+                                                   quick(), quick(), quick(), long(), quick(), quick(), quick(), quick([key(KEY_R)]),
+                                                   quick([key(KEY_R, False), key(KEY_LEFT_CONTROL, False)]), quick([key(KEY_R)]), quick()]),
         # Every frame is a refusal (UNDEFINED_NATIVE): the port still runs the clock and the stream's callback, the
         # frequency keys and both wave keys before it refuses.
         script('audio_stream_callback', 'waves', [quick(), quick([key(KEY_UP)]), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), slow([key(KEY_LEFT)]),
@@ -1666,6 +1678,21 @@ static unsigned seed = 0;
 time_t JonlibExampleTime(time_t *out) { time_t now = (time_t)seed + (time_t)probe_clock; if (out) *out = now; return now; }
 // An example's GetFileModTime: the script's seed, whatever the file.
 long JonlibExampleFileModTime(const char *fileName) { (void)fileName; return (long)seed; }
+// An example's GetApplicationDirectory: the script's directory, which is the working directory.
+const char *JonlibExampleApplicationDirectory(void) { return "./"; }
+// An example's LoadImageFromScreen: the desktop's image. The memory platform's has the rows from the bottom and red and
+// blue swapped; both are turned back here.
+Image JonlibExampleLoadImageFromScreen(void) {
+    Image image = LoadImageFromScreen();
+    unsigned char *data = image.data;
+    int stride = image.width*4;
+    for (int y = 0; data && y < image.height/2; y++) {
+        unsigned char *top = data + y*stride, *bottom = data + (image.height - 1 - y)*stride;
+        for (int x = 0; x < stride; x++) { unsigned char held = top[x]; top[x] = bottom[x]; bottom[x] = held; }
+    }
+    for (int i = 0; data && i < image.width*image.height; i++) { unsigned char held = data[i*4]; data[i*4] = data[i*4 + 2]; data[i*4 + 2] = held; }
+    return image;
+}
 // An example's own WaitTime: its sleep ends at raylib's destination, GetTime() + seconds.
 void JonlibExampleWaitTime(double seconds) { if (!(seconds < 0)) probe_after = probe_clock + seconds; WaitTime(seconds); }
 
