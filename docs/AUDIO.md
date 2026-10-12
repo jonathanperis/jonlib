@@ -293,9 +293,9 @@ buffers in the order raudio tracks them. It is plain `Data` that a program
 threads through the functions below; `AudioDevice.none()` is the state before
 `InitAudioDevice`. (It is not Base's `Audio`, a host output that Jonlib does
 not open yet.) The device is raylib's: 32-bit float samples, two channels,
-48000 Hz. **Nothing is sent to a host device and no time passes**: a sound
-that plays stays at its start until the mixer is ported, so `Sound.is_playing`
-is what raylib answers before its device thread has mixed a frame.
+48000 Hz. **Nothing is sent to a host device and no clock runs**: a sound
+that plays advances only when the program asks for a device callback with
+`AudioDevice.mix` ([below](#the-mixer)).
 
 A `Sound{stream, frames}` is raylib's handle. Its `AudioStream{buffer, rate,
 size, channels}` names a tracked buffer by number (0 is raylib's NULL;
@@ -315,8 +315,9 @@ volume, a pitch, a pan, its playing and paused flags and a block of samples
 | `Sound.is_valid(sound)` | `IsSoundValid` | Frames, buffer, sample rate, sample size and channels all nonzero. |
 | `Sound.unload(device, sound)` | `UnloadSound` | The buffer is untracked and its block freed, even a block other buffers still play. |
 | `Sound.unload_alias(device, alias)` | `UnloadSoundAlias` | The buffer is untracked; its block stays. |
-| `Sound.play` / `stop` / `pause` / `resume` | `PlaySound` ... | Play: playing, not paused. Stop: a playing buffer stops; a paused one stays as it is (raylib only stops buffers that are playing and not paused). |
-| `Sound.is_playing(device, sound)` | `IsSoundPlaying` | Playing and not paused. |
+| `Sound.play` / `stop` / `pause` / `resume` | `PlaySound` ... | Play: playing from the first frame, not paused. Stop: a playing buffer stops, back at its first frame; a paused one stays as it is (raylib only stops buffers that are playing and not paused). |
+| `Sound.is_playing(device, sound)` | `IsSoundPlaying` | Playing and not paused; false again once the mixer reached the buffer's end. |
+| `AudioDevice.mix(device, frames)` | (the device's data callback) | One callback of `frames` frames, [below](#the-mixer). |
 | `Sound.set_volume` / `set_pitch` / `set_pan` | `SetSoundVolume` ... | Any volume; pitches above 0; pans clamped to -1..1 (NaN stays). |
 | `Sound.update(device, sound, data, frames)` | `UpdateSound` | The buffer stops and the first `frames` frames of its block become `data` (F32 bits, two per frame), for every buffer over that block. |
 | `Sound.data(device, sound)` | (the buffer's memory) | The samples a sound's buffer plays, if it has any. |
@@ -346,24 +347,69 @@ was unloaded (freed memory); an alias of a buffer whose block was freed;
 whose output rate `48000/pitch` does not fit an unsigned int (raylib's cast is
 undefined).
 
+### The mixer
+
+`AudioDevice.mix(device, frames)` is one data callback of the device, as
+raudio's `OnSendAudioDataToDevice` mixes it and miniaudio then finishes it,
+in uncontracted binary32 arithmetic (raylib compiled with
+`-ffp-contract=off`, or a host without FMA). It returns the device and the
+callback's samples (F32 bits, two per frame). A device asks for one period
+at a time (480 frames on miniaudio's null backend); the program chooses.
+
+- Every buffer that is playing and not paused takes part, in tracked order.
+  It gives the frames left before its end, at most `frames`, then stops
+  (not playing, back at its first frame).
+- Its frames go through its converter's resampler, which holds two frames
+  and, at the device rate, gives the frame *before* the one it just read: a
+  sound comes out one frame late, its last frame is never heard, and the
+  held frames stay for the next `PlaySound` (its first output is the last
+  frame the buffer read before, not silence).
+- raudio reads a static buffer in runs of 512 frames and takes a cursor past
+  two halves of the buffer (`size/2` frames each) for its end: a run that
+  starts on the last frame of a buffer of an odd size (3 frames and more)
+  reads nothing and stops it.
+- Each frame is scaled by the levels of `MixAudioFrames`: with `right =
+  (pan + 1)/2` and `left = 1 - right`, `volume*0.5*side*(3 - side*side)` for
+  each side, and added to the mix.
+- Then the master volume, when it is not 1, and miniaudio's clip to -1..1.
+
+A callback Jonlib does not mix returns `None` and the device as it was: an
+unready device; no frames, or more than 2^20; a playing buffer whose pitch
+moved its converter off the device rate (`(unsigned int)(48000/pitch)` is
+not 48000: the filtered resampling of pitched buffers is not ported yet),
+one without frames (raudio divides by its size) or one whose samples were
+freed; and a callback in which a subnormal or a NaN takes part or results
+(inside the callback miniaudio flushes subnormals to zero on x86 hosts only,
+and the bits of a NaN are the host's).
+
 ### How it is verified
 
 `tools/sound_probe.py` (gate `sound`) compiles `raudio.c` itself into the
 reference program, with `-ffp-contract=off` and only miniaudio's null
 backend, so that the program can read `AUDIO` and the audio buffers, and
-stops the device right after `InitAudioDevice` so that nothing is mixed. 41
-scripts of 370 steps over four sound slots run on both sides and on a Python
-model of raudio's state; after every step the ready flag, the master volume
-bits, every slot's handle fields with `IsSoundValid` and `IsSoundPlaying`,
-and every tracked buffer (its number, block, size, volume, pitch and pan
-bits, flags and an FNV-1a hash of its samples) must be equal. The waves are
+stops the device right after `InitAudioDevice`: its thread mixes nothing,
+and the program asks for each callback itself
+(`ma_device_handle_backend_data_callback`) with the script's frame counts.
+64 scripts of 570 steps over four sound slots run on both sides and on a
+Python model of raudio's state; after every step the ready flag, the master
+volume bits, every slot's handle fields with `IsSoundValid` and
+`IsSoundPlaying`, and every tracked buffer (its number, block, size, volume,
+pitch and pan bits, flags, an FNV-1a hash of its samples, its converter's
+output rate, its cursor and the two frames its resampler holds) must be
+equal, and after a callback the hash of its samples. The callbacks cover
+silence, sounds mixed to their end in callbacks of 1 to 30000 frames,
+replays over the held frames, pauses, levels for volumes and pans (negative
+and above 1), the master volume and the clip, three buffers at once with an
+alias, odd sizes (the lost last frame, at the start of a callback and of a
+512-frame run), pitches that leave the converter at the device rate, an
+updated block and a 29647-frame file. The waves are
 8-, 16- and 32-bit, of 1, 2, 4 and 6 channels, at 48000, 8000, 22050, 44100
 and 96000 Hz, with the empty cases above, and the files are the four `.wav`
 files of the examples that only play sounds (`boom`, `buttonfx`, `sound`,
 `coin`; 26522 to 48000 frames each), a small generated one, a missing one,
-one that is not a WAV and another extension. 28 scripts are compared with
-raylib; the 13 with a step raylib has no defined answer for are checked
-against the model on Jonlib alone. `IsSoundPlaying` is asked of raylib only on
+one that is not a WAV and another extension. 40 scripts are compared with
+raylib; the 24 with a step raylib has no defined answer for, or a callback
+Jonlib refuses, are checked against the model on Jonlib alone. `IsSoundPlaying` is asked of raylib only on
 a ready device and for a tracked buffer, and no script opens the device over
 a playing buffer (raylib would mix it before the reference can stop it). CPU-1,
 CPU-2 and JavaScript.
@@ -374,6 +420,6 @@ The examples that play sounds without showing audio state
 `raudio.c` compiled beside it the same way (`tools/examples_probe.py`): its
 device mixes on its own thread there, and no frame depends on it.
 
-Not yet available: the mixer and its clock (`Sound.is_playing` never becomes
-false by itself; pitch and pan have no audible effect yet), audio streams and
+Not yet available: mixing pitched buffers, the fused (FMA) profile of the
+mixer, a clock (the program asks for each callback), audio streams and
 music, and a host device. No GPU evidence.

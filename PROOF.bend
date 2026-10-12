@@ -1400,6 +1400,63 @@ def Laws.sound_unready_buffers_untouched():
 def Laws.sound_unloaded_handle_ignored():
   {==}
 
+def Laws.sound_play_from_the_start():
+  {==}
+
+def Laws.sound_stop_back_to_the_start():
+  {==}
+
+def Laws.sound_stop_paused_keeps_its_place():
+  {==}
+
+def Laws.audio_mix_count_within():
+  {==}
+
+def Laws.audio_mix_count_to_the_end():
+  {==}
+
+def Laws.audio_mix_ends_at_the_end():
+  {==}
+
+def Laws.audio_mix_goes_on_before_the_end():
+  {==}
+
+def Laws.audio_mix_odd_last_frame_lost():
+  {==}
+
+def Laws.audio_mix_odd_last_frame_stops():
+  {==}
+
+def Laws.audio_mix_odd_read_whole():
+  {==}
+
+def Laws.audio_mix_odd_cut_at_a_run():
+  {==}
+
+def Laws.audio_mix_even_last_frame_read():
+  {==}
+
+def Laws.audio_mix_one_frame_read():
+  {==}
+
+def Laws.audio_mix_subnormal_refused():
+  {==}
+
+def Laws.audio_mix_nan_refused():
+  {==}
+
+def Laws.audio_mix_infinity_itself_fine():
+  {==}
+
+def Laws.audio_mix_negative_zero_fine():
+  {==}
+
+def Laws.audio_mix_unready_refused():
+  {==}
+
+def Laws.audio_mix_no_frames_refused():
+  {==}
+
 def Laws.frame_init_window_zero_width(height):
   {==}
 
