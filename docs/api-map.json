@@ -6334,5 +6334,53 @@
     ],
     "api_id": "raylib:function:SetAudioStreamCallback",
     "milestone": "audio-stream"
+  },
+  "AttachAudioStreamProcessor": {
+    "jonlib": "AudioStream.attach_processor",
+    "status": "profile-covered",
+    "scope": "The processor becomes the last of the stream's (or sound's) buffer: in a device callback it is called, after those attached before it, on each run of at most 512 frames the buffer gives (stereo f32, after the converter and before the volume and pan); the calls, their order and every sample compared with raylib.",
+    "gaps": [
+      "No function is kept: a processor is a number (tag) in an AudioProcessors value, and AudioDevice.mix_processed or AudioClock.advance_processing calls the program's one function with it",
+      "The processor returns the samples it wrote instead of writing in place, and must give back as many as it was given",
+      "An unready device leaves the list as it is (raylib locks a mutex that does not exist)",
+      "A stream without a tracked buffer leaves the list as it is (raylib reads through the pointer)"
+    ],
+    "api_id": "raylib:function:AttachAudioStreamProcessor",
+    "milestone": "audio-stream"
+  },
+  "DetachAudioStreamProcessor": {
+    "jonlib": "AudioStream.detach_processor",
+    "status": "profile-covered",
+    "scope": "Every processor of the buffer with the tag goes; the others keep their order.",
+    "gaps": [
+      "No function is kept: a processor is a number (tag) in an AudioProcessors value, and AudioDevice.mix_processed or AudioClock.advance_processing calls the program's one function with it",
+      "An unready device leaves the list as it is (raylib locks a mutex that does not exist)",
+      "A stream without a tracked buffer leaves the list as it is (raylib reads through the pointer)"
+    ],
+    "api_id": "raylib:function:DetachAudioStreamProcessor",
+    "milestone": "audio-stream"
+  },
+  "AttachAudioMixedProcessor": {
+    "jonlib": "AudioDevice.attach_mixed_processor",
+    "status": "profile-covered",
+    "scope": "The processor becomes the last of the mixed output's: it is called on the whole mix of every device callback, after every buffer and before the master volume and the clip; the list outlives CloseAudioDevice; calls and samples compared with raylib.",
+    "gaps": [
+      "No function is kept: a processor is a number (tag) in an AudioProcessors value, and AudioDevice.mix_processed or AudioClock.advance_processing calls the program's one function with it",
+      "The processor returns the samples it wrote instead of writing in place, and must give back as many as it was given",
+      "An unready device leaves the list as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:AttachAudioMixedProcessor",
+    "milestone": "audio-stream"
+  },
+  "DetachAudioMixedProcessor": {
+    "jonlib": "AudioDevice.detach_mixed_processor",
+    "status": "profile-covered",
+    "scope": "Every mixed processor with the tag goes; the others keep their order.",
+    "gaps": [
+      "No function is kept: a processor is a number (tag) in an AudioProcessors value, and AudioDevice.mix_processed or AudioClock.advance_processing calls the program's one function with it",
+      "An unready device leaves the list as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:DetachAudioMixedProcessor",
+    "milestone": "audio-stream"
   }
 }

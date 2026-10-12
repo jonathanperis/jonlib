@@ -1907,6 +1907,36 @@ def Laws.stream_callback_answer_missing():
 def Laws.stream_callback_unready_asks_nothing():
   {==}
 
+def Laws.processors_in_attach_order():
+  {==}
+
+def Laws.processors_mixed_are_buffer_zero():
+  {==}
+
+def Laws.processors_detach_takes_every_one():
+  {==}
+
+def Laws.processors_mixed_attached_last():
+  {==}
+
+def Laws.processors_unready_attach_nothing():
+  {==}
+
+def Laws.processors_no_buffer_attach_nothing():
+  {==}
+
+def Laws.processors_samples_come_back():
+  {==}
+
+def Laws.processors_sample_lost():
+  {==}
+
+def Laws.processors_sample_added():
+  {==}
+
+def Laws.processors_chained():
+  {==}
+
 def Laws.stream_sound_always_processed():
   {==}
 

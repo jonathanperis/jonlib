@@ -463,6 +463,22 @@ def cases():
     add('clock-periods', ('init',), ('default', 480), ('load', 0, 'tone'), ('stream', 1, 44100, 32, 1), ('stream', 2, 22050, 16, 2), ('callback', 1, 1), ('play', 0), ('play', 1),
         ('play', 2), ('feed', 2, 480, ramp16[:480] + ramp16[:480]), ('periods', 3), ('pitch', 1, bits(2.0)), ('periods', 2), ('periods', 0), ('callback', 1, 0), ('periods', 1),
         ('close',), ('periods', 2))
+    # Processors: a stream's on each run of at most 512 frames it gives, in the order attached, then the mixed ones on
+    # the whole mix; a detach takes every one with the function.
+    add('processors', ('init',), ('default', 480), ('load', 0, 'tone'), ('stream', 1, 48000, 32, 2), ('attach', 1, 1), ('attach', 0, 2), ('attach', 0, 3), ('play', 0),
+        ('play', 1), ('feed', 1, 480, tone32[:960]), ('mix', 30), ('attach', 0, 2), ('attach', 1, 3), ('mix', 20), ('detach', 0, 2), ('mix', 100), ('attachmixed', 1),
+        ('attachmixed', 3), ('mix', 64), ('detachmixed', 1), ('detach', 1, 2), ('mix', 5), ('detachmixed', 3), ('detach', 1, 1), ('detach', 1, 3), ('detach', 0, 3), ('mix', 5),
+        ('close',))
+    add('processors-runs', ('init',), ('default', 600), ('stream', 0, 44100, 16, 1), ('stream', 1, 22050, 8, 2), ('callback', 0, 1), ('attach', 0, 2), ('attach', 0, 3),
+        ('attach', 1, 1), ('attachmixed', 2), ('play', 0), ('play', 1), ('feed', 1, 600, [(i * 37 + 11) & 255 for i in range(1200)]), ('mix', 600), ('mix', 1100),
+        ('pause', 0), ('mix', 513), ('stop', 1), ('close',), ('init',), ('mix', 3), ('close',))
+    add('processors-clock', ('init',), ('default', 480), ('stream', 0, 44100, 32, 1), ('callback', 0, 1), ('attach', 0, 3), ('attachmixed', 2), ('play', 0), ('periods', 3),
+        ('detach', 0, 3), ('periods', 2), ('close',))
+    add('refused-processor-zero', ('init',), ('attach', 0, 1))
+    add('refused-processor-detach-zero', ('init',), ('detach', 0, 1))
+    add('refused-processor-unready', ('attachmixed', 1), ('init',), ('default', 480), ('stream', 0, 44100, 16, 1), ('close',), ('attach', 0, 1))
+    add('refused-processor-loses-a-sample', ('init',), ('load', 0, 'tone'), ('attach', 0, 9), ('play', 0), ('mix', 4))
+    add('refused-mixed-processor-loses-a-sample', ('init',), ('attachmixed', 9), ('mix', 4))
     add('stream-callback-zero', ('init',), ('callback', 0, 1), ('default', 480), ('stream', 0, 44100, 16, 1), ('callback', 0, 0), ('play', 0), ('mix', 10), ('close',))
     add('refused-callback-unanswered', ('init',), ('default', 480), ('stream', 0, 44100, 32, 1), ('callback', 0, 1), ('plain', 4), ('play', 0), ('plain', 4))
     add('refused-callback-sound', ('init',), ('load', 0, 'mono16'), ('callback', 0, 1))
@@ -515,6 +531,7 @@ class Model:
         self.catalog, self.ready, self.master, self.next, self.default = catalog, False, 0, 1, 0
         self.buffers, self.blocks, self.sounds, self.undefined = [], {}, [ZERO] * SLOTS, False
         self.calls, self.asks = [0] * SLOTS, []
+        self.attached, self.proc, self.log = [], dict(count=0, prev=[0, 0]), []
 
     def buffer(self, slot):
         number = self.sounds[slot][0]
@@ -594,12 +611,33 @@ class Model:
         calls[slot] += count * channels
         return [words[i * channels:(i + 1) * channels] for i in range(count)]
 
+    def process(self, tag, flat, proc, log):
+        """The probe's processors on the samples of a run (f32 bits, two a frame): half the level; the sides swapped
+        and a counted offset on the right; a delay of one frame; and (Jonlib only) one that loses a sample."""
+        log.append((tag, len(flat) // 2))
+        if tag == 1:
+            return [bits(fmul(fl(w), 0.5)) for w in flat]
+        if tag == 2:
+            out = []
+            for i in range(0, len(flat), 2):
+                out += [flat[i + 1], bits(fadd(fl(flat[i]), (proc['count'] % 5) / 8))]
+                proc['count'] += 1
+            return out
+        if tag == 3:
+            out = []
+            for i in range(0, len(flat), 2):
+                out += proc['prev']
+                proc['prev'] = flat[i:i + 2]
+            return out
+        return flat[:-1]
+
     def mix(self, frames, answered=True):
         """One device callback: the samples, or None (and nothing changed) for what Jonlib refuses."""
-        self.asks = []
+        self.asks, self.log = [], []
         if not self.ready or frames == 0 or frames > 1 << 20 or math.isnan(fl(self.master)):
             return None
         out, fine, after, calls, asks = [0] * (2 * frames), True, [], list(self.calls), []
+        proc, log = copy.deepcopy(self.proc), []
         for b in self.buffers:
             if not b['playing'] or b['paused']:
                 after.append(b)
@@ -615,12 +653,27 @@ class Model:
             b = copy.deepcopy(b)
             made, ok = turn(b, data, frames, lambda count, b=b: self.answer(b, calls, asks, count))
             fine &= ok
+            tags = [tag for number, tag in self.attached if number == b['id']]
+            for start in range(0, len(made) if tags else 0, 512):       # raudio's runs of at most 512 frames
+                run = [bits(v) for frame in made[start:start + 512] for v in frame]
+                for tag in tags:
+                    run = self.process(tag, run, proc, log)
+                fine &= len(run) == 2 * len(made[start:start + 512])
+                if not fine:
+                    break
+                made[start:start + 512] = [[fl(run[2 * i]), fl(run[2 * i + 1])] for i in range(len(run) // 2)]
+            if not fine:
+                return None
             for j, frame in enumerate(made):
                 for channel in range(2):
                     new = fadd(fl(out[2 * j + channel]), fmul(frame[channel], levels[channel]))
                     fine &= not math.isnan(new)
                     out[2 * j + channel] = bits(new)
             after.append(b)
+        for tag in [tag for number, tag in self.attached if number == 0]:    # the mixed processors, on the whole mix
+            out = self.process(tag, out, proc, log)
+        if len(out) != 2 * frames:
+            return None
         master, sent = fl(self.master), []
         for word in out:
             x = fmul(fl(word), master) if self.master != bits(1.0) else fl(word)
@@ -628,7 +681,7 @@ class Model:
             sent.append(bits(-1.0 if x < -1 else 1.0 if x > 1 else x))
         if not fine or (asks and not answered):
             return None
-        self.buffers, self.calls, self.asks = after, calls, asks
+        self.buffers, self.calls, self.asks, self.proc, self.log = after, calls, asks, proc, log
         return sent
 
     def loaded(self, slot, entry):
@@ -727,13 +780,28 @@ class Model:
             self.mixed = self.mix(step[1], answered=kind == 'mix')
             self.undefined |= self.mixed is None
         elif kind == 'periods':
-            asks, self.mixed = [], []
+            asks, log, self.mixed = [], [], []
             for _ in range(step[1] if self.ready else 0):     # an unready device makes no callback
                 if self.mix(480) is None:
                     self.undefined, self.mixed = True, None
                     break
                 asks += self.asks
-            self.asks = asks
+                log += self.log
+            self.asks, self.log = asks, log
+        elif kind in ('attach', 'detach'):
+            found = self.used(step[1], zero_fine=False)       # raylib reads through the stream's buffer pointer
+            if found is not None:
+                if kind == 'attach':
+                    self.attached.append((found['id'], step[2]))
+                else:
+                    self.attached = [entry for entry in self.attached if entry != (found['id'], step[2])]
+        elif kind in ('attachmixed', 'detachmixed'):
+            self.undefined |= not self.ready                  # raylib locks a mutex that does not exist
+            if self.ready:
+                if kind == 'attachmixed':
+                    self.attached.append((0, step[1]))
+                else:
+                    self.attached = [entry for entry in self.attached if entry != (0, step[1])]
         elif kind == 'callback':
             found = self.used(step[1])
             if found is not None:
@@ -752,7 +820,8 @@ class Model:
         return tag
 
     def state(self):
-        parts = [f'R{int(self.ready)} M{self.master} D{self.default}']
+        tags = lambda number: '.'.join(str(tag) for of, tag in self.attached if of == number)
+        parts = [f'R{int(self.ready)} M{self.master} D{self.default} Q{tags(0)}']
         for slot, (number, frames, rate, size, channels) in enumerate(self.sounds):
             found = self.buffer(slot)
             valid = int(frames > 0 and number > 0 and rate > 0 and size > 0 and channels > 0)
@@ -767,7 +836,7 @@ class Model:
             feed = 's' if b['stream'] is None else (f'{b["stream"]["size"]}/{b["stream"]["channels"]}/{int(b["stream"]["first"])}{int(b["stream"]["second"])}'
                                                     f'{int(b["stream"]["called"])}')
             parts.append(f'B{b["id"]},{b["block"]},{b["frames"]},{b["volume"]},{b["pitch"]},{b["pan"]},{int(b["playing"])},{int(b["paused"])},{samples},'
-                         f'{b["source"]},{b["rate"]},{b["cursor"]},{",".join(map(str, held))},{feed}')
+                         f'{b["source"]},{b["rate"]},{b["cursor"]},{",".join(map(str, held))},{feed},p{tags(b["id"])}')
         return ' '.join(parts)
 
 
@@ -776,7 +845,7 @@ def expected(case, catalog):
     model, tagged, plain = Model(catalog), [], []
     for step in case['steps']:
         tag = model.step(step)
-        asks = ''.join(f' A{number}:{count}' for number, count in model.asks)
+        asks = ''.join(f' A{number}:{count}' for number, count in model.asks) + ''.join(f' P{tag}:{count}' for tag, count in model.log)
         state = model.state() + (('' if step[0] not in ('mix', 'plain') else ' X-' if model.mixed is None else f' X{fnv(model.mixed)}{asks}'))
         if step[0] == 'periods':
             state += ' N0' if model.mixed is None else f' N1{asks}'
@@ -822,6 +891,34 @@ static void answer1(void *out, unsigned frames) { answer(1, out, frames); }
 static void answer2(void *out, unsigned frames) { answer(2, out, frames); }
 static void answer3(void *out, unsigned frames) { answer(3, out, frames); }
 static AudioCallback answers[SLOTS] = { answer0, answer1, answer2, answer3 };
+
+// The probe's processors (they run inside the callback, so with its denormal handling): half the level; the
+// sides swapped and a counted offset on the right; a delay of one frame. Each call is noted.
+static unsigned pcount, noted_tag[ASKS], noted_frames[ASKS], noted;
+static float pprev[2];
+static void noting(unsigned tag, unsigned frames) { if (noted == ASKS) exit(9); noted_tag[noted] = tag; noted_frames[noted++] = frames; }
+static void process1(void *buffer, unsigned frames) { float *x = (float *)buffer; noting(1, frames); for (unsigned i = 0; i < frames*2; i++) x[i] = x[i]*0.5f; }
+static void process2(void *buffer, unsigned frames)
+{
+    float *x = (float *)buffer;
+    noting(2, frames);
+    for (unsigned i = 0; i < frames; i++) { float l = x[2*i], r = x[2*i + 1]; x[2*i] = r; x[2*i + 1] = l + ((float)(pcount%5))/8.0f; pcount++; }
+}
+static void process3(void *buffer, unsigned frames)
+{
+    unsigned *x = (unsigned *)buffer, *held = (unsigned *)pprev;
+    noting(3, frames);
+    for (unsigned i = 0; i < frames; i++) { unsigned l = x[2*i], r = x[2*i + 1]; x[2*i] = held[0]; x[2*i + 1] = held[1]; held[0] = l; held[1] = r; }
+}
+static AudioCallback processes[4] = { NULL, process1, process2, process3 };
+static void tags(rAudioProcessor *list)
+{
+    for (rAudioProcessor *q = list; q != NULL; q = q->next)
+    {
+        int tag = (q->process == process1)? 1 : ((q->process == process2)? 2 : 3);
+        printf("%s%d", (q == list)? "" : ".", tag);
+    }
+}
 
 static unsigned rd(FILE *f) { unsigned v = 0; if (fread(&v, 4, 1, f) != 1) exit(3); return v; }
 static unsigned word(float x) { unsigned v; memcpy(&v, &x, 4); return v; }
@@ -869,7 +966,8 @@ static unsigned samples(rAudioBuffer *b) { return hashed(b, b->data, b->sizeInFr
 
 static void state(int first)
 {
-    printf("%sR%d M%u D%u", first? "" : ";", (int)IsAudioDeviceReady(), word(GetMasterVolume()), (unsigned)AUDIO.Buffer.defaultSize);
+    printf("%sR%d M%u D%u Q", first? "" : ";", (int)IsAudioDeviceReady(), word(GetMasterVolume()), (unsigned)AUDIO.Buffer.defaultSize);
+    tags(AUDIO.mixedProcessor);
     for (int s = 0; s < SLOTS; s++)
     {
         Sound x = slots[s];
@@ -897,6 +995,8 @@ static void state(int first)
         if (b->usage == AUDIO_BUFFER_USAGE_STATIC) printf(",s");
         else printf(",%d/%u/%d%d%d", (b->converter.formatIn == ma_format_u8)? 8 : ((b->converter.formatIn == ma_format_s16)? 16 : 32), b->converter.channelsIn,
                     (int)b->isSubBufferProcessed[0], (int)b->isSubBufferProcessed[1], (int)(b->callback != NULL));
+        printf(",p");
+        tags(b->processor);
     }
 }
 
@@ -913,6 +1013,7 @@ int main(void)
         memset(slots, 0, sizeof(slots)); memset(slot_id, 0, sizeof(slot_id));
         memset(owner, 0, sizeof(owner)); memset(gone, 0, sizeof(gone)); memset(freed, 0, sizeof(freed));
         memset(calls, 0, sizeof(calls));
+        pcount = 0; pprev[0] = pprev[1] = 0.0f;
         made = 0;
         if (!quiet) printf("C ");
         for (unsigned i = 0; i < steps; i++)
@@ -969,7 +1070,7 @@ int main(void)
                 case 12:
                 {
                     float *mixed = (float *)malloc((size_t)a*8 + 8);
-                    asked = 0;
+                    asked = 0; noted = 0;
                     if (ma_device_handle_backend_data_callback(&AUDIO.System.device, mixed, NULL, a) != MA_SUCCESS) return 7;
                     mixed_hash = fnv((const unsigned *)mixed, a*2);
                     free(mixed);
@@ -995,10 +1096,14 @@ int main(void)
                 } break;
                 case 15: SetAudioStreamBufferSizeDefault((int)a); break;
                 case 16: SetAudioStreamCallback(slots[a].stream, b? answers[a] : NULL); break;
+                case 18: AttachAudioStreamProcessor(slots[a].stream, processes[b]); break;
+                case 19: DetachAudioStreamProcessor(slots[a].stream, processes[b]); break;
+                case 20: AttachAudioMixedProcessor(processes[a]); break;
+                case 21: DetachAudioMixedProcessor(processes[a]); break;
                 case 17:
                 {
                     float period[960];
-                    asked = 0;
+                    asked = 0; noted = 0;
                     if (AUDIO.System.isReady) for (unsigned j = 0; j < a; j++) if (ma_device_handle_backend_data_callback(&AUDIO.System.device, period, NULL, 480) != MA_SUCCESS) return 7;
                 } break;
                 default: return 6;
@@ -1009,15 +1114,18 @@ int main(void)
             {
                 printf(" X%u", mixed_hash);
                 for (unsigned j = 0; j < asked; j++) printf(" A%d:%u", slot_id[asked_slot[j]], asked_frames[j]);
+                for (unsigned j = 0; j < noted; j++) printf(" P%u:%u", noted_tag[j], noted_frames[j]);
             }
             if (!quiet && (code == 17))
             {
                 printf(" N1");
                 for (unsigned j = 0; j < asked; j++) printf(" A%d:%u", slot_id[asked_slot[j]], asked_frames[j]);
+                for (unsigned j = 0; j < noted; j++) printf(" P%u:%u", noted_tag[j], noted_frames[j]);
             }
         }
         if (!quiet) printf("\n");
         if (AUDIO.System.isReady) CloseAudioDevice();
+        AUDIO.mixedProcessor = NULL;
     }
     return 0;
 }
@@ -1048,10 +1156,27 @@ type Op is Data:
   OpCallback{slot: U32, on: U32}
   OpPlain{frames: U32}
   OpPeriods{count: U32}
+  OpAttach{slot: U32, tag: U32}
+  OpDetach{slot: U32, tag: U32}
+  OpAttachMixed{tag: U32}
+  OpDetachMixed{tag: U32}
 
-# calls: how many samples each slot's stream callback has written.
+# What the program keeps beside the device: how many samples each slot's stream callback has written, the processors
+# attached, and the processors' own state (the frames the second has counted, the frame the third holds).
+type Ext is Data:
+  Ext{calls: +List<U32>, attached: +List<J.AudioDevice.Processor>, count: U32, left: U32, right: U32}
+
 type St is Data:
-  St{audio: J.AudioDevice, sounds: +List<J.Sound>, out: String, calls: +List<U32>}
+  St{audio: J.AudioDevice, sounds: +List<J.Sound>, out: String, calls: Ext}
+
+def ext.attached(ext: Ext) -> +List<J.AudioDevice.Processor>:
+  Ext{_, attached, _, _, _} = ext
+  attached
+
+def tags.text(tags: +List<U32>, +first: Bool) -> String:
+  match tags:
+    case Nil{}: ""
+    case Con{+tag, rest}: Bool.pick(String, first, "", ".") ++ U32.show(tag) ++ tags.text(rest, False{})
 
 def get(sounds: +List<J.Sound>, +i: U32) -> J.Sound:
   match sounds:
@@ -1131,24 +1256,24 @@ def head.text(head: Mixer.Head) -> String:
   Mixer.Head{source, rate, +mode, +coef, cursor, st, +residual, feed} = head
   "," ++ U32.show(source) ++ "," ++ U32.show(rate) ++ "," ++ U32.show(cursor) ++ st.text(st) ++ "," ++ U32.show(Bool.pick(U32, U32.is_eq(mode, 1), coef, 0)) ++ "," ++ U32.show(count(residual, 0)) ++ "," ++ U32.show(fnv.frames(residual, 2166136261)) ++ feed.text(feed)
 
-def buffers.text(buffers: +List<J.AudioDevice.Buffer>, +blocks: +List<J.AudioDevice.Block>) -> String:
+def buffers.text(buffers: +List<J.AudioDevice.Buffer>, +blocks: +List<J.AudioDevice.Block>, +attached: +List<J.AudioDevice.Processor>) -> String:
   match buffers:
     case Nil{}: ""
     case Con{J.AudioBuffer{+id, +block, +frames, +volume, +pitch, +pan, +playing, +paused, head}, rest}:
-      " B" ++ U32.show(id) ++ "," ++ U32.show(block) ++ "," ++ U32.show(frames) ++ "," ++ U32.show(F32.bits(volume)) ++ "," ++ U32.show(F32.bits(pitch)) ++ "," ++ U32.show(F32.bits(pan)) ++ "," ++ flag(playing) ++ "," ++ flag(paused) ++ "," ++ hashed(block, J.AudioDevice.block.find(blocks, block)) ++ head.text(head) ++ buffers.text(rest, blocks)
+      " B" ++ U32.show(id) ++ "," ++ U32.show(block) ++ "," ++ U32.show(frames) ++ "," ++ U32.show(F32.bits(volume)) ++ "," ++ U32.show(F32.bits(pitch)) ++ "," ++ U32.show(F32.bits(pan)) ++ "," ++ flag(playing) ++ "," ++ flag(paused) ++ "," ++ hashed(block, J.AudioDevice.block.find(blocks, block)) ++ head.text(head) ++ ",p" ++ tags.text(J.AudioProcessors.tags(attached, id, Nil{}), True{}) ++ buffers.text(rest, blocks, attached)
 
-def state(+audio: J.AudioDevice, +sounds: +List<J.Sound>) -> String:
+def state(+audio: J.AudioDevice, +sounds: +List<J.Sound>, +attached: +List<J.AudioDevice.Processor>) -> String:
   J.AudioDevice{_, _, _, +buffers, +blocks, +default} = audio
-  "R" ++ flag(J.AudioDevice.is_ready(audio)) ++ " M" ++ U32.show(F32.bits(J.AudioDevice.master_volume(audio))) ++ " D" ++ U32.show(default) ++ sounds.text(sounds, audio) ++ buffers.text(buffers, blocks)
+  "R" ++ flag(J.AudioDevice.is_ready(audio)) ++ " M" ++ U32.show(F32.bits(J.AudioDevice.master_volume(audio))) ++ " D" ++ U32.show(default) ++ " Q" ++ tags.text(J.AudioProcessors.tags(attached, 0, Nil{}), True{}) ++ sounds.text(sounds, audio) ++ buffers.text(buffers, blocks, attached)
 
-def after(+tag: String, +audio: J.AudioDevice, +sounds: +List<J.Sound>, +out: String, +calls: +List<U32>) -> St:
-  St{audio, sounds, out ++ ";E:" ++ tag ++ " " ++ state(audio, sounds), calls}
+def after(+tag: String, +audio: J.AudioDevice, +sounds: +List<J.Sound>, +out: String, +calls: Ext) -> St:
+  St{audio, sounds, out ++ ";E:" ++ tag ++ " " ++ state(audio, sounds, ext.attached(calls)), calls}
 
-# A refused callback leaves the counters as they were.
-def mixed(result: J.AudioDevice & Maybe<&2, +List<U32>>, +sounds: +List<J.Sound>, +out: String, +before: +List<U32>, +calls: +List<U32>, +asks: String) -> St:
+# A refused callback leaves the program's state as it was.
+def mixed(result: J.AudioDevice & Maybe<&2, +List<U32>>, +sounds: +List<J.Sound>, +out: String, +before: Ext, +calls: Ext, +asks: String) -> St:
   match result:
-    case Tuple{+audio, Some{+samples}}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds) ++ " X" ++ U32.show(fnv(samples, 2166136261)) ++ asks, calls}
-    case Tuple{+audio, None{}}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds) ++ " X-", before}
+    case Tuple{+audio, Some{+samples}}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds, ext.attached(calls)) ++ " X" ++ U32.show(fnv(samples, 2166136261)) ++ asks, calls}
+    case Tuple{+audio, None{}}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds, ext.attached(before)) ++ " X-", before}
 
 def nth(xs: +List<U32>, +i: U32) -> U32:
   match xs:
@@ -1199,37 +1324,145 @@ def answered(asks: +List<J.AudioDevice.Ask>, +sounds: +List<J.Sound>, +calls: +L
       answered(rest, sounds, put(calls, slot, (nth(calls, slot) + count : U32)), answer.samples(U32.to_nat(count), size.of(get(sounds, slot)), nth(calls, slot), acc),
         text ++ " A" ++ U32.show(buffer) ++ ":" ++ U32.show(frames))
 
-# The program's side of AudioClock.advance_answering: its state is the slots, the counters and what it was asked
-# for (the callback is a template: it closes over nothing).
+# The program's side of the callbacks and the processors: the slots, the counters, what the callbacks were asked for,
+# the processors' state and what they were called with (the functions are templates: they close over nothing).
 type Asked is Data:
-  Asked{sounds: +List<J.Sound>, calls: +List<U32>, text: String}
+  Asked{sounds: +List<J.Sound>, calls: +List<U32>, text: String, count: U32, left: U32, right: U32, log: String}
 
 def answer.one(+buffer: U32, +frames: U32, state: Asked) -> Asked & +List<U32>:
-  Asked{+sounds, +calls, +text} = state
+  Asked{+sounds, +calls, +text, count, left, right, log} = state
   +slot = slot.of(sounds, buffer, 0)
-  +count = (frames * channels.of(get(sounds, slot)) : U32)
-  (Asked{sounds, put(calls, slot, (nth(calls, slot) + count : U32)), text ++ " A" ++ U32.show(buffer) ++ ":" ++ U32.show(frames)},
-    List.reverse(&2, U32, answer.samples(U32.to_nat(count), size.of(get(sounds, slot)), nth(calls, slot), Nil{})))
+  +total = (frames * channels.of(get(sounds, slot)) : U32)
+  (Asked{sounds, put(calls, slot, (nth(calls, slot) + total : U32)), text ++ " A" ++ U32.show(buffer) ++ ":" ++ U32.show(frames), count, left, right, log},
+    List.reverse(&2, U32, answer.samples(U32.to_nat(total), size.of(get(sounds, slot)), nth(calls, slot), Nil{})))
 
-def clocked(result: J.AudioClock.Step & Asked, +sounds: +List<J.Sound>, +out: String, +before: +List<U32>) -> St:
+def half(samples: +List<U32>, +n: U32) -> U32:
+  match samples:
+    case Nil{}: (n / 2 : U32)
+    case Con{_, rest}: half(rest, (n + 1 : U32))
+
+# Processor 1: half the level (the callback's arithmetic).
+def gained(samples: +List<U32>, acc: +List<U32>) -> +List<U32>:
+  match samples:
+    case Nil{}: List.reverse(&2, U32, acc)
+    case Con{+x, rest}: gained(rest, Con{F32.bits(Mixer.fmul(J.Wave.float_bits(x), 0.5)), acc})
+
+type Swapped is Data:
+  Swapped{out: +List<U32>, count: U32}
+
+# Processor 2: the sides swapped, and (count % 5)/8 more on the right for each frame it has counted.
+def swapped(samples: +List<U32>, +count: U32, acc: +List<U32>) -> Swapped:
+  match samples:
+    case Con{+l, Con{+r, rest}}: swapped(rest, (count + 1 : U32), Con{F32.bits(Mixer.fadd(J.Wave.float_bits(l), (U32.to_f32((count % 5 : U32)) / 8.0 : F32))), Con{r, acc}})
+    case _: Swapped{List.reverse(&2, U32, acc), count}
+
+type Delayed is Data:
+  Delayed{out: +List<U32>, left: U32, right: U32}
+
+# Processor 3: each frame one frame late.
+def delayed(samples: +List<U32>, +left: U32, +right: U32, acc: +List<U32>) -> Delayed:
+  match samples:
+    case Con{+l, Con{+r, rest}}: delayed(rest, l, r, Con{right, Con{left, acc}})
+    case _: Delayed{List.reverse(&2, U32, acc), left, right}
+
+def process.swapped(result: Swapped, +sounds: +List<J.Sound>, +calls: +List<U32>, +text: String, +left: U32, +right: U32, +log: String) -> Asked & +List<U32>:
+  Swapped{+out, +count} = result
+  (Asked{sounds, calls, text, count, left, right, log}, out)
+
+def process.delayed(result: Delayed, +sounds: +List<J.Sound>, +calls: +List<U32>, +text: String, +count: U32, +log: String) -> Asked & +List<U32>:
+  Delayed{+out, +left, +right} = result
+  (Asked{sounds, calls, text, count, left, right, log}, out)
+
+# The processors: 1, 2 and 3; any other loses the last sample it was given.
+def process.one(tag: U32, +samples: +List<U32>, state: Asked) -> Asked & +List<U32>:
+  match tag:
+    case 1:
+      Asked{sounds, calls, text, count, left, right, +log} = state
+      (Asked{sounds, calls, text, count, left, right, log ++ " P1:" ++ U32.show(half(samples, 0))}, gained(samples, Nil{}))
+    case 2:
+      Asked{+sounds, +calls, +text, +count, +left, +right, +log} = state
+      process.swapped(swapped(samples, count, Nil{}), sounds, calls, text, left, right, log ++ " P2:" ++ U32.show(half(samples, 0)))
+    case 3:
+      Asked{+sounds, +calls, +text, +count, +left, +right, +log} = state
+      process.delayed(delayed(samples, left, right, Nil{}), sounds, calls, text, count, log ++ " P3:" ++ U32.show(half(samples, 0)))
+    case _:
+      Asked{sounds, calls, text, count, left, right, +log} = state
+      (Asked{sounds, calls, text, count, left, right, log ++ " P9:" ++ U32.show(half(samples, 0))}, List.reverse(&2, U32, List.drop(&2, U32, List.reverse(&2, U32, samples), 1n)))
+
+def asked.of(+sounds: +List<J.Sound>, ext: Ext, +text: String) -> Asked:
+  Ext{calls, _, count, left, right} = ext
+  Asked{sounds, calls, text, count, left, right, ""}
+
+def ext.of(asked: Asked, +attached: +List<J.AudioDevice.Processor>) -> Ext:
+  Asked{_, calls, _, count, left, right, _} = asked
+  Ext{calls, attached, count, left, right}
+
+def asked.text(asked: Asked) -> String:
+  Asked{_, _, text, _, _, _, log} = asked
+  text ++ log
+
+def clocked(result: J.AudioClock.Step & Asked, +sounds: +List<J.Sound>, +out: String, +before: Ext) -> St:
   match result:
-    case Tuple{J.AudioStep{_, +audio, True{}}, Asked{_, +calls, +text}}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds) ++ " N1" ++ text, calls}
-    case Tuple{J.AudioStep{_, +audio, False{}}, _}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds) ++ " N0", before}
+    case Tuple{J.AudioStep{_, +audio, True{}}, +asked}:
+      St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds, ext.attached(before)) ++ " N1" ++ asked.text(asked), ext.of(asked, ext.attached(before))}
+    case Tuple{J.AudioStep{_, +audio, False{}}, _}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds, ext.attached(before)) ++ " N0", before}
 
-# `count` periods on a clock opened at 0: the time is half a period past the last one.
-def periods(+count: U32, +audio: J.AudioDevice, +sounds: +List<J.Sound>, +out: String, +calls: +List<U32>) -> St:
-  clocked(J.AudioClock.advance_answering(~Asked, ~(buffer => frames => state => answer.one(buffer, frames, state)), J.AudioClock.at(M.Float64{0, 0}), audio,
-    M.Float64.from_f32(((U32.to_f32(count) / 100.0) + 0.005 : F32)), Asked{sounds, calls, ""}), sounds, out, calls)
+# `count` periods on a clock opened at 0 (the time is half a period past the last one), with the processors when
+# there are any.
+def periods.run(processors: +List<J.AudioDevice.Processor>, +count: U32, +audio: J.AudioDevice, +sounds: +List<J.Sound>, +calls: Ext) -> J.AudioClock.Step & Asked:
+  match processors:
+    case Nil{}:
+      J.AudioClock.advance_answering(~Asked, ~(buffer => frames => state => answer.one(buffer, frames, state)), J.AudioClock.at(M.Float64{0, 0}), audio,
+        M.Float64.from_f32(((U32.to_f32(count) / 100.0) + 0.005 : F32)), asked.of(sounds, calls, ""))
+    case Con{+first, +rest}:
+      J.AudioClock.advance_processing(~Asked, ~(buffer => frames => state => answer.one(buffer, frames, state)), ~(tag => samples => state => process.one(tag, samples, state)),
+        J.AudioClock.at(M.Float64{0, 0}), audio, J.AudioProcessors{Con{first, rest}}, M.Float64.from_f32(((U32.to_f32(count) / 100.0) + 0.005 : F32)), asked.of(sounds, calls, ""))
 
-def mix.answered(answers: Answered, +audio: J.AudioDevice, +frames: U32, +sounds: +List<J.Sound>, +out: String, +before: +List<U32>) -> St:
+def periods(+count: U32, +audio: J.AudioDevice, +sounds: +List<J.Sound>, +out: String, +calls: Ext) -> St:
+  clocked(periods.run(ext.attached(calls), count, audio, sounds, calls), sounds, out, calls)
+
+def mix.processed(result: (J.AudioDevice & Maybe<&2, +List<U32>>) & Asked, +sounds: +List<J.Sound>, +out: String, +before: Ext) -> St:
+  match result:
+    case Tuple{mix, +asked}: mixed(mix, sounds, out, before, ext.of(asked, ext.attached(before)), asked.text(asked))
+
+# The mix with the answers, through the processors when there are any.
+def mix.run(processors: +List<J.AudioDevice.Processor>, +audio: J.AudioDevice, +frames: U32, +data: +List<U32>, +sounds: +List<J.Sound>, +out: String, +before: Ext, +calls: +List<U32>,
+    +text: String) -> St:
+  match processors:
+    case Nil{}:
+      Ext{_, _, +count, +left, +right} = before
+      mixed(J.AudioDevice.mix_answered(audio, frames, data), sounds, out, before, Ext{calls, Nil{}, count, left, right}, text)
+    case Con{+first, +rest}:
+      Ext{_, _, +count, +left, +right} = before
+      mix.processed(J.AudioDevice.mix_processed(~Asked, ~(tag => samples => state => process.one(tag, samples, state)), audio, J.AudioProcessors{Con{first, rest}}, frames, data,
+        Asked{sounds, calls, text, count, left, right, ""}), sounds, out, before)
+
+def mix.answered(answers: Answered, +audio: J.AudioDevice, +frames: U32, +sounds: +List<J.Sound>, +out: String, +before: Ext) -> St:
   Answered{+calls, +data, +text} = answers
-  mixed(J.AudioDevice.mix_answered(audio, frames, data), sounds, out, before, calls, text)
+  mix.run(ext.attached(before), audio, frames, data, sounds, out, before, calls, text)
+
+def ext.calls(ext: Ext) -> +List<U32>:
+  Ext{calls, _, _, _, _} = ext
+  calls
 
 # One device callback: what the stream callbacks will be asked for, their answers, and the mix with them.
-def mix.asked(asks: Maybe<&2, +List<J.AudioDevice.Ask>>, +audio: J.AudioDevice, +frames: U32, +sounds: +List<J.Sound>, +out: String, +calls: +List<U32>) -> St:
+def mix.asked(asks: Maybe<&2, +List<J.AudioDevice.Ask>>, +audio: J.AudioDevice, +frames: U32, +sounds: +List<J.Sound>, +out: String, +calls: Ext) -> St:
   match asks:
-    case None{}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds) ++ " X-", calls}
-    case Some{+list}: mix.answered(answered(list, sounds, calls, Nil{}, ""), audio, frames, sounds, out, calls)
+    case None{}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds, ext.attached(calls)) ++ " X-", calls}
+    case Some{+list}: mix.answered(answered(list, sounds, ext.calls(calls), Nil{}, ""), audio, frames, sounds, out, calls)
+
+def ext.with(processors: J.AudioProcessors, ext: Ext) -> Ext:
+  J.AudioProcessors{attached} = processors
+  Ext{calls, _, count, left, right} = ext
+  Ext{calls, attached, count, left, right}
+
+# AttachAudioStreamProcessor, DetachAudioStreamProcessor, AttachAudioMixedProcessor and DetachAudioMixedProcessor.
+def attached(op: U32, +audio: J.AudioDevice, +stream: J.AudioStream, +tag: U32, +ext: Ext) -> Ext:
+  match op:
+    case 0: ext.with(J.AudioStream.attach_processor(J.AudioProcessors{ext.attached(ext)}, audio, stream, tag), ext)
+    case 1: ext.with(J.AudioStream.detach_processor(J.AudioProcessors{ext.attached(ext)}, audio, stream, tag), ext)
+    case 2: ext.with(J.AudioDevice.attach_mixed_processor(J.AudioProcessors{ext.attached(ext)}, audio, tag), ext)
+    case _: ext.with(J.AudioDevice.detach_mixed_processor(J.AudioProcessors{ext.attached(ext)}, audio, tag), ext)
 
 def wave.tag(error: J.Wave.Error) -> String:
   match error:
@@ -1244,16 +1477,16 @@ def tag(error: J.Sound.Error) -> String:
     case J.SoundWaveError{J.WaveFileError{_, _}}: "file"
     case J.SoundWaveError{J.WaveDataError{inner}}: wave.tag(inner)
 
-def loaded(result: J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>, +slot: U32, +sounds: +List<J.Sound>, +out: String, +calls: +List<U32>) -> St:
+def loaded(result: J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>, +slot: U32, +sounds: +List<J.Sound>, +out: String, +calls: Ext) -> St:
   match result:
     case Tuple{+audio, Done{+sound}}: after("-", audio, set(sounds, slot, sound), out, calls)
     case Tuple{+audio, Fail{error}}: after(tag(error), audio, set(sounds, slot, J.Sound.none()), out, calls)
 
-def aliased(result: J.AudioDevice & J.Sound, +slot: U32, +sounds: +List<J.Sound>, +out: String, +calls: +List<U32>) -> St:
+def aliased(result: J.AudioDevice & J.Sound, +slot: U32, +sounds: +List<J.Sound>, +out: String, +calls: Ext) -> St:
   match result:
     case Tuple{+audio, +sound}: after("-", audio, set(sounds, slot, sound), out, calls)
 
-def streamed(result: J.AudioDevice & J.AudioStream, +slot: U32, +sounds: +List<J.Sound>, +out: String, +calls: +List<U32>) -> St:
+def streamed(result: J.AudioDevice & J.AudioStream, +slot: U32, +sounds: +List<J.Sound>, +out: String, +calls: Ext) -> St:
   match result:
     case Tuple{+audio, +stream}: after("-", audio, set(sounds, slot, J.Sound{stream, 0}), out, calls)
 
@@ -1294,6 +1527,10 @@ def step(+st: St, op: Op) -> IO(St):
     case OpMix{+frames}: IO.pure(St, mix.asked(J.AudioDevice.asks(audio, frames), audio, frames, sounds, out, calls))
     case OpPlain{frames}: IO.pure(St, mixed(J.AudioDevice.mix(audio, frames), sounds, out, calls, calls, ""))
     case OpPeriods{+count}: IO.pure(St, periods(count, audio, sounds, out, calls))
+    case OpAttach{slot, +tag}: IO.pure(St, after("-", audio, sounds, out, attached(0, audio, stream.of(get(sounds, slot)), tag, calls)))
+    case OpDetach{slot, +tag}: IO.pure(St, after("-", audio, sounds, out, attached(1, audio, stream.of(get(sounds, slot)), tag, calls)))
+    case OpAttachMixed{+tag}: IO.pure(St, after("-", audio, sounds, out, attached(2, audio, J.AudioStream{0, 0, 0, 0}, tag, calls)))
+    case OpDetachMixed{+tag}: IO.pure(St, after("-", audio, sounds, out, attached(3, audio, J.AudioStream{0, 0, 0, 0}, tag, calls)))
     case OpCallback{slot, on}: IO.pure(St, after("-", J.AudioStream.set_callback(audio, stream.of(get(sounds, slot)), U32.is_ne(on, 0)), sounds, out, calls))
     case OpDefault{size}: IO.pure(St, after("-", J.AudioDevice.set_stream_buffer_size_default(audio, size), sounds, out, calls))
     case OpStream{slot, rate, size, channels}: IO.pure(St, streamed(J.AudioStream.load(audio, rate, size, channels), slot, sounds, out, calls))
@@ -1310,7 +1547,7 @@ def run(ops: +List<Op>, +st: St) -> IO(String):
         run(rest, next)
 
 def start() -> St:
-  St{J.AudioDevice.none(), [J.Sound.none(), J.Sound.none(), J.Sound.none(), J.Sound.none()], "", [0, 0, 0, 0]}
+  St{J.AudioDevice.none(), [J.Sound.none(), J.Sound.none(), J.Sound.none(), J.Sound.none()], "", Ext{[0, 0, 0, 0], Nil{}, 0, 0, 0}}
 '''
 
 
@@ -1360,6 +1597,10 @@ def bend_step(step, table, paths):
         return f'OpPlain{{{step[1]}}}'
     if kind == 'periods':
         return f'OpPeriods{{{step[1]}}}'
+    if kind in ('attach', 'detach'):
+        return f'Op{kind.capitalize()}{{{step[1]}, {step[2]}}}'
+    if kind in ('attachmixed', 'detachmixed'):
+        return f'Op{"Attach" if kind == "attachmixed" else "Detach"}Mixed{{{step[1]}}}'
     raise ValueError(kind)
 
 
@@ -1397,6 +1638,10 @@ def native_step(step, table, order):
         return 16, step[1], step[2], 0, []
     if kind == 'periods':
         return 17, step[1], 0, 0, []
+    if kind in ('attach', 'detach'):
+        return 18 + (kind == 'detach'), step[1], step[2], 0, []
+    if kind in ('attachmixed', 'detachmixed'):
+        return 20 + (kind == 'detachmixed'), step[1], 0, 0, []
     if kind == 'stream':
         return 13, step[1], step[2], step[3], [step[4]]
     if kind == 'feed':

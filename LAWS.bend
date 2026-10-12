@@ -2784,6 +2784,41 @@ law stream_callback_answer_missing:
 law stream_callback_unready_asks_nothing:
   {J.AudioDevice.asks(J.AudioDevice.none(), 480) == None{} : Maybe<&2, +List<J.AudioDevice.Ask>>}
 
+# Audio processors: a buffer's are called in the order they were attached,
+# the mixed output's are those of buffer 0, and a detach takes every one with
+# the tag. Nothing is attached on an unready device or to a stream without a
+# buffer. A processor must give back as many samples as it was given, and
+# each one is given what the one before wrote.
+law processors_in_attach_order:
+  {J.AudioProcessors.tags([J.AudioProcessor{1, 7}, J.AudioProcessor{2, 8}, J.AudioProcessor{1, 9}], 1, Nil{}) == [7, 9] : +List<U32>}
+
+law processors_mixed_are_buffer_zero:
+  {J.AudioProcessors.tags([J.AudioProcessor{0, 4}, J.AudioProcessor{1, 7}], 0, Nil{}) == [4] : +List<U32>}
+
+law processors_detach_takes_every_one:
+  {J.AudioProcessors.without([J.AudioProcessor{1, 7}, J.AudioProcessor{1, 8}, J.AudioProcessor{1, 7}, J.AudioProcessor{2, 7}], 1, 7, Nil{}) == [J.AudioProcessor{1, 8}, J.AudioProcessor{2, 7}] : +List<J.AudioDevice.Processor>}
+
+law processors_mixed_attached_last:
+  {J.AudioDevice.attach_mixed_processor(J.AudioProcessors{[J.AudioProcessor{0, 1}]}, J.AudioDevice.init(J.AudioDevice.none()), 3) == J.AudioProcessors{[J.AudioProcessor{0, 1}, J.AudioProcessor{0, 3}]} : J.AudioProcessors}
+
+law processors_unready_attach_nothing:
+  {J.AudioDevice.attach_mixed_processor(J.AudioProcessors.none(), J.AudioDevice.none(), 3) == J.AudioProcessors.none() : J.AudioProcessors}
+
+law processors_no_buffer_attach_nothing:
+  {J.AudioStream.attach_processor(J.AudioProcessors.none(), J.AudioDevice.init(J.AudioDevice.none()), J.AudioStream{0, 44100, 16, 1}, 3) == J.AudioProcessors.none() : J.AudioProcessors}
+
+law processors_samples_come_back:
+  {J.AudioDevice.process.sized([1, 2, 3, 4], 4) == True{} : Bool}
+
+law processors_sample_lost:
+  {J.AudioDevice.process.sized([1, 2, 3], 4) == False{} : Bool}
+
+law processors_sample_added:
+  {J.AudioDevice.process.sized([1, 2, 3, 4, 5], 4) == False{} : Bool}
+
+law processors_chained:
+  {J.AudioDevice.process.chain(~U32, ~(tag => samples => state => ((state + tag : U32), Con{tag, samples})), [3, 4], (0, [9])) == (7, [4, 3, 9]) : U32 & +List<U32>}
+
 law stream_sound_always_processed:
   {Mixer.Feed.processed(Mixer.HeadStatic{}) == True{} : Bool}
 

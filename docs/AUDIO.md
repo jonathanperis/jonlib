@@ -411,6 +411,35 @@ as raylib's. `AudioDevice.mix` itself refuses a callback in which a
 stream's callback would be asked. A sound's buffer takes no callback
 (raylib would call it for the sound's frames).
 
+**Processors.** `AttachAudioStreamProcessor` and `AttachAudioMixedProcessor`
+give raylib functions that write over frames inside the device's callback.
+A buffer's processors are called, in the order they were attached, on each
+run of at most 512 frames the buffer gives: stereo f32, after the buffer's
+converter and before its volume and pan. The mixed processors are called on
+the whole mix, after every buffer and before the master volume and the
+clip. A run that gives no frame calls nobody. Jonlib keeps no function: a
+processor is a number the program chooses (a *tag*), and the lists are a
+value of their own, `AudioProcessors`.
+
+| Function | raylib | Contract |
+|---|---|---|
+| `AudioProcessors.none()` | | No processor. |
+| `AudioStream.attach_processor(processors, device, stream, tag)` | `AttachAudioStreamProcessor` | The tag becomes the last processor of the stream's buffer (a sound's `stream` too). |
+| `AudioStream.detach_processor(processors, device, stream, tag)` | `DetachAudioStreamProcessor` | Every processor of the buffer with the tag goes. |
+| `AudioDevice.attach_mixed_processor(processors, device, tag)` | `AttachAudioMixedProcessor` | The last of the mixed output's. The list outlives `CloseAudioDevice`. |
+| `AudioDevice.detach_mixed_processor(processors, device, tag)` | `DetachAudioMixedProcessor` | Every mixed processor with the tag goes. |
+| `AudioDevice.mix_processed(~P, ~process, device, processors, frames, answers, state)` | | `AudioDevice.mix_answered` with the processors: `process(tag, samples, state)` gives the program's state after the call and the samples written over the ones given (two f32 bits a frame). |
+| `AudioClock.advance_processing(~P, ~answer, ~process, clock, device, processors, time, state)` | | `AudioClock.advance_answering` with the processors, period by period. |
+
+The lists are left as they are on an unready device (raylib locks a mutex
+that does not exist) and for a stream whose buffer is 0 or not tracked
+(raylib reads through the pointer). A processor must give back as many
+samples as it was given: otherwise the callback is refused, the device as
+it was. `process` is a template and closes over nothing, like `answer`. It
+runs inside the callback, so a program that wants raylib's bits there
+computes as the callback does (`Mixer.fadd`, `Mixer.fmul`, ...: on x86-64
+miniaudio disables denormals around it).
+
 **`audio_stream_callback`.** The example keeps the last second its callback
 wrote in `static float buffer[SAMPLE_RATE]` and draws the last 10 ms as 800
 columns; the end of column 799 is `buffer[SAMPLE_RATE - SAMPLE_RATE/100 +
@@ -531,7 +560,7 @@ backend, so that the program can read `AUDIO` and the audio buffers, and
 stops the device right after `InitAudioDevice`: its thread mixes nothing,
 and the program asks for each callback itself
 (`ma_device_handle_backend_data_callback`) with the script's frame counts.
-103 scripts of 1012 steps over four sound slots run on both sides and on a
+111 scripts of 1090 steps over four sound slots run on both sides and on a
 Python model of raudio's state; after every step the ready flag, the master
 volume bits, every slot's handle fields with `IsSoundValid` and
 `IsSoundPlaying`, and every tracked buffer (its number, block, size, volume,
@@ -574,13 +603,20 @@ two callback streams (one of 6 channels at 96000 Hz, asked 170 frames at a
 time) beside a pitched sound; and `AudioClock.advance_answering` itself over
 3, 2, 1 and no periods with a callback stream, a fed stream and a sound,
 against as many 480-frame callbacks of the reference, and on a closed
-device. The waves are
+device. Processors (the reference attaches C functions: one halves the
+level, one swaps the sides and adds a counted offset, one delays by a frame
+it keeps; every call and its frame count is compared, and each buffer's
+list and the mixed one are part of the state): on a sound and on streams,
+several in order, the same one twice, detached while playing, on runs of
+512, 88 and 1 frames of callbacks of 600, 1100 and 513, mixed ones across a
+close and a new device, and with a callback stream under the clock. The
+waves are
 8-, 16- and 32-bit, of 1, 2, 4 and 6 channels, at 48000, 8000, 22050, 44100
 and 96000 Hz, with the empty cases above, and the files are the four `.wav`
 files of the examples that only play sounds (`boom`, `buttonfx`, `sound`,
 `coin`; 26522 to 48000 frames each), a small generated one, a missing one,
-one that is not a WAV and another extension. 71 scripts are compared with
-raylib; the 32 with a step raylib has no defined answer for, or a step or
+one that is not a WAV and another extension. 74 scripts are compared with
+raylib; the 37 with a step raylib has no defined answer for, or a step or
 a callback Jonlib refuses, are checked against the model on Jonlib alone. `IsSoundPlaying` is asked of raylib only on
 a ready device and for a tracked buffer, and no script opens the device over
 a playing buffer (raylib would mix it before the reference can stop it). CPU-1,
@@ -606,6 +642,6 @@ callbacks, the stream and the mixer are raylib's own; only their timing is
 the probe's.
 
 Not yet available: the fused (FMA) profile of the mixer, the profile of
-hosts that keep subnormals in the callback, stream and mixed processors,
-music, and a host device (the clock is a model of its thread).
+hosts that keep subnormals in the callback, music, and a host device (the
+clock is a model of its thread).
 No GPU evidence.
