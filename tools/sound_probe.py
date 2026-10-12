@@ -559,7 +559,7 @@ class Model:
     def rewind(self, found):
         found['cursor'] = 0
         if found['stream'] is not None:
-            found['stream'].update(first=True, second=True)
+            found['stream'].update(first=True, second=True, done=0)
 
     def stop(self, found):
         if found['playing'] and not found['paused']:
@@ -575,7 +575,7 @@ class Model:
         if size not in (8, 16, 32) or self.default >= 1 << 31 or 2 * half * channels > 1 << 22:
             self.undefined = True
             return
-        number = self.track(2 * half, self.next, rate, dict(size=size, channels=channels, first=True, second=True, called=False))
+        number = self.track(2 * half, self.next, rate, dict(size=size, channels=channels, first=True, second=True, called=False, done=0))
         self.blocks[number] = [0] * (2 * half * channels)
         self.sounds[slot] = (number, 0, rate, size, channels)
 
@@ -597,6 +597,7 @@ class Model:
             return
         if stream['first'] and stream['second']:
             found['cursor'] = 0
+        stream['done'] = (stream['done'] + frames) & 0xFFFFFFFF      # framesProcessed: the frames asked for, written or not
         if frames <= half:
             start = target * half * channels
             self.blocks[found['block']][start:start + half * channels] = list(words) + [0] * ((half - frames) * channels)
@@ -607,6 +608,7 @@ class Model:
         slot = next(i for i, sound in enumerate(self.sounds) if sound[0] == b['id'])
         size, channels = b['stream']['size'], b['stream']['channels']
         asks.append((b['id'], count))
+        b['stream']['done'] = (b['stream']['done'] + count) & 0xFFFFFFFF
         words = [answer_sample(size, calls[slot] + i) for i in range(count * channels)]
         calls[slot] += count * channels
         return [words[i * channels:(i + 1) * channels] for i in range(count)]
@@ -834,7 +836,7 @@ class Model:
             held = [b['t_int'], b['t_frac'], *map(bits, b['x0'] + b['x1'] + b['r1']), 0 if b['coef'] is None else bits(b['coef']), len(b['residual']),
                     fnv(w for frame in b['residual'] for w in frame)]
             feed = 's' if b['stream'] is None else (f'{b["stream"]["size"]}/{b["stream"]["channels"]}/{int(b["stream"]["first"])}{int(b["stream"]["second"])}'
-                                                    f'{int(b["stream"]["called"])}')
+                                                    f'{int(b["stream"]["called"])}/{b["stream"]["done"]}')
             parts.append(f'B{b["id"]},{b["block"]},{b["frames"]},{b["volume"]},{b["pitch"]},{b["pan"]},{int(b["playing"])},{int(b["paused"])},{samples},'
                          f'{b["source"]},{b["rate"]},{b["cursor"]},{",".join(map(str, held))},{feed},p{tags(b["id"])}')
         return ' '.join(parts)
@@ -993,8 +995,8 @@ static void state(int first)
         printf(",%u", (linear->config.sampleRateIn != linear->config.sampleRateOut)? word(linear->lpf.pLPF1[0].a.f32) : 0);
         printf(",%u,%u", b->converterResidualCount, hashed(b, b->converterResidual, b->converterResidualCount));
         if (b->usage == AUDIO_BUFFER_USAGE_STATIC) printf(",s");
-        else printf(",%d/%u/%d%d%d", (b->converter.formatIn == ma_format_u8)? 8 : ((b->converter.formatIn == ma_format_s16)? 16 : 32), b->converter.channelsIn,
-                    (int)b->isSubBufferProcessed[0], (int)b->isSubBufferProcessed[1], (int)(b->callback != NULL));
+        else printf(",%d/%u/%d%d%d/%u", (b->converter.formatIn == ma_format_u8)? 8 : ((b->converter.formatIn == ma_format_s16)? 16 : 32), b->converter.channelsIn,
+                    (int)b->isSubBufferProcessed[0], (int)b->isSubBufferProcessed[1], (int)(b->callback != NULL), b->framesProcessed);
         printf(",p");
         tags(b->processor);
     }
@@ -1250,7 +1252,7 @@ def st.text(st: Resampler.St) -> String:
 def feed.text(feed: Mixer.Feed) -> String:
   match feed:
     case Mixer.HeadStatic{}: ",s"
-    case Mixer.HeadStream{size, channels, first, second, called}: "," ++ U32.show(size) ++ "/" ++ U32.show(channels) ++ "/" ++ flag(first) ++ flag(second) ++ flag(called)
+    case Mixer.HeadStream{size, channels, first, second, called, done}: "," ++ U32.show(size) ++ "/" ++ U32.show(channels) ++ "/" ++ flag(first) ++ flag(second) ++ flag(called) ++ "/" ++ U32.show(done)
 
 def head.text(head: Mixer.Head) -> String:
   Mixer.Head{source, rate, +mode, +coef, cursor, st, +residual, feed} = head

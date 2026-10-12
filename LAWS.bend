@@ -2729,19 +2729,19 @@ law stream_with_buffer_valid:
 
 # UpdateAudioStream fills the first processed half; a play or a stop marks both.
 law stream_first_half_first:
-  {Mixer.Feed.target(Mixer.HeadStream{16, 1, True{}, True{}, False{}}) == 0 : U32}
+  {Mixer.Feed.target(Mixer.HeadStream{16, 1, True{}, True{}, False{}, 0}) == 0 : U32}
 
 law stream_second_half_next:
-  {Mixer.Feed.target(Mixer.HeadStream{16, 1, False{}, True{}, False{}}) == 1 : U32}
+  {Mixer.Feed.target(Mixer.HeadStream{16, 1, False{}, True{}, False{}, 0}) == 1 : U32}
 
 law stream_no_half_left:
-  {Mixer.Feed.target(Mixer.HeadStream{16, 1, False{}, False{}, False{}}) == 2 : U32}
+  {Mixer.Feed.target(Mixer.HeadStream{16, 1, False{}, False{}, False{}, 0}) == 2 : U32}
 
 law stream_filled_half_unprocessed:
-  {Mixer.Feed.filled(Mixer.HeadStream{16, 1, True{}, True{}, False{}}, 0) == Mixer.HeadStream{16, 1, False{}, True{}, False{}} : Mixer.Feed}
+  {Mixer.Feed.filled(Mixer.HeadStream{16, 1, True{}, True{}, False{}, 0}, 0) == Mixer.HeadStream{16, 1, False{}, True{}, False{}, 0} : Mixer.Feed}
 
 law stream_play_marks_both:
-  {Mixer.Feed.fresh(Mixer.HeadStream{8, 2, False{}, False{}, False{}}) == Mixer.HeadStream{8, 2, True{}, True{}, False{}} : Mixer.Feed}
+  {Mixer.Feed.fresh(Mixer.HeadStream{8, 2, False{}, False{}, False{}, 0}) == Mixer.HeadStream{8, 2, True{}, True{}, False{}, 0} : Mixer.Feed}
 
 # SetAudioStreamCallback: a stream takes a callback and gives it back, its
 # halves as they were, and a play keeps it; a sound takes none. The answers
@@ -2749,13 +2749,13 @@ law stream_play_marks_both:
 # frames are zeros (a callback made to learn what will be asked for); what a
 # turn read is the sum of what it asked for.
 law stream_callback_set:
-  {Mixer.Feed.calling(Mixer.HeadStream{16, 1, True{}, False{}, False{}}, True{}) == Mixer.HeadStream{16, 1, True{}, False{}, True{}} : Mixer.Feed}
+  {Mixer.Feed.calling(Mixer.HeadStream{16, 1, True{}, False{}, False{}, 0}, True{}) == Mixer.HeadStream{16, 1, True{}, False{}, True{}, 0} : Mixer.Feed}
 
 law stream_callback_removed:
-  {Mixer.Feed.calling(Mixer.HeadStream{16, 1, False{}, False{}, True{}}, False{}) == Mixer.HeadStream{16, 1, False{}, False{}, False{}} : Mixer.Feed}
+  {Mixer.Feed.calling(Mixer.HeadStream{16, 1, False{}, False{}, True{}, 0}, False{}) == Mixer.HeadStream{16, 1, False{}, False{}, False{}, 0} : Mixer.Feed}
 
 law stream_callback_kept_by_play:
-  {Mixer.Feed.fresh(Mixer.HeadStream{8, 2, False{}, False{}, True{}}) == Mixer.HeadStream{8, 2, True{}, True{}, True{}} : Mixer.Feed}
+  {Mixer.Feed.fresh(Mixer.HeadStream{8, 2, False{}, False{}, True{}, 0}) == Mixer.HeadStream{8, 2, True{}, True{}, True{}, 0} : Mixer.Feed}
 
 law stream_callback_not_for_a_sound:
   {Mixer.Feed.called(Mixer.Feed.calling(Mixer.HeadStatic{}, True{})) == False{} : Bool}
@@ -2818,6 +2818,20 @@ law processors_sample_added:
 
 law processors_chained:
   {J.AudioDevice.process.chain(~U32, ~(tag => samples => state => ((state + tag : U32), Con{tag, samples})), [3, 4], (0, [9])) == (7, [4, 3, 9]) : U32 & +List<U32>}
+
+# framesProcessed: the frames a stream was given count up (an unsigned int),
+# a play forgets them, and a sound counts none.
+law stream_frames_given_counted:
+  {Mixer.Feed.done(Mixer.Feed.given(Mixer.HeadStream{16, 1, True{}, True{}, False{}, 7}, 480)) == 487 : U32}
+
+law stream_frames_given_wrap:
+  {Mixer.Feed.done(Mixer.Feed.given(Mixer.HeadStream{16, 1, True{}, True{}, False{}, 4294967295}, 2)) == 1 : U32}
+
+law stream_play_forgets_frames_given:
+  {Mixer.Feed.done(Mixer.Feed.fresh(Mixer.HeadStream{8, 2, False{}, False{}, False{}, 99})) == 0 : U32}
+
+law stream_sound_counts_no_frames:
+  {Mixer.Feed.done(Mixer.Feed.given(Mixer.HeadStatic{}, 5)) == 0 : U32}
 
 law stream_sound_always_processed:
   {Mixer.Feed.processed(Mixer.HeadStatic{}) == True{} : Bool}

@@ -373,6 +373,11 @@ given) where miniaudio makes no converter: an unready device, a rate of 0,
 no channels. Jonlib also gives none for sample sizes other than 8, 16 and 32
 (raylib takes them for 32-bit float and fills part of each sample), a
 default size that is a negative int, and buffers of more than 2^22 samples.
+A stream's buffer also counts the frames it was given since it was last
+played or stopped (raudio's `framesProcessed`, an unsigned int): the frames
+of each `UpdateAudioStream` that found a processed half, written or not,
+and the frames its callback wrote. The music functions read it.
+
 `AudioStream.update` leaves the state as it is on an unready device, for a
 buffer that is 0, not tracked or a sound's (raylib writes the sound's
 samples as if they were a stream's), and for a `data` that does not hold
@@ -567,7 +572,8 @@ volume bits, every slot's handle fields with `IsSoundValid` and
 pitch and pan bits, flags, an FNV-1a hash of its samples, its converter's
 input and output rates, its cursor, the resampler's timer, the two frames it
 holds, the filter's register and coefficient, the residual, and for a
-stream its format, channels and the two processed flags) must be equal,
+stream its format, channels, the two processed flags, whether it has a
+callback and its `framesProcessed`) must be equal,
 with the default stream size, `IsAudioStreamValid` and
 `IsAudioStreamProcessed` for every slot, and after a callback the hash of
 its samples. The callbacks cover
