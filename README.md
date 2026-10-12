@@ -42,7 +42,7 @@ and the [progress dashboard](docs/PROGRESS.md). At the time of writing
 (2026-10-12) the ledger marks 547 of raylib.h's 600 functions, all 146 of
 raymath.h's, 142 of rlgl.h's 163 and all of rcamera.h's 12 and rgestures.h's
 10 as partial, and none as complete (no API is complete before the platform
-phase); the dashboard always has the current counts. 198 of raylib's 212
+phase); the dashboard always has the current counts. 199 of raylib's 212
 examples are ported ([EXAMPLES.md](docs/EXAMPLES.md)).
 
 - **Images** ([API](docs/API.md)): owned `Surface` creation in any raylib pixel format, pixel access and

@@ -6475,7 +6475,7 @@
   {
    "name": "shaders_game_of_life",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",

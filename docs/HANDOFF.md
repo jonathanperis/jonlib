@@ -72,7 +72,7 @@ at the branch's head.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 547/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **198/212 ported** with the stack, 5 ready, 9 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **199/212 ported** with the stack, 4 ready, 9 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -328,23 +328,14 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      values it never wrote for a parent that comes later (unobserved by
      raylib).
      `shaders_game_of_life`: below;
-   - `shaders_game_of_life` is ready and now looks feasible:
-     `core_vr_simulator` draws a 2160x1200 render texture and scales it to
-     the window in about a minute per lane for five frames. What a port
-     has to carry (read 2026-10-12): two 2048x2048 render textures that
-     swap each step, with `DrawTexturePro(previous, flipped, whole, tint
-     RAYWHITE)` under a shader that changes nothing (the world dims by
-     245/255 a step instead of evolving); no `ClearBackground` in the
-     frame; ten preset `GuiButton`s, a `GuiToggleGroup` ("Run\nPause\nDraw")
-     and four more buttons whose answers act on the next frame;
-     `LoadImage` of a preset inside the loop (preload the nine PNGs of
-     `resources/game_of_life/` in the IO setup); the Random preset's
-     64 tiles of 65536 `GetRandomValue(0, 100)` draws in column order;
-     draw mode's `LoadImageFromTexture` (all zeros on the software
-     renderer, so `firstColor` is 0 and no `UpdateTextureRec` follows);
-     two `static` locals (the previous mouse position, `firstColor`). A
-     script should pause after two or three steps: each step is a
-     4-million-pixel textured blit;
+   - `shaders_game_of_life` is ported (2026-10-12). Its frames cost the
+     JavaScript lane about a minute each whatever they do (two 2048x2048
+     render textures are in play; where the time goes is not measured:
+     `Draw.texture_pro` from a 2048x2048 texture each frame is the first
+     suspect), so its CI script has nine frames; scripts of 22 and 18
+     frames (zoom buttons, Slower, a run every second frame) passed
+     locally. Its Random preset (4.2 million `GetRandomValue` draws) is
+     ported and not scripted;
    - images beyond 4096 pixels on an axis (`textures_sprite_stacking`,
      parked in `.build/pending/`, not in the repository);
    - `GetFileModTime` (`shaders_hot_reloading`), `GetApplicationDirectory`
