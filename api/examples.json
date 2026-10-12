@@ -6612,7 +6612,7 @@
   {
    "name": "audio_module_playing",
    "category": "audio",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -6646,23 +6646,12 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "GetMusicTimeLength",
-    "GetMusicTimePlayed",
-    "LoadMusicStream",
-    "PauseMusicStream",
-    "PlayMusicStream",
-    "ResumeMusicStream",
-    "SetMusicPitch",
-    "StopMusicStream",
-    "UnloadMusicStream",
-    "UpdateMusicStream"
-   ]
+   "missing": []
   },
   {
    "name": "audio_music_stream",
    "category": "audio",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -6692,19 +6681,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "GetMusicTimeLength",
-    "GetMusicTimePlayed",
-    "LoadMusicStream",
-    "PauseMusicStream",
-    "PlayMusicStream",
-    "ResumeMusicStream",
-    "SetMusicPan",
-    "SetMusicVolume",
-    "StopMusicStream",
-    "UnloadMusicStream",
-    "UpdateMusicStream"
-   ]
+   "missing": []
   },
   {
    "name": "audio_raw_stream",
@@ -6764,7 +6741,7 @@
   {
    "name": "audio_mixed_processor",
    "category": "audio",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "AttachAudioMixedProcessor",
     "BeginDrawing",
@@ -6792,17 +6769,12 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "LoadMusicStream",
-    "PlayMusicStream",
-    "UnloadMusicStream",
-    "UpdateMusicStream"
-   ]
+   "missing": []
   },
   {
    "name": "audio_stream_effects",
    "category": "audio",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "AttachAudioStreamProcessor",
     "BeginDrawing",
@@ -6832,17 +6804,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "GetMusicTimeLength",
-    "GetMusicTimePlayed",
-    "LoadMusicStream",
-    "PauseMusicStream",
-    "PlayMusicStream",
-    "ResumeMusicStream",
-    "StopMusicStream",
-    "UnloadMusicStream",
-    "UpdateMusicStream"
-   ]
+   "missing": []
   },
   {
    "name": "audio_sound_multi",

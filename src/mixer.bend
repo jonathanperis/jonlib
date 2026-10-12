@@ -280,9 +280,24 @@ def Feed.given(kind: Feed, +frames: U32) -> Feed:
     case HeadStatic{}: HeadStatic{}
     case HeadStream{size, channels, first, second, called, done}: HeadStream{size, channels, first, second, called, (done + frames : U32)}
 
+# SeekMusicStream on the buffer: both halves are processed again and
+# framesProcessed is the position sought.
+def Feed.sought(kind: Feed, +done: U32) -> Feed:
+  match kind:
+    case HeadStatic{}: HeadStatic{}
+    case HeadStream{size, channels, _, _, called, _}: HeadStream{size, channels, True{}, True{}, called, done}
+
 def Head.kind(head: Head) -> Feed:
   Head{_, _, _, _, _, _, _, kind} = head
   kind
+
+def Head.sought(head: Head, +done: U32) -> Head:
+  Head{source, rate, mode, coef, cursor, st, residual, kind} = head
+  Head{source, rate, mode, coef, cursor, st, residual, Feed.sought(kind, done)}
+
+def Head.cursor(head: Head) -> U32:
+  Head{_, _, _, _, cursor, _, _, _} = head
+  cursor
 
 def Head.calling(head: Head, +on: Bool) -> Head:
   Head{source, rate, mode, coef, cursor, st, residual, kind} = head

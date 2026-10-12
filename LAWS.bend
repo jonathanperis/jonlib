@@ -2203,6 +2203,58 @@ law audio_clock_no_period_no_callback:
 law audio_clock_refused_callback_stops:
   {J.AudioClock.pump(3n, (J.AudioDevice.none(), Some{Nil{}})) == (J.AudioDevice.none(), False{}) : J.AudioDevice & Bool}
 
+# Music streams: a music is valid with a decoder, frames and a stream's
+# rate, size and channels, with or without a buffer; a stop takes the decoder
+# back to its first frame and a seek no further than the file's last; a read
+# past the end goes on from the first frame; the frames played are a C
+# remainder brought into 0..frames-1; and the frames still in the halves are
+# no more than the music has unless it loops. A 32-bit float's bytes are its
+# bits, swapped from a big-endian container.
+law music_none_invalid:
+  {J.Music.is_valid(J.Music.none()) == False{} : Bool}
+
+law music_valid_without_buffer:
+  {J.Music.is_valid(J.Music{J.AudioStream{0, 44100, 16, 2}, 700, True{}, 1, J.MusicWav{[1, 2], 0}}) == True{} : Bool}
+
+law music_stop_rewinds:
+  {J.Music.context.rewound(J.MusicWav{[1, 2, 3, 4], 2}) == J.MusicWav{[1, 2, 3, 4], 0} : J.Music.Context}
+
+law music_seek_within:
+  {J.Music.context.sought(J.MusicWav{[1, 2, 3, 4], 0}, 3, 4) == J.MusicWav{[1, 2, 3, 4], 3} : J.Music.Context}
+
+law music_seek_stops_at_the_end:
+  {J.Music.context.sought(J.MusicWav{[1, 2, 3, 4], 0}, 9, 4) == J.MusicWav{[1, 2, 3, 4], 4} : J.Music.Context}
+
+law music_read_goes_round:
+  {J.Music.wav.read(5n, False{}, [1, 2, 3, 4, 5, 6], 1, 6, 4, 5, Nil{}) == ([3, 2, 1, 6, 5], 3) : +List<U32> & U32}
+
+law music_read_within:
+  {J.Music.wav.read(5n, False{}, [1, 2, 3, 4, 5, 6], 2, 3, 1, 1, Nil{}) == ([4, 3], 2) : +List<U32> & U32}
+
+law music_played_negative_wraps:
+  {J.Music.played.wrapped(4294967295, 700) == 699 : U32}
+
+law music_played_whole_turns:
+  {J.Music.played.wrapped(1400, 700) == 0 : U32}
+
+law music_played_negative_whole_turn:
+  {J.Music.played.wrapped(4294966596, 700) == 0 : U32}
+
+law music_buffered_no_more_than_the_music:
+  {J.Music.played.buffered(False{}, False{}, 480, 700, False{}) == 700 : U32}
+
+law music_buffered_looping:
+  {J.Music.played.buffered(False{}, False{}, 480, 700, True{}) == 960 : U32}
+
+law music_buffered_one_half:
+  {J.Music.played.buffered(True{}, False{}, 480, 700, False{}) == 480 : U32}
+
+law music_float_bits_as_they_are:
+  {Wav.wide.sample(12, [0, 0, 128, 63]) == 1065353216 : U32}
+
+law music_float_bits_big_endian:
+  {Wav.wide.sample(13, [63, 128, 0, 0]) == 1065353216 : U32}
+
 # Frame: InitWindow sizes are 1..4096; a zero or oversized width has no frame
 # whatever the height.
 law frame_init_window_zero_width:

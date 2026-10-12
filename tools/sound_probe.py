@@ -320,6 +320,29 @@ def waves():
     }
 
 
+def wav_file(kind, size, channels, rate, values):
+    """A RIFF file of PCM (kind 1) or IEEE float (kind 3) samples; `values` are sample words."""
+    width = size // 8
+    data = b''.join(struct.pack('<I', v & 0xFFFFFFFF)[:width] for v in values)
+    return (b'RIFF' + struct.pack('<I', 36 + len(data)) + b'WAVEfmt ' + struct.pack('<IHHIIHH', 16, kind, channels, rate, rate * channels * width, channels * width, size)
+            + b'data' + struct.pack('<I', len(data)) + data)
+
+
+def music_files():
+    """name -> (file, rate, the stream's sample size (None where Jonlib plays none), channels, frames, the samples as the stream holds them)."""
+    m16 = [((i * 53) % 301 - 150) * 97 for i in range(1400)]
+    m24 = [((i * 7919) % 16001 - 8000) * 1000 for i in range(300)]
+    mf32 = [bits(((i * 29) % 61 - 30) / 32) for i in range(1000)]
+    mi32 = [((i * 104729) % 2000001 - 1000000) * 2000 for i in range(400)]
+    return {
+        'm16': (wav_file(1, 16, 2, 22050, m16), 22050, 16, 2, 700, [v & 65535 for v in m16]),
+        'm24': (wav_file(1, 24, 1, 44100, m24), 44100, 16, 1, 300, [(v & 0xFFFFFF) >> 8 for v in m24]),       # drwav_s24_to_s16: the two high bytes
+        'mf32': (wav_file(3, 32, 1, 48000, mf32), 48000, 32, 1, 1000, mf32),
+        'mi32': (wav_file(1, 32, 2, 8000, mi32), 8000, 32, 2, 200, [bits(f32(v / 2147483648.0)) for v in mi32]),
+        'm8': (wav_file(1, 8, 1, 11025, [(i * 37 + 11) & 255 for i in range(600)]), 11025, None, 1, 600, []),
+    }
+
+
 def tiny_wav():
     data = bytes([128, 200, 255, 130, 0, 60, 128, 190, 250, 128])
     return (b'RIFF' + struct.pack('<I', 36 + len(data)) + b'WAVEfmt ' + struct.pack('<IHHIIHH', 16, 1, 1, 11025, 11025, 1, 8)
@@ -479,6 +502,28 @@ def cases():
     add('refused-processor-unready', ('attachmixed', 1), ('init',), ('default', 480), ('stream', 0, 44100, 16, 1), ('close',), ('attach', 0, 1))
     add('refused-processor-loses-a-sample', ('init',), ('load', 0, 'tone'), ('attach', 0, 9), ('play', 0), ('mix', 4))
     add('refused-mixed-processor-loses-a-sample', ('init',), ('attachmixed', 9), ('mix', 4))
+    # Music: a WAV file's frames through the two halves of a stream, looping (the file again from its first frame) or to
+    # its end, where the music stops; a stop and a seek move the decoder.
+    add('music', ('init',), ('default', 480), ('music', 0, 'm16'), ('play', 0), ('musicupdate', 0), ('mix', 480), ('musicupdate', 0), ('mix', 480), ('mix', 480),
+        ('musicupdate', 0), ('mix', 300), ('musicstop', 0), ('musicupdate', 0), ('play', 0), ('musicupdate', 0), ('mix', 100), ('musicupdate', 0), ('close',))
+    add('music-once', ('init',), ('default', 480), ('music', 0, 'm16'), ('looping', 0, 0), ('play', 0), ('musicupdate', 0), ('mix', 480), ('musicupdate', 0), ('mix', 480),
+        ('musicupdate', 0), ('mix', 480), ('musicupdate', 0), ('mix', 10), ('play', 0), ('musicupdate', 0), ('mix', 200), ('close',))
+    add('music-formats', ('init',), ('default', 600), ('music', 0, 'm24'), ('music', 1, 'mf32'), ('music', 2, 'mi32'), ('music', 3, 'missing'), ('play', 0), ('play', 1),
+        ('play', 2), ('play', 3), ('musicupdate', 0), ('musicupdate', 1), ('musicupdate', 2), ('musicupdate', 3), ('mix', 480), ('volume', 1, bits(0.5)),
+        ('pitch', 2, bits(1.5)), ('pan', 0, bits(-0.5)), ('musicupdate', 2), ('mix', 480), ('musicupdate', 0), ('musicupdate', 1), ('musicupdate', 2), ('mix', 480), ('close',))
+    add('music-seek', ('init',), ('default', 480), ('music', 0, 'mf32'), ('play', 0), ('musicupdate', 0), ('mix', 480), ('seek', 0, bits(0.0125)), ('musicupdate', 0),
+        ('mix', 100), ('seek', 0, bits(5.0)), ('musicupdate', 0), ('mix', 100), ('looping', 0, 0), ('seek', 0, bits(0.02)), ('musicupdate', 0), ('mix', 480),
+        ('musicupdate', 0), ('mix', 480), ('musicupdate', 0), ('seek', 0, bits(-0.00001)), ('musicupdate', 0), ('close',))
+    add('music-pause', ('init',), ('default', 480), ('music', 0, 'm16'), ('musicupdate', 0), ('play', 0), ('pause', 0), ('musicupdate', 0), ('mix', 100), ('resume', 0),
+        ('mix', 500), ('musicupdate', 0), ('stop', 0), ('musicupdate', 0), ('play', 0), ('musicupdate', 0), ('mix', 50), ('musicunload', 0), ('mix', 5), ('close',))
+    add('music-unready', ('music', 0, 'm16'), ('play', 0), ('musicupdate', 0), ('init',), ('default', 480), ('music', 1, 'm24'), ('play', 1),
+        ('musicupdate', 1), ('mix', 480), ('musicupdate', 0), ('musicstop', 1), ('close',))
+    add('music-processed', ('init',), ('default', 480), ('music', 0, 'mi32'), ('attach', 0, 1), ('play', 0), ('musicupdate', 0), ('periods', 2), ('musicupdate', 0),
+        ('periods', 1), ('close',))
+    add('refused-music-8-bit', ('init',), ('music', 0, 'm8'))
+    add('refused-music-seek-negative', ('init',), ('default', 480), ('music', 0, 'm16'), ('seek', 0, bits(-1.0)))
+    add('refused-music-seek-no-buffer', ('music', 0, 'm16'), ('seek', 0, bits(0.5)))
+    add('refused-music-seek-nothing', ('init',), ('seek', 0, bits(0.5)))
     add('stream-callback-zero', ('init',), ('callback', 0, 1), ('default', 480), ('stream', 0, 44100, 16, 1), ('callback', 0, 0), ('play', 0), ('mix', 10), ('close',))
     add('refused-callback-unanswered', ('init',), ('default', 480), ('stream', 0, 44100, 32, 1), ('callback', 0, 1), ('plain', 4), ('play', 0), ('plain', 4))
     add('refused-callback-sound', ('init',), ('load', 0, 'mono16'), ('callback', 0, 1))
@@ -532,6 +577,7 @@ class Model:
         self.buffers, self.blocks, self.sounds, self.undefined = [], {}, [ZERO] * SLOTS, False
         self.calls, self.asks = [0] * SLOTS, []
         self.attached, self.proc, self.log = [], dict(count=0, prev=[0, 0]), []
+        self.musics, self.music_files = [None] * SLOTS, music_files()
 
     def buffer(self, slot):
         number = self.sounds[slot][0]
@@ -632,6 +678,87 @@ class Model:
                 proc['prev'] = flat[i:i + 2]
             return out
         return flat[:-1]
+
+    def music(self, slot, name):
+        """LoadMusicStream: a stream of the file's format, looping; no music for a file raylib does not open."""
+        self.musics[slot], self.sounds[slot] = None, ZERO
+        if name not in self.music_files:
+            return FILE_ERRORS[name]
+        _, rate, size, channels, frames, samples = self.music_files[name]
+        if size is None:
+            self.undefined = True          # raylib streams what its shared buffer holds
+            return 'unsupported'
+        self.stream(slot, rate, size, channels)
+        self.musics[slot] = dict(frames=frames, looping=True, at=0, samples=samples, rate=rate, channels=channels)
+        return '-'
+
+    def music_stop(self, slot):
+        """StopMusicStream: the stream stops, and the decoder is at its first frame either way."""
+        self.undefined |= not self.ready
+        found = self.used(slot)
+        if found is not None:
+            self.stop(found)
+        if self.musics[slot] is not None:
+            self.musics[slot]['at'] = 0
+
+    def music_update(self, slot):
+        """UpdateMusicStream."""
+        m, found = self.musics[slot], self.used(slot)
+        if m is None or found is None or not found['playing']:
+            return
+        sub = found['frames'] // 2
+        for half in ('first', 'second'):
+            stream = found['stream']
+            left = (m['frames'] - stream['done']) & 0xFFFFFFFF
+            count = sub if left >= sub or m['looping'] else left
+            if count == 0:
+                if stream['first'] and stream['second']:
+                    self.music_stop(slot)
+                return
+            if not stream[half]:
+                continue
+            data, need = [], count
+            while need:                                     # the file again from its first frame while more are needed
+                take = min(need, m['frames'] - m['at'])
+                data += m['samples'][m['at'] * m['channels']:(m['at'] + take) * m['channels']]
+                m['at'], need = m['at'] + take, need - take
+                if need:
+                    m['at'] = 0
+            self.feed(slot, count, data)
+
+    def music_seek(self, slot, word):
+        """SeekMusicStream: raylib writes through the stream's buffer pointer."""
+        m, found = self.musics[slot], self.used(slot, zero_fine=False)
+        if m is None or found is None:
+            self.undefined = True
+            return
+        frame = f32(fl(word) * float(m['rate']))
+        if not -1.0 < frame < 4294967296.0:
+            self.undefined = True
+            return
+        m['at'] = min(int(frame), m['frames']) if m['frames'] else m['at']
+        found['stream'].update(first=True, second=True, done=int(frame))
+
+    def music_text(self, slot):
+        m = self.musics[slot]
+        if m is None:
+            return 'U-'
+        number, found = self.sounds[slot][0], self.buffer(slot)
+        length = bits(f32(f32(float(m['frames'])) / f32(float(m['rate']))))
+        if number == 0:
+            played = bits(0.0)
+        elif found is None:
+            played = '-'
+        else:
+            stream, sub = found['stream'], found['frames'] // 2
+            held = (0 if stream['first'] else sub) + (0 if stream['second'] else sub)
+            if held > m['frames'] and not m['looping']:
+                held = m['frames']
+            a = stream['done'] - held + found['cursor'] % sub
+            rest = abs(a) % m['frames']                     # C's remainder has the sign of the dividend
+            rest = m['frames'] - rest if a < 0 and rest else rest
+            played = bits(f32(f32(float(rest)) / f32(float(m['rate']))))
+        return f'U1,{m["frames"]},{int(m["looping"])},{m["at"]},{length},{played}'
 
     def mix(self, frames, answered=True):
         """One device callback: the samples, or None (and nothing changed) for what Jonlib refuses."""
@@ -790,6 +917,23 @@ class Model:
                 asks += self.asks
                 log += self.log
             self.asks, self.log = asks, log
+        elif kind == 'music':
+            tag = self.music(step[1], step[2])
+        elif kind == 'musicupdate':
+            self.music_update(step[1])
+        elif kind == 'musicstop':
+            self.music_stop(step[1])
+        elif kind == 'seek':
+            self.music_seek(step[1], step[2])
+        elif kind == 'looping':
+            if self.musics[step[1]] is not None:
+                self.musics[step[1]]['looping'] = bool(step[2])
+        elif kind == 'musicunload':
+            found = self.used(step[1])
+            if found is not None:
+                self.buffers.remove(found)
+                self.blocks.pop(found['block'], None)
+            self.musics[step[1]] = None
         elif kind in ('attach', 'detach'):
             found = self.used(step[1], zero_fine=False)       # raylib reads through the stream's buffer pointer
             if found is not None:
@@ -831,6 +975,7 @@ class Model:
             streams = int(number > 0 and rate > 0 and size > 0 and channels > 0)
             processed = int(found is not None and (found['stream'] is None or found['stream']['first'] or found['stream']['second']))
             parts.append(f'S{number},{frames},{rate},{size},{channels},{valid},{playing},{streams},{processed}')
+        parts += [self.music_text(slot) for slot in range(SLOTS)]
         for b in self.buffers:
             samples = '-' if not b['block'] else str(fnv(self.blocks[b['block']])) if b['block'] in self.blocks else 'x'
             held = [b['t_int'], b['t_frac'], *map(bits, b['x0'] + b['x1'] + b['r1']), 0 if b['coef'] is None else bits(b['coef']), len(b['residual']),
@@ -893,6 +1038,7 @@ static void answer1(void *out, unsigned frames) { answer(1, out, frames); }
 static void answer2(void *out, unsigned frames) { answer(2, out, frames); }
 static void answer3(void *out, unsigned frames) { answer(3, out, frames); }
 static AudioCallback answers[SLOTS] = { answer0, answer1, answer2, answer3 };
+static Music musics[SLOTS];
 
 // The probe's processors (they run inside the callback, so with its denormal handling): half the level; the
 // sides swapped and a counted offset on the right; a delay of one frame. Each call is noted.
@@ -977,6 +1123,16 @@ static void state(int first)
         printf(" S%d,%u,%u,%u,%u,%d,%d,%d,%d", slot_id[s], x.frameCount, x.stream.sampleRate, x.stream.sampleSize, x.stream.channels, (int)IsSoundValid(x),
                (AUDIO.System.isReady && live)? (int)IsSoundPlaying(x) : 0, (int)IsAudioStreamValid(x.stream), (AUDIO.System.isReady && live)? (int)IsAudioStreamProcessed(x.stream) : 0);
     }
+    for (int s = 0; s < SLOTS; s++)
+    {
+        Music m = musics[s];
+        int live = (slot_id[s] > 0) && !gone[slot_id[s] - 1];
+        if (m.ctxData == NULL) { printf(" U-"); continue; }
+        if (m.ctxType != MUSIC_AUDIO_WAV) exit(10);
+        printf(" U%d,%u,%d,%u,%u,", (int)IsMusicValid(m), m.frameCount, (int)m.looping, (unsigned)((drwav *)m.ctxData)->readCursorInPCMFrames, word(GetMusicTimeLength(m)));
+        if ((m.stream.buffer == NULL) || (AUDIO.System.isReady && live)) printf("%u", word(GetMusicTimePlayed(m)));
+        else printf("-");
+    }
     for (rAudioBuffer *b = AUDIO.Buffer.first; b != NULL; b = b->next)
     {
         int id = number(b);
@@ -1015,6 +1171,7 @@ int main(void)
         memset(slots, 0, sizeof(slots)); memset(slot_id, 0, sizeof(slot_id));
         memset(owner, 0, sizeof(owner)); memset(gone, 0, sizeof(gone)); memset(freed, 0, sizeof(freed));
         memset(calls, 0, sizeof(calls));
+        memset(musics, 0, sizeof(musics));
         pcount = 0; pprev[0] = pprev[1] = 0.0f;
         made = 0;
         if (!quiet) printf("C ");
@@ -1098,6 +1255,22 @@ int main(void)
                 } break;
                 case 15: SetAudioStreamBufferSizeDefault((int)a); break;
                 case 16: SetAudioStreamCallback(slots[a].stream, b? answers[a] : NULL); break;
+                case 22:
+                {
+                    Sound sound = { 0 };
+                    musics[a] = LoadMusicStream(files[b]);
+                    sound.stream = musics[a].stream;
+                    put(a, sound, -1);
+                } break;
+                case 23: UpdateMusicStream(musics[a]); break;
+                case 24: StopMusicStream(musics[a]); break;
+                case 25: SeekMusicStream(musics[a], real(b)); break;
+                case 26: musics[a].looping = (b != 0); break;
+                case 27:
+                    if (slot_id[a]) { freed[owner[slot_id[a] - 1]] = 1; gone[slot_id[a] - 1] = 1; }
+                    UnloadMusicStream(musics[a]);
+                    memset(&musics[a], 0, sizeof(Music));
+                    break;
                 case 18: AttachAudioStreamProcessor(slots[a].stream, processes[b]); break;
                 case 19: DetachAudioStreamProcessor(slots[a].stream, processes[b]); break;
                 case 20: AttachAudioMixedProcessor(processes[a]); break;
@@ -1162,17 +1335,25 @@ type Op is Data:
   OpDetach{slot: U32, tag: U32}
   OpAttachMixed{tag: U32}
   OpDetachMixed{tag: U32}
+  OpMusic{slot: U32, path: String}
+  OpMusicUpdate{slot: U32}
+  OpMusicStop{slot: U32}
+  OpSeek{slot: U32, bits: U32}
+  OpLooping{slot: U32, on: U32}
+  OpMusicUnload{slot: U32}
 
 # What the program keeps beside the device: how many samples each slot's stream callback has written, the processors
-# attached, and the processors' own state (the frames the second has counted, the frame the third holds).
+# attached, the processors' own state (the frames the second has counted, the frame the third holds), and each
+# slot's music.
 type Ext is Data:
-  Ext{calls: +List<U32>, attached: +List<J.AudioDevice.Processor>, count: U32, left: U32, right: U32}
+  Ext{calls: +List<U32>, attached: +List<J.AudioDevice.Processor>, count: U32, left: U32, right: U32, musics: +List<J.Music>}
 
-type St is Data:
-  St{audio: J.AudioDevice, sounds: +List<J.Sound>, out: String, calls: Ext}
+def ext.musics(ext: Ext) -> +List<J.Music>:
+  Ext{_, _, _, _, _, musics} = ext
+  musics
 
 def ext.attached(ext: Ext) -> +List<J.AudioDevice.Processor>:
-  Ext{_, attached, _, _, _} = ext
+  Ext{_, attached, _, _, _, _} = ext
   attached
 
 def tags.text(tags: +List<U32>, +first: Bool) -> String:
@@ -1264,18 +1445,53 @@ def buffers.text(buffers: +List<J.AudioDevice.Buffer>, +blocks: +List<J.AudioDev
     case Con{J.AudioBuffer{+id, +block, +frames, +volume, +pitch, +pan, +playing, +paused, head}, rest}:
       " B" ++ U32.show(id) ++ "," ++ U32.show(block) ++ "," ++ U32.show(frames) ++ "," ++ U32.show(F32.bits(volume)) ++ "," ++ U32.show(F32.bits(pitch)) ++ "," ++ U32.show(F32.bits(pan)) ++ "," ++ flag(playing) ++ "," ++ flag(paused) ++ "," ++ hashed(block, J.AudioDevice.block.find(blocks, block)) ++ head.text(head) ++ ",p" ++ tags.text(J.AudioProcessors.tags(attached, id, Nil{}), True{}) ++ buffers.text(rest, blocks, attached)
 
-def state(+audio: J.AudioDevice, +sounds: +List<J.Sound>, +attached: +List<J.AudioDevice.Processor>) -> String:
+def music.at(context: J.Music.Context) -> String:
+  match context:
+    case J.MusicNone{}: "-"
+    case J.MusicWav{_, at}: U32.show(at)
+
+def played.text(played: Maybe<F32>) -> String:
+  match played:
+    case None{}: "-"
+    case Some{t}: U32.show(F32.bits(t))
+
+def music.text(+audio: J.AudioDevice, +music: J.Music) -> String:
+  J.Music{_, +frames, +looping, _, +context} = music
+  match context:
+    case J.MusicNone{}: " U-"
+    case J.MusicWav{_, +at}:
+      " U" ++ flag(J.Music.is_valid(music)) ++ "," ++ U32.show(frames) ++ "," ++ flag(looping) ++ "," ++ U32.show(at) ++ "," ++ U32.show(F32.bits(J.Music.time_length(music))) ++ "," ++ played.text(J.Music.time_played(audio, music))
+
+def musics.text(musics: +List<J.Music>, +audio: J.AudioDevice) -> String:
+  match musics:
+    case Nil{}: ""
+    case Con{+music, rest}: music.text(audio, music) ++ musics.text(rest, audio)
+
+def music.get(musics: +List<J.Music>, +i: U32) -> J.Music:
+  match musics:
+    case Nil{}: J.Music.none()
+    case Con{+m, rest}: Bool.pick(J.Music, U32.is_eq(i, 0), m, music.get(rest, (i - 1 : U32)))
+
+def music.set(musics: +List<J.Music>, +i: U32, +m: J.Music) -> +List<J.Music>:
+  match musics:
+    case Nil{}: Nil{}
+    case Con{+x, +rest}: Bool.pick(+List<J.Music>, U32.is_eq(i, 0), Con{m, rest}, Con{x, music.set(rest, (i - 1 : U32), m)})
+
+type St is Data:
+  St{audio: J.AudioDevice, sounds: +List<J.Sound>, out: String, calls: Ext}
+
+def state(+audio: J.AudioDevice, +sounds: +List<J.Sound>, +ext: Ext) -> String:
   J.AudioDevice{_, _, _, +buffers, +blocks, +default} = audio
-  "R" ++ flag(J.AudioDevice.is_ready(audio)) ++ " M" ++ U32.show(F32.bits(J.AudioDevice.master_volume(audio))) ++ " D" ++ U32.show(default) ++ " Q" ++ tags.text(J.AudioProcessors.tags(attached, 0, Nil{}), True{}) ++ sounds.text(sounds, audio) ++ buffers.text(buffers, blocks, attached)
+  "R" ++ flag(J.AudioDevice.is_ready(audio)) ++ " M" ++ U32.show(F32.bits(J.AudioDevice.master_volume(audio))) ++ " D" ++ U32.show(default) ++ " Q" ++ tags.text(J.AudioProcessors.tags(ext.attached(ext), 0, Nil{}), True{}) ++ sounds.text(sounds, audio) ++ musics.text(ext.musics(ext), audio) ++ buffers.text(buffers, blocks, ext.attached(ext))
 
 def after(+tag: String, +audio: J.AudioDevice, +sounds: +List<J.Sound>, +out: String, +calls: Ext) -> St:
-  St{audio, sounds, out ++ ";E:" ++ tag ++ " " ++ state(audio, sounds, ext.attached(calls)), calls}
+  St{audio, sounds, out ++ ";E:" ++ tag ++ " " ++ state(audio, sounds, calls), calls}
 
 # A refused callback leaves the program's state as it was.
 def mixed(result: J.AudioDevice & Maybe<&2, +List<U32>>, +sounds: +List<J.Sound>, +out: String, +before: Ext, +calls: Ext, +asks: String) -> St:
   match result:
-    case Tuple{+audio, Some{+samples}}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds, ext.attached(calls)) ++ " X" ++ U32.show(fnv(samples, 2166136261)) ++ asks, calls}
-    case Tuple{+audio, None{}}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds, ext.attached(before)) ++ " X-", before}
+    case Tuple{+audio, Some{+samples}}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds, calls) ++ " X" ++ U32.show(fnv(samples, 2166136261)) ++ asks, calls}
+    case Tuple{+audio, None{}}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds, before) ++ " X-", before}
 
 def nth(xs: +List<U32>, +i: U32) -> U32:
   match xs:
@@ -1392,12 +1608,13 @@ def process.one(tag: U32, +samples: +List<U32>, state: Asked) -> Asked & +List<U
       (Asked{sounds, calls, text, count, left, right, log ++ " P9:" ++ U32.show(half(samples, 0))}, List.reverse(&2, U32, List.drop(&2, U32, List.reverse(&2, U32, samples), 1n)))
 
 def asked.of(+sounds: +List<J.Sound>, ext: Ext, +text: String) -> Asked:
-  Ext{calls, _, count, left, right} = ext
+  Ext{calls, _, count, left, right, _} = ext
   Asked{sounds, calls, text, count, left, right, ""}
 
-def ext.of(asked: Asked, +attached: +List<J.AudioDevice.Processor>) -> Ext:
+# The program's state after callbacks: the processors and musics of before.
+def ext.of(asked: Asked, +before: Ext) -> Ext:
   Asked{_, calls, _, count, left, right, _} = asked
-  Ext{calls, attached, count, left, right}
+  Ext{calls, ext.attached(before), count, left, right, ext.musics(before)}
 
 def asked.text(asked: Asked) -> String:
   Asked{_, _, text, _, _, _, log} = asked
@@ -1406,8 +1623,8 @@ def asked.text(asked: Asked) -> String:
 def clocked(result: J.AudioClock.Step & Asked, +sounds: +List<J.Sound>, +out: String, +before: Ext) -> St:
   match result:
     case Tuple{J.AudioStep{_, +audio, True{}}, +asked}:
-      St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds, ext.attached(before)) ++ " N1" ++ asked.text(asked), ext.of(asked, ext.attached(before))}
-    case Tuple{J.AudioStep{_, +audio, False{}}, _}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds, ext.attached(before)) ++ " N0", before}
+      St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds, before) ++ " N1" ++ asked.text(asked), ext.of(asked, before)}
+    case Tuple{J.AudioStep{_, +audio, False{}}, _}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds, before) ++ " N0", before}
 
 # `count` periods on a clock opened at 0 (the time is half a period past the last one), with the processors when
 # there are any.
@@ -1425,17 +1642,17 @@ def periods(+count: U32, +audio: J.AudioDevice, +sounds: +List<J.Sound>, +out: S
 
 def mix.processed(result: (J.AudioDevice & Maybe<&2, +List<U32>>) & Asked, +sounds: +List<J.Sound>, +out: String, +before: Ext) -> St:
   match result:
-    case Tuple{mix, +asked}: mixed(mix, sounds, out, before, ext.of(asked, ext.attached(before)), asked.text(asked))
+    case Tuple{mix, +asked}: mixed(mix, sounds, out, before, ext.of(asked, before), asked.text(asked))
 
 # The mix with the answers, through the processors when there are any.
 def mix.run(processors: +List<J.AudioDevice.Processor>, +audio: J.AudioDevice, +frames: U32, +data: +List<U32>, +sounds: +List<J.Sound>, +out: String, +before: Ext, +calls: +List<U32>,
     +text: String) -> St:
   match processors:
     case Nil{}:
-      Ext{_, _, +count, +left, +right} = before
-      mixed(J.AudioDevice.mix_answered(audio, frames, data), sounds, out, before, Ext{calls, Nil{}, count, left, right}, text)
+      Ext{_, _, +count, +left, +right, +musics} = before
+      mixed(J.AudioDevice.mix_answered(audio, frames, data), sounds, out, before, Ext{calls, Nil{}, count, left, right, musics}, text)
     case Con{+first, +rest}:
-      Ext{_, _, +count, +left, +right} = before
+      Ext{_, _, +count, +left, +right, _} = before
       mix.processed(J.AudioDevice.mix_processed(~Asked, ~(tag => samples => state => process.one(tag, samples, state)), audio, J.AudioProcessors{Con{first, rest}}, frames, data,
         Asked{sounds, calls, text, count, left, right, ""}), sounds, out, before)
 
@@ -1444,19 +1661,19 @@ def mix.answered(answers: Answered, +audio: J.AudioDevice, +frames: U32, +sounds
   mix.run(ext.attached(before), audio, frames, data, sounds, out, before, calls, text)
 
 def ext.calls(ext: Ext) -> +List<U32>:
-  Ext{calls, _, _, _, _} = ext
+  Ext{calls, _, _, _, _, _} = ext
   calls
 
 # One device callback: what the stream callbacks will be asked for, their answers, and the mix with them.
 def mix.asked(asks: Maybe<&2, +List<J.AudioDevice.Ask>>, +audio: J.AudioDevice, +frames: U32, +sounds: +List<J.Sound>, +out: String, +calls: Ext) -> St:
   match asks:
-    case None{}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds, ext.attached(calls)) ++ " X-", calls}
+    case None{}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds, calls) ++ " X-", calls}
     case Some{+list}: mix.answered(answered(list, sounds, ext.calls(calls), Nil{}, ""), audio, frames, sounds, out, calls)
 
 def ext.with(processors: J.AudioProcessors, ext: Ext) -> Ext:
   J.AudioProcessors{attached} = processors
-  Ext{calls, _, count, left, right} = ext
-  Ext{calls, attached, count, left, right}
+  Ext{calls, _, count, left, right, musics} = ext
+  Ext{calls, attached, count, left, right, musics}
 
 # AttachAudioStreamProcessor, DetachAudioStreamProcessor, AttachAudioMixedProcessor and DetachAudioMixedProcessor.
 def attached(op: U32, +audio: J.AudioDevice, +stream: J.AudioStream, +tag: U32, +ext: Ext) -> Ext:
@@ -1478,6 +1695,30 @@ def tag(error: J.Sound.Error) -> String:
     case J.SoundDeviceNotReady{}: "device"
     case J.SoundWaveError{J.WaveFileError{_, _}}: "file"
     case J.SoundWaveError{J.WaveDataError{inner}}: wave.tag(inner)
+
+def ext.playing(ext: Ext, +musics: +List<J.Music>) -> Ext:
+  Ext{calls, attached, count, left, right, _} = ext
+  Ext{calls, attached, count, left, right, musics}
+
+def io.tag(error: J.Wave.IOError) -> String:
+  match error:
+    case J.WaveFileError{_, _}: "file"
+    case J.WaveDataError{inner}: wave.tag(inner)
+
+# LoadMusicStream: the slot holds the music and its stream.
+def musicked(result: J.AudioDevice & Result<&1, &1, J.Wave.IOError, J.Music>, +slot: U32, +sounds: +List<J.Sound>, +out: String, +calls: Ext) -> St:
+  match result:
+    case Tuple{+audio, Done{+music}}: after("-", audio, set(sounds, slot, J.Sound{J.Music.stream(music), 0}), out, ext.playing(calls, music.set(ext.musics(calls), slot, music)))
+    case Tuple{+audio, Fail{error}}: after(io.tag(error), audio, set(sounds, slot, J.Sound.none()), out, ext.playing(calls, music.set(ext.musics(calls), slot, J.Music.none())))
+
+# UpdateMusicStream, StopMusicStream and SeekMusicStream give the music back.
+def musicking(result: J.AudioDevice & J.Music, +slot: U32, +sounds: +List<J.Sound>, +out: String, +calls: Ext) -> St:
+  match result:
+    case Tuple{+audio, +music}: after("-", audio, sounds, out, ext.playing(calls, music.set(ext.musics(calls), slot, music)))
+
+def looped(music: J.Music, +on: Bool) -> J.Music:
+  J.Music{stream, frames, _, kind, context} = music
+  J.Music{stream, frames, on, kind, context}
 
 def loaded(result: J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>, +slot: U32, +sounds: +List<J.Sound>, +out: String, +calls: Ext) -> St:
   match result:
@@ -1529,6 +1770,16 @@ def step(+st: St, op: Op) -> IO(St):
     case OpMix{+frames}: IO.pure(St, mix.asked(J.AudioDevice.asks(audio, frames), audio, frames, sounds, out, calls))
     case OpPlain{frames}: IO.pure(St, mixed(J.AudioDevice.mix(audio, frames), sounds, out, calls, calls, ""))
     case OpPeriods{+count}: IO.pure(St, periods(count, audio, sounds, out, calls))
+    case OpMusic{+slot, path}:
+      do IO<St>:
+        result : J.AudioDevice & Result<&1, &1, J.Wave.IOError, J.Music> <- J.Music.load(audio, path)
+        IO.pure(St, musicked(result, slot, sounds, out, calls))
+    case OpMusicUpdate{+slot}: IO.pure(St, musicking(J.Music.update(audio, music.get(ext.musics(calls), slot)), slot, sounds, out, calls))
+    case OpMusicStop{+slot}: IO.pure(St, musicking(J.Music.stop(audio, music.get(ext.musics(calls), slot)), slot, sounds, out, calls))
+    case OpSeek{+slot, bits}: IO.pure(St, musicking(J.Music.seek(audio, music.get(ext.musics(calls), slot), J.Wave.float_bits(bits)), slot, sounds, out, calls))
+    case OpLooping{+slot, on}: IO.pure(St, after("-", audio, sounds, out, ext.playing(calls, music.set(ext.musics(calls), slot, looped(music.get(ext.musics(calls), slot), U32.is_ne(on, 0))))))
+    case OpMusicUnload{+slot}:
+      IO.pure(St, after("-", J.Music.unload(audio, music.get(ext.musics(calls), slot)), sounds, out, ext.playing(calls, music.set(ext.musics(calls), slot, J.Music.none()))))
     case OpAttach{slot, +tag}: IO.pure(St, after("-", audio, sounds, out, attached(0, audio, stream.of(get(sounds, slot)), tag, calls)))
     case OpDetach{slot, +tag}: IO.pure(St, after("-", audio, sounds, out, attached(1, audio, stream.of(get(sounds, slot)), tag, calls)))
     case OpAttachMixed{+tag}: IO.pure(St, after("-", audio, sounds, out, attached(2, audio, J.AudioStream{0, 0, 0, 0}, tag, calls)))
@@ -1549,7 +1800,7 @@ def run(ops: +List<Op>, +st: St) -> IO(String):
         run(rest, next)
 
 def start() -> St:
-  St{J.AudioDevice.none(), [J.Sound.none(), J.Sound.none(), J.Sound.none(), J.Sound.none()], "", Ext{[0, 0, 0, 0], Nil{}, 0, 0, 0}}
+  St{J.AudioDevice.none(), [J.Sound.none(), J.Sound.none(), J.Sound.none(), J.Sound.none()], "", Ext{[0, 0, 0, 0], Nil{}, 0, 0, 0, [J.Music.none(), J.Music.none(), J.Music.none(), J.Music.none()]}}
 '''
 
 
@@ -1603,6 +1854,12 @@ def bend_step(step, table, paths):
         return f'Op{kind.capitalize()}{{{step[1]}, {step[2]}}}'
     if kind in ('attachmixed', 'detachmixed'):
         return f'Op{"Attach" if kind == "attachmixed" else "Detach"}Mixed{{{step[1]}}}'
+    if kind == 'music':
+        return f'OpMusic{{{step[1]}, {json.dumps(str(paths[step[2]]))}}}'
+    if kind in ('musicupdate', 'musicstop', 'musicunload'):
+        return f'Op{dict(musicupdate="MusicUpdate", musicstop="MusicStop", musicunload="MusicUnload")[kind]}{{{step[1]}}}'
+    if kind in ('seek', 'looping'):
+        return f'Op{kind.capitalize()}{{{step[1]}, {step[2]}}}'
     raise ValueError(kind)
 
 
@@ -1644,6 +1901,12 @@ def native_step(step, table, order):
         return 18 + (kind == 'detach'), step[1], step[2], 0, []
     if kind in ('attachmixed', 'detachmixed'):
         return 20 + (kind == 'detachmixed'), step[1], 0, 0, []
+    if kind == 'music':
+        return 22, step[1], order.index(step[2]), 0, []
+    if kind in ('musicupdate', 'musicstop', 'musicunload'):
+        return {'musicupdate': 23, 'musicstop': 24, 'musicunload': 27}[kind], step[1], 0, 0, []
+    if kind in ('seek', 'looping'):
+        return 25 + (kind == 'looping'), step[1], step[2], 0, []
     if kind == 'stream':
         return 13, step[1], step[2], step[3], [step[4]]
     if kind == 'feed':
@@ -1694,9 +1957,11 @@ def main():
     raylib = args.raylib_source.resolve()
     paths = {name: raylib / relative for name, relative in FILES.items()}
     written = {'tiny.wav': tiny_wav(), 'text.wav': b'This is not a RIFF file, whatever its name says.\n', 'other.xyz': tiny_wav()}
+    written.update({f'{name}.wav': entry[0] for name, entry in music_files().items()})
     for name, data in written.items():
         (work / name).write_bytes(data)
     paths.update(tiny=work / 'tiny.wav', text=work / 'text.wav', other=work / 'other.xyz', missing=work / 'missing.wav')
+    paths.update({name: work / f'{name}.wav' for name in music_files()})
     order = list(paths)
     table, items = waves(), cases()
     keys, steps = catalog_steps(table, order)

@@ -7206,6 +7206,306 @@ def AudioClock.advance_processing(~P: Type, ~answer: U32 -> U32 -> P -> P & +Lis
   AudioProcessors{+attached} = processors
   AudioClock.advance_processing.owed(~P, ~answer, ~process, AudioClock.owed(periods, AudioClock.due(opened, time)), opened, periods, device, attached, state)
 
+# Music streams (LoadMusicStream, UpdateMusicStream, ...): an audio stream
+# and the decoder that fills its halves. raylib's Music is a struct the
+# program copies while its ctxData points at the decoder's state; here the
+# decoder's state is in the Music value, so what changes it (an update, a
+# stop, a seek) gives the Music back. `kind` is raylib's ctxType (1:
+# MUSIC_AUDIO_WAV) and `looping` a field the program sets, as in raylib.
+type Music.Context is Data:
+  MusicNone{}
+  MusicWav{samples: +List<U32>, at: U32}
+
+type Music is Data:
+  Music{stream: AudioStream, frames: U32, looping: Bool, kind: U32, context: Music.Context}
+
+# The zero Music: what raylib gives for a file it does not load.
+def Music.none() -> Music:
+  Music{AudioStream{0, 0, 0, 0}, 0, False{}, 0, MusicNone{}}
+
+def Music.stream(music: Music) -> AudioStream:
+  Music{stream, _, _, _, _} = music
+  stream
+
+def Music.loaded.stream(loaded: AudioDevice & AudioStream, +frames: U32, +samples: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  (+audio, +stream) = loaded
+  (audio, Done{Music{stream, frames, True{}, 1, MusicWav{samples, 0}}})
+
+def Music.loaded(outcome: Wav.Outcome, +audio: AudioDevice, +size: U32) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  match outcome:
+    case Wav.Decoded{+rate, +channels, +frames, +samples}: Music.loaded.stream(AudioStream.load(audio, rate, size, channels), frames, samples)
+    case Wav.Unsupported{}: (audio, Fail{UnsupportedWaveFormat{}})
+    case Wav.Invalid{error}: (audio, Fail{Wave.error(error)})
+
+# A file raylib loads and Jonlib does not play: other sample sizes (raylib
+# streams whatever its shared buffer holds for them).
+def Music.loaded.refused(outcome: Wav.Outcome, +audio: AudioDevice) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  match outcome:
+    case Wav.Invalid{error}: (audio, Fail{Wave.error(error)})
+    case _: (audio, Fail{UnsupportedWaveFormat{}})
+
+# drwav.bitsPerSample decides how the music reads: 16 as it is, 24 as 16-bit
+# samples, 32 as floats.
+def Music.decode.wav(bits: U32, +audio: AudioDevice, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  match bits:
+    case 16: Music.loaded(Wav.decode(bytes), audio, 16)
+    case 24: Music.loaded(Wav.decode(bytes), audio, 16)
+    case 32: Music.loaded(Wav.decode.wide(bytes), audio, 32)
+    case _: Music.loaded.refused(Wav.decode(bytes), audio)
+
+def Music.decode.selected(wav: Bool, +audio: AudioDevice, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  match wav:
+    case True{}: Music.decode.wav(Wav.bits(bytes), audio, bytes)
+    case False{}: (audio, Fail{UnsupportedWaveFormat{}})
+
+# LoadMusicStreamFromMemory for ".wav" (".WAV") data: every file Wave.decode
+# reads whose samples are 16, 24 or 32 bits wide, with a stream of the file's
+# rate and channels (16-bit samples, or floats for 32 bits) and looping on,
+# as raylib sets it. The stream has no buffer where AudioStream.load gives
+# none (an unready device), and the music is still loaded. Fail, and no
+# stream: other tokens (OGG, MP3, QOA, FLAC, XM and MOD music are not
+# ported), other sample sizes, and what Wave.decode refuses (raylib would
+# read such a file again and again).
+def Music.load_from_memory(+audio: AudioDevice, +file_type: String, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  Music.decode.selected(String.eq(file_type, ".wav") || String.eq(file_type, ".WAV"), audio, bytes)
+
+def Music.load.decoded(result: AudioDevice & Result<&1, &1, Wave.Error, Music>) -> AudioDevice & Result<&1, &1, Wave.IOError, Music>:
+  match result:
+    case Tuple{+audio, Fail{error}}: (audio, Fail{WaveDataError{error}})
+    case Tuple{+audio, Done{music}}: (audio, Done{music})
+
+def Music.load.read(+token: String, +audio: AudioDevice, result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(AudioDevice & Result<&1, &1, Wave.IOError, Music>):
+  match result:
+    case Fail{FileError{code, message}}: IO.pure(AudioDevice & Result<&1, &1, Wave.IOError, Music>, (audio, Fail{WaveFileError{code, message}}))
+    case Fail{_}: IO.pure(AudioDevice & Result<&1, &1, Wave.IOError, Music>, (audio, Fail{WaveDataError{InvalidWaveHeader{}}}))
+    case Done{+bytes}: IO.pure(AudioDevice & Result<&1, &1, Wave.IOError, Music>, Music.load.decoded(Music.load_from_memory(audio, token, bytes)))
+
+# LoadMusicStream: the file's bytes, by its extension.
+def Music.load(+audio: AudioDevice, +path: String) -> IO(AudioDevice & Result<&1, &1, Wave.IOError, Music>):
+  IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, AudioDevice & Result<&1, &1, Wave.IOError, Music>, Files.load_data(path), result => Music.load.read(Image.file.token(path), audio, result))
+
+def Music.context.loaded(context: Music.Context) -> Bool:
+  match context:
+    case MusicNone{}: False{}
+    case MusicWav{_, _}: True{}
+
+# IsMusicValid: a decoder, frames, and a rate, sample size and channels that
+# are not 0.
+def Music.is_valid(music: Music) -> Bool:
+  Music{AudioStream{_, rate, size, channels}, frames, _, _, context} = music
+  Music.context.loaded(context) && (frames > 0 : U32) && (rate > 0 : U32) && (size > 0 : U32) && (channels > 0 : U32)
+
+# UnloadMusicStream: the stream's buffer is untracked and its halves freed;
+# the decoder goes with the Music value.
+def Music.unload(+audio: AudioDevice, music: Music) -> AudioDevice:
+  AudioStream.unload(audio, Music.stream(music))
+
+# PlayMusicStream, PauseMusicStream, ResumeMusicStream and
+# IsMusicStreamPlaying are the stream's.
+def Music.play(audio: AudioDevice, music: Music) -> AudioDevice:
+  AudioStream.play(audio, Music.stream(music))
+
+def Music.pause(audio: AudioDevice, music: Music) -> AudioDevice:
+  AudioStream.pause(audio, Music.stream(music))
+
+def Music.resume(audio: AudioDevice, music: Music) -> AudioDevice:
+  AudioStream.resume(audio, Music.stream(music))
+
+def Music.is_playing(audio: AudioDevice, music: Music) -> Bool:
+  AudioStream.is_playing(audio, Music.stream(music))
+
+# SetMusicVolume, SetMusicPitch and SetMusicPan are the stream's.
+def Music.set_volume(audio: AudioDevice, music: Music, +volume: F32) -> AudioDevice:
+  AudioStream.set_volume(audio, Music.stream(music), volume)
+
+def Music.set_pitch(audio: AudioDevice, music: Music, +pitch: F32) -> AudioDevice:
+  AudioStream.set_pitch(audio, Music.stream(music), pitch)
+
+def Music.set_pan(audio: AudioDevice, music: Music, +pan: F32) -> AudioDevice:
+  AudioStream.set_pan(audio, Music.stream(music), pan)
+
+# The decoder back at its first frame.
+def Music.context.rewound(context: Music.Context) -> Music.Context:
+  match context:
+    case MusicNone{}: MusicNone{}
+    case MusicWav{samples, _}: MusicWav{samples, 0}
+
+# StopMusicStream: the stream stops and the decoder goes back to its first
+# frame (whether the stream was playing or not).
+def Music.stop(audio: AudioDevice, music: Music) -> AudioDevice & Music:
+  Music{+stream, frames, looping, kind, context} = music
+  (AudioStream.stop(audio, stream), Music{stream, frames, looping, kind, Music.context.rewound(context)})
+
+# GetMusicTimeLength: (float)frameCount/sampleRate.
+def Music.time_length(music: Music) -> F32:
+  Music{AudioStream{_, rate, _, _}, frames, _, _, _} = music
+  (U32.to_f32(frames) / U32.to_f32(rate) : F32)
+
+# `need` frames from the decoder at frame `at` of `total` (not 0): what is
+# left, then from the first frame again while more are needed
+# (drwav_seek_to_first_pcm_frame), as raylib reads a looping music. The
+# samples (last first) and the decoder's frame after them.
+def Music.wav.read(fuel: Nat, done: Bool, +samples: +List<U32>, +channels: U32, +total: U32, +at: U32, +need: U32, +acc: +List<U32>) -> +List<U32> & U32:
+  match fuel:
+    case 0n: (acc, at)
+    case 1n+rest:
+      match done:
+        case True{}: (acc, at)
+        case False{}:
+          +count = U32.min(need, (total - at : U32))
+          Music.wav.read(rest, U32.is_eq(count, need), samples, channels, total, Bool.pick(U32, U32.is_eq(count, need), (at + count : U32), 0), (need - count : U32),
+            List.reverse.go(&2, U32, List.take(&2, U32, List.drop(&2, U32, samples, U32.to_nat((at * channels : U32))), U32.to_nat((count * channels : U32))), acc))
+
+type Music.Read is Data:
+  MusicRead{data: +List<U32>, context: Music.Context}
+
+def Music.read.wav(read: +List<U32> & U32, +samples: +List<U32>) -> Music.Read:
+  (+data, +at) = read
+  MusicRead{List.reverse(&2, U32, data), MusicWav{samples, at}}
+
+def Music.read(context: Music.Context, +channels: U32, +total: U32, +need: U32) -> Music.Read:
+  match context:
+    case MusicNone{}: MusicRead{Nil{}, MusicNone{}}
+    case MusicWav{+samples, +at}: Music.read.wav(Music.wav.read(U32.to_nat(((need / U32.max(total, 1)) + 3 : U32)), False{}, samples, channels, total, U32.min(at, total), need, Nil{}), samples)
+
+def Music.fed(read: Music.Read, +audio: AudioDevice, +stream: AudioStream, +frames: U32, +looping: Bool, +kind: U32, +count: U32) -> AudioDevice & Music:
+  MusicRead{+data, context} = read
+  (AudioStream.update(audio, stream, data, count), Music{stream, frames, looping, kind, context})
+
+def Music.channels(stream: AudioStream) -> U32:
+  AudioStream{_, _, _, channels} = stream
+  channels
+
+# none: no frame to stream; both: both halves are processed; mine: this half
+# is.
+def Music.update.step(none: Bool, both: Bool, mine: Bool, +count: U32, +audio: AudioDevice, +stream: AudioStream, +frames: U32, +looping: Bool, +kind: U32,
+    +context: Music.Context) -> (AudioDevice & Music) & Bool:
+  match none both mine:
+    case True{} True{} _: (Music.stop(audio, Music{stream, frames, looping, kind, context}), False{})
+    case True{} False{} _: ((audio, Music{stream, frames, looping, kind, context}), False{})
+    case False{} _ False{}: ((audio, Music{stream, frames, looping, kind, context}), True{})
+    case False{} _ True{}: (Music.fed(Music.read(context, Music.channels(stream), frames, count), audio, stream, frames, looping, kind, count), True{})
+
+# One half of UpdateMusicStream. `half` is 0 or 1; `go` is false once the
+# update has returned. The frames to stream are a whole half while as many
+# are left of the music (frameCount - framesProcessed, unsigned) or it loops,
+# else what is left; with none left the music stops once both halves are
+# processed, and the update ends either way; a half that is not processed is
+# left alone.
+def Music.update.half(go: Bool, found: Maybe<&2, AudioDevice.Buffer>, +half: U32, +audio: AudioDevice, +stream: AudioStream, +frames: U32, +looping: Bool, +kind: U32,
+    +context: Music.Context) -> (AudioDevice & Music) & Bool:
+  match go found:
+    case True{} Some{AudioBuffer{_, _, +size, _, _, _, _, _, +head}}:
+      +feed = Mixer.Head.kind(head)
+      +left = (frames - Mixer.Feed.done(feed) : U32)
+      +count = Bool.pick(U32, (left >= (size / 2) : U32) || looping, (size / 2 : U32), left)
+      Music.update.step(U32.is_eq(count, 0), Mixer.Feed.first(feed) && Mixer.Feed.second(feed), Bool.pick(Bool, U32.is_eq(half, 0), Mixer.Feed.first(feed), Mixer.Feed.second(feed)), count, audio,
+        stream, frames, looping, kind, context)
+    case _ _: ((audio, Music{stream, frames, looping, kind, context}), False{})
+
+def Music.update.done(second: (AudioDevice & Music) & Bool) -> AudioDevice & Music:
+  (result, _) = second
+  result
+
+def Music.update.second(first: (AudioDevice & Music) & Bool) -> AudioDevice & Music:
+  match first:
+    case Tuple{Tuple{+audio, Music{+stream, +frames, +looping, +kind, +context}}, +go}:
+      Music.update.done(Music.update.half(go, AudioDevice.buffer.tracked(audio, AudioStream.buffer(stream)), 1, audio, stream, frames, looping, kind, context))
+
+def Music.update.playing(found: Maybe<&2, AudioDevice.Buffer>) -> Bool:
+  match found:
+    case None{}: False{}
+    case Some{AudioBuffer{_, _, _, _, _, _, playing, _, _}}: playing
+
+# UpdateMusicStream: each half of a playing music's stream that the device
+# has read through is filled with the decoder's next frames (the first half,
+# then the second), as AudioStream.update writes them; a music that does not
+# loop gets the frames it has left, then stops when both halves are
+# processed and none is left, its decoder back at the first frame. Nothing
+# for a music that is not playing, a stream without a tracked buffer, an
+# unready device, and a music without frames (raylib would read it for ever
+# when it loops).
+def Music.update(+audio: AudioDevice, music: Music) -> AudioDevice & Music:
+  Music{+stream, +frames, +looping, +kind, +context} = music
+  Music.update.second(Music.update.half(Music.update.playing(AudioDevice.buffer.tracked(audio, AudioStream.buffer(stream))) && (frames > 0 : U32),
+    AudioDevice.buffer.tracked(audio, AudioStream.buffer(stream)), 0, audio, stream, frames, looping, kind, context))
+
+# drwav_seek_to_pcm_frame: the frame sought, at most the file's last (a file
+# without frames stays where it is).
+def Music.context.sought(context: Music.Context, +position: U32, +total: U32) -> Music.Context:
+  match context:
+    case MusicNone{}: MusicNone{}
+    case MusicWav{samples, +at}: MusicWav{samples, Bool.pick(U32, U32.is_eq(total, 0), at, U32.min(position, total))}
+
+def Music.seek.buffers(buffers: +List<AudioDevice.Buffer>, +id: U32, +done: U32, acc: +List<AudioDevice.Buffer>) -> +List<AudioDevice.Buffer>:
+  match buffers:
+    case Nil{}: List.reverse(&2, AudioDevice.Buffer, acc)
+    case Con{AudioBuffer{+found, +block, +frames, +volume, +pitch, +pan, +playing, +paused, +head}, rest}:
+      Music.seek.buffers(rest, id, done, Con{AudioBuffer{found, block, frames, volume, pitch, pan, playing, paused, Bool.pick(Mixer.Head, U32.is_eq(found, id), Mixer.Head.sought(head, done), head)}, acc})
+
+def Music.seek.checked(valid: Bool, +audio: AudioDevice, +stream: AudioStream, +frames: U32, +looping: Bool, +kind: U32, +context: Music.Context, +position: U32) -> AudioDevice & Music:
+  match valid:
+    case False{}: (audio, Music{stream, frames, looping, kind, context})
+    case True{}:
+      AudioDevice{ready, master, next, +buffers, blocks, size} = audio
+      (AudioDevice{ready, master, next, Music.seek.buffers(buffers, AudioStream.buffer(stream), position, Nil{}), blocks, size}, Music{stream, frames, looping, kind, Music.context.sought(context, position, frames)})
+
+# The frame of a position in seconds: (unsigned int)(position*sampleRate).
+def Music.seek.frame(+position: F32, +rate: U32) -> F32:
+  (position * U32.to_f32(rate) : F32)
+
+# SeekMusicStream(music, position): the decoder goes to the frame of the
+# position (dr_wav stops at the file's last frame), the stream's
+# framesProcessed is that frame, not clamped, and both halves are processed,
+# so the next update fills them from there. Nothing, and the music as it is:
+# a position whose frame is not an unsigned int (negative from -1 down, 2^32
+# and more, NaN), a stream without a tracked buffer (raylib writes through
+# the pointer) and an unready device.
+def Music.seek(+audio: AudioDevice, music: Music, +position: F32) -> AudioDevice & Music:
+  Music{+stream, +frames, +looping, +kind, +context} = music
+  AudioStream{_, +rate, _, _} = stream
+  +frame = Music.seek.frame(position, rate)
+  Music.seek.checked(AudioProcessors.tracked(AudioDevice.buffer.tracked(audio, AudioStream.buffer(stream))) && (frame > F32.neg(1.0) : F32) && (frame < 4294967296.0 : F32), audio, stream,
+    frames, looping, kind, context, F32.to_u32(frame))
+
+# a % n as C computes it for ints, n in 1..2^31-1, plus n when it is
+# negative: the remainder in 0..n-1.
+def Music.played.wrapped(+a: U32, +n: U32) -> U32:
+  +negative = (a >= 2147483648 : U32)
+  +rest = (Bool.pick(U32, negative, (0 - a : U32), a) % U32.max(n, 1) : U32)
+  Bool.pick(U32, negative && U32.is_ne(rest, 0), (n - rest : U32), rest)
+
+# The frames in the stream's halves that the device has not read through: a
+# half each, and no more than the music has when it does not loop.
+def Music.played.buffered(+first: Bool, +second: Bool, +sub: U32, +frames: U32, +looping: Bool) -> U32:
+  +held = (Bool.pick(U32, first, 0, sub) + Bool.pick(U32, second, 0, sub) : U32)
+  Bool.pick(U32, (held > frames : U32) && Bool.not(looping), frames, held)
+
+def Music.played.frames(found: Maybe<&2, AudioDevice.Buffer>, +frames: U32, +looping: Bool, +rate: U32) -> Maybe<F32>:
+  match found:
+    case None{}: None{}
+    case Some{AudioBuffer{_, _, +size, _, _, _, _, _, +head}}:
+      +feed = Mixer.Head.kind(head)
+      +sub = U32.max((size / 2 : U32), 1)
+      +done = Mixer.Feed.done(feed)
+      +played = Music.played.wrapped((((done - Music.played.buffered(Mixer.Feed.first(feed), Mixer.Feed.second(feed), sub, frames, looping)) + (Mixer.Head.cursor(head) % sub)) : U32), frames)
+      Bool.pick(Maybe<F32>, (done < 2147483648 : U32) && (frames > 0 : U32) && (frames < 2147483648 : U32), Some{(U32.to_f32(played) / U32.to_f32(rate) : F32)}, None{})
+
+def Music.played.none(zero: Bool, found: Maybe<&2, AudioDevice.Buffer>, +frames: U32, +looping: Bool, +rate: U32) -> Maybe<F32>:
+  match zero:
+    case True{}: Some{0.0}
+    case False{}: Music.played.frames(found, frames, looping, rate)
+
+# GetMusicTimePlayed: the frames the stream was given (framesProcessed), less
+# those still in its halves, plus those of the half being played that went to
+# the mix, modulo the music's frames, in seconds:
+# (float)framesPlayed/sampleRate. 0 for a stream without a buffer. None: a
+# buffer that is not tracked or an unready device, a music without frames
+# (raylib divides by them), and counts that do not fit an int.
+def Music.time_played(+audio: AudioDevice, music: Music) -> Maybe<F32>:
+  Music{AudioStream{+buffer, +rate, _, _}, +frames, +looping, _, _} = music
+  Music.played.none(U32.is_eq(buffer, 0), AudioDevice.buffer.tracked(audio, buffer), frames, looping, rate)
+
 # -----------------------------------------------------------------------------
 # Text: rtext.c byte strings and UTF-8 codepoints
 #

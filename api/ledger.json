@@ -5413,23 +5413,28 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Music",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The stream, the frame count, the looping flag, the context type, and the decoder (the file's frames as the stream holds them and the frame it is at).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The decoder is a value in the Music, not a pointer: copies do not share it",
+        "WAV files only: OGG, MP3, QOA, FLAC, XM and MOD music are not ported",
+        "A WAV file's frames are all decoded when it is loaded"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -5441,7 +5446,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive Music semantics from the linked source, add a reference fixture, then implement Music.",
+      "next_step": "Close documented gaps and unverified gates for Music.",
       "priority": 100
     },
     {
@@ -60668,23 +60673,28 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.load_music_stream",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Music.load",
+      "mapping_state": "implemented",
+      "scope": "A WAV file's music: a stream of the file's rate and channels (16-bit samples for 16- and 24-bit files, floats for 32-bit ones), the frame count and looping on; the stream has no buffer on an unready device and the music is still loaded; fields, stream and decoder position compared with raylib.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "WAV files only: OGG, MP3, QOA, FLAC, XM and MOD music are not ported",
+        "Fail for sample sizes other than 16, 24 and 32 bits (raylib streams what its shared buffer holds) and for what Wave.decode refuses",
+        "A typed error instead of a zero Music for a file that is not loaded"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -60697,7 +60707,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive LoadMusicStream semantics from the linked source, add a reference fixture, then implement Audio.load_music_stream.",
+      "next_step": "Close documented gaps and unverified gates for LoadMusicStream.",
       "priority": 521
     },
     {
@@ -60723,23 +60733,28 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.load_music_stream_from_memory",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Music.load_from_memory",
+      "mapping_state": "implemented",
+      "scope": "As Music.load, from the file's bytes and the \".wav\" token.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "WAV files only: OGG, MP3, QOA, FLAC, XM and MOD music are not ported",
+        "\".WAV\" is taken too (raylib compares the token with \".wav\" only)",
+        "Fail for sample sizes other than 16, 24 and 32 bits and for what Wave.decode refuses"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -60752,7 +60767,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive LoadMusicStreamFromMemory semantics from the linked source, add a reference fixture, then implement Audio.load_music_stream_from_memory.",
+      "next_step": "Close documented gaps and unverified gates for LoadMusicStreamFromMemory.",
       "priority": 521
     },
     {
@@ -60778,23 +60793,26 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.is_music_valid",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Music.is_valid",
+      "mapping_state": "implemented",
+      "scope": "A decoder, frames, and a rate, sample size and channels that are not 0.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The decoder is a value (MusicNone is NULL), not a pointer"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -60808,7 +60826,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive IsMusicValid semantics from the linked source, add a reference fixture, then implement Audio.is_music_valid.",
+      "next_step": "Close documented gaps and unverified gates for IsMusicValid.",
       "priority": 521
     },
     {
@@ -60834,23 +60852,26 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.unload_music_stream",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Music.unload",
+      "mapping_state": "implemented",
+      "scope": "The stream's buffer is untracked and its halves freed; the decoder goes with the Music value.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -60863,7 +60884,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive UnloadMusicStream semantics from the linked source, add a reference fixture, then implement Audio.unload_music_stream.",
+      "next_step": "Close documented gaps and unverified gates for UnloadMusicStream.",
       "priority": 521
     },
     {
@@ -60889,23 +60910,27 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.play_music_stream",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Music.play",
+      "mapping_state": "implemented",
+      "scope": "The stream plays from its first frame, both halves processed and no frame given.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -60918,7 +60943,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive PlayMusicStream semantics from the linked source, add a reference fixture, then implement Audio.play_music_stream.",
+      "next_step": "Close documented gaps and unverified gates for PlayMusicStream.",
       "priority": 521
     },
     {
@@ -60944,23 +60969,26 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.is_music_stream_playing",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Music.is_playing",
+      "mapping_state": "implemented",
+      "scope": "The stream is playing and not paused.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "False on an unready device and for an unloaded buffer"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -60974,7 +61002,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive IsMusicStreamPlaying semantics from the linked source, add a reference fixture, then implement Audio.is_music_stream_playing.",
+      "next_step": "Close documented gaps and unverified gates for IsMusicStreamPlaying.",
       "priority": 521
     },
     {
@@ -61000,23 +61028,29 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.update_music_stream",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Music.update",
+      "mapping_state": "implemented",
+      "scope": "Each processed half of a playing music's stream takes the decoder's next frames, the first half then the second: a whole half while the music loops (the file again from its first frame) or has as many left, else what is left; with none left and both halves processed the music stops, its decoder at the first frame; halves, counts and decoder position compared with raylib.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The decoder's state is in the Music value, which the function gives back: no shared ctxData pointer",
+        "WAV files only: OGG, MP3, QOA, FLAC, XM and MOD music are not ported",
+        "Nothing for a music without frames (raylib reads it for ever when it loops)",
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -61029,7 +61063,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive UpdateMusicStream semantics from the linked source, add a reference fixture, then implement Audio.update_music_stream.",
+      "next_step": "Close documented gaps and unverified gates for UpdateMusicStream.",
       "priority": 521
     },
     {
@@ -61055,23 +61089,27 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.stop_music_stream",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Music.stop",
+      "mapping_state": "implemented",
+      "scope": "The stream stops and the decoder goes back to its first frame, playing or not.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The decoder's state is in the Music value, which the function gives back: no shared ctxData pointer",
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -61084,7 +61122,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive StopMusicStream semantics from the linked source, add a reference fixture, then implement Audio.stop_music_stream.",
+      "next_step": "Close documented gaps and unverified gates for StopMusicStream.",
       "priority": 521
     },
     {
@@ -61110,23 +61148,27 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.pause_music_stream",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Music.pause",
+      "mapping_state": "implemented",
+      "scope": "The stream is paused.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -61139,7 +61181,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive PauseMusicStream semantics from the linked source, add a reference fixture, then implement Audio.pause_music_stream.",
+      "next_step": "Close documented gaps and unverified gates for PauseMusicStream.",
       "priority": 521
     },
     {
@@ -61165,23 +61207,27 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.resume_music_stream",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Music.resume",
+      "mapping_state": "implemented",
+      "scope": "The stream is not paused.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -61194,7 +61240,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive ResumeMusicStream semantics from the linked source, add a reference fixture, then implement Audio.resume_music_stream.",
+      "next_step": "Close documented gaps and unverified gates for ResumeMusicStream.",
       "priority": 521
     },
     {
@@ -61220,23 +61266,27 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.seek_music_stream",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Music.seek",
+      "mapping_state": "implemented",
+      "scope": "The decoder goes to frame (unsigned int)(position*sampleRate), at most the file's last; the stream's framesProcessed is that frame, not clamped, and both halves are processed; compared with raylib.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The decoder's state is in the Music value, which the function gives back: no shared ctxData pointer",
+        "Nothing for a position whose frame is not an unsigned int, a stream without a tracked buffer (raylib writes through the pointer) and an unready device"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -61249,7 +61299,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive SeekMusicStream semantics from the linked source, add a reference fixture, then implement Audio.seek_music_stream.",
+      "next_step": "Close documented gaps and unverified gates for SeekMusicStream.",
       "priority": 521
     },
     {
@@ -61275,23 +61325,27 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.set_music_volume",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Music.set_volume",
+      "mapping_state": "implemented",
+      "scope": "The stream's volume: any float.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -61304,7 +61358,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive SetMusicVolume semantics from the linked source, add a reference fixture, then implement Audio.set_music_volume.",
+      "next_step": "Close documented gaps and unverified gates for SetMusicVolume.",
       "priority": 521
     },
     {
@@ -61330,23 +61384,27 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.set_music_pitch",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Music.set_pitch",
+      "mapping_state": "implemented",
+      "scope": "The stream's pitch and its converter's output rate against the file's rate.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -61359,7 +61417,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive SetMusicPitch semantics from the linked source, add a reference fixture, then implement Audio.set_music_pitch.",
+      "next_step": "Close documented gaps and unverified gates for SetMusicPitch.",
       "priority": 521
     },
     {
@@ -61385,23 +61443,27 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.set_music_pan",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Music.set_pan",
+      "mapping_state": "implemented",
+      "scope": "The stream's pan, clamped to -1..1.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -61414,7 +61476,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive SetMusicPan semantics from the linked source, add a reference fixture, then implement Audio.set_music_pan.",
+      "next_step": "Close documented gaps and unverified gates for SetMusicPan.",
       "priority": 521
     },
     {
@@ -61440,23 +61502,26 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.get_music_time_length",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Music.time_length",
+      "mapping_state": "implemented",
+      "scope": "(float)frameCount/sampleRate; the bits compared with raylib.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No time in seconds beyond what a float holds, as in raylib"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -61469,7 +61534,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive GetMusicTimeLength semantics from the linked source, add a reference fixture, then implement Audio.get_music_time_length.",
+      "next_step": "Close documented gaps and unverified gates for GetMusicTimeLength.",
       "priority": 521
     },
     {
@@ -61495,23 +61560,27 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.get_music_time_played",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Music.time_played",
+      "mapping_state": "implemented",
+      "scope": "The frames given to the stream, less those still in its halves, plus those of the half being played that went to the mix, modulo the music's frames, in seconds; 0 without a buffer; the bits compared with raylib.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "None for a music without frames (raylib divides by them), counts that do not fit an int, an untracked buffer and an unready device",
+        "No device thread: the time moves when the program asks for callbacks"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -61524,7 +61593,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive GetMusicTimePlayed semantics from the linked source, add a reference fixture, then implement Audio.get_music_time_played.",
+      "next_step": "Close documented gaps and unverified gates for GetMusicTimePlayed.",
       "priority": 521
     },
     {
