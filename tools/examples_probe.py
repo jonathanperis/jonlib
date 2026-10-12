@@ -291,6 +291,7 @@ EXAMPLES = {
     'textures_sprite_explosion': ('textures/textures_sprite_explosion.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_sound_multi': ('audio/audio_sound_multi.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_sound_positioning': ('audio/audio_sound_positioning.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'core_vr_simulator': ('core/core_vr_simulator.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
     'core_custom_frame_control': ('core/core_custom_frame_control.c', 'Ex.setup(core, frame)'),
     'shapes_digital_clock': ('shapes/shapes_digital_clock.c', 'Ex.setup(seed, core, frame)'),
@@ -415,6 +416,7 @@ IO_SETUP.add('models_loading_m3d'); PERSPECTIVE.add('models_loading_m3d')
 AUDIO = {'textures_sprite_button', 'textures_sprite_explosion', 'audio_sound_multi', 'audio_sound_positioning'}
 IO_SETUP.update(AUDIO)
 PERSPECTIVE.add('audio_sound_positioning')
+PERSPECTIVE.add('core_vr_simulator')
 
 
 def scratch(probe, index, native=False):
@@ -1181,6 +1183,8 @@ def scripts():
         # SPACE twelve times: the ten sounds and around to the first two again (held, it plays once).
         script('audio_sound_multi', 'spaces', [quick(), *[frame for _ in range(12) for frame in (quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]))],
                                                quick([key(KEY_SPACE)]), slow(), quick(), quick([key(KEY_SPACE, False)])]),
+        # The first-person camera looks around the cube and walks (W, then A) while the scene goes through the 2160x1200 render texture.
+        script('core_vr_simulator', 'walk', [quick(), quick([mouse_at(430, 240)]), slow([key(87)]), quick([key(87, False), key(65), mouse_at(380, 215)]), quick([key(65, False)])]),
         # The sphere circles at the clock's angle while the free camera turns, zooms, pans and moves (W, then D).
         script('audio_sound_positioning', 'around', [quick(), quick([mouse_at(410, 230)]), quick([mouse_at(450, 210)]), slow([mouse_at(380, 260)]),
                                                      quick([(MOUSE_WHEEL, 0, 2, 0)]), quick([(MOUSE_WHEEL, 0, -1, 0)]), quick([button(2)]),
