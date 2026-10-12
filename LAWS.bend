@@ -2466,13 +2466,13 @@ law mp3_top_bands_by_window:
   {Mp3L3.tops(4n, [2, 2, 2, 2], [0, 0, 0, 2147483648, 5, 0, 0, 0], 0, 0, 0, 0) == Mp3L3.Tops{0, 0, 3} : Mp3L3.Tops}
 
 law mp3_intensity_position_default:
-  {Mp3L3.positions(Mp3L3.Tops{0, 0, 3}, [1, 2, 7, 4, 5, 6], 4, 0, 3) == [1, 2, 7, 3, 5, 6] : +List<U32>}
+  {Mp3L3.positions(Mp3L3.Tops{3, 3, 3}, [1, 2, 7, 4, 5, 6], 4, 0, 3) == [1, 2, 7, 3, 5, 6] : +List<U32>}
 
 law mp3_intensity_position_of_the_band_before:
-  {Mp3L3.positions(Mp3L3.Tops{0, 2, 0}, [1, 2, 7, 4, 5, 6], 4, 0, 3) == [1, 2, 7, 7, 5, 6] : +List<U32>}
+  {Mp3L3.positions(Mp3L3.Tops{2, 2, 2}, [1, 2, 7, 4, 5, 6], 4, 0, 3) == [1, 2, 7, 7, 5, 6] : +List<U32>}
 
 law mp3_intensity_positions_of_the_windows:
-  {Mp3L3.positions(Mp3L3.Tops{1, 0, 0}, [1, 2, 3, 4, 5, 6, 7], 0, 6, 0) == [1, 2, 3, 0, 2, 3, 7] : +List<U32>}
+  {Mp3L3.positions(Mp3L3.Tops{1, 0, 0}, [1, 2, 3, 4, 5, 6, 7], 6, 6, 0) == [1, 2, 3, 0, 2, 3, 7] : +List<U32>}
 
 law mp3_array_keeps_what_was_there:
   {Mp3L3.frame.array([1, 2], 2, [9, 8, 7, 6]) == [1, 2, 7, 6] : +List<U32>}
@@ -2497,6 +2497,54 @@ law mp3_mixed_block_at_8000_hz_refused:
 
 law mp3_short_block_at_8000_hz_inside:
   {Mp3L3.reorder.inside(4293072896, Mp3.Gr{0, 0, 0, 0, 2, 0, 0, 0, 0, 8, 255, 255, 0, 0, 0, 0, 0, 0, 0, 1, 0, 39}) == True{} : Bool}
+
+# The stereo step (drmp3_L3_decode): the header's intensity bit asks for
+# drmp3_L3_intensity_stereo whatever the frame's mode (FF FB 90 54 is joint
+# stereo, FF FB 90 D4 mono); mid/side is joint stereo with its bit and
+# without the intensity bit (FF FB 90 64; FF FB 90 24 is plain stereo). A
+# granule with long bands shares one top band between its windows. A band is
+# an intensity band when it is past the right channel's top band and its
+# position is below 7 in MPEG-1; a mono frame's right channel is zeros. The
+# shift of MPEG-2's intensity scale is read from the granule information's
+# second slot, which keeps what the last frame that wrote it left.
+law mp3_top_bands_shared_with_long_bands:
+  {Mp3L3.tops.merged(Mp3L3.Tops{0, 0, 3}, 4) == Mp3L3.Tops{3, 3, 3} : Mp3L3.Tops}
+
+law mp3_top_bands_of_short_blocks_apart:
+  {Mp3L3.tops.merged(Mp3L3.Tops{1, 0, 0}, 0) == Mp3L3.Tops{1, 0, 0} : Mp3L3.Tops}
+
+law mp3_stereo_step_intensity:
+  {Mp3L3.stereo.mode(4294676564) == 1 : U32}
+
+law mp3_stereo_step_intensity_in_a_mono_frame:
+  {Mp3L3.stereo.mode(4294676692) == 1 : U32}
+
+law mp3_stereo_step_midside:
+  {Mp3L3.stereo.mode(4294676580) == 2 : U32}
+
+law mp3_stereo_step_midside_only_in_joint_stereo:
+  {Mp3L3.stereo.mode(4294676516) == 0 : U32}
+
+law mp3_stereo_step_none:
+  {Mp3L3.stereo.mode(4294676548) == 0 : U32}
+
+law mp3_stereo_values_kept:
+  {Mp3L3.pair.kept(2n, [1, 2, 3], [7], Nil{}, Nil{}) == Mp3L3.Both{[3], Nil{}, [2, 1], [0, 7]} : Mp3L3.Both}
+
+law mp3_intensity_position_7_is_no_intensity_band:
+  {Mp3L3.stereo.bands(40n, False{}, [2, 2, 0], [7, 7], 0, Mp3L3.Tops{0, 0, 0}, True{}, 0, False{}, Nil{}, Mp3L3.Both{[1, 2, 3, 4], [5, 6, 7, 8], Nil{}, Nil{}}) == Mp3L3.Both{Nil{}, Nil{}, [4, 3, 2, 1], [8, 7, 6, 5]} : Mp3L3.Both}
+
+law mp3_band_below_the_top_band_is_no_intensity_band:
+  {Mp3L3.stereo.bands(40n, False{}, [2, 0], [0], 0, Mp3L3.Tops{1, 0, 0}, True{}, 0, False{}, Nil{}, Mp3L3.Both{[1, 2], [5, 6], Nil{}, Nil{}}) == Mp3L3.Both{Nil{}, Nil{}, [2, 1], [6, 5]} : Mp3L3.Both}
+
+law mp3_second_slot_compress_written:
+  {Mp3L3.slot.compress([Mp3.Gr{0, 288, 0, 5, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 22, 0}], 9) == 5 : U32}
+
+law mp3_second_slot_compress_left_by_too_many_big_values:
+  {Mp3L3.slot.compress([Mp3.Gr{0, 289, 0, 5, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 22, 0}], 9) == 9 : U32}
+
+law mp3_second_slot_compress_left_by_a_mono_frame:
+  {Mp3L3.slot.compress(Nil{}, 9) == 9 : U32}
 
 # Frame: InitWindow sizes are 1..4096; a zero or oversized width has no frame
 # whatever the height.

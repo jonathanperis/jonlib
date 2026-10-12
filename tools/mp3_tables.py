@@ -31,6 +31,7 @@ TABLES = {
     'g_scf_partitions': ('drmp3_uint8', 3 * 28), 'g_scfc_decode': ('drmp3_uint8', 16), 'g_mod': ('drmp3_uint8', 24),
     'g_preamp': ('drmp3_uint8', 10), 'g_expfrac': ('float', 4), 'g_drmp3_pow43': ('float', 145), 'tabs': ('drmp3_int16', 2164),
     'tab32': ('drmp3_uint8', 28), 'tab33': ('drmp3_uint8', 16), 'tabindex': ('drmp3_int16', 32), 'g_linbits': ('drmp3_uint8', 32),
+    'g_pan': ('float', 14),
 }
 
 DECLARATION = re.compile(r'static const (float|drmp3_uint8|drmp3_int16)\s+(\w+)((?:\[[^\]]*\])+)\s*=\s*\{(.*?)\};', re.S)
@@ -180,6 +181,7 @@ def render(tables):
     table('tab32', 'tab32.', '+List<U32>', flat(tables['tab32']))
     table('tab33', 'tab33.', '+List<U32>', flat(tables['tab33']))
     table('linbits', 'g_linbits.', '+List<U32>', flat(tables['g_linbits']))
+    table('pan', 'g_pan (floats): kl and kr of the seven MPEG-1 intensity positions.', '+List<U32>', flat(tables['g_pan']))
     return '\n'.join(out)
 
 

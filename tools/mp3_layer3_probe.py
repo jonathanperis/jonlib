@@ -6,8 +6,8 @@ as raylib builds it: SSE, 16-bit output). Its frame function is run over a
 file's bytes the way a caller does, a frame after a frame. The three
 functions on the way to a granule's values (drmp3dec_decode_frame,
 drmp3_L3_decode, drmp3_L3_huffman) are copied from the header's text with
-three lines put in, and the header is not changed: after each channel's
-Huffman decoding the 576 values are hashed; the Huffman reader records
+three lines put in, and the header is not changed: after a granule's
+stereo step each channel's 576 values are hashed; the Huffman reader records
 whether it read past the main data's array (it reads the granule
 information that follows in the struct); and before a granule's short
 bands are reordered their end is added up, because a mixed block at 8000 Hz
@@ -20,8 +20,9 @@ After every frame the row is
 
 where `state` hashes what the decoder keeps for the next frame (its header,
 free format size, the reservoir, the whole main data array with what earlier
-frames left in it, the 40 scales and the intensity positions) and `values`
-hashes the floats of every channel of every granule, bit for bit. A file's
+frames left in it, the 40 scales, the intensity positions and the second
+granule slot's scalefac_compress) and `values` hashes the floats of every
+channel of every granule after the stereo step, bit for bit. A file's
 walk ends at `refused` (undefined, on both sides) or `layer12` (a Layer I
 or II frame, which the port does not decode yet).
 
@@ -69,7 +70,8 @@ static unsigned probe_state(const drmp3dec *dec)
     h = probe_bytes(h, dec->scratch.maindata, (int)sizeof(dec->scratch.maindata));
     h = probe_words(h, dec->scratch.scf, 40);
     h = probe_bytes(h, dec->scratch.ist_pos[0], 39);
-    return probe_bytes(h, dec->scratch.ist_pos[1], 39);
+    h = probe_bytes(h, dec->scratch.ist_pos[1], 39);
+    return (h ^ (unsigned)dec->scratch.gr_info[1].scalefac_compress)*16777619u;
 }
 
 static unsigned char data[1 << 21];
@@ -123,8 +125,8 @@ def fnv.rows(rows: +List<+List<U32>>, +h: U32) -> U32:
     case Con{+row, rest}: fnv.rows(rest, fnv(row, h))
 
 def state(+decoder: L.Decoder) -> U32:
-  L.Decoder{H.Dec{+header, +free, +reserv}, +main, +scf, +ist0, +ist1} = decoder
-  fnv(ist1, fnv(ist0, fnv(scf, fnv(main, fnv(reserv, fnv([H.b0(header), H.b1(header), H.b2(header), H.b3(header), free, H.count(reserv, 0)], 2166136261))))))
+  L.Decoder{H.Dec{+header, +free, +reserv}, +main, +scf, +ist0, +ist1, +compress} = decoder
+  fnv([compress], fnv(ist1, fnv(ist0, fnv(scf, fnv(main, fnv(reserv, fnv([H.b0(header), H.b1(header), H.b2(header), H.b3(header), free, H.count(reserv, 0)], 2166136261)))))))
 
 def shown(status: U32, +decoder: L.Decoder, +samples: U32, +bytes: U32, +spectra: +List<+List<U32>>) -> String:
   match status:
@@ -191,8 +193,10 @@ def reference(header, paths):
     layer3 = patched(function(header, 'static void drmp3_L3_decode(drmp3dec *h, drmp3dec_scratch *s, drmp3_L3_gr_info *gr_info, int nch)'), [
         ('static void drmp3_L3_decode(', 'static void probe_L3_decode('),
         ('        drmp3_L3_huffman(s->grbuf[ch], &s->bs, gr_info + ch, s->scf, layer3gr_limit);\n',
-         '        probe_L3_huffman(s->grbuf[ch], &s->bs, gr_info + ch, s->scf, layer3gr_limit);\n'
-         '        probe_values = probe_words(probe_values, s->grbuf[ch], 576);\n'),
+         '        probe_L3_huffman(s->grbuf[ch], &s->bs, gr_info + ch, s->scf, layer3gr_limit);\n'),
+        ('    for (ch = 0; ch < nch; ch++, gr_info++)\n    {\n        int aa_bands = 31;\n',
+         '    for (ch = 0; ch < nch; ch++) probe_values = probe_words(probe_values, s->grbuf[ch], 576);\n'
+         '    for (ch = 0; ch < nch; ch++, gr_info++)\n    {\n        int aa_bands = 31;\n'),
         ('            drmp3_L3_reorder(s->grbuf[ch] + n_long_bands*18, s->syn[0], gr_info->sfbtab + gr_info->n_long_sfb);\n',
          REORDER + '            drmp3_L3_reorder(s->grbuf[ch] + n_long_bands*18, s->syn[0], gr_info->sfbtab + gr_info->n_long_sfb);\n'),
     ])
@@ -308,7 +312,7 @@ def synthetic(rng, version, rate, frames, ones, free=0, mixed=True):
     main_data_begin is mostly within what the frames before left, and the
     granules' lengths mostly within the main data, as the generator counts them.
     Without `mixed` no granule has the mixed block flag."""
-    out, reserv, drawn = bytearray(), 0, dict(frames=0, granules=0, short=0, mixed=0, start_stop=0, linbits=0, mono=0, intensity=0, crc=0, reaching=0)
+    out, reserv, drawn = bytearray(), 0, dict(frames=0, granules=0, short=0, mixed=0, start_stop=0, linbits=0, mono=0, intensity=0, mono_intensity=0, midside=0, crc=0, reaching=0)
     for _ in range(frames):
         mode, crc = rng.choice([0, 1, 1, 2, 3]), rng.random() < 0.25
         mono, padding = mode == 3, 0 if free else rng.randrange(2)
@@ -345,6 +349,8 @@ def synthetic(rng, version, rate, frames, ones, free=0, mixed=True):
         drawn['frames'] += 1
         drawn['mono'] += mono
         drawn['intensity'] += mode == 1 and ext & 1
+        drawn['mono_intensity'] += mono and ext & 1
+        drawn['midside'] += mode == 1 and ext == 2
         drawn['crc'] += crc
         drawn['reaching'] += begin > 0
         # the reservoir the decoder has after the frame: nothing after a refused one (it searches again, zeroed)
@@ -452,7 +458,7 @@ def main():
     synthetic_decoded = sum(token.split(':')[0] not in ('0', 'refused', 'layer12') for name, row in rows.items() if name.startswith('mpeg') for token in row.split()[1:])
     if len(rows['whole'].split()) != 3585 or not rows['outside'].endswith(' refused') or len(rows['outside'].split()) != 3:
         raise ProbeFailure(f'mp3-layer3: the reference did not walk country.mp3 and the stream built to leave the array as expected: {rows["whole"][:80]} / {rows["outside"][:200]}')
-    if synthetic_decoded < 120 or tokens.count('layer12') < 2 or min(drawn[key] for key in ('short', 'mixed', 'start_stop', 'linbits', 'mono', 'intensity', 'crc', 'reaching')) < 20:
+    if synthetic_decoded < 120 or tokens.count('layer12') < 2 or min(drawn[key] for key in ('short', 'mixed', 'start_stop', 'linbits', 'mono', 'intensity', 'mono_intensity', 'midside', 'crc', 'reaching')) < 20:
         raise ProbeFailure(f'mp3-layer3: the corpus lost coverage: {synthetic_decoded} synthetic frames decoded, {tokens.count("layer12")} Layer I/II files, drew {drawn}')
     lanes = probe.candidates(render, items, batch=40, parse=parse, timeout=1500)
     probe.compare(expected, lanes, describe=lambda index: items[index][0] + ' ' + next(

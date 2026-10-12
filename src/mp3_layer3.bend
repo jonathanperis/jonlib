@@ -4,9 +4,10 @@
 # vendors it in src/external/dr_mp3.h: Layer III's scalefactors
 # (drmp3_L3_read_scalefactors, drmp3_L3_ldexp_q2,
 # drmp3_L3_decode_scalefactors), its Huffman-coded values (drmp3_L3_pow_43,
-# drmp3_L3_huffman) and the frame around them (drmp3_L3_restore_reservoir,
-# drmp3_L3_save_reservoir, drmp3dec_decode_frame). See
-# THIRD_PARTY_NOTICES.md and LICENSES/dr_mp3.txt.
+# drmp3_L3_huffman), its stereo step (drmp3_L3_midside_stereo,
+# drmp3_L3_intensity_stereo, drmp3_L3_stereo_process) and the frame around
+# them (drmp3_L3_restore_reservoir, drmp3_L3_save_reservoir,
+# drmp3dec_decode_frame). See THIRD_PARTY_NOTICES.md and LICENSES/dr_mp3.txt.
 #
 # Floats are binary32, computed in dr_mp3's order, and kept in lists as
 # their bits. C ints are U32 two's-complement words. The tables are
@@ -465,25 +466,28 @@ def Spectrum.fine(spectrum: Spectrum) -> Bool:
 
 # -----------------------------------------------------------------------------
 # Frames (drmp3dec_decode_frame with its samples wanted), as far as the
-# granules' values.
+# granules' values after the stereo step.
 
 # The decoder between frames: drmp3dec's header, free format size and
 # reservoir (H.Dec), and what its scratch keeps from a frame to the next:
 # the main data's array (2815 bytes: a frame's main data is written over the
 # start of what was there, and the values are read from it however far they
 # go), the 40 scales (a granule writes its bands'; a table of more bands
-# reads what is past them) and the channels' intensity positions (39 each).
+# reads what is past them), the channels' intensity positions (39 each) and
+# scalefac_compress of the second slot of the granule information, which a
+# mono frame does not write and whose stereo step reads (stereo.shift).
 type Decoder is Data:
-  Decoder{dec: H.Dec, main: +List<U32>, scf: +List<U32>, ist0: +List<U32>, ist1: +List<U32>}
+  Decoder{dec: H.Dec, main: +List<U32>, scf: +List<U32>, ist0: +List<U32>, ist1: +List<U32>, compress: U32}
 
 # A decoder zeroed: what drmp3dec_decode_frame makes of it before it
 # searches for a frame.
 def Decoder.zero() -> Decoder:
-  Decoder{H.Dec.zero(), zeros.onto(2815n, Nil{}), zeros.onto(40n, Nil{}), zeros.onto(39n, Nil{}), zeros.onto(39n, Nil{})}
+  Decoder{H.Dec.zero(), zeros.onto(2815n, Nil{}), zeros.onto(40n, Nil{}), zeros.onto(39n, Nil{}), zeros.onto(39n, Nil{}), 0}
 
 # What a frame gives: the decoder after it, its samples for a channel (0:
-# none decoded), the bytes it used, the granules' values (576 float bits for
-# a channel of a granule, in the frame's order) and `status`: 0, or why the
+# none decoded), the bytes it used, the granules' values after the stereo
+# step (576 float bits for a channel of a granule, in the frame's order) and
+# `status`: 0, or why the
 # frame is refused. 1: dr_mp3 leaves one of its arrays, which is undefined:
 # a granule's values were read past the main data's (it reads whatever
 # follows in its struct), or a granule is a mixed block at 8000 Hz
@@ -557,22 +561,120 @@ def tops(n: Nat, sfb: +List<U32>, +right: +List<U32>, +i: U32, +a: U32, +b: U32,
 def position(+ist: +List<U32>, +top: U32, +prev: U32, +default: U32) -> U32:
   Bool.pick(U32, (top > prev : U32), default, H.nth(ist, prev))
 
-# What drmp3_L3_intensity_stereo writes of the right channel's intensity
-# positions before it uses them: those of the last band of each window (one
-# window without short blocks), from the top bands of the right channel's
-# values, which granules with long bands share between the windows. `long`
-# and `short` are the left channel's band counts; the default is 3 in
-# MPEG-1 and 0 in MPEG-2.
-def positions(tops: Tops, +ist: +List<U32>, +long: U32, +short: U32, +default: U32) -> +List<U32>:
+# The top bands as drmp3_L3_intensity_stereo uses them: a granule with long
+# bands has one for its three windows, the highest.
+def tops.merged(tops: Tops, +long: U32) -> Tops:
   Tops{+a, +b, +c} = tops
   +shared = U32.max(a, U32.max(b, c))
-  +n = (long + short : U32)
+  Tops{Bool.pick(U32, U32.is_eq(long, 0), a, shared), Bool.pick(U32, U32.is_eq(long, 0), b, shared), Bool.pick(U32, U32.is_eq(long, 0), c, shared)}
+
+# What drmp3_L3_intensity_stereo writes of the right channel's intensity
+# positions before it uses them: those of the last band of each window (one
+# window without short blocks), from the right channel's top bands. `n` is
+# the left channel's band count and `short` its short bands; the default is
+# 3 in MPEG-1 and 0 in MPEG-2.
+def positions(tops: Tops, +ist: +List<U32>, +n: U32, +short: U32, +default: U32) -> +List<U32>:
+  Tops{+a, +b, +c} = tops
   +blocks = Bool.pick(U32, U32.is_eq(short, 0), 1, 3)
   +prev = (n - (2 * blocks) : U32)
   +tail = List.drop(&2, U32, ist, U32.to_nat(n))
-  +first = position(ist, Bool.pick(U32, U32.is_eq(long, 0), a, shared), prev, default)
-  List.append(&2, U32, H.take((n - blocks : U32), ist), Bool.pick(+List<U32>, U32.is_eq(short, 0), Con{first, tail},
-    Con{first, Con{position(ist, Bool.pick(U32, U32.is_eq(long, 0), b, shared), (prev + 1 : U32), default), Con{position(ist, Bool.pick(U32, U32.is_eq(long, 0), c, shared), (prev + 2 : U32), default), tail}}}))
+  List.append(&2, U32, H.take((n - blocks : U32), ist), Bool.pick(+List<U32>, U32.is_eq(short, 0), Con{position(ist, a, prev, default), tail},
+    Con{position(ist, a, prev, default), Con{position(ist, b, (prev + 1 : U32), default), Con{position(ist, c, (prev + 2 : U32), default), tail}}}))
+
+# -----------------------------------------------------------------------------
+# Stereo (drmp3_L3_midside_stereo, drmp3_L3_stereo_process)
+
+# Two channels' values being rewritten: what is left of each, and what is
+# done of each (the last first).
+type Both is Data:
+  Both{left: +List<U32>, right: +List<U32>, done0: +List<U32>, done1: +List<U32>}
+
+# `n` values as they are. A mono frame's right channel is zeros.
+def pair.kept(n: Nat, left: +List<U32>, +right: +List<U32>, al: +List<U32>, ar: +List<U32>) -> Both:
+  match n:
+    case 0n: Both{left, right, al, ar}
+    case 1n+k:
+      match left:
+        case Nil{}: Both{Nil{}, right, al, ar}
+        case Con{+a, rest}: pair.kept(k, rest, List.drop(&2, U32, right, 1n), Con{a, al}, Con{H.first(right), ar})
+
+# drmp3_L3_midside_stereo on `n` values: left a + b, right a - b.
+def pair.midside(n: Nat, left: +List<U32>, +right: +List<U32>, al: +List<U32>, ar: +List<U32>) -> Both:
+  match n:
+    case 0n: Both{left, right, al, ar}
+    case 1n+k:
+      match left:
+        case Nil{}: Both{Nil{}, right, al, ar}
+        case Con{+a, rest}:
+          pair.midside(k, rest, List.drop(&2, U32, right, 1n), Con{F32.bits((float(a) + float(H.first(right)) : F32)), al}, Con{F32.bits((float(a) - float(H.first(right)) : F32)), ar})
+
+# drmp3_L3_intensity_stereo_band on `n` values: right is left times kr, then
+# left is left times kl.
+def pair.intensity(n: Nat, left: +List<U32>, +right: +List<U32>, +kl: F32, +kr: F32, al: +List<U32>, ar: +List<U32>) -> Both:
+  match n:
+    case 0n: Both{left, right, al, ar}
+    case 1n+k:
+      match left:
+        case Nil{}: Both{Nil{}, right, al, ar}
+        case Con{+a, rest}: pair.intensity(k, rest, List.drop(&2, U32, right, 1n), kl, kr, Con{F32.bits((float(a) * kl : F32)), al}, Con{F32.bits((float(a) * kr : F32)), ar})
+
+# The channels after their bands: what is done, then what no band covered.
+def pair.left(pair: Both) -> +List<U32>:
+  Both{left, _, al, _} = pair
+  List.reverse.go(&2, U32, al, left)
+
+def pair.right(pair: Both) -> +List<U32>:
+  Both{_, right, _, ar} = pair
+  List.reverse.go(&2, U32, ar, right)
+
+# kl of an intensity band at position `ipos`, times `s` (the square root of
+# two when the header's mid/side bit is set, else 1): MPEG-1's is g_pan's;
+# MPEG-2's is 1, or for an odd position 2^(-e/4) with e the position's half,
+# rounded up, shifted by `sh`.
+def pan.left(mpeg1: Bool, +ipos: U32, +sh: U32, +s: F32, +table: +List<U32>) -> F32:
+  match mpeg1:
+    case True{}: (float(H.nth(table, (2 * ipos : U32))) * s : F32)
+    case False{}: (Bool.pick(F32, U32.is_eq((ipos .&. 1 : U32), 0), 1.0, ldexp.q2(1.0, (((ipos + 1) >> 1n) << U32.to_nat(sh) : U32))) * s : F32)
+
+# kr: g_pan's, or MPEG-2's 2^(-e/4) for an even position and 1 for an odd one.
+def pan.right(mpeg1: Bool, +ipos: U32, +sh: U32, +s: F32, +table: +List<U32>) -> F32:
+  match mpeg1:
+    case True{}: (float(H.nth(table, ((2 * ipos) + 1 : U32))) * s : F32)
+    case False{}: (Bool.pick(F32, U32.is_eq((ipos .&. 1 : U32), 0), ldexp.q2(1.0, (((ipos + 1) >> 1n) << U32.to_nat(sh) : U32)), 1.0) * s : F32)
+
+# A band of drmp3_L3_stereo_process. 0: as it is; 1: an intensity band; 2:
+# mid/side.
+def stereo.band(mode: U32, n: Nat, +ipos: U32, +mpeg1: Bool, +sh: U32, +s: F32, +table: +List<U32>, pair: Both) -> Both:
+  match mode:
+    case 0:
+      Both{left, +right, al, ar} = pair
+      pair.kept(n, left, right, al, ar)
+    case 1:
+      Both{left, +right, al, ar} = pair
+      pair.intensity(n, left, right, pan.left(mpeg1, ipos, sh, s, table), pan.right(mpeg1, ipos, sh, s, table), al, ar)
+    case _:
+      Both{left, +right, al, ar} = pair
+      pair.midside(n, left, right, al, ar)
+
+# drmp3_L3_stereo_process: every band of the table, to its 0. A band past
+# the right channel's top band of its window, with a position below 7
+# (MPEG-1) or 64, is an intensity band; another is mid/side when the header's
+# bit is set (`ms`), whatever the frame's mode.
+def stereo.bands(n: Nat, stop: Bool, sfb: +List<U32>, +ist: +List<U32>, +i: U32, +tops: Tops, +mpeg1: Bool, +sh: U32, +ms: Bool, +table: +List<U32>, pair: Both) -> Both:
+  match n:
+    case 0n: pair
+    case 1n+k:
+      match stop:
+        case True{}: pair
+        case False{}:
+          match sfb:
+            case Nil{}: pair
+            case Con{+width, +rest}:
+              Tops{+a, +b, +c} = tops
+              +ipos = H.first(ist)
+              +intense = (i >= pick3((i % 3 : U32), a, b, c) : U32) && (ipos < Bool.pick(U32, mpeg1, 7, 64) : U32)
+              stereo.bands(k, U32.is_eq(H.first(rest), 0), rest, List.drop(&2, U32, ist, 1n), (i + 1 : U32), tops, mpeg1, sh, ms, table,
+                stereo.band(Bool.pick(U32, intense, 1, Bool.pick(U32, ms, 2, 0)), U32.to_nat(width), ipos, mpeg1, sh, Bool.pick(F32, ms, float(1068827891), 1.0), table, pair))
 
 # A granule's channels (the first loop of drmp3_L3_decode, and the positions
 # drmp3_L3_intensity_stereo writes): the bit after them, the channels'
@@ -580,52 +682,6 @@ def positions(tops: Tops, +ist: +List<U32>, +long: U32, +short: U32, +default: U
 # and the channels' values (no right channel in a mono frame).
 type Channels is Data:
   Channels{pos: U32, ist0: +List<U32>, ist1: +List<U32>, scf: +List<U32>, fine: Bool, left: +List<U32>, right: +List<U32>}
-
-def granule.second(right: Channel, +ist0: +List<U32>, +fine0: Bool, +left: +List<U32>) -> Channels:
-  Channel{+pos, ist1, scf, +fine, values} = right
-  Channels{pos, ist0, ist1, scf, fine0 && fine, left, values}
-
-def granule.stereo(left: Channel, +gr1: H.Gr, +main: +List<U32>, +limit: U32, +h: U32, +ist1: +List<U32>) -> Channels:
-  Channel{+pos, +ist0, +scf, +fine, +values} = left
-  granule.second(channel(main, limit, pos, h, gr1, ist1, scf, 1), ist0, fine, values)
-
-def granule.mono(left: Channel, +ist1: +List<U32>) -> Channels:
-  Channel{+pos, ist0, scf, +fine, values} = left
-  Channels{pos, ist0, ist1, scf, fine, values, Nil{}}
-
-def granule.channels(mono: Bool, +gr0: H.Gr, +gr1: H.Gr, +main: +List<U32>, +limit: U32, +pos: U32, +h: U32, +ist0: +List<U32>, +ist1: +List<U32>, +scf: +List<U32>) -> Channels:
-  match mono:
-    case True{}: granule.mono(channel(main, limit, pos, h, gr0, ist0, scf, 0), ist1)
-    case False{}: granule.stereo(channel(main, limit, pos, h, gr0, ist0, scf, 0), gr1, main, limit, h, ist1)
-
-# The intensity stereo bit of the header is tested whatever the frame's
-# mode: a mono frame's right channel is 576 zeros (here no values).
-def granule.positions(intensity: Bool, channels: Channels, +gr0: H.Gr, +h: U32) -> Channels:
-  match intensity:
-    case False{}: channels
-    case True{}:
-      Channels{+pos, ist0, +ist1, scf, +fine, left, +right} = channels
-      H.Gr{_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, +kind, +long, +short} = gr0
-      Channels{pos, ist0, positions(tops(U32.to_nat((long + short : U32)), bands(h, kind), right, 0, 0, 0, 0), ist1, long, short, Bool.pick(U32, H.hdr.mpeg1(h), 3, 0)), scf, fine, left, right}
-
-def granule(mono: Bool, +gr0: H.Gr, +gr1: H.Gr, +main: +List<U32>, +limit: U32, +pos: U32, +h: U32, +ist0: +List<U32>, +ist1: +List<U32>, +scf: +List<U32>) -> Channels:
-  granule.positions(U32.is_ne((H.b3(h) .&. 16 : U32), 0), granule.channels(mono, gr0, gr1, main, limit, pos, h, ist0, ist1, scf), gr0, h)
-
-def Gr.first(grs: +List<H.Gr>, +or: H.Gr) -> H.Gr:
-  match grs:
-    case Nil{}: or
-    case Con{gr, _}: gr
-
-# Every granule of a frame: the bit after the last, the channels' intensity
-# positions, the scales, whether every read was inside the array, and the
-# values, a channel after a channel (the last first).
-type Granules is Data:
-  Granules{pos: U32, ist0: +List<U32>, ist1: +List<U32>, scf: +List<U32>, fine: Bool, spectra: +List<+List<U32>>}
-
-def granules.pushed(mono: Bool, +left: +List<U32>, +right: +List<U32>, +out: +List<+List<U32>>) -> +List<+List<U32>>:
-  match mono:
-    case True{}: Con{left, out}
-    case False{}: Con{right, Con{left, out}}
 
 def Channels.pos(channels: Channels) -> U32:
   Channels{pos, _, _, _, _, _, _} = channels
@@ -655,10 +711,79 @@ def Channels.right(channels: Channels) -> +List<U32>:
   Channels{_, _, _, _, _, _, right} = channels
   right
 
+def granule.second(right: Channel, +ist0: +List<U32>, +fine0: Bool, +left: +List<U32>) -> Channels:
+  Channel{+pos, ist1, scf, +fine, values} = right
+  Channels{pos, ist0, ist1, scf, fine0 && fine, left, values}
+
+def granule.stereo(left: Channel, +gr1: H.Gr, +main: +List<U32>, +limit: U32, +h: U32, +ist1: +List<U32>) -> Channels:
+  Channel{+pos, +ist0, +scf, +fine, +values} = left
+  granule.second(channel(main, limit, pos, h, gr1, ist1, scf, 1), ist0, fine, values)
+
+def granule.mono(left: Channel, +ist1: +List<U32>) -> Channels:
+  Channel{+pos, ist0, scf, +fine, values} = left
+  Channels{pos, ist0, ist1, scf, fine, values, Nil{}}
+
+def granule.channels(mono: Bool, +gr0: H.Gr, +gr1: H.Gr, +main: +List<U32>, +limit: U32, +pos: U32, +h: U32, +ist0: +List<U32>, +ist1: +List<U32>, +scf: +List<U32>) -> Channels:
+  match mono:
+    case True{}: granule.mono(channel(main, limit, pos, h, gr0, ist0, scf, 0), ist1)
+    case False{}: granule.stereo(channel(main, limit, pos, h, gr0, ist0, scf, 0), gr1, main, limit, h, ist1)
+
+# drmp3_L3_intensity_stereo: the right channel's last positions, then the
+# bands. `sh` is the low bit of scalefac_compress in the slot after the
+# granule's first: the right channel's, or in a mono frame what an earlier
+# frame left there (Decoder.compress).
+def stereo.intensity(+tops: Tops, channels: Channels, +gr0: H.Gr, +h: U32, +sh: U32) -> Channels:
+  Channels{+pos, ist0, +ist1, scf, +fine, +left, +right} = channels
+  H.Gr{_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, +kind, +long, +short} = gr0
+  +placed = positions(tops, ist1, (long + short : U32), short, Bool.pick(U32, H.hdr.mpeg1(h), 3, 0))
+  +done = stereo.bands(40n, False{}, bands(h, kind), placed, 0, tops, H.hdr.mpeg1(h), sh, U32.is_ne((H.b3(h) .&. 32 : U32), 0), T.pan(), Both{left, right, Nil{}, Nil{}})
+  Channels{pos, ist0, placed, scf, fine, pair.left(done), pair.right(done)}
+
+def stereo.midside(channels: Channels) -> Channels:
+  Channels{+pos, ist0, ist1, scf, +fine, +left, +right} = channels
+  +done = pair.midside(576n, left, right, Nil{}, Nil{})
+  Channels{pos, ist0, ist1, scf, fine, pair.left(done), pair.right(done)}
+
+# The stereo step of drmp3_L3_decode. 1: the header's intensity bit, tested
+# whatever the frame's mode (a mono frame's right channel is 576 zeros, and
+# its values are scaled as a left channel's); 2: mid/side, in a joint stereo
+# frame without that bit; 0: nothing.
+def stereo(mode: U32, +channels: Channels, +gr0: H.Gr, +h: U32, +sh: U32) -> Channels:
+  match mode:
+    case 0: channels
+    case 1:
+      H.Gr{_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, +kind, +long, +short} = gr0
+      stereo.intensity(tops.merged(tops(U32.to_nat((long + short : U32)), bands(h, kind), Channels.right(channels), 0, 0, 0, 0), long), channels, gr0, h, sh)
+    case _: stereo.midside(channels)
+
+# Which stereo step a header asks for (DRMP3_HDR_TEST_I_STEREO, then
+# DRMP3_HDR_IS_MS_STEREO).
+def stereo.mode(+h: U32) -> U32:
+  Bool.pick(U32, U32.is_ne((H.b3(h) .&. 16 : U32), 0), 1, Bool.pick(U32, U32.is_eq((H.b3(h) .&. 224 : U32), 96), 2, 0))
+
+def granule(mono: Bool, +gr0: H.Gr, +gr1: H.Gr, +main: +List<U32>, +limit: U32, +pos: U32, +h: U32, +ist0: +List<U32>, +ist1: +List<U32>, +scf: +List<U32>, +sh: U32) -> Channels:
+  stereo(stereo.mode(h), granule.channels(mono, gr0, gr1, main, limit, pos, h, ist0, ist1, scf), gr0, h, sh)
+
+def Gr.first(grs: +List<H.Gr>, +or: H.Gr) -> H.Gr:
+  match grs:
+    case Nil{}: or
+    case Con{gr, _}: gr
+
+# Every granule of a frame: the bit after the last, the channels' intensity
+# positions, the scales, whether every read was inside the array, and the
+# values, a channel after a channel (the last first).
+type Granules is Data:
+  Granules{pos: U32, ist0: +List<U32>, ist1: +List<U32>, scf: +List<U32>, fine: Bool, spectra: +List<+List<U32>>}
+
+def granules.pushed(mono: Bool, +left: +List<U32>, +right: +List<U32>, +out: +List<+List<U32>>) -> +List<+List<U32>>:
+  match mono:
+    case True{}: Con{left, out}
+    case False{}: Con{right, Con{left, out}}
+
 # `grs` is the side information's granules, a channel after a channel: one
 # or two granules of one or two channels. `limit` is the main data's bits
 # and `pos` the granule's first.
-def granules(n: Nat, grs: +List<H.Gr>, +mono: Bool, +main: +List<U32>, +limit: U32, +pos: U32, +h: U32, +ist0: +List<U32>, +ist1: +List<U32>, +scf: +List<U32>, +fine: Bool,
+def granules(n: Nat, grs: +List<H.Gr>, +mono: Bool, +main: +List<U32>, +limit: U32, +pos: U32, +h: U32, +ist0: +List<U32>, +ist1: +List<U32>, +scf: +List<U32>, +sh: U32, +fine: Bool,
     +out: +List<+List<U32>>) -> Granules:
   match n:
     case 0n: Granules{pos, ist0, ist1, scf, fine, out}
@@ -666,15 +791,15 @@ def granules(n: Nat, grs: +List<H.Gr>, +mono: Bool, +main: +List<U32>, +limit: U
       match grs:
         case Nil{}: Granules{pos, ist0, ist1, scf, fine, out}
         case Con{+gr0, +rest}:
-          +done = granule(mono, gr0, Gr.first(rest, gr0), main, limit, pos, h, ist0, ist1, scf)
+          +done = granule(mono, gr0, Gr.first(rest, gr0), main, limit, pos, h, ist0, ist1, scf, sh)
           granules(k, Bool.pick(+List<H.Gr>, mono, rest, List.drop(&2, H.Gr, rest, 1n)), mono, main, limit, Channels.pos(done), h, Channels.ist0(done), Channels.ist1(done), Channels.scf(done),
-            fine && Channels.fine(done), granules.pushed(mono, Channels.left(done), Channels.right(done), out))
+            sh, fine && Channels.fine(done), granules.pushed(mono, Channels.left(done), Channels.right(done), out))
 
 # drmp3_L3_save_reservoir after the granules: what was not read of the main
 # data is the next frames' reservoir.
-def decoded.granules(grans: Granules, +h: U32, +free: U32, +main: +List<U32>, +len: U32, +array: +List<U32>, +bytes: U32) -> Decoded:
+def decoded.granules(grans: Granules, +h: U32, +free: U32, +main: +List<U32>, +len: U32, +array: +List<U32>, +bytes: U32, +compress: U32) -> Decoded:
   Granules{+pos, ist0, ist1, scf, +fine, spectra} = grans
-  Decoded{Decoder{H.Dec{h, free, H.layer3.kept(main, len, ((pos + 7) / 8 : U32))}, array, scf, ist0, ist1}, H.hdr.samples(h), bytes, Bool.pick(U32, fine, 0, 1),
+  Decoded{Decoder{H.Dec{h, free, H.layer3.kept(main, len, ((pos + 7) / 8 : U32))}, array, scf, ist0, ist1, compress}, H.hdr.samples(h), bytes, Bool.pick(U32, fine, 0, 1),
     List.reverse(&2, +List<U32>, spectra)}
 
 # drmp3_L3_restore_reservoir: the frame's main data after the reservoir's
@@ -695,21 +820,34 @@ def Side.grs(side: H.Side) -> +List<H.Gr>:
 
 # The reservoir's bytes.
 def Decoder.reserv(decoder: Decoder) -> +List<U32>:
-  Decoder{H.Dec{_, _, reserv}, _, _, _, _} = decoder
+  Decoder{H.Dec{_, _, reserv}, _, _, _, _, _} = decoder
   reserv
+
+# scalefac_compress of the granule information's second slot once
+# drmp3_L3_read_side_info has run: the second granule's when the reader came
+# to it and it has no more than 288 big values (the field is read after
+# that check), else what the slot had.
+def slot.compress(grs: +List<H.Gr>, +old: U32) -> U32:
+  match grs:
+    case Nil{}: old
+    case Con{H.Gr{_, +big, _, +compress, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _}, _}: Bool.pick(U32, (big > 288 : U32), old, compress)
+
+def Decoder.slot(decoder: Decoder, +side: H.Side) -> Decoder:
+  Decoder{dec, main, scf, ist0, ist1, +compress} = decoder
+  Decoder{dec, main, scf, ist0, ist1, slot.compress(List.drop(&2, H.Gr, Side.grs(side), 1n), compress)}
 
 # A frame whose reservoir is short of main_data_begin: its main data is
 # written and kept for the next frames, and nothing is decoded.
 def frame.short(mained: +List<U32> & U32, +h: U32, +free: U32, +bytes: U32, decoder: Decoder) -> Decoded:
   (+main, +len) = mained
-  Decoder{_, +array, scf, ist0, ist1} = decoder
-  Decoded{Decoder{H.Dec{h, free, H.layer3.kept(main, len, 0)}, frame.array(main, len, array), scf, ist0, ist1}, 0, bytes, 0, Nil{}}
+  Decoder{_, +array, scf, ist0, ist1, +compress} = decoder
+  Decoded{Decoder{H.Dec{h, free, H.layer3.kept(main, len, 0)}, frame.array(main, len, array), scf, ist0, ist1, compress}, 0, bytes, 0, Nil{}}
 
 def frame.full(mained: +List<U32> & U32, +grs: +List<H.Gr>, +h: U32, +free: U32, +bytes: U32, decoder: Decoder) -> Decoded:
   (+main, +len) = mained
-  Decoder{_, +array, +scf, +ist0, +ist1} = decoder
+  Decoder{_, +array, +scf, +ist0, +ist1, +compress} = decoder
   +whole = frame.array(main, len, array)
-  decoded.granules(granules(2n, grs, H.hdr.mono(h), whole, (len * 8 : U32), 0, h, ist0, ist1, scf, True{}, Nil{}), h, free, main, len, whole, bytes)
+  decoded.granules(granules(2n, grs, H.hdr.mono(h), whole, (len * 8 : U32), 0, h, ist0, ist1, scf, (compress .&. 1 : U32), True{}, Nil{}), h, free, main, len, whole, bytes, compress)
 
 # A Layer III frame by what its side information allows. 0: the side
 # information failed or the frame is too short for it, which clears the
@@ -718,8 +856,8 @@ def frame.full(mained: +List<U32> & U32, +grs: +List<H.Gr>, +h: U32, +free: U32,
 def frame.side(state: U32, +side: H.Side, +h: U32, +free: U32, +payload: +List<U32>, +limit: U32, +bytes: U32, +decoder: Decoder) -> Decoded:
   match state:
     case 0:
-      Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1} = decoder
-      Decoded{Decoder{H.Dec{(h .&. 16777215 : U32), free, reserv}, array, scf, ist0, ist1}, 0, bytes, 0, Nil{}}
+      Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1, +compress} = decoder
+      Decoded{Decoder{H.Dec{(h .&. 16777215 : U32), free, reserv}, array, scf, ist0, ist1, compress}, 0, bytes, 0, Nil{}}
     case 1: frame.short(frame.main(side, Decoder.reserv(decoder), payload, limit), h, free, bytes, decoder)
     case _: frame.full(frame.main(side, Decoder.reserv(decoder), payload, limit), Side.grs(side), h, free, bytes, decoder)
 
@@ -732,7 +870,7 @@ def frame.layer3(+at: +List<U32>, +size: U32, +skip: U32, +free: U32, +decoder: 
   +limit = ((size - 4) * 8 : U32)
   +payload = List.drop(&2, U32, at, 4n)
   +side = H.side.read(payload, limit, Bool.pick(U32, H.hdr.crc(h), 16, 0), h)
-  frame.side(side.state(side, limit, H.count(Decoder.reserv(decoder), 0)), side, h, free, payload, limit, (skip + size : U32), decoder)
+  frame.side(side.state(side, limit, H.count(Decoder.reserv(decoder), 0)), side, h, free, payload, limit, (skip + size : U32), Decoder.slot(decoder, side))
 
 # The frame whose header is at `at`, `size` bytes with its padding, after
 # `skip` bytes.
@@ -740,14 +878,14 @@ def frame.at(layer3: Bool, +at: +List<U32>, +size: U32, +skip: U32, +free: U32, 
   match layer3:
     case True{}: frame.layer3(at, size, skip, free, decoder)
     case False{}:
-      Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1} = decoder
-      Decoded{Decoder{H.Dec{H.word(at), free, reserv}, array, scf, ist0, ist1}, 0, (skip + size : U32), 2, Nil{}}
+      Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1, +compress} = decoder
+      Decoded{Decoder{H.Dec{H.word(at), free, reserv}, array, scf, ist0, ist1, compress}, 0, (skip + size : U32), 2, Nil{}}
 
 # The frame the search found in a zeroed decoder, or none: every byte
 # searched is used.
 def frame.found(found: H.Found, +window: +List<U32>) -> Decoded:
   match found:
-    case H.Found{+skip, 0, +free}: Decoded{Decoder{H.Dec{0, free, Nil{}}, zeros.onto(2815n, Nil{}), zeros.onto(40n, Nil{}), zeros.onto(39n, Nil{}), zeros.onto(39n, Nil{})}, 0, skip, 0, Nil{}}
+    case H.Found{+skip, 0, +free}: Decoded{Decoder{H.Dec{0, free, Nil{}}, zeros.onto(2815n, Nil{}), zeros.onto(40n, Nil{}), zeros.onto(39n, Nil{}), zeros.onto(39n, Nil{}), 0}, 0, skip, 0, Nil{}}
     case H.Found{+skip, +size, +free}:
       +at = List.drop(&2, U32, window, U32.to_nat(skip))
       frame.at(U32.is_eq(H.hdr.layer(H.word(at)), 1), at, size, skip, free, Decoder.zero())
@@ -756,13 +894,14 @@ def frame.next(follows: Bool, +decoder: Decoder, +window: +List<U32>, +bytes: U3
   match follows:
     case False{}: frame.found(H.find(window, bytes, 0), window)
     case True{}:
-      Decoder{H.Dec{_, +free, _}, _, _, _, _} = decoder
+      Decoder{H.Dec{_, +free, _}, _, _, _, _, _} = decoder
       frame.at(U32.is_eq(H.hdr.layer(H.word(window)), 1), window, (H.hdr.bytes(H.word(window), free) + H.hdr.padding(H.word(window)) : U32), 0, free, decoder)
 
 # drmp3dec_decode_frame on `bytes` bytes, as far as this module goes: the
-# granules' values. A frame that follows the last one's header is taken
+# granules' values after the stereo step. A frame that follows the last
+# one's header is taken
 # where it stands (H.decode.follows); otherwise the decoder is zeroed, its
 # scratch too, and a frame is searched for.
 def decode(+decoder: Decoder, +window: +List<U32>, +bytes: U32) -> Decoded:
-  Decoder{H.Dec{+header, +free, _}, _, _, _, _} = decoder
+  Decoder{H.Dec{+header, +free, _}, _, _, _, _, _} = decoder
   frame.next(H.decode.follows(header, free, window, bytes), decoder, window, bytes)
