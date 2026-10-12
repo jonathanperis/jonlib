@@ -72,7 +72,7 @@ at the branch's head.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 582/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **201/212 ported** with the stack, 9 ready (five of them wait for a decoder, which the plan does not count: `country.mp3`, `mini1111.xm`, `target.ogg`), 2 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **202/212 ported** with the stack (`audio_music_stream` plays `country.mp3` through the MP3 decoder), 8 ready (four of them wait for a decoder or an MP3 loader, which the plan does not count: `country.mp3` as a wave, `mini1111.xm`, `target.ogg`), 2 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -556,8 +556,12 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      frame's 16-bit PCM (`synth.granule`), equal to dr_mp3's on every
      frame of `country.mp3` and on the synthetic corpus. Left of the
      plan: the `Wave`/`Sound` loaders (`LoadWave` is
-     `drmp3_open_memory_and_read_pcm_frames_f32`), the three examples
-     that play `country.mp3`, and Layers I and II (refused now).
+     `drmp3_open_memory_and_read_pcm_frames_f32`), the two other
+     examples that play `country.mp3` (`audio_mixed_processor` and
+     `audio_stream_effects`: processors over a music's stream;
+     `audio_music_stream` is ported, with the device's clock and its
+     frames compared with the native example's), and Layers I and II
+     (refused now).
      **`Music` plays MP3** (`MusicMp3{player}` in `jonlib.bend`, cases
      `music-mp3` and `music-mp3-counted` of the sound gate, whose model
      takes the stream's readable frames from the reference and keeps

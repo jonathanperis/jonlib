@@ -108,6 +108,7 @@ TARGET_FPS['core_custom_frame_control'] = 10**9
 OWN_WAIT = {'core_custom_frame_control': 60}
 TARGET_FPS['audio_raw_stream'] = 30
 TARGET_FPS['audio_stream_callback'] = 30
+TARGET_FPS['audio_music_stream'] = 30
 
 (KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, INPUT_GESTURE, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 17, 18)
 # Gamepad events: (gamepad), (gamepad, button), (gamepad, axis, value/32768).
@@ -296,6 +297,7 @@ EXAMPLES = {
     'audio_sound_positioning': ('audio/audio_sound_positioning.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_raw_stream': ('audio/audio_raw_stream.c', 'Ex.setup(core, frame)'),
     'audio_stream_callback': ('audio/audio_stream_callback.c', 'Ex.setup(M.LIBM{}, core, frame)'),
+    'audio_music_stream': ('audio/audio_music_stream.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_vr_simulator': ('core/core_vr_simulator.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shaders_game_of_life': ('shaders/shaders_game_of_life.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
@@ -422,7 +424,7 @@ IO_SETUP.add('models_loading_m3d'); PERSPECTIVE.add('models_loading_m3d')
 AUDIO = {'textures_sprite_button', 'textures_sprite_explosion', 'audio_sound_multi', 'audio_sound_positioning'}
 # Examples whose frames show what the device did: its thread is stopped and the scripted clock asks for its callbacks
 # (tools/reference/audio_clock.c; AudioClock in Jonlib).
-AUDIO_CLOCK = {'audio_raw_stream'}
+AUDIO_CLOCK = {'audio_raw_stream', 'audio_music_stream'}
 AUDIO.update(AUDIO_CLOCK)
 IO_SETUP.update(AUDIO)
 # The binary64 sin of its samples and of its wave has no AppleLibm profile (docs/MATH.md): the same contract.
@@ -1216,6 +1218,14 @@ def scripts():
         script('audio_raw_stream', 'sine', [quick(), quick(), quick([key(KEY_UP)]), quick(), quick([key(KEY_RIGHT)]), slow(),
                                             quick([key(KEY_UP, False), key(KEY_DOWN)]), long([key(KEY_RIGHT, False), key(KEY_LEFT)]), quick(),
                                             quick([key(KEY_DOWN, False)]), quick([key(KEY_LEFT, False)]), quick()]),
+        # country.mp3 plays from the first frame: at 30 FPS the clock asks for 3 or 4 callbacks a frame and UpdateMusicStream
+        # fills the halves they read through, decoding the MP3 as it goes. Right moves the pan, up the volume; P pauses (the
+        # time bar stands still) and resumes; left and down move them back over a slow frame and one of a tenth of a
+        # second; space stops the music and plays it from its start.
+        script('audio_music_stream', 'keys', [quick(), quick(), quick([key(KEY_RIGHT)]), quick(), quick([key(KEY_RIGHT, False), key(KEY_UP)]), slow(),
+                                              quick([key(KEY_UP, False), key(KEY_P)]), quick([key(KEY_P, False)]), quick([key(KEY_P)]),
+                                              quick([key(KEY_P, False), key(KEY_LEFT)]), long([key(KEY_LEFT, False), key(KEY_DOWN)]),
+                                              quick([key(KEY_DOWN, False), key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), quick()]),
         # Every frame is a refusal (UNDEFINED_NATIVE): the port still runs the clock and the stream's callback, the
         # frequency keys and both wave keys before it refuses.
         script('audio_stream_callback', 'waves', [quick(), quick([key(KEY_UP)]), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), slow([key(KEY_LEFT)]),
