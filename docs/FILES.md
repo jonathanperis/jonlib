@@ -72,6 +72,15 @@ the example's `GetFileModTime` with the script's seed
 (`tools/reference/example_driver.h`), so the reference does not depend on
 the checkout's file times.
 
+`core_screen_recording` saves its GIF in `GetApplicationDirectory()`: its
+port takes that directory as a setup argument (`--directory`), and the
+examples probe answers the example's call with `"./"`, the script's own
+directory, where the file is compared like any other an example writes. The
+same example reads the screen with `LoadImageFromScreen`: the probe hands it
+the image a desktop host reads, which `Frame.load_image_from_screen`
+follows, instead of the memory platform's bottom-up one with red and blue
+swapped ([FRAME.md](FRAME.md#readback)).
+
 ## How it is verified
 
 `tools/files_probe.py` (gate `files`) runs the pure functions over a corpus of

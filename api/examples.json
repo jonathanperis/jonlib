@@ -1285,7 +1285,7 @@
   {
    "name": "core_screen_recording",
    "category": "core",
-   "status": "waiting",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",

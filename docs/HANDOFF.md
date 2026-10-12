@@ -72,7 +72,7 @@ at the branch's head.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 582/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **204/212 ported** with the stack (`audio_music_stream`, `audio_stream_effects` and `audio_mixed_processor` play `country.mp3` through the MP3 decoder), 6 ready (three of them wait for a decoder or an MP3 loader, which the plan does not count: `country.mp3` as a wave, `mini1111.xm`, `target.ogg`), 2 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **205/212 ported** with the stack (`audio_music_stream`, `audio_stream_effects` and `audio_mixed_processor` play `country.mp3` through the MP3 decoder; `core_screen_recording` writes its GIF with the msf_gif port), 6 ready (three of them wait for a decoder or an MP3 loader, which the plan does not count: `country.mp3` as a wave, `mini1111.xm`, `target.ogg`), 1 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -302,9 +302,7 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      6574 lines, with a compressed container). `shaders_hot_reloading` is ported with its file's
      modification time as a setup argument (`GetFileModTime` stays blocked
      on Base, like the directory functions `core_directory_files` needs).
-     `core_screen_recording`
-     needs `GetApplicationDirectory` (its GIF encoder, msf_gif, is in:
-     `src/msf_gif.bend`, gate `msf-gif`, docs/GIF-ENCODER.md), and
+     `core_screen_recording` is ported (below), and
      `shaders_game_of_life` draws 2048x2048 worlds each frame;
    - how the four "ready" examples left are blocked (surveyed 2026-10-11):
      `shaders_basic_pbr` is ported: its PNGs of up to 1.68 MiB needed the
@@ -626,24 +624,25 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `country.mp3` with `LoadWave`: it waits for the MP3 decoder;
      (3) music (`LoadMusicStream`) and its decoders:
      dr_mp3, stb_vorbis, jar_xm, jar_mod, dr_flac.
-   - **`core_screen_recording` (next).** Its encoder is in
-     (`src/msf_gif.bend`: `begin`, `frame`, `finish`; gate `msf-gif`;
-     docs/GIF-ENCODER.md). The port left: Ctrl+R starts and ends a
-     recording; every sixth frame `LoadImageFromScreen` goes to
-     `msf_gif_frame` with a delay of 0 and a depth of 16; the end saves
-     `screenrecording.gif` with `Files.save_data`. Three things differ
-     from the reference build and have to be settled in the probe's
-     shim (`tools/reference/example_driver.h`), as `GetFileModTime` was:
-     the memory platform's `LoadImageFromScreen` gives the rows
-     bottom-up with red and blue swapped (docs/FRAME.md), where the
-     desktop one, which `Frame.load_image_from_screen` follows, gives
-     them top-down; `GetApplicationDirectory` is not in Base (the
-     example takes the directory as a setup argument, and the hook
-     answers the script's directory); and the file is compared as the
-     other examples' files are (`SCRATCH` in `tools/examples_probe.py`).
-     The example calls `LoadImageFromScreen` before `BeginDrawing`: it
-     records the frame drawn before (an effects program's update takes
-     the frame, as `core_storage_values` does).
+   - **`core_screen_recording` is ported** over `src/msf_gif.bend`
+     (`begin`, `frame`, `finish`; gate `msf-gif`; docs/GIF-ENCODER.md):
+     Ctrl+R starts and ends a recording, every sixth frame the screen
+     goes to the encoder with a delay of 0 and a depth of 16, and the end
+     saves `screenrecording.gif`, which the probe compares byte for byte
+     with the reference's. Three things are settled in the probe's shim
+     (`tools/reference/example_driver.h`), as `GetFileModTime` was: the
+     memory platform's `LoadImageFromScreen` gives the rows bottom-up
+     with red and blue swapped (docs/FRAME.md), so the hook hands the
+     example the desktop's image, which `Frame.load_image_from_screen`
+     follows; `GetApplicationDirectory` is not in Base, so the port
+     takes the directory as a setup argument and the hook answers the
+     script's directory. The example reads the screen before
+     `BeginDrawing`: it records the frame drawn before (an effects
+     program's update takes the frame). Its 18-frame script takes the
+     JavaScript lane about ten minutes (the C lanes take seconds). Where
+     the time goes is not measured: each frame draws 255 lines and 256
+     circles of 36 segments, and two frames go through the encoder. The
+     circle's return to the left side after 180 frames is not scripted.
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`
