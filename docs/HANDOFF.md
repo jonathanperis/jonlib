@@ -446,8 +446,8 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      a minute and a half: too long to decode whole in the JavaScript
      lane, so `LoadWave` of it, which `audio_spectrum_visualizer` does,
      needs more than the decoder). **A plan for it, in pieces that each
-     have their own reference dump** (surveyed 2026-10-12; nothing is
-     written yet): `country.mp3` is MPEG-1 Layer III, 128 kbit/s, 44100
+     have their own reference dump** (surveyed 2026-10-12; piece (a) is
+     in: `src/mp3.bend`, gate `mp3`, docs/AUDIO.md): `country.mp3` is MPEG-1 Layer III, 128 kbit/s, 44100
      Hz, joint stereo, and starts with an Info/LAME frame, so
      `drmp3_init_internal`'s tag handling matters (ID3v1/APE at the end,
      ID3v2 at the start, the Xing/Info frame skipped, LAME's delay and
@@ -480,7 +480,27 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      reads through a 64 KiB window refilled below 16 KiB
      (`drmp3_decode_next_frame_ex__callbacks`), which only matters for
      how far `drmp3d_match_frame` can look on a damaged stream. The
-     bitstream is read forward only, so lists do (no `Array`). `audio_stream_callback` itself reads
+     bitstream is read forward only, so lists do (no `Array`). **What
+     the next pieces need, found while writing (a):** the tables can be
+     taken from `dr_mp3.h` by a script that copies each
+     `static const ... = {...};` initializer into a C program and prints
+     ints as they are and floats as their bits (so each literal is
+     converted as the compiler converts it): 25 tables, among them
+     `tabs` (2164 Huffman entries), `g_drmp3_pow43` (145), `g_win` (240),
+     `g_sec` (24), `g_mdct_window` (36), `g_twid9`, `g_twid3`, `g_aa`,
+     `g_pan`, `g_expfrac`; a generated `src/mp3_tables.bend` with a
+     staleness check, as the enumerations have, would fit. `tabs` is
+     indexed per codebook (`tabindex`), so each region can carry its
+     codebook's own sublist. In the SSE build `drmp3d_DCT_II` works on
+     four time columns at once but each column alone, so it ports as one
+     function of a column's 32 values in the SSE branch's order. A
+     granule switches windows with `region_count[2]` left as the slot
+     had it; its second region is 255 bands, every band there is, so the
+     third is never read (`side.gr` gives 255). In (a) the probe caught
+     two things worth remembering: a helper that indexes with
+     `Bool.pick` over its own recursion walks to the end of the list (the
+     whole file), and the test corpus needs the real file read through
+     `Files.load_data`, because 1.5 MB of literals does not compile. `audio_stream_callback` itself reads
      `buffer[SAMPLE_RATE]`, one float past its array, for the last
      column of its wave in every frame (AddressSanitizer agrees): its
      port is a refusal (`UNDEFINED_NATIVE`, docs/AUDIO.md). `audio_spectrum_visualizer` is listed ready but loads
