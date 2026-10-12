@@ -1751,6 +1751,45 @@ def Laws.mp3_mixed_block_at_8000_hz_refused():
 def Laws.mp3_short_block_at_8000_hz_inside():
   {==}
 
+def Laws.mp3_top_bands_shared_with_long_bands():
+  {==}
+
+def Laws.mp3_top_bands_of_short_blocks_apart():
+  {==}
+
+def Laws.mp3_stereo_step_intensity():
+  {==}
+
+def Laws.mp3_stereo_step_intensity_in_a_mono_frame():
+  {==}
+
+def Laws.mp3_stereo_step_midside():
+  {==}
+
+def Laws.mp3_stereo_step_midside_only_in_joint_stereo():
+  {==}
+
+def Laws.mp3_stereo_step_none():
+  {==}
+
+def Laws.mp3_stereo_values_kept():
+  {==}
+
+def Laws.mp3_intensity_position_7_is_no_intensity_band():
+  {==}
+
+def Laws.mp3_band_below_the_top_band_is_no_intensity_band():
+  {==}
+
+def Laws.mp3_second_slot_compress_written():
+  {==}
+
+def Laws.mp3_second_slot_compress_left_by_too_many_big_values():
+  {==}
+
+def Laws.mp3_second_slot_compress_left_by_a_mono_frame():
+  {==}
+
 def Laws.audio_clock_periods_owed():
   {==}
 

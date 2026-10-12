@@ -535,7 +535,15 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      floats past `grbuf[ch]` (over the right channel for the left, over
      `scf` for the right). Refused in both the port and the gate's
      reference (`reorder.inside`); (c) must keep that refusal where the
-     reorder is ported.
+     reorder is ported. **The stereo step is in too** (same module and
+     gate; the gate's hash is taken after it): what was listed for (c)
+     above about mono frames and the stale slot is done
+     (`Decoder.compress`, `stereo.mode`). Left of (c): the reorder, the
+     alias reduction, the IMDCT with its overlap (two more arrays of
+     decoder state, 288 floats a channel) and the sign change. Their SSE
+     paths compute each element with the scalar formula, so nothing in
+     (c) depends on the vector order; that begins in (d)
+     (`drmp3d_DCT_II`, `drmp3d_synth`).
      Measured: scalefactors and Huffman take about 12 ms a frame in the
      JavaScript lane (list steps through the trampoline). `audio_stream_callback` itself reads
      `buffer[SAMPLE_RATE]`, one float past its array, for the last
