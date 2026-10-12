@@ -1349,6 +1349,15 @@ def Libm.pow(libm: Libm, +x: F32, +exponent: U32) -> Maybe<F32>:
     case Glibc239Libm{}: Power.power(x, exponent)
     case _: None{}
 
+# powf(x, y) under a reference profile: glibc 2.39's x86_64 powf for x that
+# is +0 or positive and finite and a finite y that is not subnormal, where
+# its FMA and SSE2 builds give the same float (Power.powf). None for
+# AppleLibm and Glibc241Libm (not verified) and outside that domain.
+def Libm.powf(libm: Libm, +x: F32, +y: F32) -> Maybe<F32>:
+  match libm:
+    case Glibc239Libm{}: Power.powf(x, y)
+    case _: None{}
+
 # powf(2, k), and the exp2f(k) compilers substitute for it, under a reference
 # profile: glibc's (2.39 and 2.41 on x86_64, the SSE2 and the FMA variants
 # alike) for a finite k with |k| < 126, where the result is normal

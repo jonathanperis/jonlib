@@ -1610,6 +1610,20 @@
    "minutes": 1
   },
   {
+   "id": "powf",
+   "title": "M.Libm.powf (glibc 2.39's powf for a non-negative finite base and a finite exponent, where its FMA and SSE2 builds agree) against a model of both builds and, on glibc 2.39 hosts, the host's powf, with the special values, the underflows and the refused arguments",
+   "run": [
+    "{python}",
+    "tools/powf_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1
+  },
+  {
    "id": "explog",
    "title": "M.Libm.exp and M.Libm.log (expf for |x| < 87, logf for positive normal x) against the kernels' model and, on glibc hosts, the host's expf and logf, with the refused arguments and the Apple profile",
    "run": [
