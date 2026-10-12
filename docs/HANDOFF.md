@@ -72,7 +72,7 @@ at the branch's head.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 562/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **200/212 ported** with the stack, 6 ready, 6 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **201/212 ported** with the stack, 5 ready, 6 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -429,8 +429,8 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      the glue in `jonlib.bend` (not `src/mixer.bend`) is where a program
      function goes. `audio_stream_callback` itself reads
      `buffer[SAMPLE_RATE]`, one float past its array, for the last
-     column of its wave in every frame: its port has to be a refusal
-     (`UNDEFINED_NATIVE`), the next piece. `audio_spectrum_visualizer` is listed ready but loads
+     column of its wave in every frame (AddressSanitizer agrees): its
+     port is a refusal (`UNDEFINED_NATIVE`, docs/AUDIO.md). `audio_spectrum_visualizer` is listed ready but loads
      `country.mp3` with `LoadWave`: it waits for the MP3 decoder;
      (3) music (`LoadMusicStream`) and its decoders:
      dr_mp3, stb_vorbis, jar_xm, jar_mod, dr_flac.
