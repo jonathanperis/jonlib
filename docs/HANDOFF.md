@@ -566,21 +566,22 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `audio_mixed_processor` still needs is `powf` for any exponent:
      its processor is `powf(fabsf(x), exponent)` on every mixed sample,
      with the exponent moved by keys from 0.5 to 3 in steps of 0.05, and
-     `M.Libm.pow` only answers for exponents 2 and 3 on [0, 1].
-     `src/power.bend` already has both halves of glibc 2.39's `powf`
-     (`log2`, which is `log2_inline`, and `exp2.at`, `exp2_inline`); what
-     is missing is the function around them for any finite `y` (the
-     product `y*log2(x)` in binary64, the overflow and underflow
-     bounds, zero and the special values) and, above all, the evidence:
-     glibc selects an FMA build of `powf` on hosts that have FMA (the
-     CI runners do), where the compiler fused some `a*b + c`, and the
-     SSE2 build elsewhere. docs/MATH.md has the method used for `expf`,
-     `logf` and `powf(2, y)` (a C model with `FUSED` 0 and 1 compared
-     with the host's function under both `GLIBC_TUNABLES`, over every
-     argument); `powf` has two arguments, so the comparison has to be
-     over the example's 51 exponents (0.5 to 3 by 0.05f, as float sums)
-     times every float `x` from 0 to 1 and a little above, about 5e10
-     calls, or the profile has to answer only where both builds agree.
+     **`M.Libm.powf` is in** (`Power.powf`, gate `powf`, docs/MATH.md):
+     glibc 2.39's `powf` for a non-negative finite base and a finite
+     exponent, computed as both of glibc's builds (the FMA one fuses
+     nine `a*b + c`; read from the library's code) and answered where
+     they agree. What is left for the example is the port itself: a
+     mixed processor (`J.AudioClock.advance_processing`, tag of
+     `AudioDevice.attach_mixed_processor`) that takes
+     `powf(fabsf(x), exponent)` of each sample, times its sign, and the
+     history of 400 averages it draws. The callback flushes subnormals:
+     a subnormal result of `powf` is 0 there. Each `powf` is two
+     software binary64 evaluations, about 1920 a callback: slow on the
+     JavaScript lane, so keep the script short. The builds differ on
+     about 7 pairs in ten billion (measured: 30 billion pairs, the
+     models equal to their builds on all of them); `powf` is `None`
+     there and the example has to refuse that frame, since the port
+     cannot know which build the reference host runs.
      In the example the base is `fabsf` of a mixed sample: 0 or a
      normal float (the callback flushes subnormals), never negative.
      **`Music` plays MP3** (`MusicMp3{player}` in `jonlib.bend`, cases

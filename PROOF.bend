@@ -654,6 +654,57 @@ def Laws.glibc_pow2_126_none():
 def Laws.glibc_pow2_infinity_none():
   {==}
 
+def Laws.glibc_powf_zero_to_a_positive_power():
+  {==}
+
+def Laws.glibc_powf_zero_to_a_negative_power_none():
+  {==}
+
+def Laws.glibc_powf_to_zero_is_one():
+  {==}
+
+def Laws.glibc_powf_infinity_to_minus_zero_is_one():
+  {==}
+
+def Laws.glibc_powf_nan_to_zero_none():
+  {==}
+
+def Laws.glibc_powf_positive_base():
+  {==}
+
+def Laws.glibc_powf_subnormal_base():
+  {==}
+
+def Laws.glibc_powf_negative_base_none():
+  {==}
+
+def Laws.glibc_powf_minus_zero_base_none():
+  {==}
+
+def Laws.glibc_powf_infinite_base_none():
+  {==}
+
+def Laws.glibc_powf_subnormal_exponent_none():
+  {==}
+
+def Laws.glibc_powf_infinite_exponent_none():
+  {==}
+
+def Laws.glibc_powf_underflow_from_minus_150():
+  {==}
+
+def Laws.glibc_powf_subnormal_result_above_minus_150():
+  {==}
+
+def Laws.glibc_powf_top_none():
+  {==}
+
+def Laws.glibc_powf_below_the_top():
+  {==}
+
+def Laws.glibc_powf_small_products_inside():
+  {==}
+
 def Laws.glibc_expf_87_none():
   {==}
 

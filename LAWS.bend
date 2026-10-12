@@ -943,6 +943,66 @@ law glibc_pow2_126_none:
 law glibc_pow2_infinity_none:
   {Power.exp2.word(2139095040) == None{} : Maybe<F32>}
 
+# glibc powf(x, y) (src/power.bend's powf): which case the words of x and y
+# are. +0 to a positive power is +0 and to a negative one has no answer (a
+# division by zero); anything that is not a NaN to a zero power is 1; a
+# positive finite base, a subnormal one too, takes the main path with a
+# finite exponent that is not subnormal; a negative base, -0, an infinite
+# one and the other exponents have no answer here. In the main path
+# y*log2(x) at -150 and below underflows to +0, above that the result is
+# computed (a subnormal down to -150), and from 127.984375 up there is no
+# answer.
+law glibc_powf_zero_to_a_positive_power:
+  {Power.powf.region(0, 1073741824) == 0 : U32}
+
+law glibc_powf_zero_to_a_negative_power_none:
+  {Power.powf.region(0, 3221225472) == 3 : U32}
+
+law glibc_powf_to_zero_is_one:
+  {Power.powf.region(1073741824, 0) == 2 : U32}
+
+law glibc_powf_infinity_to_minus_zero_is_one:
+  {Power.powf.region(2139095040, 2147483648) == 2 : U32}
+
+law glibc_powf_nan_to_zero_none:
+  {Power.powf.region(2143289344, 0) == 3 : U32}
+
+law glibc_powf_positive_base:
+  {Power.powf.region(1073741824, 1077936128) == 1 : U32}
+
+law glibc_powf_subnormal_base:
+  {Power.powf.region(1, 1065353216) == 1 : U32}
+
+law glibc_powf_negative_base_none:
+  {Power.powf.region(3221225472, 1073741824) == 3 : U32}
+
+law glibc_powf_minus_zero_base_none:
+  {Power.powf.word(2147483648, 1073741824) == None{} : Maybe<F32>}
+
+law glibc_powf_infinite_base_none:
+  {Power.powf.region(2139095040, 1073741824) == 3 : U32}
+
+law glibc_powf_subnormal_exponent_none:
+  {Power.powf.region(1073741824, 1) == 3 : U32}
+
+law glibc_powf_infinite_exponent_none:
+  {Power.powf.region(1073741824, 2139095040) == 3 : U32}
+
+law glibc_powf_underflow_from_minus_150:
+  {Power.powf.bound(3227697152, 0) == 1 : U32}
+
+law glibc_powf_subnormal_result_above_minus_150:
+  {Power.powf.bound(3227697151, 4294967295) == 0 : U32}
+
+law glibc_powf_top_none:
+  {Power.powf.bound(1080033024, 0) == 2 : U32}
+
+law glibc_powf_below_the_top:
+  {Power.powf.bound(1080033023, 4294967295) == 0 : U32}
+
+law glibc_powf_small_products_inside:
+  {Power.powf.bound(1072693248, 0) == 0 : U32}
+
 # glibc expf and logf (src/power.bend): expf answers below 87 in magnitude
 # and refuses the two arguments at which glibc's SSE2 and FMA variants
 # differ; logf answers positive normal arguments only (zero, a negative

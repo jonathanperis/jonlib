@@ -1,0 +1,9 @@
+{"comparison": "fma", "mode": 0, "pairs": 10000000000, "differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "sse2", "mode": 0, "pairs": 10000000000, "differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "variants", "mode": 0, "pairs": 10000000000, "differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "fma", "mode": 1, "pairs": 10000000000, "differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "sse2", "mode": 1, "pairs": 10000000000, "differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "variants", "mode": 1, "pairs": 10000000000, "differences": 7, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "fma", "mode": 2, "pairs": 10000000000, "differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "sse2", "mode": 2, "pairs": 10000000000, "differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "variants", "mode": 2, "pairs": 10000000000, "differences": 4, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}

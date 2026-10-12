@@ -451,6 +451,69 @@ evaluates the same arithmetic in Python's binary64 for 280 arguments, checks
 the host's two functions against it on glibc hosts and Jonmath's result on
 every lane. macOS's `powf` and `exp2f` are not modeled: `AppleLibm` is `None`.
 
+## powf
+
+`M.Libm.powf(libm, x, y)` is glibc 2.39's x86_64 `powf(x, y)` under
+`Glibc239Libm` (`src/power.bend`'s `powf`: Arm optimized-routines
+`math/powf.c`, MIT alternative,
+[LICENSES/arm-math.txt](../LICENSES/arm-math.txt)): `log2_inline(x)`, the
+product `y*log2(x)` in binary64, and `exp2_inline` of it. `M.Libm.pow`
+(exponents 2 and 3 on [-0, 1]) and `M.Libm.pow2` are older, narrower uses
+of the same kernel and stay as they are.
+
+The domain: `x` is +0 or positive and finite (a subnormal `x` is normalized
+as `powf` does), `y` finite and not subnormal. +0 to a positive power is
++0; anything that is not a NaN to a zero power is 1; a result that
+underflows is +0 or a subnormal, as glibc returns it. `None`: a negative
+`x` and -0, an infinite `x`, NaNs, an infinite or subnormal `y`, +0 to a
+negative power (a division by zero), a result that overflows or is within a
+64th of a binade of 2^128 (from `y*log2(x)` = 127.984375 up `exp2_inline`'s
+scale is 2^128, which the exact binary64 helpers do not take), and a
+binary64 step outside those helpers' domain.
+
+**Two builds.** glibc selects `powf` at load time: an FMA build
+(`-mfma -mavx2`) on hosts that have FMA, the SSE2 one elsewhere. Read from
+the library's code: in the FMA build each `a*b + c` of the two polynomials
+is one `fma`, and so is `z*invc - 1` (six in `log2_inline`, three in
+`exp2_inline`); `y*log2(x)`, the add of the shift and the remainder are a
+product, a sum and a difference in both. `powf` computes both and answers
+where they give the same float, so the answer does not depend on the
+host's processor; where they would differ it is `None`.
+
+`tools/reference/glibc_powf/model.c` is the explicit-operation C model of
+the whole function (`FUSED=1` and `FUSED=0`), with the tables and
+polynomials as the words of the library. `powf` has two arguments, so it
+is compared on seeded samples instead of every argument: `sample.c`
+against the host's `powf` through a volatile pointer, the SSE2 model with
+`GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX2,-FMA,-FMA4`, and `variants.c` the
+two models against each other. Three ways of drawing a pair: any two
+words (every special case); `x` in [0, 2) with one of the exponents
+raylib's `audio_mixed_processor` reaches; a positive finite `x` with `y`
+within 8 of 0. `run_sample.sh` on Ubuntu 24.04, glibc 2.39-0ubuntu8.9,
+ten billion pairs each:
+
+| Pairs drawn | FMA model and host | SSE2 model and host | The two models |
+|---|---:|---:|---:|
+| any two words | 0 differences | 0 | 0 |
+| `x` in [0, 2), the example's exponents | 0 | 0 | 7 |
+| positive `x`, `y` within 8 of 0 | 0 | 0 | 4 |
+
+Each model is its build, on every pair. The two builds are not each
+other: about 7 pairs in ten billion get floats one unit in the last place
+apart (none among any two words, most of which are special cases). For
+those `powf` is `None`: `powf(2.7785363e-05f, 0.9500001f)` is 0x3844EAED
+in the FMA build and 0x3844EAEC in the SSE2 one. The JSON results are in
+`tools/reference/glibc_powf/results`.
+Gate `powf` (`tools/powf_probe.py`) computes both builds in Python's
+binary64, a fused sum rounded once from the exact rational value, for 540
+pairs (special values, underflows to 0 and to subnormals, overflows, the
+top of the range, the 112 exponents the example's keys reach with bases
+from its samples' range, six of the pairs on which the builds differ, and
+a seeded sample); on a glibc 2.39 host the host's `powf` must give the
+same word for each of the 416 answered, and Jonmath's result must on every
+lane. glibc 2.41's and macOS's `powf` are
+not modeled: `Glibc241Libm` and `AppleLibm` are `None`.
+
 ## Exponential and logarithm
 
 `src/power.bend`'s `exp` and `log` are glibc's `expf` and `logf` (Arm

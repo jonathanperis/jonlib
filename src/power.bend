@@ -230,6 +230,116 @@ def normalize(+ix: U32) -> U32:
 def general(+ix: U32, +y: V) -> Maybe<F32>:
   exp2.checked(mul(y, log2(normalize(ix))))
 
+# -----------------------------------------------------------------------------
+# powf(x, y) for any finite y (math/powf.c's main path).
+#
+# glibc selects one of two builds of powf: the FMA one (-mfma -mavx2) on
+# hosts that have FMA, where the compiler made one fma of each a*b + c of
+# the two polynomials and of z*invc - 1, and the SSE2 one elsewhere, where
+# each is a product and a sum. y*log2(x), the add of the shift and the
+# remainder are a product, a sum and a difference in both
+# (tools/reference/glibc_powf, read from the library's code). Both are
+# computed here and powf answers where they agree.
+
+def fma(a: V, b: V, c: V) -> V:
+  match a b c:
+    case Ok{+ah, +al} Ok{+bh, +bl} Ok{+ch, +cl}: lift(F.checked(ah, al, bh, bl, ch, cl))
+    case _ _ _: Bad{}
+
+# a*b + c as a build computes it.
+def madd(fused: Bool, +a: V, +b: V, +c: V) -> V:
+  match fused:
+    case True{}: fma(a, b, c)
+    case False{}: add(mul(a, b), c)
+
+# log2_inline as the build computes it (log2 above is the SSE2 build's).
+def log2.for(+fused: Bool, +ix: U32) -> V:
+  +tmp = (ix - 1060306944 : U32)
+  +i = ((tmp >> 19n) % 16 : U32)
+  +top = (tmp .&. 4286578688 : U32)
+  +r = madd(fused, promote((ix - top : U32)), pair(invc(), i), Ok{3220176896, 0})
+  +y0 = add(pair(logc(), i), exponent(top))
+  +r2 = mul(r, r)
+  +y = madd(fused, Ok{1070757398, 3377032715}, r, Ok{3218545001, 2692073082})
+  +p = madd(fused, Ok{1071564554, 1822931677}, r, Ok{3219592519, 1220474568})
+  +r4 = mul(r2, r2)
+  madd(fused, y, r4, madd(fused, p, r2, madd(fused, Ok{1073157447, 1697298475}, r, y0)))
+
+# exp2_inline as the build computes it.
+def exp2.for(+fused: Bool, +xd: V, +kd: V) -> Maybe<F32>:
+  match kd:
+    case Bad{}: None{}
+    case Ok{+kh, +kl}:
+      +r = sub(xd, sub(kd, shift()))
+      +z = madd(fused, Ok{1068264184, 1267803028}, r, Ok{1070514126, 1358611699})
+      narrow(mul(madd(fused, z, mul(r, r), madd(fused, Ok{1072049730, 4278997718}, r, one())), scale(kl)))
+
+# What powf does with y*log2(x). 0: exp2_inline. 1: at -150 and below the
+# result underflows to +0. 2: no answer here: from 127.984375 up. Above
+# 0x1.fffffffd1d571p+6 the result overflows; below that, down to
+# 127.984375, exp2_inline's scale is 2^128, which the exact binary64
+# helpers do not take, so the last 64th of the last binade has no answer
+# either. Between -150 and -149 glibc returns the smallest subnormal, which
+# is also what exp2_inline's product rounds to.
+def powf.bound(+high: U32, +low: U32) -> U32:
+  +large = (((high >> 15n) .&. 65535) >= 32959 : U32)
+  +negative = (high >= 2147483648 : U32)
+  +magnitude = (high .&. 2147483647 : U32)
+  Bool.pick(U32, large && negative && (magnitude >= 1080213504 : U32), 1, Bool.pick(U32, Bool.not(negative) && (magnitude >= 1080033024 : U32), 2, 0))
+
+def powf.bounded(bound: U32, +fused: Bool, +xd: V) -> Maybe<F32>:
+  match bound:
+    case 0: exp2.for(fused, xd, add(xd, shift()))
+    case 1: Some{0.0}
+    case _: None{}
+
+def powf.scaled(+fused: Bool, +xd: V) -> Maybe<F32>:
+  match xd:
+    case Bad{}: None{}
+    case Ok{+high, +low}: powf.bounded(powf.bound(high, low), fused, Ok{high, low})
+
+# A build's powf for the word of a positive finite x and a finite y.
+def powf.build(+fused: Bool, +ix: U32, +iy: U32) -> Maybe<F32>:
+  powf.scaled(fused, mul(promote(iy), log2.for(fused, normalize(ix))))
+
+# The answer of both builds, where it is one.
+def powf.same(a: Maybe<F32>, b: Maybe<F32>) -> Maybe<F32>:
+  match a b:
+    case Some{+x} Some{+y}: Bool.pick(Maybe<F32>, U32.is_eq(F32.bits(x), F32.bits(y)), Some{x}, None{})
+    case _ _: None{}
+
+# Which case of powf the words of x and y are. 0: x is +0 and y above 0: +0.
+# 1: x is positive and finite, y finite, normal and not 0: the main path
+# (a subnormal x is normalized). 2: y is 0 and x not a NaN: 1. 3: outside
+# this profile: a negative x (and -0), an infinite one, NaNs, an infinite or
+# subnormal y, and a negative y with x 0 (a division by zero).
+def powf.region(+ix: U32, +iy: U32) -> U32:
+  +ay = (iy .&. 2147483647 : U32)
+  +zero = U32.is_eq(ay, 0)
+  +finite = (ay >= 8388608 : U32) && (ay < 2139095040 : U32)
+  Bool.pick(U32, zero, Bool.pick(U32, ((ix .&. 2147483647) <= 2139095040 : U32), 2, 3),
+    Bool.pick(U32, Bool.not(finite), 3, Bool.pick(U32, U32.is_eq(ix, 0), Bool.pick(U32, (iy < 2147483648 : U32), 0, 3), Bool.pick(U32, (ix < 2139095040 : U32), 1, 3))))
+
+def powf.at(region: U32, +ix: U32, +iy: U32) -> Maybe<F32>:
+  match region:
+    case 0: Some{0.0}
+    case 1: powf.same(powf.build(True{}, ix, iy), powf.build(False{}, ix, iy))
+    case 2: Some{1.0}
+    case _: None{}
+
+def powf.word(+ix: U32, +iy: U32) -> Maybe<F32>:
+  powf.at(powf.region(ix, iy), ix, iy)
+
+# glibc 2.39 (x86_64) powf(x, y) in round to nearest: x is +0 or positive and
+# finite, y finite and not subnormal. None outside that, where the result
+# overflows or is within a 64th of a binade of 2^128 (powf.bound), where a
+# binary64 step is outside the exact helpers' domain, and
+# where the FMA and the SSE2 builds of glibc do not give the same float
+# (about 7 pairs in ten billion, one unit in the last place apart:
+# docs/MATH.md). An underflow is +0 or a subnormal, as glibc returns it.
+def powf(+x: F32, +y: F32) -> Maybe<F32>:
+  powf.word(F32.bits(x), F32.bits(y))
+
 # 0: +0; 1: -0; 2: (0, 1]; 3: outside the profile.
 def region(+bits: U32, +exponent: U32) -> U32:
   Bool.pick(U32, Bool.not(U32.is_eq(exponent, 2) || U32.is_eq(exponent, 3)), 3,
