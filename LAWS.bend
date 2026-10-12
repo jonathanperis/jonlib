@@ -40,6 +40,8 @@ import ./src/gui_icons.bend as GuiIcons
 import ./src/binary64_sqrt.bend as Sqrt
 import ./src/wav.bend as Wav
 import ./src/mp3.bend as Mp3
+import ./src/mp3_layer3.bend as Mp3L3
+import ./src/mp3_tables.bend as Mp3T
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -2378,6 +2380,123 @@ law mp3_read_clamped_to_the_file:
 
 law mp3_short_file_does_not_open:
   {Mp3.open([255, 251, 144, 68]) == None{} : Maybe<Mp3.Opened>}
+
+# MP3 Layer III (src/mp3_layer3.bend, src/mp3_tables.bend, dr_mp3). A
+# granule's scalefactor bands are its sample rate's row of the long, short or
+# mixed table (country.mp3's header again); codebooks 16 to 23 are one
+# Huffman table read with different linbits, and 4 has no values, as 0. The
+# scalefactors' sizes are g_scfc_decode's in MPEG-1 and scalefac_compress in
+# the mixed radix of g_mod's rows in MPEG-2 (halved for the second channel
+# of an intensity stereo frame, whose rows are the last three); they are
+# read in groups, a group that scfsi keeps taking the granule before's, and
+# an MPEG-2 intensity position of all ones is 255. The cache takes bytes
+# while it has room for one, and a byte past the main data's array counts:
+# the granule is refused. A quad of the count1 region is plus or minus the
+# band's scale where its code has the value, by the bit that follows. The
+# right channel's top band in each window gives the last band's intensity
+# position its default, or the band before's. A frame's main data is written
+# over the start of what the array held, and is decoded when the reservoir
+# reaches main_data_begin. A mixed block's short bands are reordered inside
+# the granule's 576 values except at 8000 Hz (FF E3 18 00), where dr_mp3
+# writes 24 past them: refused.
+law mp3_long_bands_of_44100:
+  {Mp3L3.bands(4294676548, 0) == [4, 4, 4, 4, 4, 4, 6, 6, 8, 8, 10, 12, 16, 20, 24, 28, 34, 42, 50, 54, 76, 158, 0] : +List<U32>}
+
+law mp3_short_bands_of_44100:
+  {Mp3.count(Mp3L3.bands(4294676548, 1), 0) == 40 : U32}
+
+law mp3_mixed_bands_begin_long:
+  {Mp3.take(8, Mp3L3.bands(4294676548, 2)) == [4, 4, 4, 4, 4, 4, 6, 6] : +List<U32>}
+
+law mp3_codebooks_share_a_table:
+  {Mp3T.book(16) == Mp3T.book(23) : +List<U32>}
+
+law mp3_codebook_without_values:
+  {Mp3T.book(4) == Mp3T.book(0) : +List<U32>}
+
+law mp3_codebook_entries:
+  {Mp3.count(Mp3T.book(31), 0) == 322 : U32}
+
+law mp3_scalefactor_sizes_mpeg1:
+  {Mp3L3.sizes.of(True{}, 4, False{}) == Mp3L3.Sizes{[3, 3, 0, 0], 0} : Mp3L3.Sizes}
+
+law mp3_scalefactor_sizes_mpeg2:
+  {Mp3L3.sizes.of(False{}, 399, False{}) == Mp3L3.Sizes{[4, 4, 3, 3], 4} : Mp3L3.Sizes}
+
+law mp3_scalefactor_sizes_mpeg2_second_row:
+  {Mp3L3.sizes.of(False{}, 400, False{}) == Mp3L3.Sizes{[0, 0, 0, 0], 8} : Mp3L3.Sizes}
+
+law mp3_scalefactor_sizes_intensity_halved:
+  {Mp3L3.sizes.of(False{}, 3, True{}) == Mp3L3.Sizes{[0, 0, 1, 0], 16} : Mp3L3.Sizes}
+
+law mp3_scalefactors_read_in_groups:
+  {Mp3L3.read.groups(4n, False{}, [3, 3, 0, 0], [2, 1, 1, 1], [177, 128], 16, 0, Mp3L3.Read{Nil{}, Nil{}, [9, 9, 9, 9, 9, 9], 0}) == Mp3L3.Read{[0, 0, 3, 4, 5], [0, 0, 3, 4, 5], [9], 9} : Mp3L3.Read}
+
+law mp3_scalefactors_kept_by_scfsi:
+  {Mp3L3.read.groups(4n, False{}, [3, 3, 0, 0], [2, 1, 1, 1], [177, 128], 16, 8, Mp3L3.Read{Nil{}, Nil{}, [7, 6, 9, 9, 9, 9], 0}) == Mp3L3.Read{[0, 0, 5, 6, 7], [0, 0, 5, 6, 7], [9], 3} : Mp3L3.Read}
+
+law mp3_intensity_position_of_all_ones_mpeg2:
+  {Mp3L3.read.groups(4n, False{}, [2, 0, 0, 0], [2, 0, 0, 0], [208], 8, 4294967280, Mp3L3.Read{Nil{}, Nil{}, Nil{}, 0}) == Mp3L3.Read{[1, 3], [1, 255], Nil{}, 4} : Mp3L3.Read}
+
+law mp3_cache_filled_by_bytes:
+  {Mp3L3.run.fill(5n, True{}, [171, 205, 7], 4, 0, 16, Nil{}) == Mp3L3.Run{[7], 6, 43981, 0, Nil{}} : Mp3L3.Run}
+
+law mp3_cache_past_the_bytes_counts:
+  {Mp3L3.run.fill(5n, True{}, Nil{}, 4, 1, 8, Nil{}) == Mp3L3.Run{Nil{}, 5, 1, 0, Nil{}} : Mp3L3.Run}
+
+law mp3_quad_signs:
+  {Mp3L3.quad.pair(1, 1, 1065353216, Nil{}, 4, 2147483648, 0, Nil{}) == Mp3L3.Run{Nil{}, 4, 0, 2, [1065353216, 3212836864]} : Mp3L3.Run}
+
+law mp3_quad_value_absent:
+  {Mp3L3.quad.pair(0, 1, 1065353216, Nil{}, 4, 2147483648, 0, Nil{}) == Mp3L3.Run{Nil{}, 4, 0, 1, [3212836864, 0]} : Mp3L3.Run}
+
+law mp3_count1_quad:
+  {Mp3.take(5, Mp3L3.Spectrum.values(Mp3L3.spectrum([10, 0, 0, 0, 0, 0, 0, 0], 8, 0, 8, 4294676548, Mp3.Gr{8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 1, 0, 0, 22, 0}, [1065353216]))) == [3212836864, 1065353216, 3212836864, 1065353216, 0] : +List<U32>}
+
+law mp3_granule_576_values:
+  {Mp3.count(Mp3L3.Spectrum.values(Mp3L3.spectrum([10, 0, 0, 0, 0, 0, 0, 0], 8, 0, 8, 4294676548, Mp3.Gr{8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 1, 0, 0, 22, 0}, [1065353216])), 0) == 576 : U32}
+
+law mp3_values_read_inside_the_array:
+  {Mp3L3.Spectrum.fine(Mp3L3.spectrum([10, 0, 0, 0, 0, 0, 0, 0], 8, 0, 8, 4294676548, Mp3.Gr{8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 1, 0, 0, 22, 0}, [1065353216])) == True{} : Bool}
+
+law mp3_values_read_past_the_array_refused:
+  {Mp3L3.Spectrum.fine(Mp3L3.spectrum([10, 0, 0, 0], 4, 0, 8, 4294676548, Mp3.Gr{8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 1, 0, 0, 22, 0}, [1065353216])) == False{} : Bool}
+
+law mp3_top_bands_by_window:
+  {Mp3L3.tops(4n, [2, 2, 2, 2], [0, 0, 0, 2147483648, 5, 0, 0, 0], 0, 0, 0, 0) == Mp3L3.Tops{0, 0, 3} : Mp3L3.Tops}
+
+law mp3_intensity_position_default:
+  {Mp3L3.positions(Mp3L3.Tops{0, 0, 3}, [1, 2, 7, 4, 5, 6], 4, 0, 3) == [1, 2, 7, 3, 5, 6] : +List<U32>}
+
+law mp3_intensity_position_of_the_band_before:
+  {Mp3L3.positions(Mp3L3.Tops{0, 2, 0}, [1, 2, 7, 4, 5, 6], 4, 0, 3) == [1, 2, 7, 7, 5, 6] : +List<U32>}
+
+law mp3_intensity_positions_of_the_windows:
+  {Mp3L3.positions(Mp3L3.Tops{1, 0, 0}, [1, 2, 3, 4, 5, 6, 7], 0, 6, 0) == [1, 2, 3, 0, 2, 3, 7] : +List<U32>}
+
+law mp3_array_keeps_what_was_there:
+  {Mp3L3.frame.array([1, 2], 2, [9, 8, 7, 6]) == [1, 2, 7, 6] : +List<U32>}
+
+law mp3_reservoir_short_decodes_nothing:
+  {Mp3L3.side.state(Mp3.Side{False{}, 5, Nil{}, 136}, 3336, 4) == 1 : U32}
+
+law mp3_reservoir_reached_decodes:
+  {Mp3L3.side.state(Mp3.Side{False{}, 5, Nil{}, 136}, 3336, 5) == 2 : U32}
+
+law mp3_side_information_refused:
+  {Mp3L3.side.state(Mp3.Side{True{}, 0, Nil{}, 136}, 3336, 511) == 0 : U32}
+
+law mp3_no_frame_in_no_bytes:
+  {Mp3L3.decode(Mp3L3.Decoder.zero(), Nil{}, 0) == Mp3L3.Decoded{Mp3L3.Decoder.zero(), 0, 0, 0, Nil{}} : Mp3L3.Decoded}
+
+law mp3_mixed_block_reordered_inside_the_granule:
+  {Mp3L3.reorder.inside(4294676548, Mp3.Gr{0, 0, 0, 0, 2, 1, 0, 0, 0, 7, 255, 255, 0, 0, 0, 0, 0, 0, 0, 2, 8, 30}) == True{} : Bool}
+
+law mp3_mixed_block_at_8000_hz_refused:
+  {Mp3L3.reorder.inside(4293072896, Mp3.Gr{0, 0, 0, 0, 2, 1, 0, 0, 0, 7, 255, 255, 0, 0, 0, 0, 0, 0, 0, 2, 6, 30}) == False{} : Bool}
+
+law mp3_short_block_at_8000_hz_inside:
+  {Mp3L3.reorder.inside(4293072896, Mp3.Gr{0, 0, 0, 0, 2, 0, 0, 0, 0, 8, 255, 255, 0, 0, 0, 0, 0, 0, 0, 1, 0, 39}) == True{} : Bool}
 
 # Frame: InitWindow sizes are 1..4096; a zero or oversized width has no frame
 # whatever the height.

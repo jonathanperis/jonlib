@@ -500,7 +500,44 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      two things worth remembering: a helper that indexes with
      `Bool.pick` over its own recursion walks to the end of the list (the
      whole file), and the test corpus needs the real file read through
-     `Files.load_data`, because 1.5 MB of literals does not compile. `audio_stream_callback` itself reads
+     `Files.load_data`, because 1.5 MB of literals does not compile.
+     **Piece (b) is in** (`src/mp3_layer3.bend`, `src/mp3_tables.bend`,
+     `tools/mp3_tables.py`, gate `mp3-layer3`, docs/AUDIO.md): a frame
+     decodes as far as its granules' 576 values per channel, bit for bit.
+     What it taught: (1) a nullary def that is a list literal builds the
+     list at every call, so a table read in a loop is named once outside
+     it and passed down (`pow`, `book`); a codebook is rebuilt only when
+     a region begins. (2) the decoder's scratch is state: the main data
+     array keeps earlier frames' bytes past the current frame's (Huffman
+     reads them on damaged granules), the 40 scales keep entries a
+     granule does not write, and `drmp3_L3_intensity_stereo` writes the
+     right channel's last intensity positions; all three are in
+     `Mp3L3.Decoder` and in the gate's state hash. For (c):
+     `drmp3_L3_intensity_stereo` is called whenever the header's bit
+     0x10 is set, in mono frames too, where it processes the mono
+     channel against 576 zeros and reads `gr[1].scalefac_compress` of
+     the next slot of `gr_info[4]`, which is also scratch that persists
+     (a mono MPEG-1 frame's second granule reads slot 2: an earlier
+     stereo frame's, or zeros): the stale granule information has to be
+     carried. (3) raylib does not define `DR_MP3_FLOAT_OUTPUT`: the
+     synthesis writes 16-bit samples (`drmp3d_scale_pcm`, SSE
+     `_mm_cvtps_epi32` and saturating packs) and
+     `drmp3_read_pcm_frames_f32` converts them to floats, so (d)'s
+     output is int16 and the float read is a division by 32768. (4) the
+     gate's synthetic frames (random side information and main data, no
+     encoder) reach every MPEG version, block type and table; later
+     stages can reuse `mp3_layer3_probe.synthetic`, though random
+     values will be large, so watch for infinities and NaNs (whose bits
+     differ between JavaScript and C) before comparing floats there.
+     (5) dr_mp3 has a bug the synthetic frames found: a mixed block at
+     8000 Hz is reordered from value 72 (`n_long_bands` 4) with a band
+     table whose long part is 48 values, so `drmp3_L3_reorder` writes 24
+     floats past `grbuf[ch]` (over the right channel for the left, over
+     `scf` for the right). Refused in both the port and the gate's
+     reference (`reorder.inside`); (c) must keep that refusal where the
+     reorder is ported.
+     Measured: scalefactors and Huffman take about 12 ms a frame in the
+     JavaScript lane (list steps through the trampoline). `audio_stream_callback` itself reads
      `buffer[SAMPLE_RATE]`, one float past its array, for the last
      column of its wave in every frame (AddressSanitizer agrees): its
      port is a refusal (`UNDEFINED_NATIVE`, docs/AUDIO.md). `audio_spectrum_visualizer` is listed ready but loads
