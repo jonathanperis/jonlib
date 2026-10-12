@@ -7,21 +7,12 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 201 ported, 5 ready, 6 waiting.
+Totals: 212 examples; 201 ported, 9 ready, 2 waiting.
 
 ## APIs that unblock the most examples
 
 | API | Examples waiting on it |
 |---|---|
-| `LoadMusicStream` | 4 |
-| `PlayMusicStream` | 4 |
-| `UnloadMusicStream` | 4 |
-| `UpdateMusicStream` | 4 |
-| `GetMusicTimeLength` | 3 |
-| `GetMusicTimePlayed` | 3 |
-| `PauseMusicStream` | 3 |
-| `ResumeMusicStream` | 3 |
-| `StopMusicStream` | 3 |
 | `GuiProgressBar` | 2 |
 | `GetApplicationDirectory` | 1 |
 | `GetFileModTime` | 1 |
@@ -30,9 +21,6 @@ Totals: 212 examples; 201 ported, 5 ready, 6 waiting.
 | `GuiListViewEx` | 1 |
 | `LoadDirectoryFiles` | 1 |
 | `LoadDirectoryFilesEx` | 1 |
-| `SetMusicPan` | 1 |
-| `SetMusicPitch` | 1 |
-| `SetMusicVolume` | 1 |
 | `UnloadDirectoryFiles` | 1 |
 
 ## Examples
@@ -241,12 +229,12 @@ Totals: 212 examples; 201 ported, 5 ready, 6 waiting.
 | `shaders_game_of_life` | shaders | ported |  |
 | `shaders_rlgl_compute` | shaders | ported |  |
 | `shaders_cel_shading` | shaders | ported |  |
-| `audio_module_playing` | audio | waiting | `GetMusicTimeLength`, `GetMusicTimePlayed`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `SetMusicPitch`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
-| `audio_music_stream` | audio | waiting | `GetMusicTimeLength`, `GetMusicTimePlayed`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `SetMusicPan`, `SetMusicVolume`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
+| `audio_module_playing` | audio | ready |  |
+| `audio_music_stream` | audio | ready |  |
 | `audio_raw_stream` | audio | ported |  |
 | `audio_sound_loading` | audio | ready |  |
-| `audio_mixed_processor` | audio | waiting | `LoadMusicStream`, `PlayMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
-| `audio_stream_effects` | audio | waiting | `GetMusicTimeLength`, `GetMusicTimePlayed`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
+| `audio_mixed_processor` | audio | ready |  |
+| `audio_stream_effects` | audio | ready |  |
 | `audio_sound_multi` | audio | ported |  |
 | `audio_sound_positioning` | audio | ported |  |
 | `audio_spectrum_visualizer` | audio | ready |  |

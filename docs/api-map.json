@@ -6169,6 +6169,182 @@
     "api_id": "raylib:function:UnloadWaveSamples",
     "milestone": "audio-codecs"
   },
+  "LoadMusicStream": {
+    "jonlib": "Music.load",
+    "status": "profile-covered",
+    "scope": "A WAV file's music: a stream of the file's rate and channels (16-bit samples for 16- and 24-bit files, floats for 32-bit ones), the frame count and looping on; the stream has no buffer on an unready device and the music is still loaded; fields, stream and decoder position compared with raylib.",
+    "gaps": [
+      "WAV files only: OGG, MP3, QOA, FLAC, XM and MOD music are not ported",
+      "Fail for sample sizes other than 16, 24 and 32 bits (raylib streams what its shared buffer holds) and for what Wave.decode refuses",
+      "A typed error instead of a zero Music for a file that is not loaded"
+    ],
+    "api_id": "raylib:function:LoadMusicStream",
+    "milestone": "audio-stream"
+  },
+  "LoadMusicStreamFromMemory": {
+    "jonlib": "Music.load_from_memory",
+    "status": "profile-covered",
+    "scope": "As Music.load, from the file's bytes and the \".wav\" token.",
+    "gaps": [
+      "WAV files only: OGG, MP3, QOA, FLAC, XM and MOD music are not ported",
+      "\".WAV\" is taken too (raylib compares the token with \".wav\" only)",
+      "Fail for sample sizes other than 16, 24 and 32 bits and for what Wave.decode refuses"
+    ],
+    "api_id": "raylib:function:LoadMusicStreamFromMemory",
+    "milestone": "audio-stream"
+  },
+  "IsMusicValid": {
+    "jonlib": "Music.is_valid",
+    "status": "profile-covered",
+    "scope": "A decoder, frames, and a rate, sample size and channels that are not 0.",
+    "gaps": [
+      "The decoder is a value (MusicNone is NULL), not a pointer"
+    ],
+    "api_id": "raylib:function:IsMusicValid",
+    "milestone": "audio-stream"
+  },
+  "UnloadMusicStream": {
+    "jonlib": "Music.unload",
+    "status": "profile-covered",
+    "scope": "The stream's buffer is untracked and its halves freed; the decoder goes with the Music value.",
+    "gaps": [
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:UnloadMusicStream",
+    "milestone": "audio-stream"
+  },
+  "PlayMusicStream": {
+    "jonlib": "Music.play",
+    "status": "profile-covered",
+    "scope": "The stream plays from its first frame, both halves processed and no frame given.",
+    "gaps": [
+      "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:PlayMusicStream",
+    "milestone": "audio-stream"
+  },
+  "IsMusicStreamPlaying": {
+    "jonlib": "Music.is_playing",
+    "status": "profile-covered",
+    "scope": "The stream is playing and not paused.",
+    "gaps": [
+      "False on an unready device and for an unloaded buffer"
+    ],
+    "api_id": "raylib:function:IsMusicStreamPlaying",
+    "milestone": "audio-stream"
+  },
+  "UpdateMusicStream": {
+    "jonlib": "Music.update",
+    "status": "profile-covered",
+    "scope": "Each processed half of a playing music's stream takes the decoder's next frames, the first half then the second: a whole half while the music loops (the file again from its first frame) or has as many left, else what is left; with none left and both halves processed the music stops, its decoder at the first frame; halves, counts and decoder position compared with raylib.",
+    "gaps": [
+      "The decoder's state is in the Music value, which the function gives back: no shared ctxData pointer",
+      "WAV files only: OGG, MP3, QOA, FLAC, XM and MOD music are not ported",
+      "Nothing for a music without frames (raylib reads it for ever when it loops)",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:UpdateMusicStream",
+    "milestone": "audio-stream"
+  },
+  "StopMusicStream": {
+    "jonlib": "Music.stop",
+    "status": "profile-covered",
+    "scope": "The stream stops and the decoder goes back to its first frame, playing or not.",
+    "gaps": [
+      "The decoder's state is in the Music value, which the function gives back: no shared ctxData pointer",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:StopMusicStream",
+    "milestone": "audio-stream"
+  },
+  "PauseMusicStream": {
+    "jonlib": "Music.pause",
+    "status": "profile-covered",
+    "scope": "The stream is paused.",
+    "gaps": [
+      "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:PauseMusicStream",
+    "milestone": "audio-stream"
+  },
+  "ResumeMusicStream": {
+    "jonlib": "Music.resume",
+    "status": "profile-covered",
+    "scope": "The stream is not paused.",
+    "gaps": [
+      "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:ResumeMusicStream",
+    "milestone": "audio-stream"
+  },
+  "SeekMusicStream": {
+    "jonlib": "Music.seek",
+    "status": "profile-covered",
+    "scope": "The decoder goes to frame (unsigned int)(position*sampleRate), at most the file's last; the stream's framesProcessed is that frame, not clamped, and both halves are processed; compared with raylib.",
+    "gaps": [
+      "The decoder's state is in the Music value, which the function gives back: no shared ctxData pointer",
+      "Nothing for a position whose frame is not an unsigned int, a stream without a tracked buffer (raylib writes through the pointer) and an unready device"
+    ],
+    "api_id": "raylib:function:SeekMusicStream",
+    "milestone": "audio-stream"
+  },
+  "SetMusicVolume": {
+    "jonlib": "Music.set_volume",
+    "status": "profile-covered",
+    "scope": "The stream's volume: any float.",
+    "gaps": [
+      "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:SetMusicVolume",
+    "milestone": "audio-stream"
+  },
+  "SetMusicPitch": {
+    "jonlib": "Music.set_pitch",
+    "status": "profile-covered",
+    "scope": "The stream's pitch and its converter's output rate against the file's rate.",
+    "gaps": [
+      "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:SetMusicPitch",
+    "milestone": "audio-stream"
+  },
+  "SetMusicPan": {
+    "jonlib": "Music.set_pan",
+    "status": "profile-covered",
+    "scope": "The stream's pan, clamped to -1..1.",
+    "gaps": [
+      "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+    ],
+    "api_id": "raylib:function:SetMusicPan",
+    "milestone": "audio-stream"
+  },
+  "GetMusicTimeLength": {
+    "jonlib": "Music.time_length",
+    "status": "profile-covered",
+    "scope": "(float)frameCount/sampleRate; the bits compared with raylib.",
+    "gaps": [
+      "No time in seconds beyond what a float holds, as in raylib"
+    ],
+    "api_id": "raylib:function:GetMusicTimeLength",
+    "milestone": "audio-stream"
+  },
+  "GetMusicTimePlayed": {
+    "jonlib": "Music.time_played",
+    "status": "profile-covered",
+    "scope": "The frames given to the stream, less those still in its halves, plus those of the half being played that went to the mix, modulo the music's frames, in seconds; 0 without a buffer; the bits compared with raylib.",
+    "gaps": [
+      "None for a music without frames (raylib divides by them), counts that do not fit an int, an untracked buffer and an unready device",
+      "No device thread: the time moves when the program asks for callbacks"
+    ],
+    "api_id": "raylib:function:GetMusicTimePlayed",
+    "milestone": "audio-stream"
+  },
   "LoadAudioStream": {
     "jonlib": "AudioStream.load",
     "status": "profile-covered",

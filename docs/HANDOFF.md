@@ -69,10 +69,10 @@ at the branch's head.
 `integrate/models-lgpl`, `feature/scoped-ci`, `feature/examples-batch-4` and the stack's branches are merged into `main` and deleted
 (`feature/examples-batch-5` was re-landed as pieces and deleted).
 
-Coverage (`python3 tools/api_plan.py check`): raylib.h 566/600 partial
+Coverage (`python3 tools/api_plan.py check`): raylib.h 582/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **201/212 ported** with the stack, 5 ready, 6 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **201/212 ported** with the stack, 9 ready (five of them wait for a decoder, which the plan does not count: `country.mp3`, `mini1111.xm`, `target.ogg`), 2 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -429,9 +429,18 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `src/mixer.bend` (a buffer's runs are its frames split by 512). The
      examples that use them, `audio_stream_effects` and
      `audio_mixed_processor`, also play `country.mp3`: they wait for the
-     music stream and the MP3 decoder. Templates (`~answer`, `~process`)
-     must be closed terms: everything a callback needs goes in the
-     program state it takes and returns. `audio_stream_callback` itself reads
+     MP3 decoder. Templates (`~answer`, `~process`) must be closed terms:
+     everything a callback needs goes in the program state it takes and
+     returns. **Music streams are in over WAV** (`Music.*`,
+     docs/AUDIO.md): the stream, raudio's `UpdateMusicStream` over the
+     two halves with `framesProcessed`, stop, seek and the time played;
+     the decoder is a `Music.Context` constructor (`MusicWav{samples,
+     at}`: the whole file decoded at load, by `Wav.decode` for 16/24-bit
+     files and `Wav.decode.wide` for 32-bit ones). A new format is a new
+     constructor with its read (`Music.read`), rewind and seek, and a
+     `case` in `Music.load_from_memory`; QOA is the next and smallest
+     (`qoaplay.c` decodes frame by frame, loops by itself and seeks to
+     QOA frames of 5120 samples). `audio_stream_callback` itself reads
      `buffer[SAMPLE_RATE]`, one float past its array, for the last
      column of its wave in every frame (AddressSanitizer agrees): its
      port is a refusal (`UNDEFINED_NATIVE`, docs/AUDIO.md). `audio_spectrum_visualizer` is listed ready but loads

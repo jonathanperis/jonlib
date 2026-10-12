@@ -59,7 +59,7 @@ class SoundModelTests(unittest.TestCase):
         self.assertEqual([(b['id'], b['block'], b['frames']) for b in model.buffers], [(1, 1, 8), (2, 0, 0), (3, 1, 8)])
         self.assertEqual((list(model.blocks), model.undefined), ([1], False))
         head = ',48000,48000,0,1,0,0,0,0,0,0,0,0,0,2166136261,s,p'
-        self.assertEqual(model.state(), 'R1 M%d D0 Q S1,8,48000,32,2,1,0,1,1 S0,0,0,0,0,0,0,0,0 S2,0,48000,32,2,0,0,1,1 S3,8,48000,32,2,1,0,1,1 B1,1,8,%d,%d,0,0,0,%d%s B2,0,0,%d,%d,0,0,0,-%s B3,1,8,%d,%d,0,0,0,%d%s'
+        self.assertEqual(model.state(), 'R1 M%d D0 Q S1,8,48000,32,2,1,0,1,1 S0,0,0,0,0,0,0,0,0 S2,0,48000,32,2,0,0,1,1 S3,8,48000,32,2,1,0,1,1 U- U- U- U- B1,1,8,%d,%d,0,0,0,%d%s B2,0,0,%d,%d,0,0,0,-%s B3,1,8,%d,%d,0,0,0,%d%s'
                          % (ONE, ONE, ONE, sp.fnv(fake(8)), head, ONE, ONE, head, ONE, ONE, sp.fnv(fake(8)), head))
 
     def test_stop_leaves_a_paused_buffer(self):
@@ -338,6 +338,56 @@ class ProcessorTests(unittest.TestCase):
             self.assertEqual((model.undefined, model.attached), (True, []), steps)
 
 
+class MusicTests(unittest.TestCase):
+    def test_the_files_and_what_their_streams_hold(self):
+        files = sp.music_files()
+        self.assertEqual({name: entry[1:5] for name, entry in files.items()},
+                         dict(m16=(22050, 16, 2, 700), m24=(44100, 16, 1, 300), mf32=(48000, 32, 1, 1000), mi32=(8000, 32, 2, 200), m8=(11025, None, 1, 600)))
+        self.assertEqual(files['m16'][0][:4] + files['m16'][0][8:12] + files['m16'][0][36:40], b'RIFFWAVEdata')
+        self.assertEqual(struct.unpack('<HHIIHH', files['m24'][0][20:36]), (1, 1, 44100, 132300, 3, 24))
+        self.assertEqual(files['m24'][5][0], ((-8000 * 1000) & 0xFFFFFF) >> 8)                  # the two high bytes of a 24-bit sample
+        self.assertEqual(files['mi32'][5][0], sp.bits(-1000000 * 2000 / 2147483648.0))           # (float)(x/2147483648.0)
+        self.assertEqual(files['mf32'][5][:2], [sp.bits(-30 / 32), sp.bits(-1 / 32)])
+
+    def test_a_music_is_a_looping_stream_fed_by_its_file(self):
+        model, tags = run(('init',), ('default', 480), ('music', 0, 'm16'), ('play', 0), ('musicupdate', 0))
+        b, samples = model.buffers[0], sp.music_files()['m16'][5]
+        self.assertEqual((tags[2], model.sounds[0], b['frames'], model.undefined), ('-', (1, 0, 22050, 16, 2), 960, False))
+        self.assertEqual(model.blocks[1], samples[:960] + samples[960:1400] + samples[:520])     # both halves: 700 frames, then the file again
+        self.assertEqual((b['stream'], model.musics[0]['at']), (dict(size=16, channels=2, first=False, second=False, called=False, done=960), 260))
+        self.assertEqual(model.music_text(0), 'U1,700,1,260,%d,%d' % (sp.bits(sp.f32(700 / 22050)), sp.bits(0.0)))
+        model.mix(480)                                        # 220 frames of the 22050 Hz stream went to the mix: 960 given, 960 still in the halves
+        self.assertEqual((model.buffers[0]['cursor'], model.music_text(0).rsplit(',', 1)[1]), (221, str(sp.bits(sp.f32(221 / 22050)))))
+        model.step(('musicstop', 0))
+        self.assertEqual((model.buffers[0]['playing'], model.musics[0]['at'], model.buffers[0]['stream']['done']), (False, 0, 0))
+
+    def test_a_music_that_does_not_loop_gets_what_is_left_and_stops(self):
+        model, _ = run(('init',), ('default', 480), ('music', 0, 'm16'), ('looping', 0, 0), ('play', 0), ('musicupdate', 0))
+        b = model.buffers[0]
+        self.assertEqual((b['stream']['done'], model.musics[0]['at'], model.blocks[1][960 + 438:960 + 444]), (700, 700, sp.music_files()['m16'][5][1398:] + [0] * 4))
+        for _ in range(12):
+            model.mix(480)
+            model.step(('musicupdate', 0))
+        self.assertEqual((model.buffers[0]['playing'], model.musics[0]['at'], model.buffers[0]['stream']), (False, 0, dict(size=16, channels=2, first=True, second=True, called=False, done=0)))
+
+    def test_a_seek_moves_the_decoder_and_the_frames_given(self):
+        model, _ = run(('init',), ('default', 480), ('music', 0, 'mf32'), ('play', 0), ('musicupdate', 0), ('seek', 0, sp.bits(0.0125)))
+        self.assertEqual((model.buffers[0]['stream'], model.musics[0]['at']), (dict(size=32, channels=1, first=True, second=True, called=False, done=600), 600))
+        model.step(('seek', 0, sp.bits(5.0)))                 # past the end: the decoder stops at the last frame, the count does not
+        self.assertEqual((model.buffers[0]['stream']['done'], model.musics[0]['at'], model.undefined), (240000, 1000, False))
+        for steps in ((('seek', 0, sp.bits(-1.0)),), (('seek', 0, sp.NAN),), (('musicunload', 0), ('seek', 0, sp.bits(0.5)))):
+            model, _ = run(('init',), ('default', 480), ('music', 0, 'mf32'), *steps)
+            self.assertTrue(model.undefined, steps)
+
+    def test_what_is_loaded_and_what_is_not(self):
+        model, tags = run(('music', 0, 'm16'), ('play', 0), ('musicupdate', 0))         # no device: a music without a buffer
+        self.assertEqual((tags[0], model.sounds[0], model.music_text(0), model.undefined), ('-', (0, 0, 22050, 16, 2), 'U1,700,1,0,%d,0' % sp.bits(sp.f32(700 / 22050)), False))
+        model, tags = run(('init',), ('music', 0, 'missing'), ('music', 1, 'm8'))
+        self.assertEqual((tags[1:], model.musics[:2], model.sounds[:2], model.undefined), (['file', 'unsupported'], [None, None], [sp.ZERO, sp.ZERO], True))
+        model, _ = run(('music', 0, 'm16'), ('musicstop', 0))                           # raylib locks the device's mutex
+        self.assertTrue(model.undefined)
+
+
 class SoundCasesTests(unittest.TestCase):
     def test_every_case_is_named_for_whether_raylib_runs_it(self):
         items = sp.cases()
@@ -345,7 +395,7 @@ class SoundCasesTests(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
         rows = [sp.expected(item, catalog()) for item in items]
         self.assertEqual([item['id'] for item, row in zip(items, rows) if item['id'].startswith('refused-') == row[2]], [])
-        self.assertEqual((len(items), sum(row[2] for row in rows), sum(len(item['steps']) for item in items)), (111, 74, 1090))
+        self.assertEqual((len(items), sum(row[2] for row in rows), sum(len(item['steps']) for item in items)), (122, 81, 1223))
         for tagged, plain, _ in rows:
             self.assertEqual(';'.join(part.split(' ', 1)[1] for part in tagged.split(';')), plain)
         used = {step[2] for item in items for step in item['steps'] if step[0] == 'load'}

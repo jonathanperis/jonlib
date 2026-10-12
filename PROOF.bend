@@ -1502,6 +1502,51 @@ def Laws.audio_mix_unready_refused():
 def Laws.audio_mix_no_frames_refused():
   {==}
 
+def Laws.music_none_invalid():
+  {==}
+
+def Laws.music_valid_without_buffer():
+  {==}
+
+def Laws.music_stop_rewinds():
+  {==}
+
+def Laws.music_seek_within():
+  {==}
+
+def Laws.music_seek_stops_at_the_end():
+  {==}
+
+def Laws.music_read_goes_round():
+  {==}
+
+def Laws.music_read_within():
+  {==}
+
+def Laws.music_played_negative_wraps():
+  {==}
+
+def Laws.music_played_whole_turns():
+  {==}
+
+def Laws.music_played_negative_whole_turn():
+  {==}
+
+def Laws.music_buffered_no_more_than_the_music():
+  {==}
+
+def Laws.music_buffered_looping():
+  {==}
+
+def Laws.music_buffered_one_half():
+  {==}
+
+def Laws.music_float_bits_as_they_are():
+  {==}
+
+def Laws.music_float_bits_big_endian():
+  {==}
+
 def Laws.audio_clock_periods_owed():
   {==}
 

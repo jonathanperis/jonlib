@@ -526,6 +526,26 @@ def samples(n: Nat, +code: U32, +adjust: Bool, +width: U32, +data: +List<U32>, +
       +value = sample(code, adjust, width, List.take(&2, U32, data, U32.to_nat(width)))
       samples(k, code, adjust, width, List.drop(&2, U32, data, U32.to_nat(width)), Con{(value .&. 65535 : U32), acc}, bad || (value > 65535 : U32))
 
+# drwav_read_pcm_frames_f32 of 32-bit samples, as raylib's music reads a
+# 32-bit file: 10/11 a signed int (little/big-endian) as
+# (float)(x/2147483648.0), 12/13 an IEEE float's bits as they are.
+def wide.int(+word: U32) -> U32:
+  +negative = (word >= 2147483648 : U32)
+  +magnitude = (U32.to_f32(Bool.pick(U32, negative, (0 - word : U32), word)) / 2147483648.0 : F32)
+  F32.bits(Bool.pick(F32, negative, F32.neg(magnitude), magnitude))
+
+def wide.sample(code: U32, +data: +List<U32>) -> U32:
+  match code:
+    case 10: wide.int(u32(data, 0))
+    case 11: wide.int(b32(data, 0))
+    case 12: u32(data, 0)
+    case _: b32(data, 0)
+
+def wide.samples(n: Nat, +code: U32, +data: +List<U32>, +acc: +List<U32>) -> Samples:
+  match n:
+    case 0n: Samples{List.reverse(&2, U32, acc), False{}}
+    case 1n+k: wide.samples(k, code, List.drop(&2, U32, data, 4n), Con{wide.sample(code, List.take(&2, U32, data, 4n)), acc})
+
 # -----------------------------------------------------------------------------
 # After the walk: validation, the data position and size, the frame count,
 # then raylib's read of (unsigned int)totalPCMFrameCount frames.
@@ -539,17 +559,18 @@ def adpcm.decoded(+rate: U32, +channels: U32, +frames: U32, run: P.Run) -> Outco
   match run:
     case P.Run{samples, got, bad}: Bool.pick(Outcome, bad || (got < frames : U32), Invalid{C.BadStream{}}, Decoded{rate, channels, frames, samples})
 
-def pcm.read(ok: Bool, +rate: U32, +channels: U32, +frames: U32, +code: U32, +adjust: Bool, +width: U32, +data: +List<U32>) -> Outcome:
-  match ok:
-    case False{}: Invalid{C.BadStream{}}
-    case True{}: decoded(rate, channels, frames, samples(U32.to_nat((frames * channels : U32)), code, adjust, width, data, Nil{}, False{}))
+def pcm.read(ok: Bool, wide: Bool, +rate: U32, +channels: U32, +frames: U32, +code: U32, +adjust: Bool, +width: U32, +data: +List<U32>) -> Outcome:
+  match ok wide:
+    case False{} _: Invalid{C.BadStream{}}
+    case True{} False{}: decoded(rate, channels, frames, samples(U32.to_nat((frames * channels : U32)), code, adjust, width, data, Nil{}, False{}))
+    case True{} True{}: decoded(rate, channels, frames, wide.samples(U32.to_nat((frames * channels : U32)), code, data, Nil{}))
 
 # Uncompressed reads: bytes come from the data chunk (at most its size) in
 # whole frames; formats other than PCM/float/a-law/mu-law, samples that do
 # not divide the frame and (outside the 16-bit PCM fast path) frames over
 # 4096 bytes read nothing. Big-endian containers byte-swap 1/2/3/4/8-byte
 # samples; other widths fail dr_wav's assertion.
-def pcm(+bytes: +List<U32>, +len: U32, +cont: U32, +flags: U32, +kind: U32, +bits: U32, +channels: U32, +rate: U32, +frame: U32, +usable: W, +p: U32, +frames: U32) -> Outcome:
+def pcm(+bytes: +List<U32>, +len: U32, +cont: U32, +flags: U32, +kind: U32, +bits: U32, +channels: U32, +rate: U32, +frame: U32, +usable: W, +p: U32, +frames: U32, +wide: Bool) -> Outcome:
   +be = U32.is_eq(cont, 1) || (U32.is_eq(cont, 4) && U32.is_eq((flags .&. 1 : U32), 0))
   +adjust = U32.is_eq(cont, 4) && U32.is_eq(bits, 8) && U32.is_eq((flags .&. 2 : U32), 0)
   +fast = U32.is_eq(kind, 1) && U32.is_eq(bits, 16)
@@ -562,7 +583,11 @@ def pcm(+bytes: +List<U32>, +len: U32, +cont: U32, +flags: U32, +kind: U32, +bit
   +code = Bool.pick(U32, U32.is_eq(kind, 6), 1, Bool.pick(U32, U32.is_eq(kind, 7), 2,
     Bool.pick(U32, U32.is_eq(kind, 3), Bool.pick(U32, U32.is_eq(width, 4), Bool.pick(U32, be, 4, 3), Bool.pick(U32, U32.is_eq(width, 8), Bool.pick(U32, be, 6, 5), 0)),
     Bool.pick(U32, U32.is_eq(width, 1), 7, Bool.pick(U32, (width > 8 : U32), 0, Bool.pick(U32, be, 9, 8))))))
-  pcm.read(readable && swappable && (frames <= (present / frame) : U32), rate, channels, frames, code, adjust, width, List.drop(&2, U32, bytes, U32.to_nat(p)))
+  +floats = (U32.is_eq(kind, 1) && (frame <= 4096 : U32)) || U32.is_eq(kind, 3)
+  +whole = U32.is_eq(width, 4) && U32.is_eq((frame % channels : U32), 0) && U32.is_eq(bits, 32)
+  +pattern = Bool.pick(U32, U32.is_eq(kind, 3), Bool.pick(U32, be, 13, 12), Bool.pick(U32, be, 11, 10))
+  pcm.read(either(wide, floats && whole, readable && swappable) && (frames <= (present / frame) : U32), wide, rate, channels, frames, Bool.pick(U32, wide, pattern, code), adjust, width,
+    List.drop(&2, U32, bytes, U32.to_nat(p)))
 
 # Frames: the fact (Wave64, RF64) or COMM count when nonzero, else the data
 # size over the frame size, or for ADPCM from the block count (a trailing
@@ -576,15 +601,19 @@ def total(+fact: W, +aframes: U32, +usable: W, +frame: U32, +kind: U32, +align: 
     Bool.pick(W, U32.is_eq(kind, 2), ms, Bool.pick(W, U32.is_eq(kind, 17), ima, W.div(usable, nonzero(frame))))))
 
 # 1 failed init, 2 undefined or endless, 3 no frames, 4 ADPCM, 5 uncompressed.
-def outcome(code: U32, +bytes: +List<U32>, +len: U32, +cont: U32, +flags: U32, +kind: U32, +bits: U32, +channels: U32, +rate: U32, +align: U32, +frame: U32, +usable: W, +p: U32, +frames: U32) -> Outcome:
+# `wide`: the samples as 32-bit floats (the uncompressed 32-bit formats only).
+def outcome(code: U32, +bytes: +List<U32>, +len: U32, +cont: U32, +flags: U32, +kind: U32, +bits: U32, +channels: U32, +rate: U32, +align: U32, +frame: U32, +usable: W, +p: U32, +frames: U32,
+    +wide: Bool) -> Outcome:
   match code:
     case 1: Invalid{C.BadHeader{}}
     case 2: Invalid{C.BadStream{}}
     case 3: Decoded{rate, channels, 0, []}
-    case 4: adpcm.decoded(rate, channels, frames, P.decode(U32.is_eq(kind, 17), U32.is_eq(channels, 2), List.drop(&2, U32, bytes, U32.to_nat(p)), (len - p : U32), align, frames))
-    case _: pcm(bytes, len, cont, flags, kind, bits, channels, rate, frame, usable, p, frames)
+    case 4:
+      Bool.pick(Outcome, wide, Unsupported{},
+        adpcm.decoded(rate, channels, frames, P.decode(U32.is_eq(kind, 17), U32.is_eq(channels, 2), List.drop(&2, U32, bytes, U32.to_nat(p)), (len - p : U32), align, frames)))
+    case _: pcm(bytes, len, cont, flags, kind, bits, channels, rate, frame, usable, p, frames, wide)
 
-def finished(+bytes: +List<U32>, +len: U32, +cont: U32, +scan: Scan) -> Outcome:
+def finished(+bytes: +List<U32>, +len: U32, +cont: U32, +scan: Scan, +wide: Bool) -> Outcome:
   Scan{_, _, has_fmt, Fmt{ftag, +channels, +rate, +align, +bits, +sub}, has_data, +dpos, +declared, +fact, +aframes, +flags, +state} = scan
   +kind = Bool.pick(U32, U32.is_eq(ftag, 65534), sub, ftag)
   +p = W.lo(dpos)
@@ -600,7 +629,7 @@ def finished(+bytes: +List<U32>, +len: U32, +cont: U32, +scan: Scan) -> Outcome:
     || U32.is_eq(bits, 0) || (bits > 64 : U32) || U32.is_eq(align, 0) || Bool.not(placed) || U32.is_eq(frame, 0) || (adpcm && (channels > 2 : U32))
   +code = Bool.pick(U32, U32.is_eq(state, 2), 1, Bool.pick(U32, U32.is_ne(state, 1), 2, Bool.pick(U32, header, 1,
     Bool.pick(U32, U32.is_eq(frames, 0), 3, Bool.pick(U32, adpcm, 4, 5)))))
-  outcome(code, bytes, len, cont, flags, kind, bits, channels, rate, align, frame, usable, p, frames)
+  outcome(code, bytes, len, cont, flags, kind, bits, channels, rate, align, frame, usable, p, frames, wide)
 
 # LoadWaveFromMemory(".wav"): drwav_init_memory on every container dr_wav
 # detects, then drwav_read_pcm_frames_s16 of (unsigned int)totalPCMFrameCount
@@ -611,4 +640,26 @@ def decode(+bytes: +List<U32>) -> Outcome:
   +len = U32.from_nat(C.byte_count(bytes, 0n))
   +cont = container(bytes, len)
   +scan = begin(cont, bytes, len)
-  finished(bytes, len, cont, walk(U32.to_nat((len + 2 : U32)), U32.is_eq(Scan.state(scan), 0), bytes, len, cont, tag(bytes, 8, 65, 73, 70, 67), scan))
+  finished(bytes, len, cont, walk(U32.to_nat((len + 2 : U32)), U32.is_eq(Scan.state(scan), 0), bytes, len, cont, tag(bytes, 8, 65, 73, 70, 67), scan), False{})
+
+# The same file read with drwav_read_pcm_frames_f32, as raylib's music reads
+# one whose drwav.bitsPerSample is 32: a 32-bit PCM sample x is
+# (float)(x/2147483648.0) and an IEEE float its own bits (byte-swapped from a
+# big-endian container). Unsupported for the other formats.
+def decode.wide(+bytes: +List<U32>) -> Outcome:
+  +len = U32.from_nat(C.byte_count(bytes, 0n))
+  +cont = container(bytes, len)
+  +scan = begin(cont, bytes, len)
+  finished(bytes, len, cont, walk(U32.to_nat((len + 2 : U32)), U32.is_eq(Scan.state(scan), 0), bytes, len, cont, tag(bytes, 8, 65, 73, 70, 67), scan), True{})
+
+def bits.of(+scan: Scan) -> U32:
+  Scan{_, _, _, Fmt{_, _, _, _, bits, _}, _, _, _, _, _, _, _} = scan
+  bits
+
+# drwav.bitsPerSample after the walk (raylib's music takes its sample size
+# from it); it means nothing for a file `decode` refuses.
+def bits(+bytes: +List<U32>) -> U32:
+  +len = U32.from_nat(C.byte_count(bytes, 0n))
+  +cont = container(bytes, len)
+  +scan = begin(cont, bytes, len)
+  bits.of(walk(U32.to_nat((len + 2 : U32)), U32.is_eq(Scan.state(scan), 0), bytes, len, cont, tag(bytes, 8, 65, 73, 70, 67), scan))
