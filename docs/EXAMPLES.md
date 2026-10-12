@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 202 ported, 8 ready, 2 waiting.
+Totals: 212 examples; 203 ported, 7 ready, 2 waiting.
 
 ## APIs that unblock the most examples
 
@@ -234,7 +234,7 @@ Totals: 212 examples; 202 ported, 8 ready, 2 waiting.
 | `audio_raw_stream` | audio | ported |  |
 | `audio_sound_loading` | audio | ready |  |
 | `audio_mixed_processor` | audio | ready |  |
-| `audio_stream_effects` | audio | ready |  |
+| `audio_stream_effects` | audio | ported |  |
 | `audio_sound_multi` | audio | ported |  |
 | `audio_sound_positioning` | audio | ported |  |
 | `audio_spectrum_visualizer` | audio | ready |  |
