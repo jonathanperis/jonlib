@@ -1771,3 +1771,12 @@ def Laws.window_monitor_count_one(core):
 
 def Laws.window_no_dropped_files(core):
   {==}
+
+def Laws.vr_stereo_mode_begins_unchanged(frame, config):
+  {==}
+
+def Laws.vr_stereo_mode_ends_unchanged(frame):
+  {==}
+
+def Laws.vr_unload_stereo_config(config):
+  {==}

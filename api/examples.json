@@ -843,7 +843,7 @@
   {
    "name": "core_vr_simulator",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -881,12 +881,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "BeginVrStereoMode",
-    "EndVrStereoMode",
-    "LoadVrStereoConfig",
-    "UnloadVrStereoConfig"
-   ]
+   "missing": []
   },
   {
    "name": "core_scissor_test",

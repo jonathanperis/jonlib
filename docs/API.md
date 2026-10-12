@@ -78,6 +78,9 @@ Path utilities and file data/text/code IO (`Files.*`) are documented in
 [FILES.md](FILES.md).
 Trace logging and the memory helpers (`Log.*`, `Memory.*`) are documented in
 [LOGGING.md](LOGGING.md).
+The VR simulator's stereo configuration (`Vr.load_stereo_config_for`) and
+stereo mode, which the software renderer does not draw, are documented in
+[VR.md](VR.md).
 Audio waves (`Wave.*`: WAV loading, crop, format conversion, samples and
 export) and the audio device and sounds (`AudioDevice.*`, `Sound.*`: the device
 state, sounds and aliases over shared samples, their playing state, volume,

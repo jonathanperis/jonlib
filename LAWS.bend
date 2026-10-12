@@ -2638,6 +2638,21 @@ law model_from_mesh_material:
   for mesh: J.Mesh
   {J.Model.from_mesh(mesh) == J.Model{M.Matrix.identity(), [mesh], [J.Material.load_default()], [0]} : J.Model}
 
+# VR stereo on the software renderer (docs/VR.md): the stereo mode leaves the
+# frame as it is, and a configuration holds nothing to unload.
+law vr_stereo_mode_begins_unchanged:
+  for frame: J.Frame
+  for config: J.VrStereoConfig
+  {J.Frame.begin_vr_stereo_mode(frame, config) == frame : J.Frame}
+
+law vr_stereo_mode_ends_unchanged:
+  for frame: J.Frame
+  {J.Frame.end_vr_stereo_mode(frame) == frame : J.Frame}
+
+law vr_unload_stereo_config:
+  for config: J.VrStereoConfig
+  {J.Vr.unload_stereo_config(config) == Unit{} : Unit}
+
 # Window state on the memory platform (docs/DRIVER.md#window-state): a Core is
 # a ready window that is never resized; SetWindowState and the toggles leave
 # it unchanged; one monitor; no dropped files; the flags SetConfigFlags sets
