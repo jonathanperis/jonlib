@@ -1871,6 +1871,42 @@ def Laws.stream_filled_half_unprocessed():
 def Laws.stream_play_marks_both():
   {==}
 
+def Laws.stream_callback_set():
+  {==}
+
+def Laws.stream_callback_removed():
+  {==}
+
+def Laws.stream_callback_kept_by_play():
+  {==}
+
+def Laws.stream_callback_not_for_a_sound():
+  {==}
+
+def Laws.stream_callback_answers_in_order():
+  {==}
+
+def Laws.stream_callback_zeros_after_the_answers():
+  {==}
+
+def Laws.stream_callback_frames_asked_for():
+  {==}
+
+def Laws.stream_callback_asked_last_first():
+  {==}
+
+def Laws.stream_callback_nothing_asked_of_the_halves():
+  {==}
+
+def Laws.stream_callback_answers_held():
+  {==}
+
+def Laws.stream_callback_answer_missing():
+  {==}
+
+def Laws.stream_callback_unready_asks_nothing():
+  {==}
+
 def Laws.stream_sound_always_processed():
   {==}
 

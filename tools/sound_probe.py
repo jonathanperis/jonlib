@@ -218,9 +218,20 @@ def feed(b, raw, want):
     return raw, made, fine
 
 
-def read(b, data, estimate):
+def answer_sample(size, c):
+    """Sample c of the probe's stream callback, as the stream holds it."""
+    if size == 8:
+        return (c * 37 + 11) & 255
+    if size == 16:
+        return ((c * 53) % 301 * 97 + 50986) & 65535
+    return bits(((c * 31) % 67 - 33) / 64)
+
+
+def read(b, data, estimate, callback=None):
     """ReadAudioBufferFramesInInternalFormat: (raw frames, whether fewer than asked)."""
     size, stream, cursor = b['frames'], b['stream'], b['cursor']
+    if b['playing'] and stream is not None and stream['called']:
+        return callback(estimate), False
     if stream is None or not b['playing']:
         half = max(size // 2 if size > 1 else size, 1)
         count = 0 if not b['playing'] or stream is not None or cursor // half > 1 else min(estimate, size - cursor)
@@ -245,7 +256,7 @@ def read(b, data, estimate):
     return [words[i * channels:(i + 1) * channels] for i in range(estimate)], False
 
 
-def turn(b, data, frames):
+def turn(b, data, frames, callback=None):
     """A playing buffer in a callback (raudio's runs of 512 frames over its converter): (frames made, fine)."""
     stream = b['stream']
     fine = not b['wide'] and b['frames'] > 0 and not (stream is not None and stream['channels'] > 1024)
@@ -261,7 +272,7 @@ def turn(b, data, frames):
                 b['residual'], out, ok = feed(b, b['residual'], want)
             else:
                 estimate = min(cap, max(int(f32(f32(f32(float(b['source'])) / f32(float(b['rate']))) * float(want))), 1))
-                raw, broke = read(b, data, estimate)
+                raw, broke = read(b, data, estimate, callback)
                 rest, out, ok = feed(b, raw, want)
                 b['residual'] = rest[:8]
             total, fine = total + len(out), fine and ok
@@ -438,6 +449,25 @@ def cases():
     add('stream-with-sounds', ('init',), ('default', 480), ('load', 0, 'tone'), ('stream', 1, 44100, 16, 1), ('play', 0), ('play', 1), ('feed', 1, 300, ramp16[:300]),
         ('pitch', 0, bits(0.5)), ('mix', 100), ('alias', 2, 0), ('play', 2), ('mix', 480), ('unload', 1), ('mix', 10), ('close',))
 
+    # Streams with a callback: the frames are the callback's, asked for by raudio's guess and again while the converter wants more.
+    add('stream-callback', ('init',), ('default', 480), ('stream', 0, 44100, 32, 1), ('play', 0), ('callback', 0, 1), ('mix', 480), ('mix', 480), ('mix', 1), ('mix', 600),
+        ('pause', 0), ('mix', 5), ('resume', 0), ('mix', 5), ('stop', 0), ('mix', 5), ('play', 0), ('mix', 100), ('close',))
+    add('stream-callback-formats', ('init',), ('default', 500), ('stream', 0, 22050, 16, 2), ('stream', 1, 8000, 8, 3), ('callback', 0, 1), ('callback', 1, 1), ('play', 0),
+        ('play', 1), ('mix', 480), ('pitch', 0, bits(1.5)), ('volume', 1, bits(0.5)), ('mix', 480), ('pitch', 1, bits(0.3)), ('mix', 700), ('close',))
+    add('stream-callback-off', ('init',), ('default', 480), ('stream', 0, 48000, 32, 2), ('play', 0), ('feed', 0, 480, tone32[:960]), ('mix', 100), ('callback', 0, 1),
+        ('mix', 200), ('feed', 0, 480, tone32[200:1160]), ('mix', 50), ('callback', 0, 0), ('mix', 480), ('mix', 480), ('close',))
+    add('stream-callback-with-sounds', ('init',), ('default', 480), ('load', 0, 'tone'), ('stream', 1, 44100, 16, 1), ('stream', 2, 96000, 32, 6), ('callback', 1, 1),
+        ('callback', 2, 1), ('play', 0), ('play', 1), ('play', 2), ('pitch', 0, bits(0.5)), ('mix', 300), ('unload', 1), ('mix', 300), ('stream', 1, 32000, 8, 1),
+        ('callback', 1, 1), ('play', 1), ('mix', 64), ('close',))
+    # The clock's periods with a callback: each period asks, answers and mixes; a closed device makes none.
+    add('clock-periods', ('init',), ('default', 480), ('load', 0, 'tone'), ('stream', 1, 44100, 32, 1), ('stream', 2, 22050, 16, 2), ('callback', 1, 1), ('play', 0), ('play', 1),
+        ('play', 2), ('feed', 2, 480, ramp16[:480] + ramp16[:480]), ('periods', 3), ('pitch', 1, bits(2.0)), ('periods', 2), ('periods', 0), ('callback', 1, 0), ('periods', 1),
+        ('close',), ('periods', 2))
+    add('stream-callback-zero', ('init',), ('callback', 0, 1), ('default', 480), ('stream', 0, 44100, 16, 1), ('callback', 0, 0), ('play', 0), ('mix', 10), ('close',))
+    add('refused-callback-unanswered', ('init',), ('default', 480), ('stream', 0, 44100, 32, 1), ('callback', 0, 1), ('plain', 4), ('play', 0), ('plain', 4))
+    add('refused-callback-sound', ('init',), ('load', 0, 'mono16'), ('callback', 0, 1))
+    add('refused-callback-unready', ('init',), ('default', 480), ('stream', 0, 44100, 16, 1), ('close',), ('callback', 0, 1))
+
     add('refused-mix-stream-wide', ('init',), ('default', 480), ('stream', 0, 48000, 16, 1025), ('play', 0), ('mix', 2))
     add('stream-play-tiny', ('init',), ('default', 480), ('stream', 0, 48000, 32, 3), ('play', 0), ('feed', 0, 3, floats([0.5, 1e-35, 0.25, 1e-38, 2e-38, -1e-38, 1e-41, 0.5, -1e-44])), ('mix', 5), ('close',))
     add('refused-stream-size', ('init',), ('stream', 0, 44100, 24, 1), ('stream', 1, 44100, 0, 1))
@@ -484,6 +514,7 @@ class Model:
     def __init__(self, catalog):
         self.catalog, self.ready, self.master, self.next, self.default = catalog, False, 0, 1, 0
         self.buffers, self.blocks, self.sounds, self.undefined = [], {}, [ZERO] * SLOTS, False
+        self.calls, self.asks = [0] * SLOTS, []
 
     def buffer(self, slot):
         number = self.sounds[slot][0]
@@ -527,7 +558,7 @@ class Model:
         if size not in (8, 16, 32) or self.default >= 1 << 31 or 2 * half * channels > 1 << 22:
             self.undefined = True
             return
-        number = self.track(2 * half, self.next, rate, dict(size=size, channels=channels, first=True, second=True))
+        number = self.track(2 * half, self.next, rate, dict(size=size, channels=channels, first=True, second=True, called=False))
         self.blocks[number] = [0] * (2 * half * channels)
         self.sounds[slot] = (number, 0, rate, size, channels)
 
@@ -554,11 +585,21 @@ class Model:
             self.blocks[found['block']][start:start + half * channels] = list(words) + [0] * ((half - frames) * channels)
             stream['first' if target == 0 else 'second'] = False
 
-    def mix(self, frames):
+    def answer(self, b, calls, asks, count):
+        """The probe's stream callback: `count` frames from the counter of the slot that holds the stream."""
+        slot = next(i for i, sound in enumerate(self.sounds) if sound[0] == b['id'])
+        size, channels = b['stream']['size'], b['stream']['channels']
+        asks.append((b['id'], count))
+        words = [answer_sample(size, calls[slot] + i) for i in range(count * channels)]
+        calls[slot] += count * channels
+        return [words[i * channels:(i + 1) * channels] for i in range(count)]
+
+    def mix(self, frames, answered=True):
         """One device callback: the samples, or None (and nothing changed) for what Jonlib refuses."""
+        self.asks = []
         if not self.ready or frames == 0 or frames > 1 << 20 or math.isnan(fl(self.master)):
             return None
-        out, fine, after = [0] * (2 * frames), True, []
+        out, fine, after, calls, asks = [0] * (2 * frames), True, [], list(self.calls), []
         for b in self.buffers:
             if not b['playing'] or b['paused']:
                 after.append(b)
@@ -572,7 +613,7 @@ class Model:
             levels = [fmul(fmul(fmul(volume, 0.5), side), fsub(3.0, fmul(side, side))) for side in (left, right)]
             fine &= not nans(*levels)
             b = copy.deepcopy(b)
-            made, ok = turn(b, data, frames)
+            made, ok = turn(b, data, frames, lambda count, b=b: self.answer(b, calls, asks, count))
             fine &= ok
             for j, frame in enumerate(made):
                 for channel in range(2):
@@ -585,9 +626,9 @@ class Model:
             x = fmul(fl(word), master) if self.master != bits(1.0) else fl(word)
             fine &= not math.isnan(x)
             sent.append(bits(-1.0 if x < -1 else 1.0 if x > 1 else x))
-        if not fine:
+        if not fine or (asks and not answered):
             return None
-        self.buffers = after
+        self.buffers, self.calls, self.asks = after, calls, asks
         return sent
 
     def loaded(self, slot, entry):
@@ -682,9 +723,24 @@ class Model:
                 if valid and held:
                     self.stop(found)
                     self.blocks[found['block']][:len(words)] = words
-        elif kind == 'mix':
-            self.mixed = self.mix(step[1])
+        elif kind in ('mix', 'plain'):
+            self.mixed = self.mix(step[1], answered=kind == 'mix')
             self.undefined |= self.mixed is None
+        elif kind == 'periods':
+            asks, self.mixed = [], []
+            for _ in range(step[1] if self.ready else 0):     # an unready device makes no callback
+                if self.mix(480) is None:
+                    self.undefined, self.mixed = True, None
+                    break
+                asks += self.asks
+            self.asks = asks
+        elif kind == 'callback':
+            found = self.used(step[1])
+            if found is not None:
+                if found['stream'] is None:
+                    self.undefined = True      # raylib calls it for the sound's frames; Jonlib gives a sound no callback
+                else:
+                    found['stream']['called'] = bool(step[2])
         elif kind == 'default':
             self.default = step[1]
         elif kind == 'stream':
@@ -708,7 +764,8 @@ class Model:
             samples = '-' if not b['block'] else str(fnv(self.blocks[b['block']])) if b['block'] in self.blocks else 'x'
             held = [b['t_int'], b['t_frac'], *map(bits, b['x0'] + b['x1'] + b['r1']), 0 if b['coef'] is None else bits(b['coef']), len(b['residual']),
                     fnv(w for frame in b['residual'] for w in frame)]
-            feed = 's' if b['stream'] is None else f'{b["stream"]["size"]}/{b["stream"]["channels"]}/{int(b["stream"]["first"])}{int(b["stream"]["second"])}'
+            feed = 's' if b['stream'] is None else (f'{b["stream"]["size"]}/{b["stream"]["channels"]}/{int(b["stream"]["first"])}{int(b["stream"]["second"])}'
+                                                    f'{int(b["stream"]["called"])}')
             parts.append(f'B{b["id"]},{b["block"]},{b["frames"]},{b["volume"]},{b["pitch"]},{b["pan"]},{int(b["playing"])},{int(b["paused"])},{samples},'
                          f'{b["source"]},{b["rate"]},{b["cursor"]},{",".join(map(str, held))},{feed}')
         return ' '.join(parts)
@@ -719,7 +776,11 @@ def expected(case, catalog):
     model, tagged, plain = Model(catalog), [], []
     for step in case['steps']:
         tag = model.step(step)
-        state = model.state() + (('' if step[0] != 'mix' else ' X-' if model.mixed is None else f' X{fnv(model.mixed)}'))
+        asks = ''.join(f' A{number}:{count}' for number, count in model.asks)
+        state = model.state() + (('' if step[0] not in ('mix', 'plain') else ' X-' if model.mixed is None else f' X{fnv(model.mixed)}{asks}'))
+        if step[0] == 'periods':
+            state += ' N0' if model.mixed is None else f' N1{asks}'
+
         tagged.append(f'E:{tag} {state}')
         plain.append(state)
     return ';'.join(tagged), ';'.join(plain), not model.undefined
@@ -738,6 +799,29 @@ static rAudioBuffer *created[MADE];
 static int owner[MADE], gone[MADE], freed[MADE + 1], made;
 static const char *files[] = { FILES };
 static unsigned mixed_hash;
+
+// The probe's stream callbacks, one a slot: the next samples of the slot's counter in the stream's format, and
+// what each call was asked for.
+#define ASKS 256
+static unsigned calls[SLOTS], asked_slot[ASKS], asked_frames[ASKS], asked;
+static void answer(int slot, void *out, unsigned frames)
+{
+    unsigned size = slots[slot].stream.sampleSize, count = frames*slots[slot].stream.channels;
+    if (asked == ASKS) exit(9);
+    asked_slot[asked] = slot; asked_frames[asked++] = frames;
+    for (unsigned i = 0; i < count; i++)
+    {
+        unsigned c = calls[slot]++;
+        if (size == 8) ((unsigned char *)out)[i] = (unsigned char)((c*37 + 11) & 255);
+        else if (size == 16) ((unsigned short *)out)[i] = (unsigned short)(((c*53)%301*97 + 50986) & 65535);
+        else ((float *)out)[i] = ((float)((int)((c*31)%67) - 33))/64.0f;
+    }
+}
+static void answer0(void *out, unsigned frames) { answer(0, out, frames); }
+static void answer1(void *out, unsigned frames) { answer(1, out, frames); }
+static void answer2(void *out, unsigned frames) { answer(2, out, frames); }
+static void answer3(void *out, unsigned frames) { answer(3, out, frames); }
+static AudioCallback answers[SLOTS] = { answer0, answer1, answer2, answer3 };
 
 static unsigned rd(FILE *f) { unsigned v = 0; if (fread(&v, 4, 1, f) != 1) exit(3); return v; }
 static unsigned word(float x) { unsigned v; memcpy(&v, &x, 4); return v; }
@@ -811,8 +895,8 @@ static void state(int first)
         printf(",%u", (linear->config.sampleRateIn != linear->config.sampleRateOut)? word(linear->lpf.pLPF1[0].a.f32) : 0);
         printf(",%u,%u", b->converterResidualCount, hashed(b, b->converterResidual, b->converterResidualCount));
         if (b->usage == AUDIO_BUFFER_USAGE_STATIC) printf(",s");
-        else printf(",%d/%u/%d%d", (b->converter.formatIn == ma_format_u8)? 8 : ((b->converter.formatIn == ma_format_s16)? 16 : 32), b->converter.channelsIn,
-                    (int)b->isSubBufferProcessed[0], (int)b->isSubBufferProcessed[1]);
+        else printf(",%d/%u/%d%d%d", (b->converter.formatIn == ma_format_u8)? 8 : ((b->converter.formatIn == ma_format_s16)? 16 : 32), b->converter.channelsIn,
+                    (int)b->isSubBufferProcessed[0], (int)b->isSubBufferProcessed[1], (int)(b->callback != NULL));
     }
 }
 
@@ -828,6 +912,7 @@ int main(void)
         memset(&AUDIO, 0, sizeof(AUDIO));
         memset(slots, 0, sizeof(slots)); memset(slot_id, 0, sizeof(slot_id));
         memset(owner, 0, sizeof(owner)); memset(gone, 0, sizeof(gone)); memset(freed, 0, sizeof(freed));
+        memset(calls, 0, sizeof(calls));
         made = 0;
         if (!quiet) printf("C ");
         for (unsigned i = 0; i < steps; i++)
@@ -884,6 +969,7 @@ int main(void)
                 case 12:
                 {
                     float *mixed = (float *)malloc((size_t)a*8 + 8);
+                    asked = 0;
                     if (ma_device_handle_backend_data_callback(&AUDIO.System.device, mixed, NULL, a) != MA_SUCCESS) return 7;
                     mixed_hash = fnv((const unsigned *)mixed, a*2);
                     free(mixed);
@@ -908,11 +994,27 @@ int main(void)
                     free(data);
                 } break;
                 case 15: SetAudioStreamBufferSizeDefault((int)a); break;
+                case 16: SetAudioStreamCallback(slots[a].stream, b? answers[a] : NULL); break;
+                case 17:
+                {
+                    float period[960];
+                    asked = 0;
+                    if (AUDIO.System.isReady) for (unsigned j = 0; j < a; j++) if (ma_device_handle_backend_data_callback(&AUDIO.System.device, period, NULL, 480) != MA_SUCCESS) return 7;
+                } break;
                 default: return 6;
             }
             free(payload);
             if (!quiet) state(i == 0);
-            if (!quiet && (code == 12)) printf(" X%u", mixed_hash);
+            if (!quiet && (code == 12))
+            {
+                printf(" X%u", mixed_hash);
+                for (unsigned j = 0; j < asked; j++) printf(" A%d:%u", slot_id[asked_slot[j]], asked_frames[j]);
+            }
+            if (!quiet && (code == 17))
+            {
+                printf(" N1");
+                for (unsigned j = 0; j < asked; j++) printf(" A%d:%u", slot_id[asked_slot[j]], asked_frames[j]);
+            }
         }
         if (!quiet) printf("\n");
         if (AUDIO.System.isReady) CloseAudioDevice();
@@ -943,9 +1045,13 @@ type Op is Data:
   OpDefault{size: U32}
   OpStream{slot: U32, rate: U32, size: U32, channels: U32}
   OpFeed{slot: U32, frames: U32, data: +List<U32>}
+  OpCallback{slot: U32, on: U32}
+  OpPlain{frames: U32}
+  OpPeriods{count: U32}
 
+# calls: how many samples each slot's stream callback has written.
 type St is Data:
-  St{audio: J.AudioDevice, sounds: +List<J.Sound>, out: String}
+  St{audio: J.AudioDevice, sounds: +List<J.Sound>, out: String, calls: +List<U32>}
 
 def get(sounds: +List<J.Sound>, +i: U32) -> J.Sound:
   match sounds:
@@ -1019,7 +1125,7 @@ def st.text(st: Resampler.St) -> String:
 def feed.text(feed: Mixer.Feed) -> String:
   match feed:
     case Mixer.HeadStatic{}: ",s"
-    case Mixer.HeadStream{size, channels, first, second}: "," ++ U32.show(size) ++ "/" ++ U32.show(channels) ++ "/" ++ flag(first) ++ flag(second)
+    case Mixer.HeadStream{size, channels, first, second, called}: "," ++ U32.show(size) ++ "/" ++ U32.show(channels) ++ "/" ++ flag(first) ++ flag(second) ++ flag(called)
 
 def head.text(head: Mixer.Head) -> String:
   Mixer.Head{source, rate, +mode, +coef, cursor, st, +residual, feed} = head
@@ -1035,13 +1141,95 @@ def state(+audio: J.AudioDevice, +sounds: +List<J.Sound>) -> String:
   J.AudioDevice{_, _, _, +buffers, +blocks, +default} = audio
   "R" ++ flag(J.AudioDevice.is_ready(audio)) ++ " M" ++ U32.show(F32.bits(J.AudioDevice.master_volume(audio))) ++ " D" ++ U32.show(default) ++ sounds.text(sounds, audio) ++ buffers.text(buffers, blocks)
 
-def after(+tag: String, +audio: J.AudioDevice, +sounds: +List<J.Sound>, +out: String) -> St:
-  St{audio, sounds, out ++ ";E:" ++ tag ++ " " ++ state(audio, sounds)}
+def after(+tag: String, +audio: J.AudioDevice, +sounds: +List<J.Sound>, +out: String, +calls: +List<U32>) -> St:
+  St{audio, sounds, out ++ ";E:" ++ tag ++ " " ++ state(audio, sounds), calls}
 
-def mixed(result: J.AudioDevice & Maybe<&2, +List<U32>>, +sounds: +List<J.Sound>, +out: String) -> St:
+# A refused callback leaves the counters as they were.
+def mixed(result: J.AudioDevice & Maybe<&2, +List<U32>>, +sounds: +List<J.Sound>, +out: String, +before: +List<U32>, +calls: +List<U32>, +asks: String) -> St:
   match result:
-    case Tuple{+audio, Some{+samples}}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds) ++ " X" ++ U32.show(fnv(samples, 2166136261))}
-    case Tuple{+audio, None{}}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds) ++ " X-"}
+    case Tuple{+audio, Some{+samples}}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds) ++ " X" ++ U32.show(fnv(samples, 2166136261)) ++ asks, calls}
+    case Tuple{+audio, None{}}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds) ++ " X-", before}
+
+def nth(xs: +List<U32>, +i: U32) -> U32:
+  match xs:
+    case Nil{}: 0
+    case Con{+x, rest}: Bool.pick(U32, U32.is_eq(i, 0), x, nth(rest, (i - 1 : U32)))
+
+def put(xs: +List<U32>, +i: U32, +v: U32) -> +List<U32>:
+  match xs:
+    case Nil{}: Nil{}
+    case Con{+x, +rest}: Bool.pick(+List<U32>, U32.is_eq(i, 0), Con{v, rest}, Con{x, put(rest, (i - 1 : U32), v)})
+
+# The slot whose stream is the buffer.
+def slot.of(sounds: +List<J.Sound>, +id: U32, +i: U32) -> U32:
+  match sounds:
+    case Nil{}: i
+    case Con{J.Sound{J.AudioStream{+buffer, _, _, _}, _}, rest}: Bool.pick(U32, U32.is_eq(buffer, id), i, slot.of(rest, id, (i + 1 : U32)))
+
+def size.of(sound: J.Sound) -> U32:
+  J.Sound{J.AudioStream{_, _, size, _}, _} = sound
+  size
+
+def channels.of(sound: J.Sound) -> U32:
+  J.Sound{J.AudioStream{_, _, _, channels}, _} = sound
+  channels
+
+# Sample c of the probe's stream callback, as the stream holds it.
+def answer.sample(size: U32, +c: U32) -> U32:
+  match size:
+    case 8: (((c * 37) + 11) % 256 : U32)
+    case 16: (((((c * 53) % 301) * 97) + 50986) % 65536 : U32)
+    case _: F32.bits(((U32.to_f32(((c * 31) % 67 : U32)) - 33.0) / 64.0 : F32))
+
+def answer.samples(n: Nat, +size: U32, +c: U32, acc: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: acc
+    case 1n+m: answer.samples(m, size, (c + 1 : U32), Con{answer.sample(size, c), acc})
+
+type Answered is Data:
+  Answered{calls: +List<U32>, data: +List<U32>, text: String}
+
+# The answers to what a callback's streams are asked for (last sample first while they are made).
+def answered(asks: +List<J.AudioDevice.Ask>, +sounds: +List<J.Sound>, +calls: +List<U32>, acc: +List<U32>, +text: String) -> Answered:
+  match asks:
+    case Nil{}: Answered{calls, List.reverse(&2, U32, acc), text}
+    case Con{J.AudioAsk{+buffer, +frames}, rest}:
+      +slot = slot.of(sounds, buffer, 0)
+      +count = (frames * channels.of(get(sounds, slot)) : U32)
+      answered(rest, sounds, put(calls, slot, (nth(calls, slot) + count : U32)), answer.samples(U32.to_nat(count), size.of(get(sounds, slot)), nth(calls, slot), acc),
+        text ++ " A" ++ U32.show(buffer) ++ ":" ++ U32.show(frames))
+
+# The program's side of AudioClock.advance_answering: its state is the slots, the counters and what it was asked
+# for (the callback is a template: it closes over nothing).
+type Asked is Data:
+  Asked{sounds: +List<J.Sound>, calls: +List<U32>, text: String}
+
+def answer.one(+buffer: U32, +frames: U32, state: Asked) -> Asked & +List<U32>:
+  Asked{+sounds, +calls, +text} = state
+  +slot = slot.of(sounds, buffer, 0)
+  +count = (frames * channels.of(get(sounds, slot)) : U32)
+  (Asked{sounds, put(calls, slot, (nth(calls, slot) + count : U32)), text ++ " A" ++ U32.show(buffer) ++ ":" ++ U32.show(frames)},
+    List.reverse(&2, U32, answer.samples(U32.to_nat(count), size.of(get(sounds, slot)), nth(calls, slot), Nil{})))
+
+def clocked(result: J.AudioClock.Step & Asked, +sounds: +List<J.Sound>, +out: String, +before: +List<U32>) -> St:
+  match result:
+    case Tuple{J.AudioStep{_, +audio, True{}}, Asked{_, +calls, +text}}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds) ++ " N1" ++ text, calls}
+    case Tuple{J.AudioStep{_, +audio, False{}}, _}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds) ++ " N0", before}
+
+# `count` periods on a clock opened at 0: the time is half a period past the last one.
+def periods(+count: U32, +audio: J.AudioDevice, +sounds: +List<J.Sound>, +out: String, +calls: +List<U32>) -> St:
+  clocked(J.AudioClock.advance_answering(~Asked, ~(buffer => frames => state => answer.one(buffer, frames, state)), J.AudioClock.at(M.Float64{0, 0}), audio,
+    M.Float64.from_f32(((U32.to_f32(count) / 100.0) + 0.005 : F32)), Asked{sounds, calls, ""}), sounds, out, calls)
+
+def mix.answered(answers: Answered, +audio: J.AudioDevice, +frames: U32, +sounds: +List<J.Sound>, +out: String, +before: +List<U32>) -> St:
+  Answered{+calls, +data, +text} = answers
+  mixed(J.AudioDevice.mix_answered(audio, frames, data), sounds, out, before, calls, text)
+
+# One device callback: what the stream callbacks will be asked for, their answers, and the mix with them.
+def mix.asked(asks: Maybe<&2, +List<J.AudioDevice.Ask>>, +audio: J.AudioDevice, +frames: U32, +sounds: +List<J.Sound>, +out: String, +calls: +List<U32>) -> St:
+  match asks:
+    case None{}: St{audio, sounds, out ++ ";E:- " ++ state(audio, sounds) ++ " X-", calls}
+    case Some{+list}: mix.answered(answered(list, sounds, calls, Nil{}, ""), audio, frames, sounds, out, calls)
 
 def wave.tag(error: J.Wave.Error) -> String:
   match error:
@@ -1056,18 +1244,18 @@ def tag(error: J.Sound.Error) -> String:
     case J.SoundWaveError{J.WaveFileError{_, _}}: "file"
     case J.SoundWaveError{J.WaveDataError{inner}}: wave.tag(inner)
 
-def loaded(result: J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>, +slot: U32, +sounds: +List<J.Sound>, +out: String) -> St:
+def loaded(result: J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>, +slot: U32, +sounds: +List<J.Sound>, +out: String, +calls: +List<U32>) -> St:
   match result:
-    case Tuple{+audio, Done{+sound}}: after("-", audio, set(sounds, slot, sound), out)
-    case Tuple{+audio, Fail{error}}: after(tag(error), audio, set(sounds, slot, J.Sound.none()), out)
+    case Tuple{+audio, Done{+sound}}: after("-", audio, set(sounds, slot, sound), out, calls)
+    case Tuple{+audio, Fail{error}}: after(tag(error), audio, set(sounds, slot, J.Sound.none()), out, calls)
 
-def aliased(result: J.AudioDevice & J.Sound, +slot: U32, +sounds: +List<J.Sound>, +out: String) -> St:
+def aliased(result: J.AudioDevice & J.Sound, +slot: U32, +sounds: +List<J.Sound>, +out: String, +calls: +List<U32>) -> St:
   match result:
-    case Tuple{+audio, +sound}: after("-", audio, set(sounds, slot, sound), out)
+    case Tuple{+audio, +sound}: after("-", audio, set(sounds, slot, sound), out, calls)
 
-def streamed(result: J.AudioDevice & J.AudioStream, +slot: U32, +sounds: +List<J.Sound>, +out: String) -> St:
+def streamed(result: J.AudioDevice & J.AudioStream, +slot: U32, +sounds: +List<J.Sound>, +out: String, +calls: +List<U32>) -> St:
   match result:
-    case Tuple{+audio, +stream}: after("-", audio, set(sounds, slot, J.Sound{stream, 0}), out)
+    case Tuple{+audio, +stream}: after("-", audio, set(sounds, slot, J.Sound{stream, 0}), out, calls)
 
 def stream.of(sound: J.Sound) -> J.AudioStream:
   J.Sound{stream, _} = sound
@@ -1087,31 +1275,34 @@ def tuned(op: U32, +audio: J.AudioDevice, +sound: J.Sound, +value: F32) -> J.Aud
     case _: J.Sound.set_pan(audio, sound, value)
 
 def step(+st: St, op: Op) -> IO(St):
-  St{+audio, +sounds, +out} = st
+  St{+audio, +sounds, +out, +calls} = st
   match op:
-    case OpInit{}: IO.pure(St, after("-", J.AudioDevice.init(audio), sounds, out))
-    case OpClose{}: IO.pure(St, after("-", J.AudioDevice.close(audio), sounds, out))
-    case OpMaster{bits}: IO.pure(St, after("-", J.AudioDevice.set_master_volume(audio, J.Wave.float_bits(bits)), sounds, out))
-    case OpLoad{slot, frames, rate, size, channels, data}: IO.pure(St, loaded(J.Sound.load_from_wave(audio, J.Wave{frames, rate, size, channels, data}), slot, sounds, out))
+    case OpInit{}: IO.pure(St, after("-", J.AudioDevice.init(audio), sounds, out, calls))
+    case OpClose{}: IO.pure(St, after("-", J.AudioDevice.close(audio), sounds, out, calls))
+    case OpMaster{bits}: IO.pure(St, after("-", J.AudioDevice.set_master_volume(audio, J.Wave.float_bits(bits)), sounds, out, calls))
+    case OpLoad{slot, frames, rate, size, channels, data}: IO.pure(St, loaded(J.Sound.load_from_wave(audio, J.Wave{frames, rate, size, channels, data}), slot, sounds, out, calls))
     case OpFile{+slot, path}:
       do IO<St>:
         result : J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound> <- J.Sound.load(audio, path)
-        IO.pure(St, loaded(result, slot, sounds, out))
-    case OpAlias{slot, source}: IO.pure(St, aliased(J.Sound.load_alias(audio, get(sounds, source)), slot, sounds, out))
-    case OpUnload{slot}: IO.pure(St, after("-", J.Sound.unload(audio, get(sounds, slot)), sounds, out))
-    case OpUnalias{slot}: IO.pure(St, after("-", J.Sound.unload_alias(audio, get(sounds, slot)), sounds, out))
-    case OpAct{slot, code}: IO.pure(St, after("-", acted(code, audio, get(sounds, slot)), sounds, out))
-    case OpTune{slot, code, bits}: IO.pure(St, after("-", tuned(code, audio, get(sounds, slot), J.Wave.float_bits(bits)), sounds, out))
-    case OpUpdate{slot, frames, data}: IO.pure(St, after("-", J.Sound.update(audio, get(sounds, slot), data, frames), sounds, out))
-    case OpMix{frames}: IO.pure(St, mixed(J.AudioDevice.mix(audio, frames), sounds, out))
-    case OpDefault{size}: IO.pure(St, after("-", J.AudioDevice.set_stream_buffer_size_default(audio, size), sounds, out))
-    case OpStream{slot, rate, size, channels}: IO.pure(St, streamed(J.AudioStream.load(audio, rate, size, channels), slot, sounds, out))
-    case OpFeed{slot, frames, data}: IO.pure(St, after("-", J.AudioStream.update(audio, stream.of(get(sounds, slot)), data, frames), sounds, out))
+        IO.pure(St, loaded(result, slot, sounds, out, calls))
+    case OpAlias{slot, source}: IO.pure(St, aliased(J.Sound.load_alias(audio, get(sounds, source)), slot, sounds, out, calls))
+    case OpUnload{slot}: IO.pure(St, after("-", J.Sound.unload(audio, get(sounds, slot)), sounds, out, calls))
+    case OpUnalias{slot}: IO.pure(St, after("-", J.Sound.unload_alias(audio, get(sounds, slot)), sounds, out, calls))
+    case OpAct{slot, code}: IO.pure(St, after("-", acted(code, audio, get(sounds, slot)), sounds, out, calls))
+    case OpTune{slot, code, bits}: IO.pure(St, after("-", tuned(code, audio, get(sounds, slot), J.Wave.float_bits(bits)), sounds, out, calls))
+    case OpUpdate{slot, frames, data}: IO.pure(St, after("-", J.Sound.update(audio, get(sounds, slot), data, frames), sounds, out, calls))
+    case OpMix{+frames}: IO.pure(St, mix.asked(J.AudioDevice.asks(audio, frames), audio, frames, sounds, out, calls))
+    case OpPlain{frames}: IO.pure(St, mixed(J.AudioDevice.mix(audio, frames), sounds, out, calls, calls, ""))
+    case OpPeriods{+count}: IO.pure(St, periods(count, audio, sounds, out, calls))
+    case OpCallback{slot, on}: IO.pure(St, after("-", J.AudioStream.set_callback(audio, stream.of(get(sounds, slot)), U32.is_ne(on, 0)), sounds, out, calls))
+    case OpDefault{size}: IO.pure(St, after("-", J.AudioDevice.set_stream_buffer_size_default(audio, size), sounds, out, calls))
+    case OpStream{slot, rate, size, channels}: IO.pure(St, streamed(J.AudioStream.load(audio, rate, size, channels), slot, sounds, out, calls))
+    case OpFeed{slot, frames, data}: IO.pure(St, after("-", J.AudioStream.update(audio, stream.of(get(sounds, slot)), data, frames), sounds, out, calls))
 
 def run(ops: +List<Op>, +st: St) -> IO(String):
   match ops:
     case Nil{}:
-      St{_, _, out} = st
+      St{_, _, out, _} = st
       IO.pure(String, out)
     case Con{+op, rest}:
       do IO<String>:
@@ -1119,7 +1310,7 @@ def run(ops: +List<Op>, +st: St) -> IO(String):
         run(rest, next)
 
 def start() -> St:
-  St{J.AudioDevice.none(), [J.Sound.none(), J.Sound.none(), J.Sound.none(), J.Sound.none()], ""}
+  St{J.AudioDevice.none(), [J.Sound.none(), J.Sound.none(), J.Sound.none(), J.Sound.none()], "", [0, 0, 0, 0]}
 '''
 
 
@@ -1163,6 +1354,12 @@ def bend_step(step, table, paths):
         return f'OpStream{{{step[1]}, {step[2]}, {step[3]}, {step[4]}}}'
     if kind == 'feed':
         return f'OpFeed{{{step[1]}, {step[2]}, {words_text(step[3])}}}'
+    if kind == 'callback':
+        return f'OpCallback{{{step[1]}, {step[2]}}}'
+    if kind == 'plain':
+        return f'OpPlain{{{step[1]}}}'
+    if kind == 'periods':
+        return f'OpPeriods{{{step[1]}}}'
     raise ValueError(kind)
 
 
@@ -1194,8 +1391,12 @@ def native_step(step, table, order):
         return 10, step[1], step[2], 0, list(step[3])
     if kind == 'dump':
         return 11, step[1], 0, 0, []
-    if kind == 'mix':
+    if kind in ('mix', 'plain'):
         return 12, step[1], 0, 0, []
+    if kind == 'callback':
+        return 16, step[1], step[2], 0, []
+    if kind == 'periods':
+        return 17, step[1], 0, 0, []
     if kind == 'stream':
         return 13, step[1], step[2], step[3], [step[4]]
     if kind == 'feed':

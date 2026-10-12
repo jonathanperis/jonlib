@@ -58726,23 +58726,28 @@
       "milestone": "memory",
       "phase": 1,
       "sequence": 3,
-      "status": "not-started",
-      "jonlib": "AudioCallback",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "U32 -> U32 -> P -> P & +List<U32> answer of AudioClock.advance_answering",
+      "mapping_state": "implemented",
+      "scope": "For a stream's buffer and a number of frames: the program's state after the call and the frames written, in the stream's format (frames*channels samples).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No void* buffer written in place: the frames are returned",
+        "The program's state is an argument and a result, not globals",
+        "Stream callbacks only: processors are not ported"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -58753,7 +58758,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Prove sizes/content and allocation/error/ownership lifecycles; make native-buffer and callback adaptations explicit.",
-      "next_step": "Derive AudioCallback semantics from the linked source, add a reference fixture, then implement AudioCallback.",
+      "next_step": "Close documented gaps and unverified gates for AudioCallback.",
       "priority": 203
     },
     {
@@ -62372,23 +62377,29 @@
       "milestone": "audio-stream",
       "phase": 4,
       "sequence": 21,
-      "status": "not-started",
-      "jonlib": "Audio.set_audio_stream_callback",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "AudioStream.set_callback",
+      "mapping_state": "implemented",
+      "scope": "A stream with a callback takes its frames from the callback instead of its halves (the cursor and the halves stay), and gives them back to the halves without one (NULL); the frames each call is asked for (raudio's guess of the converter's input, at most what its 4096-byte buffer holds, and again while the converter wants more) are AudioDevice.asks, and AudioDevice.mix_answered mixes the answers; the asks and every sample compared with raylib.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No function is kept: the program answers each device callback's asks (AudioDevice.asks, AudioDevice.mix_answered) or gives AudioClock.advance_answering a function of its own state",
+        "A sound's buffer takes no callback (raylib would call it for the sound's frames)",
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+        "AudioDevice.mix refuses a callback in which a stream's callback would be asked: its answers are needed"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -62402,7 +62413,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Stream/callback ordering, PCM continuity, seeking/looping, queue/backpressure, underruns and resource closure.",
-      "next_step": "Derive SetAudioStreamCallback semantics from the linked source, add a reference fixture, then implement Audio.set_audio_stream_callback.",
+      "next_step": "Close documented gaps and unverified gates for SetAudioStreamCallback.",
       "priority": 521
     },
     {

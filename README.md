@@ -39,7 +39,7 @@ import ./jonmath.bend as M
 Everything below is a **partial, scoped profile** compared exactly with pinned
 raylib; each API's domain and gaps are in [`api/progress.json`](api/progress.json)
 and the [progress dashboard](docs/PROGRESS.md). At the time of writing
-(2026-10-12) the ledger marks 561 of raylib.h's 600 functions, all 146 of
+(2026-10-12) the ledger marks 562 of raylib.h's 600 functions, all 146 of
 raymath.h's, 142 of rlgl.h's 163 and all of rcamera.h's 12 and rgestures.h's
 10 as partial, and none as complete (no API is complete before the platform
 phase); the dashboard always has the current counts. 200 of raylib's 212
@@ -90,14 +90,14 @@ examples are ported ([EXAMPLES.md](docs/EXAMPLES.md)).
 - **Audio** ([AUDIO.md](docs/AUDIO.md)): WAV and QOA waves, `WaveFormat`, the
   audio device's state, sounds, aliases and audio streams, a mixer whose
   device callbacks match raylib's sample for sample, pitched playback and
-  streams of any format included, and a clock that makes those callbacks
-  from the program's time.
+  streams of any format and stream callbacks included, and a clock that
+  makes those callbacks from the program's time.
 - **Jongui** ([GUI.md](docs/GUI.md)): raygui's controls.
 - **Execution**: native CPU, JavaScript and (with the declared compiler overlay)
   forced Metal; see [VERIFICATION.md](docs/VERIFICATION.md).
 
-Not yet there: audio stream callbacks and music with their MP3, OGG, FLAC,
-XM and MOD decoders; a host window, input devices and audio output
+Not yet there: audio processors and music with their MP3, OGG, FLAC, XM and
+MOD decoders; a host window, input devices and audio output
 (everything runs headless); images beyond 4096 pixels on a side; directory
 listing. macOS is off the merge path for now and owes a full validation. The
 [master plan](docs/MASTER-PLAN.md) and [HANDOFF.md](docs/HANDOFF.md) order
