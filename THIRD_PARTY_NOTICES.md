@@ -368,6 +368,19 @@ the frames the C code writes past its buffer. msf_gif is MIT or public
 domain; Jonlib uses the MIT alternative, retained with its notice in
 [LICENSES/msf_gif.txt](LICENSES/msf_gif.txt).
 
+## stb_vorbis
+
+`src/vorbis_codebook.bend` is an altered Bend adaptation of the codebook
+builders of stb_vorbis v1.22 by Sean Barrett and contributors, as pinned
+raylib vendors it in `src/external/stb_vorbis.c`: `compute_codewords`,
+`compute_sorted_huffman`, `compute_accelerated_huffman`, `ilog`,
+`bit_reverse` and `float32_unpack`. It is the first part of an Ogg Vorbis
+decoder and reads no file yet. `tools/vorbis_codebook_probe.py` includes the
+unmodified file in its reference program only; no stb code is linked into the
+Bend candidate. stb_vorbis is MIT or public domain; Jonlib uses the MIT
+alternative, retained with its notice in
+[LICENSES/stb_vorbis.txt](LICENSES/stb_vorbis.txt).
+
 ## QOA
 
 `src/qoa.bend` is an altered Bend adaptation of `qoa_decode` and `qoa_encode`

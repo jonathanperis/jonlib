@@ -2752,3 +2752,96 @@ def Laws.png_image_of_4097_on_a_side():
 
 def Laws.png_invalid_header_before_its_size():
   {==}
+
+def Laws.vorbis_ilog_counts_the_bits():
+  {==}
+
+def Laws.vorbis_ilog_of_the_largest_int():
+  {==}
+
+def Laws.vorbis_ilog_of_a_negative_int():
+  {==}
+
+def Laws.vorbis_bit_reverse_of_the_low_bit():
+  {==}
+
+def Laws.vorbis_bit_reverse_of_the_low_half():
+  {==}
+
+def Laws.vorbis_bit_reverse_twice():
+  {==}
+
+def Laws.vorbis_unpack_one():
+  {==}
+
+def Laws.vorbis_unpack_three():
+  {==}
+
+def Laws.vorbis_unpack_largest_finite():
+  {==}
+
+def Laws.vorbis_unpack_past_the_floats():
+  {==}
+
+def Laws.vorbis_unpack_smallest_normal():
+  {==}
+
+def Laws.vorbis_unpack_smallest_subnormal():
+  {==}
+
+def Laws.vorbis_unpack_half_the_smallest_is_zero():
+  {==}
+
+def Laws.vorbis_unpack_a_tie_goes_to_even():
+  {==}
+
+def Laws.vorbis_unpack_far_below_the_floats():
+  {==}
+
+def Laws.vorbis_codewords_of_a_tree():
+  {==}
+
+def Laws.vorbis_codewords_skip_a_symbol_without_a_code():
+  {==}
+
+def Laws.vorbis_codewords_of_too_many_lengths():
+  {==}
+
+def Laws.vorbis_codewords_of_no_symbol():
+  {==}
+
+def Laws.vorbis_free_level_is_the_highest_up_to_the_length():
+  {==}
+
+def Laws.vorbis_free_level_without_a_leaf():
+  {==}
+
+def Laws.vorbis_taken_frees_the_leaves_beside_the_path():
+  {==}
+
+def Laws.vorbis_sorted_by_the_codes_read_the_other_way():
+  {==}
+
+def Laws.vorbis_sorted_codewords_end_with_the_sentinel():
+  {==}
+
+def Laws.vorbis_sorted_table_keeps_the_long_codes():
+  {==}
+
+def Laws.vorbis_sorted_table_of_a_sparse_codebook_keeps_all():
+  {==}
+
+def Laws.vorbis_fast_fill_steps_by_the_code_s_period():
+  {==}
+
+def Laws.vorbis_fast_entry_past_the_shorts_fills_nothing():
+  {==}
+
+def Laws.vorbis_fast_entry_of_a_long_code_fills_nothing():
+  {==}
+
+def Laws.vorbis_codewords_by_symbol():
+  {==}
+
+def Laws.vorbis_no_tree_no_codebook():
+  {==}
