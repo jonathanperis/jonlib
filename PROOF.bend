@@ -3964,3 +3964,42 @@ def Laws.xm_module_no_data_is_no_module():
 
 def Laws.xm_module_other_data_is_no_module():
   {==}
+
+def Laws.xm_pitch_amiga_period_an_octave_up_is_halved():
+  {==}
+
+def Laws.xm_pitch_amiga_period_an_octave_down_is_doubled():
+  {==}
+
+def Laws.xm_pitch_amiga_period_far_down_is_kept_in_16_bits():
+  {==}
+
+def Laws.xm_pitch_amiga_period_ten_octaves_up_is_zero():
+  {==}
+
+def Laws.xm_pitch_amiga_table_ends_an_octave_from_its_start():
+  {==}
+
+def Laws.xm_pitch_random_waveform_s_first_step():
+  {==}
+
+def Laws.xm_pitch_envelope_counter_at_the_loop_s_end_goes_back():
+  {==}
+
+def Laws.xm_pitch_envelope_counter_before_the_loop_s_end_stays():
+  {==}
+
+def Laws.xm_pitch_envelope_without_a_loop_keeps_its_counter():
+  {==}
+
+def Laws.xm_pitch_envelope_loop_backwards_wraps_in_16_bits():
+  {==}
+
+def Laws.xm_pitch_envelope_without_points_changes_nothing():
+  {==}
+
+def Laws.xm_pitch_envelope_point_is_read_by_its_number():
+  {==}
+
+def Laws.xm_pitch_envelope_point_past_the_12th_is_none_of_its():
+  {==}

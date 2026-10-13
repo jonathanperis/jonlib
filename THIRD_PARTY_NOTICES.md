@@ -426,14 +426,20 @@ alternative, retained with its notice in
 
 ## jar_xm
 
-`src/xm_module.bend` is an altered Bend adaptation of part of jar_xm.h
+`src/xm_module.bend` and `src/xm_pitch.bend` are altered Bend adaptations
+of parts of jar_xm.h
 v0.3.1 (libxm by Romain "Artefact2" Dalmaso with Dan Spencer, repackaged by
 Joshua Adam Reisenauer, with later changes by m4ntr0n1c), as pinned raylib
 vendors it in `src/external/jar_xm.h`: the reading of a module
 (`jar_xm_create_context_safe`, `jar_xm_check_sanity_preload`,
 `jar_xm_get_memory_needed_for_context`, `jar_xm_load_module` and
-`jar_xm_check_sanity_postload`). `tools/xm_module_probe.py` includes the
-unmodified file in its reference program only; no jar_xm code is linked
+`jar_xm_check_sanity_postload`). `src/xm_pitch.bend` is its periods and
+frequencies (`jar_xm_linear_period`, `jar_xm_linear_frequency`,
+`jar_xm_amiga_period`, `jar_xm_amiga_frequency`, `jar_xm_period`,
+`jar_xm_frequency`), `jar_xm_waveform`, `jar_xm_envelope_lerp` and
+`jar_xm_envelope_tick`. `tools/xm_module_probe.py` and
+`tools/xm_pitch_probe.py` include the
+unmodified file in their reference programs only; no jar_xm code is linked
 into the Bend candidate. jar_xm is under the WTFPL, version 2, retained
 with its notice in [LICENSES/jar_xm.txt](LICENSES/jar_xm.txt).
 

@@ -1282,7 +1282,8 @@ Still to come: the music (`LoadMusicStream` for `.ogg`, with
 
 ## XM modules (in progress)
 
-`src/xm_module.bend` is the start of an adaptation of jar_xm (pinned
+`src/xm_module.bend` and `src/xm_pitch.bend` are the start of an
+adaptation of jar_xm (pinned
 raylib's `src/external/jar_xm.h`), which raylib's `LoadMusicStream` calls
 for `.xm` files. Nothing plays yet: `Music.load` does not take the format.
 What is here is the module read from its file,
@@ -1348,8 +1349,53 @@ which files are refused (15): jar_xm is not run on those, and the port must
 refuse each for the model's reason. For the 73 others the model's verdict
 is held against jar_xm itself: what fails (8), and each module's room.
 
-Still to come: the rows, ticks and effects (and the module's length in
-samples), the mixer, and the music stream.
+### Pitch, waveforms and envelopes
+
+`src/xm_pitch.bend` is what a channel's sound is worked out from, tick by
+tick: `jar_xm_linear_period`, `jar_xm_linear_frequency`,
+`jar_xm_amiga_period`, `jar_xm_amiga_frequency`, `jar_xm_period`,
+`jar_xm_frequency`, `jar_xm_waveform`, `jar_xm_envelope_lerp` and
+`jar_xm_envelope_tick`.
+
+- **Linear frequencies**: a note's period is `7680 - 64*note`, and a
+  period's frequency `8363*powf(2, (4608 - period)/768)`, which is
+  `M.Libm.pow2` (given under the glibc profiles for an exponent within 126
+  of 0; `None` under `M.AppleLibm`).
+- **Amiga frequencies**: a note's period is its place between two of the
+  table's 13 periods, shifted by the note's octave; a period's frequency is
+  `7093789.2/(2*period)`. With a note offset (vibrato, arpeggio) the
+  period's own note is first found in the table. jar_xm converts the note
+  to an `unsigned` and its octave to an `int8_t`, and shifts by the octave:
+  a NaN, a note of -1 or less, an octave past 31 and a period below 0 are
+  undefined, and `None` here.
+- **Waveforms** (`waveform(kind, libm, step, random)`): the step is a byte
+  taken modulo 64. A sine is `-sinf` of the step's 64th of a turn (with
+  jar_xm's 3.141592, and -0 at step 0), then a ramp down, a square, a
+  random value and a ramp up; other kinds are 0. The random one is the
+  generator of POSIX's example in a `static` variable: one state for every
+  module a program plays, which the port takes and gives back.
+- **Envelopes** (`envelope.tick(envelope, sustained, counter, value)`): the
+  counter is taken back by the loop's length at the loop's end, the value
+  is the line between the first two points the counter lies between (over
+  64; unchanged where there are none), and the counter moves on unless the
+  channel is sustained at the sustain point. One point is its value, 1 at
+  most; no point changes nothing. The loop's and the sustain's points are
+  numbered by bytes: a number past the 12th point, where it is read, is a
+  read past the envelope's points (`Ticked.fine` is false).
+
+`tools/xm_pitch_probe.py` (gate `xm-pitch`) calls jar_xm's own static
+functions on 197 notes, 524 pairs of a period and a note offset, 336
+waveform steps and 26 envelopes for 40 ticks each. **The reference says
+what is undefined**: it is compiled with the compiler's checks of a float
+converted to an int it does not fit, a shift by a count the type has not, a
+signed overflow and an index past an array as traps, and makes each call
+under a handler of the trap. A call that traps is -1, and the port must
+answer `None` for exactly those: 183 of the notes and pairs, and 4 of the
+envelopes. A NaN result is compared as a NaN, whatever its sign and
+payload.
+
+Still to come: a channel's samples, the rows, ticks and effects (and the
+module's length in samples), the mixer, and the music stream.
 
 ## WaveFormat
 

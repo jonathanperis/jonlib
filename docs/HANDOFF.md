@@ -995,6 +995,27 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
        static functions on contexts the reference sets up, then (2b)
        rows, ticks, effects, `jar_xm_reset` and the length, by a hash of
        the whole context after each tick.
+       For (2a): a linear frequency is `M.Libm.pow2` (the `powf(2, y)`
+       kernel, `None` under `AppleLibm` and where glibc's two builds
+       differ) and the sine waveform `M.Libm.sin`; the Amiga functions
+       convert floats to `unsigned` and `int8_t` and shift by an octave
+       (a note outside about (-1, 408), a NaN, a period below 0 or past
+       1712*2^20 are undefined). **(2a) is done for the pitch, the
+       waveforms and the envelopes** (`src/xm_pitch.bend`, gate
+       `xm-pitch`): `P.period.of`, `P.frequency.of(libm, kind, period,
+       offset)`, `P.waveform(kind, libm, step, random)` (the caller keeps
+       the random state: 24492 at first) and `P.envelope.tick`. **Its
+       reference says what is undefined by itself**: compiled with
+       `-fsanitize=float-cast-overflow,shift,signed-integer-overflow,bounds`
+       as traps (`-fsanitize-trap=...`), each call under `sigsetjmp` with
+       a handler of SIGILL and SIGTRAP; a call that traps prints -1. Use
+       this for the rest of the player instead of writing a model
+       (`bounds` catches an index past an array inside a structure; a
+       null pointer needs its own handler or a check in the harness).
+       Two things it showed: C's `-x` of a float is its sign changed
+       (`x * -1` here, not `0 - x`: a sine of 0 is -0), and a NaN's bits
+       are the machine's (the JavaScript lane keeps neither sign nor
+       payload: compare NaNs as NaNs). Next: `jar_xm_next_of_sample`.
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`
