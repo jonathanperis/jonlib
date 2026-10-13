@@ -5712,22 +5712,65 @@ def Wave.decoded.qoa(outcome: Qoa.Outcome) -> Result<&1, &1, Wave.Error, Wave>:
     case Qoa.Invalid{False{}}: Fail{InvalidWaveHeader{}}
     case Qoa.Invalid{True{}}: Fail{InvalidWaveData{}}
 
-def Wave.decode.selected(kind: U32, bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
+def Wave.mp3.bits(samples: +List<F32>, acc: +List<U32>) -> +List<U32>:
+  match samples:
+    case Nil{}: List.reverse(&2, U32, acc)
+    case Con{+sample, rest}: Wave.mp3.bits(rest, Con{F32.bits(sample), acc})
+
+def Wave.mp3.length(bytes: +List<U32>, +n: U32) -> U32:
+  match bytes:
+    case Nil{}: n
+    case Con{_, rest}: Wave.mp3.length(rest, (n + 1 : U32))
+
+# kind: 0 the frames read, 1 none, 2 a stream that stopped at a frame dr_mp3
+# decodes by leaving one of its arrays, 3 one that stopped at a Layer I or
+# II frame, which is not decoded here yet.
+def Wave.mp3.made(kind: U32, +frames: U32, +rate: U32, +channels: U32, +samples: +List<F32>) -> Result<&1, &1, Wave.Error, Wave>:
+  match kind:
+    case 0: Done{Wave{frames, rate, 32, channels, Wave.mp3.bits(samples, Nil{})}}
+    case 3: Fail{UnsupportedWaveFormat{}}
+    case _: Fail{InvalidWaveData{}}
+
+def Wave.mp3.read(read: Mp3S.Floats) -> Result<&1, &1, Wave.Error, Wave>:
+  Mp3S.Floats{+player, +frames, +samples} = read
+  +status = Mp3S.Player.status(player)
+  Wave.mp3.made(Bool.pick(U32, U32.is_eq(status, 0), Bool.pick(U32, U32.is_eq(frames, 0), 1, 0), Bool.pick(U32, U32.is_eq(status, 1), 2, 3)), frames, Mp3S.Player.rate(player),
+    Mp3S.Player.channels(player), samples)
+
+# drmp3_open_memory_and_read_pcm_frames_f32: every frame the stream reads,
+# asked for at once (`most` is more than a file of that size holds: 1152
+# frames for every four bytes).
+def Wave.mp3.opened(player: Maybe<Mp3S.Player>, +most: U32) -> Result<&1, &1, Wave.Error, Wave>:
+  match player:
+    case None{}: Fail{InvalidWaveData{}}
+    case Some{+opened}: Wave.mp3.read(Mp3S.read.f32(opened, most))
+
+def Wave.decode.mp3(+bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
+  Wave.mp3.opened(Mp3S.open.memory(bytes), (((Wave.mp3.length(bytes, 0) / 4) + 18) * 1152 : U32))
+
+def Wave.decode.selected(kind: U32, +bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
   match kind:
     case 1: Wave.decoded(Wav.decode(bytes))
     case 2: Wave.decoded.qoa(Qoa.decode(bytes))
+    case 3: Wave.decode.mp3(bytes)
     case _: Fail{UnsupportedWaveFormat{}}
 
 # LoadWaveFromMemory: ".wav"/".WAV" data (dr_wav's RIFF, RIFX, Wave64, RF64
 # and AIFF/AIFC containers with PCM, 32/64-bit float, a-law, mu-law, MS and
-# IMA ADPCM) and ".qoa"/".QOA" data (qoa.h) as 16-bit samples. Other tokens
-# are UnsupportedWaveFormat; data dr_wav would leave partly unread, convert
-# from NaN, decode with signed overflow, byte-swap through its failing
-# assertion or walk forever, and QOA data qoa.h would read past or decode
-# beyond its buffer for, are InvalidWaveData.
-def Wave.decode(+file_type: String, bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
+# IMA ADPCM) and ".qoa"/".QOA" data (qoa.h) as 16-bit samples, and
+# ".mp3"/".MP3" data (dr_mp3, src/mp3_stream.bend) as 32-bit float samples:
+# every frame of the stream, its channels and sample rate those of its
+# first MP3 frame. Other tokens are UnsupportedWaveFormat; data dr_wav would
+# leave partly unread, convert from NaN, decode with signed overflow,
+# byte-swap through its failing assertion or walk forever, QOA data qoa.h
+# would read past or decode beyond its buffer for, MP3 data dr_mp3 does not
+# open or reads no frame of (raylib has no wave then) and MP3 data with a
+# frame dr_mp3 decodes by leaving one of its arrays are InvalidWaveData. An
+# MP3 stream with a Layer I or II frame is UnsupportedWaveFormat: dr_mp3
+# decodes those and this port does not yet.
+def Wave.decode(+file_type: String, +bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
   Wave.decode.selected(Bool.pick(U32, String.eq(file_type, ".wav") || String.eq(file_type, ".WAV"), 1,
-    Bool.pick(U32, String.eq(file_type, ".qoa") || String.eq(file_type, ".QOA"), 2, 0)), bytes)
+    Bool.pick(U32, String.eq(file_type, ".qoa") || String.eq(file_type, ".QOA"), 2, Bool.pick(U32, String.eq(file_type, ".mp3") || String.eq(file_type, ".MP3"), 3, 0))), bytes)
 
 def Wave.load.decoded(result: Result<&1, &1, Wave.Error, Wave>) -> Result<&1, &1, Wave.IOError, Wave>:
   match result:
@@ -7317,12 +7360,24 @@ def Music.decode.mp3(opened: Maybe<Mp3S.Player>, +audio: AudioDevice) -> AudioDe
     case None{}: (audio, Fail{InvalidWaveHeader{}})
     case Some{+player}: Music.decode.mp3.playable(U32.is_eq(Mp3S.Player.status(player), 0), player, audio)
 
-def Music.decode.selected(kind: U32, +audio: AudioDevice, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+# dr_mp3 reads a file's stream through its callbacks and a memory stream
+# with a function of its own (src/mp3.bend, H.Stream): the two end a stream
+# with tags after its frames differently.
+def Music.decode.mp3.opened(memory: Bool, +bytes: +List<U32>) -> Maybe<Mp3S.Player>:
+  match memory:
+    case False{}: Mp3S.open(bytes)
+    case True{}: Mp3S.open.memory(bytes)
+
+def Music.decode.selected(kind: U32, +memory: Bool, +audio: AudioDevice, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
   match kind:
     case 1: Music.decode.wav(Wav.bits(bytes), audio, bytes)
-    case 4: Music.decode.mp3(Mp3S.open(bytes), audio)
+    case 4: Music.decode.mp3(Music.decode.mp3.opened(memory, bytes), audio)
     case 5: Music.decode.qoa(Qoa.decode(bytes), audio, Music.qoa.declared(bytes))
     case _: (audio, Fail{UnsupportedWaveFormat{}})
+
+def Music.decode.kind(+file_type: String) -> U32:
+  Bool.pick(U32, String.eq(file_type, ".wav") || String.eq(file_type, ".WAV"), 1, Bool.pick(U32, String.eq(file_type, ".qoa") || String.eq(file_type, ".QOA"), 5,
+    Bool.pick(U32, String.eq(file_type, ".mp3") || String.eq(file_type, ".MP3"), 4, 0)))
 
 # LoadMusicStreamFromMemory. ".wav" (".WAV") data: every file Wave.decode
 # reads whose samples are 16, 24 or 32 bits wide, with a stream of the file's
@@ -7337,10 +7392,10 @@ def Music.decode.selected(kind: U32, +audio: AudioDevice, +bytes: +List<U32>) ->
 # music is still loaded. Fail, and no stream: other tokens (OGG, FLAC, XM
 # and MOD music are not ported), other WAV sample sizes, what Wave.decode
 # refuses (raylib would read such a file again and again), and an MP3 file
-# dr_mp3 does not open or that begins with a Layer I or II frame.
+# dr_mp3 does not open or that begins with a Layer I or II frame. MP3 data
+# is opened as drmp3_init_memory opens it.
 def Music.load_from_memory(+audio: AudioDevice, +file_type: String, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
-  Music.decode.selected(Bool.pick(U32, String.eq(file_type, ".wav") || String.eq(file_type, ".WAV"), 1, Bool.pick(U32, String.eq(file_type, ".qoa") || String.eq(file_type, ".QOA"), 5,
-    Bool.pick(U32, String.eq(file_type, ".mp3") || String.eq(file_type, ".MP3"), 4, 0))), audio, bytes)
+  Music.decode.selected(Music.decode.kind(file_type), True{}, audio, bytes)
 
 def Music.load.decoded(result: AudioDevice & Result<&1, &1, Wave.Error, Music>) -> AudioDevice & Result<&1, &1, Wave.IOError, Music>:
   match result:
@@ -7351,9 +7406,10 @@ def Music.load.read(+token: String, +audio: AudioDevice, result: Result<&1, &1, 
   match result:
     case Fail{FileError{code, message}}: IO.pure(AudioDevice & Result<&1, &1, Wave.IOError, Music>, (audio, Fail{WaveFileError{code, message}}))
     case Fail{_}: IO.pure(AudioDevice & Result<&1, &1, Wave.IOError, Music>, (audio, Fail{WaveDataError{InvalidWaveHeader{}}}))
-    case Done{+bytes}: IO.pure(AudioDevice & Result<&1, &1, Wave.IOError, Music>, Music.load.decoded(Music.load_from_memory(audio, token, bytes)))
+    case Done{+bytes}: IO.pure(AudioDevice & Result<&1, &1, Wave.IOError, Music>, Music.load.decoded(Music.decode.selected(Music.decode.kind(token), False{}, audio, bytes)))
 
-# LoadMusicStream: the file's bytes, by its extension.
+# LoadMusicStream: the file's bytes, by its extension; an MP3 file is opened
+# as drmp3_init_file opens it.
 def Music.load(+audio: AudioDevice, +path: String) -> IO(AudioDevice & Result<&1, &1, Wave.IOError, Music>):
   IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, AudioDevice & Result<&1, &1, Wave.IOError, Music>, Files.load_data(path), result => Music.load.read(Image.file.token(path), audio, result))
 

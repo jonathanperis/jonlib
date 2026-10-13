@@ -2650,3 +2650,45 @@ def Laws.gui_list_disabled_items():
 
 def Laws.gui_font_base_size_is_the_default_font_s():
   {==}
+
+def Laws.mp3_memory_stream_has_its_bytes_at_hand():
+  {==}
+
+def Laws.mp3_file_stream_begins_with_an_empty_buffer():
+  {==}
+
+def Laws.mp3_memory_stream_is_told_by_its_capacity():
+  {==}
+
+def Laws.mp3_file_stream_is_not_a_memory_stream():
+  {==}
+
+def Laws.mp3_memory_stream_is_not_filled():
+  {==}
+
+def Laws.mp3_memory_stream_goes_on_after_passed_bytes():
+  {==}
+
+def Laws.mp3_memory_stream_is_over_when_no_byte_is_passed():
+  {==}
+
+def Laws.mp3_memory_stream_rewound_has_its_bytes_again():
+  {==}
+
+def Laws.mp3_memory_stream_holds_no_byte_of_its_tags():
+  {==}
+
+def Laws.mp3_memory_of_a_short_file_does_not_open():
+  {==}
+
+def Laws.mp3_stream_memory_of_a_short_file_does_not_open():
+  {==}
+
+def Laws.wave_mp3_length_counts_bytes():
+  {==}
+
+def Laws.music_kind_of_mp3_tokens():
+  {==}
+
+def Laws.music_kind_of_wav_and_qoa_tokens():
+  {==}

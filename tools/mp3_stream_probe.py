@@ -23,6 +23,19 @@ cross MP3 frames, the delay of a LAME tag and, in the files read to their
 end, the padding and the last frame; the seeks go back past the start and
 forward.
 
+Every file is opened twice: with drmp3_init_file, as LoadMusicStream opens
+it, and from its bytes with drmp3_init_memory, as LoadWave and
+LoadMusicStreamFromMemory do. dr_mp3 reads the two with different
+functions (through a buffer filled by callbacks; from all the bytes left),
+and they end some streams differently: after an Xing/Info frame the
+buffered reads go past the stream's length into an ID3v1 tag, whose bytes
+then follow the last frame and make it no frame, while a memory stream
+stops before its tags and keeps that frame. A seek to the stream's start
+puts the buffered reads right again, so the script hides it: the files that
+are a dozen frames long are also read straight to their end, one read and
+nothing before it, both ways, and the probe requires the reference to end
+the two apart for the file with an ID3v1 tag.
+
 The files are the mp3 gate's: raylib's country.mp3 and edits of its first
 frames (tags, holes, cuts, every header rewritten, seeded corruptions). A
 stream with a Layer I or II frame ends at `layer12` on both sides: dr_mp3
@@ -49,10 +62,15 @@ LAST = 20000
 NATIVE = r'''#define DR_MP3_IMPLEMENTATION
 #include "external/dr_mp3.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static const char *files[] = { FILES };
 static const unsigned lasts[] = { LASTS };
+// 1: the file's bytes through drmp3_init_memory instead of drmp3_init_file
+static const unsigned memory[] = { MEMORY };
+// 1: one read to the stream's end and nothing else
+static const unsigned straight[] = { STRAIGHT };
 static const char codes[] = "CODES";
 static const unsigned args[] = { ARGS };
 static drmp3_int16 shorts[2*LIMIT];
@@ -73,37 +91,51 @@ int main(void)
     for (unsigned a = 0; a < sizeof(files)/sizeof(files[0]); a++)
     {
         drmp3 mp3;
-        if (!drmp3_init_file(&mp3, files[a], NULL)) { printf("closed\n"); continue; }
-        if (other_layer(&mp3)) { printf("layer12\n"); drmp3_uninit(&mp3); continue; }
+        unsigned char *data = NULL;
+        if (memory[a])
+        {
+            FILE *file = fopen(files[a], "rb");
+            long size;
+            if (!file) return 2;
+            fseek(file, 0, SEEK_END); size = ftell(file); fseek(file, 0, SEEK_SET);
+            data = malloc(size + 1);
+            if (fread(data, 1, size, file) != (size_t)size) return 3;
+            fclose(file);
+            if (!drmp3_init_memory(&mp3, data, size, NULL)) { printf("closed\n"); free(data); continue; }
+        }
+        else if (!drmp3_init_file(&mp3, files[a], NULL)) { printf("closed\n"); continue; }
+        if (other_layer(&mp3)) { printf("layer12\n"); drmp3_uninit(&mp3); free(data); continue; }
         printf("o%u/%u", mp3.channels, mp3.sampleRate);
         state(&mp3);
-        for (unsigned i = 0; codes[i]; i++)
+        const char *script = straight[a]? "r" : codes;
+        for (unsigned i = 0; script[i]; i++)
         {
-            unsigned n = ((codes[i + 1] == 0) && (args[i] != 0))? lasts[a] : args[i];
+            unsigned n = straight[a]? LIMIT : ((script[i + 1] == 0) && (args[i] != 0))? lasts[a] : args[i];
             unsigned h = 2166136261u;
             printf(" ");
-            if (codes[i] == 'c') { unsigned frames = (unsigned)drmp3_get_pcm_frame_count(&mp3); if (other_layer(&mp3)) { printf("layer12"); break; } printf("c%u", frames); }
-            else if (codes[i] == 'r')
+            if (script[i] == 'c') { unsigned frames = (unsigned)drmp3_get_pcm_frame_count(&mp3); if (other_layer(&mp3)) { printf("layer12"); break; } printf("c%u", frames); }
+            else if (script[i] == 'r')
             {
                 unsigned got = (unsigned)drmp3_read_pcm_frames_s16(&mp3, n, shorts);
                 if (other_layer(&mp3)) { printf("layer12"); break; }
                 for (unsigned k = 0; k < got*mp3.channels; k++) h = (h ^ (unsigned short)shorts[k])*16777619u;
                 printf("r%u/%u", got, h);
             }
-            else if (codes[i] == 'f')
+            else if (script[i] == 'f')
             {
                 unsigned got = (unsigned)drmp3_read_pcm_frames_f32(&mp3, n, floats);
                 if (other_layer(&mp3)) { printf("layer12"); break; }
                 for (unsigned k = 0; k < got*mp3.channels; k++) { unsigned w; memcpy(&w, &floats[k], 4); h = (h ^ w)*16777619u; }
                 printf("f%u/%u", got, h);
             }
-            else if (codes[i] == 'k') { int done = (int)drmp3_seek_to_pcm_frame(&mp3, n); if (other_layer(&mp3)) { printf("layer12"); break; } printf("k%d", done); }
-            else if (codes[i] == 'e') { int done = (int)drmp3_seek_to_pcm_frame(&mp3, mp3.currentPCMFrame); printf("e%d", done); }
+            else if (script[i] == 'k') { int done = (int)drmp3_seek_to_pcm_frame(&mp3, n); if (other_layer(&mp3)) { printf("layer12"); break; } printf("k%d", done); }
+            else if (script[i] == 'e') { int done = (int)drmp3_seek_to_pcm_frame(&mp3, mp3.currentPCMFrame); printf("e%d", done); }
             else { drmp3_seek_to_start_of_stream(&mp3); printf("b"); }
             state(&mp3);
         }
         printf("\n");
         drmp3_uninit(&mp3);
+        free(data);
     }
     return 0;
 }
@@ -190,10 +222,15 @@ def opened(player: Maybe<S.Player>, +ops: +List<U32>) -> String:
       S.Player{H.Stream{_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, +channels, +rate}, _, _, _, _, _, _, +status} = p
       Bool.pick(String, U32.is_ne(status, 0), stopped(status), run(ops, False{}, p, "o" ++ U32.show(channels) ++ "/" ++ U32.show(rate) ++ state(p)))
 
-def loaded(result: Result<&1, &1, J.Surface.IOError, +List<U32>>, +ops: +List<U32>) -> IO(Unit):
+def open.as(memory: Bool, +bytes: +List<U32>) -> Maybe<S.Player>:
+  match memory:
+    case False{}: S.open(bytes)
+    case True{}: S.open.memory(bytes)
+
+def loaded(result: Result<&1, &1, J.Surface.IOError, +List<U32>>, +ops: +List<U32>, +memory: Bool) -> IO(Unit):
   match result:
     case Fail{_}: IO.print("unread")
-    case Done{+bytes}: IO.print(opened(S.open(bytes), ops))
+    case Done{+bytes}: IO.print(opened(open.as(memory, bytes), ops))
 
 def main() -> IO(Unit):
   do IO<Unit>:
@@ -205,16 +242,18 @@ def last_read(name):
     return LAST if name in WHOLE else SCRIPT[-1][1]
 
 
-def operations(name):
-    """The script for a file as the candidate takes it: a code and an argument for each operation."""
-    script = SCRIPT[:-1] + [(SCRIPT[-1][0], last_read(name))]
+def operations(name, straight=False):
+    """The script for a file as the candidate takes it: a code and an argument for each operation. `straight` is one read of
+    LAST frames and nothing before it."""
+    script = [('r', LAST)] if straight else SCRIPT[:-1] + [(SCRIPT[-1][0], last_read(name))]
     return [value for code, arg in script for value in (ord(code), arg)]
 
 
 def render(selected, gpu):
     return PROGRAM + ''.join(
-        f'    Unit <- IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Files.load_data({json.dumps(path)}), result => loaded(result, {probekit.bend_list(operations(name))}))\n'
-        for name, path in selected) + '    IO.print("done")\n'
+        f'    Unit <- IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Files.load_data({json.dumps(path)}), result => loaded(result, {probekit.bend_list(operations(name, straight))}, '
+        f'{"True" if memory else "False"}{{}}))\n'
+        for name, path, memory, straight in selected) + '    IO.print("done")\n'
 
 
 def parse(text, selected):
@@ -225,8 +264,9 @@ def parse(text, selected):
 
 
 def reference(items):
-    return (NATIVE.replace('FILES', ', '.join(json.dumps(str(ROOT / path)) for _, path in items))
-            .replace('LASTS', ', '.join(str(last_read(name)) for name, _ in items))
+    return (NATIVE.replace('FILES', ', '.join(json.dumps(str(ROOT / path)) for _, path, _, _ in items))
+            .replace('LASTS', ', '.join(str(last_read(name)) for name, _, _, _ in items)).replace('MEMORY', ', '.join(str(int(memory)) for _, _, memory, _ in items))
+            .replace('STRAIGHT', ', '.join(str(int(straight)) for _, _, _, straight in items))
             .replace('CODES', ''.join(code for code, _ in SCRIPT)).replace('ARGS', ', '.join(str(arg) for _, arg in SCRIPT)).replace('LIMIT', str(LAST)))
 
 
@@ -246,22 +286,33 @@ def main():
     items = []
     for name, data in files.items():
         (folder / f'{name}.mp3').write_bytes(data)
-        items.append((name, f'{WORK}/{name}.mp3'))
+        items.append((name, f'{WORK}/{name}.mp3', False, False))
+    items += [(name, path, True, False) for name, path, _, _ in items]
+    # the short files read straight to their end, both ways
+    straight = [(name, path, memory, True) for memory in (False, True) for name, path, _, _ in items[:len(files)] if name in WHOLE and name != 'whole']
+    items += straight
     expected = probe.native(reference(items), 'reference', extra_flags=['-ffp-contract=off', '-Wno-everything'], link_raylib=False).splitlines()
     if len(expected) != len(items):
         raise ProbeFailure(f'mp3-stream: the reference printed {len(expected)} rows for {len(items)} files')
     rows = dict(zip(files, expected))
+    # read straight to their end, a file and its bytes in memory do not always end alike (the script's seeks hide it)
+    half = len(straight) // 2
+    ends = dict(zip(((name, memory) for name, _, memory, _ in straight), expected[2 * len(files):]))
+    apart = sorted(name for name, _, _, _ in straight[:half] if ends[name, False] != ends[name, True])
+    if 'id3v1' not in apart or 'first12' in apart or len(apart) > half // 2:
+        raise ProbeFailure(f'mp3-stream: the reference ends memory streams apart from files for {apart}: the file with an ID3v1 tag is not among them, or the plain one is')
     whole = rows['whole'].split()
-    full = [row for row in expected if len(row.split()) == len(SCRIPT) + 1]
+    full = [row for row in expected[:len(files)] if len(row.split()) == len(SCRIPT) + 1]
     ended = sum(int(row.split()[-1][1:].split('/')[0]) < last_read(name) for name, row in rows.items() if name in WHOLE and len(row.split()) == len(SCRIPT) + 1)
     if len(whole) != len(SCRIPT) + 1 or not whole[0].startswith('o2/44100/0/0/0/2') or whole[1] != 'c4125934/0/0/0/2' or not whole[-1].startswith(f'r{LAST}/'):
         raise ProbeFailure(f'mp3-stream: the reference did not read country.mp3 as expected: {rows["whole"][:200]}')
-    if len(full) < 40 or ended < 8 or sum(row == 'closed' for row in expected) < 6:
-        raise ProbeFailure(f'mp3-stream: the corpus lost coverage: {len(full)} files ran the script, {ended} read to their end, {sum(row == "closed" for row in expected)} did not open')
+    if len(full) < 40 or ended < 8 or sum(row == 'closed' for row in expected[:len(files)]) < 6:
+        raise ProbeFailure(f'mp3-stream: the corpus lost coverage: {len(full)} files ran the script, {ended} read to their end, {sum(row == "closed" for row in expected[:len(files)])} did not open')
     lanes = probe.candidates(render, items, batch=24, parse=parse, timeout=1500)
-    probe.compare(expected, lanes, describe=lambda index: items[index][0] + ' ' + next(
+    probe.compare(expected, lanes, describe=lambda index: items[index][0] + (' (memory)' if items[index][2] else '') + (' (straight) ' if items[index][3] else ' ') + next(
         (first_difference(expected[index], rows[index]) for rows in lanes.values() if rows[index] != expected[index]), ''))
-    probe.finish(files=len(items), ran=len(full), read_to_end=ended, closed=sum(row == 'closed' for row in expected), layer12=sum('layer12' in row for row in expected),
+    probe.finish(files=len(files), streams=len(items), straight=len(straight), ends_apart=len(apart), ran=len(full), read_to_end=ended, closed=sum(row == 'closed' for row in expected[:len(files)]),
+                 layer12=sum('layer12' in row for row in expected),
                  operations=sum(len(row.split()) - 1 for row in expected if row != 'closed'),
                  files_sha256=hashlib.sha256(b''.join(name.encode() + data for name, data in sorted(files.items()))).hexdigest())
 

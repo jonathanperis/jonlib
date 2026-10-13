@@ -426,6 +426,13 @@ def decode(+dec: Dec, +window: +List<U32>, +bytes: U32) -> Frame:
 # the reads may then go that much past `length`). `size` is the file's bytes,
 # `length` the bytes before the tags at its end, `start` where its frames
 # begin, `cap` the buffer's capacity, `end` atEnd.
+#
+# A stream opened from memory (drmp3_init_memory) is read by another
+# function, drmp3_decode_next_frame_ex__memory: there is no buffer, every
+# frame is decoded from all the bytes left before the tags, and nothing is
+# ever read past them. Here such a stream has a `cap` of 4294967295 and its
+# "buffer" holds those bytes from the start; `end` is then that a decode
+# found nothing more (dr_mp3 sets no flag and finds nothing again each time).
 type Stream is Data:
   Stream{data: +List<U32>, size: U32, length: U32, start: U32, at: +List<U32>, have: U32, pos: U32, cursor: U32, cap: U32, end: Bool, dec: Dec,
     delay: U32, padding: U32, known: Bool, total: U32, channels: U32, rate: U32}
@@ -437,14 +444,40 @@ def stream.read(+size: U32, +length: U32, +pos: U32, +cursor: U32, +want: U32) -
 
 # The buffer filled as drmp3_decode_next_frame_ex__callbacks begins a turn:
 # below 16 KiB it is read up to its capacity (64 KiB at least); with nothing
-# read and nothing held the stream is at its end.
+# read and nothing held the stream is at its end. A memory stream has no
+# buffer to fill.
 def stream.fill(stream: Stream) -> Stream:
   Stream{data, +size, +length, start, at, +have, +pos, +cursor, +cap, +end, dec, delay, padding, known, total, channels, rate} = stream
-  +low = (have < 16384 : U32) && Bool.not(end)
+  +low = (have < 16384 : U32) && Bool.not(end) && U32.is_ne(cap, 4294967295)
   +room = U32.max(cap, 65536)
   +more = Bool.pick(U32, low, stream.read(size, length, pos, cursor, (room - U32.min(have, room) : U32)), 0)
   Stream{data, size, length, start, at, (have + more : U32), (pos + more : U32), (cursor + more : U32), Bool.pick(U32, low, room, cap), end || (low && U32.is_eq((have + more : U32), 0)), dec,
     delay, padding, known, total, channels, rate}
+
+def stream.memory(stream: Stream) -> Bool:
+  Stream{_, _, _, _, _, _, _, _, cap, _, _, _, _, _, _, _, _} = stream
+  U32.is_eq(cap, 4294967295)
+
+def stream.stopped(stream: Stream, +end: Bool) -> Stream:
+  Stream{data, size, length, start, at, have, pos, cursor, cap, _, dec, delay, padding, known, total, channels, rate} = stream
+  Stream{data, size, length, start, at, have, pos, cursor, cap, end, dec, delay, padding, known, total, channels, rate}
+
+# After a frame without samples took `bytes` of the buffer: the buffer is
+# filled again; a memory stream goes on while bytes were passed and is over
+# when none were.
+def stream.refill(memory: Bool, +stream: Stream, +bytes: U32) -> Stream:
+  match memory:
+    case False{}: stream.fill(stream)
+    case True{}: stream.stopped(stream, U32.is_eq(bytes, 0))
+
+# The stream before its first frame: the file read from `start`, or for a
+# memory stream every byte from there to `length`.
+def stream.began(memory: Bool, +data: +List<U32>, +size: U32, +length: U32, +start: U32) -> Stream:
+  match memory:
+    case False{}: Stream{data, size, length, start, List.drop(&2, U32, data, U32.to_nat(U32.min(start, size))), 0, start, start, 0, False{}, Dec.zero(), 0, 0, False{}, 0, 0, 0}
+    case True{}:
+      Stream{data, size, length, start, List.drop(&2, U32, data, U32.to_nat(U32.min(start, size))), (length - U32.min(start, length) : U32), start, start, 4294967295, False{}, Dec.zero(), 0, 0, False{}, 0, 0,
+        0}
 
 # The next frame in the buffer.
 def stream.frame(stream: Stream) -> Frame:
@@ -474,7 +507,9 @@ type Next is Data:
 # The loop of drmp3_decode_next_frame_ex__callbacks: a frame is decoded from
 # the buffer and its bytes leave it; one with samples ends the loop, anything
 # else (bytes that are no frame, a frame that decodes nothing) is passed and
-# the buffer filled again. `frame` is the frame of `stream`'s buffer.
+# the buffer filled again. `frame` is the frame of `stream`'s buffer. For a
+# memory stream it is drmp3_decode_next_frame_ex__memory's loop: the same
+# without a buffer, over when a decode passes no byte.
 def stream.loop(n: Nat, ended: Bool, frame: Frame, +stream: Stream) -> Next:
   match n:
     case 0n: Next{stream, 0, 0, 0, Nil{}}
@@ -482,7 +517,7 @@ def stream.loop(n: Nat, ended: Bool, frame: Frame, +stream: Stream) -> Next:
       match ended frame:
         case True{} _: Next{stream, 0, 0, 0, Nil{}}
         case False{} Frame{+dec, 0, +bytes, _, _}:
-          +next = stream.fill(stream.used(stream, dec, bytes))
+          +next = stream.refill(stream.memory(stream), stream.used(stream, dec, bytes), bytes)
           stream.loop(rest, stream.ended(next), stream.frame(next), next)
         case False{} Frame{+dec, +samples, +bytes, +header, _}: Next{stream.used(stream, dec, bytes), samples, header, bytes, stream.at(stream)}
 
@@ -584,28 +619,35 @@ def open.next(next: Next) -> Maybe<Opened>:
     case Next{_, 0, _, _, _}: None{}
     case Next{+stream, +samples, +header, +bytes, +region}: open.tagged(info.first(region, bytes), stream, samples, header, bytes)
 
-def open.sized(long: Bool, +data: +List<U32>, +size: U32) -> Maybe<Opened>:
+def open.sized(long: Bool, +memory: Bool, +data: +List<U32>, +size: U32) -> Maybe<Opened>:
   match long:
     case False{}: None{}
     case True{}:
       +length = tags.ape(data, tags.id3v1(data, size))
       +start = tags.id3v2(data)
-      open.next(stream.next(Stream{data, size, length, start, List.drop(&2, U32, data, U32.to_nat(U32.min(start, size))), 0, start, start, 0, False{}, Dec.zero(), 0, 0, False{}, 0, 0, 0}))
+      open.next(stream.next(stream.began(memory && U32.is_ne(length, 0), data, size, length, start)))
 
 # drmp3_init_file on the file's bytes: None where it fails (fewer than ten
 # bytes, or no frame that decodes).
 def open(+data: +List<U32>) -> Maybe<Opened>:
-  open.sized((count(data, 0) >= 10 : U32), data, count(data, 0))
+  open.sized((count(data, 0) >= 10 : U32), False{}, data, count(data, 0))
+
+# drmp3_init_memory on the same bytes. dr_mp3 reads a memory stream with its
+# memory function while the stream has bytes before its tags, and through
+# its callbacks otherwise.
+def open.memory(+data: +List<U32>) -> Maybe<Opened>:
+  open.sized((count(data, 0) >= 10 : U32), True{}, data, count(data, 0))
 
 # -----------------------------------------------------------------------------
 # Counting (drmp3_get_pcm_frame_count)
 
 # drmp3_seek_to_start_of_stream: the file at the stream's start, the buffer
-# empty and the decoder's header cleared.
+# empty (a memory stream has its bytes from there) and the decoder's header
+# cleared.
 def stream.rewound(stream: Stream) -> Stream:
-  Stream{+data, +size, length, +start, _, _, _, _, cap, _, Dec{+last, +free, +reserv}, delay, padding, known, total, channels, rate} = stream
-  Stream{data, size, length, start, List.drop(&2, U32, data, U32.to_nat(U32.min(start, size))), 0, start, start, cap, False{}, Dec{(last .&. 16777215 : U32), free, reserv}, delay, padding,
-    known, total, channels, rate}
+  Stream{+data, +size, +length, +start, _, _, _, _, +cap, _, Dec{+last, +free, +reserv}, delay, padding, known, total, channels, rate} = stream
+  Stream{data, size, length, start, List.drop(&2, U32, data, U32.to_nat(U32.min(start, size))), Bool.pick(U32, U32.is_eq(cap, 4294967295), (length - U32.min(start, length) : U32), 0), start, start, cap,
+    False{}, Dec{(last .&. 16777215 : U32), free, reserv}, delay, padding, known, total, channels, rate}
 
 # Every frame from here to the stream's end that decodes: how many, and their
 # samples (drmp3_get_mp3_and_pcm_frame_count's loop).

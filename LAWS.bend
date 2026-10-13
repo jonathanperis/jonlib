@@ -3701,3 +3701,53 @@ law gui_list_disabled_items:
 
 law gui_font_base_size_is_the_default_font_s:
   {JG.Gui.font_base_size(JG.Gui.new()) == 10 : U32}
+
+# dr_mp3's memory streams (src/mp3.bend): opened from memory, a stream has
+# every byte before its tags at hand and none after them, is never filled,
+# goes on while a decode passes bytes and is over when one passes none; a
+# seek to its start gives it its bytes again. Waves and musics from memory
+# are such streams; a music from a file is not.
+
+law mp3_memory_stream_has_its_bytes_at_hand:
+  {Mp3.stream.began(True{}, [1, 2, 3, 4, 5], 5, 4, 1) == Mp3.Stream{[1, 2, 3, 4, 5], 5, 4, 1, [2, 3, 4, 5], 3, 1, 1, 4294967295, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 0, 0} : Mp3.Stream}
+
+law mp3_file_stream_begins_with_an_empty_buffer:
+  {Mp3.stream.began(False{}, [1, 2, 3, 4, 5], 5, 4, 1) == Mp3.Stream{[1, 2, 3, 4, 5], 5, 4, 1, [2, 3, 4, 5], 0, 1, 1, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 0, 0} : Mp3.Stream}
+
+law mp3_memory_stream_is_told_by_its_capacity:
+  {Mp3.stream.memory(Mp3.stream.began(True{}, [1, 2, 3, 4, 5], 5, 4, 1)) == True{} : Bool}
+
+law mp3_file_stream_is_not_a_memory_stream:
+  {Mp3.stream.memory(Mp3.stream.began(False{}, [1, 2, 3, 4, 5], 5, 4, 1)) == False{} : Bool}
+
+law mp3_memory_stream_is_not_filled:
+  {Mp3.stream.fill(Mp3.stream.began(True{}, [1, 2, 3, 4, 5], 5, 4, 1)) == Mp3.stream.began(True{}, [1, 2, 3, 4, 5], 5, 4, 1) : Mp3.Stream}
+
+law mp3_memory_stream_goes_on_after_passed_bytes:
+  {Mp3.stream.ended(Mp3.stream.refill(True{}, Mp3.stream.began(True{}, [1, 2, 3, 4, 5], 5, 4, 1), 2)) == False{} : Bool}
+
+law mp3_memory_stream_is_over_when_no_byte_is_passed:
+  {Mp3.stream.ended(Mp3.stream.refill(True{}, Mp3.stream.began(True{}, [1, 2, 3, 4, 5], 5, 4, 1), 0)) == True{} : Bool}
+
+law mp3_memory_stream_rewound_has_its_bytes_again:
+  {Mp3.stream.rewound(Mp3.stream.stopped(Mp3.stream.used(Mp3.stream.began(True{}, [1, 2, 3, 4, 5], 5, 4, 1), Mp3.Dec.zero(), 3), True{})) == Mp3.stream.began(True{}, [1, 2, 3, 4, 5], 5, 4, 1) : Mp3.Stream}
+
+# Passing more bytes than the stream has leaves none to decode: the byte that
+# stays listed is the tag's, past what the stream holds.
+law mp3_memory_stream_holds_no_byte_of_its_tags:
+  {Mp3.stream.used(Mp3.stream.began(True{}, [1, 2, 3, 4, 5], 5, 4, 1), Mp3.Dec.zero(), 9) == Mp3.Stream{[1, 2, 3, 4, 5], 5, 4, 1, [5], 0, 1, 1, 4294967295, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 0, 0} : Mp3.Stream}
+
+law mp3_memory_of_a_short_file_does_not_open:
+  {Mp3.open.memory([255, 251, 144, 68]) == None{} : Maybe<Mp3.Opened>}
+
+law mp3_stream_memory_of_a_short_file_does_not_open:
+  {Mp3S.open.memory([255, 251, 144, 68]) == None{} : Maybe<Mp3S.Player>}
+
+law wave_mp3_length_counts_bytes:
+  {J.Wave.mp3.length([7, 8, 9], 0) == 3 : U32}
+
+law music_kind_of_mp3_tokens:
+  {((J.Music.decode.kind(".mp3") * 100) + (J.Music.decode.kind(".MP3") * 10) + J.Music.decode.kind(".Mp3") : U32) == 440 : U32}
+
+law music_kind_of_wav_and_qoa_tokens:
+  {((J.Music.decode.kind(".wav") * 10) + J.Music.decode.kind(".QOA") : U32) == 15 : U32}
