@@ -3856,3 +3856,111 @@ def Laws.wave_ogg_every_short_written_is_a_wave():
 
 def Laws.wave_ogg_shorts_never_written_are_no_wave():
   {==}
+
+def Laws.xm_module_byte_past_the_data_is_zero():
+  {==}
+
+def Laws.xm_module_bytes_are_read_the_lowest_first():
+  {==}
+
+def Laws.xm_module_word_cut_by_the_data_s_end():
+  {==}
+
+def Laws.xm_module_offset_moves_on():
+  {==}
+
+def Laws.xm_module_offset_past_any_data_stays_there():
+  {==}
+
+def Laws.xm_module_offset_does_not_wrap():
+  {==}
+
+def Laws.xm_module_int8_of_a_byte():
+  {==}
+
+def Laws.xm_module_int8_keeps_its_range():
+  {==}
+
+def Laws.xm_module_int16_of_two_bytes():
+  {==}
+
+def Laws.xm_module_sizes_are_aligned_to_16():
+  {==}
+
+def Laws.xm_module_aligned_size_stays():
+  {==}
+
+def Laws.xm_module_sizes_stop_past_the_limit():
+  {==}
+
+def Laws.xm_module_int_halved_toward_zero():
+  {==}
+
+def Laws.xm_module_loop_of_a_16_bit_sample_is_halved():
+  {==}
+
+def Laws.xm_module_loop_of_a_stereo_sample_is_halved_as_ints():
+  {==}
+
+def Laws.xm_module_loop_of_a_plain_sample_is_the_header_s():
+  {==}
+
+def Laws.xm_module_vibrato_waveforms_one_and_two_are_swapped():
+  {==}
+
+def Laws.xm_module_plain_slot_takes_five_bytes():
+  {==}
+
+def Laws.xm_module_packed_slot_takes_what_it_says():
+  {==}
+
+def Laws.xm_module_empty_packed_slot_takes_one_byte():
+  {==}
+
+def Laws.xm_module_packed_slots_are_read():
+  {==}
+
+def Laws.xm_module_plain_slot_is_read():
+  {==}
+
+def Laws.xm_module_slot_past_the_pattern_s_is_refused():
+  {==}
+
+def Laws.xm_module_bytes_for_no_slots_are_refused():
+  {==}
+
+def Laws.xm_module_no_bytes_are_no_slots_read():
+  {==}
+
+def Laws.xm_module_slots_left_out_are_zeros():
+  {==}
+
+def Laws.xm_module_order_of_its_patterns_is_fine():
+  {==}
+
+def Laws.xm_module_order_loses_a_last_entry_without_a_pattern():
+  {==}
+
+def Laws.xm_module_order_with_an_entry_without_a_pattern_fails():
+  {==}
+
+def Laws.xm_module_order_of_one_entry_without_a_pattern_fails():
+  {==}
+
+def Laws.xm_module_order_past_its_bytes_is_checked_without_end():
+  {==}
+
+def Laws.xm_module_data_with_its_marks_is_sane():
+  {==}
+
+def Laws.xm_module_data_of_59_bytes_is_not():
+  {==}
+
+def Laws.xm_module_another_version_is_not_sane():
+  {==}
+
+def Laws.xm_module_no_data_is_no_module():
+  {==}
+
+def Laws.xm_module_other_data_is_no_module():
+  {==}

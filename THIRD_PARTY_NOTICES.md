@@ -423,6 +423,20 @@ candidate. stb_vorbis is MIT or public domain; Jonlib uses the MIT
 alternative, retained with its notice in
 [LICENSES/stb_vorbis.txt](LICENSES/stb_vorbis.txt).
 
+
+## jar_xm
+
+`src/xm_module.bend` is an altered Bend adaptation of part of jar_xm.h
+v0.3.1 (libxm by Romain "Artefact2" Dalmaso with Dan Spencer, repackaged by
+Joshua Adam Reisenauer, with later changes by m4ntr0n1c), as pinned raylib
+vendors it in `src/external/jar_xm.h`: the reading of a module
+(`jar_xm_create_context_safe`, `jar_xm_check_sanity_preload`,
+`jar_xm_get_memory_needed_for_context`, `jar_xm_load_module` and
+`jar_xm_check_sanity_postload`). `tools/xm_module_probe.py` includes the
+unmodified file in its reference program only; no jar_xm code is linked
+into the Bend candidate. jar_xm is under the WTFPL, version 2, retained
+with its notice in [LICENSES/jar_xm.txt](LICENSES/jar_xm.txt).
+
 ## QOA
 
 `src/qoa.bend` is an altered Bend adaptation of `qoa_decode` and `qoa_encode`

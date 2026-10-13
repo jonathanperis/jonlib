@@ -2183,6 +2183,21 @@
    "minutes": 25
   },
   {
+   "id": "xm-module",
+   "title": "An XM module read from its file (jar_xm jar_xm_create_context_safe: the sanity checks, the block of memory's estimate, the header, pattern order, packed patterns, instruments, envelopes and delta-coded samples) against jar_xm.h itself: hashes of the header and order, every slot, and the instruments with every float of their samples, and how much of the row counts is inside the block, for raylib's mini1111.xm, cuts and changed bytes of it, and built modules; files jar_xm would write outside an array for, or loop on without end, are told by the probe's model of the loader, are not run by the reference, and must be refused for the model's reason; the model's other verdicts are held against jar_xm",
+   "run": [
+    "{python}",
+    "tools/xm_module_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 7
+  },
+  {
    "id": "wave-format",
    "title": "WaveFormat (miniaudio ma_convert_frames: formats, channel maps, linear resampling and its low-pass filter) against raylib with its audio module and the host contraction profile",
    "run": [
