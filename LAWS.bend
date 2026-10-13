@@ -1018,6 +1018,39 @@ law glibc_expf_variant_argument_none:
 law glibc_expf_other_variant_argument_none:
   {Power.exp.word(3262932441) == None{} : Maybe<F32>}
 
+# logf's domain is every positive finite float. A subnormal one is scaled by
+# 2^23 with 23 taken from its exponent, as glibc does: the word wraps below
+# zero (the smallest subnormal's exponent field is 1 - 23).
+law glibc_logf_answers_the_smallest_subnormal:
+  {Power.log.domain(1) == True{} : Bool}
+
+law glibc_logf_answers_the_largest_subnormal:
+  {Power.log.domain(8388607) == True{} : Bool}
+
+law glibc_logf_answers_the_largest_float:
+  {Power.log.domain(2139095039) == True{} : Bool}
+
+law glibc_logf_domain_without_zero:
+  {Power.log.domain(0) == False{} : Bool}
+
+law glibc_logf_domain_without_infinity:
+  {Power.log.domain(2139095040) == False{} : Bool}
+
+law glibc_logf_domain_without_negatives:
+  {Power.log.domain(2147483649) == False{} : Bool}
+
+law glibc_logf_smallest_subnormal_scaled:
+  {Power.normalize(1) == 4110417920 : U32}
+
+law glibc_logf_half_the_smallest_normal_scaled:
+  {Power.normalize(4194304) == 0 : U32}
+
+law glibc_logf_largest_subnormal_scaled:
+  {Power.normalize(8388607) == 8388606 : U32}
+
+law glibc_logf_normal_word_kept:
+  {Power.normalize(8388608) == 8388608 : U32}
+
 law glibc_logf_zero_none:
   {Power.log.word(0) == None{} : Maybe<F32>}
 

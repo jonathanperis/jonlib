@@ -29,7 +29,8 @@ class ExpLogModelTests(unittest.TestCase):
             self.assertFalse(probe.exp_inside(bits))
             self.assertTrue(probe.exp_inside(bits + 1))
         self.assertTrue(probe.log_inside(0x00800000))
-        self.assertFalse(probe.log_inside(0x007FFFFF))
+        self.assertTrue(probe.log_inside(0x007FFFFF))
+        self.assertTrue(probe.log_inside(1))
         self.assertFalse(probe.log_inside(0))
         self.assertFalse(probe.log_inside(0xBF800000))
         self.assertFalse(probe.log_inside(0x7F800000))
@@ -37,9 +38,20 @@ class ExpLogModelTests(unittest.TestCase):
     def test_cases_are_deterministic_and_reach_the_edges(self):
         chosen = probe.cases()
         self.assertEqual(chosen, probe.cases())
-        self.assertEqual(len(chosen), 242)
-        for bits in (probe.EXP_LIMIT, *probe.EXP_VARIANTS, 0x00800000, 0x7F800000):
+        self.assertEqual(len(chosen), 279)
+        for bits in (probe.EXP_LIMIT, *probe.EXP_VARIANTS, 0x00800000, 0x7F800000, 1, 0x000116C2, 0x007FFFFF):
             self.assertIn(bits, chosen)
+        self.assertEqual(sum(1 <= bits < 0x00800000 for bits in chosen), 39)
+
+    def test_a_subnormal_is_scaled_before_its_logarithm(self):
+        # x*2^23 with 23 taken from the exponent: the smallest subnormal is 2^-149, word 1 -> exponent field 1 - 23
+        self.assertEqual(probe.normalized(1), (1 - 23) << 23 & 0xFFFFFFFF)
+        self.assertEqual(probe.normalized(0x00400000), 0)                      # 2^-127: exponent field 0, no fraction
+        self.assertEqual(probe.normalized(0x007FFFFF), 0x007FFFFE)
+        self.assertEqual(probe.normalized(0x00800000), 0x00800000)
+        # logf(2^-149) = -149 ln 2, and 1e-40f is a little above 2^-133
+        self.assertEqual(probe.log_model(1), 0xC2CE8ED0)
+        self.assertEqual(probe.log_model(0x000116C2), 0xC2B834F2)
 
 
 if __name__ == '__main__':

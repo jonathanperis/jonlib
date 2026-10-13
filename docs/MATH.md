@@ -310,7 +310,7 @@ in magnitude, where the result is normal (exactly `2^y` for an integral
 [Powers of two](#powers-of-two)).
 `M.Libm.exp(libm, x)` and `M.Libm.log(libm, x)` are `expf` and `logf` under
 both glibc profiles: `expf` for a finite `x` below 87 in magnitude except two
-arguments, `logf` for a positive normal `x`; `None` for `AppleLibm` and
+arguments, `logf` for a positive finite `x` (subnormals included); `None` for `AppleLibm` and
 everything else (gate `explog`, [Exponential and logarithm](#exponential-and-logarithm)).
 `M.Libm.acos(libm, x)` and `M.Libm.pow(libm, x, exponent)` expose the glibc
 2.39 `acosf` and `powf` (exponents 2 and 3 on [-0, 1]) kernels as `Maybe`
@@ -520,7 +520,9 @@ not modeled: `Glibc241Libm` and `AppleLibm` are `None`.
 optimized-routines `math/expf.c`, `math/logf.c`, MIT alternative,
 [LICENSES/arm-math.txt](../LICENSES/arm-math.txt)). The domains leave every
 special case out: a finite `x` with `|x| < 87` for `expf` (a normal result),
-a positive normal `x` for `logf`.
+a positive finite `x` for `logf`. A subnormal `x` is first scaled by 2^23
+with 23 taken from its exponent, as `logf.c` does (`Power.normalize`, which
+`powf` shares), and then goes the normal way.
 
 `tools/reference/glibc_explog/model.c` is the explicit-operation C model of
 both (`FUSED=1` for the `-mfma -mavx2` ifunc variants, `FUSED=0` for the
@@ -534,6 +536,12 @@ the two domains against the host's functions:
 | Debian trixie container, glibc 2.41-12+deb13u4 | FMA | 2,237,399,040 | 0 | 2,130,706,432 | 0 |
 | Debian trixie container, glibc 2.41-12+deb13u4 | SSE2 | 2,237,399,040 | 0 | 2,130,706,432 | 0 |
 
+The 8,388,607 positive subnormal arguments of `logf` were checked apart
+(2026-10-13, the same files): no difference from any of the four hosts, no
+intermediate outside the binary64 helpers' domain, and the two models
+agree on all of them. `audio_spectrum_visualizer` needs them: it takes
+`logf(fmaxf(magnitude, 1e-40f))`, and `1e-40f` is subnormal.
+
 In the FMA variant of `expf` the compiler contracts `r = z - kd` over
 `z = InvLn2N*x` into `fma(InvLn2N, x, -kd)`; without that the model differs
 from an FMA host at two arguments. `variants.c` compares the two models with
@@ -544,7 +552,7 @@ checked binary64 helpers, whose domain no intermediate of the SSE2 model
 leaves) and refuses those two arguments, whose answer depends on the CPU.
 The JSON results are in `tools/reference/glibc_explog/results`. Gate `explog`
 (`tools/explog_probe.py`) evaluates the same arithmetic in Python's binary64
-for 242 arguments, checks the host's functions against it on glibc hosts and
+for 279 arguments (39 of them subnormal), checks the host's functions against it on glibc hosts and
 Jonmath's results on every lane. macOS's functions are not modeled:
 `AppleLibm` is `None`.
 

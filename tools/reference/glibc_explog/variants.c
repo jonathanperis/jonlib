@@ -26,7 +26,7 @@ int main (int argc, char **argv)
           if (bits (fused_expf (x)) != bits (plain_expf (x))) ev++;
           if (bits (fused_expf (x)) != bits (plain_expf (x)) && shown++ < 8) fprintf (stderr, "expf variants differ at %08x: fused %08x plain %08x\n", w, bits (fused_expf (x)), bits (plain_expf (x)));
         }
-      if (w >= 0x00800000 && w < 0x7f800000 && bits (fused_logf (x)) != bits (plain_logf (x))) lv++;
+      if (w >= 1 && w < 0x7f800000 && bits (fused_logf (x)) != bits (plain_logf (x))) lv++;
     }
   printf ("%llu %llu\n", ev, lv);
   return 0;

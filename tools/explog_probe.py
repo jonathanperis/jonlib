@@ -3,7 +3,8 @@
 
 The glibc profiles answer glibc's x86_64 expf for every finite x below 87 in
 magnitude (a normal result) except the two arguments at which its SSE2 and
-FMA variants differ, and its logf for every positive normal x. The expected
+FMA variants differ, and its logf for every positive finite x, the subnormal
+ones included (logf scales those by 2^23 first). The expected
 words come from `exp_model` and `log_model`: the kernels' arithmetic (Arm
 optimized-routines' expf.c and logf.c) in Python's binary64, which
 tools/reference/glibc_explog checks against glibc 2.39 and 2.41, in both
@@ -94,8 +95,18 @@ def exp_inside(bits):
 
 
 def log_inside(bits):
-    """A positive normal x."""
-    return 0x00800000 <= bits < 0x7F800000
+    """A positive finite x, subnormal or normal."""
+    return 1 <= bits < 0x7F800000
+
+
+def normalized(bits):
+    """logf's word of a subnormal x: x*2^23 with 23 taken from its exponent (the word wraps below zero)."""
+    if bits >= 0x00800000:
+        return bits
+    shifts = 0
+    while bits < 0x00800000:
+        bits, shifts = bits << 1, shifts + 1
+    return (((1 - shifts) << 23) + (bits & 0x007FFFFF)) & 0xFFFFFFFF
 
 
 def exp_model(bits):
@@ -114,7 +125,8 @@ def exp_model(bits):
 
 
 def log_model(bits):
-    """The word of logf(x) for a positive normal x."""
+    """The word of logf(x) for a positive finite x."""
+    bits = normalized(bits)
     tmp = (bits - 0x3F330000) & 0xFFFFFFFF
     i = (tmp >> 19) % 16
     k = (tmp >> 23) - (512 if tmp & 0x80000000 else 0)
@@ -145,6 +157,9 @@ def cases():
     words = [word(v) for v in values]
     words += [EXP_LIMIT - 1, EXP_LIMIT, 0x80000000 | (EXP_LIMIT - 1), 0x80000000 | EXP_LIMIT, *EXP_VARIANTS, EXP_VARIANTS[0] + 1, EXP_VARIANTS[1] - 1,
               1, 0x007FFFFF, 0x00800000, 0x7F7FFFFF, 0x7F800000, 0x7FC00000, 0x3F7FFFFF, 0x3F800001, 0x3F330000, 0x3F32FFFF]
+    # Subnormals: the smallest ones, each power of two, 1e-40f (the floor audio_spectrum_visualizer puts under its
+    # magnitudes before logf) and a seeded sample.
+    words += [2, 3, 0x000116C2, 0x00400000, 0x00400001, 0x007FFFFE] + [1 << n for n in range(2, 22, 3)] + [w & 0x007FFFFF for w in sample(24, 0x0DDB1A5E)]
     return words + sample(160, 0x51F15E5D)
 
 

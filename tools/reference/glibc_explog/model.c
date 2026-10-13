@@ -18,7 +18,8 @@
   0x3feee89f995ad3adULL, 0x3feeff76f2fb5e47ULL, 0x3fef199bdd85529cULL, 0x3fef3720dcef9069ULL,
   0x3fef5818dcfba487ULL, 0x3fef7c97337b9b5fULL, 0x3fefa4afa2a490daULL, 0x3fefd0765b6e4540ULL_BITS 4 and TOINT_INTRINSICS 0.
    MODEL_EXPF: a finite x with |x| < 87 (a normal result, no special case).
-   MODEL_LOGF: a positive normal x.
+   MODEL_LOGF: a positive finite x (a subnormal one is scaled by 2^23 first,
+   as logf.c does).
    FUSED=1 is the __expf_fma/__logf_fma ifunc variant (-mfma -mavx2): every
    a*b + c of the source is one fma, and in expf GCC also contracts
    r = z - kd over z = InvLn2N*xd into fma (InvLn2N, xd, -kd), which is what
@@ -76,6 +77,13 @@ float MODEL_LOGF (float x)
   memcpy (&ix, &x, 4);
   if (ix == 0x3f800000)
     return 0;
+  if (ix < 0x00800000)
+    {
+      /* x is subnormal, normalize it. */
+      float scaled = x * 0x1p23f;
+      memcpy (&ix, &scaled, 4);
+      ix -= 23 << 23;
+    }
   tmp = ix - 0x3f330000;
   i = (tmp >> 19) % 16;
   k = (int32_t) tmp >> 23;

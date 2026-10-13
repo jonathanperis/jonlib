@@ -1,11 +1,14 @@
 /* Every binary32 argument of each domain: the models against the host's expf
-   (a finite x with |x| < 87) and logf (a positive normal x), and, for FUSED,
+   (a finite x with |x| < 87) and logf (a positive normal x, and apart from
+   those a positive subnormal one, which logf first scales by 2^23), and, for
+   FUSED,
    every binary64 intermediate inside the domain of Jonlib's exact scaled
    helpers (zero or normal operands and results, FMA addend exponent within
    [-554, 255] of the product's, sum operands within 900 binades); for the
    unfused model the same value and sum conditions. Arguments: first, end
    (hexadecimal words). Prints: expf arguments, expf differences, logf
-   arguments, logf differences, domain violations.
+   arguments, logf differences, domain violations, then the subnormal logf
+   arguments, their differences and their domain violations.
    The two variants of expf differ at x = 0x4202422f and x = 0xc27c65d9 only
    (variants.c); logf's never do. */
 #define _GNU_SOURCE
@@ -17,7 +20,7 @@
 float model_expf (float), model_logf (float);
 static float (*volatile host_expf) (float) = expf;
 static float (*volatile host_logf) (float) = logf;
-static unsigned long long domain;
+static unsigned long long domain, sub_domain;
 static int stored (double v) { uint64_t b; memcpy (&b, &v, 8); return (int) ((b >> 52) & 2047); }
 static void value (double v) { int e = stored (v); if (v != 0 && (e == 0 || e == 2047)) domain++; }
 static double mul (double a, double b) { value (a); value (b); value (a * b); return a * b; }
@@ -71,6 +74,7 @@ static void log_intermediates (float x)
   double r, r2, y, y0;
   memcpy (&ix, &x, 4);
   if (ix == 0x3f800000) return;
+  if (ix < 0x00800000) { float scaled = x * 0x1p23f; memcpy (&ix, &scaled, 4); ix -= 23 << 23; }
   tmp = ix - 0x3f330000; i = (tmp >> 19) % 16; k = (int32_t) tmp >> 23; iz = ix - (tmp & 0xff800000);
   memcpy (&zf, &iz, 4);
   r = madd (zf, INVC[i], -1.0);
@@ -90,7 +94,7 @@ static int same (float a, float b)
 int main (int argc, char **argv)
 {
   uint64_t first = strtoull (argv[1], 0, 16), end = strtoull (argv[2], 0, 16), u;
-  unsigned long long exps = 0, exp_diff = 0, logs = 0, log_diff = 0;
+  unsigned long long exps = 0, exp_diff = 0, logs = 0, log_diff = 0, subs = 0, sub_diff = 0, before;
   (void) argc;
   for (u = first; u < end; u++)
     {
@@ -109,7 +113,15 @@ int main (int argc, char **argv)
           if (!same (model_logf (x), host_logf (x))) log_diff++;
           log_intermediates (x);
         }
+      if (w >= 1 && w < 0x00800000)
+        {
+          subs++;
+          if (!same (model_logf (x), host_logf (x))) sub_diff++;
+          before = domain;
+          log_intermediates (x);
+          sub_domain += domain - before;
+        }
     }
-  printf ("%llu %llu %llu %llu %llu\n", exps, exp_diff, logs, log_diff, domain);
+  printf ("%llu %llu %llu %llu %llu %llu %llu %llu\n", exps, exp_diff, logs, log_diff, domain, subs, sub_diff, sub_domain);
   return 0;
 }
