@@ -72,7 +72,7 @@ at the branch's head.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 582/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **207/212 ported** with the stack (`audio_music_stream`, `audio_stream_effects` and `audio_mixed_processor` play `country.mp3` through the MP3 decoder; `core_screen_recording` writes its GIF with the msf_gif port; `core_directory_files` is handed its directory listings; `text_unicode_ranges` loads a 7 MiB font), 5 ready (two of them wait for a decoder, which the plan does not count: `mini1111.xm`, `target.ogg`), 0 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **208/212 ported** with the stack (`audio_music_stream`, `audio_stream_effects` and `audio_mixed_processor` play `country.mp3` through the MP3 decoder; `core_screen_recording` writes its GIF with the msf_gif port; `core_directory_files` is handed its directory listings; `text_unicode_ranges` loads a 7 MiB font; `textures_sprite_stacking` a 112x11468 texture), 4 ready (two of them wait for a decoder, which the plan does not count: `mini1111.xm`, `target.ogg`), 0 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -287,7 +287,7 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `text_font_sdf` the C library's functions of `stbtt__solve_cubic` for
      SDF glyphs with curves (docs/FONTS.md, Gaps); `text_unicode_ranges` a
      7 MiB TTF (no limit was in its way: it is ported, below) and `shaders_basic_pbr` a 1.7 MiB PNG (the 1 MiB input
-     limit of images); `textures_sprite_stacking` a 112x11468 image (the 4096 limit);
+     limit of images); `textures_sprite_stacking` a 112x11468 image (the 4096 limit: ported since, below);
      `text_3d_drawing` is ported (the font texture held once around the
      3D texts through `Rlgl.set_texture`, the glyph metrics as a table by
      byte; no script types characters, so that branch is unverified) and
@@ -310,9 +310,9 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      decoder's two caps in `src/png.bend`, and `Inflate.decompress.within`
      so that the public `Compression.decompress` keeps 1 MiB; gates
      `png-format` at 55 minutes and `png-file` carry the cap cases).
-     `textures_sprite_stacking` needs a 112x11468 image: the 4096 limit is
-     in about sixty places of `jonlib.bend` and every codec, a contract of
-     its own. `text_unicode_ranges` is ported (below). `text_font_sdf`
+     `textures_sprite_stacking` needed a 112x11468 image; the 4096 limit is
+     in about sixty places of `jonlib.bend` and every codec, and stays
+     (the example is ported through `LoadTexture`'s strips, below). `text_unicode_ranges` is ported (below). `text_font_sdf`
      needs binary64 acos and pow for `stbtt__solve_cubic` (cos exists:
      `src/lgpl/sin.bend`). `models_loading_m3d` is ported over the M3D loader
      (`src/m3d.bend`, gate `m3d`: the binary variant's container, chunks,
@@ -335,8 +335,8 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      frames (zoom buttons, Slower, a run every second frame) passed
      locally. Its Random preset (4.2 million `GetRandomValue` draws) is
      ported and not scripted;
-   - images beyond 4096 pixels on an axis (`textures_sprite_stacking`,
-     parked in `.build/pending/`, not in the repository);
+   - images beyond 4096 pixels on an axis (as images; a texture's PNG may
+     be a strip of up to 16384, see `textures_sprite_stacking` below);
    - `GetFileModTime` (`shaders_hot_reloading`), `GetApplicationDirectory`
      (`core_screen_recording`); `models_decals` is ready since `UploadMesh`;
      `text_codepoints_loading` reads out of bounds natively and is ported
@@ -677,14 +677,47 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      first of the four choices (three loads of the file, 212 glyphs);
      the whole replay is about nine minutes on this machine, most of it
      the JavaScript lane. The other choices are not scripted.
-   - The five examples left: `audio_module_playing` (jar_xm),
-     `audio_sound_loading` (stb_vorbis), `audio_spectrum_visualizer`
-     (`LoadWave` of the whole `country.mp3`, about six minutes in the
-     JavaScript lane, and an FFT no frame shows: the reference's
-     renderer runs no shader, so its spectrum would need a gate of its
-     own), `text_font_sdf` (binary64 `acos` and `pow` for
-     stb_truetype's cubic solver) and `textures_sprite_stacking` (a
-     112x11468 image: the 4096 limit).
+   - **`textures_sprite_stacking` is ported.** Its `booth.png` is
+     112x11468, past an image's 4096 on a side. The limit was not lifted
+     in its sixty places: only `LoadTexture` takes a longer PNG (up to
+     16384 on a side, no more than 4096x4096 pixels; `Png.decode.wide`,
+     docs/TEXTURES.md), and the decoded image goes nowhere but into the
+     texture, which had no size rule of its own. The PNG decoder takes
+     its side limit as a parameter of the parse, so that an image is
+     refused at the same point as before. The `window` gate has the
+     strips. The example's three frames take the JavaScript lane about
+     ten minutes (122 textured quads of 336x282 pixels a frame; four
+     frames took fourteen, too near the gate's 30-minute lane limit for a
+     slower runner).
+   - **The four examples left**, with what each was found to need:
+     - `audio_spectrum_visualizer`. Its `LoadWave("country.mp3")` works
+       now. Still to do: (a) `logf` of a subnormal: the example takes
+       `logf(fmaxf(magnitude, 1e-40f))` and `1e-40f` is subnormal, which
+       `Power.logf` does not answer (silence would refuse the frame);
+       glibc scales such an argument by 2^23 first. (b) The port of its
+       FFT (a Blackman window of 2048 `cosf` a frame, ten stages with
+       `cosf`/`sinf` twiddles in float, 512 `sqrtf` and `logf`). No
+       frame shows the spectrum: the reference's renderer runs no
+       shader, so the frame is the empty render texture. The FFT needs
+       a gate of its own, which can include the example's source with
+       `main` renamed and call its `CaptureFrame` and `RenderFrame`.
+       (c) Time and memory in the JavaScript lane: the whole file is
+       3584 MP3 frames (about six minutes) and 8.2 million float
+       samples in lists before `WaveFormat`; not measured yet.
+     - `text_font_sdf`. `LoadFontData(FONT_SDF)` is
+       `stbtt_GetCodepointSDF`, whose `stbtt__solve_cubic` calls the C
+       library's binary64 `pow`, `acos` and `cos` and narrows them to
+       float. `cos` is in (`src/lgpl/sin.bend`). `pow` is the same Arm
+       routine family as `powf` (two builds, with and without fused
+       products); `acos` is IBM's accurate one (LGPL, tables). Then
+       `stbtt_GetGlyphSDF` itself, and `GenImageFontAtlas`'s pack
+       method 1.
+     - `audio_sound_loading`. `LoadSound("target.ogg")`: stb_vorbis
+       (codebooks, floors, residues, the inverse MDCT in float). No
+       frame depends on the sound.
+     - `audio_module_playing`. `LoadMusicStream("mini1111.xm")`: jar_xm
+       (its float mixer and its tables); the frame draws the time
+       played.
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`

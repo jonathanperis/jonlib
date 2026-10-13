@@ -3751,3 +3751,38 @@ law music_kind_of_mp3_tokens:
 
 law music_kind_of_wav_and_qoa_tokens:
   {((J.Music.decode.kind(".wav") * 10) + J.Music.decode.kind(".QOA") : U32) == 15 : U32}
+
+# PNG sizes (src/png.bend): the decoder takes headers of up to 16384 pixels on
+# a side and 4096*4096 pixels, and each decode keeps to its own side: 4096
+# for an image (Png.decode), 16384 for a texture's file (Png.decode.wide). An
+# invalid header is refused before its size is looked at.
+
+law png_image_keeps_4096_on_a_side:
+  {Png.config.within(4096, Done{Png.Config{3, 5000, 6, 4, 8, False{}}}) == Fail{Codec.BadSize{}} : Result<&2, &2, Codec.Error, Png.Config>}
+
+law png_texture_strip_within_16384:
+  {Png.config.within(16384, Done{Png.Config{3, 5000, 6, 4, 8, False{}}}) == Done{Png.Config{3, 5000, 6, 4, 8, False{}}} : Result<&2, &2, Codec.Error, Png.Config>}
+
+law png_side_limit_passes_errors_on:
+  {Png.config.within(16384, Fail{Codec.BadHeader{}}) == Fail{Codec.BadHeader{}} : Result<&2, &2, Codec.Error, Png.Config>}
+
+law png_header_of_4096_squared_pixels:
+  {Png.config.valid(True{}, 16384, 1024, 2, 3, 8, False{}) == Done{Png.Config{16384, 1024, 2, 3, 8, False{}}} : Result<&2, &2, Codec.Error, Png.Config>}
+
+law png_header_past_4096_squared_pixels:
+  {Png.config.valid(True{}, 16384, 1025, 2, 3, 8, False{}) == Fail{Codec.BadSize{}} : Result<&2, &2, Codec.Error, Png.Config>}
+
+law png_header_past_16384_on_a_side:
+  {Png.config.valid(True{}, 1, 16385, 6, 4, 8, False{}) == Fail{Codec.BadSize{}} : Result<&2, &2, Codec.Error, Png.Config>}
+
+law png_header_without_rows:
+  {Png.config.valid(True{}, 7, 0, 6, 4, 8, False{}) == Fail{Codec.BadSize{}} : Result<&2, &2, Codec.Error, Png.Config>}
+
+law png_image_of_4096_on_each_side:
+  {Png.config.within(4096, Png.config.valid(True{}, 4096, 4096, 0, 1, 8, False{})) == Done{Png.Config{4096, 4096, 0, 1, 8, False{}}} : Result<&2, &2, Codec.Error, Png.Config>}
+
+law png_image_of_4097_on_a_side:
+  {Png.config.within(4096, Png.config.valid(True{}, 4097, 1, 0, 1, 8, False{})) == Fail{Codec.BadSize{}} : Result<&2, &2, Codec.Error, Png.Config>}
+
+law png_invalid_header_before_its_size:
+  {Png.config.valid(False{}, 99999, 99999, 0, 1, 8, False{}) == Fail{Codec.BadHeader{}} : Result<&2, &2, Codec.Error, Png.Config>}

@@ -30,9 +30,15 @@ docs/FRAME.md). The harness loads raylib's file, flips it and swaps red and
 blue, and exports that with ExportImage: Jonlib's file must equal it byte for
 byte. Existence (FileExists) is compared for every name.
 
+Strips. A texture's PNG may be longer than an image's 4096 pixels: up to
+16384 on a side with no more than 4096*4096 pixels. Textures of 3x5000,
+5000x2, 1x16384 and 16384x1 are loaded and drawn where their far ends show.
+
 Contracts (Jonlib must answer null; never run natively): WaitTime of NaN,
 +infinity and more than 4096 seconds (raylib's sleep converts them with
-undefined behavior). CPU-1, CPU-2 and JavaScript lanes.
+undefined behavior), and LoadTexture of a PNG 16385 pixels long or of
+16384x1025 (raylib loads them; they are past Jonlib's bounds). CPU-1, CPU-2
+and JavaScript lanes.
 """
 import hashlib
 import json
@@ -87,12 +93,33 @@ def png(width, height, pixels, color_type=6):
             + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b''))
 
 
+STRIPS = {'strip-tall.png': (3, 5000, 6), 'strip-wide.png': (5000, 2, 2), 'strip-line.png': (1, 16384, 6), 'strip-row.png': (16384, 1, 6),
+          'strip-past.png': (1, 16385, 6)}
+
+
+def strip(width, height):
+    """Pixels that tell their column and row."""
+    return [((x * 37 + y * 11) % 256, y % 251, x % 241, 255 if (x + y) % 5 else 90) for y in range(height) for x in range(width)]
+
+
+def blank(width, height):
+    """A black RGB PNG of any size, made without a pixel list."""
+    def chunk(tag, data):
+        return struct.pack('>I', len(data)) + tag + data + struct.pack('>I', zlib.crc32(tag + data) & 0xFFFFFFFF)
+    return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0))
+            + chunk(b'IDAT', zlib.compress((b'\0' + bytes(width * 3)) * height)) + chunk(b'IEND', b''))
+
+
 def fixtures(work):
     rgba = [(x * 40 % 256, y * 60 % 256, (x + y) * 25 % 256, 255 if (x + y) % 3 else 128) for y in range(5) for x in range(7)]
     rgb = [((x * 90) % 256, 200, (y * 70) % 256, 255) for y in range(4) for x in range(3)]
     (work / 'fixture-rgba.png').write_bytes(png(7, 5, rgba))
     (work / 'fixture-rgb.png').write_bytes(png(3, 4, rgb, color_type=2))
-    return {name: (work / name).relative_to(ROOT).as_posix() for name in ('fixture-rgba.png', 'fixture-rgb.png')}
+    # Strips: a texture's PNG may be up to 16384 pixels on a side (an image's 4096) with no more than 4096*4096 pixels.
+    for name, (width, height, color_type) in STRIPS.items():
+        (work / name).write_bytes(png(width, height, strip(width, height), color_type=color_type))
+    (work / 'strip-many.png').write_bytes(blank(16384, 1025))
+    return {name: (work / name).relative_to(ROOT).as_posix() for name in ('fixture-rgba.png', 'fixture-rgb.png', *STRIPS, 'strip-many.png')}
 
 
 def scripts(paths):
@@ -127,6 +154,19 @@ def scripts(paths):
         clock(BEGIN, 0.7), op(SCENE, 1), op(DRAW_TEXTURE, 10, 10), op(DRAW_TEXTURE, -1, -2), clock(END, 0.71, 0.71), op(FRAMEBUFFER),
         op(UNLOAD_TEXTURE), op(TEXTURE, s='.build/window-probe/missing.png'), op(TEXTURE, s=paths['fixture-rgba.png']),
         op(UNLOAD_TEXTURE)]))
+    # Strips of sprites: 5000 rows, 5000 columns, and a line and a row of 16384 pixels, each drawn where its far end shows.
+    out.append(dict(name='texture-strips', pre=[], start=start, ops=[
+        op(TEXTURE, s=paths['strip-tall.png']), clock(BEGIN, 0.6), op(SCENE, 1), op(DRAW_TEXTURE, 5, -4980), op(DRAW_TEXTURE, 20, -2500), op(DRAW_TEXTURE, 40, -1),
+        clock(END, 0.62, 0.62), op(FRAMEBUFFER), op(UNLOAD_TEXTURE),
+        op(TEXTURE, s=paths['strip-wide.png']), clock(BEGIN, 0.7), op(SCENE, 1), op(DRAW_TEXTURE, -4970, 5), op(DRAW_TEXTURE, -2000, 20), clock(END, 0.71, 0.71),
+        op(FRAMEBUFFER), op(UNLOAD_TEXTURE),
+        op(TEXTURE, s=paths['strip-line.png']), clock(BEGIN, 0.8), op(SCENE, 1), op(DRAW_TEXTURE, 7, -16370), op(DRAW_TEXTURE, 30, -8000), clock(END, 0.81, 0.81),
+        op(FRAMEBUFFER), op(UNLOAD_TEXTURE),
+        op(TEXTURE, s=paths['strip-row.png']), clock(BEGIN, 0.9), op(SCENE, 1), op(DRAW_TEXTURE, -16350, 9), clock(END, 0.91, 0.91), op(FRAMEBUFFER),
+        op(UNLOAD_TEXTURE)]))
+    # Jonlib's own bounds (raylib loads both): a side of 16385, and 16384x1025, one row more than 4096*4096 pixels.
+    out.append(dict(name='texture-past-side', pre=[], start=start, ops=[op(TEXTURE, s=paths['strip-past.png'])], contract=0, contract_token='T:null'))
+    out.append(dict(name='texture-past-pixels', pre=[], start=start, ops=[op(TEXTURE, s=paths['strip-many.png'])], contract=0, contract_token='T:null'))
     cubes = [(6, 36, 0), (36, 6, 0), (12, 9, 0), (9, 12, 0), (8, 8, 0), (13, 7, 0), (6, 36, 1), (36, 6, 2), (9, 12, 3),
              (12, 9, 4), (8, 8, 1), (8, 8, 2), (8, 8, 3), (8, 8, 4), (8, 8, 5), (40, 30, 4), (30, 40, 3), (2, 2, 1)]
     out.append(dict(name='cubemap', pre=[], start=start, ops=[op(CUBEMAP, w, h, layout) for w, h, layout in cubes] + [op(QUERY)]))
@@ -325,7 +365,7 @@ def native_tokens(probe, index, item):
         else:
             tokens.append(token)
     if item.get('contract') is not None:
-        tokens.append('null')
+        tokens.append(item.get('contract_token', 'null'))
     return tokens
 
 

@@ -132,7 +132,13 @@ others use `M.AppleLibm{}`.
   `LoadImage` (`Surface.load_image`, [IMAGE-FILES.md](IMAGE-FILES.md)) and then
   `LoadTextureFromImage` of the decoded image. A file that does not load and
   an exhausted id pool are `None` with the frame unchanged (raylib returns
-  texture id 0, which every draw skips).
+  texture id 0, which every draw skips). **Strips.** A texture's PNG may be
+  longer than an image's: up to 16384 pixels on a side, with no more than
+  4096x4096 pixels in all (`Png.decode.wide`; a sheet of sprites such as
+  `textures_sprite_stacking`'s 112x11468 `booth.png`). The decoded image
+  goes nowhere but into the texture: `LoadImage` keeps 4096 on a side, and
+  so does every image operation. raylib itself loads larger files than
+  either bound; those are `None` here.
 - **LoadTextureCubemap.** rlgl's `rlLoadTextureCubemap` is compiled only for
   OpenGL 3.3 and ES2: under the software renderer it returns id 0 without
   touching rlsw, so no cubemap is ever loaded. `Texture.load_cubemap(frame,
@@ -195,7 +201,7 @@ conversions of the rectangle or sums that could reach 2^31.
 
 | Gate | Tool | Compares |
 |---|---|---|
-| `window` | `tools/window_probe.py` | `LoadTexture` of PNG fixtures (RGBA with translucent texels, RGB) drawn into the frame and of a missing file, `LoadTextureCubemap`'s fields for every layout and auto-detected aspect, and `TakeScreenshot` to `.png`, `.BMP`, a name without suffix and one with a quote: Jonlib's file must equal raylib's flipped, swapped screenshot re-exported by raylib, byte for byte ([DRIVER.md](DRIVER.md#window-state)) |
+| `window` | `tools/window_probe.py` | `LoadTexture` of PNG fixtures (RGBA with translucent texels, RGB) drawn into the frame and of a missing file, strips of 3x5000, 5000x2, 1x16384 and 16384x1 drawn where their far ends show (and, as contracts, a side of 16385 and 16384x1025), `LoadTextureCubemap`'s fields for every layout and auto-detected aspect, and `TakeScreenshot` to `.png`, `.BMP`, a name without suffix and one with a quote: Jonlib's file must equal raylib's flipped, swapped screenshot re-exported by raylib, byte for byte ([DRIVER.md](DRIVER.md#window-state)) |
 | `texture` | `tools/texture_probe.py` | 118 scenes (1410 operations, sizes 8x6 to 32x32, 10 random scenes) byte for byte against the uncontracted memory-platform raylib on CPU-1, CPU-2 and JavaScript, with texture ids, sizes, mipmaps, formats, validity and `LoadImageFromTexture` sums; 13 contract scenes (9 on glibc hosts) must be refused |
 | `frame` | `tools/frame_probe.py` | slice 1, unchanged |
 

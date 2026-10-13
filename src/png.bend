@@ -27,10 +27,25 @@ def config.sized(valid: Bool, width: U32, height: U32, color: U32, channels: U32
     case False{}: Fail{C.BadSize{}}
     case True{}: Done{Config{width, height, color, channels, bits, interlaced}}
 
+# The widest images the decoder takes: 16384 on a side and 4096*4096 pixels.
+# `config.within` then keeps a decode to its own side (4096 for an image).
 def config.valid(valid: Bool, +width: U32, +height: U32, color: U32, channels: U32, bits: U32, interlaced: Bool) -> Result<&2, &2, C.Error, Config>:
   match valid:
     case False{}: Fail{C.BadHeader{}}
-    case True{}: config.sized(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32), width, height, color, channels, bits, interlaced)
+    case True{}:
+      config.sized(((width > 0) && (height > 0) && (width <= 16384) && (height <= 16384) : U32) && (width <= (16777216 / U32.max(1, height)) : U32), width, height, color, channels, bits, interlaced)
+
+def config.sides(valid: Bool, +config: Config) -> Result<&2, &2, C.Error, Config>:
+  match valid:
+    case False{}: Fail{C.BadSize{}}
+    case True{}: Done{config}
+
+# A header whose sides are no longer than `side`; BadSize otherwise.
+def config.within(+side: U32, result: Result<&2, &2, C.Error, Config>) -> Result<&2, &2, C.Error, Config>:
+  match result:
+    case Fail{error}: Fail{error}
+    case Done{Config{+width, +height, +color, +channels, +bits, +interlaced}}:
+      config.sides((width <= side : U32) && (height <= side : U32), Config{width, height, color, channels, bits, interlaced})
 
 def config.tail(width: U32, height: U32, bytes: +List<U32>) -> Result<&2, &2, C.Error, Config>:
   match bytes:
@@ -168,25 +183,25 @@ def dispatch(+cfg: Config, kind: U32, size: U32, +colors: +List<U32>, key: Maybe
   Config{_, _, +color, _, +bits, _} = cfg
   dispatch.kind(kind, size, cfg, colors, key, palette_alpha, compressed, seen, raw, payload, bytes, color, U32.is_eq(bits, 16), (255 / ((1 << U32.to_nat(bits)) - 1) : U32), U32.is_eq(color, 3), Bool.not(List.is_empty(&2, U32, colors)))
 
-def parsed(parts: Parts, result: Maybe<&2, Chunk>) -> Result<&2, &2, C.Error, Parsing>:
+def parsed(+side: U32, parts: Parts, result: Maybe<&2, Chunk>) -> Result<&2, &2, C.Error, Parsing>:
   match parts result:
     case _ None{}: Fail{C.BadHeader{}}
     case Parts{cfg, colors, key, palette_alpha, compressed, seen, _} Some{Chunk{1130840649, _, _, rest}}: Done{More{rest, Parts{cfg, colors, key, palette_alpha, compressed, seen, True{}}}}
-    case Parts{None{}, _, _, _, _, _, raw} Some{Chunk{1229472850, 13, payload, rest}}: more.config(rest, raw, config(C.word(payload)))
+    case Parts{None{}, _, _, _, _, _, raw} Some{Chunk{1229472850, 13, payload, rest}}: more.config(rest, raw, config.within(side, config(C.word(payload))))
     case Parts{None{}, _, _, _, _, _, _} _: Fail{C.BadHeader{}}
     case Parts{Some{cfg}, colors, key, palette_alpha, compressed, seen, raw} Some{Chunk{kind, size, payload, rest}}: dispatch(cfg, kind, size, colors, key, palette_alpha, compressed, seen, raw, payload, rest)
 
-def parse(n: Nat, state: Result<&2, &2, C.Error, Parsing>) -> Result<&2, &2, C.Error, Parts>:
+def parse(n: Nat, +side: U32, state: Result<&2, &2, C.Error, Parsing>) -> Result<&2, &2, C.Error, Parts>:
   match n state:
     case _ Fail{error}: Fail{error}
     case _ Done{Complete{parts}}: Done{parts}
     case 0n _: Fail{C.BadHeader{}}
-    case 1n+rest Done{More{bytes, parts}}: parse(rest, parsed(parts, chunk(C.word(bytes))))
+    case 1n+rest Done{More{bytes, parts}}: parse(rest, side, parsed(side, parts, chunk(C.word(bytes))))
 
-def signature(size: U32, bytes: +List<U32>) -> Result<&2, &2, C.Error, Parts>:
+def signature(+side: U32, size: U32, bytes: +List<U32>) -> Result<&2, &2, C.Error, Parts>:
   match bytes:
     case Con{137, Con{80, Con{78, Con{71, Con{13, Con{10, Con{26, Con{10, rest}}}}}}}}:
-      parse(U32.to_nat(size), Done{More{rest, Parts{None{}, Nil{}, None{}, False{}, Nil{}, False{}, False{}}}})
+      parse(U32.to_nat(size), side, Done{More{rest, Parts{None{}, Nil{}, None{}, False{}, Nil{}, False{}, False{}}}})
     case _: Fail{C.BadHeader{}}
 
 def difference(+a: U32, +b: U32) -> U32:
@@ -522,10 +537,16 @@ def input.count(bytes: +List<U32>, +count: U32, error: Maybe<&2, C.Error>) -> Re
     case Nil{} None{}: Done{count}
     case Con{byte, rest} None{}: input.count(rest, (count + 1 : U32), input.error((byte <= 255 : U32), (count < 2097152 : U32)))
 
-def decode.checked(bytes: +List<U32>, result: Result<&2, &2, C.Error, U32>) -> Result<&1, &1, C.Error, C.Image>:
+def decode.checked(+side: U32, bytes: +List<U32>, result: Result<&2, &2, C.Error, U32>) -> Result<&1, &1, C.Error, C.Image>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{size}: decode.parts(signature(size, bytes))
+    case Done{size}: decode.parts(signature(side, size, bytes))
 
+# An image: sides of 1..4096.
 def decode(+bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
-  decode.checked(bytes, input.count(bytes, 0, None{}))
+  decode.checked(4096, bytes, input.count(bytes, 0, None{}))
+
+# The same decoder for a texture's file, whose sides may reach 16384 while
+# the image has no more than 4096*4096 pixels (a strip of sprites).
+def decode.wide(+bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+  decode.checked(16384, bytes, input.count(bytes, 0, None{}))

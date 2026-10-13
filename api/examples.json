@@ -3507,7 +3507,7 @@
   {
    "name": "textures_sprite_stacking",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "Clamp",

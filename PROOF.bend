@@ -2692,3 +2692,33 @@ def Laws.music_kind_of_mp3_tokens():
 
 def Laws.music_kind_of_wav_and_qoa_tokens():
   {==}
+
+def Laws.png_image_keeps_4096_on_a_side():
+  {==}
+
+def Laws.png_texture_strip_within_16384():
+  {==}
+
+def Laws.png_side_limit_passes_errors_on():
+  {==}
+
+def Laws.png_header_of_4096_squared_pixels():
+  {==}
+
+def Laws.png_header_past_4096_squared_pixels():
+  {==}
+
+def Laws.png_header_past_16384_on_a_side():
+  {==}
+
+def Laws.png_header_without_rows():
+  {==}
+
+def Laws.png_image_of_4096_on_each_side():
+  {==}
+
+def Laws.png_image_of_4097_on_a_side():
+  {==}
+
+def Laws.png_invalid_header_before_its_size():
+  {==}
