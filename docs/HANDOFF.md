@@ -1026,10 +1026,32 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
        `bounds` check does not see. The ping-pong branch is dead code
        (the loader's `switch` falls through to forward) and is not
        ported; the ramp it computes while a sample plays is overwritten
-       in the same call. Next: (2b) rows, ticks and effects over a whole
-       context (the channel's 60 fields: keep the per-sample `Head` and
-       the pitch functions as they are and build the channel around
-       them), `jar_xm_reset` and `jar_xm_get_remaining_samples`.
+       in the same call. **(2b) is done** (`src/xm_player.bend`, gate
+       `xm-player`): `Pl.player.new(libm, module, rate, random)`,
+       `Pl.tick`, `Pl.remaining.samples` (a `Counted{player, samples}`),
+       `Pl.reset`, and `Pl.Player.why` (0 while it plays). The whole
+       context equals jar_xm's after every tick, for raylib's module
+       through 6100 ticks. Three things the gate taught: jar_xm's random
+       waveform is one `static` state a process, so a reference that
+       plays several modules must `fork` for each (and cannot run a
+       second context beside the first); a row outside its pattern is
+       read inside jar_xm's block and neither traps nor faults, so the
+       reference works out the row's place before each tick itself; and
+       the panning's `fabs` makes that expression binary64. The module
+       is about 1600 lines of small defs written straight down the C;
+       `/tmp`'s reorder script (a def moved before its first use) is not
+       kept: Bend wants each def before its use, and the affine scan
+       (a parameter used twice needs `+`) saves compile cycles.
+       Next: (3) `jar_xm_mixdown` and `jar_xm_generate_samples`: per
+       frame, a tick when the samples left are 0 or less, one less
+       sample left, each channel with an instrument, a sample and a
+       position not below 0 steps (`Sm.sample.next` with -1), adds
+       `curr*actual_volume*(1 - actual_panning)` and
+       `curr*actual_volume*actual_panning`, its frame count moves on and
+       its actual volume and panning slide to their targets by 1/128;
+       the sums times the global volume if it is not 1, kept to -1 and
+       1 (by comparisons with doubles); `generated_samples` is added to
+       before the frames. Then (4) `Music.load` for `.xm`.
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`

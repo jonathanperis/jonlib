@@ -61,6 +61,7 @@ import ./src/vorbis_length.bend as VL
 import ./src/xm_module.bend as Xm
 import ./src/xm_pitch.bend as XmP
 import ./src/xm_sample.bend as XmS
+import ./src/xm_player.bend as XmPl
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -5218,3 +5219,65 @@ law xm_sample_value_of_a_new_note_s_ramp_is_kept:
 
 law xm_sample_value_of_a_frame_is_the_channel_s:
   {XmS.given(XmS.Head{0.5, 1.0, 3, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 0.0, 0.0}, 4294967295, 0.25, 0.75) == XmS.Head{0.5, 1.0, 3, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 0.25, 0.75} : XmS.Head}
+
+# An XM player's rows and ticks (src/xm_player.bend): the parameters a
+# channel remembers, the volume column's commands, jar_xm's tests for a
+# tone portamento and a vibrato, the tempo and BPM, and where a row is
+# after a jump, a break and the order's end.
+
+law xm_player_speed_and_depth_keep_what_a_parameter_leaves_out:
+  {((XmPl.nibbles(53, 64) * 65536) + ((XmPl.nibbles(53, 7) * 256) + XmPl.nibbles(53, 0)) : U32) == 4536117 : U32}
+
+law xm_player_volume_column_sets_the_volume_from_0x10_to_0x50:
+  {((((XmPl.column.kind(16) * 1000) + (XmPl.column.kind(79) * 100)) + (XmPl.column.kind(80) * 10)) + XmPl.column.kind(81) : U32) == 1110 : U32}
+
+law xm_player_volume_column_s_other_commands_are_its_high_bits:
+  {((XmPl.column.kind(96) * 100) + XmPl.column.kind(243) : U32) == 615 : U32}
+
+law xm_player_empty_volume_column_does_nothing:
+  {XmPl.column.kind(5) == 0 : U32}
+
+law xm_player_remembered_parameter_is_kept:
+  {XmPl.memo.get(XmPl.memo.set(XmPl.Memo{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 10, 7), 10) == 7 : U32}
+
+law xm_player_remembered_parameter_leaves_the_others:
+  {XmPl.memo.get(XmPl.memo.set(XmPl.Memo{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 10, 7), 11) == 0 : U32}
+
+law xm_player_tone_portamento_by_its_effects:
+  {XmPl.portamento.has(Xm.Slot{0, 0, 0, 3, 0}) == True{} : Bool}
+
+law xm_player_tone_portamento_by_the_volume_column:
+  {XmPl.portamento.has(Xm.Slot{0, 0, 241, 0, 0}) == True{} : Bool}
+
+law xm_player_vibrato_is_no_tone_portamento:
+  {XmPl.portamento.has(Xm.Slot{0, 0, 0, 4, 0}) == False{} : Bool}
+
+law xm_player_vibrato_by_a_parameter_of_six_as_jar_xm_tests_it:
+  {XmPl.vibrato.has(Xm.Slot{0, 0, 0, 1, 6}) == True{} : Bool}
+
+law xm_player_effect_six_alone_is_no_vibrato_to_that_test:
+  {XmPl.vibrato.has(Xm.Slot{0, 0, 0, 6, 1}) == False{} : Bool}
+
+law xm_player_song_begins_again_at_its_restart_position:
+  {XmPl.place.changed(Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, 2, 5, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}) == XmPl.Place{1, 5, XmPl.Song{6, 125, 1.0, False{}, False{}, 0, 0, 0, 24492, 0}} : XmPl.Place}
+
+law xm_player_entry_inside_the_order_stays:
+  {XmPl.place.changed(Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, 1, 5, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}) == XmPl.Place{1, 5, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}} : XmPl.Place}
+
+law xm_player_low_parameter_sets_the_tempo:
+  {XmPl.song.paced(XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}, 31) == XmPl.Song{31, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0} : XmPl.Song}
+
+law xm_player_high_parameter_sets_the_bpm:
+  {XmPl.song.paced(XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}, 32) == XmPl.Song{3, 32, 0.5, False{}, False{}, 0, 0, 0, 24492, 0} : XmPl.Song}
+
+law xm_player_parameter_of_zero_sets_neither:
+  {XmPl.song.paced(XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}, 0) == XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0} : XmPl.Song}
+
+law xm_player_first_reason_to_stop_is_kept:
+  {XmPl.Song.why(XmPl.stopped(XmPl.stopped(XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}, 5), 1)) == 5 : U32}
+
+law xm_player_pattern_break_goes_to_the_next_entry:
+  {XmPl.place.of(Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, 0, 3, XmPl.Song{3, 99, 0.5, False{}, True{}, 0, 2, 0, 24492, 0}) == XmPl.Place{1, 2, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}} : XmPl.Place}
+
+law xm_player_position_jump_goes_to_its_entry:
+  {XmPl.place.of(Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, 1, 3, XmPl.Song{3, 99, 0.5, True{}, False{}, 0, 0, 0, 24492, 0}) == XmPl.Place{0, 0, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}} : XmPl.Place}
