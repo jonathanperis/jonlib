@@ -445,15 +445,15 @@ scalar ones: the reference for the samples is the build as it is.
 ## Ogg Vorbis (in progress)
 
 `src/vorbis_codebook.bend`, `src/vorbis_ogg.bend`,
-`src/vorbis_setup.bend`, `src/vorbis_maps.bend` and
-`src/vorbis_tables.bend` are the start of an adaptation of stb_vorbis
-v1.22 (pinned raylib's
+`src/vorbis_setup.bend`, `src/vorbis_maps.bend`,
+`src/vorbis_tables.bend` and `src/vorbis_decode.bend` are the start of an
+adaptation of stb_vorbis v1.22 (pinned raylib's
 `src/external/stb_vorbis.c`), which raylib's `LoadWave`, `LoadSound` and
 `LoadMusicStream` call for `.ogg` files. Nothing is decoded yet:
 `Wave.decode(".ogg", ...)` is still `UnsupportedWaveFormat`. What is here
 is the reading of the data, the whole setup header, the transform's
-tables (all below) and what the setup makes of a codebook's code lengths,
-once it has read them:
+tables, the decoding of a codebook's symbols and vectors (all below) and
+what the setup makes of a codebook's code lengths, once it has read them:
 
 - **The codes** (`compute_codewords`; `codewords`, and `book.of` for all the tables). A length is 1 to
   31 bits, or 255 for a symbol without a code. The first symbol with a code
@@ -771,8 +771,83 @@ host, under `M.AppleLibm{}` too (every value given, every value the same).
 The proof has no laws on the angles: Jonmath's binary64 helpers use float
 primitives, which the proof checker does not evaluate.
 
-Still to come: the packets (floors, residues), the inverse MDCT, and then
-the waves and the music.
+### Symbols and vectors of a codebook
+
+`src/vorbis_decode.bend` decodes what a packet's bits say through a
+codebook, on the reader of the data. A codebook as the setup read it is
+first made ready (`coder.of`): its tables become rows read by index
+(`src/store.bend`, binary trees that are plain values, so that a buffer can
+be read and written by index as C does without being threaded through
+every call).
+
+| stb_vorbis | Here | |
+| --- | --- | --- |
+| `prep_huffman` | `huffman.prep` (in `vorbis_ogg.bend`) | Bytes of the packet added above the bits at hand while there are 24 or fewer, up to 32. |
+| `DECODE_RAW` | `decode.raw` | A symbol: its number, or its place in the sorted table for a sparse codebook; -1 for none. |
+| `DECODE` | `decode.symbol` | The symbol's number (a sparse codebook's sorted place turned into it). |
+| `codebook_decode_scalar_raw` | `raw.decode` | The slower search, when the accelerated table has no answer. |
+| `codebook_decode_start` | `vector.start` | A symbol for a vector of values. |
+| `codebook_decode`, `codebook_decode_step` | `vector.decode`, `vector.step` | The vector's values added to floats, next to each other or every `step`th. |
+
+raylib compiles stb_vorbis with its decode inline (no
+`STB_VORBIS_NO_INLINE_DECODE`), so `DECODE_RAW` is a macro, and the port
+follows the macro. A symbol is found in one of three ways:
+
+- **The accelerated table**, for the next 10 bits, where a code of 10 bits
+  or fewer begins them. Its bits are shifted out *before* stb_vorbis looks
+  whether there were that many: if not, the symbol is -1 and no bits are at
+  hand, but the accumulator has been shifted.
+- **The sorted table**, by binary search of the bits read the other way,
+  for a codebook of more than 8 entries that has one, and for a sparse
+  codebook. The search answers the last codeword that is not above the
+  bits: it does not ask whether the bits are a code of the codebook, so a
+  tree with leaves left over gives a symbol for bits that are no code.
+- **The symbols in turn**, for a codebook of 8 entries or fewer, and for
+  a larger one without a sorted table (all its codes 10 bits or fewer): the
+  first whose code the bits begin with. None is `VORBIS_invalid_stream`
+  (21).
+
+In the two searches a code longer than the bits at hand is -1 with no bits
+at hand and the accumulator as it was.
+
+For a vector: a codebook without a lookup has none (21). No symbol is the
+packet's end if the packet is over, and an invalid stream (21) otherwise.
+The values are `values[z*dimensions + i]`, `z` being the symbol's number, or
+its sorted place for a sparse codebook. Not in a sequence each is added to
+`0.0f` before it is added to the output (which turns a -0.0 into 0.0). In a
+sequence each value adds the one before: with the codebook's least value
+added again in `codebook_decode`, and without it in
+`codebook_decode_step`. Both are as the code has them.
+
+Two things stb_vorbis does here that C leaves undefined are refused, with
+the reader's error 1001:
+
+- **`DECODE` on a sparse codebook without a code.** The symbol is -1, and
+  the macro turns it into `sorted_values[-1]`, a place stb_vorbis keeps
+  before the table for that purpose; such a codebook has no table, and the
+  read is of a null pointer.
+- **`prep_huffman` after the bits ran out on an unflagged page.** Bits that
+  run out leave `valid_bits` at -1. Normally the packet is over and
+  `prep_huffman` returns; but when the packet stopped at a page that should
+  have been a continued one, the reader still has bytes, and the next byte
+  is shifted left by -1.
+
+`tools/vorbis_decode_probe.py` (gate `vorbis-decode`) runs
+`start_decoder` on a built stream and then a script of calls on its
+packets, with the Ogg gate's harness: everything the reader keeps, the
+call's answer and a buffer of 64 floats are hashed after each call. The
+stream has twelve codebooks, one for each way a symbol is found and each
+kind of lookup; its packets are seeded bytes of 0 to 700 bytes. 54 scripts
+(each codebook's symbols by `DECODE_RAW`, by `DECODE` and by
+`codebook_decode_scalar_raw`; each codebook's vectors; three mixes of all
+ten calls with bits read between symbols and packets left unfinished;
+packets flushed) over the stream, a copy cut inside a packet and one with
+an unflagged page: 159 runs, 109,407 calls, 5 of the runs refusals on
+which stb_vorbis is not run.
+
+Still to come: the residues' vectors over the channels
+(`codebook_decode_deinterleave_repeat`), the inverse MDCT, the packets
+(floors, residues), and then the waves and the music.
 
 ## WaveFormat
 

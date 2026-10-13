@@ -3313,3 +3313,93 @@ def Laws.vorbis_tables_glibc_values_are_the_library_s():
 
 def Laws.vorbis_tables_other_profiles_take_sure_values():
   {==}
+
+def Laws.store_index_of_one_value():
+  {==}
+
+def Laws.store_index_write_then_read():
+  {==}
+
+def Laws.store_index_write_leaves_the_other_places():
+  {==}
+
+def Laws.store_index_from_a_list():
+  {==}
+
+def Laws.store_index_from_no_value():
+  {==}
+
+def Laws.store_index_of_one_place():
+  {==}
+
+def Laws.store_depth_for_a_count():
+  {==}
+
+def Laws.store_depth_for_one_or_none():
+  {==}
+
+def Laws.vorbis_decode_bits_ran_out_are_fewer_than_any():
+  {==}
+
+def Laws.vorbis_decode_bits_fewer_than_a_code():
+  {==}
+
+def Laws.vorbis_decode_bits_enough_for_a_code():
+  {==}
+
+def Laws.vorbis_decode_search_finds_the_codeword():
+  {==}
+
+def Laws.vorbis_decode_search_takes_the_last_not_above():
+  {==}
+
+def Laws.vorbis_decode_search_of_the_highest_code():
+  {==}
+
+def Laws.vorbis_decode_search_of_one_codeword():
+  {==}
+
+def Laws.vorbis_decode_linear_finds_the_first_code_the_bits_begin_with():
+  {==}
+
+def Laws.vorbis_decode_linear_of_a_one_bit_code():
+  {==}
+
+def Laws.vorbis_decode_linear_without_bits_enough():
+  {==}
+
+def Laws.vorbis_decode_linear_passes_symbols_without_a_code():
+  {==}
+
+def Laws.vorbis_decode_linear_of_no_code():
+  {==}
+
+def Laws.vorbis_decode_small_codebook_is_searched_by_symbol():
+  {==}
+
+def Laws.vorbis_decode_codebook_of_no_entry_is_searched_by_symbol():
+  {==}
+
+def Laws.vorbis_decode_first_symbol_of_a_packet():
+  {==}
+
+def Laws.vorbis_decode_second_symbol_of_a_packet():
+  {==}
+
+def Laws.vorbis_decode_symbol_uses_its_bits():
+  {==}
+
+def Laws.vorbis_decode_raw_of_a_codebook_without_a_code():
+  {==}
+
+def Laws.vorbis_decode_symbol_of_a_sparse_codebook_without_a_code_is_refused():
+  {==}
+
+def Laws.vorbis_decode_vector_of_a_codebook_without_a_lookup():
+  {==}
+
+def Laws.vorbis_decode_prep_takes_the_packet_s_byte():
+  {==}
+
+def Laws.vorbis_decode_prep_twice_is_prep_once():
+  {==}
