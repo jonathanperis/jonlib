@@ -44,6 +44,7 @@ import ./src/mp3.bend as Mp3
 import ./src/mp3_layer3.bend as Mp3L3
 import ./src/mp3_tables.bend as Mp3T
 import ./src/mp3_stream.bend as Mp3S
+import ./src/vorbis_codebook.bend as V
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -3819,3 +3820,103 @@ law png_image_of_4097_on_a_side:
 
 law png_invalid_header_before_its_size:
   {Png.config.valid(False{}, 99999, 99999, 0, 1, 8, False{}) == Fail{Codec.BadHeader{}} : Result<&2, &2, Codec.Error, Png.Config>}
+
+# Ogg Vorbis codebooks (src/vorbis_codebook.bend, after stb_vorbis): ilog and
+# bit_reverse, float32_unpack's bits (a 21-bit mantissa scaled by a power of
+# two and narrowed once: 2^(e - 788), so 788 is one), compute_codewords (the
+# first code is 0, a later one the lowest free leaf at its length or above),
+# the sorted table (the codes read the other way, ascending, with a sentinel)
+# and the accelerated one (a short code at every index it begins).
+
+law vorbis_ilog_counts_the_bits:
+  {((V.ilog(0) * 1000) + (V.ilog(1) * 100) + (V.ilog(4) * 10) + V.ilog(7) : U32) == 133 : U32}
+
+law vorbis_ilog_of_the_largest_int:
+  {V.ilog(2147483647) == 31 : U32}
+
+law vorbis_ilog_of_a_negative_int:
+  {(V.ilog(4294967295) + V.ilog(2147483648) : U32) == 0 : U32}
+
+law vorbis_bit_reverse_of_the_low_bit:
+  {V.bit.reverse(1) == 2147483648 : U32}
+
+law vorbis_bit_reverse_of_the_low_half:
+  {V.bit.reverse(65535) == 4294901760 : U32}
+
+law vorbis_bit_reverse_twice:
+  {V.bit.reverse(V.bit.reverse(305419896)) == 305419896 : U32}
+
+law vorbis_unpack_one:
+  {V.unpack.bits(1, 0, 788) == 1065353216 : U32}
+
+law vorbis_unpack_three:
+  {V.unpack.bits(3, 1, 788) == 1077936128 : U32}
+
+law vorbis_unpack_largest_finite:
+  {V.unpack.bits(2097151, 20, 895) == 2139095032 : U32}
+
+law vorbis_unpack_past_the_floats:
+  {V.unpack.bits(1, 0, 916) == 2139095040 : U32}
+
+law vorbis_unpack_smallest_normal:
+  {V.unpack.bits(1, 0, 662) == 8388608 : U32}
+
+law vorbis_unpack_smallest_subnormal:
+  {V.unpack.bits(1, 0, 639) == 1 : U32}
+
+law vorbis_unpack_half_the_smallest_is_zero:
+  {V.unpack.bits(1, 0, 638) == 0 : U32}
+
+law vorbis_unpack_a_tie_goes_to_even:
+  {V.unpack.bits(3, 1, 638) == 2 : U32}
+
+law vorbis_unpack_far_below_the_floats:
+  {V.unpack.bits(2097151, 20, 0) == 0 : U32}
+
+law vorbis_codewords_of_a_tree:
+  {V.codewords([2, 1, 2]) == Some{[V.Entry{0, 0, 2}, V.Entry{1, 1, 1}, V.Entry{2, 2, 2}]} : Maybe<+List<V.Entry>>}
+
+law vorbis_codewords_skip_a_symbol_without_a_code:
+  {V.codewords([255, 1, 255, 2]) == Some{[V.Entry{1, 0, 1}, V.Entry{3, 1, 2}]} : Maybe<+List<V.Entry>>}
+
+law vorbis_codewords_of_too_many_lengths:
+  {V.codewords([1, 1, 1]) == None{} : Maybe<+List<V.Entry>>}
+
+law vorbis_codewords_of_no_symbol:
+  {V.codewords([255, 255]) == Some{Nil{}} : Maybe<+List<V.Entry>>}
+
+law vorbis_free_level_is_the_highest_up_to_the_length:
+  {V.free.level([0, 5, 0, 7, 9], 0, 3, 0) == 3 : U32}
+
+law vorbis_free_level_without_a_leaf:
+  {V.free.level([0, 0, 0, 7], 0, 2, 0) == 0 : U32}
+
+law vorbis_taken_frees_the_leaves_beside_the_path:
+  {V.taken([0, 2147483648, 0, 0], 0, 1, 3, 2147483648, Nil{}) == [0, 0, 3221225472, 2684354560] : +List<U32>}
+
+law vorbis_sorted_by_the_codes_read_the_other_way:
+  {V.symbols(V.sorted.runs(32n, V.runs.of([V.Entry{0, 0, 2}, V.Entry{1, 1, 1}, V.Entry{2, 2, 2}], Nil{})), Nil{}) == [0, 2, 1] : +List<U32>}
+
+law vorbis_sorted_codewords_end_with_the_sentinel:
+  {V.codes.reversed([V.Entry{0, 0, 2}, V.Entry{2, 2, 2}, V.Entry{1, 1, 1}], Nil{}) == [0, 1073741824, 2147483648, 4294967295] : +List<U32>}
+
+law vorbis_sorted_table_keeps_the_long_codes:
+  {V.kept([V.Entry{0, 0, 10}, V.Entry{1, 5, 11}], False{}, Nil{}) == [V.Entry{1, 5, 11}] : +List<V.Entry>}
+
+law vorbis_sorted_table_of_a_sparse_codebook_keeps_all:
+  {V.kept([V.Entry{0, 0, 10}, V.Entry{1, 5, 11}], True{}, Nil{}) == [V.Entry{0, 0, 10}, V.Entry{1, 5, 11}] : +List<V.Entry>}
+
+law vorbis_fast_fill_steps_by_the_code_s_period:
+  {Array.to_list(~U32, V.fast.fill(2n, 1, 2, 7, Array.new(U32, 2n, 9))) == [9, 7, 9, 7] : List<U32>}
+
+law vorbis_fast_entry_past_the_shorts_fills_nothing:
+  {Array.to_list(~U32, V.fast.entries([V.Entry{40000, 0, 1}], True{}, 0, Array.new(U32, 1n, 9))) == [9, 9] : List<U32>}
+
+law vorbis_fast_entry_of_a_long_code_fills_nothing:
+  {Array.to_list(~U32, V.fast.entries([V.Entry{3, 0, 11}], True{}, 0, Array.new(U32, 1n, 9))) == [9, 9] : List<U32>}
+
+law vorbis_codewords_by_symbol:
+  {V.by.symbol([2, 255, 1, 2], [V.Entry{0, 0, 2}, V.Entry{2, 1, 1}, V.Entry{3, 2, 2}], Nil{}) == [0, 0, 1, 2] : +List<U32>}
+
+law vorbis_no_tree_no_codebook:
+  {V.book.coded(None{}, [1, 1, 1], False{}) == None{} : Maybe<V.Book>}

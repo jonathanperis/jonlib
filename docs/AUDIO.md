@@ -442,6 +442,55 @@ Still to come: Layers I and II.
 raylib builds dr_mp3 with its SSE paths, whose samples differ from the
 scalar ones: the reference for the samples is the build as it is.
 
+## Ogg Vorbis (in progress)
+
+`src/vorbis_codebook.bend` is the start of an adaptation of stb_vorbis
+v1.22 (pinned raylib's `src/external/stb_vorbis.c`), which raylib's
+`LoadWave`, `LoadSound` and `LoadMusicStream` call for `.ogg` files. It
+reads no file yet: `Wave.decode(".ogg", ...)` is still
+`UnsupportedWaveFormat`. What is here is what the setup makes of a
+codebook's code lengths, once it has read them:
+
+- **The codes** (`compute_codewords`; `codewords`, and `book.of` for all the tables). A length is 1 to
+  31 bits, or 255 for a symbol without a code. The first symbol with a code
+  takes 0; each later one takes the lowest free leaf at its length or above
+  and leaves free the leaves beside its path. Lengths that ask for more
+  codes than a tree has are no codebook (`None`; stb_vorbis's
+  `VORBIS_invalid_setup`). A tree with leaves left over is one, as in
+  stb_vorbis. The codes are kept as stb_vorbis keeps them, the first bit
+  read lowest.
+- **The sorted table** (`compute_sorted_huffman`): the codes read the other
+  way (`bit_reverse`), ascending, with the sentinel `0xffffffff` after
+  them, and their symbols. A sparse codebook has all its codes there, and
+  its lengths in that order; another has only the codes longer than 10
+  bits (`STB_VORBIS_FAST_HUFFMAN_LENGTH`). stb_vorbis sorts with `qsort`:
+  the codes are all different, so the order does not depend on the sort.
+- **The accelerated table** (`compute_accelerated_huffman`): 1024 entries,
+  the next 10 bits of the stream to the symbol whose code they begin with
+  (its place in the sorted table for a sparse codebook), or -1. Its entries
+  are shorts in raylib's build (`STB_VORBIS_FAST_HUFFMAN_SHORT`): a symbol
+  from the 32767th on is left to the sorted table.
+- **`float32_unpack`**, the packed floats of a codebook's values: a 21-bit
+  mantissa, a 10-bit exponent and a sign, `ldexp(mantissa, exponent - 788)`
+  narrowed to float. It is exact arithmetic here: the mantissa and the
+  power of two are exact in binary64, and the narrowing is the one
+  rounding (an infinity from 2^128, subnormals and zero below 2^-126).
+- **`ilog`** and **`bit_reverse`**.
+
+`tools/vorbis_codebook_probe.py` (gate `vorbis-codebook`) includes
+stb_vorbis.c in its reference and calls those static functions on a
+`Codebook` set up as `start_decoder` sets it up: 51 sets of lengths, each
+as a sparse codebook and as one that is not (complete trees of up to 3000
+symbols from seeded splits, in order and shuffled, with symbols without a
+code, with leaves left over, a chain of every length to 31, a symbol past
+the 32767th, lengths that are no tree), and 1443 words for the three scalar
+functions. The floats are also checked against exact arithmetic in the
+probe.
+
+Still to come: `lookup1_values` (a float estimate through the C library's
+binary64 `log` and `exp`), the Ogg pages and the setup, the packets
+(floors, residues), the inverse MDCT, and then the waves and the music.
+
 ## WaveFormat
 
 `Wave.format_for` follows the miniaudio v0.11.24 code raylib's `WaveFormat`

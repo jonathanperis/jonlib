@@ -736,11 +736,16 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
        string of `len` up to 2^32 - 1); the corpus is one file and edits
        of it, as with MP3 (there is no encoder here).
        Read since (2026-10-13), for whoever starts it:
-       - A first piece that needs no file parsing: the codebook builders,
-         which a reference can call directly once stb_vorbis.c is
-         included (`compute_codewords`, `compute_sorted_huffman`,
-         `compute_accelerated_huffman`, `float32_unpack`,
-         `lookup1_values`, `bit_reverse`, `ilog`).
+       - **Done: the codebook builders** (`src/vorbis_codebook.bend`,
+         gate `vorbis-codebook`, docs/AUDIO.md "Ogg Vorbis"):
+         `compute_codewords`, `compute_sorted_huffman`,
+         `compute_accelerated_huffman`, `float32_unpack`, `bit_reverse`,
+         `ilog`, compared by a reference that includes stb_vorbis.c and
+         calls its static functions on a `Codebook` filled as
+         `start_decoder` fills it. `V.book.of(lengths, sparse)` is what the
+         setup parser will call per codebook; a length of 32 never reaches
+         it (`start_decoder` refuses it as it reads). `lookup1_values` is
+         not in yet (next item).
        - `lookup1_values(entries, dim)` is not the integer root. It
          estimates `floor(exp((float)log((float)entries)/dim))` and
          corrects it by one upward only; an estimate one too high, or two

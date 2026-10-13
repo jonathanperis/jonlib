@@ -2003,6 +2003,21 @@
    "minutes": 1
   },
   {
+   "id": "vorbis-codebook",
+   "title": "Ogg Vorbis codebooks (stb_vorbis: compute_codewords, compute_sorted_huffman, compute_accelerated_huffman, float32_unpack, ilog, bit_reverse) against stb_vorbis.c's own functions: complete and incomplete trees of up to 3000 symbols, symbols without a code, codes of every length to 31, sparse codebooks and not, symbols past the accelerated table's shorts, and lengths that are no tree (refused by both)",
+   "run": [
+    "{python}",
+    "tools/vorbis_codebook_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1
+  },
+  {
    "id": "wave-format",
    "title": "WaveFormat (miniaudio ma_convert_frames: formats, channel maps, linear resampling and its low-pass filter) against raylib with its audio module and the host contraction profile",
    "run": [
