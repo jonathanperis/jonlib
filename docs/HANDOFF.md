@@ -744,18 +744,30 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
          calls its static functions on a `Codebook` filled as
          `start_decoder` fills it. `V.book.of(lengths, sparse)` is what the
          setup parser will call per codebook; a length of 32 never reaches
-         it (`start_decoder` refuses it as it reads). `lookup1_values` is
-         not in yet (next item).
-       - `lookup1_values(entries, dim)` is not the integer root. It
-         estimates `floor(exp((float)log((float)entries)/dim))` and
-         corrects it by one upward only; an estimate one too high, or two
-         too low, makes it answer -1, and the setup is then invalid. The
-         estimate's error is about 2e-6 relative (two float roundings):
-         it is certain for perfect powers and wherever the root is not
-         that near the next integer, and it depends on the library's
-         binary64 `log` and `exp` elsewhere, large `entries` with `dim`
-         1 included (from about 500000). The port either models those
-         two functions or answers only where the estimate is certain.
+         it (`start_decoder` refuses it as it reads).
+       - **Done: `lookup1_values`** (`V.lookup1.values`, same gate). It
+         is not the integer root: it estimates
+         `floor(exp((float)log((float)entries)/dim))` and corrects it by
+         one upward only. The port answers the root where the estimate
+         is surely within the correction (every codebook of up to 2^19
+         entries; larger ones of 2 dimensions or more away from a perfect
+         power) and `None` elsewhere, and where the C code converts a
+         power of 2^31 or more to int (31 dimensions or more; a root of
+         2 in 20 to 23 dimensions), which is undefined. Checked for all
+         24 bits of entries by
+         `tools/reference/stb_vorbis_lookup1` (about two minutes, by
+         hand: `run_exhaustive.sh <raylib> <work>`). The setup must turn
+         `None` into a refusal of its own, not into
+         `VORBIS_invalid_setup`. Modelling the C library's binary64
+         `log` and `exp` would answer the unsure pairs (the same
+         functions `text_font_sdf`'s `pow` is made of).
+       - Next: the Ogg pages and packets (`start_page`, `start_packet`,
+         `next_segment`, `get8_packet_raw`, `get_bits`), which a
+         reference can drive directly on a `stb_vorbis` set up as
+         `stb_vorbis_open_memory` sets it up before `start_decoder`;
+         then `start_decoder` itself, in stages a reference can tell
+         apart by which of `codebooks`, `floor_config`, `residue_config`,
+         `mapping` it left allocated.
        - `float32_unpack` is exact arithmetic (a 21-bit mantissa scaled
          by a power of two and narrowed once).
        - The transform's tables are binary64: `compute_twiddle_factors`

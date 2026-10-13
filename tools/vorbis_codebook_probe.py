@@ -15,6 +15,16 @@ the accelerated table, with the count of sorted entries.
 Candidate. V.book.of on the same lengths, read from the same files, and the
 three scalar functions on the same values.
 
+lookup1_values is compared where the port answers it. stb_vorbis estimates
+the integer root through the C library's binary64 log and exp and corrects
+the estimate by one upward; the port answers the root where the estimate is
+surely within that correction, and nothing where it is not or where
+stb_vorbis converts a power of 2^31 or more to int (undefined in C). The
+rule is restated here (`lookup1`) and tools/reference/stb_vorbis_lookup1
+checks it against stb_vorbis for every entries of 24 bits with 36
+dimensions (its recorded results are read: no sure pair may differ). The
+reference is not called on a pair the port refuses.
+
 The codebooks: complete trees of 1 to 3000 symbols from seeded splits, the
 same with symbols left without a code, incomplete trees, a chain of every
 length up to 31, lengths in every order, a single symbol, none, a symbol
@@ -29,6 +39,8 @@ import probekit
 from probekit import ROOT, ProbeFailure
 
 WORK = '.build/vorbis-codebook-probe/cases'
+EVIDENCE = 'tools/reference/stb_vorbis_lookup1/results'
+REFUSED = 4294967294                                                           # no C answer: lookup1_values is -1 or more
 
 NATIVE = r'''#include "external/stb_vorbis.c"
 #include <stdio.h>
@@ -81,6 +93,7 @@ static void codebook(const char *path, int sparse)
 static const char *paths[] = { PATHS };
 static const int sparse[] = { SPARSE };
 static const unsigned words[] = { WORDS };
+static const int pairs[] = { PAIRS };
 
 int main(void)
 {
@@ -92,6 +105,8 @@ int main(void)
         memcpy(&w, &f, 4);
         printf("%s%u, %d, %u", i? ", " : "", w, ilog((int)words[i]), bit_reverse(words[i]));
     }
+    printf("]\n[");
+    for (unsigned i = 0; i < sizeof(pairs)/sizeof(pairs[0]); i += 2) printf("%s%u", i? ", " : "", (unsigned)lookup1_values(pairs[i], pairs[i + 1]));
     printf("]\n");
     return 0;
 }
@@ -139,9 +154,20 @@ def scalars(words: +List<U32>, +first: Bool, +out: String) -> String:
     case Con{+w, rest}:
       scalars(rest, False{}, out ++ Bool.pick(String, first, "", ", ") ++ U32.show(F32.bits(V.float32.unpack(w))) ++ ", " ++ U32.show(V.ilog(w)) ++ ", " ++ U32.show(V.bit.reverse(w)))
 
+def answered(value: Maybe<U32>) -> U32:
+  match value:
+    case None{}: REFUSED
+    case Some{+v}: v
+
+# lookup1_values of each pair: entries, then dimensions.
+def roots(pairs: +List<U32>, +first: Bool, +out: String) -> String:
+  match pairs:
+    case Con{+entries, Con{+dim, +rest}}: roots(rest, False{}, out ++ Bool.pick(String, first, "", ", ") ++ U32.show(answered(V.lookup1.values(entries, dim))))
+    case _: out ++ "]"
+
 def main() -> IO(Unit):
   do IO<Unit>:
-'''
+'''.replace('REFUSED', str(REFUSED))
 
 
 class Rng:
@@ -218,6 +244,73 @@ def words():
     return out
 
 
+def root(entries, dim):
+    """The largest r with r**dim <= entries, for entries >= 1 and dim >= 1."""
+    if dim >= 25:
+        return 1                                                               # 2**25 is past 24 bits
+    r = int(round(entries ** (1.0 / dim)))
+    while r ** dim > entries:
+        r -= 1
+    while (r + 1) ** dim <= entries:
+        r += 1
+    return r
+
+
+def lookup1(entries, dim):
+    """What the port answers for lookup1_values, as the C int: None where it answers nothing."""
+    if entries >= 1 << 24 or dim >= 1 << 16:
+        return None                                                            # the setup reads 24 bits and 16
+    if entries == 0:
+        return 0 if dim else -1
+    if dim == 0:
+        return None                                                            # (int) of an infinity or a NaN
+    r = root(entries, dim)
+    power = (r + 1) ** dim
+    if power >= 1 << 31:
+        return None                                                            # (int) floor(pow(r + 1, dim)) is undefined
+    # the estimate is the root times e**(ln(entries)*d), |d| <= 2**-23: under r + 1 and not under r - 1
+    if entries <= 1 << 19 or (dim != 1 and (power - entries) << 23 > 17 * power):
+        return r
+    return None
+
+
+def pairs():
+    """(entries, dimensions) for lookup1_values."""
+    out = set()
+    for dim in list(range(0, 41)) + [64, 255, 256, 1000, 32767, 65535]:
+        for entries in list(range(0, 70)) + [100, 255, 256, 257, 1000, 4095, 4096, 4097, 65535, 65536, 524287, 524288, 524289, 1000000, 8388608, 16777215]:
+            out.add((entries, dim))
+    # perfect powers and what is around them: a root one more, and the estimate's doubt just under them
+    for dim in range(1, 25):
+        base = 2
+        while base ** dim < (1 << 24) + 50:
+            for delta in (-40, -36, -35, -34, -33, -18, -17, -16, -3, -2, -1, 0, 1, 2, 40):
+                if 0 <= base ** dim + delta < 1 << 24:
+                    out.add((base ** dim + delta, dim))
+            base += max(1, base // 7)
+    rng = Rng(0x100C0B1)
+    for _ in range(600):
+        out.add((rng.next(1 << 24), 1 + rng.next(12)))
+    for _ in range(200):
+        out.add(((1 << 19) - 100 + rng.next(200), 1 + rng.next(3)))
+    # outside what the setup reads
+    out |= {(1 << 24, 2), (0x7FFFFFFF, 1), (5, 65536), (0, 65536), (1 << 24, 0)}
+    return sorted(out)
+
+
+def evidence():
+    """The recorded exhaustive checks of the rule: (variant, pairs the rule is sure of)."""
+    found = []
+    for path in sorted((ROOT / EVIDENCE).glob('*.json')):
+        row = json.loads(path.read_text())
+        if row['sure_differences'] != 0 or row['sure'] < 300000000 or row['entries'] != '1 to 16777215':
+            raise ProbeFailure(f'vorbis-codebook: {path.name} does not record an exhaustive check without differences')
+        found.append((row['variant'], row['sure']))
+    if {variant for variant, _ in found} != {'fma', 'sse2'}:
+        raise ProbeFailure(f'vorbis-codebook: the exhaustive checks of lookup1_values are not both recorded: {found}')
+    return found
+
+
 def unpacked(word):
     """float32_unpack by exact arithmetic: the float's word."""
     mantissa, exponent, sign = word & 0x1FFFFF, (word >> 21) & 1023, word & 0x80000000
@@ -240,11 +333,26 @@ def main():
         (ROOT / path).write_bytes(bytes(lengths))
         items += [(name, path, False), (name, path, True)]
     chosen = words()
+    checked = evidence()
+    asked = pairs()
+    ours = [lookup1(entries, dim) for entries, dim in asked]
+    sure = [pair for pair, answer in zip(asked, ours) if answer is not None]
     source = (NATIVE.replace('PATHS', ', '.join(json.dumps(str(ROOT / path)) for _, path, _ in items)).replace('SPARSE', ', '.join(str(int(sparse)) for _, _, sparse in items))
-              .replace('WORDS', ', '.join(f'{w}u' for w in chosen)))
-    expected = [json.loads(line) for line in probe.native(source, 'reference', extra_flags=['-Wno-everything'], link_raylib=False).splitlines()]
-    if len(expected) != len(items) + 1 or len(expected[-1]) != 3 * len(chosen):
+              .replace('WORDS', ', '.join(f'{w}u' for w in chosen)).replace('PAIRS', ', '.join(f'{entries}, {dim}' for entries, dim in sure)))
+    expected = [json.loads(line) for line in probe.native(source, 'reference', extra_flags=['-ffp-contract=off', '-Wno-everything'], link_raylib=False).splitlines()]
+    if len(expected) != len(items) + 2 or len(expected[-2]) != 3 * len(chosen) or len(expected[-1]) != len(sure):
         raise ProbeFailure(f'vorbis-codebook: the reference printed {len(expected)} rows for {len(items)} codebooks')
+    # stb_vorbis's answers where the rule is sure are the rule's; the pairs it is not asked are refusals
+    native = dict(zip(sure, expected.pop()))
+    if any(native[pair] != answer & 0xFFFFFFFF for pair, answer in zip(asked, ours) if answer is not None):
+        wrong = next((pair, native[pair], answer) for pair, answer in zip(asked, ours) if answer is not None and native[pair] != answer & 0xFFFFFFFF)
+        raise ProbeFailure(f'vorbis-codebook: lookup1_values{wrong[0]} is {wrong[1]} in stb_vorbis where the rule is sure of {wrong[2]}')
+    roots = [native.get(pair, REFUSED) for pair in asked]
+    large = sum(1 for (entries, dim), answer in zip(asked, ours) if answer is not None and entries > 1 << 19)
+    unsure = sum(1 for (entries, dim), answer in zip(asked, ours) if answer is None and 0 < entries < 1 << 24 and 0 < dim < 20)
+    undefined = sum(1 for (entries, dim), answer in zip(asked, ours) if answer is None and 0 < entries < 1 << 24 and dim >= 20)
+    if len(sure) < 5000 or large < 500 or unsure < 300 or undefined < 500 or 4294967295 not in roots or len(set(roots)) < 300:
+        raise ProbeFailure(f'vorbis-codebook: the pairs lost their coverage: {len(sure)} sure ({large} past 2^19), {unsure} unsure, {undefined} undefined')
     rows = dict(zip(((name, sparse) for name, _, sparse in items), expected))
     refused = sum(row[0] == 0 for row in expected[:-1])
     if rows['too-many', False][0] or rows['too-many', True][0] or not rows['chain', False][0] or refused < 4 or rows['eleven', False][2] != 2048 or rows['ten', False][2] != 0 \
@@ -258,7 +366,10 @@ def main():
         body = ''.join(f'    Unit <- IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Files.load_data({json.dumps(path)}), result => loaded(result, {"True" if sparse else "False"}{{}}))\n'
                        for _, path, sparse in items)
         chunks = ', '.join('[' + ', '.join(str(w) for w in chosen[start:start + 64]) + ']' for start in range(0, len(chosen), 64))
-        return PROGRAM + body + f'    IO.print(scalars(List.concat(&2, U32, [{chunks}]), True{{}}, "["))\n'
+        flat = [value for pair in asked for value in pair]
+        listed = ', '.join('[' + ', '.join(str(v) for v in flat[start:start + 64]) + ']' for start in range(0, len(flat), 64))
+        return (PROGRAM + body + f'    Unit <- IO.print(scalars(List.concat(&2, U32, [{chunks}]), True{{}}, "["))\n'
+                + f'    IO.print(roots(List.concat(&2, U32, [{listed}]), True{{}}, "["))\n')
 
     def parse(text, selected):
         return [[json.loads(line) for line in text.splitlines() if line.strip()]]
@@ -267,13 +378,18 @@ def main():
 
     def first(index):
         for got in lanes.values():
-            for k, (a, b) in enumerate(zip(expected, got[0])):
+            for k, (a, b) in enumerate(zip(expected + [roots], got[0])):
                 if a != b:
-                    return f'{items[k][0]}{" (sparse)" if items[k][2] else ""}: stb={a} jonlib={b}' if k < len(items) else 'the scalar functions'
+                    if k < len(items):
+                        return f'{items[k][0]}{" (sparse)" if items[k][2] else ""}: stb={a} jonlib={b}'
+                    if k == len(items):
+                        return 'the scalar functions'
+                    return next((f'lookup1_values{pair}: stb={x} jonlib={y}' for pair, x, y in zip(asked, a, b) if x != y), 'a different number of roots')
         return 'a different number of rows'
 
-    probe.compare([expected], lanes, describe=first)
-    probe.finish(codebooks=len(items), refused=refused, entries=sum(len(lengths) for _, lengths in books()), words=len(chosen))
+    probe.compare([expected + [roots]], lanes, describe=first)
+    probe.finish(codebooks=len(items), refused=refused, entries=sum(len(lengths) for _, lengths in books()), words=len(chosen),
+                 roots=len(sure), roots_refused=len(asked) - len(sure), exhaustive=dict(checked))
 
 
 if __name__ == '__main__':

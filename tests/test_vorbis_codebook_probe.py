@@ -56,6 +56,37 @@ class BooksTests(unittest.TestCase):
         self.assertEqual(vp.books(), vp.books())
 
 
+class Lookup1Tests(unittest.TestCase):
+    def test_the_root(self):
+        self.assertEqual([vp.root(n, d) for n, d in ((1, 1), (7, 1), (8, 3), (7, 3), (4096, 2), (4095, 2), (16777215, 24), (16777215, 23), (5, 65535))], [1, 7, 2, 1, 64, 63, 1, 2, 1])
+        rng = vp.Rng(5)
+        for _ in range(300):
+            n, d = 1 + rng.next((1 << 24) - 1), 1 + rng.next(30)
+            r = vp.root(n, d)
+            self.assertTrue(r ** d <= n < (r + 1) ** d)
+
+    def test_the_rule(self):
+        self.assertEqual((vp.lookup1(0, 3), vp.lookup1(0, 0), vp.lookup1(5, 0), vp.lookup1(1, 9)), (0, -1, None, 1))
+        self.assertEqual((vp.lookup1(6561, 8), vp.lookup1(6560, 8), vp.lookup1(1 << 19, 1), vp.lookup1((1 << 19) + 1, 1)), (3, 2, 1 << 19, None))
+        # past 2^19 entries: sure unless just under a perfect power, by 17/2^23 of it
+        self.assertEqual([vp.lookup1(4096 ** 2 - under, 2) for under in (1, 34, 35, 36)], [None, None, 4095, 4095])
+        self.assertEqual((vp.lookup1(1000 ** 2, 2), vp.lookup1(1000 ** 2 - 1, 2), vp.lookup1(1000 ** 2 - 3, 2)), (1000, None, 999))
+        # a power of 2^31 or more converted to int
+        self.assertEqual((vp.lookup1(5, 30), vp.lookup1(5, 31), vp.lookup1(1 << 19, 19), vp.lookup1(1 << 20, 20), vp.lookup1(600000, 20)), (1, None, 2, None, 1))
+        self.assertEqual((vp.lookup1(1 << 24, 2), vp.lookup1(5, 1 << 16)), (None, None))
+
+    def test_the_pairs(self):
+        pairs = vp.pairs()
+        self.assertEqual((pairs, len(pairs) == len(set(pairs)), len(pairs) > 8000), (vp.pairs(), True, True))
+        answers = [vp.lookup1(entries, dim) for entries, dim in pairs]
+        self.assertTrue(-1 in answers and 0 in answers and 4095 in answers and answers.count(None) > 2000)
+        self.assertTrue({(0, 0), (16777215, 1), (16777215, 65535), (1 << 24, 2), (524288, 1), (524289, 1)} <= set(pairs))
+
+    def test_the_recorded_checks(self):
+        found = dict(vp.evidence())
+        self.assertEqual((sorted(found), found['fma'] == found['sse2'] > 300000000), (['fma', 'sse2'], True))
+
+
 class WordsTests(unittest.TestCase):
     def test_unpacking_is_exact(self):
         word = lambda value: struct.unpack('<I', struct.pack('<f', value))[0]

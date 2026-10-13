@@ -3920,3 +3920,74 @@ law vorbis_codewords_by_symbol:
 
 law vorbis_no_tree_no_codebook:
   {V.book.coded(None{}, [1, 1, 1], False{}) == None{} : Maybe<V.Book>}
+
+# lookup1_values (src/vorbis_codebook.bend): the integer root where
+# stb_vorbis's estimate of it is surely within its correction, nothing where
+# it hangs on the C library's last bits or where the C code converts a
+# power of 2^31 or more to int.
+
+law vorbis_power_capped_is_the_power:
+  {((V.power.capped(3, 4) * 1000) + V.power.capped(7, 1) : U32) == 81007 : U32}
+
+law vorbis_power_capped_stops_at_2_26:
+  {((V.power.capped(2, 26) + V.power.capped(2, 65535)) + V.power.capped(16777215, 2) : U32) == 201326592 : U32}
+
+law vorbis_power_capped_of_one_and_zero:
+  {((V.power.capped(1, 65535) * 10) + V.power.capped(0, 9) : U32) == 10 : U32}
+
+law vorbis_root_of_one_dimension:
+  {V.root(16777215, 1) == 16777215 : U32}
+
+law vorbis_root_of_a_square:
+  {((V.root(4096, 2) * 100) + V.root(4095, 2) : U32) == 6463 : U32}
+
+law vorbis_root_of_many_dimensions:
+  {((V.root(16777215, 23) * 10) + V.root(16777215, 24) : U32) == 21 : U32}
+
+law vorbis_lookup1_of_a_perfect_power:
+  {V.lookup1.values(6561, 8) == Some{3} : Maybe<U32>}
+
+law vorbis_lookup1_under_a_perfect_power:
+  {V.lookup1.values(6560, 8) == Some{2} : Maybe<U32>}
+
+law vorbis_lookup1_of_one_entry:
+  {V.lookup1.values(1, 5) == Some{1} : Maybe<U32>}
+
+law vorbis_lookup1_without_entries:
+  {V.lookup1.values(0, 3) == Some{0} : Maybe<U32>}
+
+law vorbis_lookup1_without_entries_or_dimensions:
+  {V.lookup1.values(0, 0) == Some{4294967295} : Maybe<U32>}
+
+law vorbis_lookup1_without_dimensions_is_undefined:
+  {V.lookup1.values(5, 0) == None{} : Maybe<U32>}
+
+law vorbis_lookup1_of_2_19_entries_in_one_dimension:
+  {V.lookup1.values(524288, 1) == Some{524288} : Maybe<U32>}
+
+law vorbis_lookup1_past_2_19_entries_in_one_dimension:
+  {V.lookup1.values(524289, 1) == None{} : Maybe<U32>}
+
+law vorbis_lookup1_of_a_large_codebook_away_from_a_power:
+  {V.lookup1.values(16777000, 2) == Some{4095} : Maybe<U32>}
+
+law vorbis_lookup1_of_a_large_codebook_just_under_a_power:
+  {V.lookup1.values(16777215, 2) == None{} : Maybe<U32>}
+
+law vorbis_lookup1_of_30_dimensions:
+  {V.lookup1.values(600000, 30) == Some{1} : Maybe<U32>}
+
+law vorbis_lookup1_of_31_dimensions_is_undefined:
+  {V.lookup1.values(5, 31) == None{} : Maybe<U32>}
+
+law vorbis_lookup1_of_a_root_of_two_in_20_dimensions_is_undefined:
+  {V.lookup1.values(1048576, 20) == None{} : Maybe<U32>}
+
+law vorbis_lookup1_of_a_root_of_two_in_19_dimensions:
+  {V.lookup1.values(524288, 19) == Some{2} : Maybe<U32>}
+
+law vorbis_lookup1_past_24_bits_of_entries:
+  {V.lookup1.values(16777216, 2) == None{} : Maybe<U32>}
+
+law vorbis_lookup1_past_16_bits_of_dimensions:
+  {V.lookup1.values(5, 65536) == None{} : Maybe<U32>}

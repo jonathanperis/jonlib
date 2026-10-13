@@ -3,8 +3,8 @@
 # domain), as raylib 6.0 vendors it in src/external/stb_vorbis.c: what the
 # setup makes of a codebook's code lengths (compute_codewords,
 # compute_sorted_huffman, compute_accelerated_huffman), with ilog,
-# bit_reverse and float32_unpack. See THIRD_PARTY_NOTICES.md and
-# LICENSES/stb_vorbis.txt.
+# bit_reverse, float32_unpack and lookup1_values. See
+# THIRD_PARTY_NOTICES.md and LICENSES/stb_vorbis.txt.
 #
 # This is the first part of the Ogg Vorbis decoder: nothing reads a file
 # yet. C ints are U32 two's-complement words; a length of 255 is NO_CODE,
@@ -148,6 +148,73 @@ def entries.result(+coding: Coding) -> Maybe<+List<Entry>>:
 # The codes are in stb_vorbis's order: the first bit read is the lowest.
 def codewords(+lengths: +List<U32>) -> Maybe<+List<Entry>>:
   entries.result(code.all(lengths, 0, Coding{False{}, True{}, Nil{}, Nil{}}))
+
+# -----------------------------------------------------------------------------
+# lookup1_values
+
+# p * base, or 2^26 from there up.
+def times.capped(+p: U32, +base: U32) -> U32:
+  Bool.pick(U32, (p > (67108864 / U32.max(base, 1)) : U32), 67108864, (p * base : U32))
+
+def power.steps(n: Nat, +base: U32, +left: U32, +p: U32) -> U32:
+  match n:
+    case 0n: p
+    case 1n+k: power.steps(k, base, (left - U32.min(left, 1) : U32), Bool.pick(U32, U32.is_eq(left, 0), p, times.capped(p, base)))
+
+# base^dim for dim >= 1, or 2^26 from there up (26 products reach it from
+# any base above 1).
+def power.capped(+base: U32, +dim: U32) -> U32:
+  Bool.pick(U32, (base <= 1 : U32), base, power.steps(26n, base, dim, 1))
+
+def root.bits(n: Nat, +bit: U32, +entries: U32, +dim: U32, +r: U32) -> U32:
+  match n:
+    case 0n: r
+    case 1n+k: root.bits(k, (bit >> 1n : U32), entries, dim, Bool.pick(U32, (power.capped((r .|. bit : U32), dim) <= entries : U32), (r .|. bit : U32), r))
+
+# The largest r whose dim-th power is at most `entries`, for entries below
+# 2^24 and dim >= 1.
+def root(+entries: U32, +dim: U32) -> U32:
+  root.bits(24n, 8388608, entries, dim, 0)
+
+# Whether stb_vorbis's estimate of the root r is surely r or r - 1, which
+# its correction turns into r, for entries from 1 to 2^24 - 1 and dim >= 1.
+# The estimate is floor(exp((float)log((float)entries)/dim)): the root times
+# e^(ln(entries)*d), |d| <= 2^-23 from the two float roundings. It stays
+# below r + 1 when 17*P < (P - entries)*2^23 for P = (r + 1)^dim, and for
+# every entries up to 2^19; it is at least r - 1 from 2 dimensions up, and
+# with one for entries up to 2^19. Outside, the answer hangs on the last
+# bits of the C library's log and exp.
+def root.sure(+entries: U32, +dim: U32, +r: U32) -> Bool:
+  +p = power.capped((r + 1 : U32), dim)
+  (entries <= 524288 : U32) || (U32.is_ne(dim, 1) && ((p >= (entries * 2) : U32) || ((p - U32.min(entries, p)) > ((17 * p) >> 23n) : U32)))
+
+# Whether (r + 1)^dim is 2^31 or more: `(int) floor(pow((float) r+1, dim))`
+# is then a conversion C leaves undefined (x86-64 gives INT_MIN and
+# stb_vorbis answers r + 1). r is 1 from 24 dimensions up.
+def root.undefined(+dim: U32, +r: U32) -> Bool:
+  (U32.is_eq(r, 1) && (dim >= 31 : U32)) || (U32.is_eq(r, 2) && (dim >= 20 : U32))
+
+def lookup1.rooted(+entries: U32, +dim: U32, +r: U32) -> Maybe<U32>:
+  Bool.pick(Maybe<U32>, Bool.not(root.undefined(dim, r)) && root.sure(entries, dim, r), Some{r}, None{})
+
+# lookup1_values(entries, dim), the C int as a word: how many values a
+# lookup of type 1 has for each dimension, the largest r with r^dim <=
+# entries. stb_vorbis does not compute the root: it estimates it through the
+# C library's binary64 log and exp with two float roundings between them,
+# and corrects the estimate by one upward only. The answer here is the root
+# where the estimate is surely within that correction (root.sure: every
+# codebook of up to 2^19 entries, and a larger one of 2 dimensions or more
+# that is not just under a perfect power), which
+# tools/reference/stb_vorbis_lookup1 checks against stb_vorbis for every
+# entries of 24 bits. None where it is not sure, where stb_vorbis converts
+# a power of 2^31 or more to int (root.undefined), for a codebook of no
+# dimension with entries (a conversion of an infinity or a NaN), and
+# outside what the setup reads (24 bits of entries, 16 of dimensions).
+# Without entries the C answer is 0, and -1 without dimensions as well.
+def lookup1.values(+entries: U32, +dim: U32) -> Maybe<U32>:
+  Bool.pick(Maybe<U32>, (entries >= 16777216 : U32) || (dim >= 65536 : U32), None{},
+    Bool.pick(Maybe<U32>, U32.is_eq(entries, 0), Some{Bool.pick(U32, U32.is_eq(dim, 0), 4294967295, 0)},
+      Bool.pick(Maybe<U32>, U32.is_eq(dim, 0), None{}, lookup1.rooted(entries, dim, root(entries, dim)))))
 
 # -----------------------------------------------------------------------------
 # The sorted table (compute_sorted_huffman)
