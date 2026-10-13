@@ -2033,6 +2033,21 @@
    "minutes": 5
   },
   {
+   "id": "vorbis-setup",
+   "title": "The Vorbis setup as far as the codebooks (stb_vorbis start_decoder: the identification header, the comment header, the setup header's codebooks with their lookups and multiplicands, the time domain transfers) against stb_vorbis.c's own start_decoder: the error code where it fails before the floors, else the header's fields and every codebook's fields, multiplicands and tables; raylib's target.ogg, 40 damaged copies and 102 built streams; the files stb_vorbis answers with what a port cannot give are refused (lookup1_values unsure or undefined, entries * dimensions past the ints, an allocation over 16 MiB, a codebook over 2^19 entries)",
+   "run": [
+    "{python}",
+    "tools/vorbis_setup_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 6
+  },
+  {
    "id": "wave-format",
    "title": "WaveFormat (miniaudio ma_convert_frames: formats, channel maps, linear resampling and its low-pass filter) against raylib with its audio module and the host contraction profile",
    "run": [

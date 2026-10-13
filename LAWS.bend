@@ -46,6 +46,7 @@ import ./src/mp3_tables.bend as Mp3T
 import ./src/mp3_stream.bend as Mp3S
 import ./src/vorbis_codebook.bend as V
 import ./src/vorbis_ogg.bend as Ogg
+import ./src/vorbis_setup.bend as VS
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -4094,3 +4095,167 @@ law ogg_continued_page_starts_no_packet:
 
 law ogg_continued_page_is_needed_to_go_on:
   {Ogg.Reader.value(Ogg.packet.get8.raw(Ogg.packet.get8.raw(Ogg.packet.get8.raw(Ogg.packet.get8.raw(Ogg.packet.start(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9, 8, 7, 79, 103, 103, 83, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 5, 6])))))))) == 4294967295 : U32}
+
+# The Vorbis setup as far as the codebooks (src/vorbis_setup.bend): the
+# first failed check of a header decides; a length or a count sizes an
+# allocation (a negative one is out of memory, one over 16 MiB is refused);
+# the identification header's tests and fields; what a comment header and a
+# setup header that are not ones come to, with stb_vorbis's error codes
+# (34 invalid first page, 38 Ogg skeleton, 10 unexpected end, 5 too many
+# channels, 20 invalid setup, 3 out of memory, 30 no page, 0 none).
+
+law vorbis_setup_going:
+  {VS.going(VS.Going{}) == True{} : Bool}
+
+law vorbis_setup_refused_is_not_going:
+  {VS.going(VS.Refused{1}) == False{} : Bool}
+
+law vorbis_setup_failed_without_an_error_is_not_going:
+  {VS.going(VS.Failed{0}) == False{} : Bool}
+
+law vorbis_setup_first_failed_check_wins:
+  {VS.checked([VS.Check{False{}, VS.Failed{1}}, VS.Check{True{}, VS.Failed{2}}, VS.Check{True{}, VS.Refused{3}}], VS.Going{}, True{}) == VS.Failed{2} : VS.Status}
+
+law vorbis_setup_no_failed_check_goes_on:
+  {VS.checked([VS.Check{False{}, VS.Failed{1}}, VS.Check{False{}, VS.Failed{2}}], VS.Going{}, True{}) == VS.Going{} : VS.Status}
+
+law vorbis_setup_name_is_vorbis:
+  {VS.named([118, 111, 114, 98, 105, 115]) == True{} : Bool}
+
+law vorbis_setup_name_of_another_case:
+  {VS.named([86, 111, 114, 98, 105, 115]) == False{} : Bool}
+
+law vorbis_setup_name_cut_short:
+  {VS.named([118, 111, 114, 98, 105]) == False{} : Bool}
+
+law vorbis_setup_length_within_the_budget:
+  {VS.sized(16777216) == VS.Going{} : VS.Status}
+
+law vorbis_setup_length_over_the_budget_is_refused:
+  {VS.sized(16777217) == VS.Refused{3} : VS.Status}
+
+law vorbis_setup_length_of_the_largest_int_is_refused:
+  {VS.sized(2147483647) == VS.Refused{3} : VS.Status}
+
+law vorbis_setup_negative_length_is_out_of_memory:
+  {VS.sized(4294967295) == VS.Failed{3} : VS.Status}
+
+law vorbis_setup_most_negative_length_is_out_of_memory:
+  {VS.sized(2147483648) == VS.Failed{3} : VS.Status}
+
+law vorbis_setup_no_comment_list:
+  {VS.listed(0) == VS.Going{} : VS.Status}
+
+law vorbis_setup_negative_comment_count_is_no_list:
+  {(VS.comment.count(4294967295) + VS.comment.count(2147483648) : U32) == 0 : U32}
+
+law vorbis_setup_negative_comment_count_goes_on:
+  {VS.listed(4294967295) == VS.Going{} : VS.Status}
+
+law vorbis_setup_comment_list_within_the_budget:
+  {VS.listed(2097152) == VS.Going{} : VS.Status}
+
+law vorbis_setup_comment_list_over_the_budget_is_refused:
+  {VS.listed(2097153) == VS.Refused{3} : VS.Status}
+
+law vorbis_setup_comment_list_of_negative_size_is_out_of_memory:
+  {VS.listed(268435456) == VS.Failed{3} : VS.Status}
+
+law vorbis_setup_comment_list_smaller_than_its_count_is_refused:
+  {VS.listed(536870912) == VS.Refused{3} : VS.Status}
+
+law vorbis_setup_product_of_entries_and_dimensions:
+  {VS.product(4096, 1000) == Some{4096000} : Maybe<U32>}
+
+law vorbis_setup_product_past_the_ints:
+  {VS.product(524288, 4096) == None{} : Maybe<U32>}
+
+law vorbis_setup_product_under_the_ints:
+  {VS.product(524288, 4095) == Some{2146959360} : Maybe<U32>}
+
+law vorbis_setup_product_without_dimensions:
+  {VS.product(5, 0) == Some{0} : Maybe<U32>}
+
+law vorbis_setup_divisor_within_the_unsigned_ints:
+  {VS.div.over(31n, 2, 1, False{}) == False{} : Bool}
+
+law vorbis_setup_divisor_past_the_unsigned_ints:
+  {VS.div.over(32n, 2, 1, False{}) == True{} : Bool}
+
+law vorbis_setup_divisor_of_one_value_never_passes:
+  {VS.div.over(64n, 1, 1, False{}) == False{} : Bool}
+
+law vorbis_setup_repeated:
+  {VS.repeated(3n, 7, [1]) == [7, 7, 7, 1] : +List<U32>}
+
+law vorbis_setup_range:
+  {VS.range(3n, 5, Nil{}) == [5, 6, 7] : +List<U32>}
+
+law vorbis_setup_of_no_data:
+  {VS.Setup.status(VS.setup.codebooks([])) == VS.Failed{30} : VS.Status}
+
+law vorbis_setup_first_page_of_another_length:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9, 8, 7])) == VS.Failed{34} : VS.Status}
+
+law vorbis_setup_first_page_not_flagged_first:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1])) == VS.Failed{34} : VS.Status}
+
+law vorbis_setup_ogg_skeleton:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 64, 102, 105, 115, 104, 101, 97, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])) == VS.Failed{38} : VS.Status}
+
+law vorbis_setup_identification_alone:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1])) == VS.Failed{30} : VS.Status}
+
+law vorbis_setup_identification_cut_in_its_name:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114])) == VS.Failed{10} : VS.Status}
+
+law vorbis_setup_seventeen_channels:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 17, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1])) == VS.Failed{5} : VS.Status}
+
+law vorbis_setup_no_sample_rate:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1])) == VS.Failed{34} : VS.Status}
+
+law vorbis_setup_block_size_under_64:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 181, 1])) == VS.Failed{20} : VS.Status}
+
+law vorbis_setup_first_block_size_over_the_second:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 154, 1])) == VS.Failed{20} : VS.Status}
+
+law vorbis_setup_channels_of_the_identification:
+  {VS.Head.channels(VS.Setup.head(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 6, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1]))) == 6 : U32}
+
+law vorbis_setup_rate_of_the_identification:
+  {VS.Head.rate(VS.Setup.head(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 34, 86, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1]))) == 22050 : U32}
+
+law vorbis_setup_block_sizes_of_the_identification:
+  {((VS.Head.blocksize_0(VS.Setup.head(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 214, 1]))) * 10000) + VS.Head.blocksize_1(VS.Setup.head(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 214, 1]))) : U32) == 648192 : U32}
+
+law vorbis_setup_comment_header_of_another_type:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 21, 5, 118, 111, 114, 98, 105, 115, 1, 0, 0, 0, 118, 0, 0, 0, 0, 1, 5, 118, 111, 114, 98, 105, 115, 0, 66, 67, 86, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0])) == VS.Failed{20} : VS.Status}
+
+law vorbis_setup_empty_comment_packet_fails_without_an_error:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 21, 5, 118, 111, 114, 98, 105, 115, 0, 66, 67, 86, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0])) == VS.Failed{0} : VS.Status}
+
+law vorbis_setup_negative_vendor_length:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 21, 3, 118, 111, 114, 98, 105, 115, 255, 255, 255, 255, 118, 0, 0, 0, 0, 1, 5, 118, 111, 114, 98, 105, 115, 0, 66, 67, 86, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0])) == VS.Failed{3} : VS.Status}
+
+law vorbis_setup_vendor_over_the_budget:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 21, 3, 118, 111, 114, 98, 105, 115, 1, 0, 0, 1, 118, 0, 0, 0, 0, 1, 5, 118, 111, 114, 98, 105, 115, 0, 66, 67, 86, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0])) == VS.Refused{3} : VS.Status}
+
+law vorbis_setup_comment_without_its_framing_bit:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 21, 3, 118, 111, 114, 98, 105, 115, 1, 0, 0, 0, 118, 0, 0, 0, 0, 0, 5, 118, 111, 114, 98, 105, 115, 0, 66, 67, 86, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0])) == VS.Failed{20} : VS.Status}
+
+law vorbis_setup_without_its_third_packet:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 17, 3, 118, 111, 114, 98, 105, 115, 1, 0, 0, 0, 118, 0, 0, 0, 0, 1])) == VS.Failed{30} : VS.Status}
+
+law vorbis_setup_header_of_another_type:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 21, 3, 118, 111, 114, 98, 105, 115, 1, 0, 0, 0, 118, 0, 0, 0, 0, 1, 3, 118, 111, 114, 98, 105, 115, 0, 66, 67, 86, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0])) == VS.Failed{20} : VS.Status}
+
+law vorbis_setup_codebook_without_its_sync_pattern:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 21, 3, 118, 111, 114, 98, 105, 115, 1, 0, 0, 0, 118, 0, 0, 0, 0, 1, 5, 118, 111, 114, 98, 105, 115, 0, 66, 67, 87, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0])) == VS.Failed{20} : VS.Status}
+
+law vorbis_setup_codebook_without_entries_is_out_of_memory:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 20, 3, 118, 111, 114, 98, 105, 115, 1, 0, 0, 0, 118, 0, 0, 0, 0, 1, 5, 118, 111, 114, 98, 105, 115, 0, 66, 67, 86, 1, 0, 0, 0, 0, 0, 0, 0, 0])) == VS.Failed{3} : VS.Status}
+
+law vorbis_setup_codebook_over_the_budget_is_refused:
+  {VS.Setup.status(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 23, 3, 118, 111, 114, 98, 105, 115, 1, 0, 0, 0, 118, 0, 0, 0, 0, 1, 5, 118, 111, 114, 98, 105, 115, 0, 66, 67, 86, 1, 0, 1, 0, 8, 103, 0, 0, 2, 0, 0, 0])) == VS.Refused{4} : VS.Status}
