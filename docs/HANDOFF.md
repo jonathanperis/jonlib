@@ -869,17 +869,14 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
          `tools/vorbis_frame_probe.py`: mono, blocks of 64 and 256, a
          type-1 residue of scalars): the way to get a stream with a
          chosen property in seconds, also for later gates.
+       - **Done: the stream's length** (`src/vorbis_length.bend`, gate
+         `vorbis-length`; `O.offset.set` is `set_file_offset`):
+         `L.stream.length(frames, first, total)` is
+         `Measured{frames, total, value}`; the caller keeps `total`
+         (`total_samples`: 0 none yet, all ones not known). The gate's
+         probe has `summed`/`checksummed` (a page's CRC made right) for
+         streams that are searched for pages.
        - Next, in order:
-         (b) `stb_vorbis_stream_length_in_samples`: `set_file_offset`
-         to 64 KiB before the end (or `first`), `vorbis_find_page` (the
-         page CRC, table of polynomial 0x04c11db7; `retry_loc - 25 >
-         stream_len` is an unsigned comparison that gives up on a page in
-         the first 24 bytes), the pages followed to the one flagged
-         last, its granule position (saturated to 0xfffffffe when its
-         high word is set; all ones is unknown, and the answer 0), then
-         the offset restored: `set_file_offset` clears `eof`, and sets
-         it when the offset is the data's end. The answer is cached in
-         `total_samples`;
          (c) `Wave.decode(".ogg")`, the sound, the music stream,
          `audio_sound_loading`. raylib: `stb_vorbis_open_memory`, the
          length, a `malloc` of `frameCount*channels` shorts and one

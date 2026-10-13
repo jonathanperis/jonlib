@@ -2153,6 +2153,21 @@
    "minutes": 15
   },
   {
+   "id": "vorbis-length",
+   "title": "A Vorbis stream's length (stb_vorbis stb_vorbis_stream_length_in_samples with vorbis_find_page, the pages' checksum and set_file_offset) against stb_vorbis.c's own function: the answer, the length kept and everything the decoder keeps after each call of scripts of the length, frames and reads on raylib's target.ogg, copies cut in and between pages, with a body's byte changed, and with a last page of another position, version or flag, and on built streams with their pages' checksums: without checksums, with audio on the setup's page, and over 64 KiB with bytes that are no page, flags before the end or nowhere, capture patterns and a whole page inside a body, a header whose table the data ends in and a page of empty segments cut short",
+   "run": [
+    "{python}",
+    "tools/vorbis_length_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 20
+  },
+  {
    "id": "wave-format",
    "title": "WaveFormat (miniaudio ma_convert_frames: formats, channel maps, linear resampling and its low-pass filter) against raylib with its audio module and the host contraction profile",
    "run": [

@@ -448,8 +448,9 @@ scalar ones: the reference for the samples is the build as it is.
 `src/vorbis_setup.bend`, `src/vorbis_maps.bend`,
 `src/vorbis_tables.bend`, `src/vorbis_decode.bend`,
 `src/vorbis_mdct.bend`, `src/vorbis_residue.bend`,
-`src/vorbis_floor.bend`, `src/vorbis_packet.bend` and
-`src/vorbis_frame.bend` are the start of an adaptation of stb_vorbis
+`src/vorbis_floor.bend`, `src/vorbis_packet.bend`,
+`src/vorbis_frame.bend` and `src/vorbis_length.bend` are the start of an
+adaptation of stb_vorbis
 v1.22 (pinned raylib's
 `src/external/stb_vorbis.c`), which raylib's `LoadWave`, `LoadSound` and
 `LoadMusicStream` call for `.ogg` files. No wave is made yet:
@@ -457,8 +458,8 @@ v1.22 (pinned raylib's
 is the reading of the data, the whole setup header, the transform's
 tables, the decoding of a codebook's symbols and vectors, the inverse
 MDCT, the residues, a floor's curve, the decoding of a packet into its
-block of floats, the frames and their 16-bit samples (all below) and what
-the setup makes
+block of floats, the frames and their 16-bit samples, the stream's length
+(all below) and what the setup makes
 of a codebook's code lengths, once it has read them:
 
 - **The codes** (`compute_codewords`; `codewords`, and `book.of` for all the tables). A length is 1 to
@@ -1158,8 +1159,72 @@ against the function. A table of 314 floats is converted one by one by
 ends of its range, the ends of what is refused, infinities, NaNs and seeded
 ones; 49 are left out by the reference and refused by the port.
 
-Still to come: the stream's length
-(`stb_vorbis_stream_length_in_samples`), and then the waves and the music.
+### A stream's length
+
+`src/vorbis_length.bend` is `stb_vorbis_stream_length_in_samples` with
+`vorbis_find_page` and the pages' checksum (`crc32_init`, `crc32_update`),
+and `src/vorbis_ogg.bend` has `set_file_offset` for data in memory
+(`offset.set`). `stream.length(frames, first, total)` is one call:
+`Measured{frames, total, value}`, where `first` is the decoder's
+`first_audio_page_offset`, `total` what the call before kept (0 at first)
+and `value` the C answer.
+
+The length is the granule position of the stream's last page, which
+stb_vorbis searches for once:
+
+- **Where the search begins**: 64 KiB before the data's end, or where the
+  audio begins if that is later (a page is less than 64 KiB).
+- **A page** (`page.find`) is the first `O` from there that begins
+  `OggS`, a stream structure version of 0 and a header, segment table and
+  body whose checksum is the one the header states: the CRC of polynomial
+  0x04c11db7 from 0, not reflected, over the page with its checksum field
+  as zeros. Anything else is passed over, and the search goes on from the
+  byte after that `O`: capture patterns inside a body, pages whose bytes
+  were changed, pages cut by the data's end. A whole page inside another
+  page's body is a page.
+- **Where the search gives up**: at the data's end; at a header whose
+  segment table the data ends in (a small page after it, inside what would
+  be that table, is not found); and at an `O` in the data's first 24 bytes,
+  where `retry_loc - 25 > stream_len` is an unsigned comparison that wraps.
+  A stream whose audio shares the setup's page begins its search at offset
+  0 and so finds nothing.
+- **Bytes past the data's end are zeros** to the checksum (`get8` answers
+  0 there): a page of empty segments cut short in its table still has its
+  checksum, and is found.
+- **The last page** is the first one found that is flagged as the last, or
+  the last one found before the search fails. Pages after a flagged one are
+  not looked at.
+- **The position**: all ones is no position (`VORBIS_cant_find_last_page`,
+  error 36, and the answer 0, as when no page is found); one past 32 bits
+  is 0xfffffffe; otherwise its low word. A low word of all ones under a
+  high word of 0 is kept as it is, which reads as not known (the answer 0)
+  without the error.
+- **The reader afterwards** is where it was, by `set_file_offset`: its
+  end-of-data flag is cleared, or set if the offset is the data's end.
+  A length of 0 is not kept and is searched for again by the next call.
+
+`p_last` (the last page's place, which only seeking reads) is not kept.
+
+`tools/vorbis_length_probe.py` (gate `vorbis-length`) runs scripts of the
+length, frames and reads on 32 files with the vorbis-frame gate's hashing
+after each call (143 calls, 96 of them the length's): raylib's `target.ogg`
+asked for its length first as `LoadWave` does, after all its samples are
+read and between reads; copies cut in the last page, at its start and in
+the page before, and with a byte of a body changed; copies whose last page
+states another position with its checksum made right (all ones, past 32
+bits, 0, less than the samples, either word all ones), another version, or
+no last flag; and 15 streams built by the probe with their pages'
+checksums: a small one, one without checksums, one whose audio shares the
+setup's page, and ones over 64 KiB that end with their last page, with
+bytes that are no page (more than 64 KiB of them, and a few with capture
+patterns and the data's end inside one), with a page flagged before
+another, with none flagged, with positions past 32 bits and unknown, with
+capture patterns or a whole small page inside the body the search begins
+in, with a header whose table the data ends in, and with a page of empty
+segments cut short. The probe states each stream's length beforehand and
+holds the reference to it.
+
+Still to come: the waves and the music.
 
 ## WaveFormat
 

@@ -3712,3 +3712,108 @@ def Laws.vorbis_frame_audio_inside_a_page_has_no_first_page():
 
 def Laws.vorbis_frame_no_data_is_no_decoder():
   {==}
+
+def Laws.vorbis_ogg_offset_inside_the_data():
+  {==}
+
+def Laws.vorbis_ogg_offset_inside_the_data_reads_from_there():
+  {==}
+
+def Laws.vorbis_ogg_offset_inside_the_data_answers_one():
+  {==}
+
+def Laws.vorbis_ogg_offset_at_the_data_s_end_is_its_end():
+  {==}
+
+def Laws.vorbis_ogg_offset_past_the_data_is_its_end():
+  {==}
+
+def Laws.vorbis_ogg_offset_past_the_data_answers_zero():
+  {==}
+
+def Laws.vorbis_ogg_offset_in_no_data_is_its_end():
+  {==}
+
+def Laws.vorbis_ogg_offset_inside_clears_the_end_of_data():
+  {==}
+
+def Laws.vorbis_length_crc_table_entry_of_one_is_the_polynomial():
+  {==}
+
+def Laws.vorbis_length_crc_of_a_one():
+  {==}
+
+def Laws.vorbis_length_crc_of_the_capture_pattern():
+  {==}
+
+def Laws.vorbis_length_crc_shifts_a_byte_through():
+  {==}
+
+def Laws.vorbis_length_crc_of_zeros_is_zero():
+  {==}
+
+def Laws.vorbis_length_capture_pattern_is_there():
+  {==}
+
+def Laws.vorbis_length_capture_pattern_is_another_byte():
+  {==}
+
+def Laws.vorbis_length_capture_pattern_at_the_data_s_end():
+  {==}
+
+def Laws.vorbis_length_page_is_found_by_its_checksum():
+  {==}
+
+def Laws.vorbis_length_page_with_a_body_is_found():
+  {==}
+
+def Laws.vorbis_length_page_with_another_body_is_none():
+  {==}
+
+def Laws.vorbis_length_page_cut_in_its_body_is_none():
+  {==}
+
+def Laws.vorbis_length_page_of_empty_segments_cut_short_is_found():
+  {==}
+
+def Laws.vorbis_length_page_in_the_first_bytes_is_none():
+  {==}
+
+def Laws.vorbis_length_search_from_the_data_s_end_finds_none():
+  {==}
+
+def Laws.vorbis_length_search_after_a_page_s_start_finds_none():
+  {==}
+
+def Laws.vorbis_length_is_the_last_page_s_position():
+  {==}
+
+def Laws.vorbis_length_is_kept():
+  {==}
+
+def Laws.vorbis_length_leaves_the_reader_where_it_was():
+  {==}
+
+def Laws.vorbis_length_position_of_all_ones_is_not_known():
+  {==}
+
+def Laws.vorbis_length_not_known_answers_zero():
+  {==}
+
+def Laws.vorbis_length_not_known_is_an_error():
+  {==}
+
+def Laws.vorbis_length_position_past_32_bits_is_the_most():
+  {==}
+
+def Laws.vorbis_length_search_begins_where_the_audio_does():
+  {==}
+
+def Laws.vorbis_length_kept_is_not_searched_for_again():
+  {==}
+
+def Laws.vorbis_length_kept_as_not_known_answers_zero():
+  {==}
+
+def Laws.vorbis_length_of_no_data_is_not_known():
+  {==}

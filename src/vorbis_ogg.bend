@@ -722,3 +722,26 @@ def Page.known_loc(page: Page) -> U32:
 def Reader.decoding(reader: Reader) -> Bool:
   match reader:
     case Reader{_, _, First{+decoding, _, _, _}, _, _, _, _}: decoding
+
+def Stream.bytes(stream: Stream) -> +List<U32>:
+  Stream{bytes, _, _, _, _} = stream
+  bytes
+
+def Stream.length(stream: Stream) -> U32:
+  Stream{_, _, _, length, _} = stream
+  length
+
+def offset.placed(inside: Bool, +loc: U32, reader: Reader) -> Reader:
+  match inside:
+    case False{}:
+      Reader{Stream{bytes, _, _, +length, _}, page, first, packet, error, taken, _} = reader
+      Reader{Stream{bytes, Nil{}, length, length, True{}}, page, first, packet, error, taken, 0}
+    case True{}:
+      Reader{Stream{+bytes, _, _, length, _}, page, first, packet, error, taken, _} = reader
+      Reader{Stream{bytes, List.drop(&2, U32, bytes, U32.to_nat(loc)), loc, length, False{}}, page, first, packet, error, taken, 1}
+
+# set_file_offset(f, loc) on data in memory: the reader at that offset of
+# the data with its end-of-data flag cleared (the answer 1); for an offset
+# that is not inside the data, at the data's end with the flag set (0).
+def offset.set(+reader: Reader, +loc: U32) -> Reader:
+  offset.placed((loc < Stream.length(Reader.stream(reader)) : U32), loc, reader)
