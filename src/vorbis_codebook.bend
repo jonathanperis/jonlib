@@ -370,6 +370,10 @@ def fast(+entries: +List<Entry>, +by_symbol: Bool) -> +List<U32>:
 type Book is Data:
   Book{sparse: Bool, entries: U32, lengths: +List<U32>, codewords: +List<U32>, sorted: U32, sorted_codewords: +List<U32>, sorted_values: +List<U32>, fast: +List<U32>}
 
+def Book.sparse(book: Book) -> Bool:
+  Book{sparse, _, _, _, _, _, _, _} = book
+  sparse
+
 def Book.lengths(book: Book) -> +List<U32>:
   Book{_, _, lengths, _, _, _, _, _} = book
   lengths

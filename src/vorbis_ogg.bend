@@ -553,3 +553,97 @@ def bits.wide(wide: Bool, +n: U32, +reader: Reader) -> Reader:
 # (valid_bits is INVALID_BITS), whatever was read of the bits asked for.
 def bits.get(+n: U32, +reader: Reader) -> Reader:
   bits.wide((n > 24 : U32) && bits.wanting(n, reader), n, reader)
+
+# -----------------------------------------------------------------------------
+# What the setup does with its header packets
+
+def Page.count(page: Page) -> U32:
+  Page{_, count, _, _, _, _, _} = page
+  count
+
+def Page.segments(page: Page) -> +List<U32>:
+  Page{_, _, segments, _, _, _, _} = page
+  segments
+
+# `n` bytes of the segment read byte by byte, n at most what it has left:
+# zeros where the data ended.
+def segment.read(reader: Reader, +n: U32) -> Reader:
+  match reader:
+    case Reader{Stream{+bytes, +rest, +at, +length, +eof}, +page, +first, Packet{+in_seg, +last, +which, +count, +acc, +valid}, +error, +taken, +value}:
+      +left = (length - U32.min(at, length) : U32)
+      Reader{Stream{bytes, List.drop(&2, U32, rest, U32.to_nat(U32.min(n, 255))), (at + U32.min(n, left) : U32), length, eof || (n > left : U32)}, page, first,
+        Packet{(in_seg - n : U32), last, which, (count + n : U32), acc, valid}, error, taken, value}
+
+# What the segment has of `n` bytes wanted: `value` is how many are still
+# wanted.
+def skip.read(+n: U32, +reader: Reader) -> Reader:
+  Reader.answer(segment.read(reader, U32.min(n, Packet.in_seg(Reader.packet(reader)))), (n - U32.min(n, Packet.in_seg(Reader.packet(reader))) : U32))
+
+def skip.taken(none: Bool, +n: U32, +reader: Reader) -> Reader:
+  match none:
+    case True{}: Reader.answer(reader, 0)
+    case False{}: skip.read(n, reader)
+
+def skip.entered(+n: U32, +reader: Reader) -> Reader:
+  skip.taken(U32.is_eq(Reader.value(reader), 0), n, reader)
+
+# kind: 0 the segment has a byte, 1 it has none and is the packet's last, 2
+# it has none and the packet may go on.
+def skip.turn(kind: U32, +n: U32, +reader: Reader) -> Reader:
+  match kind:
+    case 0: skip.read(n, reader)
+    case 1: Reader.answer(reader, 0)
+    case _: skip.entered(n, segment.next(reader))
+
+def skip.step(+reader: Reader) -> Reader:
+  skip.turn(Bool.pick(U32, U32.is_ne(Packet.in_seg(Reader.packet(reader)), 0), 0, Bool.pick(U32, Packet.last(Reader.packet(reader)), 1, 2)), Reader.value(reader), reader)
+
+def skip.tail(n: Nat, done: Bool, +reader: Reader) -> Reader:
+  match n done:
+    case _ True{}: reader
+    case 0n False{}: reader
+    case 1n+k False{}:
+      +next = skip.step(reader)
+      skip.tail(k, U32.is_eq(Reader.value(next), 0), next)
+
+def skip.loop(fuel: +List<U32>, done: Bool, +reader: Reader) -> Reader:
+  match fuel done:
+    case _ True{}: reader
+    case Nil{} False{}: skip.tail(600n, False{}, reader)
+    case Con{_, +more} False{}:
+      +next = skip.step(reader)
+      skip.loop(more, U32.is_eq(Reader.value(next), 0), next)
+
+def skip.some(some: Bool, +n: U32, +reader: Reader) -> Reader:
+  match some:
+    case False{}: reader
+    case True{}: bits.dropped(skip.loop(Stream.rest(Reader.stream(reader)), False{}, Reader.answer(reader, n)))
+
+# get8_packet `n` times, the bytes dropped (a vendor string, a comment): a
+# segment a turn. At the packet's end the calls that are left answer EOP and
+# change nothing.
+def packet.skipped(+reader: Reader, +n: U32) -> Reader:
+  skip.some(U32.is_ne(n, 0), n, reader)
+
+def left.tail(n: Nat, ended: Bool, +reader: Reader) -> Reader:
+  match n ended:
+    case _ True{}: reader
+    case 0n False{}: reader
+    case 1n+k False{}:
+      +next = segment.dropped(segment.next(reader))
+      left.tail(k, U32.is_eq(Reader.value(next), 0), next)
+
+def left.loop(fuel: +List<U32>, ended: Bool, +reader: Reader) -> Reader:
+  match fuel ended:
+    case _ True{}: reader
+    case Nil{} False{}: left.tail(600n, False{}, reader)
+    case Con{_, +more} False{}:
+      +next = segment.dropped(segment.next(reader))
+      left.loop(more, U32.is_eq(Reader.value(next), 0), next)
+
+# The rest of a header packet passed over, as start_decoder does it:
+#   skip(f, f->bytes_in_seg); f->bytes_in_seg = 0;
+#   do { len = next_segment(f); skip(f, len); f->bytes_in_seg = 0; } while (len);
+# The bytes are skipped, not read: the position can pass the data's end.
+def packet.left(+reader: Reader) -> Reader:
+  left.loop(Stream.rest(Reader.stream(reader)), False{}, segment.dropped(reader))

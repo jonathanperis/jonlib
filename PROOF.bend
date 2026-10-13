@@ -3007,3 +3007,159 @@ def Laws.ogg_continued_page_starts_no_packet():
 
 def Laws.ogg_continued_page_is_needed_to_go_on():
   {==}
+
+def Laws.vorbis_setup_going():
+  {==}
+
+def Laws.vorbis_setup_refused_is_not_going():
+  {==}
+
+def Laws.vorbis_setup_failed_without_an_error_is_not_going():
+  {==}
+
+def Laws.vorbis_setup_first_failed_check_wins():
+  {==}
+
+def Laws.vorbis_setup_no_failed_check_goes_on():
+  {==}
+
+def Laws.vorbis_setup_name_is_vorbis():
+  {==}
+
+def Laws.vorbis_setup_name_of_another_case():
+  {==}
+
+def Laws.vorbis_setup_name_cut_short():
+  {==}
+
+def Laws.vorbis_setup_length_within_the_budget():
+  {==}
+
+def Laws.vorbis_setup_length_over_the_budget_is_refused():
+  {==}
+
+def Laws.vorbis_setup_length_of_the_largest_int_is_refused():
+  {==}
+
+def Laws.vorbis_setup_negative_length_is_out_of_memory():
+  {==}
+
+def Laws.vorbis_setup_most_negative_length_is_out_of_memory():
+  {==}
+
+def Laws.vorbis_setup_no_comment_list():
+  {==}
+
+def Laws.vorbis_setup_negative_comment_count_is_no_list():
+  {==}
+
+def Laws.vorbis_setup_negative_comment_count_goes_on():
+  {==}
+
+def Laws.vorbis_setup_comment_list_within_the_budget():
+  {==}
+
+def Laws.vorbis_setup_comment_list_over_the_budget_is_refused():
+  {==}
+
+def Laws.vorbis_setup_comment_list_of_negative_size_is_out_of_memory():
+  {==}
+
+def Laws.vorbis_setup_comment_list_smaller_than_its_count_is_refused():
+  {==}
+
+def Laws.vorbis_setup_product_of_entries_and_dimensions():
+  {==}
+
+def Laws.vorbis_setup_product_past_the_ints():
+  {==}
+
+def Laws.vorbis_setup_product_under_the_ints():
+  {==}
+
+def Laws.vorbis_setup_product_without_dimensions():
+  {==}
+
+def Laws.vorbis_setup_divisor_within_the_unsigned_ints():
+  {==}
+
+def Laws.vorbis_setup_divisor_past_the_unsigned_ints():
+  {==}
+
+def Laws.vorbis_setup_divisor_of_one_value_never_passes():
+  {==}
+
+def Laws.vorbis_setup_repeated():
+  {==}
+
+def Laws.vorbis_setup_range():
+  {==}
+
+def Laws.vorbis_setup_of_no_data():
+  {==}
+
+def Laws.vorbis_setup_first_page_of_another_length():
+  {==}
+
+def Laws.vorbis_setup_first_page_not_flagged_first():
+  {==}
+
+def Laws.vorbis_setup_ogg_skeleton():
+  {==}
+
+def Laws.vorbis_setup_identification_alone():
+  {==}
+
+def Laws.vorbis_setup_identification_cut_in_its_name():
+  {==}
+
+def Laws.vorbis_setup_seventeen_channels():
+  {==}
+
+def Laws.vorbis_setup_no_sample_rate():
+  {==}
+
+def Laws.vorbis_setup_block_size_under_64():
+  {==}
+
+def Laws.vorbis_setup_first_block_size_over_the_second():
+  {==}
+
+def Laws.vorbis_setup_channels_of_the_identification():
+  {==}
+
+def Laws.vorbis_setup_rate_of_the_identification():
+  {==}
+
+def Laws.vorbis_setup_block_sizes_of_the_identification():
+  {==}
+
+def Laws.vorbis_setup_comment_header_of_another_type():
+  {==}
+
+def Laws.vorbis_setup_empty_comment_packet_fails_without_an_error():
+  {==}
+
+def Laws.vorbis_setup_negative_vendor_length():
+  {==}
+
+def Laws.vorbis_setup_vendor_over_the_budget():
+  {==}
+
+def Laws.vorbis_setup_comment_without_its_framing_bit():
+  {==}
+
+def Laws.vorbis_setup_without_its_third_packet():
+  {==}
+
+def Laws.vorbis_setup_header_of_another_type():
+  {==}
+
+def Laws.vorbis_setup_codebook_without_its_sync_pattern():
+  {==}
+
+def Laws.vorbis_setup_codebook_without_entries_is_out_of_memory():
+  {==}
+
+def Laws.vorbis_setup_codebook_over_the_budget_is_refused():
+  {==}

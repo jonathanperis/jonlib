@@ -444,13 +444,15 @@ scalar ones: the reference for the samples is the build as it is.
 
 ## Ogg Vorbis (in progress)
 
-`src/vorbis_codebook.bend` and `src/vorbis_ogg.bend` are the start of an
-adaptation of stb_vorbis v1.22 (pinned raylib's
+`src/vorbis_codebook.bend`, `src/vorbis_ogg.bend` and
+`src/vorbis_setup.bend` are the start of an adaptation of stb_vorbis
+v1.22 (pinned raylib's
 `src/external/stb_vorbis.c`), which raylib's `LoadWave`, `LoadSound` and
 `LoadMusicStream` call for `.ogg` files. Nothing is decoded yet:
 `Wave.decode(".ogg", ...)` is still `UnsupportedWaveFormat`. What is here
-is the reading of the data (below) and what the setup makes of a
-codebook's code lengths, once it has read them:
+is the reading of the data, the setup as far as the codebooks (both
+below) and what the setup makes of a codebook's code lengths, once it has
+read them:
 
 - **The codes** (`compute_codewords`; `codewords`, and `book.of` for all the tables). A length is 1 to
   31 bits, or 255 for a symbol without a code. The first symbol with a code
@@ -588,8 +590,90 @@ seeded damage, the file twice; and 13 streams of pages built by the probe
 full table, empty packets, data that ends inside a segment or a table,
 bytes between pages). 781,620 calls, equal on cpu-1, cpu-2 and JavaScript.
 
-Still to come: the setup (`start_decoder`), the packets (floors,
-residues), the inverse MDCT, and then the waves and the music.
+### The setup: the headers and the codebooks
+
+`src/vorbis_setup.bend` is the beginning of `start_decoder`:
+`setup.codebooks(bytes)` reads the identification header, the comment
+header and the setup header as far as its time domain transfers, and
+gives the channels, the sample rate, the two block sizes and the
+codebooks. It ends in one of three ways:
+
+- `Going{}`: the setup goes on (to the floors, which are not here yet);
+- `Failed{code}`: `start_decoder` answers FALSE, with stb_vorbis's error
+  code. The code can be 0: an empty comment packet makes `next_segment`
+  answer 0, and `start_decoder` returns without setting an error;
+- `Refused{why}`: stb_vorbis's answer is not one a port can give.
+
+| `why` | |
+| --- | --- |
+| 1 | `lookup1_values` hangs on the C library's last bits or is undefined (above) |
+| 2 | `entries * dimensions`, the value count of a type 2 lookup, passes the ints: undefined in C |
+| 3 | An allocation of more than 16 MiB, which succeeds or not with the host: a vendor string or a comment of that length, a comment list of more than 2^21 comments, a lookup of more than 2^22 values |
+| 4 | A codebook of more than 2^19 entries, the port's budget (the format allows 2^24) |
+
+What the three headers do, with what is not obvious:
+
+- **The identification header is read as bytes of the data**, not as a
+  packet: the first page must be flagged first, not last, not continued,
+  with one segment of 30 bytes (34 otherwise; 38 for a first segment of 64
+  bytes that begins `fishead\0`, an Ogg skeleton). Type 1, `vorbis`,
+  version 0, 1 to 16 channels (5 past that), a sample rate that is not 0,
+  the block sizes as two exponents of 6 to 13 with the first not above the
+  second (20), the framing bit. Where the data ends in the name the error
+  is 10; after the name the missing bytes are zeros.
+- **The comment header's strings are counted, not kept**: nothing of raylib
+  reads them. Each length sizes an allocation of `length + 1` bytes. A
+  negative int is `VORBIS_outofmem` (3): `setup_malloc` answers NULL for no
+  byte and `malloc` for a size that is negative. A string longer than its
+  packet is read to the end as `EOP` bytes and the setup goes on: the count
+  that follows is then the sum of four `EOP`s, a negative int, which is no
+  comment at all, and the framing "byte" is -1, whose bit is set. A comment
+  list of 2^28 to 2^29 comments is a negative size (3); the rest of the
+  packet is passed over with `skip`.
+- **A codebook without entries is `VORBIS_outofmem`**: its lengths are an
+  allocation of no byte. Without dimensions and with entries it is an
+  invalid setup (20).
+- **Lengths** are read one by one (5 bits and 1; a sparse codebook says
+  first, in a bit, whether the symbol has a code), or ordered, in runs of
+  one length each longer than the one before, a run's count in as many
+  bits as the entries left take. A length of 32, a run past the entries
+  and lengths that are no tree are invalid setups. A sparse codebook with a
+  code for a quarter of its symbols or more is kept as one that is not
+  sparse.
+- **Lookups.** Two packed floats (the least value and the step), the bits
+  of a value, whether the values are a sequence, and the values:
+  `lookup1_values(entries, dimensions)` of them for type 1,
+  `entries * dimensions` for type 2. A value is
+  `mults*delta + minimum + last` in floats, in that order, `last` being the
+  value before it in a sequence. stb_vorbis expands a type 1 lookup as it
+  reads it, to every entry's values (the entry's number as digits in the
+  base of the value count, the lowest first; a sparse codebook's entries
+  in its sorted table's order), and calls the result type 2. In that
+  expansion `last` is not set back to 0 with a new entry: a sequence runs
+  on across entries. A sparse codebook without a code keeps type 1 and has
+  no values.
+- **Bits past the packet's end are zeros**, so a setup header that is cut
+  goes on being read: lengths of 1, values of 0, until one of the tests
+  fails.
+
+`tools/vorbis_setup_probe.py` (gate `vorbis-setup`) runs stb_vorbis's
+`start_decoder` on each file. Where it fails before it allocates the
+floors the row is its error code; otherwise the row is the header's fields
+and every codebook: its fields, the count and the hash of its
+multiplicands' bits, and the tables the codebook gate compares. The probe
+also reads the headers itself (`model`, with the rules above restated in
+Python): that tells it which files the port refuses, on which stb_vorbis
+is not run, and its reading is held against stb_vorbis's on every other
+file. 143 files: raylib's `target.ogg` (37 codebooks), 40 copies with one
+to three bits changed inside its codebooks, and 102 streams built from
+headers (codebooks of each kind of lengths and lookup, 256 codebooks in
+one setup, every failure above, every refusal with its neighbour that is
+not one). 41 read (857 codebooks, 4.2 million multiplicands), 90 failed
+with stb_vorbis's code, 12 refused.
+
+Still to come: the rest of the setup (floors, residues, mappings, modes
+and the transform's tables), the packets (floors, residues), the inverse
+MDCT, and then the waves and the music.
 
 ## WaveFormat
 

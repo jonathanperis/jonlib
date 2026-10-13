@@ -774,18 +774,26 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
          of an `EOP` shifted left (`get32_packet`), are followed as every
          compiler does them, not refused; reads outside memory and
          results that differ between machines are refused.
-       - Next: `start_decoder` itself, in stages a reference can tell
-         apart by which of `codebooks`, `floor_config`,
-         `residue_config`, `mapping` it left allocated. Known before
-         starting: the identification header is read with the raw byte
-         functions (not as a packet); `vorbis_init` leaves `next_seg` at
-         0, not -1; the vendor and comment lengths come from
-         `get32_packet` and size a `setup_malloc(len + 1)` (a length of
-         -1 writes before its buffer; a large one depends on the host's
-         memory: the port needs a contract there, e.g. a refusal past
-         what the packet can hold); a codebook whose `lookup1.values` is
-         `None` must be refused as such; `get_bits` answers 0 past the
-         packet's end and the setup keeps going.
+       - **Done: `start_decoder` as far as the codebooks**
+         (`src/vorbis_setup.bend`, gate `vorbis-setup`, docs/AUDIO.md
+         "The setup"): `S.setup.codebooks(bytes)` gives a status
+         (`Going`, `Failed{stb's code}`, `Refused{why}`), the
+         identification's fields and the codebooks with their expanded
+         lookups. The gate's reference is `start_decoder` itself; the
+         stage it failed in is told by `floor_config` being allocated or
+         not. The probe has its own reading of the headers in Python
+         (`model`), which says which files the port refuses and is
+         checked against stb_vorbis on the others: extend both as the
+         setup grows (`residue_config`, `mapping` tell the next stages).
+         Learned there: a function that keeps many `Reader`s alive at
+         once does not compile ("an arity over 255": records are
+         flattened into words, a `Reader` is 25) though it type-checks;
+         take each reader's values as soon as it is read.
+       - Next: the rest of `start_decoder` (floors with their sorted
+         order and neighbours, residues with `classdata`, mappings,
+         modes), then `init_blocksize`'s tables, which are binary64
+         `sin` and `cos` narrowed to float (a libm profile, as in
+         `src/lgpl/sin.bend`), then `vorbis_decode_packet`.
        - `float32_unpack` is exact arithmetic (a 21-bit mantissa scaled
          by a power of two and narrowed once).
        - The transform's tables are binary64: `compute_twiddle_factors`
