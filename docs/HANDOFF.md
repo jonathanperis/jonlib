@@ -713,8 +713,28 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
        `stbtt_GetGlyphSDF` itself, and `GenImageFontAtlas`'s pack
        method 1.
      - `audio_sound_loading`. `LoadSound("target.ogg")`: stb_vorbis
-       (codebooks, floors, residues, the inverse MDCT in float). No
-       frame depends on the sound.
+       (`src/external/stb_vorbis.c`, 5584 lines; `target.ogg` is 13 KB).
+       No frame depends on the sound. A plan in pieces, each with a gate
+       whose reference includes stb_vorbis.c and reads its structures:
+       (1) the Ogg pages and the three header packets (`start_decoder`:
+       identification, comments, then the setup's codebooks, floors,
+       residues, mappings and modes, with `compute_codewords`, the sorted
+       and accelerated Huffman tables and the pre-expanded
+       multiplicands); (2) a packet's decode up to the residue
+       (`vorbis_decode_packet_rest`, `do_floor`, `decode_residue` and the
+       `codebook_decode*` family); (3) `inverse_mdct` and the window and
+       overlap, in float, in stb's order; (4)
+       `stb_vorbis_decode_memory` and
+       `stb_vorbis_get_samples_short_interleaved` as `Wave.decode(".ogg")`,
+       then the music stream. Things already seen in the setup: the
+       C library's binary64 functions are called there (`float32_unpack`
+       is `ldexp`; `lookup1_values` is `floor(exp(log(entries)/dim))`
+       corrected with `pow` on small integers, whose answer is the
+       integer root: exact integer arithmetic gives it wherever the
+       library's error is below one unit, which its documentation says);
+       `setup_malloc` sizes come from the file (`len + 1` for a vendor
+       string of `len` up to 2^32 - 1); the corpus is one file and edits
+       of it, as with MP3 (there is no encoder here).
      - `audio_module_playing`. `LoadMusicStream("mini1111.xm")`: jar_xm
        (its float mixer and its tables); the frame draws the time
        played.
