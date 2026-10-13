@@ -383,7 +383,8 @@ its residues, mappings and modes). `src/vorbis_tables.bend` is
 which the LGPL module below provides. `src/vorbis_decode.bend` is the
 decoding of a codebook's symbols and vectors (the `DECODE_RAW` and `DECODE`
 macros, `codebook_decode_scalar_raw`, `codebook_decode_start`,
-`codebook_decode`, `codebook_decode_step`). The second is
+`codebook_decode`, `codebook_decode_step`). `src/vorbis_mdct.bend` is
+`inverse_mdct` with its loops. The second is
 how the decoder reads its data: bytes (`get8`, `get32`, `getn`, `skip`), Ogg
 pages (`capture_pattern`, `start_page_no_capturepattern`, `start_page`),
 packets (`start_packet`, `maybe_start_packet`, `next_segment`,
@@ -395,7 +396,7 @@ arithmetic where stb_vorbis's float estimate is sure). They are the first
 parts of an Ogg Vorbis decoder, which decodes nothing yet.
 `tools/vorbis_codebook_probe.py`, `tools/vorbis_ogg_probe.py`,
 `tools/vorbis_setup_probe.py`, `tools/vorbis_tables_probe.py`,
-`tools/vorbis_decode_probe.py` and
+`tools/vorbis_decode_probe.py`, `tools/vorbis_mdct_probe.py` and
 `tools/reference/stb_vorbis_lookup1/exhaustive.c` include the unmodified
 file in their reference programs only; no stb code is linked into the Bend
 candidate. stb_vorbis is MIT or public domain; Jonlib uses the MIT

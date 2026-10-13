@@ -2078,6 +2078,21 @@
    "minutes": 8
   },
   {
+   "id": "vorbis-mdct",
+   "title": "The Vorbis inverse MDCT (stb_vorbis inverse_mdct with imdct_step3_iter0_loop, imdct_step3_inner_r_loop, imdct_step3_inner_s_loop, iter_54 and imdct_step3_inner_s_loop_ld654) against stb_vorbis.c's own function for every block size from 64 to 8192: the bits of each block's n floats for silence, single values, ones, alternating signs, noise, a ramp, values from 1e-30 to 1e30 with negative zeros, and noise over a second half the transform does not read",
+   "run": [
+    "{python}",
+    "tools/vorbis_mdct_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 6
+  },
+  {
    "id": "wave-format",
    "title": "WaveFormat (miniaudio ma_convert_frames: formats, channel maps, linear resampling and its low-pass filter) against raylib with its audio module and the host contraction profile",
    "run": [

@@ -3403,3 +3403,21 @@ def Laws.vorbis_decode_prep_takes_the_packet_s_byte():
 
 def Laws.vorbis_decode_prep_twice_is_prep_once():
   {==}
+
+def Laws.vorbis_mdct_butterflies_come_in_fours():
+  {==}
+
+def Laws.vorbis_mdct_block_of_64_has_no_butterfly_of_two():
+  {==}
+
+def Laws.vorbis_mdct_fours_of_a_multiple_of_four():
+  {==}
+
+def Laws.store_row_write_then_read():
+  {==}
+
+def Laws.store_row_write_leaves_the_other_places():
+  {==}
+
+def Laws.store_row_from_a_list():
+  {==}

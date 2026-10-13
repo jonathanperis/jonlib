@@ -446,14 +446,16 @@ scalar ones: the reference for the samples is the build as it is.
 
 `src/vorbis_codebook.bend`, `src/vorbis_ogg.bend`,
 `src/vorbis_setup.bend`, `src/vorbis_maps.bend`,
-`src/vorbis_tables.bend` and `src/vorbis_decode.bend` are the start of an
-adaptation of stb_vorbis v1.22 (pinned raylib's
+`src/vorbis_tables.bend`, `src/vorbis_decode.bend` and
+`src/vorbis_mdct.bend` are the start of an adaptation of stb_vorbis
+v1.22 (pinned raylib's
 `src/external/stb_vorbis.c`), which raylib's `LoadWave`, `LoadSound` and
 `LoadMusicStream` call for `.ogg` files. Nothing is decoded yet:
 `Wave.decode(".ogg", ...)` is still `UnsupportedWaveFormat`. What is here
 is the reading of the data, the whole setup header, the transform's
-tables, the decoding of a codebook's symbols and vectors (all below) and
-what the setup makes of a codebook's code lengths, once it has read them:
+tables, the decoding of a codebook's symbols and vectors, the inverse
+MDCT (all below) and what the setup makes of a codebook's code lengths,
+once it has read them:
 
 - **The codes** (`compute_codewords`; `codewords`, and `book.of` for all the tables). A length is 1 to
   31 bits, or 255 for a symbol without a code. The first symbol with a code
@@ -845,9 +847,45 @@ packets flushed) over the stream, a copy cut inside a packet and one with
 an unflagged page: 159 runs, 109,407 calls, 5 of the runs refusals on
 which stb_vorbis is not run.
 
+### The inverse MDCT
+
+`src/vorbis_mdct.bend` is `inverse_mdct`: `transform(buffer, factors, n)`
+turns the n/2 spectral values at the start of a block's n floats into its n
+samples, before the window. `factors.of` makes a block size's tables
+(above) into rows.
+
+It is stb_vorbis's own algorithm, pass for pass, on two buffers (the block
+and a temporary one of half its size): the spectrum's even and odd places
+turned by the factors `A` into the temporary buffer; step 2 back into the
+block; step 3's levels of butterflies in place (`imdct_step3_iter0_loop`
+for the two halves, `imdct_step3_inner_r_loop` for the four quarters and
+the next levels, `imdct_step3_inner_s_loop` for the levels after, and the
+last three levels at once in `imdct_step3_inner_s_loop_ld654` with
+`iter_54`); the bit-reversed copy into the temporary buffer; step 7 with
+the factors `C`; and step 8 with the factors `B`, which writes every float
+of the block. Every float operation is one of the C code's, in its order,
+each rounded once, with no product fused into the sum after it.
+
+- The result is half what an inverse MDCT gives: stb_vorbis leaves out a
+  factor of 2 where its first pass adds each value to itself, and the
+  window's step makes up for it.
+- The loops that take their butterflies four at a time run `count >> 2`
+  turns: the block of 64 asks one of them for 2 butterflies and gets none.
+- The second half of the block is not read: only written.
+
+`tools/vorbis_mdct_probe.py` (gate `vorbis-mdct`) calls `init_blocksize`
+and `inverse_mdct` for each of the eight block sizes on ten blocks read
+from a file (silence, a value at each end of the spectrum and in its
+middle, ones, alternating signs, seeded noise, a ramp, values from 1e-30
+to 1e30 with negative zeros, and the noise again over a second half filled
+with something else, which must give the noise's result), and compares the
+bits of every float of every block: 80 blocks, 163,200 floats. No block
+overflows: the bits of the NaN that an infinity less an infinity gives are
+the machine's, not the code's.
+
 Still to come: the residues' vectors over the channels
-(`codebook_decode_deinterleave_repeat`), the inverse MDCT, the packets
-(floors, residues), and then the waves and the music.
+(`codebook_decode_deinterleave_repeat`), the packets (floors, residues),
+and then the waves and the music.
 
 ## WaveFormat
 
