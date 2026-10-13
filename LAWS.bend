@@ -53,6 +53,8 @@ import ./src/store.bend as St
 import ./src/vorbis_decode.bend as VD
 import ./src/vorbis_mdct.bend as VX
 import ./src/vorbis_residue.bend as VR
+import ./src/vorbis_floor.bend as VF
+import ./src/vorbis_db.bend as VDb
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -4618,3 +4620,47 @@ law vorbis_residue_vector_read_past_the_codebook_s_values_is_refused:
 
 law vorbis_residue_no_value_to_decode_is_fine:
   {VR.Woven.fine(VR.weave.decode(VD.coder.at(VD.coders.of(VS.Setup.books(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 60, 3, 118, 111, 114, 98, 105, 115, 1, 0, 0, 0, 118, 0, 0, 0, 0, 1, 5, 118, 111, 114, 98, 105, 115, 0, 66, 67, 86, 4, 0, 1, 0, 0, 128, 8, 0, 0, 19, 11, 0, 0, 20, 19, 5, 0, 0, 128, 0, 0, 0, 1, 0, 0, 0, 0, 0, 16, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 80, 10, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0])), Nil{}), 0), Ogg.packet.maybe(VM.Maps.reader(VM.maps.read(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 60, 3, 118, 111, 114, 98, 105, 115, 1, 0, 0, 0, 118, 0, 0, 0, 0, 1, 5, 118, 111, 114, 98, 105, 115, 0, 66, 67, 86, 4, 0, 1, 0, 0, 128, 8, 0, 0, 19, 11, 0, 0, 20, 19, 5, 0, 0, 128, 0, 0, 0, 1, 0, 0, 0, 0, 0, 16, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 80, 10, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0])))), [St.Row.new(4, 0.0), St.Row.new(4, 0.0), St.Row.new(4, 0.0)], 7, 3, 2, 9, 10, 0)) == True{} : Bool}
+
+# A Vorbis floor's curve (src/vorbis_floor.bend, src/vorbis_db.bend): the
+# table of 256 values, a line's slope as C divides ints, and the level end
+# of a curve, which stb_vorbis reads from the table without a modulo:
+# past it, the port refuses.
+
+law vorbis_floor_table_has_256_values:
+  {St.count.words(VDb.table(), 0) == 256 : U32}
+
+law vorbis_floor_table_begins_at_its_least_value:
+  {VF.head(VDb.table()) == 870626366 : U32}
+
+law vorbis_floor_table_ends_at_one:
+  {VF.nth(VDb.table(), 255) == 1065353216 : U32}
+
+law vorbis_floor_negative_int:
+  {VF.negative(4294967295) == True{} : Bool}
+
+law vorbis_floor_positive_int:
+  {VF.negative(2147483647) == False{} : Bool}
+
+law vorbis_floor_magnitude_of_a_negative_int:
+  {VF.magnitude(4294967291) == 5 : U32}
+
+law vorbis_floor_slope_is_cut_toward_zero:
+  {VF.slope(10, 3) == 3 : U32}
+
+law vorbis_floor_negative_slope_is_cut_toward_zero:
+  {VF.slope(4294967286, 3) == 4294967293 : U32}
+
+law vorbis_floor_level_line_has_no_slope:
+  {VF.slope(0, 7) == 0 : U32}
+
+law vorbis_floor_level_end_inside_the_table:
+  {VF.past.table(64, 255, 128) == False{} : Bool}
+
+law vorbis_floor_level_end_past_the_table_is_refused:
+  {VF.past.table(64, 256, 128) == True{} : Bool}
+
+law vorbis_floor_negative_level_end_is_refused:
+  {VF.past.table(0, 4294967295, 128) == True{} : Bool}
+
+law vorbis_floor_no_level_end_at_the_block_s_end:
+  {VF.past.table(128, 9999, 128) == False{} : Bool}
