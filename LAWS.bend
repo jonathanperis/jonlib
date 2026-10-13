@@ -56,6 +56,7 @@ import ./src/vorbis_residue.bend as VR
 import ./src/vorbis_floor.bend as VF
 import ./src/vorbis_db.bend as VDb
 import ./src/vorbis_packet.bend as VK
+import ./src/vorbis_frame.bend as VFr
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -4762,3 +4763,101 @@ law vorbis_packet_no_data_is_no_decoder:
 # leaves the reader, the floats and the position as they are.
 law vorbis_packet_refused_reader_decodes_nothing:
   {VK.packet.decode(VK.Plan{2, 64, 64, Nil{}, Nil{}, Nil{}, Nil{}, Nil{}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, St.Row.new(0, 0.0)}, VK.State{Ogg.undefined(Ogg.open([1, 2, 3])), Nil{}, 7, True{}, 3}) == VK.Packet{VK.State{Ogg.undefined(Ogg.open([1, 2, 3])), Nil{}, 7, True{}, 3}, False{}, 0, 0, 0} : VK.Packet}
+
+# Vorbis frames and samples (src/vorbis_frame.bend): a float's short by the
+# bits of its sum with 384 (the steps of 1/32768, a short's range, the sums
+# whose conversion overflows an int), a NaN by its bits, the window of a
+# previous length, what a frame gives, and reads that read nothing.
+
+law vorbis_frame_short_of_no_step_is_zero:
+  {VFr.short.clamped(1136656384) == 0 : U32}
+
+law vorbis_frame_short_counts_the_steps_up:
+  {VFr.short.clamped(1136656385) == 1 : U32}
+
+law vorbis_frame_short_counts_the_steps_down:
+  {VFr.short.clamped(1136656383) == 65535 : U32}
+
+law vorbis_frame_short_reaches_its_largest:
+  {VFr.short.clamped(1136689151) == 32767 : U32}
+
+law vorbis_frame_short_stops_at_its_largest:
+  {VFr.short.clamped(1136689152) == 32767 : U32}
+
+law vorbis_frame_short_reaches_its_least:
+  {VFr.short.clamped(1136623616) == 32768 : U32}
+
+law vorbis_frame_short_stops_at_its_least:
+  {VFr.short.clamped(1136623615) == 32768 : U32}
+
+law vorbis_frame_short_of_infinity_is_the_largest:
+  {VFr.short.clamped(2139095040) == 32767 : U32}
+
+law vorbis_frame_short_of_minus_infinity_is_the_least:
+  {VFr.short.clamped(4286578688) == 32768 : U32}
+
+law vorbis_frame_short_of_a_sum_of_zero_is_the_least:
+  {VFr.short.clamped(0) == 32768 : U32}
+
+law vorbis_frame_short_of_a_sum_of_minus_384_is_the_least:
+  {VFr.short.clamped(3284140032) == 32768 : U32}
+
+law vorbis_frame_sum_just_above_minus_384_is_undefined:
+  {VFr.short.undefined(3284140031) == True{} : Bool}
+
+law vorbis_frame_sum_of_minus_384_is_defined:
+  {VFr.short.undefined(3284140032) == False{} : Bool}
+
+law vorbis_frame_sum_just_below_zero_is_undefined:
+  {VFr.short.undefined(2147483649) == True{} : Bool}
+
+law vorbis_frame_largest_positive_sum_is_defined:
+  {VFr.short.undefined(2147483647) == False{} : Bool}
+
+law vorbis_frame_nan_by_its_bits:
+  {VFr.nan(2139095041) == True{} : Bool}
+
+law vorbis_frame_negative_nan_by_its_bits:
+  {VFr.nan(4290772992) == True{} : Bool}
+
+law vorbis_frame_infinity_is_no_nan:
+  {VFr.nan(2139095040) == False{} : Bool}
+
+law vorbis_frame_minus_infinity_is_no_nan:
+  {VFr.nan(4286578688) == False{} : Bool}
+
+law vorbis_frame_half_a_block_has_its_window:
+  {VFr.window.for(VK.Plan{2, 64, 64, Nil{}, Nil{}, Nil{}, Nil{}, Nil{}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, St.Row.new(0, 0.0)}, 32) == Some{St.Row.new(0, 0.0)} : Maybe<St.Row>}
+
+law vorbis_frame_other_lengths_have_no_window:
+  {VFr.window.for(VK.Plan{2, 64, 64, Nil{}, Nil{}, Nil{}, Nil{}, Nil{}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, St.Row.new(0, 0.0)}, 16) == None{} : Maybe<St.Row>}
+
+law vorbis_frame_length_below_zero_has_no_window:
+  {VFr.window.for(VK.Plan{2, 64, 64, Nil{}, Nil{}, Nil{}, Nil{}, Nil{}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, St.Row.new(0, 0.0)}, 4294967264) == None{} : Maybe<St.Row>}
+
+law vorbis_frame_first_frame_gives_no_sample:
+  {VFr.finish(VK.Plan{2, 64, 64, Nil{}, Nil{}, Nil{}, Nil{}, Nil{}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, St.Row.new(0, 0.0)}, VFr.Frames{VK.State{Ogg.open([1, 2, 3]), Nil{}, 7, True{}, 3}, Nil{}, 0, 0, 0, 9}, 64, 0, 32) == VFr.Got{VFr.Frames{VK.State{Ogg.open([1, 2, 3]), Nil{}, 7, True{}, 3}, Nil{}, 32, 0, 0, 9}, 0} : VFr.Got}
+
+law vorbis_frame_frame_gives_its_left_part:
+  {VFr.finish(VK.Plan{2, 64, 64, Nil{}, Nil{}, Nil{}, Nil{}, Nil{}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, St.Row.new(0, 0.0)}, VFr.Frames{VK.State{Ogg.open([1, 2, 3]), Nil{}, 7, True{}, 3}, Nil{}, 32, 0, 0, 9}, 64, 0, 32) == VFr.Got{VFr.Frames{VK.State{Ogg.open([1, 2, 3]), Nil{}, 7, True{}, 3}, Nil{}, 32, 0, 0, 41}, 32} : VFr.Got}
+
+law vorbis_frame_cut_block_gives_what_it_has:
+  {VFr.finish(VK.Plan{2, 64, 64, Nil{}, Nil{}, Nil{}, Nil{}, Nil{}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, St.Row.new(0, 0.0)}, VFr.Frames{VK.State{Ogg.open([1, 2, 3]), Nil{}, 7, True{}, 3}, Nil{}, 32, 0, 0, 9}, 20, 0, 32) == VFr.Got{VFr.Frames{VK.State{Ogg.open([1, 2, 3]), Nil{}, 7, True{}, 3}, Nil{}, 4294967284, 0, 0, 29}, 20} : VFr.Got}
+
+law vorbis_frame_no_window_gives_nothing_and_changes_nothing:
+  {VFr.finish(VK.Plan{2, 64, 64, Nil{}, Nil{}, Nil{}, Nil{}, Nil{}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, St.Row.new(0, 0.0)}, VFr.Frames{VK.State{Ogg.open([1, 2, 3]), Nil{}, 7, True{}, 3}, Nil{}, 5, 0, 0, 9}, 64, 0, 32) == VFr.Got{VFr.Frames{VK.State{Ogg.open([1, 2, 3]), Nil{}, 7, True{}, 3}, Nil{}, 5, 0, 0, 9}, 0} : VFr.Got}
+
+law vorbis_frame_refused_decoder_reads_nothing:
+  {VFr.samples.read(VK.Plan{2, 64, 64, Nil{}, Nil{}, Nil{}, Nil{}, Nil{}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, St.Row.new(0, 0.0)}, VFr.Frames{VK.State{Ogg.undefined(Ogg.open([1, 2, 3])), Nil{}, 7, True{}, 3}, Nil{}, 32, 0, 0, 9}, 100) == VFr.Read{VFr.Frames{VK.State{Ogg.undefined(Ogg.open([1, 2, 3])), Nil{}, 7, True{}, 3}, Nil{}, 32, 0, 0, 9}, 0, Nil{}, False{}} : VFr.Read}
+
+law vorbis_frame_fewer_shorts_than_channels_read_nothing:
+  {VFr.samples.read(VK.Plan{2, 64, 64, Nil{}, Nil{}, Nil{}, Nil{}, Nil{}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, St.Row.new(0, 0.0)}, VFr.Frames{VK.State{Ogg.open([1, 2, 3]), Nil{}, 7, True{}, 3}, Nil{}, 32, 0, 0, 9}, 1) == VFr.Read{VFr.Frames{VK.State{Ogg.open([1, 2, 3]), Nil{}, 7, True{}, 3}, Nil{}, 32, 0, 0, 9}, 0, Nil{}, False{}} : VFr.Read}
+
+law vorbis_frame_audio_begins_where_the_reader_is_between_pages:
+  {VFr.first.audio(Ogg.Reader{Ogg.Stream{[9], [9], 7, 1, False{}}, Ogg.Page{0, 0, Nil{}, 4294967295, 0, 0, 0}, Ogg.First{False{}, 0, 0, 0}, Ogg.Packet{0, False{}, 0, 0, 0, 0}, 0, Nil{}, 0}) == 7 : U32}
+
+law vorbis_frame_audio_inside_a_page_has_no_first_page:
+  {VFr.first.audio(Ogg.skip(Ogg.open([1, 2, 3]), 2)) == 0 : U32}
+
+law vorbis_frame_no_data_is_no_decoder:
+  {VFr.memory.open(M.Glibc239Libm{}, Nil{}) == VFr.Unready{VS.Failed{30}} : VFr.Started}
