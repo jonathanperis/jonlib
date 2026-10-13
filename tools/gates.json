@@ -2228,6 +2228,21 @@
    "minutes": 2
   },
   {
+   "id": "xm-player",
+   "title": "An XM player's rows and ticks (jar_xm jar_xm_row, jar_xm_tick, jar_xm_handle_note_and_instrument, jar_xm_trigger_note and every effect and volume-column command, jar_xm_reset, jar_xm_get_remaining_samples) against jar_xm.h itself: the whole context (the song and every field of every channel) hashed after each tick of scripts of ticks, lengths and resets on raylib's mini1111.xm and on seeded modules of every effect in linear and Amiga frequencies; the reference traps undefined behaviour, keeps jar_xm's block of memory under a guard, works out each row's place before its tick and plays each module in a process of its own, and the port's player must have stopped wherever jar_xm's run is undefined",
+   "run": [
+    "{python}",
+    "tools/xm_player_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 15
+  },
+  {
    "id": "wave-format",
    "title": "WaveFormat (miniaudio ma_convert_frames: formats, channel maps, linear resampling and its low-pass filter) against raylib with its audio module and the host contraction profile",
    "run": [

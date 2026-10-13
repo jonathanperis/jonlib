@@ -4042,3 +4042,60 @@ def Laws.xm_sample_value_of_a_new_note_s_ramp_is_kept():
 
 def Laws.xm_sample_value_of_a_frame_is_the_channel_s():
   {==}
+
+def Laws.xm_player_speed_and_depth_keep_what_a_parameter_leaves_out():
+  {==}
+
+def Laws.xm_player_volume_column_sets_the_volume_from_0x10_to_0x50():
+  {==}
+
+def Laws.xm_player_volume_column_s_other_commands_are_its_high_bits():
+  {==}
+
+def Laws.xm_player_empty_volume_column_does_nothing():
+  {==}
+
+def Laws.xm_player_remembered_parameter_is_kept():
+  {==}
+
+def Laws.xm_player_remembered_parameter_leaves_the_others():
+  {==}
+
+def Laws.xm_player_tone_portamento_by_its_effects():
+  {==}
+
+def Laws.xm_player_tone_portamento_by_the_volume_column():
+  {==}
+
+def Laws.xm_player_vibrato_is_no_tone_portamento():
+  {==}
+
+def Laws.xm_player_vibrato_by_a_parameter_of_six_as_jar_xm_tests_it():
+  {==}
+
+def Laws.xm_player_effect_six_alone_is_no_vibrato_to_that_test():
+  {==}
+
+def Laws.xm_player_song_begins_again_at_its_restart_position():
+  {==}
+
+def Laws.xm_player_entry_inside_the_order_stays():
+  {==}
+
+def Laws.xm_player_low_parameter_sets_the_tempo():
+  {==}
+
+def Laws.xm_player_high_parameter_sets_the_bpm():
+  {==}
+
+def Laws.xm_player_parameter_of_zero_sets_neither():
+  {==}
+
+def Laws.xm_player_first_reason_to_stop_is_kept():
+  {==}
+
+def Laws.xm_player_pattern_break_goes_to_the_next_entry():
+  {==}
+
+def Laws.xm_player_position_jump_goes_to_its_entry():
+  {==}

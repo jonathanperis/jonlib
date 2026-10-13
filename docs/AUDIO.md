@@ -1282,8 +1282,8 @@ Still to come: the music (`LoadMusicStream` for `.ogg`, with
 
 ## XM modules (in progress)
 
-`src/xm_module.bend`, `src/xm_pitch.bend` and `src/xm_sample.bend` are
-the start of an adaptation of jar_xm (pinned
+`src/xm_module.bend`, `src/xm_pitch.bend`, `src/xm_sample.bend` and
+`src/xm_player.bend` are the start of an adaptation of jar_xm (pinned
 raylib's `src/external/jar_xm.h`), which raylib's `LoadMusicStream` calls
 for `.xm` files. Nothing plays yet: `Music.load` does not take the format.
 What is here is the module read from its file,
@@ -1434,8 +1434,80 @@ readable memory with 20 GiB after them that are not, so a read past them
 faults. 39 runs end that way, 18 of them at their first call, and the port
 finds exactly those steps not fine.
 
-Still to come: the rows, ticks and effects (and the module's length in
-samples), the mixer, and the music stream.
+### Rows and ticks
+
+`src/xm_player.bend` is the player itself: `jar_xm_row`, `jar_xm_tick`,
+`jar_xm_handle_note_and_instrument`, `jar_xm_trigger_note`, the effects,
+`jar_xm_reset` and `jar_xm_get_remaining_samples`.
+`player.new(libm, module, rate, random)` is the context as
+`jar_xm_create_context_safe` leaves it; `tick(player)` is one tick (a row's
+first tick plays the row); `remaining.samples(player)` the song's length in
+samples, counted by playing its ticks without sound until a row comes
+again; `reset(player)` the song's start.
+
+A `Player` has the song (tempo, BPM, global volume, a position jump or a
+pattern break to come, the random waveform's state), its place (the
+order's entry, the row, the tick), the samples left in the tick, the count
+of each row's passes, and the channels. A `Channel` has its instrument, its
+sample and the slot it plays, its place in the sample (the `Head` of *A
+channel's next sample*), its pitch, its levels (volume, panning, the
+envelopes' values, the fadeout, what the mixer ramps to), its vibratos,
+tremolo and arpeggio, and the effect parameters it remembers.
+
+- **A row** gives each channel its slot: an instrument (a number past the
+  module's cuts the note), a note (a new note keeps the last eight values
+  of the sample it replaces, takes its sample by the instrument's note
+  table and begins; under a tone portamento it only sets the period to
+  slide to; 97 is a key off), then the effect column. Every effect and
+  volume-column command of jar_xm is there, with its quirks: `HAS_VIBRATO`
+  tests the parameter for 6 where the effect is meant, a ghost instrument
+  begins the envelopes again, E60 leaves its row for the next pattern, a
+  restart position is kept in a byte.
+- **A tick** runs each channel's envelopes and instrument vibrato, ends an
+  arpeggio or a vibrato the slot no longer has, applies the volume column
+  and the effects that go on every tick, and works out the volume and
+  panning to reach. The panning is `panning + (envelope - .5f)*(.5f -
+  fabs(panning - .5f))*2.0f`: `fabs` makes that a binary64 product and
+  sum, narrowed to a float once (Jonmath's soft binary64).
+- **The length** adds each tick's samples (`rate/(0.4*BPM)`, a float) to a
+  64-bit total, which C does as a float sum: past 2^24 samples the total is
+  rounded as a float is. The port counts in 32 bits.
+- **The random waveform** is one `static` state for every module a program
+  plays; the player takes it when it is made and keeps it in its song.
+- **`reset`** cuts the notes and puts the place, tempo, BPM and global
+  volume back. Everything else stays as the length's silent playing left
+  it: the channels' samples and positions, the rows' counts, the samples
+  left in the tick.
+- **Stopped (`Player.why`): 1, what C leaves undefined.** A note begun on a
+  channel without a sample (a note delay with neither note nor instrument,
+  a retrigger: `jar_xm_trigger_note` reads the sample's panning through a
+  null pointer); a row outside its pattern's slots (a break or a jump to a
+  row the pattern has not: jar_xm reads the slots where they would be, in
+  whatever lies after them) or a pattern the module has not; E5y with y
+  below 8 (a negative int shifted left); an envelope's loop or sustain
+  point past its 12th; a step of a sample that is not fine; a row counted
+  outside jar_xm's block of memory; an Amiga period C does not define.
+- **Stopped: 2**, a song that comes to no row again in 4096 times 4096
+  ticks; **5**, what the libm profile does not give (`powf(2, y)`, `sinf`)
+  or a value the binary64 helpers do not take.
+
+`tools/xm_player_probe.py` (gate `xm-player`) runs scripts of ticks,
+lengths and resets on 20 modules and hashes the whole context after every
+one of 11460 ticks: raylib's `mini1111.xm` for its length first as raylib
+asks (2974098 samples: 62 s at 48000 Hz), tick by tick past its end, and
+with resets between; four seeded modules of effects that play on for long,
+in linear and Amiga frequencies; six of every effect, which play until
+they meet something undefined; and modules built for one thing each
+(jumps, breaks, loops and delays; a delay on a channel without a sample; a
+finetune below 8 and one above; a sustain point past its envelope; a break
+past its pattern). jar_xm says what is undefined as in the gates above
+(traps, and its block of memory under a guard with the bytes after it
+looked at); the row outside its pattern is the one thing the program works
+out itself, before each tick, as `jar_xm_row` does. Each module is played
+in a process of its own, because of the random waveform's state. 10 runs
+end undefined, and the port's player has stopped at the same call in each.
+
+Still to come: the mixer (`jar_xm_generate_samples`) and the music stream.
 
 ## WaveFormat
 
