@@ -396,9 +396,11 @@ source's text by `tools/vorbis_db_table.py`. `src/vorbis_packet.bend` is
 `vorbis_pump_first_frame`, `stb_vorbis_open_memory`,
 `stb_vorbis_get_frame_float` and
 `stb_vorbis_get_samples_short_interleaved` with
-`convert_channels_short_interleaved` and `FAST_SCALED_FLOAT_TO_INT`. The
-second is
-how the decoder reads its data: bytes (`get8`, `get32`, `getn`, `skip`), Ogg
+`convert_channels_short_interleaved` and `FAST_SCALED_FLOAT_TO_INT`.
+`src/vorbis_length.bend` is `stb_vorbis_stream_length_in_samples` with
+`vorbis_find_page`, `crc32_init` and `crc32_update`. The second is
+how the decoder reads its data: bytes (`get8`, `get32`, `getn`, `skip`,
+`set_file_offset`), Ogg
 pages (`capture_pattern`, `start_page_no_capturepattern`, `start_page`),
 packets (`start_packet`, `maybe_start_packet`, `next_segment`,
 `get8_packet_raw`, `get8_packet`, `get32_packet`, `flush_packet`) and bits
@@ -412,7 +414,8 @@ not yet behind Jonlib's waves and music.
 `tools/vorbis_setup_probe.py`, `tools/vorbis_tables_probe.py`,
 `tools/vorbis_decode_probe.py`, `tools/vorbis_mdct_probe.py`,
 `tools/vorbis_residue_probe.py`, `tools/vorbis_floor_probe.py`,
-`tools/vorbis_packet_probe.py`, `tools/vorbis_frame_probe.py` and
+`tools/vorbis_packet_probe.py`, `tools/vorbis_frame_probe.py`,
+`tools/vorbis_length_probe.py` and
 `tools/reference/stb_vorbis_lookup1/exhaustive.c` include the unmodified
 file in their reference programs only; no stb code is linked into the Bend
 candidate. stb_vorbis is MIT or public domain; Jonlib uses the MIT

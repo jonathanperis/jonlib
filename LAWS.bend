@@ -57,6 +57,7 @@ import ./src/vorbis_floor.bend as VF
 import ./src/vorbis_db.bend as VDb
 import ./src/vorbis_packet.bend as VK
 import ./src/vorbis_frame.bend as VFr
+import ./src/vorbis_length.bend as VL
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -4861,3 +4862,113 @@ law vorbis_frame_audio_inside_a_page_has_no_first_page:
 
 law vorbis_frame_no_data_is_no_decoder:
   {VFr.memory.open(M.Glibc239Libm{}, Nil{}) == VFr.Unready{VS.Failed{30}} : VFr.Started}
+
+# A Vorbis stream's length (src/vorbis_length.bend) and the reader's
+# set_file_offset: the pages' checksum, a page found by it (and not found
+# cut, changed, or in the data's first bytes), and the last page's position
+# as the length: kept, not known, past 32 bits.
+
+law vorbis_ogg_offset_inside_the_data:
+  {Ogg.Stream.at(Ogg.Reader.stream(Ogg.offset.set(Ogg.open([1, 2, 3]), 2))) == 2 : U32}
+
+law vorbis_ogg_offset_inside_the_data_reads_from_there:
+  {Ogg.Reader.value(Ogg.get8(Ogg.offset.set(Ogg.open([1, 2, 3]), 2))) == 3 : U32}
+
+law vorbis_ogg_offset_inside_the_data_answers_one:
+  {Ogg.Reader.value(Ogg.offset.set(Ogg.open([1, 2, 3]), 2)) == 1 : U32}
+
+law vorbis_ogg_offset_at_the_data_s_end_is_its_end:
+  {Ogg.Stream.eof(Ogg.Reader.stream(Ogg.offset.set(Ogg.open([1, 2, 3]), 3))) == True{} : Bool}
+
+law vorbis_ogg_offset_past_the_data_is_its_end:
+  {Ogg.Stream.at(Ogg.Reader.stream(Ogg.offset.set(Ogg.open([1, 2, 3]), 4000000000))) == 3 : U32}
+
+law vorbis_ogg_offset_past_the_data_answers_zero:
+  {Ogg.Reader.value(Ogg.offset.set(Ogg.open([1, 2, 3]), 9)) == 0 : U32}
+
+law vorbis_ogg_offset_in_no_data_is_its_end:
+  {Ogg.Stream.eof(Ogg.Reader.stream(Ogg.offset.set(Ogg.get8(Ogg.open(Nil{})), 0))) == True{} : Bool}
+
+law vorbis_ogg_offset_inside_clears_the_end_of_data:
+  {Ogg.Stream.eof(Ogg.Reader.stream(Ogg.offset.set(Ogg.get8(Ogg.get8(Ogg.open([7]))), 0))) == False{} : Bool}
+
+law vorbis_length_crc_table_entry_of_one_is_the_polynomial:
+  {VL.crc.entry(8n, 16777216) == 79764919 : U32}
+
+law vorbis_length_crc_of_a_one:
+  {VL.crc.update(VL.crc.table(), 0, 1) == 79764919 : U32}
+
+law vorbis_length_crc_of_the_capture_pattern:
+  {VL.crc.each([79, 103, 103, 83], VL.crc.table(), 0) == 1605413199 : U32}
+
+law vorbis_length_crc_shifts_a_byte_through:
+  {VL.crc.each([1, 0], VL.crc.table(), 0) == 3524903388 : U32}
+
+law vorbis_length_crc_of_zeros_is_zero:
+  {VL.crc.zeros(5n, VL.crc.table(), 0) == 0 : U32}
+
+law vorbis_length_capture_pattern_is_there:
+  {VL.capture.kind([103, 103, 83], [103, 103, 83, 0]) == 0 : U32}
+
+law vorbis_length_capture_pattern_is_another_byte:
+  {VL.capture.kind([103, 103, 83], [103, 104]) == 1 : U32}
+
+law vorbis_length_capture_pattern_at_the_data_s_end:
+  {VL.capture.kind([103, 103, 83], [103, 103]) == 2 : U32}
+
+law vorbis_length_page_is_found_by_its_checksum:
+  {VL.page.find([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 4, 77, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 9, 0, 0, 0, 188, 39, 167, 220, 0], 0, 57, VL.crc.table()) == VL.Found{True{}, 30, 57, True{}} : VL.Found}
+
+law vorbis_length_page_with_a_body_is_found:
+  {VL.page.find([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 0, 52, 18, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 3, 0, 0, 0, 213, 121, 154, 17, 1, 2, 7, 8], 0, 60, VL.crc.table()) == VL.Found{True{}, 30, 60, False{}} : VL.Found}
+
+law vorbis_length_page_with_another_body_is_none:
+  {VL.page.find([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 0, 52, 18, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 3, 0, 0, 0, 213, 121, 154, 17, 1, 2, 7, 9], 0, 60, VL.crc.table()) == VL.Found{False{}, 0, 0, False{}} : VL.Found}
+
+law vorbis_length_page_cut_in_its_body_is_none:
+  {VL.page.find([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 0, 52, 18, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 3, 0, 0, 0, 213, 121, 154, 17, 1, 2, 7], 0, 59, VL.crc.table()) == VL.Found{False{}, 0, 0, False{}} : VL.Found}
+
+law vorbis_length_page_of_empty_segments_cut_short_is_found:
+  {VL.page.find([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 4, 5, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 9, 0, 0, 0, 62, 178, 110, 13, 3, 0, 0], 0, 59, VL.crc.table()) == VL.Found{True{}, 30, 59, True{}} : VL.Found}
+
+law vorbis_length_page_in_the_first_bytes_is_none:
+  {VL.page.find([79, 103, 103, 83, 0, 4, 77, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 9, 0, 0, 0, 188, 39, 167, 220, 0], 0, 27, VL.crc.table()) == VL.Found{False{}, 0, 0, False{}} : VL.Found}
+
+law vorbis_length_search_from_the_data_s_end_finds_none:
+  {VL.page.find([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 4, 77, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 9, 0, 0, 0, 188, 39, 167, 220, 0], 57, 57, VL.crc.table()) == VL.Found{False{}, 0, 0, False{}} : VL.Found}
+
+law vorbis_length_search_after_a_page_s_start_finds_none:
+  {VL.page.find([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 4, 77, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 9, 0, 0, 0, 188, 39, 167, 220, 0], 31, 57, VL.crc.table()) == VL.Found{False{}, 0, 0, False{}} : VL.Found}
+
+law vorbis_length_is_the_last_page_s_position:
+  {VL.Length.value(VL.length.samples(Ogg.open([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 4, 77, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 9, 0, 0, 0, 188, 39, 167, 220, 0]), 0, 0)) == 77 : U32}
+
+law vorbis_length_is_kept:
+  {VL.Length.total(VL.length.samples(Ogg.open([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 4, 77, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 9, 0, 0, 0, 188, 39, 167, 220, 0]), 0, 0)) == 77 : U32}
+
+law vorbis_length_leaves_the_reader_where_it_was:
+  {Ogg.Stream.at(Ogg.Reader.stream(VL.Length.reader(VL.length.samples(Ogg.skip(Ogg.open([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 4, 77, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 9, 0, 0, 0, 188, 39, 167, 220, 0]), 5), 0, 0)))) == 5 : U32}
+
+law vorbis_length_position_of_all_ones_is_not_known:
+  {VL.Length.total(VL.length.samples(Ogg.open([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 4, 255, 255, 255, 255, 255, 255, 255, 255, 29, 0, 0, 0, 9, 0, 0, 0, 253, 42, 94, 231, 0]), 0, 0)) == 4294967295 : U32}
+
+law vorbis_length_not_known_answers_zero:
+  {VL.Length.value(VL.length.samples(Ogg.open([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 4, 255, 255, 255, 255, 255, 255, 255, 255, 29, 0, 0, 0, 9, 0, 0, 0, 253, 42, 94, 231, 0]), 0, 0)) == 0 : U32}
+
+law vorbis_length_not_known_is_an_error:
+  {Ogg.Reader.error(VL.Length.reader(VL.length.samples(Ogg.open([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 4, 255, 255, 255, 255, 255, 255, 255, 255, 29, 0, 0, 0, 9, 0, 0, 0, 253, 42, 94, 231, 0]), 0, 0))) == 36 : U32}
+
+law vorbis_length_position_past_32_bits_is_the_most:
+  {VL.Length.value(VL.length.samples(Ogg.open([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 4, 7, 0, 0, 0, 5, 0, 0, 0, 29, 0, 0, 0, 9, 0, 0, 0, 79, 80, 66, 146, 0]), 0, 0)) == 4294967294 : U32}
+
+law vorbis_length_search_begins_where_the_audio_does:
+  {VL.Length.total(VL.length.samples(Ogg.open([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 4, 77, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 9, 0, 0, 0, 188, 39, 167, 220, 0]), 31, 0)) == 4294967295 : U32}
+
+law vorbis_length_kept_is_not_searched_for_again:
+  {VL.Length.value(VL.length.samples(Ogg.open(Nil{}), 0, 500)) == 500 : U32}
+
+law vorbis_length_kept_as_not_known_answers_zero:
+  {VL.Length.value(VL.length.samples(Ogg.open(Nil{}), 0, 4294967295)) == 0 : U32}
+
+law vorbis_length_of_no_data_is_not_known:
+  {Ogg.Reader.error(VL.Length.reader(VL.length.samples(Ogg.open(Nil{}), 0, 0))) == 36 : U32}
