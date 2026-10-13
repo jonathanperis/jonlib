@@ -307,6 +307,7 @@ EXAMPLES = {
     'audio_mixed_processor': ('audio/audio_mixed_processor.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'core_screen_recording': ('core/core_screen_recording.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'core_directory_files': ('core/core_directory_files.c', 'Ex.setup(listings, core, frame)'),
+    'text_unicode_ranges': ('text/text_unicode_ranges.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_vr_simulator': ('core/core_vr_simulator.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shaders_game_of_life': ('shaders/shaders_game_of_life.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
@@ -442,6 +443,7 @@ IO_SETUP.add('audio_stream_callback')
 PERSPECTIVE.add('audio_sound_positioning')
 PERSPECTIVE.add('core_vr_simulator')
 IO_SETUP.add('shaders_game_of_life'); SEEDED.add('shaders_game_of_life')
+IO_SETUP.add('text_unicode_ranges'); EFFECTS.add('text_unicode_ranges')
 # core_directory_files lists its working directory and, after its back button, the directories above. Base has no
 # directory listing: the port is handed the listings (LISTED: its setup takes them, read here with readdir's order from the
 # very directories the reference lists). Each script's working directory (WORKING) is three levels inside its own
@@ -1304,6 +1306,11 @@ def scripts():
                                                   quick(), quick([mouse_at(300, 100)]), quick([button(0)]), quick([button(0, False), mouse_at(64, 24)]),
                                                   quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0)]), quick(), quick([mouse_at(250, 70)])]),
         script('core_directory_files', 'noext', [quick(), quick([mouse_at(200, 150)])]),
+        # The font's 95 glyphs; 1 asks for the first choice (the notice covers that frame) and the next pass loads the 7 MiB
+        # font three times, once for each of its two ranges after the plain load: the Spanish line gets its letter, the
+        # atlas grows to 512x512 and the font has 212 glyphs. 0 goes back to the 95. The other choices are not scripted:
+        # the second loads the file five times and the fourth eighteen, the last ones for tens of thousands of codepoints.
+        script('text_unicode_ranges', 'ranges', [quick(), quick([key(49)]), quick([key(49, False)]), quick(), quick([key(48)]), slow([key(48, False)]), quick()]),
         # Every frame is a refusal (UNDEFINED_NATIVE): the port still runs the clock and the stream's callback, the
         # frequency keys and both wave keys before it refuses.
         script('audio_stream_callback', 'waves', [quick(), quick([key(KEY_UP)]), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), slow([key(KEY_LEFT)]),

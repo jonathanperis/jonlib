@@ -3887,7 +3887,7 @@
   {
    "name": "text_unicode_ranges",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
