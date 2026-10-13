@@ -3271,3 +3271,45 @@ def Laws.vorbis_maps_mode_fails_in_the_modes():
 
 def Laws.vorbis_maps_setup_that_failed_is_not_read_on():
   {==}
+
+def Laws.vorbis_tables_bit_reversal_of_64():
+  {==}
+
+def Laws.vorbis_tables_bit_reversal_ends_of_8192():
+  {==}
+
+def Laws.vorbis_tables_zero_as_a_double():
+  {==}
+
+def Laws.vorbis_tables_one_as_a_double():
+  {==}
+
+def Laws.vorbis_tables_64_as_a_double():
+  {==}
+
+def Laws.vorbis_tables_8191_as_a_double():
+  {==}
+
+def Laws.vorbis_tables_five_128ths():
+  {==}
+
+def Laws.vorbis_tables_two_units_further():
+  {==}
+
+def Laws.vorbis_tables_two_units_nearer():
+  {==}
+
+def Laws.vorbis_tables_nearer_then_further():
+  {==}
+
+def Laws.vorbis_tables_negative_zero_is_zero():
+  {==}
+
+def Laws.vorbis_tables_smallest_double_is_not_zero():
+  {==}
+
+def Laws.vorbis_tables_glibc_values_are_the_library_s():
+  {==}
+
+def Laws.vorbis_tables_other_profiles_take_sure_values():
+  {==}

@@ -48,6 +48,7 @@ import ./src/vorbis_codebook.bend as V
 import ./src/vorbis_ogg.bend as Ogg
 import ./src/vorbis_setup.bend as VS
 import ./src/vorbis_maps.bend as VM
+import ./src/vorbis_tables.bend as VT
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -4374,3 +4375,49 @@ law vorbis_maps_mode_fails_in_the_modes:
 
 law vorbis_maps_setup_that_failed_is_not_read_on:
   {VM.Maps.stage(VM.maps.read(VS.setup.codebooks(Nil{}))) == 0 : U32}
+
+# The Vorbis transform's tables (src/vorbis_tables.bend): the bit reversal,
+# the ints and angles as doubles (exact products and quotients of M_PI),
+# and the two-unit margin by which a float is sure under any library.
+
+law vorbis_tables_bit_reversal_of_64:
+  {VT.bitreverse(64) == [0, 16, 8, 24, 4, 20, 12, 28] : +List<U32>}
+
+law vorbis_tables_bit_reversal_ends_of_8192:
+  {VT.reverse.each(2n, 22, 1023, Nil{}) == [4092, 0] : +List<U32>}
+
+law vorbis_tables_zero_as_a_double:
+  {VT.whole(0) == M.Float64{0, 0} : M.Float64}
+
+law vorbis_tables_one_as_a_double:
+  {VT.whole(1) == M.Float64{1072693248, 0} : M.Float64}
+
+law vorbis_tables_64_as_a_double:
+  {VT.whole(64) == M.Float64{1078984704, 0} : M.Float64}
+
+law vorbis_tables_8191_as_a_double:
+  {VT.whole(8191) == M.Float64{1086324480, 0} : M.Float64}
+
+law vorbis_tables_five_128ths:
+  {VT.halved(VT.whole(5), 7) == M.Float64{1067712512, 0} : M.Float64}
+
+law vorbis_tables_two_units_further:
+  {VT.further(M.Float64{1, 4294967295}) == M.Float64{2, 1} : M.Float64}
+
+law vorbis_tables_two_units_nearer:
+  {VT.nearer(M.Float64{2, 1}) == M.Float64{1, 4294967295} : M.Float64}
+
+law vorbis_tables_nearer_then_further:
+  {VT.further(VT.nearer(M.Float64{1072652951, 3489094832})) == M.Float64{1072652951, 3489094832} : M.Float64}
+
+law vorbis_tables_negative_zero_is_zero:
+  {VT.zero(M.Float64{2147483648, 0}) == True{} : Bool}
+
+law vorbis_tables_smallest_double_is_not_zero:
+  {VT.zero(M.Float64{0, 1}) == False{} : Bool}
+
+law vorbis_tables_glibc_values_are_the_library_s:
+  {VT.library.own(M.Glibc239Libm{}) == True{} : Bool}
+
+law vorbis_tables_other_profiles_take_sure_values:
+  {(VT.library.own(M.AppleLibm{}) || VT.library.own(M.Glibc241Libm{})) == False{} : Bool}
