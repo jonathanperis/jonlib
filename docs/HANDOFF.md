@@ -761,13 +761,31 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
          `VORBIS_invalid_setup`. Modelling the C library's binary64
          `log` and `exp` would answer the unsure pairs (the same
          functions `text_font_sdf`'s `pow` is made of).
-       - Next: the Ogg pages and packets (`start_page`, `start_packet`,
-         `next_segment`, `get8_packet_raw`, `get_bits`), which a
-         reference can drive directly on a `stb_vorbis` set up as
-         `stb_vorbis_open_memory` sets it up before `start_decoder`;
-         then `start_decoder` itself, in stages a reference can tell
-         apart by which of `codebooks`, `floor_config`, `residue_config`,
-         `mapping` it left allocated.
+       - **Done: the Ogg pages, packets and bits**
+         (`src/vorbis_ogg.bend`, gate `vorbis-ogg`, docs/AUDIO.md "The
+         data"): a `Reader` with stb_vorbis's state and its functions one
+         for one, each answering in `Reader.value`. The gate drives
+         stb_vorbis's static functions by scripts and compares all the
+         state after each call; the same harness (a script of calls, a
+         digest of the struct) will do for whatever is added to the
+         reader (`prep_huffman`, the codebook decodes, the seeks).
+         A judgment made there, to keep or to overturn: a pointer moved
+         past the data's end and only compared (`skip`), and the int -1
+         of an `EOP` shifted left (`get32_packet`), are followed as every
+         compiler does them, not refused; reads outside memory and
+         results that differ between machines are refused.
+       - Next: `start_decoder` itself, in stages a reference can tell
+         apart by which of `codebooks`, `floor_config`,
+         `residue_config`, `mapping` it left allocated. Known before
+         starting: the identification header is read with the raw byte
+         functions (not as a packet); `vorbis_init` leaves `next_seg` at
+         0, not -1; the vendor and comment lengths come from
+         `get32_packet` and size a `setup_malloc(len + 1)` (a length of
+         -1 writes before its buffer; a large one depends on the host's
+         memory: the port needs a contract there, e.g. a refusal past
+         what the packet can hold); a codebook whose `lookup1.values` is
+         `None` must be refused as such; `get_bits` answers 0 past the
+         packet's end and the setup keeps going.
        - `float32_unpack` is exact arithmetic (a 21-bit mantissa scaled
          by a power of two and narrowed once).
        - The transform's tables are binary64: `compute_twiddle_factors`

@@ -444,11 +444,12 @@ scalar ones: the reference for the samples is the build as it is.
 
 ## Ogg Vorbis (in progress)
 
-`src/vorbis_codebook.bend` is the start of an adaptation of stb_vorbis
-v1.22 (pinned raylib's `src/external/stb_vorbis.c`), which raylib's
-`LoadWave`, `LoadSound` and `LoadMusicStream` call for `.ogg` files. It
-reads no file yet: `Wave.decode(".ogg", ...)` is still
-`UnsupportedWaveFormat`. What is here is what the setup makes of a
+`src/vorbis_codebook.bend` and `src/vorbis_ogg.bend` are the start of an
+adaptation of stb_vorbis v1.22 (pinned raylib's
+`src/external/stb_vorbis.c`), which raylib's `LoadWave`, `LoadSound` and
+`LoadMusicStream` call for `.ogg` files. Nothing is decoded yet:
+`Wave.decode(".ogg", ...)` is still `UnsupportedWaveFormat`. What is here
+is the reading of the data (below) and what the setup makes of a
 codebook's code lengths, once it has read them:
 
 - **The codes** (`compute_codewords`; `codewords`, and `book.of` for all the tables). A length is 1 to
@@ -521,7 +522,73 @@ the 32767th, lengths that are no tree), and 1443 words for the three scalar
 functions. The floats are also checked against exact arithmetic in the
 probe.
 
-Still to come: the Ogg pages and the setup, the packets (floors,
+### The data: pages, packets and bits
+
+`src/vorbis_ogg.bend` is how stb_vorbis reads a memory stream
+(`stb_vorbis_open_memory`, which is what raylib opens), function by
+function. A `Reader` holds what stb_vorbis keeps between calls and each
+function gives it back with its C answer in `value`:
+
+| stb_vorbis | Here | |
+| --- | --- | --- |
+| `get8`, `get32`, `getn`, `skip` | `get8`, `get32`, `getn`, `skip` | Bytes. Past the end a byte is 0 and `eof` is set; `getn` reads nothing where fewer bytes are left. |
+| `start_page`, `start_page_no_capturepattern` | `page.start`, `page.begin` | "OggS" (read up to the first byte that is another: error 30), the version (31), the flags, the granule position, the sequence number and the segment table (10 where the data ends in it). The serial number and the checksum are passed over, as in stb_vorbis's pull API. |
+| `start_packet`, `maybe_start_packet` | `packet.start`, `packet.maybe` | A packet begins on the page's next segment, or on the next page, which must not be a continued one (32). `packet.maybe` takes the end of the data for an answer, not an error. |
+| `next_segment` | `segment.next` | The packet's next segment: a length under 255 ends the packet; after a page's last segment the next page must be a continued one (32). |
+| `get8_packet_raw`, `get8_packet`, `get32_packet`, `flush_packet` | `packet.get8.raw`, `packet.get8`, `packet.get32`, `flush.packet` | The packet's bytes, `EOP` (-1) at its end. |
+| `get_bits` | `bits.get` | Up to 32 bits, the first one lowest; 0 from the packet's end on. |
+
+Things the code does that a reader of the format would not guess, all kept:
+
+- **A page's segment table is 255 places that are never cleared.** A page
+  writes as many as it has. A page without segments leaves `next_seg` at 0,
+  and the next segment asked for is the length the table held from an
+  earlier page.
+- **A packet that is not read to its end is not skipped.** `start_packet`
+  only resets the counters: the next packet begins at the page's next
+  segment while the bytes are where the reading stopped. stb_vorbis's
+  decoder flushes a packet it decoded; after an error it does not.
+- **An error does not stop anything.** `error` keeps the last code;
+  `next_segment` on a page that should have been a continued one answers 0
+  with the page started, and the call after it reads that page's first
+  segment.
+- **The data's end inside a packet is zeros.** The segment's length is
+  counted down, each byte 0, and only a page that does not begin ends the
+  packet.
+- **`eof` is sticky and `maybe_start_packet` tests it after its read:** an
+  `eof` left by an earlier `getn` makes it answer 0 on a byte that is there.
+- **`get_bits` past a packet's end** answers 0 for the whole request,
+  whatever bits it had taken in, and for every request after it.
+
+Two things C leaves undefined and every compiler raylib is built with
+defines alike are followed, not refused: `skip` moves the stream pointer
+past the end of the data and compares it (the position here is a number,
+and passes the length the same way), and `get32_packet` shifts the int -1
+of an `EOP` left (it adds `0xFFFFFF00`, `0xFFFF0000`, `0xFF000000` as two's
+complement does). Neither reads or writes memory it should not; what does
+(or what differs between machines, like the conversion in
+`lookup1_values`) is refused. `next_segment` asserts that no byte of a
+segment is left: it is only called that way.
+
+`tools/vorbis_ogg_probe.py` (gate `vorbis-ogg`) includes stb_vorbis.c in
+its reference and drives those static functions on a `stb_vorbis` set up as
+`stb_vorbis_open_memory` sets one up, by six scripts: a walk of every
+packet; the calls `start_decoder` makes over the three headers, then
+packets read as bits and flushed; packets read as bits of every width and
+left unfinished; packets read byte by byte past their ends; and two seeded
+mixes of all fourteen calls. After each call everything the reader keeps is
+hashed with the call's answer (position, `eof`, error, flags, the 255
+places, `next_seg`, sequence number, known position, `p_first`, the
+packet's counters, `acc`, `valid_bits`, the bytes of the last `getn`), and
+the rolling hash is compared every 64 calls. The 70 files: raylib's
+`target.ogg` whole, cut at 24 places, with each page's capture pattern or
+continued flag changed, versions, unknown positions, segment counts,
+seeded damage, the file twice; and 13 streams of pages built by the probe
+(packets over pages with and without the flag, pages without segments, a
+full table, empty packets, data that ends inside a segment or a table,
+bytes between pages). 781,620 calls, equal on cpu-1, cpu-2 and JavaScript.
+
+Still to come: the setup (`start_decoder`), the packets (floors,
 residues), the inverse MDCT, and then the waves and the music.
 
 ## WaveFormat

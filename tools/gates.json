@@ -2018,6 +2018,21 @@
    "minutes": 1
   },
   {
+   "id": "vorbis-ogg",
+   "title": "Ogg data as stb_vorbis reads it (start_page, start_packet, maybe_start_packet, next_segment, get8_packet_raw, get8_packet, get32_packet, flush_packet, get_bits, get8, get32, getn, skip) against stb_vorbis.c's own functions, call by call: everything the reader keeps after each of 781,620 calls of six scripts over raylib's target.ogg, its cuts and damaged copies, and built pages (packets over pages with and without the flag, a page without segments, a full table, empty packets, unknown positions, data that ends in a segment or a table, bytes between pages)",
+   "run": [
+    "{python}",
+    "tools/vorbis_ogg_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 5
+  },
+  {
    "id": "wave-format",
    "title": "WaveFormat (miniaudio ma_convert_frames: formats, channel maps, linear resampling and its low-pass filter) against raylib with its audio module and the host contraction profile",
    "run": [
