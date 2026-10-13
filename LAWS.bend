@@ -45,6 +45,7 @@ import ./src/mp3_layer3.bend as Mp3L3
 import ./src/mp3_tables.bend as Mp3T
 import ./src/mp3_stream.bend as Mp3S
 import ./src/vorbis_codebook.bend as V
+import ./src/vorbis_ogg.bend as Ogg
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -3991,3 +3992,105 @@ law vorbis_lookup1_past_24_bits_of_entries:
 
 law vorbis_lookup1_past_16_bits_of_dimensions:
   {V.lookup1.values(5, 65536) == None{} : Maybe<U32>}
+
+# Ogg data as stb_vorbis reads it (src/vorbis_ogg.bend): bytes (0 and eof
+# past the end, a skip that moves past it), pages (the capture pattern, the
+# version, the segment table), packets over the pages' segments (EOP at
+# their end, a continued page where one is and is not due) and bits (the
+# first one lowest, zeros once they ran out).
+
+law ogg_get8_at_the_end_is_zero:
+  {Ogg.Reader.value(Ogg.get8(Ogg.open(Nil{}))) == 0 : U32}
+
+law ogg_get8_at_the_end_is_eof:
+  {Ogg.Stream.eof(Ogg.Reader.stream(Ogg.get8(Ogg.open(Nil{})))) == True{} : Bool}
+
+law ogg_get32_is_low_byte_first:
+  {Ogg.Reader.value(Ogg.get32(Ogg.open([1, 2, 3, 4]))) == 67305985 : U32}
+
+law ogg_get32_past_the_end_reads_zeros:
+  {Ogg.Reader.value(Ogg.get32(Ogg.open([1, 2]))) == 513 : U32}
+
+law ogg_getn_of_more_than_is_left_fails:
+  {Ogg.Reader.value(Ogg.getn(Ogg.open([1, 2, 3]), 4)) == 0 : U32}
+
+law ogg_getn_of_more_than_is_left_reads_nothing:
+  {Ogg.Stream.at(Ogg.Reader.stream(Ogg.getn(Ogg.open([1, 2, 3]), 4))) == 0 : U32}
+
+law ogg_getn_gives_the_bytes:
+  {Ogg.Reader.taken(Ogg.getn(Ogg.open([1, 2, 3]), 2)) == [1, 2] : +List<U32>}
+
+law ogg_skip_moves_past_the_end:
+  {Ogg.Stream.at(Ogg.Reader.stream(Ogg.skip(Ogg.open([1, 2, 3]), 5))) == 5 : U32}
+
+law ogg_skip_to_the_end_is_eof:
+  {Ogg.Stream.eof(Ogg.Reader.stream(Ogg.skip(Ogg.open([1, 2, 3]), 3))) == True{} : Bool}
+
+law ogg_skip_short_of_the_end_is_not_eof:
+  {Ogg.Stream.eof(Ogg.Reader.stream(Ogg.skip(Ogg.open([1, 2, 3]), 2))) == False{} : Bool}
+
+law ogg_page_without_its_capture_pattern:
+  {Ogg.Reader.error(Ogg.page.start(Ogg.open([79, 103, 103, 84, 0, 0]))) == 30 : U32}
+
+law ogg_capture_pattern_stops_at_the_wrong_byte:
+  {Ogg.Stream.at(Ogg.Reader.stream(Ogg.page.start(Ogg.open([79, 104, 103, 83, 0, 0])))) == 2 : U32}
+
+law ogg_page_of_another_version:
+  {Ogg.Reader.error(Ogg.page.start(Ogg.open([79, 103, 103, 83, 1, 0]))) == 31 : U32}
+
+law ogg_page_with_a_cut_segment_table:
+  {Ogg.Reader.error(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 3, 9]))) == 10 : U32}
+
+law ogg_page_starts:
+  {Ogg.Reader.value(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9, 8, 7]))) == 1 : U32}
+
+law ogg_page_start_stops_at_the_body:
+  {Ogg.Stream.at(Ogg.Reader.stream(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9, 8, 7])))) == 28 : U32}
+
+law ogg_page_keeps_its_flags:
+  {Ogg.Page.flag(Ogg.Reader.page(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9, 8, 7])))) == 2 : U32}
+
+law ogg_packet_first_byte:
+  {Ogg.Reader.value(Ogg.packet.get8.raw(Ogg.packet.start(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9, 8, 7]))))) == 9 : U32}
+
+law ogg_packet_ends_after_its_segment:
+  {Ogg.Reader.value(Ogg.packet.get8.raw(Ogg.packet.get8.raw(Ogg.packet.get8.raw(Ogg.packet.get8.raw(Ogg.packet.start(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9, 8, 7])))))))) == 4294967295 : U32}
+
+law ogg_packet_end_is_no_error:
+  {Ogg.Reader.error(Ogg.packet.get8.raw(Ogg.packet.get8.raw(Ogg.packet.get8.raw(Ogg.packet.get8.raw(Ogg.packet.start(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9, 8, 7])))))))) == 0 : U32}
+
+law ogg_get32_packet_adds_the_end_as_minus_one:
+  {Ogg.Reader.value(Ogg.packet.get32(Ogg.packet.start(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9, 8, 7]))))) == 4278650889 : U32}
+
+law ogg_bits_are_read_low_first:
+  {Ogg.Reader.value(Ogg.bits.get(3, Ogg.packet.start(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 181, 8, 7]))))) == 5 : U32}
+
+law ogg_bits_go_on_where_the_last_ended:
+  {Ogg.Reader.value(Ogg.bits.get(5, Ogg.bits.get(3, Ogg.packet.start(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 181, 8, 7])))))) == 22 : U32}
+
+law ogg_bits_of_no_width:
+  {Ogg.Reader.value(Ogg.bits.get(0, Ogg.packet.start(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 181, 8, 7]))))) == 0 : U32}
+
+law ogg_bits_of_32:
+  {Ogg.Reader.value(Ogg.bits.get(32, Ogg.packet.start(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 4, 1, 2, 3, 4]))))) == 67305985 : U32}
+
+law ogg_bits_past_the_packet_are_zero:
+  {Ogg.Reader.value(Ogg.bits.get(16, Ogg.bits.get(16, Ogg.packet.start(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9, 8, 7])))))) == 0 : U32}
+
+law ogg_bits_past_the_packet_stay_out:
+  {Ogg.Packet.valid(Ogg.Reader.packet(Ogg.bits.get(1, Ogg.bits.get(16, Ogg.bits.get(16, Ogg.packet.start(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9, 8, 7])))))))) == 4294967295 : U32}
+
+law ogg_flush_passes_the_packet:
+  {Ogg.Stream.at(Ogg.Reader.stream(Ogg.flush.packet(Ogg.packet.start(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9, 8, 7])))))) == 31 : U32}
+
+law ogg_no_packet_at_the_end_is_no_error:
+  {(Ogg.Reader.error(Ogg.packet.maybe(Ogg.flush.packet(Ogg.packet.start(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9, 8, 7])))))) + Ogg.Reader.value(Ogg.packet.maybe(Ogg.flush.packet(Ogg.packet.start(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9, 8, 7])))))) : U32) == 0 : U32}
+
+law ogg_start_packet_at_the_end_is_an_error:
+  {Ogg.Reader.error(Ogg.packet.start(Ogg.flush.packet(Ogg.packet.start(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9, 8, 7])))))) == 30 : U32}
+
+law ogg_continued_page_starts_no_packet:
+  {Ogg.Reader.error(Ogg.packet.start(Ogg.flush.packet(Ogg.packet.start(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9, 8, 7, 79, 103, 103, 83, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 5, 6])))))) == 32 : U32}
+
+law ogg_continued_page_is_needed_to_go_on:
+  {Ogg.Reader.value(Ogg.packet.get8.raw(Ogg.packet.get8.raw(Ogg.packet.get8.raw(Ogg.packet.get8.raw(Ogg.packet.start(Ogg.page.start(Ogg.open([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9, 8, 7, 79, 103, 103, 83, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 5, 6])))))))) == 4294967295 : U32}

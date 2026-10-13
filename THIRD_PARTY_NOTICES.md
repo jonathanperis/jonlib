@@ -370,14 +370,19 @@ domain; Jonlib uses the MIT alternative, retained with its notice in
 
 ## stb_vorbis
 
-`src/vorbis_codebook.bend` is an altered Bend adaptation of the codebook
-builders of stb_vorbis v1.22 by Sean Barrett and contributors, as pinned
-raylib vendors it in `src/external/stb_vorbis.c`: `compute_codewords`,
+`src/vorbis_codebook.bend` and `src/vorbis_ogg.bend` are altered Bend
+adaptations of parts of stb_vorbis v1.22 by Sean Barrett and contributors,
+as pinned raylib vendors it in `src/external/stb_vorbis.c`. The second is
+how the decoder reads its data: bytes (`get8`, `get32`, `getn`, `skip`), Ogg
+pages (`capture_pattern`, `start_page_no_capturepattern`, `start_page`),
+packets (`start_packet`, `maybe_start_packet`, `next_segment`,
+`get8_packet_raw`, `get8_packet`, `get32_packet`, `flush_packet`) and bits
+(`get_bits`). The first is the codebook builders: `compute_codewords`,
 `compute_sorted_huffman`, `compute_accelerated_huffman`, `ilog`,
 `bit_reverse`, `float32_unpack` and `lookup1_values` (answered by integer
-arithmetic where stb_vorbis's float estimate is sure). It is the first part
-of an Ogg Vorbis decoder and reads no file yet.
-`tools/vorbis_codebook_probe.py` and
+arithmetic where stb_vorbis's float estimate is sure). They are the first
+parts of an Ogg Vorbis decoder, which decodes nothing yet.
+`tools/vorbis_codebook_probe.py`, `tools/vorbis_ogg_probe.py` and
 `tools/reference/stb_vorbis_lookup1/exhaustive.c` include the unmodified
 file in their reference programs only; no stb code is linked into the Bend
 candidate. stb_vorbis is MIT or public domain; Jonlib uses the MIT

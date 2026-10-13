@@ -2911,3 +2911,99 @@ def Laws.vorbis_lookup1_past_24_bits_of_entries():
 
 def Laws.vorbis_lookup1_past_16_bits_of_dimensions():
   {==}
+
+def Laws.ogg_get8_at_the_end_is_zero():
+  {==}
+
+def Laws.ogg_get8_at_the_end_is_eof():
+  {==}
+
+def Laws.ogg_get32_is_low_byte_first():
+  {==}
+
+def Laws.ogg_get32_past_the_end_reads_zeros():
+  {==}
+
+def Laws.ogg_getn_of_more_than_is_left_fails():
+  {==}
+
+def Laws.ogg_getn_of_more_than_is_left_reads_nothing():
+  {==}
+
+def Laws.ogg_getn_gives_the_bytes():
+  {==}
+
+def Laws.ogg_skip_moves_past_the_end():
+  {==}
+
+def Laws.ogg_skip_to_the_end_is_eof():
+  {==}
+
+def Laws.ogg_skip_short_of_the_end_is_not_eof():
+  {==}
+
+def Laws.ogg_page_without_its_capture_pattern():
+  {==}
+
+def Laws.ogg_capture_pattern_stops_at_the_wrong_byte():
+  {==}
+
+def Laws.ogg_page_of_another_version():
+  {==}
+
+def Laws.ogg_page_with_a_cut_segment_table():
+  {==}
+
+def Laws.ogg_page_starts():
+  {==}
+
+def Laws.ogg_page_start_stops_at_the_body():
+  {==}
+
+def Laws.ogg_page_keeps_its_flags():
+  {==}
+
+def Laws.ogg_packet_first_byte():
+  {==}
+
+def Laws.ogg_packet_ends_after_its_segment():
+  {==}
+
+def Laws.ogg_packet_end_is_no_error():
+  {==}
+
+def Laws.ogg_get32_packet_adds_the_end_as_minus_one():
+  {==}
+
+def Laws.ogg_bits_are_read_low_first():
+  {==}
+
+def Laws.ogg_bits_go_on_where_the_last_ended():
+  {==}
+
+def Laws.ogg_bits_of_no_width():
+  {==}
+
+def Laws.ogg_bits_of_32():
+  {==}
+
+def Laws.ogg_bits_past_the_packet_are_zero():
+  {==}
+
+def Laws.ogg_bits_past_the_packet_stay_out():
+  {==}
+
+def Laws.ogg_flush_passes_the_packet():
+  {==}
+
+def Laws.ogg_no_packet_at_the_end_is_no_error():
+  {==}
+
+def Laws.ogg_start_packet_at_the_end_is_an_error():
+  {==}
+
+def Laws.ogg_continued_page_starts_no_packet():
+  {==}
+
+def Laws.ogg_continued_page_is_needed_to_go_on():
+  {==}
