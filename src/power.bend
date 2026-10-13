@@ -9,7 +9,7 @@
 # unfused arithmetic here gives the result of both the SSE2 and the FMA
 # variants glibc 2.39 and 2.41 select (tools/reference/glibc_pow2).
 # Also math/expf.c and math/logf.c (logf_data.c) at the same revision: expf
-# for |x| < 87 and logf for positive normal x, as glibc 2.39 and 2.41 answer
+# for |x| < 87 and logf for positive finite x, as glibc 2.39 and 2.41 answer
 # in both variants (tools/reference/glibc_explog).
 import Base
 import ./binary64_fma.bend as F
@@ -182,6 +182,20 @@ def exp.word(+bits: U32) -> Maybe<F32>:
 def exp(+x: F32) -> Maybe<F32>:
   exp.word(F32.bits(x))
 
+# The word of x normalized as logf and powf do for subnormals (x * 2^23,
+# minus 23 in the exponent), in integer arithmetic.
+def normalize.steps(n: Nat, +m: U32, +s: U32) -> U32 & U32:
+  match n:
+    case 0n: (m, s)
+    case 1n+k: Bool.pick(U32 & U32, (m >= 8388608 : U32), (m, s), normalize.steps(k, (m << 1n : U32), (s + 1 : U32)))
+
+def normalize.word(pair: U32 & U32) -> U32:
+  (+m, +s) = pair
+  ((((1 - s) << 23n) : U32) + (m .&. 8388607) : U32)
+
+def normalize(+ix: U32) -> U32:
+  Bool.pick(U32, (ix < 8388608 : U32), normalize.word(normalize.steps(24n, ix, 0)), ix)
+
 # log(c) for the centers of logf's 16 subintervals (logf_data.c; their 1/c is
 # powf's invc table).
 def log_logc() -> +List<U32>:
@@ -204,28 +218,20 @@ def log.inside(inside: Bool, +bits: U32) -> Maybe<F32>:
     case False{}: None{}
     case True{}: log.at(bits)
 
+# The words logf has an answer for here: a positive finite x, subnormal or
+# normal.
+def log.domain(+bits: U32) -> Bool:
+  (bits >= 1 : U32) && (bits < 2139095040 : U32)
+
 # glibc 2.39 and 2.41 (x86_64) logf(x) for the binary32 word of x: a positive
-# normal x (the SSE2 and the FMA variants agree on every one). None for zero,
-# subnormals, negative values, infinities and NaN.
+# finite x (the SSE2 and the FMA variants agree on every one, the subnormal
+# ones included, which logf first scales by 2^23). None for zero, negative
+# values, infinities and NaN.
 def log.word(+bits: U32) -> Maybe<F32>:
-  log.inside((bits >= 8388608 : U32) && (bits < 2139095040 : U32), bits)
+  log.inside(log.domain(bits), normalize(bits))
 
 def log(+x: F32) -> Maybe<F32>:
   log.word(F32.bits(x))
-
-# The word of x normalized as powf does for subnormals (x * 2^23, minus 23 in
-# the exponent), in integer arithmetic.
-def normalize.steps(n: Nat, +m: U32, +s: U32) -> U32 & U32:
-  match n:
-    case 0n: (m, s)
-    case 1n+k: Bool.pick(U32 & U32, (m >= 8388608 : U32), (m, s), normalize.steps(k, (m << 1n : U32), (s + 1 : U32)))
-
-def normalize.word(pair: U32 & U32) -> U32:
-  (+m, +s) = pair
-  ((((1 - s) << 23n) : U32) + (m .&. 8388607) : U32)
-
-def normalize(+ix: U32) -> U32:
-  Bool.pick(U32, (ix < 8388608 : U32), normalize.word(normalize.steps(24n, ix, 0)), ix)
 
 def general(+ix: U32, +y: V) -> Maybe<F32>:
   exp2.checked(mul(y, log2(normalize(ix))))

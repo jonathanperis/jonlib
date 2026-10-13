@@ -691,10 +691,9 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      slower runner).
    - **The four examples left**, with what each was found to need:
      - `audio_spectrum_visualizer`. Its `LoadWave("country.mp3")` works
-       now. Still to do: (a) `logf` of a subnormal: the example takes
-       `logf(fmaxf(magnitude, 1e-40f))` and `1e-40f` is subnormal, which
-       `Power.logf` does not answer (silence would refuse the frame);
-       glibc scales such an argument by 2^23 first. (b) The port of its
+       now, and so does `logf` of a subnormal (the example takes
+       `logf(fmaxf(magnitude, 1e-40f))`, and `1e-40f` is subnormal: with
+       silence every bin is that). Still to do: (b) The port of its
        FFT (a Blackman window of 2048 `cosf` a frame, ten stages with
        `cosf`/`sinf` twiddles in float, 512 `sqrtf` and `logf`). No
        frame shows the spectrum: the reference's renderer runs no

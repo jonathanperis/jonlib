@@ -16,5 +16,5 @@ for fused in 1 0; do
   done
   wait
   cat "$work"/part$fused-* | awk -v fused=$fused -v glibc="$(ldd --version | head -1)" \
-    '{a+=$1; b+=$2; c+=$3; d+=$4; e+=$5} END {printf "{\"fused\": %d, \"expf_arguments\": %d, \"expf_differences\": %d, \"logf_arguments\": %d, \"logf_differences\": %d, \"domain_violations\": %d, \"glibc\": \"%s\"}\n", fused, a, b, c, d, e, glibc}'
+    '{a+=$1; b+=$2; c+=$3; d+=$4; e+=$5; f+=$6; g+=$7; h+=$8} END {printf "{\"fused\": %d, \"expf_arguments\": %d, \"expf_differences\": %d, \"logf_arguments\": %d, \"logf_differences\": %d, \"domain_violations\": %d, \"logf_subnormal_arguments\": %d, \"logf_subnormal_differences\": %d, \"logf_subnormal_domain_violations\": %d, \"glibc\": \"%s\"}\n", fused, a, b, c, d, e, f, g, h, glibc}'
 done

@@ -714,6 +714,36 @@ def Laws.glibc_expf_variant_argument_none():
 def Laws.glibc_expf_other_variant_argument_none():
   {==}
 
+def Laws.glibc_logf_answers_the_smallest_subnormal():
+  {==}
+
+def Laws.glibc_logf_answers_the_largest_subnormal():
+  {==}
+
+def Laws.glibc_logf_answers_the_largest_float():
+  {==}
+
+def Laws.glibc_logf_domain_without_zero():
+  {==}
+
+def Laws.glibc_logf_domain_without_infinity():
+  {==}
+
+def Laws.glibc_logf_domain_without_negatives():
+  {==}
+
+def Laws.glibc_logf_smallest_subnormal_scaled():
+  {==}
+
+def Laws.glibc_logf_half_the_smallest_normal_scaled():
+  {==}
+
+def Laws.glibc_logf_largest_subnormal_scaled():
+  {==}
+
+def Laws.glibc_logf_normal_word_kept():
+  {==}
+
 def Laws.glibc_logf_zero_none():
   {==}
 

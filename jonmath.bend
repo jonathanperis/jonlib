@@ -1379,8 +1379,9 @@ def Libm.exp(libm: Libm, +x: F32) -> Maybe<F32>:
     case _: Power.exp(x)
 
 # logf(x) under a reference profile: glibc's (2.39 and 2.41 on x86_64, both
-# variants alike) for a positive normal x (Power.log). None for AppleLibm
-# (not verified), zero, subnormals, negative values, infinities and NaN.
+# variants alike) for a positive finite x, subnormal or normal (Power.log).
+# None for AppleLibm (not verified), zero, negative values, infinities and
+# NaN.
 def Libm.log(libm: Libm, +x: F32) -> Maybe<F32>:
   match libm:
     case AppleLibm{}: None{}
