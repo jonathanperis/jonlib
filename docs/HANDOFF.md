@@ -660,6 +660,16 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      examples that click buttons with the mouse button do not press
      them: worth a pass (`core_clipboard_text`'s `buttons` script says
      its buttons act).
+   - **`Wave` and `Sound` load MP3 files** (`Wave.decode(".mp3")`, gate
+     `mp3-wave`, docs/AUDIO.md). dr_mp3 reads a memory stream
+     (`LoadWave`, `LoadMusicStreamFromMemory`) with another function than
+     a file's (`LoadMusicStream`), and the two end a stream with an
+     ID3v1 tag differently: `Mp3S.open.memory` beside `Mp3S.open`, and
+     `Music.load_from_memory` now opens the memory way (it shared the
+     file's before). The `mp3-stream` gate opens every file both ways.
+     What `audio_spectrum_visualizer` still needs: its FFT (`cosf`,
+     `sinf`, `logf`, `sqrtf`), and time: `LoadWave` of the whole
+     `country.mp3` is about six minutes in the JavaScript lane.
    - The six examples left: `audio_module_playing` (jar_xm),
      `audio_sound_loading` (stb_vorbis), `audio_spectrum_visualizer`
      (`LoadWave` of an MP3, slow in the JavaScript lane),

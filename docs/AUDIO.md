@@ -9,7 +9,7 @@ It is plain `Data`: copying a Wave copies its samples.
 
 | Function | raylib | Contract |
 |---|---|---|
-| `Wave.decode(file_type, bytes)` | `LoadWaveFromMemory` | `.wav`/`.WAV` and `.qoa`/`.QOA` data as 16-bit samples (below). Other tokens are `UnsupportedWaveFormat`. |
+| `Wave.decode(file_type, bytes)` | `LoadWaveFromMemory` | `.wav`/`.WAV` and `.qoa`/`.QOA` data as 16-bit samples and `.mp3`/`.MP3` data as 32-bit float samples (below). Other tokens are `UnsupportedWaveFormat`. |
 | `Wave.load(path)` | `LoadWave` | The file's bytes decoded by its extension; file errors are `WaveFileError`. |
 | `Wave.is_valid(wave)` | `IsWaveValid` | Frames, sample rate, sample size and channels all positive. |
 | `Wave.copy(wave)` / `unload` | `WaveCopy` / `UnloadWave` | |
@@ -143,8 +143,8 @@ without decoding their samples, which is what opening a stream and counting
 its frames take; `src/mp3_layer3.bend` decodes a Layer III frame to its
 16-bit samples; `src/mp3_stream.bend` is the two together, a stream read
 and sought as raylib's music and waves do it (all below). `Music` plays
-MP3 files through it (see Music streams); `Wave` and `Sound` do not load
-them yet.
+MP3 files through it (see Music streams), and `Wave` and `Sound` load them
+(below).
 
 - **Headers** (`drmp3_hdr_*`): validity, whether two headers are of one
   stream, bit rate, sample rate, samples and bytes of a frame, padding.
@@ -399,11 +399,45 @@ float read, a seek forward to 3000, a read, a count, and a last read (of
 operation both sides
 give its result (frames read and a hash of the samples, of the floats'
 bits for a float read) and `currentPCMFrame`, the frames left and consumed
-of the frame at hand and its channels. 64 files run the script (832
-operations) and 21 do not open, on both sides. CPU-1, CPU-2 and
-JavaScript.
+of the frame at hand and its channels. Each file is opened as a file and
+from memory (below), and 17 of them are also read straight to their end
+both ways: 204 streams, 1698 operations; 64 files run the script and 21
+do not open, on both sides. CPU-1, CPU-2 and JavaScript.
 
-Still to come: Layers I and II, and `Wave` and `Sound` from MP3 files.
+**Files and memory.** dr_mp3 reads a stream opened from a file
+(`drmp3_init_file`, which `LoadMusicStream` calls) through a buffer its
+callbacks fill, and one opened from memory (`drmp3_init_memory`:
+`LoadWave`, `LoadSound` and `LoadMusicStreamFromMemory`) with another
+function, which decodes each frame from all the bytes left. `Mp3S.open` is
+the first and `Mp3S.open.memory` the second (`H.Stream`, whose `cap` tells
+them apart). They do not always end a stream alike. After an Xing/Info
+frame the buffered path counts its position from the stream's start again
+while the file stays where it is, so its reads go that many bytes past the
+stream's length: into an ID3v1 tag, whose bytes then follow the last frame,
+which is no frame for it (minimp3 wants the header of the next one, or the
+data's end). A memory stream ends before its tags and keeps the frame.
+`first12` with an ID3v1 tag has 10415 frames read as a file and 11567 from
+memory. A seek to the stream's start puts the buffered path right, so the
+gate's script alone hides it: the dozen-frame files are also read straight
+to their end, both ways (204 streams in all).
+
+**Waves and sounds.** `Wave.decode(".mp3", bytes)` is
+`drmp3_open_memory_and_read_pcm_frames_f32`: the memory stream's every
+frame, as 32-bit float samples (raylib's build decodes 16-bit samples and
+divides by 32768), with the channels and sample rate of the stream's first
+frame. `tools/mp3_wave_probe.py` (gate `mp3-wave`) compares `Wave.load`
+with raylib's `LoadWave` on the `mp3` gate's files without the whole
+`country.mp3` (84, and one under `.MP3`): 62 waves (431318 frames: count,
+rate, size, channels and a hash of the samples' bits) and 23 files without
+one, and for each wave the frames of the `Sound` made of it
+(`LoadSoundFromWave` on an open device). There is no wave where dr_mp3
+opens no stream or reads no frame (`InvalidWaveData`), nor for a stream
+that stops at a frame dr_mp3 decodes by leaving one of its arrays; a
+stream with a Layer I or II frame is `UnsupportedWaveFormat`. The whole
+file is 3584 MP3 frames: about six minutes in the JavaScript lane, so
+it is in no gate as a wave (its frames are in `mp3-layer3`).
+
+Still to come: Layers I and II.
 
 raylib builds dr_mp3 with its SSE paths, whose samples differ from the
 scalar ones: the reference for the samples is the build as it is.
@@ -554,7 +588,7 @@ wave's length does not grow their depth: the examples' sounds (up to 48000
 stereo frames out) convert on every lane, JavaScript included, through
 `Sound.load` (gate `sound`, below).
 
-Not yet available: OGG, MP3 (above), FLAC, XM and MOD data. Gaps of `WaveFormat`:
+Not yet available: OGG, FLAC, XM and MOD data, and MP3 Layers I and II (above). Gaps of `WaveFormat`:
 the refusals above, and no GPU evidence.
 
 ## Audio device and sounds
@@ -605,7 +639,7 @@ volume, a pitch, a pan, its playing and paused flags and a block of samples
 - `SoundDeviceNotReady` on an unready device, where raylib converts to the
   zeroed device's rate and tracks through a mutex that does not exist.
 - `SoundWaveError` for a file `Wave.load` fails on (raylib returns the zero
-  sound: missing files, bad data; and OGG, MP3, FLAC, XM and MOD files,
+  sound: missing files, bad data; and OGG, FLAC, XM and MOD files,
   which raylib loads and Jonlib does not yet) and for a wave `WaveFormat`
   refuses (above).
 

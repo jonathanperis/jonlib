@@ -1944,7 +1944,7 @@
   },
   {
    "id": "mp3-stream",
-   "title": "MP3 streams read and sought (dr_mp3: the first frame, drmp3_get_pcm_frame_count, 16-bit and float reads across frames, the LAME delay and padding, seeks back and forward, the start) against dr_mp3 through the functions raylib calls",
+   "title": "MP3 streams read and sought (dr_mp3: the first frame, drmp3_get_pcm_frame_count, 16-bit and float reads across frames, the LAME delay and padding, seeks back and forward, the start), opened as files and from memory, against dr_mp3 through the functions raylib calls",
    "run": [
     "{python}",
     "tools/mp3_stream_probe.py",
@@ -1955,7 +1955,22 @@
     "linux",
     "macos"
    ],
-   "minutes": 10
+   "minutes": 25
+  },
+  {
+   "id": "mp3-wave",
+   "title": "Waves and sounds from MP3 files (LoadWave: drmp3_open_memory_and_read_pcm_frames_f32, a memory stream's every frame as floats; LoadSoundFromWave) against raudio.c on the mp3 gate's files: frame count, rate, size, channels, the samples' bits and the sound's frames, or no wave",
+   "run": [
+    "{python}",
+    "tools/mp3_wave_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 4
   },
   {
    "id": "msf-gif",

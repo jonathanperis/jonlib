@@ -12,6 +12,7 @@ class ScriptTests(unittest.TestCase):
         ops = sp.operations('whole')
         self.assertEqual((len(ops), ops[:4], ops[-2:]), (2 * len(sp.SCRIPT), [ord('c'), 0, ord('r'), 100], [ord('r'), 20000]))
         self.assertEqual(sp.operations('edit17')[-2:], [ord('r'), 2500])
+        self.assertEqual(sp.operations('edit17', straight=True), [ord('r'), 20000])
 
     def test_the_script_has_every_operation(self):
         self.assertEqual({code for code, _ in sp.SCRIPT}, set('crfkeb'))
@@ -21,18 +22,23 @@ class ScriptTests(unittest.TestCase):
         self.assertLess(codes.index('b'), codes.rindex('k'))
 
     def test_the_reference_takes_the_script_and_each_file_s_last_read(self):
-        source = sp.reference([('first12', 'x/first12.mp3'), ('edit17', 'x/edit17.mp3')])
-        self.assertIn('static const unsigned lasts[] = { 20000, 2500 };', source)
+        source = sp.reference([('first12', 'x/first12.mp3', False, False), ('edit17', 'x/edit17.mp3', True, False), ('first12', 'x/first12.mp3', True, True)])
+        self.assertIn('static const unsigned lasts[] = { 20000, 2500, 20000 };', source)
+        self.assertIn('static const unsigned memory[] = { 0, 1, 1 };', source)
+        self.assertIn('static const unsigned straight[] = { 0, 0, 1 };', source)
         self.assertIn('static const char codes[] = "crfrkrebfkrcr";', source)
         self.assertIn('static const unsigned args[] = { 0, 100, 1000, 2000, 500, 300, 0, 0, 1200, 3000, 50, 0, 2500 };', source)
         self.assertIn('static drmp3_int16 shorts[2*20000];', source)
         self.assertEqual(source.count('x/edit17.mp3"'), 1)
-        for name in ('drmp3_init_file', 'drmp3_get_pcm_frame_count', 'drmp3_read_pcm_frames_s16', 'drmp3_read_pcm_frames_f32', 'drmp3_seek_to_pcm_frame', 'drmp3_seek_to_start_of_stream'):
+        for name in ('drmp3_init_file', 'drmp3_init_memory', 'drmp3_get_pcm_frame_count', 'drmp3_read_pcm_frames_s16', 'drmp3_read_pcm_frames_f32', 'drmp3_seek_to_pcm_frame', 'drmp3_seek_to_start_of_stream'):
             self.assertIn(name + '(', source)
 
     def test_the_candidate_runs_each_file_s_script(self):
-        text = sp.render([('first12', 'x/a.mp3'), ('edit17', 'x/b.mp3')], False)
-        self.assertEqual((text.count('J.Files.load_data('), text.count('"x/b.mp3"'), text.rstrip().endswith('IO.print("done")')), (2, 1, True))
+        text = sp.render([('first12', 'x/a.mp3', False, False), ('edit17', 'x/b.mp3', True, False), ('first12', 'x/a.mp3', True, True)], False)
+        self.assertEqual((text.count('J.Files.load_data('), text.count('"x/b.mp3"'), text.rstrip().endswith('IO.print("done")')), (3, 1, True))
+        # a file is opened as a file or from its bytes; a straight script is one read
+        self.assertEqual((text.count('], False{}))'), text.count('], True{}))'), text.count('[114, 20000], True{}))')), (1, 2, 1))
+        self.assertIn('S.open.memory(bytes)', text)
         self.assertIn('[99, 0, 114, 100, 102, 1000, 114, 2000, 107, 500, 114, 300, 101, 0, 98, 0, 102, 1200, 107, 3000, 114, 50, 99, 0, 114, 20000]', text)
         self.assertIn('99, 0, 114, 2500]', text)
         # the operation codes the program matches are the script's letters

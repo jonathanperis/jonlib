@@ -71,8 +71,9 @@ def next.frame(+stream: H.Stream, +decoder: L.Decoder, +samples: U32, +bytes: U3
 # samples: a frame is decoded from the buffer and its bytes leave it; one
 # with samples ends the loop, as does one this port refuses; anything else
 # (bytes that are no frame, a frame that decodes nothing) is passed and the
-# buffer filled again. `frame` is the frame of `stream`'s buffer and
-# `before` the decoder it was decoded with.
+# buffer filled again (a memory stream, H.Stream, goes on without one while
+# bytes are passed). `frame` is the frame of `stream`'s buffer and `before`
+# the decoder it was decoded with.
 def next.loop(n: Nat, ended: Bool, frame: L.Decoded, +stream: H.Stream, +before: L.Decoder) -> Next:
   match n:
     case 0n: Next{stream, before, 0, 0, Nil{}, 0}
@@ -80,7 +81,7 @@ def next.loop(n: Nat, ended: Bool, frame: L.Decoded, +stream: H.Stream, +before:
       match ended frame:
         case True{} _: Next{stream, before, 0, 0, Nil{}, 0}
         case False{} L.Decoded{+decoder, 0, +bytes, 0, _, _}:
-          +filled = H.stream.fill(H.stream.used(stream, Decoder.dec(decoder), bytes))
+          +filled = H.stream.refill(H.stream.memory(stream), H.stream.used(stream, Decoder.dec(decoder), bytes), bytes)
           next.loop(rest, H.stream.ended(filled), buffered(filled, decoder), filled, decoder)
         case False{} L.Decoded{+decoder, +samples, +bytes, +status, _, +pcm}: next.frame(stream, decoder, samples, bytes, status, pcm)
 
@@ -159,8 +160,7 @@ def open.first(tagged: Bool, first: Player, +opened: H.Stream) -> Player:
 # the tags at the file's end, from the byte after an ID3v2 tag.
 def open.stream(+data: +List<U32>, +opened: H.Stream) -> H.Stream:
   H.Stream{_, +size, +length, _, _, _, _, _, _, _, _, _, _, _, _, _, _} = opened
-  +start = H.tags.id3v2(data)
-  H.Stream{data, size, length, start, List.drop(&2, U32, data, U32.to_nat(U32.min(start, size))), 0, start, start, 0, False{}, H.Dec.zero(), 0, 0, False{}, 0, 0, 0}
+  H.stream.began(H.stream.memory(opened), data, size, length, H.tags.id3v2(data))
 
 def open.opened(opened: Maybe<H.Opened>, +data: +List<U32>) -> Maybe<Player>:
   match opened:
@@ -171,6 +171,12 @@ def open.opened(opened: Maybe<H.Opened>, +data: +List<U32>) -> Maybe<Player>:
 # drmp3_init_file on the file's bytes: None where it fails (H.open).
 def open(+data: +List<U32>) -> Maybe<Player>:
   open.opened(H.open(data), data)
+
+# drmp3_init_memory on the same bytes (H.open.memory): what LoadWave and
+# LoadMusicStreamFromMemory open. The two read a stream's end differently:
+# a memory stream never sees the tags after its frames.
+def open.memory(+data: +List<U32>) -> Maybe<Player>:
+  open.opened(H.open.memory(data), data)
 
 # -----------------------------------------------------------------------------
 # Reading (drmp3_read_pcm_frames_raw)
