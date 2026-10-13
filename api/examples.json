@@ -6871,7 +6871,7 @@
   {
    "name": "audio_spectrum_visualizer",
    "category": "audio",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",

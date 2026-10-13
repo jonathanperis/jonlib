@@ -1025,7 +1025,26 @@ for the periods due since, `(int)((clock - opened)*100.0)` in all. The
 callbacks, the stream and the mixer are raylib's own; only their timing is
 the probe's.
 
+**A spectrum no frame shows.** `audio_spectrum_visualizer` loads
+`country.mp3` whole as a wave, feeds a stream from it and, each frame, makes
+a spectrum of the last samples for a fragment shader to draw: a Blackman
+window, a 1024-point fast Fourier transform (`cosf` and `sinf` twiddles,
+float products and sums), 512 magnitudes smoothed over time, and
+`logf(fmaxf(magnitude, 1e-40f))` on a scale from -100 to -30 decibels,
+written as the red of a 512x1 image. The software renderer runs no shader,
+so the example's frames are an empty render texture and its replay compares
+only that the port loads the wave, feeds the stream and refuses nothing.
+`tools/spectrum_probe.py` (gate `spectrum`) compares the spectrum itself:
+the example's source is included in the reference program with its `main`
+renamed, and its own `CaptureFrame` and `RenderFrame` run over 50 frames of
+samples (silence, tones, square waves, noise, an impulse, the quietest
+samples, and silence until the 45-row history has gone round) beside the
+port's `capture` and `render`: the smoothed magnitudes' bits and every
+pixel are equal. The port computes the window's weights and the twiddle
+factors once, since they depend on their place alone; the example computes
+them again every frame, with the same result.
+
 Not yet available: the fused (FMA) profile of the mixer, the profile of
 hosts that keep subnormals in the callback, music from files other than
-WAV and QOA, and a host device (the clock is a model of its thread).
+WAV, QOA and MP3, and a host device (the clock is a model of its thread).
 No GPU evidence.

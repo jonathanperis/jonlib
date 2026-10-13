@@ -72,7 +72,7 @@ at the branch's head.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 582/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **208/212 ported** with the stack (`audio_music_stream`, `audio_stream_effects` and `audio_mixed_processor` play `country.mp3` through the MP3 decoder; `core_screen_recording` writes its GIF with the msf_gif port; `core_directory_files` is handed its directory listings; `text_unicode_ranges` loads a 7 MiB font; `textures_sprite_stacking` a 112x11468 texture), 4 ready (two of them wait for a decoder, which the plan does not count: `mini1111.xm`, `target.ogg`), 0 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **209/212 ported** with the stack (`audio_music_stream`, `audio_stream_effects` and `audio_mixed_processor` play `country.mp3` through the MP3 decoder and `audio_spectrum_visualizer` loads it whole; `core_screen_recording` writes its GIF with the msf_gif port; `core_directory_files` is handed its directory listings; `text_unicode_ranges` loads a 7 MiB font; `textures_sprite_stacking` a 112x11468 texture), 3 ready (two of them wait for a decoder, which the plan does not count: `mini1111.xm`, `target.ogg`), 0 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -689,20 +689,21 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      ten minutes (122 textured quads of 336x282 pixels a frame; four
      frames took fourteen, too near the gate's 30-minute lane limit for a
      slower runner).
-   - **The four examples left**, with what each was found to need:
-     - `audio_spectrum_visualizer`. Its `LoadWave("country.mp3")` works
-       now, and so does `logf` of a subnormal (the example takes
-       `logf(fmaxf(magnitude, 1e-40f))`, and `1e-40f` is subnormal: with
-       silence every bin is that). Still to do: (b) The port of its
-       FFT (a Blackman window of 2048 `cosf` a frame, ten stages with
-       `cosf`/`sinf` twiddles in float, 512 `sqrtf` and `logf`). No
-       frame shows the spectrum: the reference's renderer runs no
-       shader, so the frame is the empty render texture. The FFT needs
-       a gate of its own, which can include the example's source with
-       `main` renamed and call its `CaptureFrame` and `RenderFrame`.
-       (c) Time and memory in the JavaScript lane: the whole file is
-       3584 MP3 frames (about six minutes) and 8.2 million float
-       samples in lists before `WaveFormat`; not measured yet.
+   - **`audio_spectrum_visualizer` is ported.** The whole `country.mp3`
+     is loaded as a wave (7.5 minutes in the JavaScript lane, 27 seconds
+     natively: 4125934 frames) and its spectrum computed every frame. No
+     frame shows the spectrum (the software renderer runs no shader), so
+     the example's replay is six plain frames and the transform has a
+     gate of its own, `spectrum`, whose reference includes the example's
+     source with `main` renamed and runs its own `CaptureFrame` and
+     `RenderFrame` (docs/AUDIO.md). That way of reaching an example's
+     static functions is there for any other example whose work no frame
+     shows.
+     Its JavaScript lane held 6.9 GB at its peak here (the wave's 8.2
+     million samples as lists, twice): fine on a 16 GB runner, a risk on
+     a smaller one, macOS included when it comes back. A wave kept as an
+     array, or decoded as it is consumed, would bring it down.
+   - **The three examples left**, with what each was found to need:
      - `text_font_sdf`. `LoadFontData(FONT_SDF)` is
        `stbtt_GetCodepointSDF`, whose `stbtt__solve_cubic` calls the C
        library's binary64 `pow`, `acos` and `cos` and narrows them to
