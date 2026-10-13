@@ -1282,8 +1282,8 @@ Still to come: the music (`LoadMusicStream` for `.ogg`, with
 
 ## XM modules (in progress)
 
-`src/xm_module.bend` and `src/xm_pitch.bend` are the start of an
-adaptation of jar_xm (pinned
+`src/xm_module.bend`, `src/xm_pitch.bend` and `src/xm_sample.bend` are
+the start of an adaptation of jar_xm (pinned
 raylib's `src/external/jar_xm.h`), which raylib's `LoadMusicStream` calls
 for `.xm` files. Nothing plays yet: `Music.load` does not take the format.
 What is here is the module read from its file,
@@ -1394,8 +1394,48 @@ answer `None` for exactly those: 183 of the notes and pairs, and 4 of the
 envelopes. A NaN result is compared as a NaN, whatever its sign and
 payload.
 
-Still to come: a channel's samples, the rows, ticks and effects (and the
-module's length in samples), the mixer, and the music stream.
+### A channel's next sample
+
+`src/xm_sample.bend` is `jar_xm_next_of_sample`, with linear interpolation
+and ramping on (jar_xm loads every module so, and raylib changes neither):
+`sample.next(sampled, tone, head, previous)` is one step of a channel
+through its sample. A `Tone` is the sample as the step reads it (length,
+loop, whether it is stereo, its floats); a `Head` is what the step keeps of
+the channel: its position in the sample and how far a frame moves it, its
+frame count since the note began, the eight last values of the sample
+before it, left and right, and its value now.
+
+- **The value** is the line between the float at the position and the next
+  one, by the position's fraction. A stereo sample's right side is the
+  data's second half. The float after a loop's end is the loop's start;
+  after the last float of a sample that does not loop it is 0.
+- **The position** moves on by the step. A sample that does not loop ends
+  at its length (the position becomes -1, and the channel is silent from
+  then on); a loop goes back by its length at its end, and to its start
+  from the sample's length on. Only forward loops arise: the loader makes
+  ping-pong loops forward ones.
+- **Where the value goes**: to the channel (`previous` -1), or to one of
+  the eight values kept (0 to 7), which is how a new note takes the last
+  eight values of the sample it replaces.
+- **A channel without a sample to play** (none, or a position below 0) is
+  silent; in its first eight frames the silence is reached from the values
+  kept, an eighth further a frame.
+- **Not fine** (`Stepped.fine` false): a position that is not an unsigned
+  int (a NaN, 2^32 or more: C's conversion is undefined) and a read past
+  the sample's floats (a loop that ends past the data, a start past it, a
+  length the data does not have).
+
+`tools/xm_sample_probe.py` (gate `xm-sample`) runs `jar_xm_next_of_sample`
+by scripts on 111 samples and channels the reference sets up (3562 calls):
+a frame of the mixer, a new note's eight calls, and the channel without
+its sample. As in the xm-pitch gate, jar_xm says what is undefined by
+itself: besides the compiler's traps, the sample's floats lie at the end of
+readable memory with 20 GiB after them that are not, so a read past them
+faults. 39 runs end that way, 18 of them at their first call, and the port
+finds exactly those steps not fine.
+
+Still to come: the rows, ticks and effects (and the module's length in
+samples), the mixer, and the music stream.
 
 ## WaveFormat
 
