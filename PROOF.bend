@@ -3529,3 +3529,93 @@ def Laws.vorbis_floor_negative_level_end_is_refused():
 
 def Laws.vorbis_floor_no_level_end_at_the_block_s_end():
   {==}
+
+def Laws.vorbis_packet_int16_of_minus_one():
+  {==}
+
+def Laws.vorbis_packet_int16_of_the_largest():
+  {==}
+
+def Laws.vorbis_packet_int16_cuts_the_high_bits():
+  {==}
+
+def Laws.vorbis_packet_int16_of_32768_is_negative():
+  {==}
+
+def Laws.vorbis_packet_minus_one_is_under_zero():
+  {==}
+
+def Laws.vorbis_packet_zero_is_not_under_minus_one():
+  {==}
+
+def Laws.vorbis_packet_half_of_a_negative_int_keeps_its_sign():
+  {==}
+
+def Laws.vorbis_packet_half_of_an_int():
+  {==}
+
+def Laws.vorbis_packet_predicted_point_on_a_rising_line():
+  {==}
+
+def Laws.vorbis_packet_predicted_point_on_a_falling_line():
+  {==}
+
+def Laws.vorbis_packet_predicted_point_is_cut_toward_the_first():
+  {==}
+
+def Laws.vorbis_packet_class_value_shifts_down():
+  {==}
+
+def Laws.vorbis_packet_no_class_value_stays_none():
+  {==}
+
+def Laws.vorbis_packet_floor_ranges():
+  {==}
+
+def Laws.vorbis_packet_coupled_channels_without_floors_stay_out():
+  {==}
+
+def Laws.vorbis_packet_coupled_channel_with_a_floor_brings_the_other():
+  {==}
+
+def Laws.vorbis_packet_coupled_pairs_bring_each_other_in_turn():
+  {==}
+
+def Laws.vorbis_packet_coupled_pairs_do_not_reach_back():
+  {==}
+
+def Laws.vorbis_packet_first_block_is_placed_a_half_block_before_zero():
+  {==}
+
+def Laws.vorbis_packet_long_first_block_leaves_samples_to_drop():
+  {==}
+
+def Laws.vorbis_packet_samples_to_drop_move_the_left_part_up():
+  {==}
+
+def Laws.vorbis_packet_samples_to_drop_past_the_block_s_left_part():
+  {==}
+
+def Laws.vorbis_packet_block_without_a_position_is_a_window_further():
+  {==}
+
+def Laws.vorbis_packet_unknown_position_stays_unknown():
+  {==}
+
+def Laws.vorbis_packet_page_position_places_the_block():
+  {==}
+
+def Laws.vorbis_packet_last_page_cuts_the_block_short():
+  {==}
+
+def Laws.vorbis_packet_last_page_before_the_block_gives_none():
+  {==}
+
+def Laws.vorbis_packet_last_page_past_the_block_does_not_cut_it():
+  {==}
+
+def Laws.vorbis_packet_no_data_is_no_decoder():
+  {==}
+
+def Laws.vorbis_packet_refused_reader_decodes_nothing():
+  {==}

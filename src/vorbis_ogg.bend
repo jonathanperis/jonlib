@@ -702,3 +702,23 @@ def bits.used(reader: Reader, +n: U32) -> Reader:
   match reader:
     case Reader{+stream, +page, +first, Packet{+in_seg, +last, +which, +bytes, +acc, +valid}, +error, +taken, +value}:
       Reader{stream, page, first, Packet{in_seg, last, which, bytes, (acc >> U32.to_nat(U32.min(n, 31)) : U32), (valid - n : U32)}, error, taken, value}
+
+# -----------------------------------------------------------------------------
+# What a packet's decoding reads of the reader
+
+def Packet.which(packet: Packet) -> U32:
+  Packet{_, _, which, _, _, _} = packet
+  which
+
+def Page.known_seg(page: Page) -> U32:
+  Page{_, _, _, _, _, known_seg, _} = page
+  known_seg
+
+def Page.known_loc(page: Page) -> U32:
+  Page{_, _, _, _, _, _, known_loc} = page
+  known_loc
+
+# first_decode.
+def Reader.decoding(reader: Reader) -> Bool:
+  match reader:
+    case Reader{_, _, First{+decoding, _, _, _}, _, _, _, _}: decoding

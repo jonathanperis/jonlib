@@ -2123,6 +2123,21 @@
    "minutes": 2
   },
   {
+   "id": "vorbis-packet",
+   "title": "The decoding of a Vorbis audio packet (stb_vorbis vorbis_decode_packet: the mode and windows, the floors' Y values, the residues, the inverse coupling, the floors' curves, the inverse MDCT and the block's place in the stream) against stb_vorbis.c's own vorbis_decode_packet after start_decoder: the answer, the block's length and parts, everything the reader keeps, the sample position and every float of the channels' buffers after each of 120 calls on raylib's target.ogg, on copies cut inside its audio pages and on copies with seeded damage in its packets' bits and bytes",
+   "run": [
+    "{python}",
+    "tools/vorbis_packet_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 15
+  },
+  {
    "id": "wave-format",
    "title": "WaveFormat (miniaudio ma_convert_frames: formats, channel maps, linear resampling and its low-pass filter) against raylib with its audio module and the host contraction profile",
    "run": [

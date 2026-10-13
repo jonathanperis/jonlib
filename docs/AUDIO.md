@@ -447,15 +447,17 @@ scalar ones: the reference for the samples is the build as it is.
 `src/vorbis_codebook.bend`, `src/vorbis_ogg.bend`,
 `src/vorbis_setup.bend`, `src/vorbis_maps.bend`,
 `src/vorbis_tables.bend`, `src/vorbis_decode.bend`,
-`src/vorbis_mdct.bend`, `src/vorbis_residue.bend` and
-`src/vorbis_floor.bend` are the start of an adaptation of stb_vorbis
+`src/vorbis_mdct.bend`, `src/vorbis_residue.bend`,
+`src/vorbis_floor.bend` and `src/vorbis_packet.bend` are the start of an
+adaptation of stb_vorbis
 v1.22 (pinned raylib's
 `src/external/stb_vorbis.c`), which raylib's `LoadWave`, `LoadSound` and
-`LoadMusicStream` call for `.ogg` files. Nothing is decoded yet:
+`LoadMusicStream` call for `.ogg` files. No wave is made yet:
 `Wave.decode(".ogg", ...)` is still `UnsupportedWaveFormat`. What is here
 is the reading of the data, the whole setup header, the transform's
 tables, the decoding of a codebook's symbols and vectors, the inverse
-MDCT, the residues, a floor's curve (all below) and what the setup makes
+MDCT, the residues, a floor's curve, the decoding of a packet into its
+block of floats (all below) and what the setup makes
 of a codebook's code lengths, once it has read them:
 
 - **The codes** (`compute_codewords`; `codewords`, and `book.of` for all the tables). A length is 1 to
@@ -986,9 +988,89 @@ which cases end past the table (19): stb_vorbis is not run on those, and
 the port must refuse exactly them. The table's hash is compared too, and
 the generated module is held against the source.
 
-Still to come: the packets (the floors' Y values, and the residues,
-coupling, curve and transform put together), and then the waves and the
-music.
+### A packet
+
+`src/vorbis_packet.bend` is `vorbis_decode_packet` (`vorbis_decode_initial`
+and `vorbis_decode_packet_rest`, with `predict_point`): the parts above put
+together. `open(libm, bytes)` is the decoder as `start_decoder` leaves it,
+`Opened{plan, state}`, or `Closed{status}` with stb_vorbis's failure or a
+refusal. The `Plan` is what the setup gives and no packet changes: the
+codebooks ready to decode with, the floors, residues, mappings and modes,
+the transform's factors for the two block sizes and `inverse_db_table`. The
+`State` is what a packet changes: the reader, a row of `blocksize_1` floats
+a channel (`channel_buffers`), the sample position of the next block
+(`current_loc`), whether it is known, and the samples still to drop
+(`discard_samples_deferred`). `packet.decode(plan, state)` is one call,
+`Packet{state, fine, len, left, right}`: the C answer, the count of the
+block's samples and where its left and right parts begin. The floats are
+the block before its window; windows and samples are the next piece.
+
+- **The packet's start.** Packets whose first bit is set are not audio and
+  are passed over. The mode's number takes the bits the last mode's number
+  does. A long block says in two bits whether the blocks before and after
+  it are long too, which gives its windows: next to a short block the slope
+  is the short block's, in the long block's middle.
+- **The floors.** A bit says whether the packet has a channel's floor. The
+  first two points' Y values are plain bits, as many as the floor's range
+  (256, 128, 86 or 64 by its multiplier) takes; the others are symbols of
+  the subclasses' codebooks, a point's subclass being some bits of its
+  partition's class value (a symbol of the class's masterbook). Each point
+  from the third on is then placed against the line between its two
+  neighbours (`predict_point`, by integers): its value is how far from the
+  line it is, to one side or the other by turns while there is room on
+  both, and to the roomier side past that. A value of 0 is the line's
+  height, and the point is not one of the curve's (-1 in `finalY`). The
+  values are int16s, as stb_vorbis keeps them: a symbol's number is cut to
+  16 bits where it is stored, `val >> 1` of a negative one keeps its sign,
+  and a class value of -1 (the masterbook gave no symbol) stays -1 through
+  its shifts. A packet that ends in a floor's values leaves the channel
+  without a floor, with the Y values the packet before left it.
+- **The residues**, a submap at a time (`decode_residue`, above), for the
+  channels that have a floor or are coupled with one that has.
+- **The inverse coupling**, from the last pair to the first: by the signs
+  of a magnitude and its angle, one of the two becomes their sum or their
+  difference.
+- **The curves and the transform.** A channel without a floor has its half
+  block cleared; the others are multiplied by their floor's curve. Then
+  the inverse MDCT of each channel's block.
+- **The block's place.** What is left of the packet is dropped. The first
+  packet decoded places the stream: its block begins half a block before
+  sample 0, and what a long first block has past its right window is
+  dropped from the next block (its left part moves up, as far as its right
+  one). The packet its page's granule position is for takes its place from
+  that position; on the stream's last page the position can cut the block
+  short instead, and `len` is then what is left of it. Otherwise the next
+  block is a window's width further.
+- **Refused (error 1001).** What the parts above refuse: a floor's level
+  end past the table, a residue's woven vectors cut where they take values
+  past a codebook's, and what the reader refuses. A call that meets one
+  fails with the reader's error 1001 and leaves the floats and the position
+  as they were, and so does every call after it. `open` is
+  `Closed{Refused{why}}` for the setup's refusals and, with 5, where the
+  transform's tables are not given under the libm profile.
+
+`tools/vorbis_packet_probe.py` (gate `vorbis-packet`) runs `start_decoder`
+and then `vorbis_decode_packet` 120 times on each of 12 files: raylib's
+`target.ogg` (two channels at 22050 Hz, blocks of 512 and 1024 samples,
+coupled, 105 audio packets), four copies cut inside its audio pages, four
+with one to four bits of its packets changed and three with a run of a
+packet's bytes replaced (seeded). After each call the answer, the block's
+length and parts, everything the reader keeps, the sample position and
+every float of the channels' buffers are hashed, and the rolling hash is
+compared every 8 calls. The whole file decodes 105 packets, and the calls
+after its end fail as stb_vorbis's do; 1008 of the 1440 calls decode a
+packet. The damage is in the packets' bytes alone (a damaged
+packet is mostly decoded all the same, into other floats), so none of the
+refusals arises: this file's floors have no codebook with more entries
+than their range, and its residues end with their blocks.
+
+A packet takes about a third of a second in the JavaScript lane (the
+CPU lanes are several times faster): the persistent rows cost a path a
+float, and the whole of `target.ogg` is half a minute there.
+
+Still to come: the windows and the samples (`vorbis_finish_frame`,
+`stb_vorbis_get_samples_short_interleaved`), the stream's length, and then
+the waves and the music.
 
 ## WaveFormat
 
