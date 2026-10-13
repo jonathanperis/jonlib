@@ -819,15 +819,23 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
          Ogg gate's script harness after `start_decoder`, with a float
          buffer in the digest. Port refusals are the reader's error 1001
          (`O.refused`): the decoder above must stop on it.
-       - Next, in order: (a) `codebook_decode_deinterleave_repeat` (a
-         draft of its inner loop is not committed; mind that `effective`
-         is cut by `len*ch - (p_inter*ch - c_inter)`, with the sign of
-         `c_inter` wrong, that it stays cut for the next vectors, and that
-         at 0 or below the loop only ends by the packet's end; a
+       - **Done: `inverse_mdct`** (`src/vorbis_mdct.bend`, gate
+         `vorbis-mdct`): `X.transform(row, X.factors.of(tables), n)`,
+         bit for bit on every block size. A reference that calls it
+         needs only `vorbis_init` and `init_blocksize`, no stream.
+       - Next, in order: (a) `codebook_decode_deinterleave_repeat` and
+         `decode_residue`, which a reference can call directly on a
+         started decoder (mind that `effective` is cut by
+         `len*ch - (p_inter*ch - c_inter)`, with the sign of `c_inter`
+         wrong, that it stays cut for the next vectors, and that at 0 or
+         below the loop only ends by the packet's end; a
          `+List<Maybe<T>>` does not type-check, so the channels without
-         floats need a mask); (b) `inverse_mdct` alone on a `Row`, with
-         `T.tables.for`'s tables as rows (butterflies of two pairs each: a
-         helper that reads four places and writes four is most of it);
+         floats need a mask; `residue_decode` of type 0 passes a length
+         of `n - offset - k`, the partition's size less where the
+         partition is, which is under 1 past the first partitions: then
+         nothing is added; a residue of type 2 with one channel writes
+         up to twice the vectors' length, over floats `decode_residue`
+         did not clear, which are the block before's);
          (c) `vorbis_decode_packet` (`vorbis_decode_initial`, the floors'
          Y values, `do_floor` with `inverse_db_table`, the residues, the
          coupling), compared by the channel buffers; (d)

@@ -51,6 +51,7 @@ import ./src/vorbis_maps.bend as VM
 import ./src/vorbis_tables.bend as VT
 import ./src/store.bend as St
 import ./src/vorbis_decode.bend as VD
+import ./src/vorbis_mdct.bend as VX
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -4520,3 +4521,24 @@ law vorbis_decode_prep_takes_the_packet_s_byte:
 
 law vorbis_decode_prep_twice_is_prep_once:
   {Ogg.Packet.valid(Ogg.Reader.packet(Ogg.huffman.prep(Ogg.huffman.prep(Ogg.packet.maybe(VM.Maps.reader(VM.maps.read(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 61, 3, 118, 111, 114, 98, 105, 115, 1, 0, 0, 0, 118, 0, 0, 0, 0, 1, 5, 118, 111, 114, 98, 105, 115, 1, 66, 67, 86, 1, 0, 2, 0, 0, 0, 0, 66, 67, 86, 1, 0, 4, 0, 0, 2, 0, 0, 0, 64, 0, 0, 128, 0, 0, 0, 0, 0, 0, 8, 0, 128, 1, 0, 0, 0, 0, 0, 0, 0, 40, 5, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2])))))))) == 8 : U32}
+
+# The inverse MDCT's loops take their butterflies four at a time
+# (src/vorbis_mdct.bend); rows of floats (src/store.bend).
+
+law vorbis_mdct_butterflies_come_in_fours:
+  {VX.fours(7) == 4n : Nat}
+
+law vorbis_mdct_block_of_64_has_no_butterfly_of_two:
+  {VX.fours(2) == 0n : Nat}
+
+law vorbis_mdct_fours_of_a_multiple_of_four:
+  {VX.fours(64) == 64n : Nat}
+
+law store_row_write_then_read:
+  {St.Row.get(St.Row.set(St.Row.new(2, 0.0), 3, 2.5), 3) == 2.5 : F32}
+
+law store_row_write_leaves_the_other_places:
+  {St.Row.list(St.Row.set(St.Row.new(1, 0.5), 1, 2.5)) == [0.5, 2.5] : +List<F32>}
+
+law store_row_from_a_list:
+  {St.Row.list(St.Row.from([1.5, 2.5, 3.5])) == [1.5, 2.5, 3.5, 0.0] : +List<F32>}
