@@ -72,6 +72,19 @@ the example's `GetFileModTime` with the script's seed
 (`tools/reference/example_driver.h`), so the reference does not depend on
 the checkout's file times.
 
+`core_directory_files` lists its working directory and the ones above it.
+Its port is handed the directories it may list as a setup argument: each
+with its path and its entries in the order `readdir` gives them, and whether
+each is a file (`IsPathFile`). The example's own code runs on them
+(`LoadDirectoryFilesEx`'s extension filter, `LoadDirectoryFiles`,
+`GetPrevDirectoryPath`), and a directory it was not handed is a refusal. The
+examples probe reads the listings from the very directories the reference
+lists, three levels inside the script's own so that no other program writes
+in them, and checks after the reference ran that they are still the same.
+A file without an extension below a directory with a dot in its name (the
+probe's `.build`) makes `IsFileExtension` read a 16-byte array as a string
+it does not end: one script has such a file and is refused from its start.
+
 `core_screen_recording` saves its GIF in `GetApplicationDirectory()`: its
 port takes that directory as a setup argument (`--directory`), and the
 examples probe answers the example's call with `"./"`, the script's own

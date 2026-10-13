@@ -1205,7 +1205,7 @@
   {
    "name": "core_directory_files",
    "category": "core",
-   "status": "waiting",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1237,9 +1237,7 @@
     "GetWorkingDirectory",
     "LoadDirectoryFiles",
     "LoadDirectoryFilesEx",
-    "UnloadDirectoryFiles",
-    "GuiGetFont",
-    "GuiListViewEx"
+    "UnloadDirectoryFiles"
    ]
   },
   {

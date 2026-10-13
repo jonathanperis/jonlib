@@ -3649,3 +3649,55 @@ law msf_gif_frame_with_a_pixel_more_none:
 
 law msf_gif_finish_adds_the_trailer:
   {MsfGif.finish(MsfGif.Gif{1, 1, Nil{}, 0, 0, [2, 1]}) == [1, 2, 59] : +List<U32>}
+
+# GuiListViewEx (jongui.bend): the scroll index is 0 when it is negative or
+# past the last full page, the wheel moves it an item a notch between the
+# first item and the last page, a press selects an item or clears its
+# selection, and the selection is drawn before the focus. The control's
+# rectangles are float arithmetic; core_directory_files compares them with
+# raygui's.
+
+law gui_list_counts_its_items:
+  {JG.Gui.list.count(["a", "b", "c"], 0) == 3 : U32}
+
+law gui_list_starts_at_its_scroll_index:
+  {JG.Gui.list.start(14, 27, 13) == 14 : U32}
+
+law gui_list_start_past_the_last_page_is_zero:
+  {JG.Gui.list.start(15, 27, 13) == 0 : U32}
+
+law gui_list_negative_start_is_zero:
+  {JG.Gui.list.start(4294967295, 27, 13) == 0 : U32}
+
+law gui_list_wheel_down_a_notch:
+  {JG.Gui.list.wheeled(0, 4294967295, 27, 13) == 1 : U32}
+
+law gui_list_wheel_stops_at_the_last_page:
+  {JG.Gui.list.wheeled(13, 4294967293, 27, 13) == 14 : U32}
+
+law gui_list_wheel_stops_at_the_first_item:
+  {JG.Gui.list.wheeled(2, 5, 27, 13) == 0 : U32}
+
+law gui_list_press_selects:
+  {JG.Gui.list.pressed(4294967295, 3) == 3 : U32}
+
+law gui_list_press_on_the_selected_item_clears:
+  {JG.Gui.list.pressed(3, 3) == 4294967295 : U32}
+
+law gui_list_press_moves_the_selection:
+  {JG.Gui.list.pressed(2, 3) == 3 : U32}
+
+law gui_list_selection_goes_before_focus:
+  {JG.Gui.list.kind(False{}, 3, 3, 3) == 2 : U32}
+
+law gui_list_focused_item:
+  {JG.Gui.list.kind(False{}, 3, 9, 3) == 1 : U32}
+
+law gui_list_plain_item:
+  {JG.Gui.list.kind(False{}, 3, 9, 8) == 0 : U32}
+
+law gui_list_disabled_items:
+  {((JG.Gui.list.kind(True{}, 3, 3, 9) * 10) + JG.Gui.list.kind(True{}, 3, 9, 3) : U32) == 43 : U32}
+
+law gui_font_base_size_is_the_default_font_s:
+  {JG.Gui.font_base_size(JG.Gui.new()) == 10 : U32}
