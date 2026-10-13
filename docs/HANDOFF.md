@@ -810,22 +810,30 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
          rule against Apple's library; if a value differs there, the rule
          is wrong for that library and Vorbis must be refused under
          `AppleLibm` instead.**
-       - Next: the decode. In order: (a) a store read and written by
-         index for the buffers and the tables (a binary tree of floats
-         as a Data value, so that it needs no threading: `Array` is
-         affine); (b) `prep_huffman`, `codebook_decode_scalar_raw`, the
-         `DECODE` fast path and `codebook_decode`, `_step`,
-         `_deinterleave_repeat` on the Ogg reader, gated by the Ogg
-         gate's script harness with codebooks from a started decoder
-         (`prep_huffman` shifts by `valid_bits`, which is -1 after bits
-         ran out: where a byte then comes, after a continued-flag error,
-         the shift is undefined and must be refused); (c)
-         `inverse_mdct` alone on buffers, callable directly; (d)
-         `vorbis_decode_packet` (the floors' Y values, `do_floor` with
-         `inverse_db_table`, the residues, the coupling), compared by
-         the channel buffers; (e) `vorbis_finish_frame`, the samples and
+       - **Done: the store and the codebook decodes** (`src/store.bend`:
+         `Row` of floats and `Index` of words, binary trees that are
+         values; `src/vorbis_decode.bend`, gate `vorbis-decode`,
+         docs/AUDIO.md "Symbols and vectors"): `huffman.prep`,
+         `decode.raw`, `decode.symbol`, `raw.decode`, `vector.decode`,
+         `vector.step` on `Coder`s made by `coder.of`. The gate is the
+         Ogg gate's script harness after `start_decoder`, with a float
+         buffer in the digest. Port refusals are the reader's error 1001
+         (`O.refused`): the decoder above must stop on it.
+       - Next, in order: (a) `codebook_decode_deinterleave_repeat` (a
+         draft of its inner loop is not committed; mind that `effective`
+         is cut by `len*ch - (p_inter*ch - c_inter)`, with the sign of
+         `c_inter` wrong, that it stays cut for the next vectors, and that
+         at 0 or below the loop only ends by the packet's end; a
+         `+List<Maybe<T>>` does not type-check, so the channels without
+         floats need a mask); (b) `inverse_mdct` alone on a `Row`, with
+         `T.tables.for`'s tables as rows (butterflies of two pairs each: a
+         helper that reads four places and writes four is most of it);
+         (c) `vorbis_decode_packet` (`vorbis_decode_initial`, the floors'
+         Y values, `do_floor` with `inverse_db_table`, the residues, the
+         coupling), compared by the channel buffers; (d)
+         `vorbis_finish_frame`, the samples and
          `stb_vorbis_stream_length_in_samples` (which seeks:
-         `vorbis_find_page`, the page CRC); (f) `Wave.decode(".ogg")`,
+         `vorbis_find_page`, the page CRC); (e) `Wave.decode(".ogg")`,
          the sound, the music stream, `audio_sound_loading`.
        - `float32_unpack` is exact arithmetic (a 21-bit mantissa scaled
          by a power of two and narrowed once).

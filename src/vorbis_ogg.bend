@@ -647,3 +647,58 @@ def left.loop(fuel: +List<U32>, ended: Bool, +reader: Reader) -> Reader:
 # The bytes are skipped, not read: the position can pass the data's end.
 def packet.left(+reader: Reader) -> Reader:
   left.loop(Stream.rest(Reader.stream(reader)), False{}, segment.dropped(reader))
+
+# -----------------------------------------------------------------------------
+# Bits for the codebooks (prep_huffman)
+
+def Packet.acc(packet: Packet) -> U32:
+  Packet{_, _, _, _, acc, _} = packet
+  acc
+
+# A refusal of this port's, kept where stb_vorbis keeps its errors: 1001,
+# what C leaves undefined.
+def undefined(reader: Reader) -> Reader:
+  Reader{stream, page, first, packet, _, taken, value} = reader
+  Reader{stream, page, first, packet, 1001, taken, value}
+
+def refused(reader: Reader) -> Bool:
+  (Reader.error(reader) >= 1000 : U32)
+
+# A byte of the packet above the bits at hand: acc += z << valid_bits. An
+# EOP changes nothing. Where the bits had run out (valid_bits is -1) the
+# shift is by -1, which C leaves undefined: refused.
+def huffman.byte(reader: Reader) -> Reader:
+  match reader:
+    case Reader{+stream, +page, +first, Packet{+in_seg, +last, +which, +bytes, +acc, +valid}, +error, +taken, +value}:
+      Reader{stream, page, first, Bool.pick(Packet, U32.is_eq(value, 4294967295) || U32.is_eq(valid, 4294967295), Packet{in_seg, last, which, bytes, acc, valid},
+        Packet{in_seg, last, which, bytes, (acc + (value << U32.to_nat(U32.min(valid, 31))) : U32), (valid + 8 : U32)}),
+        Bool.pick(U32, U32.is_ne(value, 4294967295) && U32.is_eq(valid, 4294967295), 1001, error), taken, value}
+
+# Whether prep_huffman's loop takes a turn: valid_bits <= 24 (as an int: -1
+# is) and the packet not known to be over.
+def huffman.wanting(reader: Reader) -> Bool:
+  match reader:
+    case Reader{_, _, _, Packet{+in_seg, +last, _, _, _, +valid}, _, _, _}: ((valid <= 24 : U32) || U32.is_eq(valid, 4294967295)) && Bool.not(last && U32.is_eq(in_seg, 0))
+
+# After a turn: no other after an EOP or a refusal.
+def huffman.more(+reader: Reader) -> Bool:
+  U32.is_ne(Reader.value(reader), 4294967295) && Bool.not(refused(reader)) && huffman.wanting(reader)
+
+def huffman.fill(n: Nat, more: Bool, +reader: Reader) -> Reader:
+  match n more:
+    case _ False{}: reader
+    case 0n True{}: reader
+    case 1n+k True{}:
+      +next = huffman.byte(packet.get8.raw(reader))
+      huffman.fill(k, huffman.more(next), next)
+
+# prep_huffman: bytes are added to the bits at hand while there are 24 or
+# fewer and the packet has bytes, up to 32 bits.
+def huffman.prep(+reader: Reader) -> Reader:
+  huffman.fill(5n, huffman.wanting(reader), bits.cleared(reader, 1))
+
+# acc >>= n, valid_bits -= n: n bits used, n under 32.
+def bits.used(reader: Reader, +n: U32) -> Reader:
+  match reader:
+    case Reader{+stream, +page, +first, Packet{+in_seg, +last, +which, +bytes, +acc, +valid}, +error, +taken, +value}:
+      Reader{stream, page, first, Packet{in_seg, last, which, bytes, (acc >> U32.to_nat(U32.min(n, 31)) : U32), (valid - n : U32)}, error, taken, value}
