@@ -789,11 +789,25 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
          once does not compile ("an arity over 255": records are
          flattened into words, a `Reader` is 25) though it type-checks;
          take each reader's values as soon as it is read.
-       - Next: the rest of `start_decoder` (floors with their sorted
-         order and neighbours, residues with `classdata`, mappings,
-         modes), then `init_blocksize`'s tables, which are binary64
-         `sin` and `cos` narrowed to float (a libm profile, as in
-         `src/lgpl/sin.bend`), then `vorbis_decode_packet`.
+       - **Done: the rest of the setup header**
+         (`src/vorbis_maps.bend`, same gate): floors (type 1, with
+         `sorted_order` and `neighbors`), residues, mappings, modes,
+         `first_audio_page_offset`, and the stage a setup fails in.
+         `M.maps.read(S.setup.codebooks(bytes))` is `start_decoder`
+         without its tables. Two more refusals: a sixteenth submap
+         (stb_vorbis's arrays hold 15) and a classbook of more than 2^24
+         entries times dimensions.
+       - Next: `init_blocksize`'s tables for the two block sizes
+         (`compute_twiddle_factors`, `compute_window`,
+         `compute_bitreverse`), which are binary64 `sin` and `cos`
+         narrowed to float (a libm profile, as in `src/lgpl/sin.bend`;
+         a reference can read `f->A`, `B`, `C`, `window`, `bit_reverse`
+         after `start_decoder`); then `vorbis_decode_packet`
+         (`vorbis_decode_initial`, the floors' Y values with
+         `prep_huffman` and the codebook decodes, the residues,
+         `inverse_mdct`), which the Ogg gate's harness (a script of
+         calls, a digest of the struct) and this one's can be grown
+         into.
        - `float32_unpack` is exact arithmetic (a 21-bit mantissa scaled
          by a power of two and narrowed once).
        - The transform's tables are binary64: `compute_twiddle_factors`

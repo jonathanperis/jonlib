@@ -3163,3 +3163,111 @@ def Laws.vorbis_setup_codebook_without_entries_is_out_of_memory():
 
 def Laws.vorbis_setup_codebook_over_the_budget_is_refused():
   {==}
+
+def Laws.vorbis_maps_nth():
+  {==}
+
+def Laws.vorbis_maps_subclass_book_past_the_codebooks():
+  {==}
+
+def Laws.vorbis_maps_subclass_book_the_last_codebook():
+  {==}
+
+def Laws.vorbis_maps_subclass_books_are_read_one_more():
+  {==}
+
+def Laws.vorbis_maps_classes_are_the_largest_and_one():
+  {==}
+
+def Laws.vorbis_maps_no_partition_no_class():
+  {==}
+
+def Laws.vorbis_maps_points_of_the_partitions():
+  {==}
+
+def Laws.vorbis_maps_points_sorted_by_place():
+  {==}
+
+def Laws.vorbis_maps_two_points_at_one_place():
+  {==}
+
+def Laws.vorbis_maps_a_point_at_the_first_place():
+  {==}
+
+def Laws.vorbis_maps_points_at_different_places():
+  {==}
+
+def Laws.vorbis_maps_neighbor_below():
+  {==}
+
+def Laws.vorbis_maps_neighbor_above():
+  {==}
+
+def Laws.vorbis_maps_neighbors_below():
+  {==}
+
+def Laws.vorbis_maps_neighbors_above():
+  {==}
+
+def Laws.vorbis_maps_channel_of_another_submap():
+  {==}
+
+def Laws.vorbis_maps_channels_of_the_submaps():
+  {==}
+
+def Laws.vorbis_maps_whole_setup_goes_on():
+  {==}
+
+def Laws.vorbis_maps_whole_setup_comes_to_the_end():
+  {==}
+
+def Laws.vorbis_maps_audio_begins_after_the_header_s_page():
+  {==}
+
+def Laws.vorbis_maps_setup_cut_after_its_floors_is_whole():
+  {==}
+
+def Laws.vorbis_maps_floor_of_type_0_is_not_supported():
+  {==}
+
+def Laws.vorbis_maps_floor_of_type_0_fails_in_the_floors():
+  {==}
+
+def Laws.vorbis_maps_floor_of_type_2():
+  {==}
+
+def Laws.vorbis_maps_floor_with_two_points_at_one_place():
+  {==}
+
+def Laws.vorbis_maps_residue_that_ends_before_it_begins():
+  {==}
+
+def Laws.vorbis_maps_residue_fails_in_the_residues():
+  {==}
+
+def Laws.vorbis_maps_residue_of_type_3():
+  {==}
+
+def Laws.vorbis_maps_mapping_coupling_a_channel_with_itself():
+  {==}
+
+def Laws.vorbis_maps_mapping_fails_in_the_mappings():
+  {==}
+
+def Laws.vorbis_maps_mapping_of_16_submaps_is_refused():
+  {==}
+
+def Laws.vorbis_maps_mapping_of_15_submaps():
+  {==}
+
+def Laws.vorbis_maps_mapping_that_fails_before_its_sixteenth_submap():
+  {==}
+
+def Laws.vorbis_maps_mode_of_another_mapping():
+  {==}
+
+def Laws.vorbis_maps_mode_fails_in_the_modes():
+  {==}
+
+def Laws.vorbis_maps_setup_that_failed_is_not_read_on():
+  {==}

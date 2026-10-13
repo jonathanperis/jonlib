@@ -370,12 +370,14 @@ domain; Jonlib uses the MIT alternative, retained with its notice in
 
 ## stb_vorbis
 
-`src/vorbis_codebook.bend`, `src/vorbis_ogg.bend` and
-`src/vorbis_setup.bend` are altered Bend adaptations of parts of stb_vorbis
-v1.22 by Sean Barrett and contributors, as pinned raylib vendors it in
-`src/external/stb_vorbis.c`. The third is the beginning of `start_decoder`
-(the identification and comment headers, and the setup header's codebooks
-with their lookups). The second is
+`src/vorbis_codebook.bend`, `src/vorbis_ogg.bend`,
+`src/vorbis_setup.bend` and `src/vorbis_maps.bend` are altered Bend
+adaptations of parts of stb_vorbis v1.22 by Sean Barrett and contributors,
+as pinned raylib vendors it in `src/external/stb_vorbis.c`. The third and
+the fourth are `start_decoder`'s reading of the three headers (the
+identification and comment headers; the setup header's codebooks with
+their lookups, its floors with `point_compare`'s order and `neighbors`,
+its residues, mappings and modes). The second is
 how the decoder reads its data: bytes (`get8`, `get32`, `getn`, `skip`), Ogg
 pages (`capture_pattern`, `start_page_no_capturepattern`, `start_page`),
 packets (`start_packet`, `maybe_start_packet`, `next_segment`,

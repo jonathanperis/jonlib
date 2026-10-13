@@ -587,6 +587,10 @@ def transfers.read(+reader: O.Reader) -> Step:
 type Setup is Data:
   Setup{reader: O.Reader, status: Status, head: Head, books: +List<Codebook>}
 
+def Setup.reader(setup: Setup) -> O.Reader:
+  Setup{reader, _, _, _} = setup
+  reader
+
 def Setup.status(setup: Setup) -> Status:
   Setup{_, status, _, _} = setup
   status
