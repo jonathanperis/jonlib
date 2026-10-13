@@ -1973,6 +1973,21 @@
    "minutes": 4
   },
   {
+   "id": "spectrum",
+   "title": "The spectrum of audio_spectrum_visualizer (its Blackman window, fast Fourier transform, smoothing and decibel scale: CaptureFrame and RenderFrame, which no frame shows) against the example's own functions over 50 frames of samples",
+   "run": [
+    "{python}",
+    "tools/spectrum_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 3
+  },
+  {
    "id": "msf-gif",
    "title": "The GIF encoder of raylib's screen recording example (msf_gif.h: msf_gif_begin, msf_gif_frame, msf_gif_end) against the header's SSE2 and scalar builds: cooking with the dither and the lowered depths, palettes, LZW with table resets, sub-blocks, frames equal to the one before, the asked depths and delays, and the frames the C code writes past its buffer (refused)",
    "run": [

@@ -305,6 +305,7 @@ EXAMPLES = {
     'audio_music_stream': ('audio/audio_music_stream.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_stream_effects': ('audio/audio_stream_effects.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_mixed_processor': ('audio/audio_mixed_processor.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'audio_spectrum_visualizer': ('audio/audio_spectrum_visualizer.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'core_screen_recording': ('core/core_screen_recording.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'core_directory_files': ('core/core_directory_files.c', 'Ex.setup(listings, core, frame)'),
     'text_unicode_ranges': ('text/text_unicode_ranges.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -435,11 +436,13 @@ IO_SETUP.add('models_loading_m3d'); PERSPECTIVE.add('models_loading_m3d')
 AUDIO = {'textures_sprite_button', 'textures_sprite_explosion', 'audio_sound_multi', 'audio_sound_positioning'}
 # Examples whose frames show what the device did: its thread is stopped and the scripted clock asks for its callbacks
 # (tools/reference/audio_clock.c; AudioClock in Jonlib).
-AUDIO_CLOCK = {'audio_raw_stream', 'audio_music_stream', 'audio_stream_effects', 'audio_mixed_processor'}
+AUDIO_CLOCK = {'audio_raw_stream', 'audio_music_stream', 'audio_stream_effects', 'audio_mixed_processor', 'audio_spectrum_visualizer'}
 AUDIO.update(AUDIO_CLOCK)
 IO_SETUP.update(AUDIO)
 # The binary64 sin of its samples and of its wave has no AppleLibm profile (docs/MATH.md): the same contract.
 PERSPECTIVE.add('audio_raw_stream')
+# The cosf of its Blackman window and transform has no AppleLibm profile either: the same contract.
+PERSPECTIVE.add('audio_spectrum_visualizer')
 IO_SETUP.add('audio_stream_callback')
 PERSPECTIVE.add('audio_sound_positioning')
 PERSPECTIVE.add('core_vr_simulator')
@@ -1308,6 +1311,11 @@ def scripts():
                                                   quick(), quick([mouse_at(300, 100)]), quick([button(0)]), quick([button(0, False), mouse_at(64, 24)]),
                                                   quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0)]), quick(), quick([mouse_at(250, 70)])]),
         script('core_directory_files', 'noext', [quick(), quick([mouse_at(200, 150)])]),
+        # The whole of country.mp3 is loaded as a wave before the first frame (minutes in the JavaScript lane). The frame is
+        # the empty render texture under a shader the software renderer does not run: what the frames compare is that the
+        # stream is fed and the spectrum computed without a refusal, over callbacks that empty the stream's halves (a
+        # tenth of a second takes more than one). The spectrum itself is the `spectrum` gate's.
+        script('audio_spectrum_visualizer', 'frames', [quick(), quick(), slow(), long(), quick(), quick()]),
         # The 122 slices of a 112x11468 texture, three times their size, turning with the frame time: D speeds them up
         # over a slow frame while the wheel spreads the slices as far as they go (5); then A slows them and the wheel
         # closes them (0). Three frames: each is 122 textured quads of 336x282 pixels, more than three minutes in the
