@@ -3490,3 +3490,42 @@ def Laws.vorbis_residue_vector_read_past_the_codebook_s_values_is_refused():
 
 def Laws.vorbis_residue_no_value_to_decode_is_fine():
   {==}
+
+def Laws.vorbis_floor_table_has_256_values():
+  {==}
+
+def Laws.vorbis_floor_table_begins_at_its_least_value():
+  {==}
+
+def Laws.vorbis_floor_table_ends_at_one():
+  {==}
+
+def Laws.vorbis_floor_negative_int():
+  {==}
+
+def Laws.vorbis_floor_positive_int():
+  {==}
+
+def Laws.vorbis_floor_magnitude_of_a_negative_int():
+  {==}
+
+def Laws.vorbis_floor_slope_is_cut_toward_zero():
+  {==}
+
+def Laws.vorbis_floor_negative_slope_is_cut_toward_zero():
+  {==}
+
+def Laws.vorbis_floor_level_line_has_no_slope():
+  {==}
+
+def Laws.vorbis_floor_level_end_inside_the_table():
+  {==}
+
+def Laws.vorbis_floor_level_end_past_the_table_is_refused():
+  {==}
+
+def Laws.vorbis_floor_negative_level_end_is_refused():
+  {==}
+
+def Laws.vorbis_floor_no_level_end_at_the_block_s_end():
+  {==}

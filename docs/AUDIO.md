@@ -447,15 +447,16 @@ scalar ones: the reference for the samples is the build as it is.
 `src/vorbis_codebook.bend`, `src/vorbis_ogg.bend`,
 `src/vorbis_setup.bend`, `src/vorbis_maps.bend`,
 `src/vorbis_tables.bend`, `src/vorbis_decode.bend`,
-`src/vorbis_mdct.bend` and `src/vorbis_residue.bend` are the start of an
-adaptation of stb_vorbis v1.22 (pinned raylib's
+`src/vorbis_mdct.bend`, `src/vorbis_residue.bend` and
+`src/vorbis_floor.bend` are the start of an adaptation of stb_vorbis
+v1.22 (pinned raylib's
 `src/external/stb_vorbis.c`), which raylib's `LoadWave`, `LoadSound` and
 `LoadMusicStream` call for `.ogg` files. Nothing is decoded yet:
 `Wave.decode(".ogg", ...)` is still `UnsupportedWaveFormat`. What is here
 is the reading of the data, the whole setup header, the transform's
 tables, the decoding of a codebook's symbols and vectors, the inverse
-MDCT, the residues (all below) and what the setup makes of a codebook's
-code lengths, once it has read them:
+MDCT, the residues, a floor's curve (all below) and what the setup makes
+of a codebook's code lengths, once it has read them:
 
 - **The codes** (`compute_codewords`; `codewords`, and `book.of` for all the tables). A length is 1 to
   31 bits, or 255 for a symbol without a code. The first symbol with a code
@@ -945,8 +946,49 @@ first channel at each vector, so that stb_vorbis reads no value past a
 codebook's; one run is the refusal, on which stb_vorbis is not run. 53
 runs, 9008 calls.
 
-Still to come: the packets (the floors, and the residues, coupling and
-transform put together), and then the waves and the music.
+### A floor's curve
+
+`src/vorbis_floor.bend` is `do_floor` with `draw_line`, as raylib's build
+has them (the deferred floor: the curve multiplies the spectrum after the
+residue is in it): `curve.of(row, floor, ys, n, table)` multiplies the
+first `n` floats of a channel (half a block) by the floor's curve, given
+the Y value of each of the floor's points (`finalY`; -1 for a point
+without one).
+
+The curve is lines between the points that have a Y, in the order of their
+places, each drawn with integers as the specification has it: a height that
+moves by `dy/adx` (cut toward zero) a float, and by one more step where the
+error passes `adx`. Each float is multiplied by `inverse_db_table` at the
+line's height, which stb_vorbis takes modulo 256; a height is a Y times the
+floor's multiplier. Lines stop at the half block's end. After the last
+point the curve is level.
+
+- **`inverse_db_table`** is 256 floats the specification gives in decimal.
+  `src/vorbis_db.bend` has them as the bits the C compiler makes of each
+  literal: `tools/vorbis_db_table.py` takes the table out of
+  stb_vorbis.c's text and compiles it (`--check` says whether the module is
+  stale). Nothing is typed by hand.
+- **Refused (error 1001 for the packet): a level end past the table.**
+  The level end is read as `inverse_db_table[ly]`, the height itself, with
+  no modulo. A Y inside the floor's range times the multiplier is 255 at
+  most; a Y past the range, which a subclass codebook with more entries
+  than the range can give, is a read past the table's end. (Before the
+  last point such a height only wraps in the table.)
+
+`tools/vorbis_floor_probe.py` (gate `vorbis-floor`) runs `start_decoder`
+on a built stream of six floors (2 to 250 points, places of 1 to 15 bits,
+each multiplier) and calls `do_floor` on 216 cases: Y values inside the
+range, with points left out, only the first point, values past the range
+and negative ones, for half blocks of 32, 256 and 2048 floats, shorter and
+longer than the floors are wide. The floats' bits are compared, and the 8
+floats after the half block, which must be untouched. The probe works out
+which cases end past the table (19): stb_vorbis is not run on those, and
+the port must refuse exactly them. The table's hash is compared too, and
+the generated module is held against the source.
+
+Still to come: the packets (the floors' Y values, and the residues,
+coupling, curve and transform put together), and then the waves and the
+music.
 
 ## WaveFormat
 

@@ -2108,6 +2108,21 @@
    "minutes": 5
   },
   {
+   "id": "vorbis-floor",
+   "title": "A Vorbis floor's curve (stb_vorbis do_floor and draw_line, with inverse_db_table generated from the source) against stb_vorbis.c's own do_floor after start_decoder on a built stream: the bits of half a block of floats for floors of 2 to 250 points, places of 1 to 15 bits and each multiplier, with Y values inside the range, missing, past the range and negative, and half blocks shorter and longer than the floor is wide; a level end read past the table is refused; the generated table is held against the source",
+   "run": [
+    "{python}",
+    "tools/vorbis_floor_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
    "id": "wave-format",
    "title": "WaveFormat (miniaudio ma_convert_frames: formats, channel maps, linear resampling and its low-pass filter) against raylib with its audio module and the host contraction profile",
    "run": [

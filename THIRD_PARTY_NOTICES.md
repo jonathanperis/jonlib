@@ -386,7 +386,10 @@ macros, `codebook_decode_scalar_raw`, `codebook_decode_start`,
 `codebook_decode`, `codebook_decode_step`). `src/vorbis_mdct.bend` is
 `inverse_mdct` with its loops, and `src/vorbis_residue.bend` is
 `decode_residue`, `residue_decode` and
-`codebook_decode_deinterleave_repeat`. The second is
+`codebook_decode_deinterleave_repeat`. `src/vorbis_floor.bend` is
+`do_floor` and `draw_line`, and `src/vorbis_db.bend` is stb_vorbis's
+`inverse_db_table` (the Vorbis I specification's), generated from the
+source's text by `tools/vorbis_db_table.py`. The second is
 how the decoder reads its data: bytes (`get8`, `get32`, `getn`, `skip`), Ogg
 pages (`capture_pattern`, `start_page_no_capturepattern`, `start_page`),
 packets (`start_packet`, `maybe_start_packet`, `next_segment`,
@@ -399,7 +402,7 @@ parts of an Ogg Vorbis decoder, which decodes nothing yet.
 `tools/vorbis_codebook_probe.py`, `tools/vorbis_ogg_probe.py`,
 `tools/vorbis_setup_probe.py`, `tools/vorbis_tables_probe.py`,
 `tools/vorbis_decode_probe.py`, `tools/vorbis_mdct_probe.py`,
-`tools/vorbis_residue_probe.py` and
+`tools/vorbis_residue_probe.py`, `tools/vorbis_floor_probe.py` and
 `tools/reference/stb_vorbis_lookup1/exhaustive.c` include the unmodified
 file in their reference programs only; no stb code is linked into the Bend
 candidate. stb_vorbis is MIT or public domain; Jonlib uses the MIT
