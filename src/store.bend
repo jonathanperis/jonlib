@@ -148,3 +148,17 @@ def count.words(values: +List<U32>, +n: U32) -> U32:
 # the next power of two.
 def Index.from(+values: +List<U32>, +rest: U32) -> Index:
   index.filled(values, 0, Index.new(depth.for(32n, count.words(values, 0), 0), rest))
+
+# The row's first places, a power of two of them, replaced by `zeros` (a
+# tree of as many places): `whole` is whether the places at hand are those.
+def floats.cleared(places: Floats, whole: Bool, +size: U32, +count: U32, +zeros: Floats) -> Floats:
+  match places whole:
+    case _ True{}: zeros
+    case FOne{_} False{}: zeros
+    case FTwo{+a, +b} False{}: FTwo{floats.cleared(a, U32.is_eq((size >> 1n : U32), count), (size >> 1n : U32), count, zeros), b}
+
+# The row with its first `count` places 0.0: `count` is a power of two, no
+# more than the row has. As many steps as the row's depth.
+def Row.cleared(row: Row, +count: U32) -> Row:
+  Row{+top, places} = row
+  Row{top, floats.cleared(places, U32.is_eq(U32.max((top * 2 : U32), 1), count), U32.max((top * 2 : U32), 1), count, floats.new(U32.to_nat(depth.for(32n, count, 0)), 0.0))}
