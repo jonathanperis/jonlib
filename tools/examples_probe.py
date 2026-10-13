@@ -300,6 +300,7 @@ EXAMPLES = {
     'textures_sprite_explosion': ('textures/textures_sprite_explosion.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_sound_multi': ('audio/audio_sound_multi.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_sound_positioning': ('audio/audio_sound_positioning.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'audio_sound_loading': ('audio/audio_sound_loading.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'audio_raw_stream': ('audio/audio_raw_stream.c', 'Ex.setup(core, frame)'),
     'audio_stream_callback': ('audio/audio_stream_callback.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'audio_music_stream': ('audio/audio_music_stream.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -433,7 +434,7 @@ IO_SETUP.add('shaders_basic_pbr'); PERSPECTIVE.add('shaders_basic_pbr'); CONFIG_
 IO_SETUP.add('models_loading_m3d'); PERSPECTIVE.add('models_loading_m3d')
 # Examples that call raudio.c: it is compiled beside them with miniaudio's null backend only (the reference library
 # has no audio module). The device opens on every host and mixes on its own thread; no frame depends on it.
-AUDIO = {'textures_sprite_button', 'textures_sprite_explosion', 'audio_sound_multi', 'audio_sound_positioning'}
+AUDIO = {'textures_sprite_button', 'textures_sprite_explosion', 'audio_sound_multi', 'audio_sound_positioning', 'audio_sound_loading'}
 # Examples whose frames show what the device did: its thread is stopped and the scripted clock asks for its callbacks
 # (tools/reference/audio_clock.c; AudioClock in Jonlib).
 AUDIO_CLOCK = {'audio_raw_stream', 'audio_music_stream', 'audio_stream_effects', 'audio_mixed_processor', 'audio_spectrum_visualizer'}
@@ -1248,6 +1249,11 @@ def scripts():
         script('textures_sprite_explosion', 'booms', [quick(), quick([mouse_at(300, 200)]), quick([button(0)]), quick([button(0, False)]), quick(), quick(),
                                                       quick([mouse_at(500, 300), button(0)]), quick([button(0, False)]), slow(), *[quick() for _ in range(66)],
                                                       quick(), quick([mouse_at(40, 30), button(0)]), quick([button(0, False)]), quick(), quick(), quick()]),
+        # SPACE plays the WAV sound and ENTER the Ogg Vorbis one (decoded whole before the first frame: about a minute in the JavaScript
+        # lane); then both in one frame, and held keys play nothing more. No frame shows a sound.
+        script('audio_sound_loading', 'keys', [quick(), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), quick([key(KEY_ENTER)]), slow(),
+                                               quick([key(KEY_ENTER, False)]), quick([key(KEY_SPACE), key(KEY_ENTER)]), quick(),
+                                               quick([key(KEY_SPACE, False), key(KEY_ENTER, False)]), quick()]),
         # SPACE twelve times: the ten sounds and around to the first two again (held, it plays once).
         script('audio_sound_multi', 'spaces', [quick(), *[frame for _ in range(12) for frame in (quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]))],
                                                quick([key(KEY_SPACE)]), slow(), quick(), quick([key(KEY_SPACE, False)])]),

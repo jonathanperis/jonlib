@@ -1239,7 +1239,8 @@ path)` is `LoadWave`, and `Sound.load_with(profile, libm, device, path)`
   tables*). Under `M.Glibc239Libm` every table is given. `Wave.decode`,
   `Wave.load` and `Sound.load_for` use `M.AppleLibm{}`, as the other
   functions without a profile do: a stream whose tables that profile does
-  not give is `UnsupportedWaveFormat`.
+  not give is `UnsupportedWaveFormat`. (It gives them for every block
+  size: see *The transform's tables*.)
 - **A length that is not known**, or 0, is a wave of no frames (raylib's
   buffer is `malloc(0)`), and `LoadSoundFromWave` of it is the invalid
   sound.
@@ -1845,7 +1846,8 @@ CPU-2 and JavaScript.
 
 The examples that play sounds without showing audio state
 (`textures_sprite_button`, `textures_sprite_explosion`, `audio_sound_multi`,
-`audio_sound_positioning`) replay against the native example with
+`audio_sound_positioning`, and `audio_sound_loading`, whose second sound
+is an Ogg Vorbis file) replay against the native example with
 `raudio.c` compiled beside it the same way (`tools/examples_probe.py`): its
 device mixes on its own thread there, and no frame depends on it.
 

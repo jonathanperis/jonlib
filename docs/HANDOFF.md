@@ -72,7 +72,7 @@ at the branch's head.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 582/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **209/212 ported** with the stack (`audio_music_stream`, `audio_stream_effects` and `audio_mixed_processor` play `country.mp3` through the MP3 decoder and `audio_spectrum_visualizer` loads it whole; `core_screen_recording` writes its GIF with the msf_gif port; `core_directory_files` is handed its directory listings; `text_unicode_ranges` loads a 7 MiB font; `textures_sprite_stacking` a 112x11468 texture), 3 ready (two of them wait for a decoder, which the plan does not count: `mini1111.xm`, `target.ogg`), 0 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **210/212 ported** with the stack (`audio_music_stream`, `audio_stream_effects` and `audio_mixed_processor` play `country.mp3` through the MP3 decoder and `audio_spectrum_visualizer` loads it whole; `audio_sound_loading` loads `target.ogg` through the Ogg Vorbis decoder; `core_screen_recording` writes its GIF with the msf_gif port; `core_directory_files` is handed its directory listings; `text_unicode_ranges` loads a 7 MiB font; `textures_sprite_stacking` a 112x11468 texture), 2 ready (`audio_module_playing` waits for a decoder, which the plan does not count: `mini1111.xm`; `text_font_sdf` for the binary64 `pow` and `acos`), 0 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -371,8 +371,8 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `textures_sprite_button`, `textures_sprite_explosion`,
      `audio_sound_multi` (the first of the new `examples-audio` gate) and
      `audio_sound_positioning` (it asks `IsSoundPlaying` every frame, but
-     draws nothing from it: the port plays the sound once) are in. `audio_sound_loading`
-     is listed ready but also loads an .ogg. Pitched buffers are mixed too
+     draws nothing from it: the port plays the sound once) are in, and
+     `audio_sound_loading` with its .ogg. Pitched buffers are mixed too
      (`src/mixer.bend`: raudio's read loop with its input estimate and its
      8-frame residual over the resampler as a stream). **A buffer's
      converter has the first-order filter** (`ma_lpf1`, coefficient
@@ -884,12 +884,33 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
          `InvalidWaveData`, and so are frame counts whose product with
          the channels is past an int. The functions without a profile
          use `M.AppleLibm{}`, under which the tables are given only
-         where their floats are sure: whether `target.ogg` loads there
-         is to be seen when macOS is back.
-       - Next, in order:
-         (c) the example `audio_sound_loading` (`Sound.load_with` under
-         the libm profile, in the `examples-audio` gate; the wave takes
-         the JavaScript lane about a minute), then the music stream
+         where their floats are sure: they are for every block size
+         (`T.tables.for(M.AppleLibm{}, n)` is given for 64, 256, 512,
+         1024, 2048 and 8192), so `.ogg` files load under the default
+         profile. What macOS has to show is that Apple's `sin` and `cos`
+         are within the unit in the last place the rule allows
+         ([AUDIO.md](AUDIO.md), *The transform's tables*).
+       - **Done: the example `audio_sound_loading`** (`Sound.load_with`
+         under the libm profile, in the `examples-audio` gate: ten
+         frames, SPACE and ENTER; no frame shows a sound, so what the
+         replay holds is that both files load and play without a
+         refusal). **Every program that calls `Wave.load` or
+         `Sound.load` now compiles the Ogg Vorbis decoder with the
+         others** (the format is chosen at run time). Under this
+         machine's 8 GiB cgroup that is the edge: the compiler's heap
+         (held while clang runs) and clang together pass it, and the
+         kernel kills one of them (exit -9; `oom_kill` in
+         `/sys/fs/cgroup/memory.events` counts them).
+         `audio_sound_loading`'s candidate was killed once and compiled
+         the next time; `audio_spectrum_visualizer`'s (the MP3 decoder,
+         its own transform and now Vorbis) is killed every time here, so
+         the `examples-audio` gate cannot finish locally: its other
+         eight examples replay, and the hosted runners (no such limit)
+         are where the ninth is held. If a runner's memory becomes the
+         limit too, the way out is to keep the decoders apart
+         (loaders for one format, which an example that knows its
+         file's can call), not to change a script.
+       - Next: the music stream
          (`LoadMusicStream` for `.ogg`: `stb_vorbis_seek_start` is
          `set_file_offset(first)`, `previous_length = 0`, `first_decode`
          on, `next_seg = -1` and the first frame pumped;
@@ -912,8 +933,36 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
        - The memory reader moves its pointer past the data's end (`skip`)
          before it notes the end: a truncated header is undefined there.
      - `audio_module_playing`. `LoadMusicStream("mini1111.xm")`: jar_xm
-       (its float mixer and its tables); the frame draws the time
-       played.
+       (`src/external/jar_xm.h`, about 1900 lines of player). The frame
+       draws `GetMusicTimePlayed/GetMusicTimeLength`: the samples
+       generated so far (`jar_xm_get_position`) over
+       `jar_xm_get_remaining_samples`, which plays the whole module's
+       ticks silently at load. So the frame needs the loader and the
+       sequencer (rows, ticks, the effects that change tempo, BPM and
+       the order: `remaining_samples_in_tick += rate/(bpm*0.4f)` in
+       floats), and the stream's samples need the mixer too. A plan in
+       pieces, each with a gate whose reference includes jar_xm.h (as
+       raudio.c does, `JAR_XM_IMPLEMENTATION`) and hashes its context:
+       (1) the module: `jar_xm_create_context_safe`
+       (`jar_xm_check_sanity_preload`,
+       `jar_xm_get_memory_needed_for_context`, `jar_xm_load_module`:
+       header, pattern order, packed patterns, instruments with their
+       envelopes, sample headers and delta-coded 8- and 16-bit data as
+       floats, `jar_xm_check_sanity_postload`). Its reads are safe
+       (`READ_U8` answers 0 past the data) and its writes are not: packed
+       pattern data with more packets than rows times channels writes
+       past the pattern's slots, an envelope's point count past 12
+       writes past its points, and `for (uint8_t i = 0; i <
+       num_channels; ++i)` does not end for 256 channels or more: all to
+       refuse. A sample's loop type falls through its `switch` (ping-pong
+       becomes forward); (2) `jar_xm_row`, `jar_xm_tick` and the effects
+       (a linear frequency is `8363*powf(2, (4608 - period)/768)`,
+       `jar_xm_waveform`'s sine is a `sinf`, and its random waveform is a
+       `static` state every context shares), with
+       `jar_xm_get_remaining_samples`; (3)
+       `jar_xm_mixdown` and `jar_xm_generate_samples` (ramping and
+       linear interpolation are on); (4) `Music.load` for `.xm`,
+       `Music.update`, `jar_xm_reset` on stop, and the example.
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`

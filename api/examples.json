@@ -6715,7 +6715,7 @@
   {
    "name": "audio_sound_loading",
    "category": "audio",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
