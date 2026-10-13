@@ -1280,6 +1280,77 @@ wave.
 Still to come: the music (`LoadMusicStream` for `.ogg`, with
 `stb_vorbis_seek_start` and `stb_vorbis_seek_frame`).
 
+## XM modules (in progress)
+
+`src/xm_module.bend` is the start of an adaptation of jar_xm (pinned
+raylib's `src/external/jar_xm.h`), which raylib's `LoadMusicStream` calls
+for `.xm` files. Nothing plays yet: `Music.load` does not take the format.
+What is here is the module read from its file,
+`jar_xm_create_context_safe`: `load(bytes)` is `Loaded{module}`,
+`Failed{code}` (jar_xm's own failure) or `Refused{why}`.
+
+A `Module` has the pattern order (its length, its restart position and its
+256 entries), the channels, the frequency type, the default tempo and BPM,
+the patterns (rows, and a slot a channel a row: note, instrument, volume
+column, effect, parameter) and the instruments (the sample of each of 96
+notes, the volume and panning envelopes of 12 points, the vibrato, the
+fadeout, and the samples with their loop, volume, finetune, panning,
+relative note and data as floats). Names are not kept.
+
+- **What is a module** (`jar_xm_check_sanity_preload`): 60 bytes at least,
+  `Extended Module: `, 0x1A at 37 and the version 1.04. Anything else is
+  `Failed{1}`.
+- **Reads past the data are zeros** (`READ_U8`), so a file cut anywhere
+  after its first 60 bytes still loads: patterns, instruments and samples
+  the header counts and the file does not have are empty.
+- **Packed patterns**: a slot's first byte with its high bit set says which
+  of the five bytes follow; any other byte is the note, and four more
+  follow. Slots the packed bytes do not reach are zeros. A packed slot
+  whose bytes run past the packed size is read all the same.
+- **Samples**: delta-coded, each value the last plus an int8 or an int16
+  (kept to that type), as a float over 128 or 32768. A 16-bit sample's
+  lengths are halved. A stereo sample's running value begins again at its
+  half and only its first half is the sample; if it loops, its loop is
+  halved from the header's values as ints. A loop type of 2 or 3
+  (ping-pong) falls through jar_xm's `switch` to forward.
+- **The pattern order** (`jar_xm_check_sanity_postload`): an entry that
+  names no pattern is `Failed{1}`, unless it is the last of more than one,
+  which is dropped.
+- **jar_xm's block of memory.** jar_xm works out one size beforehand
+  (`jar_xm_get_memory_needed_for_context`), allocates it and lays the
+  module out in it by a second reading of the file. The two readings do not
+  always agree (a 16-bit sample of an odd length moves them a byte apart),
+  and where they do the estimate is still 8 to 23 bytes short of the
+  layout: the last bytes of the player's row counts are outside the block. `load` keeps
+  the same account, with jar_xm's structures as the LP64 machines lay them
+  out (the reference program checks the sizes), and the module's `room` is
+  how many bytes of the row counts are inside, for the player to refuse
+  past.
+- **Refused 1: a write outside an array or the block.** Packed bytes for
+  more slots than the pattern has; an envelope of more than 12 points;
+  patterns, samples or channels that do not fit the block (a module whose
+  order is empty has no room for its channels).
+- **Refused 2: a loop that does not end.** jar_xm counts the channels and
+  the order's entries in a byte: 256 channels, or an order of 256 entries
+  or more whose first 256 all name patterns, are counted for ever.
+- **Refused 4: past this port's limits.** A block of more than 16 MiB, and
+  a pattern whose packed bytes pass 65535 by their count, where jar_xm's
+  16-bit counters wrap.
+
+`tools/xm_module_probe.py` (gate `xm-module`) loads 88 files with
+`jar_xm_create_context_safe` and compares rolling hashes of the header and
+order, of every slot, and of the instruments with their envelopes, samples
+and every float, with the counts and the room: raylib's `mini1111.xm` (11
+channels, 10 patterns, 8 instruments, 9520 floats), 10 cuts of it and 24
+copies with a byte changed, and 53 modules the probe builds for each of
+the points above. The probe has a model of the loader's account that says
+which files are refused (15): jar_xm is not run on those, and the port must
+refuse each for the model's reason. For the 73 others the model's verdict
+is held against jar_xm itself: what fails (8), and each module's room.
+
+Still to come: the rows, ticks and effects (and the module's length in
+samples), the mixer, and the music stream.
+
 ## WaveFormat
 
 `Wave.format_for` follows the miniaudio v0.11.24 code raylib's `WaveFormat`

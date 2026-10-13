@@ -58,6 +58,7 @@ import ./src/vorbis_db.bend as VDb
 import ./src/vorbis_packet.bend as VK
 import ./src/vorbis_frame.bend as VFr
 import ./src/vorbis_length.bend as VL
+import ./src/xm_module.bend as Xm
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -5015,3 +5016,116 @@ law wave_ogg_every_short_written_is_a_wave:
 
 law wave_ogg_shorts_never_written_are_no_wave:
   {J.Wave.ogg.whole(False{}, 2, 8000, 1, [5]) == Fail{J.InvalidWaveData{}} : Result<&1, &1, J.Wave.Error, J.Wave>}
+
+# An XM module read from its file (src/xm_module.bend): the data's bytes
+# and offsets, sizes in jar_xm's block of memory, a sample's loop, packed
+# slots (and those refused), the pattern order's check, and data that is no
+# module.
+
+law xm_module_byte_past_the_data_is_zero:
+  {Xm.u8(St.Index.from([7, 8], 0), 2, 2) == 0 : U32}
+
+law xm_module_bytes_are_read_the_lowest_first:
+  {Xm.u32(St.Index.from([1, 2, 3, 4], 0), 4, 0) == 67305985 : U32}
+
+law xm_module_word_cut_by_the_data_s_end:
+  {Xm.u32(St.Index.from([1, 2, 3, 4], 0), 3, 0) == 197121 : U32}
+
+law xm_module_offset_moves_on:
+  {Xm.moved(60, 276) == 336 : U32}
+
+law xm_module_offset_past_any_data_stays_there:
+  {Xm.moved(4026531840, 5) == 4026531840 : U32}
+
+law xm_module_offset_does_not_wrap:
+  {Xm.moved(4000000000, 4000000000) == 4026531840 : U32}
+
+law xm_module_int8_of_a_byte:
+  {Xm.s8(255) == 4294967295 : U32}
+
+law xm_module_int8_keeps_its_range:
+  {Xm.s8(384) == 4294967168 : U32}
+
+law xm_module_int16_of_two_bytes:
+  {Xm.s16(65534) == 4294967294 : U32}
+
+law xm_module_sizes_are_aligned_to_16:
+  {Xm.aligned(424) == 432 : U32}
+
+law xm_module_aligned_size_stays:
+  {Xm.aligned(448) == 448 : U32}
+
+law xm_module_sizes_stop_past_the_limit:
+  {Xm.times(4000000000, 5) == 1073741824 : U32}
+
+law xm_module_int_halved_toward_zero:
+  {Xm.halved(4294967293) == 4294967295 : U32}
+
+law xm_module_loop_of_a_16_bit_sample_is_halved:
+  {Xm.loop.end(True{}, False{}, 21, 60) == 40 : U32}
+
+law xm_module_loop_of_a_stereo_sample_is_halved_as_ints:
+  {Xm.loop.start(False{}, True{}, 2147483651) == 3221225474 : U32}
+
+law xm_module_loop_of_a_plain_sample_is_the_header_s:
+  {Xm.loop.end(False{}, False{}, 4294967280, 49) == 33 : U32}
+
+law xm_module_vibrato_waveforms_one_and_two_are_swapped:
+  {((Xm.waveform(1) * 100) + ((Xm.waveform(2) * 10) + Xm.waveform(4)) : U32) == 214 : U32}
+
+law xm_module_plain_slot_takes_five_bytes:
+  {Xm.slot.size(49) == 5 : U32}
+
+law xm_module_packed_slot_takes_what_it_says:
+  {Xm.slot.size(154) == 4 : U32}
+
+law xm_module_empty_packed_slot_takes_one_byte:
+  {Xm.slot.size(128) == 1 : U32}
+
+law xm_module_packed_slots_are_read:
+  {Xm.unpack(St.Index.from([129, 60, 128], 0), 3, 0, 3, 2) == Xm.Unpacked{[Xm.Slot{0, 0, 0, 0, 0}, Xm.Slot{60, 0, 0, 0, 0}], 0} : Xm.Unpacked}
+
+law xm_module_plain_slot_is_read:
+  {Xm.unpack(St.Index.from([49, 1, 2, 3, 4], 0), 5, 0, 5, 1) == Xm.Unpacked{[Xm.Slot{49, 1, 2, 3, 4}], 0} : Xm.Unpacked}
+
+law xm_module_slot_past_the_pattern_s_is_refused:
+  {Xm.unpack(St.Index.from([128, 128, 128], 0), 3, 0, 3, 2) == Xm.Unpacked{[Xm.Slot{0, 0, 0, 0, 0}, Xm.Slot{0, 0, 0, 0, 0}], 1} : Xm.Unpacked}
+
+law xm_module_bytes_for_no_slots_are_refused:
+  {Xm.unpack(St.Index.from([128], 0), 1, 0, 1, 0) == Xm.Unpacked{Nil{}, 1} : Xm.Unpacked}
+
+law xm_module_no_bytes_are_no_slots_read:
+  {Xm.unpack(St.Index.from([128], 0), 1, 0, 0, 9) == Xm.Unpacked{Nil{}, 0} : Xm.Unpacked}
+
+law xm_module_slots_left_out_are_zeros:
+  {Xm.slots.whole([Xm.Slot{60, 0, 0, 0, 0}], 3) == [Xm.Slot{60, 0, 0, 0, 0}, Xm.Slot{0, 0, 0, 0, 0}, Xm.Slot{0, 0, 0, 0, 0}] : +List<Xm.Slot>}
+
+law xm_module_order_of_its_patterns_is_fine:
+  {Xm.order.check([0, 1, 0, 9], True{}, 0, 0, 3, 2) == Xm.Checked{0, 3} : Xm.Checked}
+
+law xm_module_order_loses_a_last_entry_without_a_pattern:
+  {Xm.order.check([0, 1, 9, 9], True{}, 0, 0, 3, 2) == Xm.Checked{0, 2} : Xm.Checked}
+
+law xm_module_order_with_an_entry_without_a_pattern_fails:
+  {Xm.order.check([0, 9, 1, 0], True{}, 0, 0, 3, 2) == Xm.Checked{1, 3} : Xm.Checked}
+
+law xm_module_order_of_one_entry_without_a_pattern_fails:
+  {Xm.order.check([9], True{}, 0, 0, 1, 2) == Xm.Checked{1, 1} : Xm.Checked}
+
+law xm_module_order_past_its_bytes_is_checked_without_end:
+  {Xm.order.check([0, 0], True{}, 0, 0, 256, 1) == Xm.Checked{2, 256} : Xm.Checked}
+
+law xm_module_data_with_its_marks_is_sane:
+  {Xm.sane(St.Index.from([69, 120, 116, 101, 110, 100, 101, 100, 32, 77, 111, 100, 117, 108, 101, 58, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 26, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 4, 1], 0), 60) == True{} : Bool}
+
+law xm_module_data_of_59_bytes_is_not:
+  {Xm.sane(St.Index.from([69, 120, 116, 101, 110, 100, 101, 100, 32, 77, 111, 100, 117, 108, 101, 58, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 26, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 4, 1], 0), 59) == False{} : Bool}
+
+law xm_module_another_version_is_not_sane:
+  {Xm.sane(St.Index.from([69, 120, 116, 101, 110, 100, 101, 100, 32, 77, 111, 100, 117, 108, 101, 58, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 26, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 3, 1], 0), 60) == False{} : Bool}
+
+law xm_module_no_data_is_no_module:
+  {Xm.load(Nil{}) == Xm.Failed{1} : Xm.Loaded}
+
+law xm_module_other_data_is_no_module:
+  {Xm.load([1, 2, 3]) == Xm.Failed{1} : Xm.Loaded}

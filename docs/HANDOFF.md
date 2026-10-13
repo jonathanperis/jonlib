@@ -943,6 +943,17 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
        floats), and the stream's samples need the mixer too. A plan in
        pieces, each with a gate whose reference includes jar_xm.h (as
        raudio.c does, `JAR_XM_IMPLEMENTATION`) and hashes its context:
+       **(1) is done** (`src/xm_module.bend`, gate `xm-module`:
+       `Xm.load(bytes)` is `Loaded{module}`, `Failed{code}` or
+       `Refused{why}`; the probe has a writer of modules, `module`,
+       `pattern`, `slots`, `instrument`, `sample`, `envelope`, and a
+       model of the loader's account of jar_xm's block of memory). For
+       the player: `Module.room` is how many bytes of `row_loop_count`
+       are inside the block (jar_xm's estimate is 8 to 23 bytes short of
+       its layout, so the last rows of the order's last entry are counted
+       outside it: to refuse); a sample's data is a list of floats (a
+       stereo sample keeps both halves, its length is the first); an
+       envelope always has 12 points.
        (1) the module: `jar_xm_create_context_safe`
        (`jar_xm_check_sanity_preload`,
        `jar_xm_get_memory_needed_for_context`, `jar_xm_load_module`:
@@ -963,6 +974,27 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
        `jar_xm_mixdown` and `jar_xm_generate_samples` (ramping and
        linear interpolation are on); (4) `Music.load` for `.xm`,
        `Music.update`, `jar_xm_reset` on stop, and the example.
+       Read in the player so far (for (2), which cannot be had without
+       the mixer's per-sample step): a note that triggers calls
+       `jar_xm_next_of_sample` eight times for the ramp
+       (`jar_xm_handle_note_and_instrument`), so the silent pass of
+       `jar_xm_get_remaining_samples` reads samples and moves their
+       positions too; that function adds a float
+       (`remaining_samples_in_tick`) to a `uint64_t` total, which is a
+       float sum once the total passes 2^24; `jar_xm_trigger_note` reads
+       `ch->sample->panning` whether there is a sample or not (EDy on an
+       empty channel, a ghost instrument: a null pointer, to refuse);
+       `jar_xm_envelope_tick` indexes an envelope's points by its
+       sustain and loop point numbers, which are bytes (past 11: to
+       refuse); `HAS_VIBRATO` tests `effect_param == 6` where it means the
+       effect type (to follow); the row counts are indexed by
+       `256*table_index + row` (past `Module.room`: to refuse); a
+       possible split is (2a) the channel's own functions (periods and
+       frequencies, linear and Amiga, the waveforms, the envelopes,
+       `jar_xm_next_of_sample` with its loops and ramp) against the
+       static functions on contexts the reference sets up, then (2b)
+       rows, ticks, effects, `jar_xm_reset` and the length, by a hash of
+       the whole context after each tick.
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`
