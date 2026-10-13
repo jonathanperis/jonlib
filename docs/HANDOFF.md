@@ -72,7 +72,7 @@ at the branch's head.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 582/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **206/212 ported** with the stack (`audio_music_stream`, `audio_stream_effects` and `audio_mixed_processor` play `country.mp3` through the MP3 decoder; `core_screen_recording` writes its GIF with the msf_gif port; `core_directory_files` is handed its directory listings), 6 ready (three of them wait for a decoder or an MP3 loader, which the plan does not count: `country.mp3` as a wave, `mini1111.xm`, `target.ogg`), 0 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **207/212 ported** with the stack (`audio_music_stream`, `audio_stream_effects` and `audio_mixed_processor` play `country.mp3` through the MP3 decoder; `core_screen_recording` writes its GIF with the msf_gif port; `core_directory_files` is handed its directory listings; `text_unicode_ranges` loads a 7 MiB font), 5 ready (two of them wait for a decoder, which the plan does not count: `mini1111.xm`, `target.ogg`), 0 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -286,8 +286,8 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      ASCII one of `examples/text_rectangle_bounds.bend`):
      `text_font_sdf` the C library's functions of `stbtt__solve_cubic` for
      SDF glyphs with curves (docs/FONTS.md, Gaps); `text_unicode_ranges` a
-     7 MiB TTF and `shaders_basic_pbr` a 1.7 MiB PNG (the 1 MiB input
-     limit); `textures_sprite_stacking` a 112x11468 image (the 4096 limit);
+     7 MiB TTF (no limit was in its way: it is ported, below) and `shaders_basic_pbr` a 1.7 MiB PNG (the 1 MiB input
+     limit of images); `textures_sprite_stacking` a 112x11468 image (the 4096 limit);
      `text_3d_drawing` is ported (the font texture held once around the
      3D texts through `Rlgl.set_texture`, the glyph metrics as a table by
      byte; no script types characters, so that branch is unverified) and
@@ -312,7 +312,7 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `png-format` at 55 minutes and `png-file` carry the cap cases).
      `textures_sprite_stacking` needs a 112x11468 image: the 4096 limit is
      in about sixty places of `jonlib.bend` and every codec, a contract of
-     its own. `text_unicode_ranges` needs a 7 MiB TTF. `text_font_sdf`
+     its own. `text_unicode_ranges` is ported (below). `text_font_sdf`
      needs binary64 acos and pow for `stbtt__solve_cubic` (cos exists:
      `src/lgpl/sin.bend`). `models_loading_m3d` is ported over the M3D loader
      (`src/m3d.bend`, gate `m3d`: the binary variant's container, chunks,
@@ -670,13 +670,21 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      What `audio_spectrum_visualizer` still needs: its FFT (`cosf`,
      `sinf`, `logf`, `sqrtf`), and time: `LoadWave` of the whole
      `country.mp3` is about six minutes in the JavaScript lane.
-   - The six examples left: `audio_module_playing` (jar_xm),
+   - **`text_unicode_ranges` is ported.** There was no input limit in
+     its way (earlier notes here said 1 MiB; `Files.load_data` takes any
+     file and `FontData.load` any font): Noto Sans TC's 7 MiB and its
+     format 12 character map load as they are. The script takes the
+     first of the four choices (three loads of the file, 212 glyphs);
+     the whole replay is about nine minutes on this machine, most of it
+     the JavaScript lane. The other choices are not scripted.
+   - The five examples left: `audio_module_playing` (jar_xm),
      `audio_sound_loading` (stb_vorbis), `audio_spectrum_visualizer`
-     (`LoadWave` of an MP3, slow in the JavaScript lane),
-     `text_font_sdf` (binary64 `acos` and `pow` for stb_truetype's
-     cubic solver), `text_unicode_ranges` (a 7 MiB TTF: the 1 MiB input
-     limit) and `textures_sprite_stacking` (a 112x11468 image: the 4096
-     limit).
+     (`LoadWave` of the whole `country.mp3`, about six minutes in the
+     JavaScript lane, and an FFT no frame shows: the reference's
+     renderer runs no shader, so its spectrum would need a gate of its
+     own), `text_font_sdf` (binary64 `acos` and `pow` for
+     stb_truetype's cubic solver) and `textures_sprite_stacking` (a
+     112x11468 image: the 4096 limit).
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`
