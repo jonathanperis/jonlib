@@ -19,14 +19,15 @@ import ./store.bend as R
 # (the accelerated table, the lengths the codebook keeps, the sorted
 # codewords and their symbols, the values), with the lengths and the
 # codewords by symbol as lists too, for the search of a small codebook.
+# `count` is how many values it has.
 type Coder is Data:
   Coder{dimensions: U32, entries: U32, sparse: Bool, lookup: U32, sequence: Bool, minimum: F32, sorted: U32, fast: R.Index, kept: R.Index, lengths: +List<U32>, codewords: +List<U32>, sorted_codewords: R.Index,
-    sorted_values: R.Index, values: R.Row}
+    sorted_values: R.Index, values: R.Row, count: U32}
 
 def coder.booked(book: C.Book, +dimensions: U32, +entries: U32, +lookup: U32, +sequence: Bool, +minimum: F32, +values: +List<F32>) -> Coder:
   C.Book{+sparse, _, +lengths, +codewords, +sorted, +sorted_codewords, +sorted_values, +fast} = book
   Coder{dimensions, entries, sparse, lookup, sequence, minimum, sorted, R.Index.from(fast, 4294967295), R.Index.from(lengths, 255), lengths, codewords, R.Index.from(sorted_codewords, 4294967295), R.Index.from(sorted_values, 4294967295),
-    R.Row.from(values)}
+    R.Row.from(values), R.count.floats(values, 0)}
 
 # The codebook as the setup read it, ready to decode with.
 def coder.of(read: S.Codebook) -> Coder:
@@ -42,7 +43,7 @@ def coders.of(books: +List<S.Codebook>, acc: +List<Coder>) -> +List<Coder>:
 # A codebook of no entry: what a number past the setup's codebooks gets
 # (the setup does not let one be asked for).
 def coder.none() -> Coder:
-  Coder{0, 0, False{}, 0, False{}, 0.0, 0, R.Index.new(0, 4294967295), R.Index.new(0, 255), Nil{}, Nil{}, R.Index.new(0, 4294967295), R.Index.new(0, 4294967295), R.Row.new(0, 0.0)}
+  Coder{0, 0, False{}, 0, False{}, 0.0, 0, R.Index.new(0, 4294967295), R.Index.new(0, 255), Nil{}, Nil{}, R.Index.new(0, 4294967295), R.Index.new(0, 4294967295), R.Row.new(0, 0.0), 0}
 
 def coder.first(coders: +List<Coder>) -> Coder:
   match coders:
@@ -54,39 +55,43 @@ def coder.at(+coders: +List<Coder>, +i: U32) -> Coder:
   coder.first(List.drop(&2, Coder, coders, U32.to_nat(i)))
 
 def Coder.sparse(coder: Coder) -> Bool:
-  Coder{_, _, sparse, _, _, _, _, _, _, _, _, _, _, _} = coder
+  Coder{_, _, sparse, _, _, _, _, _, _, _, _, _, _, _, _} = coder
   sparse
 
 def Coder.sorted(coder: Coder) -> U32:
-  Coder{_, _, _, _, _, _, sorted, _, _, _, _, _, _, _} = coder
+  Coder{_, _, _, _, _, _, sorted, _, _, _, _, _, _, _, _} = coder
   sorted
 
 def Coder.sorted_values(coder: Coder) -> R.Index:
-  Coder{_, _, _, _, _, _, _, _, _, _, _, _, sorted_values, _} = coder
+  Coder{_, _, _, _, _, _, _, _, _, _, _, _, sorted_values, _, _} = coder
   sorted_values
 
 def Coder.lookup(coder: Coder) -> U32:
-  Coder{_, _, _, lookup, _, _, _, _, _, _, _, _, _, _} = coder
+  Coder{_, _, _, lookup, _, _, _, _, _, _, _, _, _, _, _} = coder
   lookup
 
 def Coder.dimensions(coder: Coder) -> U32:
-  Coder{dimensions, _, _, _, _, _, _, _, _, _, _, _, _, _} = coder
+  Coder{dimensions, _, _, _, _, _, _, _, _, _, _, _, _, _, _} = coder
   dimensions
 
 def Coder.sequence(coder: Coder) -> Bool:
-  Coder{_, _, _, _, sequence, _, _, _, _, _, _, _, _, _} = coder
+  Coder{_, _, _, _, sequence, _, _, _, _, _, _, _, _, _, _} = coder
   sequence
 
 def Coder.minimum(coder: Coder) -> F32:
-  Coder{_, _, _, _, _, minimum, _, _, _, _, _, _, _, _} = coder
+  Coder{_, _, _, _, _, minimum, _, _, _, _, _, _, _, _, _} = coder
   minimum
 
 def Coder.kept(coder: Coder) -> R.Index:
-  Coder{_, _, _, _, _, _, _, _, kept, _, _, _, _, _} = coder
+  Coder{_, _, _, _, _, _, _, _, kept, _, _, _, _, _, _} = coder
   kept
 
+def Coder.count(coder: Coder) -> U32:
+  Coder{_, _, _, _, _, _, _, _, _, _, _, _, _, _, count} = coder
+  count
+
 def Coder.values(coder: Coder) -> R.Row:
-  Coder{_, _, _, _, _, _, _, _, _, _, _, _, _, values} = coder
+  Coder{_, _, _, _, _, _, _, _, _, _, _, _, _, values, _} = coder
   values
 
 def acc(reader: O.Reader) -> U32:
@@ -118,15 +123,15 @@ def search(n: Nat, +codes: R.Index, +code: U32, +x: U32, +count: U32) -> U32:
       search(k, codes, code, Bool.pick(U32, over, (x + (count >> 1n) : U32), x), Bool.pick(U32, (count > 1 : U32), Bool.pick(U32, over, (count - (count >> 1n) : U32), (count >> 1n : U32)), count))
 
 def sorted.symbol(+coder: Coder, +x: U32) -> U32:
-  Coder{_, _, +sparse, _, _, _, _, _, _, _, _, _, +sorted_values, _} = coder
+  Coder{_, _, +sparse, _, _, _, _, _, _, _, _, _, +sorted_values, _, _} = coder
   Bool.pick(U32, sparse, x, R.Index.get(sorted_values, x))
 
 def sorted.found(+coder: Coder, +reader: O.Reader, +symbol: U32) -> O.Reader:
-  Coder{_, _, _, _, _, _, _, _, +kept, _, _, _, _, _} = coder
+  Coder{_, _, _, _, _, _, _, _, +kept, _, _, _, _, _, _} = coder
   taken(Bool.not(short(valid(reader), R.Index.get(kept, symbol))), reader, R.Index.get(kept, symbol), symbol)
 
 def sorted.decode(+coder: Coder, +reader: O.Reader) -> O.Reader:
-  Coder{_, _, _, _, _, _, +sorted, _, _, _, _, +sorted_codewords, _, _} = coder
+  Coder{_, _, _, _, _, _, +sorted, _, _, _, _, +sorted_codewords, _, _, _} = coder
   sorted.found(coder, reader, sorted.symbol(coder, search(32n, sorted_codewords, C.bit.reverse(acc(reader)), 0, sorted)))
 
 # What the search of a small codebook finds: state 0 nothing, 1 a symbol
@@ -151,7 +156,7 @@ def linear.found(found: Hit, +reader: O.Reader) -> O.Reader:
     case Hit{_, +symbol, +length}: taken(False{}, reader, length, symbol)
 
 def linear.decode(+coder: Coder, +reader: O.Reader) -> O.Reader:
-  Coder{_, _, _, _, _, _, _, _, _, +lengths, +codewords, _, _, _} = coder
+  Coder{_, _, _, _, _, _, _, _, _, +lengths, +codewords, _, _, _, _} = coder
   linear.found(linear(lengths, codewords, 0, acc(reader), valid(reader), 0, 0, 0), reader)
 
 # kind: 0 the codebook has no code (-1), 1 the sorted table is searched, 2
@@ -163,7 +168,7 @@ def raw.search(kind: U32, +coder: Coder, +reader: O.Reader) -> O.Reader:
     case _: linear.decode(coder, reader)
 
 def raw.kind(+coder: Coder) -> U32:
-  Coder{_, +entries, +sparse, _, _, _, +sorted, _, _, _, _, _, _, _} = coder
+  Coder{_, +entries, +sparse, _, _, _, +sorted, _, _, _, _, _, _, _, _} = coder
   Bool.pick(U32, sparse && U32.is_eq(sorted, 0), 0, Bool.pick(U32, ((entries > 8 : U32) && U32.is_ne(sorted, 0)) || ((entries <= 8 : U32) && sparse), 1, 2))
 
 # codebook_decode_scalar_raw: the bits are prepared, then the sorted table
@@ -185,7 +190,7 @@ def fast.found(none: Bool, +coder: Coder, +reader: O.Reader, +symbol: U32) -> O.
     case False{}: fast.used(reader, R.Index.get(Coder.kept(coder), symbol), symbol)
 
 def fast.decode(+coder: Coder, +reader: O.Reader) -> O.Reader:
-  Coder{_, _, _, _, _, _, _, +fast, _, _, _, _, _, _} = coder
+  Coder{_, _, _, _, _, _, _, +fast, _, _, _, _, _, _, _} = coder
   fast.found(U32.is_eq(R.Index.get(fast, (acc(reader) .&. 1023 : U32)), 4294967295), coder, reader, R.Index.get(fast, (acc(reader) .&. 1023 : U32)))
 
 def prepared(few: Bool, +reader: O.Reader) -> O.Reader:

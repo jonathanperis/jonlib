@@ -3421,3 +3421,72 @@ def Laws.store_row_write_leaves_the_other_places():
 
 def Laws.store_row_from_a_list():
   {==}
+
+def Laws.vorbis_residue_above_as_ints():
+  {==}
+
+def Laws.vorbis_residue_minus_one_is_not_above_zero():
+  {==}
+
+def Laws.vorbis_residue_zero_is_above_minus_one():
+  {==}
+
+def Laws.vorbis_residue_class_digits_highest_first():
+  {==}
+
+def Laws.vorbis_residue_class_digits_in_base_two():
+  {==}
+
+def Laws.vorbis_residue_class_digits_of_one_classification():
+  {==}
+
+def Laws.vorbis_residue_class_digits_past_the_number():
+  {==}
+
+def Laws.vorbis_residue_codebook_of_a_class_in_a_pass():
+  {==}
+
+def Laws.vorbis_residue_class_without_a_codebook_in_a_pass():
+  {==}
+
+def Laws.vorbis_residue_channel_decoded():
+  {==}
+
+def Laws.vorbis_residue_channel_not_decoded():
+  {==}
+
+def Laws.vorbis_residue_vector_inside_the_floats_is_whole():
+  {==}
+
+def Laws.vorbis_residue_vector_at_the_end_of_the_floats_is_cut():
+  {==}
+
+def Laws.vorbis_residue_cut_adds_the_channel_twice():
+  {==}
+
+def Laws.vorbis_residue_vector_past_the_floats_has_no_room():
+  {==}
+
+def Laws.store_row_first_places_cleared():
+  {==}
+
+def Laws.store_row_one_place_cleared():
+  {==}
+
+def Laws.store_row_all_places_cleared():
+  {==}
+
+def Laws.vorbis_decode_codebook_of_no_entry_has_no_value():
+  {==}
+
+def Laws.vorbis_decode_single_symbol_has_its_dimensions_of_values():
+  {==}
+
+def Laws.vorbis_residue_vectors_woven_from_the_first_channel():
+  {==}
+
+def Laws.vorbis_residue_vector_read_past_the_codebook_s_values_is_refused():
+  {==}
+
+def Laws.vorbis_residue_no_value_to_decode_is_fine():
+  {==}

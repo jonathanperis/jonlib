@@ -446,16 +446,16 @@ scalar ones: the reference for the samples is the build as it is.
 
 `src/vorbis_codebook.bend`, `src/vorbis_ogg.bend`,
 `src/vorbis_setup.bend`, `src/vorbis_maps.bend`,
-`src/vorbis_tables.bend`, `src/vorbis_decode.bend` and
-`src/vorbis_mdct.bend` are the start of an adaptation of stb_vorbis
-v1.22 (pinned raylib's
+`src/vorbis_tables.bend`, `src/vorbis_decode.bend`,
+`src/vorbis_mdct.bend` and `src/vorbis_residue.bend` are the start of an
+adaptation of stb_vorbis v1.22 (pinned raylib's
 `src/external/stb_vorbis.c`), which raylib's `LoadWave`, `LoadSound` and
 `LoadMusicStream` call for `.ogg` files. Nothing is decoded yet:
 `Wave.decode(".ogg", ...)` is still `UnsupportedWaveFormat`. What is here
 is the reading of the data, the whole setup header, the transform's
 tables, the decoding of a codebook's symbols and vectors, the inverse
-MDCT (all below) and what the setup makes of a codebook's code lengths,
-once it has read them:
+MDCT, the residues (all below) and what the setup makes of a codebook's
+code lengths, once it has read them:
 
 - **The codes** (`compute_codewords`; `codewords`, and `book.of` for all the tables). A length is 1 to
   31 bits, or 255 for a symbol without a code. The first symbol with a code
@@ -883,9 +883,70 @@ bits of every float of every block: 80 blocks, 163,200 floats. No block
 overflows: the bits of the NaN that an infinity less an infinity gives are
 the machine's, not the code's.
 
-Still to come: the residues' vectors over the channels
-(`codebook_decode_deinterleave_repeat`), the packets (floors, residues),
-and then the waves and the music.
+### Residues
+
+`src/vorbis_residue.bend` is `decode_residue`:
+`residue.decode(reader, rows, coders, residue, channels, n, mask)` adds a
+residue's vectors to the channels' floats (rows; `mask` has a bit for each
+channel that is decoded, where stb_vorbis has a null pointer for the
+others), after clearing the first `n` floats of each decoded channel. `n`
+is half the block.
+
+A residue is read in eight passes over its partitions. In the first pass a
+class is read for each group of partitions (a symbol of the classbook,
+whose digits in the base of the classifications are the partitions'
+classes); in each pass a partition whose class has a codebook for that
+pass gets vectors of it. No symbol for a class, or a vector that is not
+decoded, ends the residue there. How the vectors are laid is the residue's
+type:
+
+- **Type 1** (and type 2 with one channel): `codebook_decode` at the
+  partition's floats, the codebook's dimensions further each time.
+- **Type 0**: `codebook_decode_step` from each of the first
+  `size/dimensions` floats, every `size/dimensions`th float after it. The
+  length stb_vorbis passes is `n - offset - k`, where `n` is the
+  partition's *size* and `offset` where the partition *is*: past the first
+  partitions it is under 1, and nothing is added. Kept.
+- **Type 2 with two channels or more**: one class for all the channels, and
+  the vectors woven over them (`codebook_decode_deinterleave_repeat`,
+  `weave.decode`): each value to the next channel in turn, the next float
+  after the last channel.
+
+As the code has them:
+
+- A residue's begin and end are cut to the vectors' length to count the
+  partitions, but the partitions are placed from the begin as written.
+- **A residue of type 2 with one channel reads up to twice `n`**, over
+  floats the clearing did not reach: they hold what the block before left
+  there. The channels' rows are kept from packet to packet for that.
+- **Where woven vectors come to the end of the floats**, stb_vorbis cuts
+  the values it takes from a vector to `len*ch - (p_inter*ch - c_inter)`:
+  the room left with the channel it is at added instead of taken away. It
+  keeps that for the vectors after it, and writes the extra values past
+  the vectors' length (inside the buffers, which are twice as long). At 0
+  or less no value is taken and nothing is counted as decoded: the loop
+  then ends only when the packet does.
+- **Refused (error 1001): a cut that takes more values than the codebook
+  has after the vector's symbol.** The cut can be up to twice the channel
+  number more than a vector has. The values read are then the next
+  symbol's, which the port follows; past the last symbol's they are no
+  longer the codebook's (a read past its allocation).
+
+`tools/vorbis_residue_probe.py` (gate `vorbis-residue`) runs
+`start_decoder` on a built stream of four channels with eleven residues and
+thirteen codebooks, then scripts of calls on its packets: `decode_residue`
+for each residue with 1 to 4 channels, vectors of 32 and 64 floats and
+every choice of channels that are not decoded; residues one after another
+in a packet; and `codebook_decode_deinterleave_repeat` directly for every
+codebook, at places inside and past the end of the floats. Everything the
+reader keeps and four buffers of 256 floats are hashed after each call.
+The direct calls either stay clear of the end of the floats or keep to the
+first channel at each vector, so that stb_vorbis reads no value past a
+codebook's; one run is the refusal, on which stb_vorbis is not run. 53
+runs, 9008 calls.
+
+Still to come: the packets (the floors, and the residues, coupling and
+transform put together), and then the waves and the music.
 
 ## WaveFormat
 

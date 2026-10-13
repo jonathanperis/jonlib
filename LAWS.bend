@@ -52,6 +52,7 @@ import ./src/vorbis_tables.bend as VT
 import ./src/store.bend as St
 import ./src/vorbis_decode.bend as VD
 import ./src/vorbis_mdct.bend as VX
+import ./src/vorbis_residue.bend as VR
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -4542,3 +4543,78 @@ law store_row_write_leaves_the_other_places:
 
 law store_row_from_a_list:
   {St.Row.list(St.Row.from([1.5, 2.5, 3.5])) == [1.5, 2.5, 3.5, 0.0] : +List<F32>}
+
+# Vorbis residues (src/vorbis_residue.bend): a class's digits, the
+# codebook of a class in a pass, and the vectors woven over the channels:
+# how many values of a vector are used at the end of the floats (stb_vorbis
+# adds the channel it is at instead of taking it away), and the refusal of
+# values read past the codebook's.
+
+law vorbis_residue_above_as_ints:
+  {VR.above(1, 0) == True{} : Bool}
+
+law vorbis_residue_minus_one_is_not_above_zero:
+  {VR.above(4294967295, 0) == False{} : Bool}
+
+law vorbis_residue_zero_is_above_minus_one:
+  {VR.above(0, 4294967295) == True{} : Bool}
+
+law vorbis_residue_class_digits_highest_first:
+  {((VR.digit(5, 3, 2, 0) * 10) + VR.digit(5, 3, 2, 1) : U32) == 12 : U32}
+
+law vorbis_residue_class_digits_in_base_two:
+  {((((VR.digit(7, 2, 4, 0) * 1000) + (VR.digit(7, 2, 4, 1) * 100)) + (VR.digit(7, 2, 4, 2) * 10)) + VR.digit(7, 2, 4, 3) : U32) == 111 : U32}
+
+law vorbis_residue_class_digits_of_one_classification:
+  {(VR.digit(9, 1, 3, 0) + VR.digit(9, 1, 3, 2) : U32) == 0 : U32}
+
+law vorbis_residue_class_digits_past_the_number:
+  {VR.digit(5, 3, 60000, 7) == 0 : U32}
+
+law vorbis_residue_codebook_of_a_class_in_a_pass:
+  {((VR.book.of([[4294967295, 3], [7]], 0, 1) * 10) + VR.book.of([[4294967295, 3], [7]], 1, 0) : U32) == 37 : U32}
+
+law vorbis_residue_class_without_a_codebook_in_a_pass:
+  {VR.book.of([[4294967295, 3], [7]], 0, 0) == 4294967295 : U32}
+
+law vorbis_residue_channel_decoded:
+  {VR.live(5, 2) == True{} : Bool}
+
+law vorbis_residue_channel_not_decoded:
+  {VR.live(5, 1) == False{} : Bool}
+
+law vorbis_residue_vector_inside_the_floats_is_whole:
+  {VR.weave.room(4, 0, 8, 2, 10) == 4 : U32}
+
+law vorbis_residue_vector_at_the_end_of_the_floats_is_cut:
+  {VR.weave.room(4, 0, 9, 2, 10) == 2 : U32}
+
+law vorbis_residue_cut_adds_the_channel_twice:
+  {VR.weave.room(4, 1, 9, 2, 10) == 3 : U32}
+
+law vorbis_residue_vector_past_the_floats_has_no_room:
+  {VR.above(VR.weave.room(4, 0, 12, 2, 10), 0) == False{} : Bool}
+
+law store_row_first_places_cleared:
+  {St.Row.list(St.Row.cleared(St.Row.from([1.5, 2.5, 3.5, 4.5]), 2)) == [0.0, 0.0, 3.5, 4.5] : +List<F32>}
+
+law store_row_one_place_cleared:
+  {St.Row.list(St.Row.cleared(St.Row.from([1.5, 2.5, 3.5, 4.5]), 1)) == [0.0, 2.5, 3.5, 4.5] : +List<F32>}
+
+law store_row_all_places_cleared:
+  {St.Row.list(St.Row.cleared(St.Row.from([1.5, 2.5, 3.5, 4.5]), 4)) == [0.0, 0.0, 0.0, 0.0] : +List<F32>}
+
+law vorbis_decode_codebook_of_no_entry_has_no_value:
+  {VD.Coder.count(VD.coder.none()) == 0 : U32}
+
+law vorbis_decode_single_symbol_has_its_dimensions_of_values:
+  {VD.Coder.count(VD.coder.at(VD.coders.of(VS.Setup.books(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 60, 3, 118, 111, 114, 98, 105, 115, 1, 0, 0, 0, 118, 0, 0, 0, 0, 1, 5, 118, 111, 114, 98, 105, 115, 0, 66, 67, 86, 4, 0, 1, 0, 0, 128, 8, 0, 0, 19, 11, 0, 0, 20, 19, 5, 0, 0, 128, 0, 0, 0, 1, 0, 0, 0, 0, 0, 16, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 80, 10, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0])), Nil{}), 0)) == 4 : U32}
+
+law vorbis_residue_vectors_woven_from_the_first_channel:
+  {VR.Woven.fine(VR.weave.decode(VD.coder.at(VD.coders.of(VS.Setup.books(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 60, 3, 118, 111, 114, 98, 105, 115, 1, 0, 0, 0, 118, 0, 0, 0, 0, 1, 5, 118, 111, 114, 98, 105, 115, 0, 66, 67, 86, 4, 0, 1, 0, 0, 128, 8, 0, 0, 19, 11, 0, 0, 20, 19, 5, 0, 0, 128, 0, 0, 0, 1, 0, 0, 0, 0, 0, 16, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 80, 10, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0])), Nil{}), 0), Ogg.packet.maybe(VM.Maps.reader(VM.maps.read(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 60, 3, 118, 111, 114, 98, 105, 115, 1, 0, 0, 0, 118, 0, 0, 0, 0, 1, 5, 118, 111, 114, 98, 105, 115, 0, 66, 67, 86, 4, 0, 1, 0, 0, 128, 8, 0, 0, 19, 11, 0, 0, 20, 19, 5, 0, 0, 128, 0, 0, 0, 1, 0, 0, 0, 0, 0, 16, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 80, 10, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0])))), [St.Row.new(4, 0.0), St.Row.new(4, 0.0), St.Row.new(4, 0.0)], 7, 3, 0, 0, 10, 4)) == True{} : Bool}
+
+law vorbis_residue_vector_read_past_the_codebook_s_values_is_refused:
+  {Ogg.Reader.error(VR.Woven.reader(VR.weave.decode(VD.coder.at(VD.coders.of(VS.Setup.books(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 60, 3, 118, 111, 114, 98, 105, 115, 1, 0, 0, 0, 118, 0, 0, 0, 0, 1, 5, 118, 111, 114, 98, 105, 115, 0, 66, 67, 86, 4, 0, 1, 0, 0, 128, 8, 0, 0, 19, 11, 0, 0, 20, 19, 5, 0, 0, 128, 0, 0, 0, 1, 0, 0, 0, 0, 0, 16, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 80, 10, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0])), Nil{}), 0), Ogg.packet.maybe(VM.Maps.reader(VM.maps.read(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 60, 3, 118, 111, 114, 98, 105, 115, 1, 0, 0, 0, 118, 0, 0, 0, 0, 1, 5, 118, 111, 114, 98, 105, 115, 0, 66, 67, 86, 4, 0, 1, 0, 0, 128, 8, 0, 0, 19, 11, 0, 0, 20, 19, 5, 0, 0, 128, 0, 0, 0, 1, 0, 0, 0, 0, 0, 16, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 80, 10, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0])))), [St.Row.new(4, 0.0), St.Row.new(4, 0.0), St.Row.new(4, 0.0)], 7, 3, 2, 9, 10, 4))) == 1001 : U32}
+
+law vorbis_residue_no_value_to_decode_is_fine:
+  {VR.Woven.fine(VR.weave.decode(VD.coder.at(VD.coders.of(VS.Setup.books(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 60, 3, 118, 111, 114, 98, 105, 115, 1, 0, 0, 0, 118, 0, 0, 0, 0, 1, 5, 118, 111, 114, 98, 105, 115, 0, 66, 67, 86, 4, 0, 1, 0, 0, 128, 8, 0, 0, 19, 11, 0, 0, 20, 19, 5, 0, 0, 128, 0, 0, 0, 1, 0, 0, 0, 0, 0, 16, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 80, 10, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0])), Nil{}), 0), Ogg.packet.maybe(VM.Maps.reader(VM.maps.read(VS.setup.codebooks([79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30, 1, 118, 111, 114, 98, 105, 115, 0, 0, 0, 0, 2, 68, 172, 0, 0, 0, 0, 0, 0, 0, 244, 1, 0, 0, 0, 0, 0, 184, 1, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 17, 60, 3, 118, 111, 114, 98, 105, 115, 1, 0, 0, 0, 118, 0, 0, 0, 0, 1, 5, 118, 111, 114, 98, 105, 115, 0, 66, 67, 86, 4, 0, 1, 0, 0, 128, 8, 0, 0, 19, 11, 0, 0, 20, 19, 5, 0, 0, 128, 0, 0, 0, 1, 0, 0, 0, 0, 0, 16, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 80, 10, 0, 0, 0, 0, 0, 0, 0, 0, 79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0])))), [St.Row.new(4, 0.0), St.Row.new(4, 0.0), St.Row.new(4, 0.0)], 7, 3, 2, 9, 10, 0)) == True{} : Bool}

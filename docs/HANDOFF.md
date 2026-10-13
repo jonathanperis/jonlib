@@ -823,25 +823,28 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
          `vorbis-mdct`): `X.transform(row, X.factors.of(tables), n)`,
          bit for bit on every block size. A reference that calls it
          needs only `vorbis_init` and `init_blocksize`, no stream.
-       - Next, in order: (a) `codebook_decode_deinterleave_repeat` and
-         `decode_residue`, which a reference can call directly on a
-         started decoder (mind that `effective` is cut by
-         `len*ch - (p_inter*ch - c_inter)`, with the sign of `c_inter`
-         wrong, that it stays cut for the next vectors, and that at 0 or
-         below the loop only ends by the packet's end; a
-         `+List<Maybe<T>>` does not type-check, so the channels without
-         floats need a mask; `residue_decode` of type 0 passes a length
-         of `n - offset - k`, the partition's size less where the
-         partition is, which is under 1 past the first partitions: then
-         nothing is added; a residue of type 2 with one channel writes
-         up to twice the vectors' length, over floats `decode_residue`
-         did not clear, which are the block before's);
-         (c) `vorbis_decode_packet` (`vorbis_decode_initial`, the floors'
+       - **Done: the residues** (`src/vorbis_residue.bend`, gate
+         `vorbis-residue`): `Rs.residue.decode` and `Rs.weave.decode`,
+         with `store`'s `Row.cleared` and a `count` of values in
+         `D.Coder`. One more refusal (1001): woven vectors cut at the
+         end of the floats can take values past the codebook's.
+       - Next, in order:
+         (a) `vorbis_decode_packet` (`vorbis_decode_initial`, the floors'
          Y values, `do_floor` with `inverse_db_table`, the residues, the
-         coupling), compared by the channel buffers; (d)
+         coupling, the transform), compared by the channel buffers
+         after a call of the static function on a started decoder.
+         Seen already: `do_floor` ends with `inverse_db_table[ly]`
+         unmasked, `ly` being the last point's Y times the multiplier,
+         which passes 255 when a floor's subclass codebook has more
+         entries than the floor's range (256, 128, 86 or 64 by
+         multiplier): a read past the table, to refuse. raylib's
+         target.ogg has no such codebook, so its packets can be damaged
+         freely for a corpus (its residues end with the block and their
+         codebooks' dimensions divide the partitions: no cut either);
+         (b)
          `vorbis_finish_frame`, the samples and
          `stb_vorbis_stream_length_in_samples` (which seeks:
-         `vorbis_find_page`, the page CRC); (e) `Wave.decode(".ogg")`,
+         `vorbis_find_page`, the page CRC); (c) `Wave.decode(".ogg")`,
          the sound, the music stream, `audio_sound_loading`.
        - `float32_unpack` is exact arithmetic (a 21-bit mantissa scaled
          by a power of two and narrowed once).
