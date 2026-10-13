@@ -2198,6 +2198,21 @@
    "minutes": 7
   },
   {
+   "id": "xm-pitch",
+   "title": "An XM channel's pitch, waveforms and envelopes (jar_xm jar_xm_linear_period, jar_xm_amiga_period, jar_xm_frequency for both frequency types, jar_xm_waveform and jar_xm_envelope_tick) against jar_xm.h's own static functions on seeded notes, periods, note offsets, waveform steps and envelopes; the reference is compiled with the compiler's undefined-behaviour checks as traps and makes each call under a handler, so jar_xm itself says which arguments are undefined, and the port must answer None for exactly those",
+   "run": [
+    "{python}",
+    "tools/xm_pitch_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
    "id": "wave-format",
    "title": "WaveFormat (miniaudio ma_convert_frames: formats, channel maps, linear resampling and its low-pass filter) against raylib with its audio module and the host contraction profile",
    "run": [

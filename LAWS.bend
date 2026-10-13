@@ -59,6 +59,7 @@ import ./src/vorbis_packet.bend as VK
 import ./src/vorbis_frame.bend as VFr
 import ./src/vorbis_length.bend as VL
 import ./src/xm_module.bend as Xm
+import ./src/xm_pitch.bend as XmP
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -5129,3 +5130,46 @@ law xm_module_no_data_is_no_module:
 
 law xm_module_other_data_is_no_module:
   {Xm.load([1, 2, 3]) == Xm.Failed{1} : Xm.Loaded}
+
+# An XM channel's pitch and envelopes (src/xm_pitch.bend): an Amiga period
+# shifted by octaves, the random waveform's state, an envelope's loop and
+# its points.
+
+law xm_pitch_amiga_period_an_octave_up_is_halved:
+  {XmP.amiga.shifted(1712, 1) == 856 : U32}
+
+law xm_pitch_amiga_period_an_octave_down_is_doubled:
+  {XmP.amiga.shifted(1712, 4294967295) == 3424 : U32}
+
+law xm_pitch_amiga_period_far_down_is_kept_in_16_bits:
+  {XmP.amiga.shifted(1712, 4294967276) == 0 : U32}
+
+law xm_pitch_amiga_period_ten_octaves_up_is_zero:
+  {XmP.amiga.shifted(856, 10) == 0 : U32}
+
+law xm_pitch_amiga_table_ends_an_octave_from_its_start:
+  {((XmP.nth(XmP.amiga.table(), 0) * 10000) + XmP.nth(XmP.amiga.table(), 12) : U32) == 17120856 : U32}
+
+law xm_pitch_random_waveform_s_first_step:
+  {XmP.random.next(24492) == 3361166453 : U32}
+
+law xm_pitch_envelope_counter_at_the_loop_s_end_goes_back:
+  {XmP.envelope.looped(True{}, [Xm.Point{0, 0}, Xm.Point{4, 64}, Xm.Point{10, 32}, Xm.Point{20, 48}, Xm.Point{30, 0}], 1, 3, 20) == 4 : U32}
+
+law xm_pitch_envelope_counter_before_the_loop_s_end_stays:
+  {XmP.envelope.looped(True{}, [Xm.Point{0, 0}, Xm.Point{4, 64}, Xm.Point{10, 32}, Xm.Point{20, 48}, Xm.Point{30, 0}], 1, 3, 19) == 19 : U32}
+
+law xm_pitch_envelope_without_a_loop_keeps_its_counter:
+  {XmP.envelope.looped(False{}, [Xm.Point{0, 0}, Xm.Point{4, 64}, Xm.Point{10, 32}, Xm.Point{20, 48}, Xm.Point{30, 0}], 1, 3, 25) == 25 : U32}
+
+law xm_pitch_envelope_loop_backwards_wraps_in_16_bits:
+  {XmP.envelope.looped(True{}, [Xm.Point{0, 0}, Xm.Point{4, 64}, Xm.Point{10, 32}, Xm.Point{20, 48}, Xm.Point{30, 0}], 3, 1, 5) == 21 : U32}
+
+law xm_pitch_envelope_without_points_changes_nothing:
+  {XmP.envelope.tick(Xm.Envelope{Nil{}, 0, 0, 0, 0, True{}, True{}, True{}}, True{}, 7, 0.25) == XmP.Ticked{7, 0.25, True{}} : XmP.Ticked}
+
+law xm_pitch_envelope_point_is_read_by_its_number:
+  {XmP.Point.frame(XmP.point.nth([Xm.Point{0, 0}, Xm.Point{4, 64}, Xm.Point{10, 32}, Xm.Point{20, 48}, Xm.Point{30, 0}], 2)) == 10 : U32}
+
+law xm_pitch_envelope_point_past_the_12th_is_none_of_its:
+  {XmP.point.nth([Xm.Point{0, 0}, Xm.Point{4, 64}, Xm.Point{10, 32}, Xm.Point{20, 48}, Xm.Point{30, 0}], 99) == Xm.Point{0, 0} : Xm.Point}
