@@ -55,6 +55,7 @@ import ./src/vorbis_mdct.bend as VX
 import ./src/vorbis_residue.bend as VR
 import ./src/vorbis_floor.bend as VF
 import ./src/vorbis_db.bend as VDb
+import ./src/vorbis_packet.bend as VK
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -4664,3 +4665,100 @@ law vorbis_floor_negative_level_end_is_refused:
 
 law vorbis_floor_no_level_end_at_the_block_s_end:
   {VF.past.table(128, 9999, 128) == False{} : Bool}
+
+# A Vorbis audio packet (src/vorbis_packet.bend): the floors' int16 values
+# and the point a line predicts, the channels a coupling brings back, and
+# where a block is placed: the first one a half block before zero, the
+# samples to drop, a page's position, and the last page's cut.
+
+law vorbis_packet_int16_of_minus_one:
+  {VK.s16(65535) == 4294967295 : U32}
+
+law vorbis_packet_int16_of_the_largest:
+  {VK.s16(32767) == 32767 : U32}
+
+law vorbis_packet_int16_cuts_the_high_bits:
+  {VK.s16(65541) == 5 : U32}
+
+law vorbis_packet_int16_of_32768_is_negative:
+  {VK.s16(32768) == 4294934528 : U32}
+
+law vorbis_packet_minus_one_is_under_zero:
+  {VK.under(4294967295, 0) == True{} : Bool}
+
+law vorbis_packet_zero_is_not_under_minus_one:
+  {VK.under(0, 4294967295) == False{} : Bool}
+
+law vorbis_packet_half_of_a_negative_int_keeps_its_sign:
+  {VK.halved(4294967293) == 4294967294 : U32}
+
+law vorbis_packet_half_of_an_int:
+  {VK.halved(7) == 3 : U32}
+
+law vorbis_packet_predicted_point_on_a_rising_line:
+  {VK.predict(5, 0, 10, 20, 40) == 30 : U32}
+
+law vorbis_packet_predicted_point_on_a_falling_line:
+  {VK.predict(5, 0, 10, 40, 20) == 30 : U32}
+
+law vorbis_packet_predicted_point_is_cut_toward_the_first:
+  {((VK.predict(1, 0, 3, 0, 1) * 10) + VK.predict(2, 0, 3, 10, 0) : U32) == 4 : U32}
+
+law vorbis_packet_class_value_shifts_down:
+  {VK.shifted(13, 2) == 3 : U32}
+
+law vorbis_packet_no_class_value_stays_none:
+  {VK.shifted(4294967295, 2) == 4294967295 : U32}
+
+law vorbis_packet_floor_ranges:
+  {((((VK.range.of(1) * 1000000) + (VK.range.of(2) * 10000)) + (VK.range.of(3) * 100)) + VK.range.of(4) : U32) == 257288664 : U32}
+
+law vorbis_packet_coupled_channels_without_floors_stay_out:
+  {VK.coupled.zeros([0], [1], 3) == 3 : U32}
+
+law vorbis_packet_coupled_channel_with_a_floor_brings_the_other:
+  {VK.coupled.zeros([0], [1], 2) == 0 : U32}
+
+law vorbis_packet_coupled_pairs_bring_each_other_in_turn:
+  {VK.coupled.zeros([0, 1], [1, 2], 6) == 0 : U32}
+
+law vorbis_packet_coupled_pairs_do_not_reach_back:
+  {VK.coupled.zeros([1, 0], [2, 1], 6) == 4 : U32}
+
+law vorbis_packet_first_block_is_placed_a_half_block_before_zero:
+  {VK.placed.of(True{}, False{}, False{}, 0, 0, False{}, 0, 512, 0, 256, 512) == VK.Placed{0, True{}, 0, 512, 0} : VK.Placed}
+
+law vorbis_packet_long_first_block_leaves_samples_to_drop:
+  {VK.placed.of(True{}, False{}, False{}, 0, 0, False{}, 0, 1024, 192, 704, 832) == VK.Placed{0, True{}, 192, 832, 192} : VK.Placed}
+
+law vorbis_packet_samples_to_drop_move_the_left_part_up:
+  {VK.placed.of(False{}, False{}, False{}, 0, 1000, True{}, 100, 512, 0, 256, 512) == VK.Placed{1156, True{}, 0, 512, 100} : VK.Placed}
+
+law vorbis_packet_samples_to_drop_past_the_block_s_left_part:
+  {VK.placed.of(False{}, False{}, False{}, 0, 1000, True{}, 300, 512, 0, 256, 512) == VK.Placed{1000, True{}, 44, 512, 256} : VK.Placed}
+
+law vorbis_packet_block_without_a_position_is_a_window_further:
+  {VK.placed.of(False{}, False{}, False{}, 0, 1000, True{}, 0, 512, 0, 256, 512) == VK.Placed{1256, True{}, 0, 512, 0} : VK.Placed}
+
+law vorbis_packet_unknown_position_stays_unknown:
+  {VK.placed.of(False{}, False{}, False{}, 0, 7, False{}, 0, 512, 0, 256, 512) == VK.Placed{7, False{}, 0, 512, 0} : VK.Placed}
+
+law vorbis_packet_page_position_places_the_block:
+  {VK.placed.of(False{}, True{}, False{}, 5000, 1000, False{}, 0, 512, 0, 256, 512) == VK.Placed{5000, True{}, 0, 512, 0} : VK.Placed}
+
+law vorbis_packet_last_page_cuts_the_block_short:
+  {VK.placed.of(False{}, True{}, True{}, 1100, 1000, True{}, 0, 512, 0, 256, 512) == VK.Placed{1100, True{}, 0, 100, 0} : VK.Placed}
+
+law vorbis_packet_last_page_before_the_block_gives_none:
+  {VK.placed.of(False{}, True{}, True{}, 900, 1000, True{}, 0, 512, 0, 256, 512) == VK.Placed{1000, True{}, 0, 0, 0} : VK.Placed}
+
+law vorbis_packet_last_page_past_the_block_does_not_cut_it:
+  {VK.placed.of(False{}, True{}, True{}, 9000, 1000, True{}, 0, 512, 0, 256, 512) == VK.Placed{9000, True{}, 0, 512, 0} : VK.Placed}
+
+law vorbis_packet_no_data_is_no_decoder:
+  {VK.open(M.Glibc239Libm{}, Nil{}) == VK.Closed{VS.Failed{30}} : VK.Decoder}
+
+# After a refusal (the reader's error 1001) a call decodes nothing and
+# leaves the reader, the floats and the position as they are.
+law vorbis_packet_refused_reader_decodes_nothing:
+  {VK.packet.decode(VK.Plan{2, 64, 64, Nil{}, Nil{}, Nil{}, Nil{}, Nil{}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, VX.Factors{St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Row.new(0, 0.0), St.Index.new(0, 0)}, St.Row.new(0, 0.0)}, VK.State{Ogg.undefined(Ogg.open([1, 2, 3])), Nil{}, 7, True{}, 3}) == VK.Packet{VK.State{Ogg.undefined(Ogg.open([1, 2, 3])), Nil{}, 7, True{}, 3}, False{}, 0, 0, 0} : VK.Packet}
