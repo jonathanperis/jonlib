@@ -1015,7 +1015,21 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
        Two things it showed: C's `-x` of a float is its sign changed
        (`x * -1` here, not `0 - x`: a sine of 0 is -0), and a NaN's bits
        are the machine's (the JavaScript lane keeps neither sign nor
-       payload: compare NaNs as NaNs). Next: `jar_xm_next_of_sample`.
+       payload: compare NaNs as NaNs). **`jar_xm_next_of_sample` is
+       done too** (`src/xm_sample.bend`, gate `xm-sample`):
+       `Sm.sample.next(sampled, tone, head, previous)` with
+       `Stepped.fine`; a `Tone`'s data is a `store` row and its `count`
+       the floats the loader read. Its reference puts the sample's floats
+       at the end of readable memory before 20 GiB of `PROT_NONE`
+       (`mmap` with `MAP_NORESERVE`), so that a read past them faults:
+       the way to have jar_xm show reads through a pointer, which the
+       `bounds` check does not see. The ping-pong branch is dead code
+       (the loader's `switch` falls through to forward) and is not
+       ported; the ramp it computes while a sample plays is overwritten
+       in the same call. Next: (2b) rows, ticks and effects over a whole
+       context (the channel's 60 fields: keep the per-sample `Head` and
+       the pitch functions as they are and build the channel around
+       them), `jar_xm_reset` and `jar_xm_get_remaining_samples`.
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`

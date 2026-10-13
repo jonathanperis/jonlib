@@ -60,6 +60,7 @@ import ./src/vorbis_frame.bend as VFr
 import ./src/vorbis_length.bend as VL
 import ./src/xm_module.bend as Xm
 import ./src/xm_pitch.bend as XmP
+import ./src/xm_sample.bend as XmS
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -5173,3 +5174,47 @@ law xm_pitch_envelope_point_is_read_by_its_number:
 
 law xm_pitch_envelope_point_past_the_12th_is_none_of_its:
   {XmP.point.nth([Xm.Point{0, 0}, Xm.Point{4, 64}, Xm.Point{10, 32}, Xm.Point{20, 48}, Xm.Point{30, 0}], 99) == Xm.Point{0, 0} : Xm.Point}
+
+# An XM channel's next sample (src/xm_sample.bend): the values kept of the
+# sample before a new note, the float after a position (a loop's start at
+# its end, the right side in the data's second half), and where a step's
+# value goes.
+
+law xm_sample_kept_value_is_read_by_its_number:
+  {XmS.nth([1.0, 2.0, 3.0], 1) == 2.0 : F32}
+
+law xm_sample_kept_value_past_the_eight_is_zero:
+  {XmS.nth([1.0, 2.0, 3.0], 9) == 0.0 : F32}
+
+law xm_sample_kept_value_is_put_at_its_number:
+  {XmS.put([1.0, 2.0, 3.0], 1, 9.0) == [1.0, 9.0, 3.0] : +List<F32>}
+
+law xm_sample_value_past_the_kept_ones_is_not_put:
+  {XmS.put([1.0, 2.0, 3.0], 5, 9.0) == [1.0, 2.0, 3.0] : +List<F32>}
+
+law xm_sample_float_after_a_loop_s_end_is_its_start:
+  {XmS.after(XmS.Tone{16, 4, 8, 12, True{}, False{}, St.Row.new(0, 0.0), 16}, 12, 0) == 4 : U32}
+
+law xm_sample_float_after_inside_a_loop_is_the_next:
+  {XmS.after(XmS.Tone{16, 4, 8, 12, True{}, False{}, St.Row.new(0, 0.0), 16}, 11, 0) == 11 : U32}
+
+law xm_sample_right_side_is_the_data_s_second_half:
+  {XmS.after(XmS.Tone{16, 4, 8, 12, True{}, False{}, St.Row.new(0, 0.0), 16}, 12, 16) == 20 : U32}
+
+law xm_sample_float_after_without_a_loop_is_the_next:
+  {XmS.after(XmS.Tone{16, 0, 0, 0, False{}, False{}, St.Row.new(0, 0.0), 16}, 12, 0) == 12 : U32}
+
+law xm_sample_loop_always_has_a_float_after:
+  {XmS.follows(XmS.Tone{16, 4, 8, 12, True{}, False{}, St.Row.new(0, 0.0), 16}, 4000) == True{} : Bool}
+
+law xm_sample_last_float_without_a_loop_has_none_after:
+  {XmS.follows(XmS.Tone{16, 0, 0, 0, False{}, False{}, St.Row.new(0, 0.0), 16}, 16) == False{} : Bool}
+
+law xm_sample_float_before_the_last_has_one_after:
+  {XmS.follows(XmS.Tone{16, 0, 0, 0, False{}, False{}, St.Row.new(0, 0.0), 16}, 15) == True{} : Bool}
+
+law xm_sample_value_of_a_new_note_s_ramp_is_kept:
+  {XmS.given(XmS.Head{0.5, 1.0, 3, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 0.0, 0.0}, 2, 0.25, 0.75) == XmS.Head{0.5, 1.0, 3, [0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.75, 0.0, 0.0, 0.0, 0.0, 0.0], 0.0, 0.0} : XmS.Head}
+
+law xm_sample_value_of_a_frame_is_the_channel_s:
+  {XmS.given(XmS.Head{0.5, 1.0, 3, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 0.0, 0.0}, 4294967295, 0.25, 0.75) == XmS.Head{0.5, 1.0, 3, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 0.25, 0.75} : XmS.Head}

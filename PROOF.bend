@@ -4003,3 +4003,42 @@ def Laws.xm_pitch_envelope_point_is_read_by_its_number():
 
 def Laws.xm_pitch_envelope_point_past_the_12th_is_none_of_its():
   {==}
+
+def Laws.xm_sample_kept_value_is_read_by_its_number():
+  {==}
+
+def Laws.xm_sample_kept_value_past_the_eight_is_zero():
+  {==}
+
+def Laws.xm_sample_kept_value_is_put_at_its_number():
+  {==}
+
+def Laws.xm_sample_value_past_the_kept_ones_is_not_put():
+  {==}
+
+def Laws.xm_sample_float_after_a_loop_s_end_is_its_start():
+  {==}
+
+def Laws.xm_sample_float_after_inside_a_loop_is_the_next():
+  {==}
+
+def Laws.xm_sample_right_side_is_the_data_s_second_half():
+  {==}
+
+def Laws.xm_sample_float_after_without_a_loop_is_the_next():
+  {==}
+
+def Laws.xm_sample_loop_always_has_a_float_after():
+  {==}
+
+def Laws.xm_sample_last_float_without_a_loop_has_none_after():
+  {==}
+
+def Laws.xm_sample_float_before_the_last_has_one_after():
+  {==}
+
+def Laws.xm_sample_value_of_a_new_note_s_ramp_is_kept():
+  {==}
+
+def Laws.xm_sample_value_of_a_frame_is_the_channel_s():
+  {==}
