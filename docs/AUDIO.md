@@ -444,15 +444,14 @@ scalar ones: the reference for the samples is the build as it is.
 
 ## Ogg Vorbis (in progress)
 
-`src/vorbis_codebook.bend`, `src/vorbis_ogg.bend` and
-`src/vorbis_setup.bend` are the start of an adaptation of stb_vorbis
-v1.22 (pinned raylib's
+`src/vorbis_codebook.bend`, `src/vorbis_ogg.bend`,
+`src/vorbis_setup.bend` and `src/vorbis_maps.bend` are the start of an
+adaptation of stb_vorbis v1.22 (pinned raylib's
 `src/external/stb_vorbis.c`), which raylib's `LoadWave`, `LoadSound` and
 `LoadMusicStream` call for `.ogg` files. Nothing is decoded yet:
 `Wave.decode(".ogg", ...)` is still `UnsupportedWaveFormat`. What is here
-is the reading of the data, the setup as far as the codebooks (both
-below) and what the setup makes of a codebook's code lengths, once it has
-read them:
+is the reading of the data, the whole setup header (all below) and what
+the setup makes of a codebook's code lengths, once it has read them:
 
 - **The codes** (`compute_codewords`; `codewords`, and `book.of` for all the tables). A length is 1 to
   31 bits, or 255 for a symbol without a code. The first symbol with a code
@@ -657,23 +656,77 @@ What the three headers do, with what is not obvious:
   fails.
 
 `tools/vorbis_setup_probe.py` (gate `vorbis-setup`) runs stb_vorbis's
-`start_decoder` on each file. Where it fails before it allocates the
-floors the row is its error code; otherwise the row is the header's fields
-and every codebook: its fields, the count and the hash of its
+`start_decoder` on each file and compares, for this part, the header's
+fields and every codebook: its fields, the count and the hash of its
 multiplicands' bits, and the tables the codebook gate compares. The probe
 also reads the headers itself (`model`, with the rules above restated in
 Python): that tells it which files the port refuses, on which stb_vorbis
 is not run, and its reading is held against stb_vorbis's on every other
-file. 143 files: raylib's `target.ogg` (37 codebooks), 40 copies with one
-to three bits changed inside its codebooks, and 102 streams built from
-headers (codebooks of each kind of lengths and lookup, 256 codebooks in
-one setup, every failure above, every refusal with its neighbour that is
-not one). 41 read (857 codebooks, 4.2 million multiplicands), 90 failed
-with stb_vorbis's code, 12 refused.
+file. For this part: raylib's `target.ogg` (37 codebooks), 40 copies with
+one to three bits changed inside its codebooks, and 102 streams built
+from headers (codebooks of each kind of lengths and lookup, 256 codebooks
+in one setup, every failure above, every refusal with its neighbour that
+is not one). The totals are with the next part's.
 
-Still to come: the rest of the setup (floors, residues, mappings, modes
-and the transform's tables), the packets (floors, residues), the inverse
-MDCT, and then the waves and the music.
+### The setup: floors, residues, mappings and modes
+
+`src/vorbis_maps.bend` reads the rest of the setup header:
+`maps.read(setup)` takes what `setup.codebooks` gave and gives the floors,
+the residues, the mappings, the modes, the stage the setup came to (0 not
+to the floors; 1 to 4 failed in the floors, the residues, the mappings,
+the modes; 5 the end) and `first_audio_page_offset`. Each section is a
+count of 6 bits and 1.
+
+- **Floors.** Type 0 is `VORBIS_feature_not_supported` (4): stb_vorbis does
+  not decode it. Type 1: up to 31 partitions, each of a class; a class has
+  1 to 8 points, 0 to 3 bits of subclass, a masterbook where it has
+  subclasses and a codebook for each subclass (read as its number and 1:
+  0 is none). The classes read are those up to the largest a partition
+  names. A floor's points are at 0, at `1 << rangebits`, and where the
+  header says, in `rangebits` bits each: 250 at most. Two points at one
+  place are an invalid setup (so is any point of a floor of no
+  `rangebits`). stb_vorbis sorts the points by place (`sorted_order`) and
+  finds for each point from the third on its nearest neighbours below and
+  above among the points before it (`neighbors`): both are kept.
+- **Residues.** A type of 0 to 2, a begin and an end (the end not under
+  the begin), a partition size, 1 to 64 classifications, a classbook, and
+  for each classification a cascade (which of eight codebooks it has) and
+  those codebooks. stb_vorbis then allocates a classification for every
+  dimension of every entry of the classbook: `entries * dimensions` bytes
+  in as many allocations as entries, which the port does not need (it is
+  the entry's number written in the base of the classifications) but which
+  is refused past 16 MiB (refusal 3).
+- **Mappings.** Type 0; 1 to 16 submaps; coupling steps, each a magnitude
+  and an angle channel in as many bits as the last channel's number takes
+  (two channels of the stream, not the same one: a mono stream cannot be
+  coupled); two reserved bits; a submap for each channel where there are
+  several; a floor and a residue for each submap. **stb_vorbis has room for
+  15 submaps**: the sixteenth's floor is written over the first's residue.
+  A mapping of 16 submaps is refused (2), once everything before the
+  sixteenth has passed its tests; one that fails before it fails as in
+  stb_vorbis.
+- **Modes.** A block size flag, a window type and a transform type that
+  must be 0, a mapping.
+- **A header that is cut goes on as zeros**, and zeros are a valid end: a
+  setup header with nothing after its floors has one residue of nothing,
+  one mapping and one mode, and `start_decoder` succeeds.
+- **`first_audio_page_offset`** is where the data is after the header if
+  the header's page is used up, and 0 if the page has another packet.
+
+The gate `vorbis-setup` covers this too. A row is whether
+`start_decoder` succeeded, its error code, the stage it came to (told by
+which of `floor_config`, `residue_config`, `mapping` and `mode_count` it
+had set) and everything it had read whole by then, compared field by
+field: 249 files (60 more copies of `target.ogg` damaged after its
+codebooks; 46 more built streams, with floors of 2 to 250 points, residues
+of each type and 64 classifications, mappings of 15 submaps and three
+couplings, 64 modes, each test failed in turn, each refusal with its
+neighbour). 54 whole setups, 180 failures with the same code at the same
+stage, 15 refusals; 3141 codebooks, 179 floors, 130 residues, 103
+mappings, 155 modes.
+
+Still to come: the transform's tables, the packets (floors, residues), the
+inverse MDCT, and then the waves and the music.
 
 ## WaveFormat
 

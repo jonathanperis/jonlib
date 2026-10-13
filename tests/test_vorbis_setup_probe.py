@@ -49,35 +49,64 @@ class HeaderTests(unittest.TestCase):
     def test_a_setup_is_read_back(self):
         books = [sp.book(2, [2, 2, 2, 2]), sp.book(1, [255, 1, 255, 255, 255, 255, 255, 255], sparse=True), sp.book(3, runs=(1, [1, 1, 2])),
                  sp.book(2, [2, 2, 2, 2], lookup=(1, 0, ONE, 5, True, [1, 2])), sp.book(2, [1, 1], lookup=(2, ONE, 0, 3, False, [1, 2, 3, 4]))]
-        kind, head, made = sp.model(sp.stream(third=sp.setup(books)))
-        self.assertEqual((kind, head, len(made)), (sp.GOING, [2, 44100, 256, 2048], 5))
+        # without floors the header ends in zeros: a floor of type 0, which stb_vorbis does not decode
+        kind, code, stage, head, made = sp.model(sp.stream(third=sp.setup(books)))
+        self.assertEqual((kind, code, stage, head, len(made)), (sp.FAILED, 4, 1, [2, 44100, 256, 2048], 5))
         self.assertEqual([(m['dimensions'], m['entries'], m['sparse'], m['lookup'], m['values'], m['count']) for m in made],
                          [(2, 4, 0, 0, 0, 0), (1, 8, 1, 0, 0, 0), (3, 4, 0, 0, 0, 0), (2, 4, 0, 2, 2, 8), (2, 2, 0, 2, 4, 4)])
         self.assertEqual((made[3]['least'], made[3]['step'], made[3]['bits'], made[3]['sequence']), (0, 0x3F800000, 5, 1))
 
     def test_what_the_model_fails(self):
         fails = lambda **parts: sp.model(sp.stream(**parts))
-        self.assertEqual(fails(first=sp.identification(channels=17)), (sp.FAILED, 5))
-        self.assertEqual(fails(first=sp.identification(small=5)), (sp.FAILED, 20))
-        self.assertEqual(fails(flag=0), (sp.FAILED, 34))
-        self.assertEqual(fails(first=b'fishead\x00' + bytes(56)), (sp.FAILED, 38))
-        self.assertEqual(fails(second=b''), (sp.FAILED, 0))
-        self.assertEqual(fails(second=sp.comment(vendor_length=0x80000000)), (sp.FAILED, 3))
-        self.assertEqual(fails(packets=[sp.comment()]), (sp.FAILED, 30))
-        self.assertEqual(fails(third=sp.setup([sp.book(1, [1, 1, 1])])), (sp.FAILED, 20))            # no tree
-        self.assertEqual(fails(third=sp.setup([sp.book(1, [])])), (sp.FAILED, 3))                    # no entries
-        self.assertEqual(fails(third=sp.setup([sp.book(1, [1, 1])], transfers=(0, 1))), (sp.FAILED, 20))
+        self.assertEqual(fails(first=sp.identification(channels=17)), (sp.FAILED, 5, 0))
+        self.assertEqual(fails(first=sp.identification(small=5)), (sp.FAILED, 20, 0))
+        self.assertEqual(fails(flag=0), (sp.FAILED, 34, 0))
+        self.assertEqual(fails(first=b'fishead\x00' + bytes(56)), (sp.FAILED, 38, 0))
+        self.assertEqual(fails(second=b''), (sp.FAILED, 0, 0))
+        self.assertEqual(fails(second=sp.comment(vendor_length=0x80000000)), (sp.FAILED, 3, 0))
+        self.assertEqual(fails(packets=[sp.comment()]), (sp.FAILED, 30, 0))
+        self.assertEqual(fails(third=sp.setup([sp.book(1, [1, 1, 1])])), (sp.FAILED, 20, 0))         # no tree
+        self.assertEqual(fails(third=sp.setup([sp.book(1, [])])), (sp.FAILED, 3, 0))                 # no entries
+        self.assertEqual(fails(third=sp.setup([sp.book(1, [1, 1])], transfers=(0, 1))), (sp.FAILED, 20, 0))
+
+    def test_a_whole_setup_is_read_back(self):
+        floors = [sp.floor(), sp.floor(partitions=(0, 1), classes=((2, 0, 0, (-1,)), (1, 1, 0, (0, -1))), multiplier=3, rangebits=5, places=(9, 30, 4))]
+        residues = [sp.residue(kind=2, begin=3, end=40, part_size=8, cascades=(0, 5, 0x81), books=(0, 0, 0, 0))]
+        mappings = [sp.mapping(coupling=((1, 0),), submaps=((1, 0), (0, 0)), mux=(1, 0))]
+        made = sp.model(sp.stream(third=sp.whole(floors=floors, residues=residues, mappings=mappings, modes=[sp.mode(1), sp.mode()])))
+        self.assertEqual((made[:3], len(made)), ((sp.GOING, 0, 5), 10))
+        none = 0xFFFFFFFF
+        self.assertEqual(made[5], [[[], [], 1, 4, [0, 16], [0, 1], [], []],
+                                   [[0, 1], [[2, 0, 0, [none]], [1, 1, 0, [0, none]]], 3, 5, [0, 32, 9, 30, 4], [0, 4, 2, 3, 1], [0, 2, 0], [1, 1, 2]]])
+        self.assertEqual(made[6], [[2, 3, 40, 8, 3, 0, [[none] * 8, [0, none, 0] + [none] * 5, [0] + [none] * 6 + [0]]]])
+        self.assertEqual((made[7], made[8]), ([[[1], [0], [1, 0], 2, [1, 0], [0, 0]]], [[1, 0], [0, 0]]))
+        self.assertEqual(made[9], len(sp.stream(third=sp.whole(floors=floors, residues=residues, mappings=mappings, modes=[sp.mode(1), sp.mode()]))))   # the audio would begin after the header's page
+
+    def test_the_stage_a_setup_fails_in(self):
+        fails = lambda **parts: sp.model(sp.stream(third=sp.whole(**parts)))[:3]
+        self.assertEqual(fails(floors=[sp.floor(kind=0)]), (sp.FAILED, 4, 1))
+        self.assertEqual(fails(floors=[sp.floor(partitions=(0,), classes=((2, 0, 0, (0,)),), places=(3, 3))]), (sp.FAILED, 20, 1))    # two points at one place
+        self.assertEqual(fails(residues=[sp.residue(begin=9, end=8)]), (sp.FAILED, 20, 2))
+        self.assertEqual(fails(mappings=[sp.mapping(coupling=((0, 0),))]), (sp.FAILED, 20, 3))
+        self.assertEqual(fails(modes=[sp.mode(mapped=1)]), (sp.FAILED, 20, 4))
+        self.assertEqual(sp.model(sp.stream(third=sp.setup([sp.book(1, [1, 1])], floors=[sp.floor()])))[:3], (sp.GOING, 0, 5))        # the sections that are not there are zeros
 
     def test_what_the_model_refuses(self):
         refused = lambda **parts: sp.model(sp.stream(**parts))
         self.assertEqual(refused(second=sp.comment(vendor_length=sp.BUDGET + 1)), (sp.REFUSED, 3))
-        self.assertEqual(refused(second=sp.comment(vendor_length=sp.BUDGET))[0], sp.GOING)
+        self.assertEqual(refused(second=sp.comment(vendor_length=sp.BUDGET))[:3], (sp.FAILED, 4, 1))   # read; the least setup has no floor
         self.assertEqual(refused(second=sp.comment(count=(1 << 21) + 1)), (sp.REFUSED, 3))
-        self.assertEqual(refused(second=sp.comment(count=1 << 28)), (sp.FAILED, 3))
+        self.assertEqual(refused(second=sp.comment(count=1 << 28)), (sp.FAILED, 3, 0))
         self.assertEqual(refused(third=sp.setup([sp.book(1, runs=(20, [sp.ENTRIES + 1]))])), (sp.REFUSED, 4))
         self.assertEqual(refused(third=sp.setup([sp.book(31, [1, 1], lookup=(1, 0, ONE, 1, False, [1]))])), (sp.REFUSED, 1))
         self.assertEqual(refused(third=sp.setup([sp.book(65535, runs=(16, [1 << 16]), lookup=(2, 0, ONE, 1, False, []))])), (sp.REFUSED, 2))
         self.assertEqual(refused(third=sp.setup([sp.book(1100, runs=(12, [1 << 12]), lookup=(2, 0, ONE, 1, False, []))])), (sp.REFUSED, 3))
+        sixteen = [(0, 0)] * 16
+        self.assertEqual(refused(third=sp.whole(mappings=[sp.mapping(submaps=sixteen, mux=(15, 0))])), (sp.REFUSED, 2))
+        self.assertEqual(refused(third=sp.whole(mappings=[sp.mapping(submaps=sixteen[:15], mux=(14, 0))]))[:3], (sp.GOING, 0, 5))
+        self.assertEqual(refused(third=sp.whole(mappings=[sp.mapping(submaps=sixteen, mux=(15, 0), reserved=1)]))[:3], (sp.FAILED, 20, 3))   # it fails before the sixteenth
+        self.assertEqual(refused(third=sp.whole(books=[sp.book(4097, runs=(12, [4096]))])), (sp.REFUSED, 3))
+        self.assertEqual(refused(third=sp.whole(books=[sp.book(4096, runs=(12, [4096]))]))[:3], (sp.GOING, 0, 5))
 
     def test_leaves(self):
         self.assertEqual([sp.leafed(lengths) for lengths in ([1, 1], [1, 1, 1], [2, 1, 2], [255, 255], [1, 2, 3, 3], [1, 2, 3, 3, 9], [5], [31, 31])], [True, False, True, True, True, False, True, True])
@@ -98,8 +127,8 @@ class PagingTests(unittest.TestCase):
         self.assertEqual((where[0], data[5], data[58 + 5], len(where)), ((0, 58), 2, 0, 2))
         # where the codebooks of the setup header are: after its type, its name and their count
         built = sp.stream(third=sp.setup([sp.book(1, [1, 1]), sp.book(2, [2, 2, 2, 2])]))
-        start, end = sp.codebooks_end(built)
-        self.assertEqual((built[start - 8:start - 1], built[start - 1], built[start:start + 3], end - start), (b'\x05vorbis', 1, b'BCV', 22))   # 80 and 90 bits
+        start, end, last = sp.codebooks_end(built)
+        self.assertEqual((built[start - 8:start - 1], built[start - 1], built[start:start + 3], end - start, last), (b'\x05vorbis', 1, b'BCV', 22, len(built)))   # 80 and 90 bits
 
 
 class CasesTests(unittest.TestCase):
@@ -108,11 +137,18 @@ class CasesTests(unittest.TestCase):
         self.assertEqual(streams, sp.built())
         read = {name: sp.model(data) for name, data in streams.items()}
         kinds = [made[0] for made in read.values()]
-        self.assertTrue(kinds.count(sp.GOING) >= 25 and kinds.count(sp.REFUSED) >= 10)
-        self.assertEqual({made[1] for made in read.values() if made[0] == sp.FAILED}, {0, 3, 5, 10, 20, 30, 34, 38})
+        self.assertTrue(kinds.count(sp.GOING) >= 15 and kinds.count(sp.REFUSED) >= 14)
+        self.assertEqual({made[1] for made in read.values() if made[0] == sp.FAILED}, {0, 3, 4, 5, 10, 20, 30, 34, 38})
         self.assertEqual({made[1] for made in read.values() if made[0] == sp.REFUSED}, {1, 2, 3, 4})
-        self.assertEqual((read['at-budget'][0], read['over-budget'], read['lookup-1-30-dimensions'][0], read['lookup-1-31-dimensions']), (sp.GOING, (sp.REFUSED, 4), sp.GOING, (sp.REFUSED, 1)))
-        self.assertEqual(len(read['many'][2]), 256)
+        self.assertEqual({made[2] for made in read.values() if made[0] == sp.FAILED}, {0, 1, 2, 3, 4})
+        # read to the floors, which the streams of codebooks alone do not have
+        self.assertEqual((read['at-budget'][:3], read['over-budget'], read['lookup-1-30-dimensions'][:3], read['lookup-1-31-dimensions']), ((sp.FAILED, 4, 1), (sp.REFUSED, 4), (sp.FAILED, 4, 1), (sp.REFUSED, 1)))
+        self.assertEqual(len(read['many'][4]), 256)
+        self.assertEqual((read['whole-all'][:3], max(len(floor[4]) for floor in read['whole-floors'][5]), read['whole-then-a-packet'][9], read['whole-then-a-page'][9] > 58), ((sp.GOING, 0, 5), 250, 0, True))
+
+    def test_places(self):
+        found = sp.places(sp.Rng(3), 248, 9)
+        self.assertEqual((len(found), len(set(found)), 0 in found, max(found) < 512), (248, 248, False, True))
 
 
 if __name__ == '__main__':
