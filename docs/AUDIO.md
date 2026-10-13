@@ -448,8 +448,8 @@ scalar ones: the reference for the samples is the build as it is.
 `src/vorbis_setup.bend`, `src/vorbis_maps.bend`,
 `src/vorbis_tables.bend`, `src/vorbis_decode.bend`,
 `src/vorbis_mdct.bend`, `src/vorbis_residue.bend`,
-`src/vorbis_floor.bend` and `src/vorbis_packet.bend` are the start of an
-adaptation of stb_vorbis
+`src/vorbis_floor.bend`, `src/vorbis_packet.bend` and
+`src/vorbis_frame.bend` are the start of an adaptation of stb_vorbis
 v1.22 (pinned raylib's
 `src/external/stb_vorbis.c`), which raylib's `LoadWave`, `LoadSound` and
 `LoadMusicStream` call for `.ogg` files. No wave is made yet:
@@ -457,7 +457,8 @@ v1.22 (pinned raylib's
 is the reading of the data, the whole setup header, the transform's
 tables, the decoding of a codebook's symbols and vectors, the inverse
 MDCT, the residues, a floor's curve, the decoding of a packet into its
-block of floats (all below) and what the setup makes
+block of floats, the frames and their 16-bit samples (all below) and what
+the setup makes
 of a codebook's code lengths, once it has read them:
 
 - **The codes** (`compute_codewords`; `codewords`, and `book.of` for all the tables). A length is 1 to
@@ -1003,7 +1004,7 @@ a channel (`channel_buffers`), the sample position of the next block
 (`discard_samples_deferred`). `packet.decode(plan, state)` is one call,
 `Packet{state, fine, len, left, right}`: the C answer, the count of the
 block's samples and where its left and right parts begin. The floats are
-the block before its window; windows and samples are the next piece.
+the block before its window.
 
 - **The packet's start.** Packets whose first bit is set are not audio and
   are passed over. The mode's number takes the bits the last mode's number
@@ -1068,9 +1069,97 @@ A packet takes about a third of a second in the JavaScript lane (the
 CPU lanes are several times faster): the persistent rows cost a path a
 float, and the whole of `target.ogg` is half a minute there.
 
-Still to come: the windows and the samples (`vorbis_finish_frame`,
-`stb_vorbis_get_samples_short_interleaved`), the stream's length, and then
-the waves and the music.
+### Frames and samples
+
+`src/vorbis_frame.bend` is what stb_vorbis does with a decoded block:
+`vorbis_finish_frame` with `get_window`, `vorbis_pump_first_frame`,
+`stb_vorbis_open_memory`, `stb_vorbis_get_frame_float` and
+`stb_vorbis_get_samples_short_interleaved` with
+`convert_channels_short_interleaved`.
+
+`memory.open(libm, bytes)` is `Ready{plan, frames, rate, first}` (or
+`Unready{status}`): the setup read and the first frame pumped, with the
+stream's sample rate and `first_audio_page_offset` (where the data is when
+the setup's packet ends its page; 0 when audio packets share that page).
+`Frames` is the decoder between frames: the packets' state, each channel's
+`previous_window` and its length, where the samples not yet taken are in
+the channels' floats and how many samples the frames have given.
+
+- **A frame** (`frame.float(plan, frames)`, `stb_vorbis_get_frame_float`):
+  the next packet decoded, and its block's left part mixed with what the
+  block before left, each under its half of the window:
+  `buffer[left + j]*w[j] + previous[j]*w[n - 1 - j]`, two float products
+  and a sum. The block's right part is then kept for the next frame, and
+  the frame gives the samples from `left` to `right`. The first frame has
+  nothing to mix with and gives none (that is the frame `memory.open`
+  pumps).
+- **No window.** The window is the one of the block twice as long as what
+  the last block left. A last page's position that cuts its last block
+  short leaves another length, or one below 0; if more packets follow (pages
+  after the one flagged as the last), `get_window` has no window, and every
+  frame from there on gives nothing and changes nothing but the packets'
+  state. Blocks whose flags disagree with their neighbours (a long block
+  that says a long one follows, before a short one) are mixed as their
+  lengths say, over floats past the short block's end, inside the channel's
+  buffer in every case.
+- **Samples** (`samples.read(plan, frames, shorts)`,
+  `stb_vorbis_get_samples_short_interleaved` for the stream's own count of
+  channels, which is how raylib calls it): `shorts/channels` samples of each
+  channel, interleaved, taken from the samples at hand and then from frame
+  after frame; a frame that gives no sample ends the read early, as in
+  stb_vorbis. `Read{frames, count, samples, on}`.
+- **A float's short.** raylib's build converts with
+  `FAST_SCALED_FLOAT_TO_INT(temp, x, 15)`: `temp.f = x + MAGIC(15)`, then
+  the int `temp.i - ADDEND(15)`. `MAGIC(15)` is written as
+  `1.5f*(1 << 8) + 0.5f/(1 << 15)`, but the second term is half a float's
+  step at 384 and is lost: the constant is 384.0f, whose bits are
+  `ADDEND(15)` (the reference program checks both). So the sum's bits count
+  the steps of 1/32768 from 384: `x*32768` rounded to the nearest, to the
+  even one of two as near, and then kept to -32768 and 32767
+  (`sample.short`).
+- **Refused (error 1001): two kinds of float** (`sample.refused`). For a
+  sum below 0 and above -384 (a float from -768 to -384, both left out) the
+  int subtraction overflows, which C leaves undefined (a wrapped result
+  would be 32767 for a sample far below the range). And a NaN's short goes
+  by its sign bit, which is the machine's (an invalid operation makes a
+  negative NaN on x86 and a positive one on ARM). A read that meets one
+  leaves the reader's error 1001 (`Frames.refused`), and what it read is
+  not to be used. Floats that large come only of codebooks whose values
+  are: target.ogg's samples stay far inside, damaged or not.
+
+`tools/vorbis_frame_probe.py` (gate `vorbis-frame`) opens each of 22 files
+with `stb_vorbis_open_memory` and runs a script of 293 calls in all, each
+`stb_vorbis_get_frame_float` or `stb_vorbis_get_samples_short_interleaved`
+for some count of shorts (even, odd, less than a frame, more than the
+stream has). After each call the answer, the shorts and everything the
+decoder keeps are hashed: the reader, the sample position, every float of
+the channels' buffers, the previous windows, where the samples at hand are
+and the samples given; at the opening, the sample rate and where the audio
+begins too. The files are raylib's `target.ogg` read whole as `LoadWave`
+asks (88200 shorts at once) and in a music stream's steps, two cut copies,
+three damaged inside their packets, and 14 streams built by the probe (one
+of them read two ways): one channel, blocks of 64 and 256 samples, a floor of two points and a residue
+of type 1 whose codebook's values are 0, 1 and a chosen loudness either
+way. They are quiet (samples about a short's steps), loud (every sample
+past a short's range), loud enough to be refused, with long and short
+blocks whose windows disagree, with a long first block, with a last page
+whose position cuts the last block short, lies before it or is unknown,
+with pages after such a last page (previous lengths of 6, -24 and -32
+samples), and with audio packets on the setup's page. 248792 samples of
+each channel are compared.
+
+A second decoder in the reference program runs each read first, with the
+function's own loop written out and each float looked at where it would be
+converted; on a float the port refuses it ends the run, the function is
+not called on it, and the port must refuse in the same call. The two
+decoders must agree after every call, which holds the loop written out
+against the function. A table of 314 floats is converted one by one by
+`convert_channels_short_interleaved`: the steps and ties of a short, the
+ends of its range, the ends of what is refused, infinities, NaNs and seeded
+ones; 49 are left out by the reference and refused by the port.
+
+Still to come: the stream's length
+(`stb_vorbis_stream_length_in_samples`), and then the waves and the music.
 
 ## WaveFormat
 

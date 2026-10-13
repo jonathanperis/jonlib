@@ -3619,3 +3619,96 @@ def Laws.vorbis_packet_no_data_is_no_decoder():
 
 def Laws.vorbis_packet_refused_reader_decodes_nothing():
   {==}
+
+def Laws.vorbis_frame_short_of_no_step_is_zero():
+  {==}
+
+def Laws.vorbis_frame_short_counts_the_steps_up():
+  {==}
+
+def Laws.vorbis_frame_short_counts_the_steps_down():
+  {==}
+
+def Laws.vorbis_frame_short_reaches_its_largest():
+  {==}
+
+def Laws.vorbis_frame_short_stops_at_its_largest():
+  {==}
+
+def Laws.vorbis_frame_short_reaches_its_least():
+  {==}
+
+def Laws.vorbis_frame_short_stops_at_its_least():
+  {==}
+
+def Laws.vorbis_frame_short_of_infinity_is_the_largest():
+  {==}
+
+def Laws.vorbis_frame_short_of_minus_infinity_is_the_least():
+  {==}
+
+def Laws.vorbis_frame_short_of_a_sum_of_zero_is_the_least():
+  {==}
+
+def Laws.vorbis_frame_short_of_a_sum_of_minus_384_is_the_least():
+  {==}
+
+def Laws.vorbis_frame_sum_just_above_minus_384_is_undefined():
+  {==}
+
+def Laws.vorbis_frame_sum_of_minus_384_is_defined():
+  {==}
+
+def Laws.vorbis_frame_sum_just_below_zero_is_undefined():
+  {==}
+
+def Laws.vorbis_frame_largest_positive_sum_is_defined():
+  {==}
+
+def Laws.vorbis_frame_nan_by_its_bits():
+  {==}
+
+def Laws.vorbis_frame_negative_nan_by_its_bits():
+  {==}
+
+def Laws.vorbis_frame_infinity_is_no_nan():
+  {==}
+
+def Laws.vorbis_frame_minus_infinity_is_no_nan():
+  {==}
+
+def Laws.vorbis_frame_half_a_block_has_its_window():
+  {==}
+
+def Laws.vorbis_frame_other_lengths_have_no_window():
+  {==}
+
+def Laws.vorbis_frame_length_below_zero_has_no_window():
+  {==}
+
+def Laws.vorbis_frame_first_frame_gives_no_sample():
+  {==}
+
+def Laws.vorbis_frame_frame_gives_its_left_part():
+  {==}
+
+def Laws.vorbis_frame_cut_block_gives_what_it_has():
+  {==}
+
+def Laws.vorbis_frame_no_window_gives_nothing_and_changes_nothing():
+  {==}
+
+def Laws.vorbis_frame_refused_decoder_reads_nothing():
+  {==}
+
+def Laws.vorbis_frame_fewer_shorts_than_channels_read_nothing():
+  {==}
+
+def Laws.vorbis_frame_audio_begins_where_the_reader_is_between_pages():
+  {==}
+
+def Laws.vorbis_frame_audio_inside_a_page_has_no_first_page():
+  {==}
+
+def Laws.vorbis_frame_no_data_is_no_decoder():
+  {==}

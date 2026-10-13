@@ -854,21 +854,39 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
          (half a minute for target.ogg's 105): a whole-file decode in an
          example's replay is affordable, a long music stream will want
          care.
+       - **Done: frames and samples** (`src/vorbis_frame.bend`, gate
+         `vorbis-frame`): `Fr.memory.open(libm, bytes)` is
+         `Ready{plan, frames, rate, first}` (`stb_vorbis_open_memory`:
+         the first frame pumped; `first` is `first_audio_page_offset`),
+         `Fr.frame.float(plan, frames)` and
+         `Fr.samples.read(plan, frames, shorts)` (for the stream's own
+         channels: the only way raylib calls it; the mono/stereo mixing
+         of `compute_stereo_samples` is not ported). Two more refusals
+         (1001, `Fr.Frames.refused`): a float from -768 to -384 (its
+         conversion overflows an int) and a NaN (its short goes by a
+         sign that is the machine's). The gate's probe builds its own
+         small streams (`headers`, `packet`, `audio` in
+         `tools/vorbis_frame_probe.py`: mono, blocks of 64 and 256, a
+         type-1 residue of scalars): the way to get a stream with a
+         chosen property in seconds, also for later gates.
        - Next, in order:
-         (b) `vorbis_finish_frame` (the window over the overlap with
-         `get_window`, `previous_window`, `previous_length`,
-         `samples_output`), `vorbis_pump_first_frame`,
-         `stb_vorbis_get_frame_float` and
-         `stb_vorbis_get_samples_short_interleaved` (raylib's build has
-         `FAST_SCALED_FLOAT_TO_INT`: `temp.f = x + MAGIC(15)`,
-         `temp.i - ADDEND(15)`, an int subtraction that can overflow for
-         floats far out of range: to be looked at, and refused where it
-         is undefined), and `stb_vorbis_stream_length_in_samples` (which
-         seeks: `vorbis_find_page`, the page CRC, `set_file_offset`);
+         (b) `stb_vorbis_stream_length_in_samples`: `set_file_offset`
+         to 64 KiB before the end (or `first`), `vorbis_find_page` (the
+         page CRC, table of polynomial 0x04c11db7; `retry_loc - 25 >
+         stream_len` is an unsigned comparison that gives up on a page in
+         the first 24 bytes), the pages followed to the one flagged
+         last, its granule position (saturated to 0xfffffffe when its
+         high word is set; all ones is unknown, and the answer 0), then
+         the offset restored: `set_file_offset` clears `eof`, and sets
+         it when the offset is the data's end. The answer is cached in
+         `total_samples`;
          (c) `Wave.decode(".ogg")`, the sound, the music stream,
-         `audio_sound_loading` (raylib: `stb_vorbis_open_memory`, which
-         pumps the first frame, then the length, then the interleaved
-         shorts for `frameCount*channels`).
+         `audio_sound_loading`. raylib: `stb_vorbis_open_memory`, the
+         length, a `malloc` of `frameCount*channels` shorts and one
+         `stb_vorbis_get_samples_short_interleaved` for all of them: a
+         stream that gives fewer samples than its length says leaves the
+         rest of the wave unwritten (to refuse), and `frameCount*channels`
+         is an unsigned product cast to int.
        - `float32_unpack` is exact arithmetic (a 21-bit mantissa scaled
          by a power of two and narrowed once).
        - The transform's tables are binary64: `compute_twiddle_factors`

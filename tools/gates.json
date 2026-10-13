@@ -2138,6 +2138,21 @@
    "minutes": 15
   },
   {
+   "id": "vorbis-frame",
+   "title": "Vorbis frames and samples (stb_vorbis stb_vorbis_open_memory, vorbis_finish_frame, stb_vorbis_get_frame_float and stb_vorbis_get_samples_short_interleaved with FAST_SCALED_FLOAT_TO_INT) against stb_vorbis.c's own functions: the answer, the shorts and everything the decoder keeps after each call of scripts that read raylib's target.ogg whole and in steps, cut and damaged copies, and built streams of one channel that are quiet, loud past a short's range, refused, without a window for what a block left, cut by their last page and with audio on the setup's page; a table of floats converted one by one, the refused ones left out by the reference and refused by the port",
+   "run": [
+    "{python}",
+    "tools/vorbis_frame_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 15
+  },
+  {
    "id": "wave-format",
    "title": "WaveFormat (miniaudio ma_convert_frames: formats, channel maps, linear resampling and its low-pass filter) against raylib with its audio module and the host contraction profile",
    "run": [

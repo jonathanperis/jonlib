@@ -391,7 +391,13 @@ macros, `codebook_decode_scalar_raw`, `codebook_decode_start`,
 `inverse_db_table` (the Vorbis I specification's), generated from the
 source's text by `tools/vorbis_db_table.py`. `src/vorbis_packet.bend` is
 `vorbis_decode_packet` (`vorbis_decode_initial`,
-`vorbis_decode_packet_rest` and `predict_point`). The second is
+`vorbis_decode_packet_rest` and `predict_point`), and
+`src/vorbis_frame.bend` is `get_window`, `vorbis_finish_frame`,
+`vorbis_pump_first_frame`, `stb_vorbis_open_memory`,
+`stb_vorbis_get_frame_float` and
+`stb_vorbis_get_samples_short_interleaved` with
+`convert_channels_short_interleaved` and `FAST_SCALED_FLOAT_TO_INT`. The
+second is
 how the decoder reads its data: bytes (`get8`, `get32`, `getn`, `skip`), Ogg
 pages (`capture_pattern`, `start_page_no_capturepattern`, `start_page`),
 packets (`start_packet`, `maybe_start_packet`, `next_segment`,
@@ -400,13 +406,13 @@ packets (`start_packet`, `maybe_start_packet`, `next_segment`,
 `compute_sorted_huffman`, `compute_accelerated_huffman`, `ilog`,
 `bit_reverse`, `float32_unpack` and `lookup1_values` (answered by integer
 arithmetic where stb_vorbis's float estimate is sure). They are the first
-parts of an Ogg Vorbis decoder, which decodes packets into blocks of
-floats and makes no samples yet.
+parts of an Ogg Vorbis decoder, which decodes a stream's samples and is
+not yet behind Jonlib's waves and music.
 `tools/vorbis_codebook_probe.py`, `tools/vorbis_ogg_probe.py`,
 `tools/vorbis_setup_probe.py`, `tools/vorbis_tables_probe.py`,
 `tools/vorbis_decode_probe.py`, `tools/vorbis_mdct_probe.py`,
 `tools/vorbis_residue_probe.py`, `tools/vorbis_floor_probe.py`,
-`tools/vorbis_packet_probe.py` and
+`tools/vorbis_packet_probe.py`, `tools/vorbis_frame_probe.py` and
 `tools/reference/stb_vorbis_lookup1/exhaustive.c` include the unmodified
 file in their reference programs only; no stb code is linked into the Bend
 candidate. stb_vorbis is MIT or public domain; Jonlib uses the MIT
