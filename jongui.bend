@@ -1721,3 +1721,145 @@ def Gui.progress_bar(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle, left: Mayb
   +capped = Bool.pick(F32, (value > max : F32), max, value)
   +state = Gui.get_state(gui)
   (Gui.progress.label(gui, Gui.progress.label(gui, Gui.progress.drawn(U32.is_eq(state, 3), gui, frame, bounds, capped, min, max, state), left, False{}, bounds, state), right, True{}, bounds, state), capped)
+
+# -----------------------------------------------------------------------------
+# GuiListViewEx
+
+# scrollIndex, active and focus after the control: C ints as words (-1 is
+# 4294967295).
+type Gui.Listed is Data:
+  GuiListed{scroll: U32, active: U32, focus: U32}
+
+def Gui.list.count(items: +List<String>, +n: U32) -> U32:
+  match items:
+    case Nil{}: n
+    case Con{_, +rest}: Gui.list.count(rest, (n + 1 : U32))
+
+# The first item shown on entry: scrollIndex, or 0 where it is negative or
+# past the last full page.
+def Gui.list.start(+scroll: U32, +count: U32, +visible: U32) -> U32:
+  Bool.pick(U32, Gui.int.less(scroll, 0) || Gui.int.less((count - visible : U32), scroll), 0, scroll)
+
+# startIndex -= (int)scrollDelta, kept from 0 to the last full page.
+def Gui.list.wheeled(+start: U32, +notches: U32, +count: U32, +visible: U32) -> U32:
+  +moved = (start - notches : U32)
+  Bool.pick(U32, Gui.int.less(moved, 0), 0, Bool.pick(U32, Gui.int.less((count - visible : U32), moved), (count - visible : U32), moved))
+
+# A press on an item selects it, or clears the selection where it was the
+# selected one.
+def Gui.list.pressed(+active: U32, +item: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(active, item), 4294967295, item)
+
+# How an item is drawn: 0 normal, 1 focused, 2 selected, 3 disabled, 4
+# disabled and selected. The selection goes before the focus.
+def Gui.list.kind(+disabled: Bool, +index: U32, +selected: U32, +focused: U32) -> U32:
+  Bool.pick(U32, disabled, Bool.pick(U32, U32.is_eq(index, selected), 4, 3), Bool.pick(U32, U32.is_eq(index, selected), 2, Bool.pick(U32, U32.is_eq(index, focused), 1, 0)))
+
+# The place of the first visible item under the pointer, `none` where there
+# is none: the item rectangles go down by `step` from y.
+def Gui.list.hit(n: Nat, +i: U32, +mouse: M.Vector2, +x: F32, +y: F32, +w: F32, +h: F32, +step: F32, +none: U32, +found: U32) -> U32:
+  match n:
+    case 0n: found
+    case 1n+k:
+      Gui.list.hit(k, (i + 1 : U32), mouse, x, (y + step : F32), w, h, step, none, Bool.pick(U32, U32.is_eq(found, none) && J.Collision.point_rec(mouse, J.Rectangle{x, y, w, h}), i, found))
+
+def Gui.list.bordered(shown: Bool, +gui: Gui, frame: J.Frame, +item: J.Rectangle) -> J.Frame:
+  match shown:
+    case False{}: frame
+    case True{}: Gui.draw_rectangle(frame, item, Gui.get_style(gui, 12, 21), Gui.color(gui, 12, 0), 0)
+
+# An item: its rectangle where it is selected or focused, and its text in
+# the state's color.
+def Gui.list.item(kind: U32, +gui: Gui, frame: J.Frame, +item: J.Rectangle, text: String) -> J.Frame:
+  match kind:
+    case 0: Gui.draw_text(gui, frame, text, Gui.text_bounds(gui, 12, item), Gui.get_style(gui, 12, 14), Gui.color(gui, 12, 2))
+    case 1: Gui.draw_text(gui, Gui.draw_rectangle(frame, item, Gui.get_style(gui, 12, 21), Gui.color(gui, 12, 3), Gui.color(gui, 12, 4)), text, Gui.text_bounds(gui, 12, item), Gui.get_style(gui, 12, 14), Gui.color(gui, 12, 5))
+    case 2: Gui.draw_text(gui, Gui.draw_rectangle(frame, item, Gui.get_style(gui, 12, 21), Gui.color(gui, 12, 6), Gui.color(gui, 12, 7)), text, Gui.text_bounds(gui, 12, item), Gui.get_style(gui, 12, 14), Gui.color(gui, 12, 8))
+    case 3: Gui.draw_text(gui, frame, text, Gui.text_bounds(gui, 12, item), Gui.get_style(gui, 12, 14), Gui.color(gui, 12, 11))
+    case _: Gui.draw_text(gui, Gui.draw_rectangle(frame, item, Gui.get_style(gui, 12, 21), Gui.color(gui, 12, 9), Gui.color(gui, 12, 10)), text, Gui.text_bounds(gui, 12, item), Gui.get_style(gui, 12, 14), Gui.color(gui, 12, 11))
+
+# The visible items, from `index` down the list view.
+def Gui.list.items(n: Nat, items: +List<String>, +gui: Gui, +index: U32, +selected: U32, +focused: U32, +disabled: Bool, +x: F32, +y: F32, +w: F32, +h: F32, +step: F32, frame: J.Frame) -> J.Frame:
+  match n:
+    case 0n: frame
+    case 1n+k:
+      match items:
+        case Nil{}: frame
+        case Con{+text, +rest}:
+          Gui.list.items(k, rest, gui, (index + 1 : U32), selected, focused, disabled, x, (y + step : F32), w, h, step,
+            Gui.list.item(Gui.list.kind(disabled, index, selected, focused), gui, Gui.list.bordered(U32.is_ne(Gui.get_style(gui, 12, 20), 0), gui, frame, J.Rectangle{x, y, w, h}), J.Rectangle{x, y, w, h}, text))
+
+# SCROLL_SLIDER_SIZE and SCROLL_SPEED put back after the bar.
+def Gui.list.restored(rest: Gui & U32, frame: J.Frame, +slider: U32, +speed: U32, +selected: U32, +focused: U32, +bad: Bool) -> J.Frame & (Gui & Gui.Listed):
+  (+gui, +value) = rest
+  (Gui.refused(bad, frame), (Gui.set_style(Gui.set_style(gui, 14, 21, speed), 14, 19, slider), GuiListed{value, selected, focused}))
+
+def Gui.list.scrolled(r: J.Frame & (Gui & U32), +slider: U32, +speed: U32, +selected: U32, +focused: U32, +bad: Bool) -> J.Frame & (Gui & Gui.Listed):
+  (frame, rest) = r
+  Gui.list.restored(rest, frame, slider, speed, selected, focused, bad)
+
+# The bar at the right, inside the border: its slider is the share of the
+# items that is visible, and its arrows step a page of the hidden ones.
+def Gui.list.barred(use: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +start: U32, +end: U32, +count: U32, +visible: U32, +selected: U32, +focused: U32) -> J.Frame & (Gui & Gui.Listed):
+  match use:
+    case False{}: (frame, (gui, GuiListed{start, selected, focused}))
+    case True{}:
+      J.Rectangle{+x, +y, +w, +h} = bounds
+      +border = Gui.style.f32(gui, 12, 12)
+      +width = Gui.style.f32(gui, 12, 18)
+      +size = (h * (U32.to_f32((end - start : U32)) / U32.to_f32(count)) : F32)
+      Gui.list.scrolled(Gui.scroll_bar(Gui.set_style(Gui.set_style(gui, 14, 19, Gui.int.of(size)), 14, 21, (count - visible : U32)), core, frame,
+        J.Rectangle{(((x + w : F32) - border : F32) - width : F32), (y + border : F32), width, (h - 2.0 * Gui.style.f32(gui, 0, 12) : F32)}, start, 0, (count - visible : U32)),
+        Gui.get_style(gui, 14, 19), Gui.get_style(gui, 14, 21), selected, focused, Bool.not(FontCore.int.valid(size)))
+
+# GuiListViewEx(bounds, text, count, &scrollIndex, &active, &focus) for the
+# list of items: the frame, the Gui (the scroll bar's drag) and the three
+# ints. As many items as fit are shown from scrollIndex, each
+# LIST_ITEMS_HEIGHT high and LIST_ITEMS_SPACING apart; with more items than
+# fit, a scroll bar SCROLLBAR_WIDTH wide stands at the right and the wheel
+# moves the list an item a notch. Under the pointer an item is focused, and
+# a press selects it or clears its selection; the focus is -1 with the
+# pointer outside the list, and stays as given with it between items. The
+# items are drawn from the index the wheel left, the focus and the selection
+# being those of the index on entry, as raygui does. The frame is undefined
+# for an item height or spacing above 32767 or more than 32767 items (the
+# int product), a height and spacing that add up to 0 (the division), a
+# list view's height that is negative or not a C int, and a wheel movement
+# that is not one.
+def Gui.list_view_ex(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +items: +List<String>, +scroll: U32, +active: U32, +focus: U32) -> J.Frame & (Gui & Gui.Listed):
+  J.Rectangle{+bx, +by, +bw, +bh} = bounds
+  +count = Gui.list.count(items, 0)
+  +height = Gui.get_style(gui, 12, 16)
+  +spacing = Gui.get_style(gui, 12, 17)
+  +pitch = (height + spacing : U32)
+  +sound = (height <= 32767 : U32) && (spacing <= 32767 : U32) && (count <= 32767 : U32) && (pitch >= 1 : U32) && (bh >= 0.0 : F32) && FontCore.int.valid(bh)
+  +step = U32.to_f32(pitch)
+  +use = (U32.to_f32((pitch * count : U32)) > bh : F32)
+  +border = Gui.style.f32(gui, 0, 12)
+  +ix = (bx + U32.to_f32(spacing) : F32)
+  +iy = ((by + U32.to_f32(spacing) : F32) + border : F32)
+  +iw0 = ((bw - U32.to_f32((2 * spacing : U32)) : F32) - border : F32)
+  +iw = Bool.pick(F32, use, (iw0 - Gui.style.f32(gui, 12, 18) : F32), iw0)
+  +ih = U32.to_f32(height)
+  +visible = U32.min((Gui.int.of(bh) / U32.max(1, pitch) : U32), count)
+  +start0 = Gui.list.start(scroll, count, visible)
+  +live = Gui.active(gui) && Bool.not(Gui.exclusive(gui))
+  +mouse = J.Input.get_mouse_position(core)
+  +inside = live && J.Collision.point_rec(mouse, bounds)
+  +place = Gui.list.hit(U32.to_nat(visible), 0, mouse, ix, iy, iw, ih, step, visible, visible)
+  +hit = inside && (place < visible : U32)
+  +over = (start0 + place : U32)
+  +focused = Bool.pick(U32, live, Bool.pick(U32, inside, Bool.pick(U32, hit, over, focus), 4294967295), focus)
+  +selected = Bool.pick(U32, hit && Gui.pressed(core), Gui.list.pressed(active, over), active)
+  +delta = Gui.scroll.delta(core)
+  +wheel = inside && use
+  +start1 = Bool.pick(U32, wheel, Gui.list.wheeled(start0, Gui.int.of(delta), count, visible), start0)
+  +state = Bool.pick(U32, inside, 1, Gui.get_state(gui))
+  f1 = Gui.draw_rectangle(frame, bounds, Gui.get_style(gui, 12, 12), Gui.color(gui, 12, (state * 3 : U32)), Gui.color(gui, 0, 19))
+  f2 = Gui.list.items(U32.to_nat(visible), List.drop(&2, String, items, U32.to_nat(U32.min(start1, count))), gui, start1, selected, focused, U32.is_eq(state, 3), ix, iy, iw, ih, step, f1)
+  Gui.list.barred(use, gui, core, Gui.refused(Bool.not(sound) || (wheel && Bool.not(FontCore.int.valid(delta))), f2), bounds, start1, U32.min((start1 + visible : U32), count), count, visible, selected,
+    focused)
+
+# GuiGetFont().baseSize: the gui's font is raylib's default one.
+def Gui.font_base_size(gui: Gui) -> U32:
+  10

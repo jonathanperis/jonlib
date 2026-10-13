@@ -101,7 +101,20 @@
    "status": "not-started"
   },
   "GuiGetFont": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.font_base_size",
+   "scope": "GuiGetFont().baseSize: the gui's font is raylib's default one.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/core_directory_files.bend",
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "The Font value is not returned: only its baseSize",
+    "The default font only (GuiSetFont is not delivered)"
+   ]
   },
   "GuiSetStyle": {
    "status": "partial",
@@ -525,7 +538,24 @@
    "status": "not-started"
   },
   "GuiListViewEx": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.list_view_ex",
+   "scope": "The list of items with its focus, selection and scroll index (Gui.Listed), the wheel, and the scroll bar (Gui.scroll_bar) when the items do not fit.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/core_directory_files.bend",
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "A NULL text, scrollIndex, active or focus is not delivered: the list and the three ints are always given",
+    "The disabled state and LIST_ITEMS_BORDER_NORMAL are compared with raygui by reading only",
+    "An item height or spacing above 32767, more than 32767 items, a height and spacing that add up to 0, a list view's height that is negative or not a C int and a wheel movement that is not one mark the frame undefined",
+    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered); tooltips are not delivered (off by default)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiMessageBox": {
    "status": "not-started"

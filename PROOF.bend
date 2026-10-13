@@ -2605,3 +2605,48 @@ def Laws.msf_gif_frame_with_a_pixel_more_none():
 
 def Laws.msf_gif_finish_adds_the_trailer():
   {==}
+
+def Laws.gui_list_counts_its_items():
+  {==}
+
+def Laws.gui_list_starts_at_its_scroll_index():
+  {==}
+
+def Laws.gui_list_start_past_the_last_page_is_zero():
+  {==}
+
+def Laws.gui_list_negative_start_is_zero():
+  {==}
+
+def Laws.gui_list_wheel_down_a_notch():
+  {==}
+
+def Laws.gui_list_wheel_stops_at_the_last_page():
+  {==}
+
+def Laws.gui_list_wheel_stops_at_the_first_item():
+  {==}
+
+def Laws.gui_list_press_selects():
+  {==}
+
+def Laws.gui_list_press_on_the_selected_item_clears():
+  {==}
+
+def Laws.gui_list_press_moves_the_selection():
+  {==}
+
+def Laws.gui_list_selection_goes_before_focus():
+  {==}
+
+def Laws.gui_list_focused_item():
+  {==}
+
+def Laws.gui_list_plain_item():
+  {==}
+
+def Laws.gui_list_disabled_items():
+  {==}
+
+def Laws.gui_font_base_size_is_the_default_font_s():
+  {==}

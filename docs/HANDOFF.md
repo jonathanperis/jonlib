@@ -72,7 +72,7 @@ at the branch's head.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 582/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **205/212 ported** with the stack (`audio_music_stream`, `audio_stream_effects` and `audio_mixed_processor` play `country.mp3` through the MP3 decoder; `core_screen_recording` writes its GIF with the msf_gif port), 6 ready (three of them wait for a decoder or an MP3 loader, which the plan does not count: `country.mp3` as a wave, `mini1111.xm`, `target.ogg`), 1 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **206/212 ported** with the stack (`audio_music_stream`, `audio_stream_effects` and `audio_mixed_processor` play `country.mp3` through the MP3 decoder; `core_screen_recording` writes its GIF with the msf_gif port; `core_directory_files` is handed its directory listings), 6 ready (three of them wait for a decoder or an MP3 loader, which the plan does not count: `country.mp3` as a wave, `mini1111.xm`, `target.ogg`), 0 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -643,6 +643,30 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      the time goes is not measured: each frame draws 255 lines and 256
      circles of 36 segments, and two frames go through the encoder. The
      circle's return to the left side after 180 frames is not scripted.
+   - **`core_directory_files` is ported** over `Gui.list_view_ex`
+     (raygui's `GuiListViewEx`, docs/GUI.md). Base has no directory
+     listing, so the port is handed the listings (docs/FILES.md) and the
+     probe reads them where the reference does (`LISTED`, `WORKING` in
+     `tools/examples_probe.py`; a script's files may now be in
+     directories). Two things the port found: raylib's `IsFileExtension`
+     copies up to 16 bytes of the extension into a `char[16]` and reads
+     it as a string, so a file without an extension below a directory
+     with a dot in its name is undefined (a script covers the refusal);
+     and on the memory platform a mouse button's previous state is never
+     registered, so `IsMouseButtonReleased` never fires for it and
+     `IsMouseButtonPressed` fires every frame it is held: a script
+     presses a `GuiButton` with a touch point (`TOUCH_DOWN`, `TOUCH_UP`),
+     whose previous state is registered. Scripts of earlier raygui
+     examples that click buttons with the mouse button do not press
+     them: worth a pass (`core_clipboard_text`'s `buttons` script says
+     its buttons act).
+   - The six examples left: `audio_module_playing` (jar_xm),
+     `audio_sound_loading` (stb_vorbis), `audio_spectrum_visualizer`
+     (`LoadWave` of an MP3, slow in the JavaScript lane),
+     `text_font_sdf` (binary64 `acos` and `pow` for stb_truetype's
+     cubic solver), `text_unicode_ranges` (a 7 MiB TTF: the 1 MiB input
+     limit) and `textures_sprite_stacking` (a 112x11468 image: the 4096
+     limit).
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`

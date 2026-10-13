@@ -45,6 +45,8 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiDropdownBox` | `Gui.dropdown_box(gui, core, frame, bounds, text, active, edit)` | `Frame & (U32 & Bool)` (the active item, raygui's result) |
 | `GuiScrollPanel` | `Gui.scroll_panel(gui, core, frame, bounds, text, content, scroll)` | `Frame & (Gui & (Vector2 & Rectangle))` (the scroll offset and the view) |
 | `GuiProgressBar` | `Gui.progress_bar(gui, frame, bounds, left, right, value, min, max)` | `Frame & F32` (the value, which one above `max` becomes; a value is always given) |
+| `GuiListViewEx` | `Gui.list_view_ex(gui, core, frame, bounds, items, scroll, active, focus)` | `Frame & (Gui & Gui.Listed)` (`GuiListed{scroll, active, focus}`: the three ints as words, -1 being 4294967295) |
+| `GuiGetFont().baseSize` | `Gui.font_base_size(gui)` | `U32` (the default font's 10) |
 | `GuiScrollBar` (static in raygui) | `Gui.scroll_bar(gui, core, frame, bounds, value, min, max)` | `Frame & (Gui & U32)` (the int value as a word) |
 | `GuiTextBox` | `Gui.text_box(gui, core, frame, bounds, text, size, edit, editing)` | `Frame & (Core & (String & (Gui.Editing & Bool)))` (the text, raygui's two text box globals, its result) |
 
@@ -148,6 +150,24 @@ example waiting on each raygui function it calls that is not delivered.
   drag (the slider drag's exclusive mode), an arrow steps by
   `range/SCROLL_SPEED` and a press on the track jumps there. The slider is
   drawn where the value was on entry, as raygui does.
+- **List views.** `items` is the list of texts (`text` and `count`); the
+  three ints go in and come back in a `G.Gui.Listed`. As many items as fit
+  the height are shown from the scroll index (0 when it is negative or past
+  the last full page), each `LIST_ITEMS_HEIGHT` high and
+  `LIST_ITEMS_SPACING` apart, their rectangles placed by repeated addition
+  as raygui places them. With more items than fit, the items are
+  `SCROLLBAR_WIDTH` narrower, a `GuiScrollBar` stands at the right with a
+  slider of the visible share of the height (`SCROLL_SLIDER_SIZE` and
+  `SCROLL_SPEED` are set for it and put back), and the wheel moves the
+  list an item a notch while the pointer is over the list view. The item
+  under the pointer is focused and a press selects it, or clears the
+  selection when it was the selected one; the focus is -1 with the pointer
+  outside and stays as given with it between two items. raygui works out
+  the focus and the selection with the scroll index it entered with and
+  then draws from the index the wheel left: for one frame after a wheel
+  movement the highlighted item is not the one under the pointer. That is
+  kept. The selected item is drawn in the pressed colors, the focused one
+  in the focused colors (the selection first).
 - **Shapes texture.** raygui's first style load calls `SetShapesTexture` with
   the default font's white rectangle, the value `InitWindow` already set, so
   nothing changes.
@@ -157,9 +177,10 @@ example waiting on each raygui function it calls that is not delivered.
 - Not delivered yet: `GuiToggleSlider`,
   `GuiComboBox`, `GuiTextBoxMulti`, `GuiValueBoxFloat`,
   `GuiDummyRec`, `GuiGrid`,
-  `GuiTabBar`, `GuiListView(Ex)`,
+  `GuiTabBar`, `GuiListView` (the one that splits a text; `GuiListViewEx` is in),
   `GuiColor*`, `GuiMessageBox`, `GuiTextInputBox`, `GuiWindowBox`,
-  `GuiLabelButton`, the style file loaders, `GuiSetFont`/`GuiGetFont`,
+  `GuiLabelButton`, the style file loaders, `GuiSetFont` and `GuiGetFont`'s
+  Font (its base size is `Gui.font_base_size`),
   `GuiDrawIcon`/`GuiIconText` as functions, `GuiLoadIcons` and tooltips.
 - An icon id above 255 reads past raygui's table and marks the frame
   undefined, and so does an icon drawn at a scale above 65536. So does a line that is not the text's last, starts with `#`
@@ -167,6 +188,11 @@ example waiting on each raygui function it calls that is not delivered.
   `#` with no second `#`: raygui's `GuiGetTextWidth` would look for it in the
   lines that follow.
 - The `TEXT_WRAP_CHAR` and `TEXT_WRAP_WORD` modes mark the frame undefined.
+- `GuiListViewEx` marks the frame undefined for an item height or spacing
+  above 32767 or more than 32767 items (raygui multiplies them as ints), a
+  height and spacing that add up to 0 (its division), a list view's height
+  that is negative or not a C int, and a wheel movement that is not one. A
+  NULL text or int pointer has no counterpart.
 - `GuiDropdownBox` marks the frame undefined for an active index outside the
   items (raygui reads a stale pointer), a text of 1024 bytes or more and 128
   items or more (`GuiTextSplit`'s static buffers).

@@ -119,6 +119,9 @@ KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR = 49, 50, 51, 52
 KEY_P, KEY_W, KEY_D, KEY_TAB = 80, 87, 68, 258
 KEY_F = 70
 KEY_LEFT_CONTROL = 341
+# Touch point events: a touch point counts as the mouse button of its index, and the memory platform, which never
+# registers a mouse button's previous state, registers a touch point's: IsMouseButtonReleased fires for it alone.
+TOUCH_UP, TOUCH_DOWN = 14, 15
 
 # name: (raylib source, setup expression, State is Data, needs the logo image)
 EXAMPLES = {
@@ -303,6 +306,7 @@ EXAMPLES = {
     'audio_stream_effects': ('audio/audio_stream_effects.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_mixed_processor': ('audio/audio_mixed_processor.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'core_screen_recording': ('core/core_screen_recording.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'core_directory_files': ('core/core_directory_files.c', 'Ex.setup(listings, core, frame)'),
     'core_vr_simulator': ('core/core_vr_simulator.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shaders_game_of_life': ('shaders/shaders_game_of_life.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
@@ -438,6 +442,20 @@ IO_SETUP.add('audio_stream_callback')
 PERSPECTIVE.add('audio_sound_positioning')
 PERSPECTIVE.add('core_vr_simulator')
 IO_SETUP.add('shaders_game_of_life'); SEEDED.add('shaders_game_of_life')
+# core_directory_files lists its working directory and, after its back button, the directories above. Base has no
+# directory listing: the port is handed the listings (LISTED: its setup takes them, read here with readdir's order from the
+# very directories the reference lists). Each script's working directory (WORKING) is three levels inside its own
+# directory, whose files this probe puts: a script goes up twice, never to a directory other programs write in.
+LISTED, WORKING = {'core_directory_files'}, {'core_directory_files': 'top/mid/cwd'}
+SCRATCH.add('core_directory_files')
+FILES['core_directory_files-browse'] = {**{f'top/mid/cwd/{name}': b'' for name in (
+    'alpha.png', 'beta.c', 'gamma.txt', 'Delta.PNG', 'main.c', 'sub/inner.c', 'epsilon.png.bak', 'zeta.C', '.hidden.c', 'eta.cpp', 'theta.h',
+    *[f'file{n:02}.c' for n in range(18)], *[f'shot{n}.png' for n in range(5)])},
+    'top/mid/notes.md': b'notes', 'top/mid/photo.png': b'', 'top/mid/build/out.o': b'', 'top/readme': b'read me'}
+# A file without an extension in a path with a dot before it (the probe's .build): IsFileExtension takes everything from
+# that dot for the extension and copies 16 bytes of it into a char[16] it then reads as a string. Refused from the start.
+FILES['core_directory_files-noext'] = {'top/mid/cwd/alpha.png': b'', 'top/mid/cwd/noext': b''}
+UNDEFINED_FROM['core_directory_files-noext'] = 0
 # core_screen_recording: the recording is saved in the loop, in the application's directory, which the reference's hook
 # and the port's setup argument both make the script's own. Its sines have no AppleLibm profile (docs/MATH.md).
 IO_SETUP.add('core_screen_recording'); EFFECTS.add('core_screen_recording'); SCRATCH.add('core_screen_recording'); PERSPECTIVE.add('core_screen_recording')
@@ -456,13 +474,32 @@ def scratch_reset(probe, items, name=None, native=False):
             shutil.rmtree(directory, ignore_errors=True)
             directory.mkdir(parents=True)
             for file, data in FILES.get(item['name'], {}).items():
+                (directory / file).parent.mkdir(parents=True, exist_ok=True)
                 (directory / file).write_bytes(data)
 
 
 def scratch_left(probe, index, native=False):
-    """The files of a script's directory: {name: bytes}."""
-    return {path.name: path.read_bytes() for path in sorted(scratch(probe, index, native).iterdir())}
+    """The files of a script's directory and of the directories in it: {relative name: bytes}."""
+    root = scratch(probe, index, native)
+    return {path.relative_to(root).as_posix(): path.read_bytes() for path in sorted(root.rglob('*')) if path.is_file()}
 IO_SETUP.add('shaders_shadowmap_rendering'); PERSPECTIVE.add('shaders_shadowmap_rendering'); CONFIG_FLAGS['shaders_shadowmap_rendering'] = 32
+
+
+def listings(root, working):
+    """What a script of a LISTED example may list: its working directory and each directory above it up to the script's
+    own, as [(path, [(name, is a file), ...]), ...] with the entries in readdir's order."""
+    out, directory = [], root / working
+    while True:
+        out.append((str(directory), [(entry.name, entry.is_file()) for entry in os.scandir(directory)]))
+        if directory == root:
+            return out
+        directory = directory.parent
+
+
+def listings_text(found):
+    def entries(items):
+        return '[' + ', '.join(f'Ex.Entry{{{json.dumps(name)}, {"True" if file else "False"}{{}}}}' for name, file in items) + ']' if items else 'Nil{}'
+    return '[' + ', '.join(f'Ex.Listing{{{json.dumps(path)}, {entries(items)}}}' for path, items in found) + ']'
 
 
 # -----------------------------------------------------------------------------
@@ -1255,6 +1292,18 @@ def scripts():
         script('core_screen_recording', 'record', [quick(), quick([key(KEY_LEFT_CONTROL)]), quick([key(KEY_R)]), quick([key(KEY_R, False)]), quick(), slow(), quick(),
                                                    quick(), quick(), quick(), long(), quick(), quick(), quick(), quick([key(KEY_R)]),
                                                    quick([key(KEY_R, False), key(KEY_LEFT_CONTROL, False)]), quick([key(KEY_R)]), quick()]),
+        # The working directory has 27 files the filter takes, more than the 13 the list shows: the pointer focuses an
+        # item, a press selects it and a second one clears it, the wheel moves the list down by one and by three, a press
+        # on the bar's track jumps there and a drag follows the pointer. Then "<" twice: the directory above and the one
+        # above it, listed whole (files and directories), with the scroll index and the selection the example keeps. The
+        # button answers a release, which the memory platform sees for a touch point only.
+        script('core_directory_files', 'browse', [quick(), quick([mouse_at(200, 150)]), quick([button(0)]), quick([button(0, False)]), quick([button(0)]),
+                                                  quick([button(0, False), (MOUSE_WHEEL, 0, -1, 0)]), slow([(MOUSE_WHEEL, 0, -3, 0)]), quick([mouse_at(793, 420)]),
+                                                  quick([button(0)]), quick([mouse_at(793, 150)]), quick([mouse_at(300, 200)]), quick([button(0, False)]),
+                                                  quick([mouse_at(400, 30)]), quick([mouse_at(64, 24)]), quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0)]),
+                                                  quick(), quick([mouse_at(300, 100)]), quick([button(0)]), quick([button(0, False), mouse_at(64, 24)]),
+                                                  quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0)]), quick(), quick([mouse_at(250, 70)])]),
+        script('core_directory_files', 'noext', [quick(), quick([mouse_at(200, 150)])]),
         # Every frame is a refusal (UNDEFINED_NATIVE): the port still runs the clock and the stream's callback, the
         # frequency keys and both wave keys before it refuses.
         script('audio_stream_callback', 'waves', [quick(), quick([key(KEY_UP)]), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), slow([key(KEY_LEFT)]),
@@ -1845,7 +1894,7 @@ def native_frames(probe, binary, index, item):
     in_module = item['example'] == 'textures_logo_raylib' or item['example'] in IO_SETUP
     cwd = probe.args.raylib_source / 'examples' / source.split('/')[0] if in_module else probe.work
     if item['example'] in SCRATCH:
-        cwd = scratch(probe, index, native=True)
+        cwd = scratch(probe, index, native=True) / WORKING.get(item['example'], '')
     result = subprocess.run([str(binary)], cwd=cwd, env=dict(probekit.ENV, JONLIB_EXAMPLE_SCRIPT=str(path)), stdin=subprocess.DEVNULL,
                             capture_output=True, text=True, timeout=600)
     if result.returncode:
@@ -2050,10 +2099,11 @@ def bend_script(item):
     return '[' + ', '.join(frames) + ']'
 
 
-def render(items, libm, logo, raylib_source, directories=None):
+def render(items, libm, logo, raylib_source, directories=None, listed=None):
     """One program per example (actions are example names): every script of
     the example, one output line each. `directories` gives a SCRATCH
-    example's scripts their directories, by script index."""
+    example's scripts their directories, by script index; `listed` gives a
+    LISTED example's scripts their listings (listings())."""
     def build(selected, gpu):
         if len(selected) != 1:
             raise ProbeFailure('examples: one example per batch')
@@ -2062,6 +2112,8 @@ def render(items, libm, logo, raylib_source, directories=None):
         setup_params = '+seed: U32, ' if name in SEEDED else {'textures_logo_raylib': 'logo: Result<&1, &1, J.Surface.IOError, J.Surface>, '}.get(name, '')
         if name in SCRATCH:
             setup_params += '+dir: String, '
+        if name in LISTED:
+            setup_params += '+listings: +List<Ex.Listing>, '
         io = name in IO_SETUP
         effects = name in EFFECTS
         if effects and not io:
@@ -2085,6 +2137,8 @@ def render(items, libm, logo, raylib_source, directories=None):
             args = f'{item["seed"]}, ' if name in SEEDED else {'textures_logo_raylib': 'logo, '}.get(name, '')
             if name in SCRATCH:
                 args += json.dumps(str(directories[index]) + '/') + ', '
+            if name in LISTED:
+                args += listings_text(listed[index]) + ', '
             result = 'IO(String)' if io else 'String'
             calls.append(f'def script.{index}() -> +List<J.ReplayFrame>:\n  {bend_script(item)}\n\n'
                          f'def run.{index}({logo_param}) -> {result}:\n  replay({args}script.{index}(), {window})\n')
@@ -2176,7 +2230,10 @@ def main():
         scratch_reset(probe, items, chosen[0])
         return ['\n'.join(line for line in text.splitlines() if line.strip())]
 
-    lanes = probe.candidates(render(items, libm, logo, probe.args.raylib_source, directories), names, batch=1, timeout=LANE_TIMEOUT, parse_lane=parse_lane)
+    # The listings are read from the reference's directories, which are put again, the same way, before it runs.
+    scratch_reset(probe, items, native=True)
+    listed = {index: listings(scratch(probe, index, native=True).resolve(), WORKING[item['example']]) for index, item in enumerate(items) if item['example'] in LISTED}
+    lanes = probe.candidates(render(items, libm, logo, probe.args.raylib_source, directories, listed), names, batch=1, timeout=LANE_TIMEOUT, parse_lane=parse_lane)
 
     def reported(item):
         """The first frame the CPU-1 lane refused in this script (None when it refused none)."""
@@ -2203,6 +2260,8 @@ def main():
             rows = [expected_row(runs, *size_of(name)) for runs in native_frames(probe, binaries[name], index, item)]
             if index in directories and cut is None:
                 native_left[item['name']] = scratch_left(probe, index, native=True)
+            if index in listed and listed[index] != listings(scratch(probe, index, native=True).resolve(), WORKING[name]):
+                raise ProbeFailure(f'examples: {item["name"]}: the directories the reference listed are not the ones the port was handed')
         if cut is not None:
             rows = rows[:cut] + ['null null'] * (len(item['frames']) - cut)
         rows_by_script.append('|'.join(rows) + '|')
