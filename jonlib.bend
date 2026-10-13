@@ -68,6 +68,10 @@ import ./src/jpeg.bend as Jpeg
 import ./src/wav.bend as Wav
 import ./src/qoa.bend as Qoa
 import ./src/mp3_stream.bend as Mp3S
+import ./src/vorbis_setup.bend as VorbisS
+import ./src/vorbis_packet.bend as VorbisK
+import ./src/vorbis_frame.bend as VorbisF
+import ./src/vorbis_length.bend as VorbisL
 import ./src/input.bend as InputCore
 import ./src/gestures.bend as GestureCore
 import ./src/automation.bend as AutomationCore
@@ -5748,11 +5752,63 @@ def Wave.mp3.opened(player: Maybe<Mp3S.Player>, +most: U32) -> Result<&1, &1, Wa
 def Wave.decode.mp3(+bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
   Wave.mp3.opened(Mp3S.open.memory(bytes), (((Wave.mp3.length(bytes, 0) / 4) + 18) * 1152 : U32))
 
-def Wave.decode.selected(kind: U32, +bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
+# A setup stb_vorbis fails on, or one C leaves undefined, gives no wave
+# (InvalidWaveData). One past this port's limits (an allocation over 16 MiB,
+# a codebook over 2^19 entries, transform tables the libm profile does not
+# give) is one stb_vorbis decodes and this port does not
+# (UnsupportedWaveFormat).
+def Wave.ogg.limited(over: Bool) -> Result<&1, &1, Wave.Error, Wave>:
+  match over:
+    case True{}: Fail{UnsupportedWaveFormat{}}
+    case False{}: Fail{InvalidWaveData{}}
+
+def Wave.ogg.unready(status: VorbisS.Status) -> Result<&1, &1, Wave.Error, Wave>:
+  match status:
+    case VorbisS.Refused{+why}: Wave.ogg.limited((why >= 3 : U32))
+    case _: Wave.ogg.limited(False{})
+
+def Wave.ogg.whole(whole: Bool, +frames: U32, +rate: U32, +channels: U32, +samples: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
+  match whole:
+    case False{}: Fail{InvalidWaveData{}}
+    case True{}: Done{Wave{frames, rate, 16, channels, samples}}
+
+# raylib's buffer is malloc'd for frameCount*channels shorts and read into
+# once: a stream that gives fewer samples than its length says (or a sample
+# this port refuses) leaves shorts that were never written.
+def Wave.ogg.read(read: VorbisF.Read, +frames: U32, +rate: U32, +channels: U32) -> Result<&1, &1, Wave.Error, Wave>:
+  VorbisF.Read{+state, +count, +samples, _} = read
+  Wave.ogg.whole(Bool.not(VorbisF.Frames.refused(state)) && U32.is_eq(count, frames), frames, rate, channels, samples)
+
+# frameCount*channels, an unsigned product, as the int the read takes: one
+# below 0 reads nothing.
+def Wave.ogg.shorts(+frames: U32, +channels: U32) -> U32:
+  Bool.pick(U32, ((frames * channels : U32) >= 2147483648 : U32), 0, (frames * channels : U32))
+
+def Wave.ogg.measured(measured: VorbisL.Measured, +plan: VorbisK.Plan, +rate: U32) -> Result<&1, &1, Wave.Error, Wave>:
+  VorbisL.Measured{+frames, _, +value} = measured
+  Wave.ogg.read(VorbisF.samples.read(plan, frames, Wave.ogg.shorts(value, VorbisK.Plan.channels(plan))), value, rate, VorbisK.Plan.channels(plan))
+
+def Wave.ogg.ready(refused: Bool, +plan: VorbisK.Plan, +frames: VorbisF.Frames, +rate: U32, +first: U32) -> Result<&1, &1, Wave.Error, Wave>:
+  match refused:
+    case True{}: Fail{InvalidWaveData{}}
+    case False{}: Wave.ogg.measured(VorbisL.stream.length(frames, first, 0), plan, rate)
+
+def Wave.ogg.opened(started: VorbisF.Started) -> Result<&1, &1, Wave.Error, Wave>:
+  match started:
+    case VorbisF.Unready{+status}: Wave.ogg.unready(status)
+    case VorbisF.Ready{+plan, +frames, +rate, +first}: Wave.ogg.ready(VorbisF.Frames.refused(frames), plan, frames, rate, first)
+
+# stb_vorbis_open_memory, stb_vorbis_stream_length_in_samples frames and
+# one stb_vorbis_get_samples_short_interleaved for all of them.
+def Wave.decode.ogg(+libm: M.Libm, +bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
+  Wave.ogg.opened(VorbisF.memory.open(libm, bytes))
+
+def Wave.decode.selected(kind: U32, +libm: M.Libm, +bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
   match kind:
     case 1: Wave.decoded(Wav.decode(bytes))
     case 2: Wave.decoded.qoa(Qoa.decode(bytes))
     case 3: Wave.decode.mp3(bytes)
+    case 4: Wave.decode.ogg(libm, bytes)
     case _: Fail{UnsupportedWaveFormat{}}
 
 # LoadWaveFromMemory: ".wav"/".WAV" data (dr_wav's RIFF, RIFX, Wave64, RF64
@@ -5768,24 +5824,44 @@ def Wave.decode.selected(kind: U32, +bytes: +List<U32>) -> Result<&1, &1, Wave.E
 # frame dr_mp3 decodes by leaving one of its arrays are InvalidWaveData. An
 # MP3 stream with a Layer I or II frame is UnsupportedWaveFormat: dr_mp3
 # decodes those and this port does not yet.
-def Wave.decode(+file_type: String, +bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
+#
+# ".ogg"/".OGG" data (stb_vorbis, src/vorbis_frame.bend) is 16-bit samples:
+# as many frames as the stream's length says (the last page's position; none
+# for a length that is not known), its channels and sample rate. The
+# transform's tables are the C library's sines and cosines: `libm` is the
+# profile they are taken under, and a stream whose tables it does not give
+# is UnsupportedWaveFormat, as is one past the port's limits. Data
+# stb_vorbis does not open, a stream that gives fewer samples than its
+# length says (raylib's wave then ends in shorts that were never written)
+# and what the decoder refuses (docs/AUDIO.md) are InvalidWaveData.
+def Wave.decode_for(+libm: M.Libm, +file_type: String, +bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
   Wave.decode.selected(Bool.pick(U32, String.eq(file_type, ".wav") || String.eq(file_type, ".WAV"), 1,
-    Bool.pick(U32, String.eq(file_type, ".qoa") || String.eq(file_type, ".QOA"), 2, Bool.pick(U32, String.eq(file_type, ".mp3") || String.eq(file_type, ".MP3"), 3, 0))), bytes)
+    Bool.pick(U32, String.eq(file_type, ".qoa") || String.eq(file_type, ".QOA"), 2, Bool.pick(U32, String.eq(file_type, ".mp3") || String.eq(file_type, ".MP3"), 3,
+      Bool.pick(U32, String.eq(file_type, ".ogg") || String.eq(file_type, ".OGG"), 4, 0)))), libm, bytes)
+
+# LoadWaveFromMemory under the AppleLibm profile.
+def Wave.decode(+file_type: String, +bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
+  Wave.decode_for(M.AppleLibm{}, file_type, bytes)
 
 def Wave.load.decoded(result: Result<&1, &1, Wave.Error, Wave>) -> Result<&1, &1, Wave.IOError, Wave>:
   match result:
     case Fail{error}: Fail{WaveDataError{error}}
     case Done{wave}: Done{wave}
 
-def Wave.load.read(+token: String, result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(Result<&1, &1, Wave.IOError, Wave>):
+def Wave.load.read(+libm: M.Libm, +token: String, result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(Result<&1, &1, Wave.IOError, Wave>):
   match result:
     case Fail{FileError{code, message}}: IO.pure(Result<&1, &1, Wave.IOError, Wave>, Fail{WaveFileError{code, message}})
     case Fail{_}: IO.pure(Result<&1, &1, Wave.IOError, Wave>, Fail{WaveDataError{InvalidWaveHeader{}}})
-    case Done{bytes}: IO.pure(Result<&1, &1, Wave.IOError, Wave>, Wave.load.decoded(Wave.decode(token, bytes)))
+    case Done{bytes}: IO.pure(Result<&1, &1, Wave.IOError, Wave>, Wave.load.decoded(Wave.decode_for(libm, token, bytes)))
 
-# LoadWave: the file's bytes, decoded by its extension.
+# LoadWave: the file's bytes, decoded by its extension under a libm profile
+# (an ".ogg" file's: see Wave.decode_for).
+def Wave.load_for(+libm: M.Libm, +path: String) -> IO(Result<&1, &1, Wave.IOError, Wave>):
+  IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Wave.IOError, Wave>, Files.load_data(path), Wave.load.read(libm, Image.file.token(path)))
+
+# LoadWave under the AppleLibm profile.
 def Wave.load(+path: String) -> IO(Result<&1, &1, Wave.IOError, Wave>):
-  IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Wave.IOError, Wave>, Files.load_data(path), Wave.load.read(Image.file.token(path)))
+  Wave.load_for(M.AppleLibm{}, path)
 
 # IsWaveValid: frames, sample rate, sample size and channels all positive.
 def Wave.is_valid(+wave: Wave) -> Bool:
@@ -6282,10 +6358,15 @@ def Sound.load.wave(+contraction: M.Contraction, +audio: AudioDevice, result: Re
     case Fail{error}: IO.pure(AudioDevice & Result<&1, &1, Sound.Error, Sound>, (audio, Fail{SoundWaveError{error}}))
     case Done{+wave}: IO.pure(AudioDevice & Result<&1, &1, Sound.Error, Sound>, Sound.load_from_wave_for(contraction, audio, wave))
 
-# LoadSound under a contraction profile: LoadWave then LoadSoundFromWave. A
-# file raylib cannot load (it returns the zero sound) is SoundWaveError.
+# LoadSound under a contraction profile and a libm profile (an ".ogg"
+# file's): LoadWave then LoadSoundFromWave. A file raylib cannot load (it
+# returns the zero sound) is SoundWaveError.
+def Sound.load_with(+contraction: M.Contraction, +libm: M.Libm, +audio: AudioDevice, +path: String) -> IO(AudioDevice & Result<&1, &1, Sound.Error, Sound>):
+  IO.bind(Result<&1, &1, Wave.IOError, Wave>, AudioDevice & Result<&1, &1, Sound.Error, Sound>, Wave.load_for(libm, path), Sound.load.wave(contraction, audio))
+
+# LoadSound under a contraction profile and the AppleLibm profile.
 def Sound.load_for(+contraction: M.Contraction, +audio: AudioDevice, +path: String) -> IO(AudioDevice & Result<&1, &1, Sound.Error, Sound>):
-  IO.bind(Result<&1, &1, Wave.IOError, Wave>, AudioDevice & Result<&1, &1, Sound.Error, Sound>, Wave.load(path), Sound.load.wave(contraction, audio))
+  Sound.load_with(contraction, M.AppleLibm{}, audio, path)
 
 # LoadSound with uncontracted f32 arithmetic.
 def Sound.load(+audio: AudioDevice, +path: String) -> IO(AudioDevice & Result<&1, &1, Sound.Error, Sound>):

@@ -408,15 +408,16 @@ packets (`start_packet`, `maybe_start_packet`, `next_segment`,
 `compute_sorted_huffman`, `compute_accelerated_huffman`, `ilog`,
 `bit_reverse`, `float32_unpack` and `lookup1_values` (answered by integer
 arithmetic where stb_vorbis's float estimate is sure). They are the first
-parts of an Ogg Vorbis decoder, which decodes a stream's samples and is
-not yet behind Jonlib's waves and music.
+parts of an Ogg Vorbis decoder, which is behind Jonlib's waves and sounds
+(`Wave.decode_for`) and not yet behind its music.
 `tools/vorbis_codebook_probe.py`, `tools/vorbis_ogg_probe.py`,
 `tools/vorbis_setup_probe.py`, `tools/vorbis_tables_probe.py`,
 `tools/vorbis_decode_probe.py`, `tools/vorbis_mdct_probe.py`,
 `tools/vorbis_residue_probe.py`, `tools/vorbis_floor_probe.py`,
 `tools/vorbis_packet_probe.py`, `tools/vorbis_frame_probe.py`,
 `tools/vorbis_length_probe.py` and
-`tools/reference/stb_vorbis_lookup1/exhaustive.c` include the unmodified
+`tools/reference/stb_vorbis_lookup1/exhaustive.c` (and
+`tools/vorbis_wave_probe.py`, through raylib's `raudio.c`) include the unmodified
 file in their reference programs only; no stb code is linked into the Bend
 candidate. stb_vorbis is MIT or public domain; Jonlib uses the MIT
 alternative, retained with its notice in

@@ -88,18 +88,18 @@ refuse every frame, because the native example is undefined behavior in C.
   files, materials, cameras, shader uniforms and the VR stereo
   configuration (shaders and stereo change nothing on the software
   renderer, as in raylib).
-- **Audio** ([AUDIO.md](docs/AUDIO.md)): WAV and QOA waves, `WaveFormat`, the
+- **Audio** ([AUDIO.md](docs/AUDIO.md)): WAV, QOA, MP3 and Ogg Vorbis waves, `WaveFormat`, the
   audio device's state, sounds, aliases and audio streams, a mixer whose
   device callbacks match raylib's sample for sample, pitched playback and
   streams of any format, stream callbacks and audio processors included,
-  music streams over WAV and QOA files, and a clock that makes those
+  music streams over WAV, QOA and MP3 files, and a clock that makes those
   callbacks from the program's time.
 - **Jongui** ([GUI.md](docs/GUI.md)): raygui's controls.
 - **Execution**: native CPU, JavaScript and (with the declared compiler overlay)
   forced Metal; see [VERIFICATION.md](docs/VERIFICATION.md).
 
 Not yet there: music from OGG, FLAC, XM and MOD files (WAV, QOA and MP3
-music plays); sounds and waves from MP3 files; a host window, input devices and audio output
+music plays); waves from FLAC files and from MP3 files of Layer I or II; a host window, input devices and audio output
 (everything runs headless); images beyond 4096 pixels on a side; directory
 listing. macOS is off the merge path for now and owes a full validation. The
 [master plan](docs/MASTER-PLAN.md) and [HANDOFF.md](docs/HANDOFF.md) order

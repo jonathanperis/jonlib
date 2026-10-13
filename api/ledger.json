@@ -59078,11 +59078,11 @@
       "phase": 4,
       "sequence": 19,
       "status": "partial",
-      "jonlib": "Wave.load",
+      "jonlib": "Wave.load_for / Wave.load",
       "mapping_state": "implemented",
       "scope": "The file decoded by its extension as LoadWaveFromMemory.",
       "gaps": [
-        "OGG, MP3, FLAC, XM and MOD data"
+        "FLAC, XM and MOD data, and MP3 data with a Layer I or II frame"
       ],
       "blocker": null,
       "gates": {
@@ -59096,6 +59096,8 @@
       "evidence": [
         "tools/wav_probe.py",
         "tools/qoa_probe.py",
+        "tools/mp3_wave_probe.py",
+        "tools/vorbis_wave_probe.py",
         "docs/AUDIO.md"
       ],
       "gate_evidence": {},
@@ -59139,14 +59141,16 @@
       "phase": 4,
       "sequence": 19,
       "status": "partial",
-      "jonlib": "Wave.decode",
+      "jonlib": "Wave.decode_for / Wave.decode",
       "mapping_state": "implemented",
-      "scope": "WAV data through drwav_init_memory (RIFF, RIFX, Wave64, RF64 and AIFF/AIFC containers, their chunk walks, 64-bit sizes and 80-bit AIFF rates) and drwav_read_pcm_frames_s16 (PCM 8..64-bit, 32- and 64-bit float, a-law, mu-law, MS and IMA ADPCM, extensible headers) and QOA data through qoa_decode (frames ending at a failed frame header), every 16-bit sample compared with raylib.",
+      "scope": "WAV data through drwav_init_memory (RIFF, RIFX, Wave64, RF64 and AIFF/AIFC containers) and drwav_read_pcm_frames_s16 (PCM, float, a-law, mu-law, MS and IMA ADPCM), and QOA data through qoa_decode, as 16-bit samples; MP3 Layer III data through drmp3_open_memory_and_read_pcm_frames_f32 as floats; Ogg Vorbis data through stb_vorbis_open_memory, the stream's length and one stb_vorbis_get_samples_short_interleaved as 16-bit samples, under a libm profile. Every sample compared with raylib.",
       "gaps": [
-        "OGG, MP3, FLAC, XM and MOD data",
+        "FLAC, XM and MOD data, and MP3 data with a Layer I or II frame (UnsupportedWaveFormat)",
         "InvalidWaveData where dr_wav leaves samples unread, converts NaN or walks chunks forever",
         "InvalidWaveData for MS ADPCM or AIFF int overflow, an AIFF rate negating INT64_MIN and 5-7 or 9+ byte samples in big-endian containers",
-        "InvalidWaveData for QOA frames decoding past the declared total, more than 8 channels or 2^24 samples"
+        "InvalidWaveData for QOA frames decoding past the declared total, more than 8 channels or 2^24 samples",
+        "InvalidWaveData for MP3 data dr_mp3 does not open or decodes by leaving an array, and for an Ogg Vorbis stream that gives fewer samples than its length says or that the decoder refuses (docs/AUDIO.md)",
+        "UnsupportedWaveFormat for an Ogg Vorbis stream past the port's limits or whose transform tables the libm profile does not give (Glibc239Libm gives them all; Wave.decode uses AppleLibm)"
       ],
       "blocker": null,
       "gates": {
@@ -59160,6 +59164,8 @@
       "evidence": [
         "tools/wav_probe.py",
         "tools/qoa_probe.py",
+        "tools/mp3_wave_probe.py",
+        "tools/vorbis_wave_probe.py",
         "docs/AUDIO.md"
       ],
       "gate_evidence": {},
@@ -59264,12 +59270,12 @@
       "phase": 4,
       "sequence": 20,
       "status": "partial",
-      "jonlib": "Sound.load_for / Sound.load",
+      "jonlib": "Sound.load_with / Sound.load_for / Sound.load",
       "mapping_state": "implemented",
-      "scope": "Wave.load then LoadSoundFromWave; the examples' .wav sounds (26522 to 48000 frames) compared sample by sample with raylib.",
+      "scope": "Wave.load_for then LoadSoundFromWave; the examples' .wav sounds (26522 to 48000 frames) compared sample by sample with raylib, and the frame counts of sounds from MP3 and Ogg Vorbis files.",
       "gaps": [
         "SoundWaveError where raylib returns the zero sound (missing or bad files)",
-        "OGG, MP3, FLAC, XM and MOD files",
+        "FLAC, XM and MOD files, and MP3 files with a Layer I or II frame",
         "SoundDeviceNotReady on an unready device",
         "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
       ],
@@ -59284,6 +59290,8 @@
       },
       "evidence": [
         "tools/sound_probe.py",
+        "tools/mp3_wave_probe.py",
+        "tools/vorbis_wave_probe.py",
         "docs/AUDIO.md"
       ],
       "gate_evidence": {},
