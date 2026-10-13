@@ -9492,6 +9492,31 @@ def Texture.unload(frame: Frame, texture: Texture) -> Frame:
   Texture{+id, _, _, _, _, _, _} = texture
   Frame{FrameCore.Canvas.give(False{}, id, canvas), Nil{}}
 
+# A texture's file is an image's, except that a PNG may be up to 16384 pixels
+# on a side while it has no more than 4096*4096 (Png.decode.wide): a strip of
+# sprites is loaded whole. The image goes nowhere but into the texture.
+def Texture.file.png(png: Bool, reference: M.Contraction, +bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
+  match png:
+    case True{}: Surface.codec.result(Png.decode.wide(bytes))
+    case False{}: Image.file.named_png.other(Image.file.beyond(U32.to_nat(1048576), bytes), reference, bytes)
+
+def Texture.file.decode(reference: M.Contraction, kind: Image.FileKind, +bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
+  match kind:
+    case PngFile{}: Texture.file.png(Image.file.png_signed(bytes), reference, bytes)
+    case QoiFile{}: Surface.decode_qoi(bytes)
+    case DdsFile{}: Surface.decode_dds(bytes)
+    case RasterFile{}: Image.file.raster(reference, bytes)
+    case UnsupportedImageFile{}: Fail{InvalidImageHeader{}}
+
+def Texture.file.surface(reference: M.Contraction, kind: Image.FileKind, result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(Result<&1, &1, Surface.IOError, Surface>):
+  match result:
+    case Fail{error}: IO.pure(Result<&1, &1, Surface.IOError, Surface>, Fail{error})
+    case Done{+bytes}: IO.pure(Result<&1, &1, Surface.IOError, Surface>, Image.file.decoded(Surface, Texture.file.decode(reference, kind, bytes)))
+
+def Texture.file.load(+kind: Image.FileKind, path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
+  IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, Surface>,
+    Image.file.bytes(path, Image.file.limit(kind)), Texture.file.surface(M.Uncontracted{}, kind))
+
 def Texture.load.image(frame: Frame, result: Result<&1, &1, Surface.IOError, Surface>) -> IO(Frame & Maybe<Texture>):
   match result:
     case Fail{_}: IO.pure(Frame & Maybe<Texture>, (frame, None{}))
@@ -9500,9 +9525,10 @@ def Texture.load.image(frame: Frame, result: Result<&1, &1, Surface.IOError, Sur
 # LoadTexture(fileName): LoadImage, then LoadTextureFromImage of the decoded
 # image (which UnloadImage frees). None, the frame unchanged, when the file
 # does not load (raylib returns texture id 0) or the 127 texture ids are in
-# use.
-def Texture.load(frame: Frame, path: String) -> IO(Frame & Maybe<Texture>):
-  IO.bind(Result<&1, &1, Surface.IOError, Surface>, Frame & Maybe<Texture>, Surface.load_image(path), Texture.load.image(frame))
+# use. A PNG file may be up to 16384 pixels on a side here, with no more than
+# 4096*4096 pixels (an image keeps 4096 on a side).
+def Texture.load(frame: Frame, +path: String) -> IO(Frame & Maybe<Texture>):
+  IO.bind(Result<&1, &1, Surface.IOError, Surface>, Frame & Maybe<Texture>, Texture.file.load(Image.file.kind(path), path), Texture.load.image(frame))
 
 # The face size LoadTextureCubemap derives (C int divisions), with the layout
 # auto-detection: line or cross layouts by the image's aspect.

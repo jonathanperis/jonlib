@@ -134,7 +134,7 @@ contract, not a stored field.
 
 ### Limits and error ordering
 
-Dimensions are 1..4096 on each axis. The complete encoded list, including bytes
+Dimensions are 1..4096 on each axis for an image (`Png.decode`); a texture's file (`Png.decode.wide`, which `Texture.load` uses) may reach 16384 on a side with no more than 4096x4096 pixels, the same decoder otherwise ([TEXTURES.md](TEXTURES.md)). The complete encoded list, including bytes
 after IEND, has an **inclusive 2,097,152-byte cap** (1 MiB until 2026-10-11;
 raised for the 1024x1024 textures of `shaders_basic_pbr`, the largest 1.68 MiB;
 a chunk's length has the same cap); the filtered scanline/pass

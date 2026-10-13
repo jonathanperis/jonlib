@@ -308,6 +308,7 @@ EXAMPLES = {
     'core_screen_recording': ('core/core_screen_recording.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'core_directory_files': ('core/core_directory_files.c', 'Ex.setup(listings, core, frame)'),
     'text_unicode_ranges': ('text/text_unicode_ranges.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_sprite_stacking': ('textures/textures_sprite_stacking.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_vr_simulator': ('core/core_vr_simulator.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shaders_game_of_life': ('shaders/shaders_game_of_life.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
@@ -444,6 +445,7 @@ PERSPECTIVE.add('audio_sound_positioning')
 PERSPECTIVE.add('core_vr_simulator')
 IO_SETUP.add('shaders_game_of_life'); SEEDED.add('shaders_game_of_life')
 IO_SETUP.add('text_unicode_ranges'); EFFECTS.add('text_unicode_ranges')
+IO_SETUP.add('textures_sprite_stacking')
 # core_directory_files lists its working directory and, after its back button, the directories above. Base has no
 # directory listing: the port is handed the listings (LISTED: its setup takes them, read here with readdir's order from the
 # very directories the reference lists). Each script's working directory (WORKING) is three levels inside its own
@@ -1306,6 +1308,11 @@ def scripts():
                                                   quick(), quick([mouse_at(300, 100)]), quick([button(0)]), quick([button(0, False), mouse_at(64, 24)]),
                                                   quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0)]), quick(), quick([mouse_at(250, 70)])]),
         script('core_directory_files', 'noext', [quick(), quick([mouse_at(200, 150)])]),
+        # The 122 slices of a 112x11468 texture, three times their size, turning with the frame time: D speeds them up
+        # over a slow frame while the wheel spreads the slices as far as they go (5); then A slows them and the wheel
+        # closes them (0). Three frames: each is 122 textured quads of 336x282 pixels, more than three minutes in the
+        # JavaScript lane.
+        script('textures_sprite_stacking', 'spin', [quick(), slow([key(68), (MOUSE_WHEEL, 0, 40, 0)]), quick([key(68, False), key(KEY_A), (MOUSE_WHEEL, 0, -60, 0)])]),
         # The font's 95 glyphs; 1 asks for the first choice (the notice covers that frame) and the next pass loads the 7 MiB
         # font three times, once for each of its two ranges after the plain load: the Spanish line gets its letter, the
         # atlas grows to 512x512 and the font has 212 glyphs. 0 goes back to the 95. The other choices are not scripted:
@@ -1605,7 +1612,7 @@ UNDEFINED_NATIVE = {
     # past the array, in every frame. docs/AUDIO.md.
     'audio_stream_callback': 'the last column of its wave reads one float past its buffer',
 }
-REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
+REPORTED = {'textures_sprite_stacking', 'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
             'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass',
             'shapes_rlgl_color_wheel', 'shapes_rectangle_advanced', 'core_input_gestures_testbed', 'core_input_gamepad',
             'shapes_easings_ball', 'shapes_easings_box', 'shapes_easings_testbed', 'textures_textured_curve',
