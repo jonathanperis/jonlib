@@ -876,14 +876,26 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
          (`total_samples`: 0 none yet, all ones not known). The gate's
          probe has `summed`/`checksummed` (a page's CRC made right) for
          streams that are searched for pages.
+       - **Done: waves and sounds** (`Wave.decode_for(libm, ".ogg",
+         bytes)`, `Wave.load_for`, `Sound.load_with`; gate `vorbis-wave`,
+         against raudio.c's own `LoadWave`). A wave is given only where
+         every short raylib's buffer holds was written by the read: a
+         stream that gives fewer samples than its length says is
+         `InvalidWaveData`, and so are frame counts whose product with
+         the channels is past an int. The functions without a profile
+         use `M.AppleLibm{}`, under which the tables are given only
+         where their floats are sure: whether `target.ogg` loads there
+         is to be seen when macOS is back.
        - Next, in order:
-         (c) `Wave.decode(".ogg")`, the sound, the music stream,
-         `audio_sound_loading`. raylib: `stb_vorbis_open_memory`, the
-         length, a `malloc` of `frameCount*channels` shorts and one
-         `stb_vorbis_get_samples_short_interleaved` for all of them: a
-         stream that gives fewer samples than its length says leaves the
-         rest of the wave unwritten (to refuse), and `frameCount*channels`
-         is an unsigned product cast to int.
+         (c) the example `audio_sound_loading` (`Sound.load_with` under
+         the libm profile, in the `examples-audio` gate; the wave takes
+         the JavaScript lane about a minute), then the music stream
+         (`LoadMusicStream` for `.ogg`: `stb_vorbis_seek_start` is
+         `set_file_offset(first)`, `previous_length = 0`, `first_decode`
+         on, `next_seg = -1` and the first frame pumped;
+         `stb_vorbis_seek_frame` is `seek_to_sample_coarse`, a search
+         over pages with `p_first` and `p_last`, which the length would
+         have to keep).
        - `float32_unpack` is exact arithmetic (a 21-bit mantissa scaled
          by a power of two and narrowed once).
        - The transform's tables are binary64: `compute_twiddle_factors`

@@ -2168,6 +2168,21 @@
    "minutes": 20
   },
   {
+   "id": "vorbis-wave",
+   "title": "Waves and sounds from Ogg Vorbis files (LoadWave: stb_vorbis_open_memory, stb_vorbis_stream_length_in_samples frames and one stb_vorbis_get_samples_short_interleaved; LoadSoundFromWave) against raudio.c itself: whether there is a wave, its frames, rate, size and channels, every 16-bit sample and the sound's frames, for raylib's target.ogg under both tokens, cut and damaged copies, last pages that state no position, fewer samples, more, and counts past an int, and built streams that are loud, quiet, cut by their position, without a length and refused; a stream whose read would leave shorts of raylib's buffer unwritten is not loaded by the reference and must be no wave",
+   "run": [
+    "{python}",
+    "tools/vorbis_wave_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 25
+  },
+  {
    "id": "wave-format",
    "title": "WaveFormat (miniaudio ma_convert_frames: formats, channel maps, linear resampling and its low-pass filter) against raylib with its audio module and the host contraction profile",
    "run": [

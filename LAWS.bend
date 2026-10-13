@@ -4972,3 +4972,46 @@ law vorbis_length_kept_as_not_known_answers_zero:
 
 law vorbis_length_of_no_data_is_not_known:
   {Ogg.Reader.error(VL.Length.reader(VL.length.samples(Ogg.open(Nil{}), 0, 0))) == 36 : U32}
+
+# Waves from Ogg Vorbis data (Wave.decode_for): data stb_vorbis does not
+# open, setups that are refused or past the port's limits, the count of
+# shorts LoadWave asks for, and a wave only where every short was written.
+
+law wave_ogg_of_no_data_is_no_wave:
+  {J.Wave.decode_for(M.Glibc239Libm{}, ".ogg", Nil{}) == Fail{J.InvalidWaveData{}} : Result<&1, &1, J.Wave.Error, J.Wave>}
+
+law wave_ogg_token_in_capitals_is_the_same:
+  {J.Wave.decode_for(M.Glibc239Libm{}, ".OGG", [1, 2, 3]) == Fail{J.InvalidWaveData{}} : Result<&1, &1, J.Wave.Error, J.Wave>}
+
+law wave_ogg_under_the_default_profile:
+  {J.Wave.decode(".ogg", Nil{}) == Fail{J.InvalidWaveData{}} : Result<&1, &1, J.Wave.Error, J.Wave>}
+
+law wave_other_tokens_stay_unsupported:
+  {J.Wave.decode_for(M.Glibc239Libm{}, ".oga", Nil{}) == Fail{J.UnsupportedWaveFormat{}} : Result<&1, &1, J.Wave.Error, J.Wave>}
+
+law wave_ogg_setup_stb_vorbis_fails_on_is_invalid:
+  {J.Wave.ogg.unready(VS.Failed{20}) == Fail{J.InvalidWaveData{}} : Result<&1, &1, J.Wave.Error, J.Wave>}
+
+law wave_ogg_setup_c_leaves_undefined_is_invalid:
+  {J.Wave.ogg.unready(VS.Refused{1}) == Fail{J.InvalidWaveData{}} : Result<&1, &1, J.Wave.Error, J.Wave>}
+
+law wave_ogg_setup_past_the_port_s_limits_is_unsupported:
+  {J.Wave.ogg.unready(VS.Refused{3}) == Fail{J.UnsupportedWaveFormat{}} : Result<&1, &1, J.Wave.Error, J.Wave>}
+
+law wave_ogg_tables_the_profile_does_not_give_are_unsupported:
+  {J.Wave.ogg.unready(VS.Refused{5}) == Fail{J.UnsupportedWaveFormat{}} : Result<&1, &1, J.Wave.Error, J.Wave>}
+
+law wave_ogg_shorts_are_frames_times_channels:
+  {J.Wave.ogg.shorts(44100, 2) == 88200 : U32}
+
+law wave_ogg_shorts_past_an_int_read_nothing:
+  {J.Wave.ogg.shorts(1610612736, 2) == 0 : U32}
+
+law wave_ogg_shorts_wrap_as_the_unsigned_product_does:
+  {J.Wave.ogg.shorts(2147483649, 2) == 2 : U32}
+
+law wave_ogg_every_short_written_is_a_wave:
+  {J.Wave.ogg.whole(True{}, 2, 8000, 1, [5, 65535]) == Done{J.Wave{2, 8000, 16, 1, [5, 65535]}} : Result<&1, &1, J.Wave.Error, J.Wave>}
+
+law wave_ogg_shorts_never_written_are_no_wave:
+  {J.Wave.ogg.whole(False{}, 2, 8000, 1, [5]) == Fail{J.InvalidWaveData{}} : Result<&1, &1, J.Wave.Error, J.Wave>}

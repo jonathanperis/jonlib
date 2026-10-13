@@ -9,8 +9,8 @@ It is plain `Data`: copying a Wave copies its samples.
 
 | Function | raylib | Contract |
 |---|---|---|
-| `Wave.decode(file_type, bytes)` | `LoadWaveFromMemory` | `.wav`/`.WAV` and `.qoa`/`.QOA` data as 16-bit samples and `.mp3`/`.MP3` data as 32-bit float samples (below). Other tokens are `UnsupportedWaveFormat`. |
-| `Wave.load(path)` | `LoadWave` | The file's bytes decoded by its extension; file errors are `WaveFileError`. |
+| `Wave.decode_for(libm, file_type, bytes)` / `decode` | `LoadWaveFromMemory` | `.wav`/`.WAV`, `.qoa`/`.QOA` and `.ogg`/`.OGG` data as 16-bit samples and `.mp3`/`.MP3` data as 32-bit float samples (below). Other tokens are `UnsupportedWaveFormat`. `libm` is the profile an Ogg Vorbis stream's tables are taken under; `decode` uses `M.AppleLibm{}`. |
+| `Wave.load_for(libm, path)` / `load` | `LoadWave` | The file's bytes decoded by its extension; file errors are `WaveFileError`. |
 | `Wave.is_valid(wave)` | `IsWaveValid` | Frames, sample rate, sample size and channels all positive. |
 | `Wave.copy(wave)` / `unload` | `WaveCopy` / `UnloadWave` | |
 | `Wave.crop(wave, init, final)` | `WaveCrop` | Frames `init..final-1` when `0 <= init < final <= frames` (C ints as U32 two's-complement words); other ranges return the wave unchanged with `InvalidWaveRequest`. |
@@ -442,19 +442,19 @@ Still to come: Layers I and II.
 raylib builds dr_mp3 with its SSE paths, whose samples differ from the
 scalar ones: the reference for the samples is the build as it is.
 
-## Ogg Vorbis (in progress)
+## Ogg Vorbis
 
 `src/vorbis_codebook.bend`, `src/vorbis_ogg.bend`,
 `src/vorbis_setup.bend`, `src/vorbis_maps.bend`,
 `src/vorbis_tables.bend`, `src/vorbis_decode.bend`,
 `src/vorbis_mdct.bend`, `src/vorbis_residue.bend`,
 `src/vorbis_floor.bend`, `src/vorbis_packet.bend`,
-`src/vorbis_frame.bend` and `src/vorbis_length.bend` are the start of an
-adaptation of stb_vorbis
+`src/vorbis_frame.bend` and `src/vorbis_length.bend` are an adaptation of
+stb_vorbis
 v1.22 (pinned raylib's
 `src/external/stb_vorbis.c`), which raylib's `LoadWave`, `LoadSound` and
-`LoadMusicStream` call for `.ogg` files. No wave is made yet:
-`Wave.decode(".ogg", ...)` is still `UnsupportedWaveFormat`. What is here
+`LoadMusicStream` call for `.ogg` files. Waves and sounds are loaded
+(*Waves and sounds*, at the section's end); music is not yet. What is here
 is the reading of the data, the whole setup header, the transform's
 tables, the decoding of a codebook's symbols and vectors, the inverse
 MDCT, the residues, a floor's curve, the decoding of a packet into its
@@ -1224,7 +1224,60 @@ in, with a header whose table the data ends in, and with a page of empty
 segments cut short. The probe states each stream's length beforehand and
 holds the reference to it.
 
-Still to come: the waves and the music.
+### Waves and sounds
+
+`Wave.decode_for(libm, ".ogg", bytes)` is raylib's `LoadWaveFromMemory`
+for Ogg Vorbis data: `stb_vorbis_open_memory`, as many frames as
+`stb_vorbis_stream_length_in_samples` says, and one
+`stb_vorbis_get_samples_short_interleaved` for all of them. The wave is
+16-bit samples at the stream's rate and channels. `Wave.load_for(libm,
+path)` is `LoadWave`, and `Sound.load_with(profile, libm, device, path)`
+`LoadSound`.
+
+- **`libm`** is the profile the transform's tables are taken under (they
+  are the C library's binary64 sines and cosines, see *The transform's
+  tables*). Under `M.Glibc239Libm` every table is given. `Wave.decode`,
+  `Wave.load` and `Sound.load_for` use `M.AppleLibm{}`, as the other
+  functions without a profile do: a stream whose tables that profile does
+  not give is `UnsupportedWaveFormat`.
+- **A length that is not known**, or 0, is a wave of no frames (raylib's
+  buffer is `malloc(0)`), and `LoadSoundFromWave` of it is the invalid
+  sound.
+- **`InvalidWaveData`: a stream that gives fewer samples than its length
+  says.** raylib does not look at how many samples the read gave: its
+  buffer is `malloc`'d for `frameCount*channels` shorts, and the shorts the
+  read did not reach are what `malloc` left there. That count is an
+  unsigned product taken as an int: one past an int reads nothing at all,
+  and one past 32 bits wraps to a few shorts under a frame count that says
+  billions. All of them are refused: a wave is given only where every
+  short of it was written.
+- **`InvalidWaveData`** also for data stb_vorbis does not open (raylib
+  warns and has no wave), for a setup C leaves undefined and for what the
+  decoder refuses in a packet or a sample (above).
+- **`UnsupportedWaveFormat`** for a setup past this port's limits (an
+  allocation over 16 MiB, a codebook over 2^19 entries), which stb_vorbis
+  decodes.
+
+`tools/vorbis_wave_probe.py` (gate `vorbis-wave`) compares `Wave.load_for`
+and `Sound.load_from_wave` with raudio.c's own `LoadWave` and
+`LoadSoundFromWave` on 20 files: raylib's `target.ogg` (44100 frames of two
+channels at 22050 Hz, and a sound of 96000 frames) under `.ogg` and `.OGG`;
+cut at its last page and inside it (the page before is the last then: 30208
+frames), inside its setup and its first header (no wave); with seeded
+damage in its packets; with a last page that states no position or 0 (no
+frames), 30000 samples (a shorter wave), 50000 (more than it has), and
+positions past an int and past 32 bits; and six streams of one channel at
+8000 Hz built by the vorbis-frame gate's probe: loud (every sample at an
+end of a short's range), quiet, with a position before the last block and
+one past the stream's samples, without checksums (no length) and loud
+enough to be refused. The reference program reads each stream itself
+first, with the read's loop written out, counting the samples and looking
+at each float: where the read would leave shorts unwritten or convert a
+float the port refuses, `LoadWave` is not called and the port must give no
+wave.
+
+Still to come: the music (`LoadMusicStream` for `.ogg`, with
+`stb_vorbis_seek_start` and `stb_vorbis_seek_frame`).
 
 ## WaveFormat
 
@@ -1400,7 +1453,7 @@ volume, a pitch, a pan, its playing and paused flags and a block of samples
 | `AudioDevice.is_ready(device)` | `IsAudioDeviceReady` | |
 | `AudioDevice.set_master_volume(device, volume)` / `master_volume` | `SetMasterVolume` / `GetMasterVolume` | Any volume that is not below 0 is kept (NaN included), ready device or not. |
 | `Sound.load_from_wave_for(profile, device, wave)` / `load_from_wave` | `LoadSoundFromWave` | The wave converted as `WaveFormat(wave, 48000, 32, 2)` converts it (the same `ma_convert_frames` calls) in a new tracked buffer. `load_from_wave` uses `M.Uncontracted{}`. |
-| `Sound.load_for(profile, device, path)` / `load` | `LoadSound` | `Wave.load` then the above. |
+| `Sound.load_with(profile, libm, device, path)` / `load_for(profile, device, path)` / `load` | `LoadSound` | `Wave.load_for` then the above. `load_for` uses `M.AppleLibm{}`. |
 | `Sound.load_alias(device, source)` | `LoadSoundAlias` | A new tracked buffer with its own volume, pitch, pan and state over the source's block, and the source handle's frame count. |
 | `Sound.is_valid(sound)` | `IsSoundValid` | Frames, buffer, sample rate, sample size and channels all nonzero. |
 | `Sound.unload(device, sound)` | `UnloadSound` | The buffer is untracked and its block freed, even a block other buffers still play. |

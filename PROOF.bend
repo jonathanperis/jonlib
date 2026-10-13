@@ -3817,3 +3817,42 @@ def Laws.vorbis_length_kept_as_not_known_answers_zero():
 
 def Laws.vorbis_length_of_no_data_is_not_known():
   {==}
+
+def Laws.wave_ogg_of_no_data_is_no_wave():
+  {==}
+
+def Laws.wave_ogg_token_in_capitals_is_the_same():
+  {==}
+
+def Laws.wave_ogg_under_the_default_profile():
+  {==}
+
+def Laws.wave_other_tokens_stay_unsupported():
+  {==}
+
+def Laws.wave_ogg_setup_stb_vorbis_fails_on_is_invalid():
+  {==}
+
+def Laws.wave_ogg_setup_c_leaves_undefined_is_invalid():
+  {==}
+
+def Laws.wave_ogg_setup_past_the_port_s_limits_is_unsupported():
+  {==}
+
+def Laws.wave_ogg_tables_the_profile_does_not_give_are_unsupported():
+  {==}
+
+def Laws.wave_ogg_shorts_are_frames_times_channels():
+  {==}
+
+def Laws.wave_ogg_shorts_past_an_int_read_nothing():
+  {==}
+
+def Laws.wave_ogg_shorts_wrap_as_the_unsigned_product_does():
+  {==}
+
+def Laws.wave_ogg_every_short_written_is_a_wave():
+  {==}
+
+def Laws.wave_ogg_shorts_never_written_are_no_wave():
+  {==}
