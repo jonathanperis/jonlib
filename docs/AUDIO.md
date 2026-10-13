@@ -476,6 +476,40 @@ codebook's code lengths, once it has read them:
   power of two are exact in binary64, and the narrowing is the one
   rounding (an infinity from 2^128, subnormals and zero below 2^-126).
 - **`ilog`** and **`bit_reverse`**.
+- **`lookup1_values(entries, dim)`** (`lookup1.values`): how many values a
+  lookup of type 1 has per dimension, the largest `r` with `r^dim <=
+  entries`. stb_vorbis does not compute that root. It estimates it as
+  `floor(exp((float)log((float)entries)/dim))`, through the C library's
+  binary64 `log` and `exp` with two float roundings between them, and then
+  corrects the estimate by one, upward only: its answer is the root when
+  the estimate is the root or one less, and -1 (an invalid setup)
+  otherwise. The two roundings move the estimate by a factor of at most
+  `e^(ln(entries)*2^-23)`, so:
+  - for every codebook of up to 2^19 entries, and for a larger one of two
+    dimensions or more that is not just under a perfect power (within
+    17/2^23 of it: 34 entries under 4096^2), the estimate is surely within
+    the correction and the answer is the root, computed here with
+    integers;
+  - elsewhere (one dimension and more than 2^19 entries; just under a
+    large perfect power) the answer hangs on the last bits of the C
+    library's `log` and `exp`: on this host 67% of those pairs are -1 and
+    the rest the root. The port answers nothing (`None`), and the setup
+    will refuse such a codebook;
+  - the correction is `(int) floor(pow((float) r+1, dim)) <= entries`, a
+    conversion to int of a power that is 2^31 or more for every codebook of
+    31 dimensions or more, and for one of 20 to 23 dimensions whose root is
+    2. C leaves that undefined (x86-64 makes it `INT_MIN`, and stb_vorbis
+    then answers one more than the root). `None` too, as for a codebook
+    with entries and no dimension (a conversion of an infinity or a NaN),
+    which the setup refuses before it asks.
+
+  `tools/reference/stb_vorbis_lookup1/exhaustive.c` checks the rule against
+  stb_vorbis's function for every `entries` from 1 to 2^24 - 1 with 36
+  dimensions: of 603,979,740 pairs the rule is sure of 368,526,909 and
+  stb_vorbis answers the root on every one, with the C library's FMA
+  variants and without them (glibc 2.39; `results/`). The gate compares
+  6644 pairs with stb_vorbis and holds the port to `None` on 2171 others,
+  where stb_vorbis is not called.
 
 `tools/vorbis_codebook_probe.py` (gate `vorbis-codebook`) includes
 stb_vorbis.c in its reference and calls those static functions on a
@@ -487,9 +521,8 @@ the 32767th, lengths that are no tree), and 1443 words for the three scalar
 functions. The floats are also checked against exact arithmetic in the
 probe.
 
-Still to come: `lookup1_values` (a float estimate through the C library's
-binary64 `log` and `exp`), the Ogg pages and the setup, the packets
-(floors, residues), the inverse MDCT, and then the waves and the music.
+Still to come: the Ogg pages and the setup, the packets (floors,
+residues), the inverse MDCT, and then the waves and the music.
 
 ## WaveFormat
 

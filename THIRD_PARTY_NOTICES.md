@@ -374,10 +374,13 @@ domain; Jonlib uses the MIT alternative, retained with its notice in
 builders of stb_vorbis v1.22 by Sean Barrett and contributors, as pinned
 raylib vendors it in `src/external/stb_vorbis.c`: `compute_codewords`,
 `compute_sorted_huffman`, `compute_accelerated_huffman`, `ilog`,
-`bit_reverse` and `float32_unpack`. It is the first part of an Ogg Vorbis
-decoder and reads no file yet. `tools/vorbis_codebook_probe.py` includes the
-unmodified file in its reference program only; no stb code is linked into the
-Bend candidate. stb_vorbis is MIT or public domain; Jonlib uses the MIT
+`bit_reverse`, `float32_unpack` and `lookup1_values` (answered by integer
+arithmetic where stb_vorbis's float estimate is sure). It is the first part
+of an Ogg Vorbis decoder and reads no file yet.
+`tools/vorbis_codebook_probe.py` and
+`tools/reference/stb_vorbis_lookup1/exhaustive.c` include the unmodified
+file in their reference programs only; no stb code is linked into the Bend
+candidate. stb_vorbis is MIT or public domain; Jonlib uses the MIT
 alternative, retained with its notice in
 [LICENSES/stb_vorbis.txt](LICENSES/stb_vorbis.txt).
 

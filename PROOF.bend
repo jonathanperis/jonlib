@@ -2845,3 +2845,69 @@ def Laws.vorbis_codewords_by_symbol():
 
 def Laws.vorbis_no_tree_no_codebook():
   {==}
+
+def Laws.vorbis_power_capped_is_the_power():
+  {==}
+
+def Laws.vorbis_power_capped_stops_at_2_26():
+  {==}
+
+def Laws.vorbis_power_capped_of_one_and_zero():
+  {==}
+
+def Laws.vorbis_root_of_one_dimension():
+  {==}
+
+def Laws.vorbis_root_of_a_square():
+  {==}
+
+def Laws.vorbis_root_of_many_dimensions():
+  {==}
+
+def Laws.vorbis_lookup1_of_a_perfect_power():
+  {==}
+
+def Laws.vorbis_lookup1_under_a_perfect_power():
+  {==}
+
+def Laws.vorbis_lookup1_of_one_entry():
+  {==}
+
+def Laws.vorbis_lookup1_without_entries():
+  {==}
+
+def Laws.vorbis_lookup1_without_entries_or_dimensions():
+  {==}
+
+def Laws.vorbis_lookup1_without_dimensions_is_undefined():
+  {==}
+
+def Laws.vorbis_lookup1_of_2_19_entries_in_one_dimension():
+  {==}
+
+def Laws.vorbis_lookup1_past_2_19_entries_in_one_dimension():
+  {==}
+
+def Laws.vorbis_lookup1_of_a_large_codebook_away_from_a_power():
+  {==}
+
+def Laws.vorbis_lookup1_of_a_large_codebook_just_under_a_power():
+  {==}
+
+def Laws.vorbis_lookup1_of_30_dimensions():
+  {==}
+
+def Laws.vorbis_lookup1_of_31_dimensions_is_undefined():
+  {==}
+
+def Laws.vorbis_lookup1_of_a_root_of_two_in_20_dimensions_is_undefined():
+  {==}
+
+def Laws.vorbis_lookup1_of_a_root_of_two_in_19_dimensions():
+  {==}
+
+def Laws.vorbis_lookup1_past_24_bits_of_entries():
+  {==}
+
+def Laws.vorbis_lookup1_past_16_bits_of_dimensions():
+  {==}
