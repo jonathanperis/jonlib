@@ -735,6 +735,37 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
        `setup_malloc` sizes come from the file (`len + 1` for a vendor
        string of `len` up to 2^32 - 1); the corpus is one file and edits
        of it, as with MP3 (there is no encoder here).
+       Read since (2026-10-13), for whoever starts it:
+       - A first piece that needs no file parsing: the codebook builders,
+         which a reference can call directly once stb_vorbis.c is
+         included (`compute_codewords`, `compute_sorted_huffman`,
+         `compute_accelerated_huffman`, `float32_unpack`,
+         `lookup1_values`, `bit_reverse`, `ilog`).
+       - `lookup1_values(entries, dim)` is not the integer root. It
+         estimates `floor(exp((float)log((float)entries)/dim))` and
+         corrects it by one upward only; an estimate one too high, or two
+         too low, makes it answer -1, and the setup is then invalid. The
+         estimate's error is about 2e-6 relative (two float roundings):
+         it is certain for perfect powers and wherever the root is not
+         that near the next integer, and it depends on the library's
+         binary64 `log` and `exp` elsewhere, large `entries` with `dim`
+         1 included (from about 500000). The port either models those
+         two functions or answers only where the estimate is certain.
+       - `float32_unpack` is exact arithmetic (a 21-bit mantissa scaled
+         by a power of two and narrowed once).
+       - The transform's tables are binary64: `compute_twiddle_factors`
+         is `cos` and `sin` of `4*k*M_PI/n` and the like narrowed to
+         float, `compute_window` is
+         `sin(0.5*M_PI*square((float)sin((i + 0.5)/n2*0.5*M_PI)))`. The
+         glibc 2.39 binary64 `sin` and `cos` are in
+         (`src/lgpl/sin.bend`); up to about 14000 of them for a pair of
+         block sizes.
+       - `get_bits` answers 0 from a packet's end on, and the setup goes
+         on reading zeros until one of its own checks fails or it ends:
+         `f->error` set by the page reader meanwhile is overwritten or
+         kept as it is, and a setup can succeed with it set.
+       - The memory reader moves its pointer past the data's end (`skip`)
+         before it notes the end: a truncated header is undefined there.
      - `audio_module_playing`. `LoadMusicStream("mini1111.xm")`: jar_xm
        (its float mixer and its tables); the frame draws the time
        played.
