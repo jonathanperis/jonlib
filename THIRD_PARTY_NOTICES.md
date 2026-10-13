@@ -377,7 +377,10 @@ as pinned raylib vendors it in `src/external/stb_vorbis.c`. The third and
 the fourth are `start_decoder`'s reading of the three headers (the
 identification and comment headers; the setup header's codebooks with
 their lookups, its floors with `point_compare`'s order and `neighbors`,
-its residues, mappings and modes). The second is
+its residues, mappings and modes). `src/vorbis_tables.bend` is
+`init_blocksize`'s tables (`compute_twiddle_factors`, `compute_window`,
+`compute_bitreverse`); their sines and cosines are Jonmath's binary64 ones,
+which the LGPL module below provides. The second is
 how the decoder reads its data: bytes (`get8`, `get32`, `getn`, `skip`), Ogg
 pages (`capture_pattern`, `start_page_no_capturepattern`, `start_page`),
 packets (`start_packet`, `maybe_start_packet`, `next_segment`,
@@ -388,7 +391,7 @@ packets (`start_packet`, `maybe_start_packet`, `next_segment`,
 arithmetic where stb_vorbis's float estimate is sure). They are the first
 parts of an Ogg Vorbis decoder, which decodes nothing yet.
 `tools/vorbis_codebook_probe.py`, `tools/vorbis_ogg_probe.py`,
-`tools/vorbis_setup_probe.py` and
+`tools/vorbis_setup_probe.py`, `tools/vorbis_tables_probe.py` and
 `tools/reference/stb_vorbis_lookup1/exhaustive.c` include the unmodified
 file in their reference programs only; no stb code is linked into the Bend
 candidate. stb_vorbis is MIT or public domain; Jonlib uses the MIT

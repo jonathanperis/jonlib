@@ -797,17 +797,36 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
          without its tables. Two more refusals: a sixteenth submap
          (stb_vorbis's arrays hold 15) and a classbook of more than 2^24
          entries times dimensions.
-       - Next: `init_blocksize`'s tables for the two block sizes
-         (`compute_twiddle_factors`, `compute_window`,
-         `compute_bitreverse`), which are binary64 `sin` and `cos`
-         narrowed to float (a libm profile, as in `src/lgpl/sin.bend`;
-         a reference can read `f->A`, `B`, `C`, `window`, `bit_reverse`
-         after `start_decoder`); then `vorbis_decode_packet`
-         (`vorbis_decode_initial`, the floors' Y values with
-         `prep_huffman` and the codebook decodes, the residues,
-         `inverse_mdct`), which the Ogg gate's harness (a script of
-         calls, a digest of the struct) and this one's can be grown
-         into.
+       - **Done: `init_blocksize`'s tables** (`src/vorbis_tables.bend`,
+         gate `vorbis-tables`, docs/AUDIO.md "The transform's tables"):
+         `T.tables.for(libm, n)`. Found there: stb_vorbis defines a
+         *float* `M_PI` where `<math.h>` has none, so a reference must be
+         compiled as raylib is (`-D_DEFAULT_SOURCE`), or its tables are
+         others; a variable named `C`, `L` or `R` after including
+         stb_vorbis.c is one of its macros. Under profiles other than
+         `Glibc239Libm` the port gives the floats that are sure whatever
+         the library (a two-unit margin from the rounding boundary): on
+         Linux every one is. **On macOS this gate is the test of that
+         rule against Apple's library; if a value differs there, the rule
+         is wrong for that library and Vorbis must be refused under
+         `AppleLibm` instead.**
+       - Next: the decode. In order: (a) a store read and written by
+         index for the buffers and the tables (a binary tree of floats
+         as a Data value, so that it needs no threading: `Array` is
+         affine); (b) `prep_huffman`, `codebook_decode_scalar_raw`, the
+         `DECODE` fast path and `codebook_decode`, `_step`,
+         `_deinterleave_repeat` on the Ogg reader, gated by the Ogg
+         gate's script harness with codebooks from a started decoder
+         (`prep_huffman` shifts by `valid_bits`, which is -1 after bits
+         ran out: where a byte then comes, after a continued-flag error,
+         the shift is undefined and must be refused); (c)
+         `inverse_mdct` alone on buffers, callable directly; (d)
+         `vorbis_decode_packet` (the floors' Y values, `do_floor` with
+         `inverse_db_table`, the residues, the coupling), compared by
+         the channel buffers; (e) `vorbis_finish_frame`, the samples and
+         `stb_vorbis_stream_length_in_samples` (which seeks:
+         `vorbis_find_page`, the page CRC); (f) `Wave.decode(".ogg")`,
+         the sound, the music stream, `audio_sound_loading`.
        - `float32_unpack` is exact arithmetic (a 21-bit mantissa scaled
          by a power of two and narrowed once).
        - The transform's tables are binary64: `compute_twiddle_factors`

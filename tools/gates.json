@@ -2048,6 +2048,21 @@
    "minutes": 9
   },
   {
+   "id": "vorbis-tables",
+   "title": "The Vorbis transform's tables (stb_vorbis init_blocksize: compute_twiddle_factors, compute_window, compute_bitreverse) against stb_vorbis.c's own functions for every block size from 64 to 8192: the C library's binary64 cos and sin narrowed to float, under the host's libm profile, and on a glibc host under M.AppleLibm too, where a value is given only if its float is sure whatever library computes it (every value is, and is the same)",
+   "run": [
+    "{python}",
+    "tools/vorbis_tables_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 6
+  },
+  {
    "id": "wave-format",
    "title": "WaveFormat (miniaudio ma_convert_frames: formats, channel maps, linear resampling and its low-pass filter) against raylib with its audio module and the host contraction profile",
    "run": [

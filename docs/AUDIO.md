@@ -445,13 +445,15 @@ scalar ones: the reference for the samples is the build as it is.
 ## Ogg Vorbis (in progress)
 
 `src/vorbis_codebook.bend`, `src/vorbis_ogg.bend`,
-`src/vorbis_setup.bend` and `src/vorbis_maps.bend` are the start of an
-adaptation of stb_vorbis v1.22 (pinned raylib's
+`src/vorbis_setup.bend`, `src/vorbis_maps.bend` and
+`src/vorbis_tables.bend` are the start of an adaptation of stb_vorbis
+v1.22 (pinned raylib's
 `src/external/stb_vorbis.c`), which raylib's `LoadWave`, `LoadSound` and
 `LoadMusicStream` call for `.ogg` files. Nothing is decoded yet:
 `Wave.decode(".ogg", ...)` is still `UnsupportedWaveFormat`. What is here
-is the reading of the data, the whole setup header (all below) and what
-the setup makes of a codebook's code lengths, once it has read them:
+is the reading of the data, the whole setup header, the transform's
+tables (all below) and what the setup makes of a codebook's code lengths,
+once it has read them:
 
 - **The codes** (`compute_codewords`; `codewords`, and `book.of` for all the tables). A length is 1 to
   31 bits, or 255 for a symbol without a code. The first symbol with a code
@@ -725,8 +727,52 @@ neighbour). 54 whole setups, 180 failures with the same code at the same
 stage, 15 refusals; 3141 codebooks, 179 floors, 130 residues, 103
 mappings, 155 modes.
 
-Still to come: the transform's tables, the packets (floors, residues), the
-inverse MDCT, and then the waves and the music.
+### The transform's tables
+
+`src/vorbis_tables.bend` is `init_blocksize`: for a block size `n` (a power
+of two from 64 to 8192), `tables.for(libm, n)` gives the twiddle factors
+`A` and `B` (n/2 floats each) and `C` (n/4), the window (n/2) and the bit
+reversal (n/8), as `compute_twiddle_factors`, `compute_window` and
+`compute_bitreverse` compute them.
+
+The floats are the C library's binary64 `cos` and `sin` narrowed:
+`A[2k] = (float)cos(4*k*M_PI/n)`, `A[2k+1] = (float)-sin(4*k*M_PI/n)`,
+`B[2k] = (float)cos((2k+1)*M_PI/n/2)*0.5f` and its `sin`,
+`C[2k] = (float)cos(2*(2k+1)*M_PI/n)` and its `-sin`, and the window is
+`(float)sin(0.5*M_PI*square((float)sin((i + 0.5)/n2*0.5*M_PI)))`, a sine of
+a squared sine narrowed twice.
+
+- **The arguments are the same on every host.** They are products and
+  quotients of ints and `M_PI` in binary64, each rounded once, with no
+  product followed by a sum that a compiler could fuse. The port computes
+  them with Jonmath's exact binary64 helpers.
+- **`M_PI` is `<math.h>`'s.** stb_vorbis defines `M_PI` itself where the
+  header does not, as a *float* constant (`3.14159265358979323846264f`),
+  and its tables are then others in most places. raylib's builds define
+  `_DEFAULT_SOURCE` (CMake) or `_GNU_SOURCE` (Makefile), so the double is
+  used; that is what the port has, and the gate's reference is compiled so.
+- **The functions are the library's.** Under `M.Glibc239Libm{}` every
+  value is glibc 2.39's own (`Libm.sin64`, `Libm.cos64`: the LGPL module
+  `src/lgpl/sin.bend`). Under another profile the port has no model of the
+  library's sine, and gives a value only where its float is sure: where the
+  binary64 result is at least two units in its last place away from a
+  float's rounding boundary, so that any library within one unit of the
+  true value (glibc's is) narrows to the same float. A table with a value
+  that is not sure is `None`. For the eight block sizes every one of the
+  28,560 floats is sure. Whether Apple's library is within that unit is
+  what the gate will show on a macOS host, where the reference is Apple's
+  own.
+
+`tools/vorbis_tables_probe.py` (gate `vorbis-tables`) includes
+stb_vorbis.c in its reference and calls the three functions for each of
+the eight block sizes; the tables are compared by a rolling hash of the
+floats' bits every 64 values, under the host's profile and, on a glibc
+host, under `M.AppleLibm{}` too (every value given, every value the same).
+The proof has no laws on the angles: Jonmath's binary64 helpers use float
+primitives, which the proof checker does not evaluate.
+
+Still to come: the packets (floors, residues), the inverse MDCT, and then
+the waves and the music.
 
 ## WaveFormat
 
