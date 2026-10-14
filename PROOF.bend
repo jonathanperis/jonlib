@@ -4099,3 +4099,18 @@ def Laws.xm_player_pattern_break_goes_to_the_next_entry():
 
 def Laws.xm_player_position_jump_goes_to_its_entry():
   {==}
+
+def Laws.xm_mixer_frame_of_a_channel_is_counted():
+  {==}
+
+def Laws.xm_mixer_channel_that_does_not_sound_is_kept_as_it_is():
+  {==}
+
+def Laws.xm_mixer_samples_generated_are_the_player_s_count():
+  {==}
+
+def Laws.xm_mixer_frames_asked_for_are_added_to_the_count():
+  {==}
+
+def Laws.xm_mixer_samples_come_in_the_order_they_were_made():
+  {==}

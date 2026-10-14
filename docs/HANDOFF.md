@@ -1051,7 +1051,19 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
        its actual volume and panning slide to their targets by 1/128;
        the sums times the global volume if it is not 1, kept to -1 and
        1 (by comparisons with doubles); `generated_samples` is added to
-       before the frames. Then (4) `Music.load` for `.xm`.
+       before the frames. **(3) is done** (`src/xm_mixer.bend`, gate
+       `xm-mixer`): `Mx.generate(player, count)` is `Generated{player,
+       samples}` (left and right in turn) and `Mx.generated.of(player)`
+       the samples asked for. The gate plays the built modules at 8000
+       Hz so that a few thousand frames pass many rows.
+       Next: (4) `Music.load` for `.xm` (raylib: a stream of the device's
+       rate, 32 bits and 2 channels, `frameCount` the remaining samples,
+       looping on, `jar_xm_reset`; `UpdateMusicStream` asks
+       `jar_xm_generate_samples` for each half; `StopMusicStream` is
+       `jar_xm_reset`; `GetMusicTimePlayed` is `generated_samples` over
+       the rate), under a libm profile, and the example. Mind the compile
+       size: `Music.load` reaching the XM player adds it to every program
+       that loads music (see the note on the 8 GiB limit above).
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`

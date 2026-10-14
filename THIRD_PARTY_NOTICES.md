@@ -426,8 +426,9 @@ alternative, retained with its notice in
 
 ## jar_xm
 
-`src/xm_module.bend`, `src/xm_pitch.bend`, `src/xm_sample.bend` and
-`src/xm_player.bend` are altered Bend adaptations of parts of jar_xm.h
+`src/xm_module.bend`, `src/xm_pitch.bend`, `src/xm_sample.bend`,
+`src/xm_player.bend` and `src/xm_mixer.bend` are altered Bend adaptations
+of parts of jar_xm.h
 v0.3.1 (libxm by Romain "Artefact2" Dalmaso with Dan Spencer, repackaged by
 Joshua Adam Reisenauer, with later changes by m4ntr0n1c), as pinned raylib
 vendors it in `src/external/jar_xm.h`: the reading of a module
@@ -441,9 +442,11 @@ frequencies (`jar_xm_linear_period`, `jar_xm_linear_frequency`,
 `jar_xm_next_of_sample`. `src/xm_player.bend` is the player's rows and
 ticks (`jar_xm_row`, `jar_xm_tick`, `jar_xm_handle_note_and_instrument`,
 `jar_xm_trigger_note`, `jar_xm_envelopes`, the vibrato, tremolo, arpeggio
-and slide functions), `jar_xm_reset` and `jar_xm_get_remaining_samples`.
-`tools/xm_module_probe.py`, `tools/xm_pitch_probe.py`,
-`tools/xm_sample_probe.py` and `tools/xm_player_probe.py` include the
+and slide functions), `jar_xm_reset` and `jar_xm_get_remaining_samples`,
+and `src/xm_mixer.bend` is `jar_xm_mixdown` and
+`jar_xm_generate_samples`. `tools/xm_module_probe.py`,
+`tools/xm_pitch_probe.py`, `tools/xm_sample_probe.py`,
+`tools/xm_player_probe.py` and `tools/xm_mixer_probe.py` include the
 unmodified file in their reference programs only; no jar_xm code is linked
 into the Bend candidate. jar_xm is under the WTFPL, version 2, retained
 with its notice in [LICENSES/jar_xm.txt](LICENSES/jar_xm.txt).

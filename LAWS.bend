@@ -62,6 +62,7 @@ import ./src/xm_module.bend as Xm
 import ./src/xm_pitch.bend as XmP
 import ./src/xm_sample.bend as XmS
 import ./src/xm_player.bend as XmPl
+import ./src/xm_mixer.bend as XmX
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/mixer.bend as Mixer
@@ -5281,3 +5282,22 @@ law xm_player_pattern_break_goes_to_the_next_entry:
 
 law xm_player_position_jump_goes_to_its_entry:
   {XmPl.place.of(Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, 1, 3, XmPl.Song{3, 99, 0.5, True{}, False{}, 0, 0, 0, 24492, 0}) == XmPl.Place{0, 0, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}} : XmPl.Place}
+
+# An XM player's mixer (src/xm_mixer.bend): a channel's frame counted, a
+# channel that does not sound, and the count and order of the samples
+# generated.
+
+law xm_mixer_frame_of_a_channel_is_counted:
+  {XmX.head.counted(XmS.Head{0.5, 1.0, 3, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 0.25, 0.75}) == XmS.Head{0.5, 1.0, 4, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 0.25, 0.75} : XmS.Head}
+
+law xm_mixer_channel_that_does_not_sound_is_kept_as_it_is:
+  {XmX.channel.kept(XmPl.channel.new(), XmX.Mixed{Nil{}, 0.5, 0.25, True{}}) == XmX.Mixed{[XmPl.channel.new()], 0.5, 0.25, True{}} : XmX.Mixed}
+
+law xm_mixer_samples_generated_are_the_player_s_count:
+  {XmX.generated.of(XmPl.Player{M.Glibc239Libm{}, Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, Nil{}, 48000, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}, 0, 0, 0, 0.0, St.Index.new(0, 0), 0, 7, Nil{}}) == 7 : U32}
+
+law xm_mixer_frames_asked_for_are_added_to_the_count:
+  {XmX.generated.of(XmX.player.generated(XmPl.Player{M.Glibc239Libm{}, Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, Nil{}, 48000, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}, 0, 0, 0, 0.0, St.Index.new(0, 0), 0, 7, Nil{}}, 5)) == 12 : U32}
+
+law xm_mixer_samples_come_in_the_order_they_were_made:
+  {XmX.generated.ended(XmX.Generated{XmPl.Player{M.Glibc239Libm{}, Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, Nil{}, 48000, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}, 0, 0, 0, 0.0, St.Index.new(0, 0), 0, 7, Nil{}}, [4.0, 3.0, 2.0, 1.0]}) == XmX.Generated{XmPl.Player{M.Glibc239Libm{}, Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, Nil{}, 48000, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}, 0, 0, 0, 0.0, St.Index.new(0, 0), 0, 7, Nil{}}, [1.0, 2.0, 3.0, 4.0]} : XmX.Generated}
