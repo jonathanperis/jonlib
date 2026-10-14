@@ -22,8 +22,7 @@ import ./mp3_layer3.bend as L
 # there), pcmFramesConsumedInMP3Frame and pcmFramesRemainingInMP3Frame, the
 # channels of the frame decoded last (mp3FrameChannels), currentPCMFrame,
 # and `status`: 0, or why the stream stopped (L.Decoded's: 1 a frame dr_mp3
-# decodes by leaving one of its arrays, 2 a Layer I or II frame, which this
-# port does not decode yet).
+# decodes by leaving one of its arrays).
 type Player is Data:
   Player{stream: H.Stream, decoder: L.Decoder, pcm: +List<U32>, consumed: U32, remaining: U32, channels: U32, current: U32, status: U32}
 
@@ -63,28 +62,6 @@ def buffered(+stream: H.Stream, +decoder: L.Decoder) -> L.Decoded:
 type Next is Data:
   Next{stream: H.Stream, decoder: L.Decoder, samples: U32, status: U32, pcm: +List<U32>, channels: U32}
 
-def next.frame(+stream: H.Stream, +decoder: L.Decoder, +samples: U32, +bytes: U32, +status: U32, +pcm: +List<U32>) -> Next:
-  L.Decoder{H.Dec{+header, _, _}, _, _, _, _, _, _, _, _} = decoder
-  Next{H.stream.used(stream, Decoder.dec(decoder), bytes), decoder, Bool.pick(U32, U32.is_eq(status, 0), samples, 0), status, pcm, Bool.pick(U32, H.hdr.mono(header), 1, 2)}
-
-# The loop of drmp3_decode_next_frame_ex__callbacks with a buffer for the
-# samples: a frame is decoded from the buffer and its bytes leave it; one
-# with samples ends the loop, as does one this port refuses; anything else
-# (bytes that are no frame, a frame that decodes nothing) is passed and the
-# buffer filled again (a memory stream, H.Stream, goes on without one while
-# bytes are passed). `frame` is the frame of `stream`'s buffer and `before`
-# the decoder it was decoded with.
-def next.loop(n: Nat, ended: Bool, frame: L.Decoded, +stream: H.Stream, +before: L.Decoder) -> Next:
-  match n:
-    case 0n: Next{stream, before, 0, 0, Nil{}, 0}
-    case 1n+rest:
-      match ended frame:
-        case True{} _: Next{stream, before, 0, 0, Nil{}, 0}
-        case False{} L.Decoded{+decoder, 0, +bytes, 0, _, _}:
-          +filled = H.stream.refill(H.stream.memory(stream), H.stream.used(stream, Decoder.dec(decoder), bytes), bytes)
-          next.loop(rest, H.stream.ended(filled), buffered(filled, decoder), filled, decoder)
-        case False{} L.Decoded{+decoder, +samples, +bytes, +status, _, +pcm}: next.frame(stream, decoder, samples, bytes, status, pcm)
-
 def count(xs: +List<U32>, +n: U32) -> U32:
   match xs:
     case Nil{}: n
@@ -94,13 +71,40 @@ def count(xs: +List<U32>, +n: U32) -> U32:
 def pcm.written(+samples: +List<U32>, +array: +List<U32>) -> +List<U32>:
   List.append(&2, U32, samples, List.drop(&2, U32, array, U32.to_nat(count(samples, 0))))
 
+# `array` is pcmFrames: a frame the port refuses leaves it as it was.
+def next.frame(+stream: H.Stream, +decoder: L.Decoder, +samples: U32, +bytes: U32, +status: U32, +pcm: +List<U32>, +array: +List<U32>) -> Next:
+  L.Decoder{H.Dec{+header, _, _}, _, _, _, _, _, _, _, _} = decoder
+  Next{H.stream.used(stream, Decoder.dec(decoder), bytes), decoder, Bool.pick(U32, U32.is_eq(status, 0), samples, 0), status,
+    Bool.pick(+List<U32>, U32.is_eq(status, 0), pcm.written(pcm, array), array), Bool.pick(U32, H.hdr.mono(header), 1, 2)}
+
+# The loop of drmp3_decode_next_frame_ex__callbacks with a buffer for the
+# samples: a frame is decoded from the buffer and its bytes leave it; one
+# with samples ends the loop, as does one this port refuses; anything else
+# (bytes that are no frame, a frame that decodes nothing) is passed and the
+# buffer filled again (a memory stream, H.Stream, goes on without one while
+# bytes are passed). `frame` is the frame of `stream`'s buffer and `before`
+# the decoder it was decoded with; `array` is pcmFrames, which every frame
+# decoded writes to, a frame without samples too (a Layer I or II frame
+# read past its end has written the granules it made).
+def next.loop(n: Nat, ended: Bool, frame: L.Decoded, +stream: H.Stream, +before: L.Decoder, +array: +List<U32>) -> Next:
+  match n:
+    case 0n: Next{stream, before, 0, 0, array, 0}
+    case 1n+rest:
+      match ended frame:
+        case True{} _: Next{stream, before, 0, 0, array, 0}
+        case False{} L.Decoded{+decoder, 0, +bytes, 0, _, +partial}:
+          +filled = H.stream.refill(H.stream.memory(stream), H.stream.used(stream, Decoder.dec(decoder), bytes), bytes)
+          next.loop(rest, H.stream.ended(filled), buffered(filled, decoder), filled, decoder, pcm.written(partial, array))
+        case False{} L.Decoded{+decoder, +samples, +bytes, +status, _, +pcm}: next.frame(stream, decoder, samples, bytes, status, pcm, array)
+
 # The player after drmp3_decode_next_frame. A frame with samples becomes the
-# frame at hand, none consumed; without one nothing changes but the stream
-# and the decoder (and `status` when the frame is one this port refuses).
-def next.player(next: Next, +pcm: +List<U32>, +consumed: U32, +remaining: U32, +channels: U32, +current: U32, +status: U32) -> Player:
+# frame at hand, none consumed; without one nothing changes but the stream,
+# the decoder and pcmFrames (and `status` when the frame is one this port
+# refuses).
+def next.player(next: Next, +consumed: U32, +remaining: U32, +channels: U32, +current: U32, +status: U32) -> Player:
   match next:
-    case Next{stream, decoder, 0, +stopped, _, _}: Player{stream, decoder, pcm, consumed, remaining, channels, current, U32.max(status, stopped)}
-    case Next{stream, decoder, +samples, _, +written, +of}: Player{stream, decoder, pcm.written(written, pcm), 0, samples, of, current, status}
+    case Next{stream, decoder, 0, +stopped, +written, _}: Player{stream, decoder, written, consumed, remaining, channels, current, U32.max(status, stopped)}
+    case Next{stream, decoder, +samples, _, +written, +of}: Player{stream, decoder, written, 0, samples, of, current, status}
 
 # drmp3_decode_next_frame: the next frame that decodes, its samples in
 # pcmFrames. A player that stopped stays where it is.
@@ -110,7 +114,7 @@ def next.go(stopped: Bool, +player: Player) -> Player:
     case False{}:
       Player{+stream, +decoder, +pcm, +consumed, +remaining, +channels, +current, +status} = player
       +filled = H.stream.fill(stream)
-      next.player(next.loop(U32.to_nat(((H.stream.size(stream) / 4) + 16 : U32)), H.stream.ended(filled), buffered(filled, decoder), filled, decoder), pcm, consumed, remaining, channels, current, status)
+      next.player(next.loop(U32.to_nat(((H.stream.size(stream) / 4) + 16 : U32)), H.stream.ended(filled), buffered(filled, decoder), filled, decoder, pcm), consumed, remaining, channels, current, status)
 
 def Player.status(player: Player) -> U32:
   Player{_, _, _, _, _, _, _, status} = player
@@ -297,8 +301,47 @@ def read.floats(read: Read) -> Floats:
   Read{player, frames, samples} = read
   Floats{player, frames, pcm.floats(samples, Nil{})}
 
+# The chunks a read is made of, the last first, joined in order.
+def chunks.joined(chunks: +List<+List<U32>>, +out: +List<U32>) -> +List<U32>:
+  match chunks:
+    case Nil{}: out
+    case Con{+chunk, rest}: chunks.joined(rest, List.append(&2, U32, chunk, out))
+
+# A read made of raw reads of at most `each` frames, as dr_mp3's loops make
+# it, until `left` frames are read or a read gives none. `read` is the last
+# raw read; `stop` is whether it ended the loop. Where the chunks fall
+# matters: a mono frame in a stereo stream is copied from where the frames
+# consumed put it, with what follows it in pcmFrames.
+def read.chunks(n: Nat, stop: Bool, +each: U32, +left: U32, +total: U32, +acc: +List<+List<U32>>, read: Read) -> Read:
+  match n stop:
+    case _ True{}:
+      Read{+player, _, _} = read
+      Read{player, total, chunks.joined(acc, Nil{})}
+    case 0n False{}:
+      Read{+player, _, _} = read
+      Read{player, total, chunks.joined(acc, Nil{})}
+    case 1n+k False{}:
+      Read{+player, +got, +samples} = read
+      +rest = (left - U32.min(got, left) : U32)
+      +ends = U32.is_eq(got, 0) || U32.is_eq(rest, 0)
+      read.chunks(k, ends, each, rest, (total + got : U32), Con{samples, acc}, read.raw(player, Bool.pick(U32, ends, 0, U32.min(rest, each)), True{}))
+
+def read.chunked(+player: Player, +frames: U32, +each: U32) -> Read:
+  read.chunks(U32.to_nat(((frames / U32.max(each, 1)) + 2 : U32)), False{}, each, frames, 0, Nil{}, read.raw(player, U32.min(frames, each), True{}))
+
+# drmp3_read_pcm_frames_f32 in raylib's build: 16-bit raw reads of at most
+# 8192 samples (8192 / channels frames) converted to floats; the 16-bit
+# samples, before the division by 32768.
+def read.f32.raw(+player: Player, +frames: U32) -> Read:
+  read.chunked(player, frames, (8192 / U32.max(Player.channels(player), 1) : U32))
+
 def read.f32(+player: Player, +frames: U32) -> Floats:
-  read.floats(read.raw(player, frames, True{}))
+  read.floats(read.f32.raw(player, frames))
+
+# drmp3__full_read_and_close_f32: reads of 4096 / channels frames (one raw
+# read each) until one gives none; `most` bounds the frames.
+def read.f32.whole(+player: Player, +most: U32) -> Floats:
+  read.floats(read.chunked(player, most, (4096 / U32.max(Player.channels(player), 1) : U32)))
 
 # -----------------------------------------------------------------------------
 # Seeking
@@ -352,10 +395,18 @@ def total.sought(sought: Sought, +frames: U32) -> Counted:
   Sought{player, +done} = sought
   Counted{player, Bool.pick(U32, done, frames, 0)}
 
+# The channels of the last frame counted (mp3FrameChannels), none counted
+# leaving them as they were.
+def channels.counted(+header: U32, player: Player) -> Player:
+  Player{stream, decoder, pcm, consumed, remaining, channels, current, status} = player
+  Player{stream, decoder, pcm, consumed, remaining, Bool.pick(U32, U32.is_eq(header, 0), channels, Bool.pick(U32, H.hdr.mono(header), 1, 2)), current, status}
+
 def total.known(known: Bool, +player: Player) -> Counted:
   match known:
     case True{}: Counted{player, H.total(Player.stream(player))}
-    case False{}: total.sought(seek(rewind(player), Player.current(player)), H.scan.samples(H.scan(Player.stream(player))))
+    case False{}:
+      +scanned = H.scan.all(Player.stream(player))
+      total.sought(seek(channels.counted(H.Scanned.header(scanned), rewind(player)), Player.current(player)), H.Scanned.samples(scanned))
 
 # drmp3_get_pcm_frame_count. With an Xing/Info frame's count the stream is
 # left as it is. Without one every frame is counted from the start, and the

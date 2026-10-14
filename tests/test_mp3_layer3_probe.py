@@ -123,13 +123,23 @@ class CorpusTests(unittest.TestCase):
         self.assertEqual((len(first), first[:4], len(second), second[417:421]), (4 * 136, bytes([0xFF, 0xFF, 0x40, 0]), 4 * 417, bytes([0xFF, 0xFD, 0x80, 0])))
 
 
+    def test_the_layer_i_and_ii_streams_of_the_other_gates(self):
+        files = lp.layer12_files()
+        self.assertEqual(sorted(files), ['l1-stream', 'l2-mpeg2', 'l2-stream'])
+        # their first headers: MPEG-1 Layer I and II at 44100 Hz, MPEG-2 Layer II at 24000 Hz
+        self.assertEqual([(files[name][0], files[name][1] & 0xFE, (files[name][2] >> 2) & 3) for name in ('l1-stream', 'l2-stream', 'l2-mpeg2')],
+                         [(0xFF, 0xFE, 0), (0xFF, 0xFC, 0), (0xFF, 0xF4, 1)])
+        self.assertEqual(lp.layer12_files(), files)
+
+
 class RowsTests(unittest.TestCase):
     def test_a_file_is_its_lines_joined(self):
         text = lp.render([('a', 'x/a.mp3'), ('b', 'x/b.mp3')], False)
         self.assertEqual((text.count('J.Files.load_data('), text.count('"x/b.mp3"'), text.rstrip().endswith('IO.print("done")')), (2, 1, True))
         rows = lp.parse('frames\n1152:417:1:2:9\n0:5:3:4:8\nframes\nunread\nframes\nrefused\ndone\n', [1, 2, 3, 4])
         self.assertEqual(rows, ['frames 1152:417:1:2:9 0:5:3:4:8', 'frames', 'unread', 'frames refused'])
-        self.assertIn('U32.show(fnv(pcm, 2166136261))', text)
+        # a frame without samples hashes none, as dr_mp3's driver hashes samples * channels of them
+        self.assertIn('U32.show(fnv(Bool.pick(+List<U32>, U32.is_eq(samples, 0), Nil{}, pcm), 2166136261))', text)
         with self.assertRaises(ValueError):
             lp.parse('frames\n', [1])
         with self.assertRaises(ValueError):

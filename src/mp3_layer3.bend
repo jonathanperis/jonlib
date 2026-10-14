@@ -22,6 +22,7 @@
 import Base
 import ./mp3.bend as H
 import ./mp3_tables.bend as T
+import ./mp3_layer12.bend as L12
 
 # A float from its bits. The constructor's way (U32{word} to F32{word})
 # goes through a list of 32 bits on the JavaScript target, and this module
@@ -559,8 +560,8 @@ def Decoder.zero() -> Decoder:
 # frame is refused. 1: dr_mp3 leaves one of its arrays, which is undefined:
 # a granule's values were read past the main data's (it reads whatever
 # follows in its struct), or a granule is a mixed block at 8000 Hz
-# (reorder.inside). 2: a Layer I or II frame, which this port does not
-# decode yet.
+# (reorder.inside). A Layer I or II frame (src/mp3_layer12.bend) has no
+# spectra.
 type Decoded is Data:
   Decoded{decoder: Decoder, samples: U32, bytes: U32, status: U32, spectra: +List<+List<U32>>, pcm: +List<U32>}
 
@@ -1543,19 +1544,24 @@ def synth.kept(mono: Bool, synth: Synth, +old: +List<+List<U32>>) -> Synth:
       Synth{pcm, history} = synth
       Synth{pcm, rows.merged(history, old, Nil{})}
 
-def dct.right(mono: Bool, +left: +List<+List<U32>>, +values: +List<U32>, +sec: +List<U32>) -> +List<+List<U32>>:
+def dct.right(n: Nat, mono: Bool, +left: +List<+List<U32>>, +values: +List<U32>, +sec: +List<U32>) -> +List<+List<U32>>:
   match mono:
     case True{}: left
-    case False{}: dct.slots(18n, subbands(32n, values, Nil{}), sec, Nil{})
+    case False{}: dct.slots(n, subbands(32n, values, Nil{}), sec, Nil{})
 
 # drmp3d_synth_granule: the channels' subband samples (576 each) through
 # the DCT and the window to 576 samples a channel, a frame a channel after a
 # channel, each an int16's 16 bits; and the fifteen rows (qmf_state) the
 # next granule begins with.
-def synth.granule(+left: +List<U32>, +right: +List<U32>, +mono: Bool, +history: +List<+List<U32>>) -> Synth:
+# drmp3d_synth_granule with nbands `n` (18 for Layer III, 12 for Layers I
+# and II): the DCT of each subband's first n samples and n/2 calls.
+def synth.granule.slots(+n: Nat, calls: Nat, +left: +List<U32>, +right: +List<U32>, +mono: Bool, +history: +List<+List<U32>>) -> Synth:
   +sec = T.sec()
-  +slots = dct.slots(18n, subbands(32n, left, Nil{}), sec, Nil{})
-  synth.kept(mono, synth.calls(9n, slots, dct.right(mono, slots, right, sec), mono, List.reverse(&2, +List<U32>, T.win()), history, Nil{}), history)
+  +slots = dct.slots(n, subbands(32n, left, Nil{}), sec, Nil{})
+  synth.kept(mono, synth.calls(calls, slots, dct.right(n, mono, slots, right, sec), mono, List.reverse(&2, +List<U32>, T.win()), history, Nil{}), history)
+
+def synth.granule(+left: +List<U32>, +right: +List<U32>, +mono: Bool, +history: +List<+List<U32>>) -> Synth:
+  synth.granule.slots(18n, 9n, left, right, mono, history)
 
 def Synth.pcm(synth: Synth) -> +List<U32>:
   Synth{pcm, _} = synth
@@ -1676,14 +1682,39 @@ def frame.layer3(+at: +List<U32>, +size: U32, +skip: U32, +free: U32, +decoder: 
   +side = H.side.read(payload, limit, Bool.pick(U32, H.hdr.crc(h), 16, 0), h)
   frame.side(side.state(side, limit, H.count(Decoder.reserv(decoder), 0)), side, h, free, payload, limit, (skip + size : U32), Decoder.slot(decoder, side))
 
+# A Layer I or II frame's granule buffers through the synthesis, 384
+# samples a channel each, in order: the samples (the last first while
+# made) and the synthesis state after them.
+def layer12.synth(buffers: +List<L12.Buffer>, +mono: Bool, +history: +List<+List<U32>>, +pcm: +List<+List<U32>>) -> Synth:
+  match buffers:
+    case Nil{}: Synth{blocks.joined(pcm, Nil{}), history}
+    case Con{L12.Buffer{+left, +right}, rest}:
+      +made = synth.granule.slots(12n, 6n, left, right, mono, history)
+      layer12.synth(rest, mono, Synth.history(made), Con{Synth.pcm(made), pcm})
+
+# drmp3dec_decode_frame's Layer I and II branch: the frame's samples, its
+# header kept. A reader past the frame clears the header's first byte
+# (drmp3dec_init) and the frame gives no samples, but what was synthesized
+# before the check stays in the synthesis state and is in `pcm` (dr_mp3 has
+# written it to the caller's buffer), as in dr_mp3. The
+# reservoir and the Layer III state are left as they are.
+def frame.layer12.done(frame: L12.Frame, +h: U32, +free: U32, +bytes: U32, +decoder: Decoder) -> Decoded:
+  L12.Frame{+buffers, +fine} = frame
+  Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1, +qmf} = decoder
+  +made = layer12.synth(buffers, H.hdr.mono(h), qmf, Nil{})
+  Decoded{Decoder{H.Dec{Bool.pick(U32, fine, h, (h .&. 16777215 : U32)), free, reserv}, array, scf, ist0, ist1, compress, overlap0, overlap1, Synth.history(made)},
+    Bool.pick(U32, fine, H.hdr.samples(h), 0), bytes, 0, Nil{}, Synth.pcm(made)}
+
+def frame.layer12(+at: +List<U32>, +size: U32, +skip: U32, +free: U32, +decoder: Decoder) -> Decoded:
+  +h = H.word(at)
+  frame.layer12.done(L12.frame.read(h, List.drop(&2, U32, at, 4n), ((size - 4) * 8 : U32), Bool.pick(U32, H.hdr.crc(h), 16, 0)), h, free, (skip + size : U32), decoder)
+
 # The frame whose header is at `at`, `size` bytes with its padding, after
 # `skip` bytes.
 def frame.at(layer3: Bool, +at: +List<U32>, +size: U32, +skip: U32, +free: U32, +decoder: Decoder) -> Decoded:
   match layer3:
     case True{}: frame.layer3(at, size, skip, free, decoder)
-    case False{}:
-      Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1, +qmf} = decoder
-      Decoded{Decoder{H.Dec{H.word(at), free, reserv}, array, scf, ist0, ist1, compress, overlap0, overlap1, qmf}, 0, (skip + size : U32), 2, Nil{}, Nil{}}
+    case False{}: frame.layer12(at, size, skip, free, decoder)
 
 # The frame the search found in a zeroed decoder, or none: every byte
 # searched is used.

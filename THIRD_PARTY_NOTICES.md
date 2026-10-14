@@ -324,11 +324,16 @@ frame count (`drmp3_get_pcm_frame_count`), with their bit rate tables.
 `drmp3_L3_imdct_short`, `drmp3_L3_change_sign`, `drmp3_L3_imdct_gr`), the
 synthesis filter (`drmp3d_DCT_II`, `drmp3d_synth_pair`, `drmp3d_synth`,
 `drmp3d_synth_granule`, `drmp3d_scale_pcm`, in the SSE branches' order)
-and the frame around them (`drmp3dec_decode_frame`). `src/mp3_stream.bend`
+and the frame around them (`drmp3dec_decode_frame`). `src/mp3_layer12.bend`
+adapts Layers I and II (`drmp3_L12_subband_alloc_table`,
+`drmp3_L12_read_scale_info`, `drmp3_L12_read_scalefactors`,
+`drmp3_L12_dequantize_granule`, `drmp3_L12_apply_scf_384`, with
+`g_bitalloc_code_tab` and `g_deq_L12`). `src/mp3_stream.bend`
 adapts the stream's reading and seeking
 (`drmp3_decode_next_frame_ex__callbacks` with its samples,
 `drmp3_read_pcm_frames_raw`, `drmp3_read_pcm_frames_s16`,
-`drmp3_read_pcm_frames_f32`, `drmp3_s16_to_f32`, `drmp3_reset`,
+`drmp3_read_pcm_frames_f32`, `drmp3_s16_to_f32`,
+`drmp3__full_read_and_close_f32`, `drmp3_reset`,
 `drmp3_seek_to_start_of_stream`, `drmp3_seek_to_pcm_frame` and its brute
 force, `drmp3_get_mp3_and_pcm_frame_count`). `src/mp3_tables.bend` is the
 header's constant tables (scalefactor bands and partitions, `g_drmp3_pow43`, the

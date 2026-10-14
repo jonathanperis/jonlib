@@ -302,8 +302,18 @@ channel. Both are equal to dr_mp3's bit for bit.
   values and 528 short ones, so the reorder ends 24 values past the
   granule's 576 and is written over the other channel's values or over the
   scales (`Mp3L3.reorder.inside`). Every other table ends at 576.
-- **Layers I and II** are decoded by dr_mp3 and not here yet: such a frame
-  is refused (`status` 2).
+- **Layers I and II** (`src/mp3_layer12.bend`, `Mp3L12`): the allocation
+  table the header selects (Layer I's; MPEG-2 Layer II's; MPEG-1 Layer
+  II's low-rate, 27-band or 30-band one by the bit rate a channel and the
+  sample rate), the allocations and the joint stereo bound, the
+  scalefactor codes and scalefactors (`drmp3_L12_read_scale_info`), the
+  granules' samples, plain or grouped in base 3, 5 or 9
+  (`drmp3_L12_dequantize_granule`), scaled (`drmp3_L12_apply_scf_384`) and
+  synthesized by the Layer III synthesis with 12 slots a subband: one
+  buffer of 384 samples for Layer I, three for Layer II, each made as it
+  is read. A frame whose reading passes its end clears the header's first
+  byte (`drmp3dec_init`) and gives no samples, as dr_mp3 does; what was
+  synthesized before that check stays in the synthesis state.
 
 `drmp3_read_pcm_frames_f32`, which raylib's music and waves call, converts
 the 16-bit samples to floats afterwards (a division by 32768): see the
@@ -319,7 +329,7 @@ decoder keeps (header, free format size, reservoir, the whole main data
 array, the 40 scales, the intensity positions, the second slot's
 `scalefac_compress`, both channels' overlap, the synthesis rows), a hash
 of the subband samples and a hash of the 16-bit samples.
-The 118 files: 400 frames of `country.mp3` (its first 200 and 200 from the
+The files: 400 frames of `country.mp3` (its first 200 and 200 from the
 middle), the `mp3` gate's 84 edits, and 32 synthetic files. A synthetic frame is a valid header, side
 information written field by field by a seeded generator, and random main
 data (bits set with probability 0.5, 0.2 or 0.8): MPEG-1, MPEG-2 and
@@ -328,8 +338,17 @@ bit rate and the padding changing from frame to frame, free-format
 streams, short, mixed, start and stop blocks, every table, reservoirs that
 are short and side information dr_mp3 refuses (mixed blocks at 8000 Hz in
 one stream only, which ends there); two files of Layer I and II frames; and
-the stream built to leave the array. Two files are refused and two stop at
-another layer, on both sides. CPU-1, CPU-2 and JavaScript.
+the stream built to leave the array. Layer I and II streams are synthetic
+too (54 files): valid headers of MPEG-1 and MPEG-2 at each sample rate,
+every bit rate (so every allocation table: Layer I's, MPEG-2 Layer II's,
+MPEG-1 Layer II's low-rate, 27-band and 30-band ones), every mode and joint
+stereo bound, CRC, padding and free format, with random payloads dense,
+sparse or nearly empty, so that allocations, scalefactor codes and grouped
+samples take every value and many frames read past their end (dr_mp3 then
+clears the header and the frame gives no samples). 172 files, 1587 frames:
+1207 decoded, 66 of them Layer I and 104 Layer II frames, 251 Layer I and
+II frames that read past their end, and two files refused on both sides.
+CPU-1, CPU-2 and JavaScript.
 
 The whole of `country.mp3` (3584 frames) was in this gate until the
 synthesis: every frame's state and subband samples matched on the three
@@ -384,14 +403,22 @@ Three things dr_mp3 does that follow from its bookkeeping and are kept:
 - A read copies as many samples a frame as the stream has channels, from
   where the MP3 frame's own channel count puts it: where a mono frame is
   in a stereo stream, what follows its samples in dr_mp3's buffer (the
-  frame before's) is read too. `Player.pcm` is that buffer.
+  frame before's) is read too. `Player.pcm` is that buffer. So where a
+  read's chunks fall changes what such a frame gives, and the port reads in
+  dr_mp3's chunks: `drmp3_read_pcm_frames_f32` (raylib's music and waves)
+  makes raw reads of 8192 / channels frames (`Mp3S.read.f32.raw`), and
+  `drmp3__full_read_and_close_f32` (`LoadWave`) asks for 4096 / channels
+  frames at a time until a read gives none (`Mp3S.read.f32.whole`).
+- A frame decoded without samples writes to `pcmFrames` too: a Layer I or
+  II frame read past its end has written the granules it made, which a
+  mono frame after it in a stereo stream reads.
 
 A stream stops (`Player.status`) at a frame the decoder refuses: 1 where
-dr_mp3 leaves one of its arrays, 2 at a Layer I or II frame, which is not
-decoded yet.
+dr_mp3 leaves one of its arrays.
 
 `tools/mp3_stream_probe.py` (gate `mp3-stream`) runs one script on each of
-the `mp3` gate's 85 files through dr_mp3's functions and through
+the `mp3` gate's 85 files and three Layer I and II streams (88) through
+dr_mp3's functions and through
 `Mp3S`: a count, reads of 100 16-bit, 1000 float and 2000 16-bit frames,
 a seek back to 500, a read, a seek to where the count stands, the start, a
 float read, a seek forward to 3000, a read, a count, and a last read (of
@@ -401,8 +428,9 @@ give its result (frames read and a hash of the samples, of the floats'
 bits for a float read) and `currentPCMFrame`, the frames left and consumed
 of the frame at hand and its channels. Each file is opened as a file and
 from memory (below), and 17 of them are also read straight to their end
-both ways: 204 streams, 1698 operations; 64 files run the script and 21
-do not open, on both sides. CPU-1, CPU-2 and JavaScript.
+both ways: 210 streams, 1776 operations; 67 files run the script and 21
+do not open, on both sides. A count (`Mp3S.total`) leaves the channels of
+the last frame it counted, as dr_mp3's leaves `mp3FrameChannels`. CPU-1, CPU-2 and JavaScript.
 
 **Files and memory.** dr_mp3 reads a stream opened from a file
 (`drmp3_init_file`, which `LoadMusicStream` calls) through a buffer its
@@ -427,17 +455,15 @@ frame, as 32-bit float samples (raylib's build decodes 16-bit samples and
 divides by 32768), with the channels and sample rate of the stream's first
 frame. `tools/mp3_wave_probe.py` (gate `mp3-wave`) compares `Wave.load`
 with raylib's `LoadWave` on the `mp3` gate's files without the whole
-`country.mp3` (84, and one under `.MP3`): 62 waves (431318 frames: count,
+`country.mp3` (84, and one under `.MP3`) and three Layer I and II streams
+whose frames change between mono and stereo: 65 waves (532310 frames: count,
 rate, size, channels and a hash of the samples' bits) and 23 files without
 one, and for each wave the frames of the `Sound` made of it
 (`LoadSoundFromWave` on an open device). There is no wave where dr_mp3
 opens no stream or reads no frame (`InvalidWaveData`), nor for a stream
-that stops at a frame dr_mp3 decodes by leaving one of its arrays; a
-stream with a Layer I or II frame is `UnsupportedWaveFormat`. The whole
+that stops at a frame dr_mp3 decodes by leaving one of its arrays. The whole
 file is 3584 MP3 frames: about six minutes in the JavaScript lane, so
 it is in no gate as a wave (its frames are in `mp3-layer3`).
-
-Still to come: Layers I and II.
 
 raylib builds dr_mp3 with its SSE paths, whose samples differ from the
 scalar ones: the reference for the samples is the build as it is.
@@ -1768,7 +1794,7 @@ wave's length does not grow their depth: the examples' sounds (up to 48000
 stereo frames out) convert on every lane, JavaScript included, through
 `Sound.load` (gate `sound`, below).
 
-Not yet available: OGG, FLAC, XM and MOD data, and MP3 Layers I and II (above). Gaps of `WaveFormat`:
+Not yet available: FLAC data (above). Gaps of `WaveFormat`:
 the refusals above, and no GPU evidence.
 
 ## Audio device and sounds
@@ -1819,8 +1845,8 @@ volume, a pitch, a pan, its playing and paused flags and a block of samples
 - `SoundDeviceNotReady` on an unready device, where raylib converts to the
   zeroed device's rate and tracks through a mutex that does not exist.
 - `SoundWaveError` for a file `Wave.load` fails on (raylib returns the zero
-  sound: missing files, bad data; and OGG, FLAC, XM and MOD files,
-  which raylib loads and Jonlib does not yet) and for a wave `WaveFormat`
+  sound: missing files, bad data; and FLAC files, which raylib loads
+  and Jonlib does not yet) and for a wave `WaveFormat`
   refuses (above).
 
 Steps raylib has no defined answer for leave the `AudioDevice` as it is, and
@@ -2046,8 +2072,8 @@ Not loaded (a typed error, and no stream): WAV sample sizes other than 16,
 24 and 32 bits (raylib streams whatever its shared buffer holds for them),
 what `Wave.decode` refuses, a QOA file that does not hold every frame its
 header counts (qoaplay decodes a frame at a time and would play what is
-there), an MP3 file dr_mp3 does not open or whose first frame is of Layer I
-or II (not decoded yet), a module as "XM modules" says, an Ogg Vorbis
+there), an MP3 file dr_mp3 does not open or whose first frame it decodes by
+leaving one of its arrays, a module as "XM modules" says, an Ogg Vorbis
 stream as below, and every other format. FLAC and MOD music are not ported
 yet. Left as they are: `Music.update` for a
 music without frames (raylib reads it for ever when it loops);
@@ -2072,9 +2098,8 @@ for the other formats. `frameCount` can be more than the stream holds (a
 cut file keeps its Info frame's count): the music then goes round at the
 stream's end. A stream that gives no frame from its start would keep
 raylib in its read loop for ever; the update ends there with zeros. A
-stream that stops at a frame the decoder refuses plays what came before
-it, round and round: that differs from raylib, which decodes Layer I and
-II frames. On the JavaScript target a frame takes about 95 ms to decode,
+stream that stops at a frame the decoder refuses (one dr_mp3 decodes by
+leaving one of its arrays) plays what came before it, round and round. On the JavaScript target a frame takes about 95 ms to decode,
 3.6 times its 26 ms of sound.
 
 An Ogg Vorbis music (`MusicOgg`, raylib's `MUSIC_AUDIO_OGG`) is a 16-bit

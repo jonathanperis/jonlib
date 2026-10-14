@@ -5419,7 +5419,7 @@
       "scope": "The stream, the frame count, the looping flag, the context type, and the decoder (the file's frames as the stream holds them and the frame it is at).",
       "gaps": [
         "The decoder is a value in the Music, not a pointer: copies do not share it",
-        "WAV, QOA and MP3 (Layer III) files only: OGG, FLAC, XM and MOD music are not ported, nor MP3 files of Layer I or II frames",
+        "WAV, QOA, MP3, XM and Ogg Vorbis files only: FLAC and MOD music are not ported",
         "A file's frames are all decoded when it is loaded"
       ],
       "blocker": null,
@@ -59082,7 +59082,7 @@
       "mapping_state": "implemented",
       "scope": "The file decoded by its extension as LoadWaveFromMemory.",
       "gaps": [
-        "FLAC, XM and MOD data, and MP3 data with a Layer I or II frame"
+        "FLAC, XM and MOD data"
       ],
       "blocker": null,
       "gates": {
@@ -59143,9 +59143,9 @@
       "status": "partial",
       "jonlib": "Wave.decode_for / Wave.decode",
       "mapping_state": "implemented",
-      "scope": "WAV data through drwav_init_memory (RIFF, RIFX, Wave64, RF64 and AIFF/AIFC containers) and drwav_read_pcm_frames_s16 (PCM, float, a-law, mu-law, MS and IMA ADPCM), and QOA data through qoa_decode, as 16-bit samples; MP3 Layer III data through drmp3_open_memory_and_read_pcm_frames_f32 as floats; Ogg Vorbis data through stb_vorbis_open_memory, the stream's length and one stb_vorbis_get_samples_short_interleaved as 16-bit samples, under a libm profile. Every sample compared with raylib.",
+      "scope": "WAV data through drwav_init_memory (RIFF, RIFX, Wave64, RF64 and AIFF/AIFC containers) and drwav_read_pcm_frames_s16 (PCM, float, a-law, mu-law, MS and IMA ADPCM), and QOA data through qoa_decode, as 16-bit samples; MP3 data (Layers I, II and III) through drmp3_open_memory_and_read_pcm_frames_f32 as floats; Ogg Vorbis data through stb_vorbis_open_memory, the stream's length and one stb_vorbis_get_samples_short_interleaved as 16-bit samples, under a libm profile. Every sample compared with raylib.",
       "gaps": [
-        "FLAC, XM and MOD data, and MP3 data with a Layer I or II frame (UnsupportedWaveFormat)",
+        "FLAC, XM and MOD data (UnsupportedWaveFormat)",
         "InvalidWaveData where dr_wav leaves samples unread, converts NaN or walks chunks forever",
         "InvalidWaveData for MS ADPCM or AIFF int overflow, an AIFF rate negating INT64_MIN and 5-7 or 9+ byte samples in big-endian containers",
         "InvalidWaveData for QOA frames decoding past the declared total, more than 8 channels or 2^24 samples",
@@ -59275,7 +59275,7 @@
       "scope": "Wave.load_for then LoadSoundFromWave; the examples' .wav sounds (26522 to 48000 frames) compared sample by sample with raylib, and the frame counts of sounds from MP3 and Ogg Vorbis files.",
       "gaps": [
         "SoundWaveError where raylib returns the zero sound (missing or bad files)",
-        "FLAC, XM and MOD files, and MP3 files with a Layer I or II frame",
+        "FLAC, XM and MOD files",
         "SoundDeviceNotReady on an unready device",
         "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
       ],
@@ -60686,7 +60686,7 @@
       "mapping_state": "implemented",
       "scope": "A WAV, QOA or MP3 file's music: a stream of the file's rate and channels (16-bit samples for 16- and 24-bit WAV files, floats for 32-bit ones, for QOA and for MP3), the frame count (an MP3's is drmp3_get_pcm_frame_count) and looping on. An XM module's (Music.load_for under a libm profile): a float stream of the device's rate and two channels and jar_xm_get_remaining_samples' frames. The stream has no buffer on an unready device and the music is still loaded; fields, stream and decoder position compared with raylib.",
       "gaps": [
-        "WAV, QOA, MP3 (Layer III), XM and Ogg Vorbis files only: FLAC and MOD music are not ported, nor MP3 files of Layer I or II frames",
+        "WAV, QOA, MP3, XM and Ogg Vorbis files only: FLAC and MOD music are not ported",
         "Fail for WAV sample sizes other than 16, 24 and 32 bits (raylib streams what its shared buffer holds) and for what Wave.decode refuses",
         "Fail for a QOA file that does not hold every frame its header counts (qoaplay decodes a frame at a time)",
         "A typed error instead of a zero Music for a file that is not loaded",
@@ -60751,7 +60751,7 @@
       "mapping_state": "implemented",
       "scope": "As Music.load, from the file's bytes and the \".wav\", \".qoa\", \".mp3\" or \".xm\" token, in lower or upper case as raylib takes them (Music.load_from_memory_for under a libm profile).",
       "gaps": [
-        "WAV, QOA, MP3 (Layer III), XM and Ogg Vorbis files only: FLAC and MOD music are not ported, nor MP3 files of Layer I or II frames",
+        "WAV, QOA, MP3, XM and Ogg Vorbis files only: FLAC and MOD music are not ported",
         "Fail for sample sizes other than 16, 24 and 32 bits and for what Wave.decode refuses",
         "Fail for a module as Music.load fails for it"
       ],
@@ -61049,7 +61049,7 @@
       "scope": "Each processed half of a playing music's stream takes the decoder's next frames, the first half then the second: a whole half while the music loops (the file again from its first frame; an MP3's or Ogg Vorbis's stream from its start whenever a read comes short; an XM player just goes on) or has as many left, else what is left; with none left and both halves processed the music stops, its decoder at the first frame; halves, counts and decoder position compared with raylib.",
       "gaps": [
         "The decoder's state is in the Music value, which the function gives back: no shared ctxData pointer",
-        "WAV, QOA, MP3 (Layer III), XM and Ogg Vorbis files only: FLAC and MOD music are not ported, nor MP3 files of Layer I or II frames",
+        "WAV, QOA, MP3, XM and Ogg Vorbis files only: FLAC and MOD music are not ported",
         "Nothing for a music without frames (raylib reads it for ever when it loops)",
         "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
         "An XM player that meets what C leaves undefined, a NaN sample or 2^32 samples gives silence from there (Music.why says so)"

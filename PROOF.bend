@@ -1673,6 +1673,42 @@ def Laws.mp3_header_free_format_size():
 def Laws.mp3_header_mpeg2_rate():
   {==}
 
+def Laws.mp3_layer1_bands():
+  {==}
+
+def Laws.mp3_layer1_joint_stereo_bound():
+  {==}
+
+def Laws.mp3_layer2_twenty_seven_bands():
+  {==}
+
+def Laws.mp3_layer2_thirty_bands_in_mono():
+  {==}
+
+def Laws.mp3_layer2_mono_has_no_stereo_bands():
+  {==}
+
+def Laws.mp3_layer2_low_rate_bands():
+  {==}
+
+def Laws.mp3_layer2_mpeg2_bands():
+  {==}
+
+def Laws.mp3_layer12_unallocated_band_reads_nothing():
+  {==}
+
+def Laws.mp3_layer12_plain_band_bits():
+  {==}
+
+def Laws.mp3_layer12_grouped_base_three():
+  {==}
+
+def Laws.mp3_layer12_grouped_base_five():
+  {==}
+
+def Laws.mp3_layer12_grouped_base_nine():
+  {==}
+
 def Laws.mp3_header_mpeg2_samples():
   {==}
 

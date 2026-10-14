@@ -50,7 +50,7 @@ class ScriptTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             sp.parse('closed\n', [1])
         self.assertEqual(sp.first_difference('o1 c5 r100/7', 'o1 c5 r100/8'), 'operation 2: raylib=r100/7 jonlib=r100/8')
-        self.assertEqual(sp.first_difference('o1 c5 layer12', 'o1 c5'), 'operation 2: raylib=layer12 jonlib=(none)')
+        self.assertEqual(sp.first_difference('o1 c5 stopped', 'o1 c5'), 'operation 2: raylib=stopped jonlib=(none)')
 
 
 if __name__ == '__main__':
