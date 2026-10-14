@@ -1,4 +1,4 @@
-# Session handoff (2026-10-11)
+# Session handoff (2026-10-11, status updated 2026-10-14)
 
 Snapshot for continuing on another machine or in a new session. Everything
 described here is committed and pushed (`main`, and the pieces still on their
@@ -20,6 +20,17 @@ everything merged is validated against it ([CI.md](CI.md)). That validation
 is owed: the port is not done before it passes.
 
 ## Where things are
+
+State on 2026-10-14: every example is ported (212/212) and on `main`; the
+stack is empty. Landed since 2026-10-11: XM and Ogg Vorbis music, glibc's
+binary64 `acos` and the cube root of stb_truetype's cubic solver (SDF glyphs
+with curves, `text_font_sdf`), and MP3 Layers I and II (`src/mp3_layer12.bend`,
+with dr_mp3's read chunks for waves and music). Left of the port: FLAC data
+and FLAC/MOD music, the rlgl.h and raylib.h gaps the ledger lists
+(`python3 tools/api_plan.py check`), the 17 functions that need OS
+primitives the pinned Bend Base does not have (directory listing, file
+stat/rename/remove, working directory, `OpenURL`: extending the declared
+compiler overlay is Jonathan's call), and then the owed macOS validation.
 
 | Branch | Content | State |
 |---|---|---|
@@ -473,8 +484,8 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `drmp3_read_pcm_frames_f32` and seeking. raylib does not define
      `DR_MP3_NO_SIMD`: the reference runs the SSE paths, so each float
      stage has to be compared with the reference as built, not with the
-     scalar C. Layers I and II decode in dr_mp3 too and can be refused
-     at first. The tables (Huffman, scalefactor bands,
+     scalar C. Layers I and II decode in dr_mp3 too: they are ported
+     (`src/mp3_layer12.bend`, 2026-10-14). The tables (Huffman, scalefactor bands,
      windows, `g_win`, `g_sec`) are float and integer literals to carry
      over as bit patterns. There is no MP3 encoder here: test files are
      `country.mp3`, slices of its frames and mutations of them. Measured
@@ -567,7 +578,8 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      frame of `country.mp3` and on the synthetic corpus. Left of the
      plan: the `Wave`/`Sound` loaders (`LoadWave` is
      `drmp3_open_memory_and_read_pcm_frames_f32`), the last example
-     that plays `country.mp3`, and Layers I and II (refused now).
+     that plays `country.mp3`, and Layers I and II (decoded since
+     2026-10-14, gate `mp3-layer3`).
      `audio_music_stream` and `audio_stream_effects` are ported, with
      the device's clock and their frames compared with the native
      examples' (the effects are stream processors computing with

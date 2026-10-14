@@ -5730,18 +5730,16 @@ def Wave.mp3.length(bytes: +List<U32>, +n: U32) -> U32:
     case Con{_, rest}: Wave.mp3.length(rest, (n + 1 : U32))
 
 # kind: 0 the frames read, 1 none, 2 a stream that stopped at a frame dr_mp3
-# decodes by leaving one of its arrays, 3 one that stopped at a Layer I or
-# II frame, which is not decoded here yet.
+# decodes by leaving one of its arrays.
 def Wave.mp3.made(kind: U32, +frames: U32, +rate: U32, +channels: U32, +samples: +List<F32>) -> Result<&1, &1, Wave.Error, Wave>:
   match kind:
     case 0: Done{Wave{frames, rate, 32, channels, Wave.mp3.bits(samples, Nil{})}}
-    case 3: Fail{UnsupportedWaveFormat{}}
     case _: Fail{InvalidWaveData{}}
 
 def Wave.mp3.read(read: Mp3S.Floats) -> Result<&1, &1, Wave.Error, Wave>:
   Mp3S.Floats{+player, +frames, +samples} = read
   +status = Mp3S.Player.status(player)
-  Wave.mp3.made(Bool.pick(U32, U32.is_eq(status, 0), Bool.pick(U32, U32.is_eq(frames, 0), 1, 0), Bool.pick(U32, U32.is_eq(status, 1), 2, 3)), frames, Mp3S.Player.rate(player),
+  Wave.mp3.made(Bool.pick(U32, U32.is_eq(status, 0), Bool.pick(U32, U32.is_eq(frames, 0), 1, 0), 2), frames, Mp3S.Player.rate(player),
     Mp3S.Player.channels(player), samples)
 
 # drmp3_open_memory_and_read_pcm_frames_f32: every frame the stream reads,
@@ -5750,7 +5748,7 @@ def Wave.mp3.read(read: Mp3S.Floats) -> Result<&1, &1, Wave.Error, Wave>:
 def Wave.mp3.opened(player: Maybe<Mp3S.Player>, +most: U32) -> Result<&1, &1, Wave.Error, Wave>:
   match player:
     case None{}: Fail{InvalidWaveData{}}
-    case Some{+opened}: Wave.mp3.read(Mp3S.read.f32(opened, most))
+    case Some{+opened}: Wave.mp3.read(Mp3S.read.f32.whole(opened, most))
 
 def Wave.decode.mp3(+bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
   Wave.mp3.opened(Mp3S.open.memory(bytes), (((Wave.mp3.length(bytes, 0) / 4) + 18) * 1152 : U32))
@@ -5824,9 +5822,8 @@ def Wave.decode.selected(kind: U32, +libm: M.Libm, +bytes: +List<U32>) -> Result
 # byte-swap through its failing assertion or walk forever, QOA data qoa.h
 # would read past or decode beyond its buffer for, MP3 data dr_mp3 does not
 # open or reads no frame of (raylib has no wave then) and MP3 data with a
-# frame dr_mp3 decodes by leaving one of its arrays are InvalidWaveData. An
-# MP3 stream with a Layer I or II frame is UnsupportedWaveFormat: dr_mp3
-# decodes those and this port does not yet.
+# frame dr_mp3 decodes by leaving one of its arrays are InvalidWaveData. MP3
+# frames of every layer are decoded: Layers I, II and III.
 #
 # ".ogg"/".OGG" data (stb_vorbis, src/vorbis_frame.bend) is 16-bit samples:
 # as many frames as the stream's length says (the last page's position; none
@@ -7440,8 +7437,8 @@ def Music.decode.mp3.playable(playable: Bool, +player: Mp3S.Player, +audio: Audi
     case False{}: (audio, Fail{UnsupportedWaveFormat{}})
 
 # drmp3_init: a stream of floats at the first frame's rate and channels. No
-# music where dr_mp3 opens none, nor where the first frame is one Jonlib
-# does not decode (Layer I or II).
+# music where dr_mp3 opens none, nor where the first frame is one dr_mp3
+# decodes by leaving one of its arrays (UnsupportedWaveFormat).
 def Music.decode.mp3(opened: Maybe<Mp3S.Player>, +audio: AudioDevice) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
   match opened:
     case None{}: (audio, Fail{InvalidWaveHeader{}})
@@ -7559,8 +7556,8 @@ def Music.decode.kind(+file_type: String) -> U32:
 # counts; the player's sines and powers of two are the libm profile's. Fail,
 # and no stream: other tokens (OGG, FLAC and MOD music are not ported),
 # other WAV sample sizes, what Wave.decode refuses (raylib would read such
-# a file again and again), an MP3 file dr_mp3 does not open or that begins
-# with a Layer I or II frame, and a module jar_xm does not take
+# a file again and again), an MP3 file dr_mp3 does not open or whose first
+# frame it decodes by leaving one of its arrays, and a module jar_xm does not take
 # (InvalidWaveHeader), whose loading or first time through the song meets
 # what C leaves undefined or does not end (InvalidWaveData), or that is
 # past this port's limits or needs what the profile does not give
@@ -7729,7 +7726,7 @@ def Music.mp3.read(fuel: Nat, state: Music.Mp3) -> Music.Mp3:
     case 1n+rest:
       match state:
         case MusicMp3Read{player, need, chunks, fresh, True{}}: MusicMp3Read{player, need, chunks, fresh, True{}}
-        case MusicMp3Read{+player, +need, +chunks, +fresh, False{}}: Music.mp3.read(rest, Music.mp3.turn(Mp3S.read.s16(player, need), need, chunks, fresh))
+        case MusicMp3Read{+player, +need, +chunks, +fresh, False{}}: Music.mp3.read(rest, Music.mp3.turn(Mp3S.read.f32.raw(player, need), need, chunks, fresh))
 
 def Music.mp3.joined(chunks: +List<+List<U32>>, acc: +List<U32>) -> +List<U32>:
   match chunks:

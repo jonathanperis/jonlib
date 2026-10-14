@@ -13,20 +13,20 @@ format), with the device open.
 The files are the mp3 gate's: edits of the first frames of raylib's
 country.mp3 (tags, holes, cuts, every header rewritten, seeded
 corruptions), without the whole file, which the JavaScript lane decodes too
-slowly for a gate (the mp3-layer3 gate has its frames). A file with a Layer
-I or II frame would be a contract and not a comparison: dr_mp3 decodes
-those and the port does not yet, so the reference is asked through dr_mp3
-whether its stream meets one, and such a file must be
-UnsupportedWaveFormat (none of the corpus's files is one today: the edits
-that name another layer leave streams dr_mp3 does not open). The token
+slowly for a gate (the mp3-layer3 gate has its frames), and three Layer I
+and II streams of the mp3-layer3 gate's generator (MPEG-1 Layer I and II,
+MPEG-2 Layer II, 40 frames each). The token
 ".MP3" is loaded too. CPU/JS.
 """
 import json
 
+import mp3_layer3_probe
 import mp3_probe
 import probekit
 from probekit import ROOT, ProbeFailure
 
+# The Layer I and II streams (mp3_layer3_probe.layer12_files).
+LAYER12 = ('l1-stream', 'l2-stream', 'l2-mpeg2')
 SOURCE = 'examples/audio/resources/country.mp3'
 WORK = '.build/mp3-wave-probe/cases'
 FLAGS = ['-ffp-contract=off', '-DMA_ENABLE_ONLY_SPECIFIC_BACKENDS', '-DMA_ENABLE_NULL', '-D_DEFAULT_SOURCE', '-Wno-everything']
@@ -39,23 +39,6 @@ NATIVE = r'''#include "raudio.c"
 
 static const char *files[] = { FILES };
 
-// Whether the stream has a Layer I or II frame: its decoder's header shows the frame decoded last.
-static int other_layer(const char *path)
-{
-    static drmp3 mp3;
-    static float chunk[4096];
-    int found = 0;
-    if (!drmp3_init_file(&mp3, path, NULL)) return 0;
-    for (;;)
-    {
-        found = (mp3.decoder.header[0] == 0xFF) && (((mp3.decoder.header[1] >> 1) & 3) != 1);
-        if (found || (drmp3_read_pcm_frames_f32(&mp3, 4096/mp3.channels, chunk) == 0)) break;
-    }
-    if (!found) found = (mp3.decoder.header[0] == 0xFF) && (((mp3.decoder.header[1] >> 1) & 3) != 1);
-    drmp3_uninit(&mp3);
-    return found;
-}
-
 int main(void)
 {
     SetTraceLogLevel(LOG_NONE);
@@ -63,8 +46,6 @@ int main(void)
     if (!IsAudioDeviceReady()) return 2;
     for (unsigned a = 0; a < sizeof(files)/sizeof(files[0]); a++)
     {
-        const char *dot = strrchr(files[a], '.');
-        if ((strcmp(dot, ".mp3") == 0 || strcmp(dot, ".MP3") == 0) && other_layer(files[a])) { printf("layer12\n"); continue; }
         Wave wave = LoadWave(files[a]);
         if (wave.data == NULL) { printf("none\n"); continue; }
         unsigned h = 2166136261u;
@@ -100,7 +81,6 @@ def told(wave: J.Wave, +audio: J.AudioDevice) -> String:
 
 def loaded(result: Result<&1, &1, J.Wave.IOError, J.Wave>, +audio: J.AudioDevice) -> IO(Unit):
   match result:
-    case Fail{J.WaveDataError{J.UnsupportedWaveFormat{}}}: IO.print("layer12")
     case Fail{_}: IO.print("none")
     case Done{+wave}: IO.print(told(wave, audio))
 
@@ -127,6 +107,7 @@ def main():
     folder = ROOT / WORK
     folder.mkdir(parents=True, exist_ok=True)
     files = mp3_probe.cases((probe.args.raylib_source / SOURCE).read_bytes())
+    files.update(mp3_layer3_probe.layer12_files())
     files.pop('whole')
     items = []
     for name, data in files.items():
@@ -143,11 +124,13 @@ def main():
     waves = [row for row in expected if row.startswith('w')]
     if not rows['first12'].startswith('w') or rows['upper'] != rows['first12']:
         raise ProbeFailure(f'mp3-wave: the reference did not load the first frames as expected: {rows["first12"]}, {rows["upper"]}')
+    if not all(rows[name].startswith('w') for name in LAYER12):
+        raise ProbeFailure(f'mp3-wave: the reference made no wave of the Layer I or II stream: {[rows[name] for name in LAYER12]}')
     if len(waves) < 40 or expected.count('none') < 8 or len({row.split('/')[3] for row in waves}) < 2 or len({row.split('/')[0] for row in waves}) < 12:
         raise ProbeFailure(f'mp3-wave: the corpus lost coverage: {len(waves)} waves ({len({row.split("/")[0] for row in waves})} frame counts), {expected.count("none")} without one')
     lanes = probe.candidates(render, items, batch=30, parse=parse, timeout=1500)
     probe.compare(expected, lanes, describe=lambda index: items[index][0])
-    probe.finish(files=len(items), waves=len(waves), none=expected.count('none'), layer12=expected.count('layer12'),
+    probe.finish(files=len(items), waves=len(waves), none=expected.count('none'), layer12=[rows[name].split('/')[0] for name in LAYER12],
                  frames=sum(int(row[1:].split('/')[0]) for row in waves))
 
 

@@ -37,19 +37,22 @@ nothing before it, both ways, and the probe requires the reference to end
 the two apart for the file with an ID3v1 tag.
 
 The files are the mp3 gate's: raylib's country.mp3 and edits of its first
-frames (tags, holes, cuts, every header rewritten, seeded corruptions). A
-stream with a Layer I or II frame ends at `layer12` on both sides: dr_mp3
-decodes those and the port does not yet, so the reference stops where its
-decoder's header shows one. CPU/JS.
+frames (tags, holes, cuts, every header rewritten, seeded corruptions),
+and three Layer I and II streams of the mp3-layer3 gate's generator
+(MPEG-1 Layer I and II, MPEG-2 Layer II, 40 frames each), which both sides
+decode through the script. CPU/JS.
 """
 import hashlib
 import json
 
+import mp3_layer3_probe
 import mp3_probe
 import probekit
 from probekit import ROOT, ProbeFailure
 
 WORK = '.build/mp3-stream-probe/cases'
+# The Layer I and II streams (mp3_layer3_probe.layer12_files).
+LAYER12 = ('l1-stream', 'l2-stream', 'l2-mpeg2')
 SOURCE = 'examples/audio/resources/country.mp3'
 
 # The script: (operation, argument). A read asks for that many frames; a
@@ -76,11 +79,6 @@ static const unsigned args[] = { ARGS };
 static drmp3_int16 shorts[2*LIMIT];
 static float floats[2*LIMIT];
 
-static int other_layer(const drmp3 *mp3)
-{
-    return (mp3->decoder.header[0] == 0xFF) && (((mp3->decoder.header[1] >> 1) & 3) != 1);
-}
-
 static void state(const drmp3 *mp3)
 {
     printf("/%u/%u/%u/%u", (unsigned)mp3->currentPCMFrame, mp3->pcmFramesRemainingInMP3Frame, mp3->pcmFramesConsumedInMP3Frame, mp3->mp3FrameChannels);
@@ -104,7 +102,6 @@ int main(void)
             if (!drmp3_init_memory(&mp3, data, size, NULL)) { printf("closed\n"); free(data); continue; }
         }
         else if (!drmp3_init_file(&mp3, files[a], NULL)) { printf("closed\n"); continue; }
-        if (other_layer(&mp3)) { printf("layer12\n"); drmp3_uninit(&mp3); free(data); continue; }
         printf("o%u/%u", mp3.channels, mp3.sampleRate);
         state(&mp3);
         const char *script = straight[a]? "r" : codes;
@@ -113,22 +110,20 @@ int main(void)
             unsigned n = straight[a]? LIMIT : ((script[i + 1] == 0) && (args[i] != 0))? lasts[a] : args[i];
             unsigned h = 2166136261u;
             printf(" ");
-            if (script[i] == 'c') { unsigned frames = (unsigned)drmp3_get_pcm_frame_count(&mp3); if (other_layer(&mp3)) { printf("layer12"); break; } printf("c%u", frames); }
+            if (script[i] == 'c') { unsigned frames = (unsigned)drmp3_get_pcm_frame_count(&mp3); printf("c%u", frames); }
             else if (script[i] == 'r')
             {
                 unsigned got = (unsigned)drmp3_read_pcm_frames_s16(&mp3, n, shorts);
-                if (other_layer(&mp3)) { printf("layer12"); break; }
                 for (unsigned k = 0; k < got*mp3.channels; k++) h = (h ^ (unsigned short)shorts[k])*16777619u;
                 printf("r%u/%u", got, h);
             }
             else if (script[i] == 'f')
             {
                 unsigned got = (unsigned)drmp3_read_pcm_frames_f32(&mp3, n, floats);
-                if (other_layer(&mp3)) { printf("layer12"); break; }
                 for (unsigned k = 0; k < got*mp3.channels; k++) { unsigned w; memcpy(&w, &floats[k], 4); h = (h ^ w)*16777619u; }
                 printf("f%u/%u", got, h);
             }
-            else if (script[i] == 'k') { int done = (int)drmp3_seek_to_pcm_frame(&mp3, n); if (other_layer(&mp3)) { printf("layer12"); break; } printf("k%d", done); }
+            else if (script[i] == 'k') { int done = (int)drmp3_seek_to_pcm_frame(&mp3, n); printf("k%d", done); }
             else if (script[i] == 'e') { int done = (int)drmp3_seek_to_pcm_frame(&mp3, mp3.currentPCMFrame); printf("e%d", done); }
             else { drmp3_seek_to_start_of_stream(&mp3); printf("b"); }
             state(&mp3);
@@ -192,7 +187,7 @@ def op(code: U32, +arg: U32, +player: S.Player) -> Told:
 def stopped(status: U32) -> String:
   match status:
     case 1: "refused"
-    case _: "layer12"
+    case _: "stopped"
 
 def Told.player(told: Told) -> S.Player:
   Told{player, _} = told
@@ -281,6 +276,7 @@ def main():
     folder = ROOT / WORK
     folder.mkdir(parents=True, exist_ok=True)
     files = mp3_probe.cases((probe.args.raylib_source / SOURCE).read_bytes())
+    files.update(mp3_layer3_probe.layer12_files())
     if set(WHOLE) - set(files):
         raise ProbeFailure(f'mp3-stream: the corpus has no {sorted(set(WHOLE) - set(files))}')
     items = []
@@ -306,13 +302,14 @@ def main():
     ended = sum(int(row.split()[-1][1:].split('/')[0]) < last_read(name) for name, row in rows.items() if name in WHOLE and len(row.split()) == len(SCRIPT) + 1)
     if len(whole) != len(SCRIPT) + 1 or not whole[0].startswith('o2/44100/0/0/0/2') or whole[1] != 'c4125934/0/0/0/2' or not whole[-1].startswith(f'r{LAST}/'):
         raise ProbeFailure(f'mp3-stream: the reference did not read country.mp3 as expected: {rows["whole"][:200]}')
+    if any(len(rows[name].split()) != len(SCRIPT) + 1 for name in LAYER12):
+        raise ProbeFailure(f'mp3-stream: the reference did not run the script on the Layer I and II streams: {[rows[name][:80] for name in LAYER12]}')
     if len(full) < 40 or ended < 8 or sum(row == 'closed' for row in expected[:len(files)]) < 6:
         raise ProbeFailure(f'mp3-stream: the corpus lost coverage: {len(full)} files ran the script, {ended} read to their end, {sum(row == "closed" for row in expected[:len(files)])} did not open')
     lanes = probe.candidates(render, items, batch=24, parse=parse, timeout=1500)
     probe.compare(expected, lanes, describe=lambda index: items[index][0] + (' (memory)' if items[index][2] else '') + (' (straight) ' if items[index][3] else ' ') + next(
         (first_difference(expected[index], rows[index]) for rows in lanes.values() if rows[index] != expected[index]), ''))
     probe.finish(files=len(files), streams=len(items), straight=len(straight), ends_apart=len(apart), ran=len(full), read_to_end=ended, closed=sum(row == 'closed' for row in expected[:len(files)]),
-                 layer12=sum('layer12' in row for row in expected),
                  operations=sum(len(row.split()) - 1 for row in expected if row != 'closed'),
                  files_sha256=hashlib.sha256(b''.join(name.encode() + data for name, data in sorted(files.items()))).hexdigest())
 

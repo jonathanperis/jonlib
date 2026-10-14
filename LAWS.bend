@@ -45,6 +45,7 @@ import ./src/binary64_sqrt.bend as Sqrt
 import ./src/wav.bend as Wav
 import ./src/mp3.bend as Mp3
 import ./src/mp3_layer3.bend as Mp3L3
+import ./src/mp3_layer12.bend as Mp3L12
 import ./src/mp3_tables.bend as Mp3T
 import ./src/mp3_stream.bend as Mp3S
 import ./src/vorbis_codebook.bend as V
@@ -2429,6 +2430,50 @@ law mp3_header_free_format_size:
 
 law mp3_header_mpeg2_rate:
   {Mp3.hdr.hz(4294152260) == 22050 : U32}
+
+# MP3 Layers I and II (src/mp3_layer12.bend, drmp3_L12_subband_alloc_table
+# and drmp3_L12_dequantize_granule). The bands a header's table has and how
+# many of them are coded for each channel: Layer I's 32, joint stereo's
+# bound (mode extension 2: 12); MPEG-1 Layer II's 27 at 64 kbit/s a
+# channel, 30 at 192 in mono at 44100 Hz, 8 below 56; MPEG-2 Layer II's 30.
+law mp3_layer1_bands:
+  {Mp3L12.Layout.total(Mp3L12.layout.of(4294918240)) == 32 : U32}
+
+law mp3_layer1_joint_stereo_bound:
+  {Mp3L12.Layout.stereo(Mp3L12.layout.of(4294918240)) == 12 : U32}
+
+law mp3_layer2_twenty_seven_bands:
+  {Mp3L12.Layout.total(Mp3L12.layout.of(4294803456)) == 27 : U32}
+
+law mp3_layer2_thirty_bands_in_mono:
+  {Mp3L12.Layout.total(Mp3L12.layout.of(4294811840)) == 30 : U32}
+
+law mp3_layer2_mono_has_no_stereo_bands:
+  {Mp3L12.Layout.stereo(Mp3L12.layout.of(4294811840)) == 0 : U32}
+
+law mp3_layer2_low_rate_bands:
+  {Mp3L12.Layout.total(Mp3L12.layout.of(4294779072)) == 8 : U32}
+
+law mp3_layer2_mpeg2_bands:
+  {Mp3L12.Layout.total(Mp3L12.layout.of(4294279360)) == 30 : U32}
+
+# The bits a band's samples take in a granule: none unallocated, `ba` a
+# sample below 17, and one code of 5, 7 or 10 bits for three samples in
+# base 3, 5 or 9.
+law mp3_layer12_unallocated_band_reads_nothing:
+  {Mp3L12.band.bits(0, 3) == 0 : U32}
+
+law mp3_layer12_plain_band_bits:
+  {Mp3L12.band.bits(5, 3) == 15 : U32}
+
+law mp3_layer12_grouped_base_three:
+  {Mp3L12.band.bits(17, 3) == 5 : U32}
+
+law mp3_layer12_grouped_base_five:
+  {Mp3L12.band.bits(18, 3) == 7 : U32}
+
+law mp3_layer12_grouped_base_nine:
+  {Mp3L12.band.bits(19, 3) == 10 : U32}
 
 law mp3_header_mpeg2_samples:
   {Mp3.hdr.samples(4294152260) == 576 : U32}

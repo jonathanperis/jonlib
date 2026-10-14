@@ -649,19 +649,42 @@ def stream.rewound(stream: Stream) -> Stream:
   Stream{data, size, length, start, List.drop(&2, U32, data, U32.to_nat(U32.min(start, size))), Bool.pick(U32, U32.is_eq(cap, 4294967295), (length - U32.min(start, length) : U32), 0), start, start, cap,
     False{}, Dec{(last .&. 16777215 : U32), free, reserv}, delay, padding, known, total, channels, rate}
 
-# Every frame from here to the stream's end that decodes: how many, and their
-# samples (drmp3_get_mp3_and_pcm_frame_count's loop).
-def count.frames(n: Nat, next: Next, +frames: U32, +samples: U32) -> U32 & U32:
+# What a count gives: the frames that decode, their samples, and the header
+# of the last of them (0 for none): dr_mp3 takes mp3FrameChannels from
+# each frame it counts.
+type Scanned is Data:
+  Scanned{frames: U32, samples: U32, header: U32}
+
+def Scanned.samples(scanned: Scanned) -> U32:
+  Scanned{_, samples, _} = scanned
+  samples
+
+def Scanned.header(scanned: Scanned) -> U32:
+  Scanned{_, _, header} = scanned
+  header
+
+# Every frame from here to the stream's end that decodes: how many, their
+# samples and the last one's header (drmp3_get_mp3_and_pcm_frame_count's
+# loop).
+def count.frames(n: Nat, next: Next, +frames: U32, +samples: U32, +header: U32) -> Scanned:
   match n:
-    case 0n: (frames, samples)
+    case 0n: Scanned{frames, samples, header}
     case 1n+rest:
       match next:
-        case Next{_, 0, _, _, _}: (frames, samples)
-        case Next{+stream, +s, _, _, _}: count.frames(rest, stream.next(stream), (frames + 1 : U32), (samples + s : U32))
+        case Next{_, 0, _, _, _}: Scanned{frames, samples, header}
+        case Next{+stream, +s, +h, _, _}: count.frames(rest, stream.next(stream), (frames + 1 : U32), (samples + s : U32), h)
+
+# The MP3 frames of the stream, counted from its start.
+def scan.all(+stream: Stream) -> Scanned:
+  count.frames(U32.to_nat(((stream.size(stream) / 4) + 16 : U32)), stream.next(stream.rewound(stream)), 0, 0, 0)
+
+def scan.pair(scanned: Scanned) -> U32 & U32:
+  Scanned{frames, samples, _} = scanned
+  (frames, samples)
 
 # The MP3 frames of the stream and their PCM frames, counted from its start.
 def scan(+stream: Stream) -> U32 & U32:
-  count.frames(U32.to_nat(((stream.size(stream) / 4) + 16 : U32)), stream.next(stream.rewound(stream)), 0, 0)
+  scan.pair(scan.all(stream))
 
 def scan.samples(counted: U32 & U32) -> U32:
   (_, samples) = counted

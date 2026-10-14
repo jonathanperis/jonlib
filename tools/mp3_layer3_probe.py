@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare Layer III decoding, as far as src/mp3_layer3.bend goes, with dr_mp3.
+"""Compare MP3 frame decoding (src/mp3_layer3.bend with src/mp3_layer12.bend) with dr_mp3.
 
 The reference is dr_mp3 itself (pinned raylib's src/external/dr_mp3.h, built
 as raylib builds it: SSE, 16-bit output). Its frame function is run over a
@@ -27,9 +27,9 @@ synthesis filter's rows), `values` hashes the subband samples of every
 channel of every granule, bit for bit, and `pcm` hashes the frame's 16-bit
 samples. Thirty floats of the filter's newest row are left out of `state`:
 the next call writes them before anything reads them, and until then
-dr_mp3 has there whatever its scratch held. A file's
-walk ends at `refused` (undefined, on both sides) or `layer12` (a Layer I
-or II frame, which the port does not decode yet).
+dr_mp3 has there whatever its scratch held. A Layer I or II frame has no
+Layer III values (their hash is the empty one) and its row is otherwise
+the same. A file's walk ends at `refused` (undefined, on both sides).
 
 The files: 400 frames of raylib's country.mp3 (its first 200 and 200 from
 the middle of the song, which begin without their reservoir), the mp3
@@ -42,8 +42,15 @@ every stereo mode, CRC, free format, short and mixed blocks, every Huffman
 table with its escapes, reservoirs that are short, and side information
 that is refused. Mixed blocks at 8000 Hz are drawn in one stream only (it
 ends at the first). One stream is built to make the Huffman reader run off
-the array. The generated src/mp3_tables.bend is checked against the header
-first. CPU/JS.
+the array. Layer I and II streams are synthetic too: valid headers (MPEG-1
+and MPEG-2, every bit rate, so every allocation table: Layer I's, MPEG-2
+Layer II's and MPEG-1 Layer II's low-rate, 27-band and 30-band ones, every
+stereo mode and joint stereo bound, CRC, padding, free format) and random
+bytes after them, dense, sparse or nearly empty, so that allocations, scalefactor codes
+and grouped samples take every value and some frames ask for more bits
+than they hold (the reader then passes the frame's end: dr_mp3 resets its
+header and the frame gives no samples). The generated
+src/mp3_tables.bend is checked against the header first. CPU/JS.
 """
 import hashlib
 import json
@@ -119,7 +126,6 @@ int main(void)
             probe_values = 2166136261u;
             int samples = probe_decode_frame(&dec, data + pos, size - pos, pcm, &info);
             if (probe_outside) { printf(" refused"); break; }
-            if ((info.layer == 1) || (info.layer == 2)) { printf(" layer12"); break; }
             printf(" %d:%d:%u:%u:%u", samples, info.frame_bytes, probe_state(&dec), probe_values, probe_shorts(2166136261u, pcm, samples*info.channels));
             if (info.frame_bytes == 0) break;
             pos += info.frame_bytes;
@@ -161,7 +167,7 @@ def state(+decoder: L.Decoder) -> U32:
 
 def shown(status: U32, +decoder: L.Decoder, +samples: U32, +bytes: U32, +spectra: +List<+List<U32>>, +pcm: +List<U32>) -> String:
   match status:
-    case 0: U32.show(samples) ++ ":" ++ U32.show(bytes) ++ ":" ++ U32.show(state(decoder)) ++ ":" ++ U32.show(fnv.rows(spectra, 2166136261)) ++ ":" ++ U32.show(fnv(pcm, 2166136261))
+    case 0: U32.show(samples) ++ ":" ++ U32.show(bytes) ++ ":" ++ U32.show(state(decoder)) ++ ":" ++ U32.show(fnv.rows(spectra, 2166136261)) ++ ":" ++ U32.show(fnv(Bool.pick(+List<U32>, U32.is_eq(samples, 0), Nil{}, pcm), 2166136261))
     case 1: "refused"
     case _: "layer12"
 
@@ -408,10 +414,51 @@ def outside():
 
 
 def other_layer(rng, layer1):
-    """Four MPEG-1 frames of Layer I or II at 128 kbit/s and 44100 Hz with random bytes after their headers: dr_mp3 decodes them, the port stops at the first."""
+    """Four MPEG-1 frames of Layer I or II at 128 kbit/s and 44100 Hz with random bytes after their headers."""
     size = (384 * 128 * 125 // 44100) & ~3 if layer1 else 1152 * 128 * 125 // 44100
     head = bytes([0xFF, 0xFF if layer1 else 0xFD, (4 if layer1 else 8) << 4, 0])
     return b''.join(head + noise(rng, size - 4, 0.5) for _ in range(4))
+
+
+# dr_mp3's halved bit rates of Layers I and II (g_halfrate): [MPEG-1][layer 1 or 2]
+HALFRATE12 = {(True, 1): [0, 16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224], (True, 2): [0, 16, 24, 28, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192],
+              (False, 1): [0, 16, 24, 28, 32, 40, 48, 56, 64, 72, 80, 88, 96, 112, 128], (False, 2): [0, 4, 8, 12, 16, 20, 24, 28, 32, 40, 48, 56, 64, 72, 80]}
+
+
+def layer12_bytes(version, layer, bitrate, rate, padding, free):
+    """A Layer I or II frame's bytes (drmp3_hdr_frame_bytes and drmp3_hdr_padding): version 3 is MPEG-1, 2 MPEG-2."""
+    mpeg1 = version == 3
+    hz = HZ[rate] >> (0 if mpeg1 else 1)
+    size = (384 if layer == 1 else 1152) * 2 * HALFRATE12[mpeg1, layer][bitrate] * 125 // hz
+    if layer == 1:
+        size &= ~3
+    return (size if size else free) + (padding * (4 if layer == 1 else 1))
+
+
+def layer12_stream(rng, version, layer, rate, frames, ones, drawn, free=0, bitrates=None, modes=(0, 1, 2, 3)):
+    """Frames of one version, layer and sample rate; the bit rate (free format with `free`), mode, joint stereo bound, CRC and padding drawn
+    a frame at a time, random bytes after the header."""
+    out = b''
+    for _ in range(frames):
+        bitrate = 0 if free else rng.choice(bitrates or range(1, 15))
+        mode, ext, crc, padding = rng.choice(modes), rng.randrange(4), rng.randrange(2), rng.randrange(2)
+        head = bytes([0xFF, 0xE0 | version << 3 | (4 - layer) << 1 | (0 if crc else 1), bitrate << 4 | rate << 2 | padding << 1, mode << 6 | ext << 4])
+        size = layer12_bytes(version, layer, bitrate, rate, padding, free)
+        out += head + noise(rng, size - 4, ones)
+        mpeg1, kbps = version == 3, 2 * HALFRATE12[version == 3, layer][bitrate]
+        share = (kbps >> (mode != 3)) or 192
+        table = 'layer1' if layer == 1 else 'mpeg2' if not mpeg1 else 'low' if share < 56 else 'thirty' if share >= 96 and rate != 1 else 'twentyseven'
+        for key in (table, f'mode{mode}', 'crc' if crc else 'nocrc', 'free' if free else 'rated'):
+            drawn[key] = drawn.get(key, 0) + 1
+    return out
+
+
+def layer12_files():
+    """Whole Layer I and II streams for the stream and wave gates: MPEG-1 Layer I and II at 44100 Hz and MPEG-2 Layer II at 24000 Hz,
+    40 frames each, nearly empty payloads (most frames decode; a few read past their end and give no samples)."""
+    rng = random.Random(0x112)
+    return {'l1-stream': layer12_stream(rng, 3, 1, 0, 40, 0.05, {}), 'l2-stream': layer12_stream(rng, 3, 2, 0, 40, 0.05, {}),
+            'l2-mpeg2': layer12_stream(rng, 2, 2, 1, 40, 0.05, {})}
 
 
 def corpus(source):
@@ -435,6 +482,15 @@ def corpus(source):
         for key, value in counts.items():
             drawn[key] = drawn.get(key, 0) + value
     files['mpeg1-layer1'], files['mpeg1-layer2'] = other_layer(rng, True), other_layer(rng, False)
+    for version, label in ((3, 'mpeg1'), (2, 'mpeg2')):
+        for layer in (1, 2):
+            for rate in range(3):
+                for ones in (0.5, 0.15, 0.85, 0.05):
+                    files[f'l{layer}-{label}-{rate}-{int(ones * 100)}'] = layer12_stream(rng, version, layer, rate, 8, ones, drawn)
+            files[f'l{layer}-{label}-free'] = layer12_stream(rng, version, layer, 0, 6, 0.3, drawn, free=420 if layer == 2 else 400)
+    # MPEG-1 Layer II's tables by the bit rate a channel: low rates in stereo and mono, and high ones
+    files['l2-mpeg1-low'] = layer12_stream(rng, 3, 2, 2, 8, 0.3, drawn, bitrates=range(1, 5), modes=(0, 1, 2, 3))
+    files['l2-mpeg1-high'] = layer12_stream(rng, 3, 2, 0, 8, 0.3, drawn, bitrates=range(9, 15), modes=(3, 3, 0))
     files['outside'] = outside()
     return files, drawn
 
@@ -486,17 +542,21 @@ def main():
         raise ProbeFailure(f'mp3-layer3: the reference printed {len(expected)} rows for {len(items)} files')
     rows = dict(zip(files, expected))
     tokens = [token for row in expected for token in row.split()[1:]]
-    decoded = sum(token.split(':')[0] not in ('0', 'refused', 'layer12') for token in tokens)
-    synthetic_decoded = sum(token.split(':')[0] not in ('0', 'refused', 'layer12') for name, row in rows.items() if name.startswith('mpeg') for token in row.split()[1:])
+    decoded = sum(token.split(':')[0] not in ('0', 'refused') for token in tokens)
+    synthetic_decoded = sum(token.split(':')[0] not in ('0', 'refused') for name, row in rows.items() if name.startswith('mpeg') for token in row.split()[1:])
+    layer12 = [token.split(':')[0] for name, row in rows.items() if name.startswith('l1-') or name.startswith('l2-') for token in row.split()[1:]]
     music = [token.split(':')[0] for name in ('start', 'middle') for token in rows[name].split()[1:]]
     if len(music) != 400 or music.count('1152') < 395 or not rows['outside'].endswith(' refused') or len(rows['outside'].split()) != 3:
         raise ProbeFailure(f'mp3-layer3: the reference did not walk country.mp3 and the stream built to leave the array as expected: {rows["start"][:80]} / {rows["outside"][:200]}')
-    if synthetic_decoded < 120 or tokens.count('layer12') < 2 or min(drawn[key] for key in ('short', 'mixed', 'start_stop', 'linbits', 'mono', 'intensity', 'mono_intensity', 'midside', 'crc', 'reaching')) < 20:
-        raise ProbeFailure(f'mp3-layer3: the corpus lost coverage: {synthetic_decoded} synthetic frames decoded, {tokens.count("layer12")} Layer I/II files, drew {drawn}')
+    if (synthetic_decoded < 120 or layer12.count('384') < 40 or layer12.count('1152') < 40 or layer12.count('0') < 10
+            or min(drawn[key] for key in ('short', 'mixed', 'start_stop', 'linbits', 'mono', 'intensity', 'mono_intensity', 'midside', 'crc', 'reaching',
+                                          'layer1', 'mpeg2', 'low', 'thirty', 'twentyseven', 'mode0', 'mode1', 'mode2', 'mode3', 'free')) < 5):
+        raise ProbeFailure(f'mp3-layer3: the corpus lost coverage: {synthetic_decoded} synthetic frames decoded, Layer I/II frames {layer12}, drew {drawn}')
     lanes = probe.candidates(render, items, batch=40, parse=parse, timeout=1500)
     probe.compare(expected, lanes, describe=lambda index: items[index][0] + ' ' + next(
         (first_difference(expected[index], rows[index]) for rows in lanes.values() if rows[index] != expected[index]), ''))
-    probe.finish(files=len(items), frames=len(tokens), decoded=decoded, synthetic_decoded=synthetic_decoded, refused=tokens.count('refused'), layer12=tokens.count('layer12'),
+    probe.finish(files=len(items), frames=len(tokens), decoded=decoded, synthetic_decoded=synthetic_decoded, refused=tokens.count('refused'),
+                 layer1_decoded=layer12.count('384'), layer2_decoded=layer12.count('1152'), layer12_empty=layer12.count('0'),
                  **{f'drawn_{key}': value for key, value in drawn.items()},
                  files_sha256=hashlib.sha256(b''.join(name.encode() + data for name, data in sorted(files.items()))).hexdigest())
 

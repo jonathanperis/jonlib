@@ -1972,7 +1972,7 @@
   },
   {
    "id": "mp3-layer3",
-   "title": "MP3 Layer III frames to their 16-bit samples (dr_mp3: the bit reservoir and the main data array, scalefactors, Huffman-coded values, stereo processing, reorder, alias reduction, IMDCT, the synthesis filter in its SSE order; undefined reads and reorders refused) against dr_mp3's own frame function, with generated tables checked against the header",
+   "title": "MP3 frames to their 16-bit samples (dr_mp3, Layer III: the bit reservoir and the main data array, scalefactors, Huffman-coded values, stereo processing, reorder, alias reduction, IMDCT, the synthesis filter in its SSE order; undefined reads and reorders refused; Layers I and II: allocation tables, scalefactors, plain and grouped samples, frames read past their end) against dr_mp3's own frame function, with generated tables checked against the header",
    "run": [
     "{python}",
     "tools/mp3_layer3_probe.py",
@@ -1987,7 +1987,7 @@
   },
   {
    "id": "mp3-stream",
-   "title": "MP3 streams read and sought (dr_mp3: the first frame, drmp3_get_pcm_frame_count, 16-bit and float reads across frames, the LAME delay and padding, seeks back and forward, the start), opened as files and from memory, against dr_mp3 through the functions raylib calls",
+   "title": "MP3 streams read and sought (dr_mp3: the first frame, drmp3_get_pcm_frame_count, 16-bit and float reads across frames, the LAME delay and padding, seeks back and forward, the start; Layer I and II streams too), opened as files and from memory, against dr_mp3 through the functions raylib calls",
    "run": [
     "{python}",
     "tools/mp3_stream_probe.py",
@@ -2002,7 +2002,7 @@
   },
   {
    "id": "mp3-wave",
-   "title": "Waves and sounds from MP3 files (LoadWave: drmp3_open_memory_and_read_pcm_frames_f32, a memory stream's every frame as floats; LoadSoundFromWave) against raudio.c on the mp3 gate's files: frame count, rate, size, channels, the samples' bits and the sound's frames, or no wave",
+   "title": "Waves and sounds from MP3 files (LoadWave: drmp3_open_memory_and_read_pcm_frames_f32, a memory stream's every frame as floats; LoadSoundFromWave) against raudio.c on the mp3 gate's files and Layer I and II streams: frame count, rate, size, channels, the samples' bits and the sound's frames, or no wave",
    "run": [
     "{python}",
     "tools/mp3_wave_probe.py",
