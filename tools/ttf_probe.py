@@ -950,7 +950,8 @@ def main():
     items = scenes(paths, libm, cubic)
     expected = native_rows(probe, items, str(codes))
     actions = list(enumerate(items))
-    lanes = probe.candidates(render(libm, str(codes)), actions, batch=12, parse=lambda text, selected: [line for line in text.splitlines() if line.strip()])
+    # the SDF scenes under the profile solve thousands of cubics in software binary64: about 25 minutes on the JavaScript lane
+    lanes = probe.candidates(render(libm, str(codes)), actions, batch=12, timeout=3600, parse=lambda text, selected: [line for line in text.splitlines() if line.strip()])
     probe.compare(expected, lanes, describe=lambda i: f'scene {items[i]["id"]}')
     probe.finish(scenes=len(items), operations=sum(len(s['ops']) for s in items), refused_operations=sum(declared(op) for s in items for op in s['ops']),
                  libm=libm, cubic_compared=cubic, fused_free_objects=len(fused), scenes_sha256=hashlib.sha256(json.dumps(items, default=repr).encode()).hexdigest())
