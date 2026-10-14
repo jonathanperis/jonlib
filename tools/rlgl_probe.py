@@ -14,7 +14,8 @@ rlVertex2i/2f/3f, rlTexCoord2f, rlNormal3f, rlColor4ub/3f/4f, rlSetTexture,
 rlMatrixMode with the projection and texture stacks, rlOrtho, rlFrustum,
 rlViewport, the blend/depth/cull/scissor/wire/point toggles, rlSetCullFace,
 rlScissor, rlSetLineWidth/rlGetLineWidth, rlSetPointSize/rlGetPointSize,
-rlClearColor/rlClearScreenBuffers, the matrix and state getters and the
+rlClearColor/rlClearScreenBuffers, rlGetGlTextureFormats for the formats
+-1 to 25, rlGenTextureMipmaps, the matrix and state getters and the
 OpenGL 3.3-only calls that do nothing on the software renderer. Getter
 results (F32 bits, ids) are appended to the scene's row.
 
@@ -67,7 +68,7 @@ C_TOGGLES = {0: ('rlEnableColorBlend', 'rlDisableColorBlend'), 1: ('rlEnableDept
              4: ('rlEnableWireMode', 'rlDisableWireMode'), 5: ('rlEnablePointMode', 'rlDisablePointMode'),
              6: ('rlEnableSmoothLines', 'rlDisableSmoothLines'), 7: ('rlEnableDepthMask', 'rlDisableDepthMask'),
              8: ('rlEnableStereoRender', 'rlDisableStereoRender')}
-GETTERS = ('line_width', 'point_size', 'modelview', 'projection', 'framebuffer', 'version', 'misc')
+GETTERS = ('line_width', 'point_size', 'modelview', 'projection', 'framebuffer', 'version', 'misc', 'formats')
 
 
 # -----------------------------------------------------------------------------
@@ -426,7 +427,7 @@ def scenes():
                                   ('get', 'line_width'), ('line', 2.0, 28.0, 38.0, 28.0, WHITE), ('end',)])
     add('rl-clear-getters', 24, 16, [('begin',), ('clear_color', 10, 20, 30, 40), ('clear_buffers',), ('clear_color', 255, 0, 0, 255),
                                      ('scissor', 2.0, 3.0, 4.0, 5.0), ('toggle', 'scissor', True), ('clear_buffers',), ('toggle', 'scissor', False),
-                                     ('get', 'framebuffer'), ('get', 'version'), ('get', 'misc'), ('noops',), ('get', 'modelview'), ('get', 'projection'),
+                                     ('get', 'framebuffer'), ('get', 'version'), ('get', 'misc'), ('get', 'formats'), ('noops',), ('get', 'modelview'), ('get', 'projection'),
                                      ('load_rt', 0, 6, 5), ('begin_rt', 0), ('get', 'framebuffer'), ('clear_color', 0, 0, 255, 255), ('clear_buffers',),
                                      ('rl_begin', 4), ('v2f', 0.0, 0.0), ('v2f', 0.0, 5.0), ('v2f', 6.0, 5.0), ('rl_end',), ('end_rt', 0),
                                      ('draw_rt', 0, 12.0, 8.0, WHITE), ('end',)], screen=True)
@@ -518,6 +519,21 @@ static void misc(void)
     note(" n");
     for (unsigned int format = 0; format <= 25; format++) { note(rlGetPixelFormatName(format)); note("|"); }
 }
+static void formats(void)
+{
+    char s[64];
+    for (int format = -1; format <= 25; format++)
+    {
+        unsigned int internal, glFormat, glType;
+        rlGetGlTextureFormats(format, &internal, &glFormat, &glType);
+        snprintf(s, sizeof s, " g%u,%u,%u", internal, glFormat, glType);
+        note(s);
+    }
+    int mipmaps = 5;
+    rlGenTextureMipmaps(rlGetTextureIdDefault(), 4, 4, 7, &mipmaps);
+    snprintf(s, sizeof s, " q%d", mipmaps);
+    note(s);
+}
 static void dump(int w, int h, int screen)''')
 if 'static void noops(void)' not in C_PREFIX:
     raise ProbeFailure('rlgl: tools/texture_probe.py C_PREFIX changed; update the rlgl probe hooks')
@@ -571,7 +587,8 @@ def c_op(op):
         'get': lambda: {'line_width': 'note_f("w", rlGetLineWidth());', 'point_size': 'note_f("p", rlGetPointSize());',
                         'modelview': 'note_m("m", rlGetMatrixModelview());', 'projection': 'note_m("j", rlGetMatrixProjection());',
                         'framebuffer': '{ char s[32]; snprintf(s, sizeof s, " a%u", rlGetActiveFramebuffer()); note(s); }',
-                        'version': '{ char s[32]; snprintf(s, sizeof s, " v%d", rlGetVersion()); note(s); }', 'misc': 'misc();'}[a[0]],
+                        'version': '{ char s[32]; snprintf(s, sizeof s, " v%d", rlGetVersion()); note(s); }', 'misc': 'misc();',
+                        'formats': 'formats();'}[a[0]],
     }
     return '    ' + calls[name]()
 
@@ -963,6 +980,19 @@ def got.misc(r: J.Frame & Bool) -> J.Frame & String:
   (frame, b) = r
   got.misc.b(" x" ++ bool.digit(b), J.Rlgl.get_framebuffer_width(frame))
 
+def gl.text(f: J.Rlgl.GlFormats) -> String:
+  J.Rlgl.GlFormats{+internal, +gl, +kind} = f
+  " g" ++ U32.show(internal) ++ "," ++ U32.show(gl) ++ "," ++ U32.show(kind)
+
+# rlGetGlTextureFormats for `n` formats from `format` on, then the mipmaps
+# rlGenTextureMipmaps left (`r`).
+def gl.formats(n: Nat, +format: U32, +text: String, r: J.Frame & U32) -> J.Frame & String:
+  match n:
+    case 0n:
+      (frame, +m) = r
+      (frame, text ++ " q" ++ U32.show(m))
+    case 1n+k: gl.formats(k, (format + 1 : U32), text ++ gl.text(J.Rlgl.get_gl_texture_formats(format)), r)
+
 def query(what: U32, frame: J.Frame) -> J.Frame & String:
   match what:
     case 0: got.f32("w", J.Rlgl.get_line_width(frame))
@@ -971,7 +1001,8 @@ def query(what: U32, frame: J.Frame) -> J.Frame & String:
     case 3: got.matrix("j", J.Rlgl.get_matrix_projection(frame))
     case 4: got.u32("a", J.Rlgl.get_active_framebuffer(frame))
     case 5: (frame, " v" ++ U32.show(J.Rlgl.get_version()))
-    case _: got.misc(J.Rlgl.is_stereo_render_enabled(frame))
+    case 6: got.misc(J.Rlgl.is_stereo_render_enabled(frame))
+    case _: gl.formats(27n, 4294967295, "", J.Rlgl.gen_texture_mipmaps(frame, J.Rlgl.get_texture_id_default(), 4, 4, 7, 5))
 
 def shapes.info.text(info: J.TextureInfo, rec: J.Rectangle) -> String:
   J.TextureInfo{id, width, height, mipmaps, format} = info

@@ -3176,6 +3176,24 @@ law rlgl_set_uniform_unchanged:
   for kind: U32
   {J.Rlgl.set_uniform(frame, location, value, kind) == frame : J.Frame}
 
+# rlGetGlTextureFormats under OpenGL 1.1: R8G8B8A8 is GL_RGBA with
+# GL_UNSIGNED_BYTE, R5G6B5 GL_RGB with GL_UNSIGNED_SHORT_5_6_5, and a float
+# format (R32) has no answer; rlGenTextureMipmaps leaves the count.
+law rlgl_gl_formats_rgba8:
+  {J.Rlgl.get_gl_texture_formats(7) == J.Rlgl.GlFormats{6408, 6408, 5121} : J.Rlgl.GlFormats}
+
+law rlgl_gl_formats_r5g6b5:
+  {J.Rlgl.get_gl_texture_formats(3) == J.Rlgl.GlFormats{6407, 6407, 33635} : J.Rlgl.GlFormats}
+
+law rlgl_gl_formats_float_none:
+  {J.Rlgl.get_gl_texture_formats(8) == J.Rlgl.GlFormats{0, 0, 0} : J.Rlgl.GlFormats}
+
+law rlgl_gen_texture_mipmaps_unchanged:
+  for frame: J.Frame
+  for id: U32
+  for mipmaps: U32
+  {J.Rlgl.gen_texture_mipmaps(frame, id, 4, 4, 7, mipmaps) == (frame, mipmaps) : J.Frame & U32}
+
 law rlgl_set_uniform_matrix_unchanged:
   for frame: J.Frame
   for location: U32
