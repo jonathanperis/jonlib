@@ -11862,6 +11862,34 @@ def Font.gen_image_atlas_for(libm: M.Libm, glyphs: List<GlyphInfo>, +count: U32,
 def Font.gen_image_atlas(glyphs: List<GlyphInfo>, +count: U32, +size: U32, +padding: U32, +method: U32) -> List<GlyphInfo> & Maybe<(Surface & +List<Rectangle>)>:
   Font.gen_image_atlas_for(M.AppleLibm{}, glyphs, count, size, padding, method)
 
+# A Font a program assembles itself, as text_font_sdf does with
+# `Font font = { 0 }` and its fields: baseSize, the glyphs of LoadFontData,
+# the rectangles GenImageFontAtlas made for them and the texture
+# LoadTextureFromImage makes of its atlas; glyphPadding stays 0. The glyphs
+# are paired with the rectangles in order (glyphCount is how many pairs
+# there are). None when the texture cannot be loaded (127 in use).
+def Font.assemble.glyph(g: GlyphInfo, +r: Rectangle) -> FontCore.Glyph:
+  GlyphInfo{value, ox, oy, adv, _} = g
+  Rectangle{x, y, w, h} = r
+  FontCore.Glyph{value, ox, oy, adv, x, y, w, h}
+
+def Font.assemble.glyphs(gs: List<GlyphInfo>, +recs: +List<Rectangle>) -> +List<FontCore.Glyph>:
+  match gs recs:
+    case Con{g, gr} Con{+r, rr}: Con{Font.assemble.glyph(g, r), Font.assemble.glyphs(gr, rr)}
+    case _ _: Nil{}
+
+def Font.assemble.textured(+base: U32, +glyphs: +List<FontCore.Glyph>, atlas: Surface, loaded: Frame & Maybe<Texture>) -> Frame & Maybe<Font>:
+  match loaded:
+    case Tuple{frame, None{}}: (frame, None{})
+    case Tuple{frame, Some{texture}}: (frame, Some{Font{base, 0, glyphs, texture, atlas}})
+
+def Font.assemble.copied(frame: Frame, +base: U32, +glyphs: +List<FontCore.Glyph>, pair: Surface & Surface) -> Frame & Maybe<Font>:
+  (atlas, copy) = pair
+  Font.assemble.textured(base, glyphs, atlas, Texture.load_from_image(frame, copy))
+
+def Font.assemble(frame: Frame, +base: U32, glyphs: List<GlyphInfo>, atlas: Surface, +recs: +List<Rectangle>) -> Frame & Maybe<Font>:
+  Font.assemble.copied(frame, base, Font.assemble.glyphs(glyphs, recs), Surface.copy(atlas))
+
 # LoadFontFromMemory ----------------------------------------------------------
 
 def Font.memory.glyph(+g: FontData.Glyph, +r: FontData.Rec) -> FontCore.Glyph:
