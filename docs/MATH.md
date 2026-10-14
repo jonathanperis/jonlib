@@ -807,3 +807,54 @@ interval's bound and every table entry's first argument with their
 neighbours, arguments below 1 through all 128 reciprocal roots and every
 power of two, 1 and -1, and nine that are `None`, on CPU-1, CPU-2 and
 JavaScript.
+
+## The cube root of stb_truetype's solver
+
+`src/power64.bend`'s `third(bits)` is `(float) pow((double) x, (double)
+(1.0f/3.0f))` for a float `x`: the cube root `stbtt__cuberoot` takes when
+`stbtt__solve_cubic` finds one real root (its sign is the caller's). It is
+Arm optimized-routines' `math/pow.c` (with `pow_log_data.c` and
+`exp_data.c`, MIT alternative, [LICENSES/arm-math.txt](../LICENSES/arm-math.txt))
+as glibc 2.39's x86_64 `pow` runs it in its FMA ifunc variant, restricted to
+that exponent: `log_inline` of `x` in two parts (a table of 128 intervals and
+a polynomial of degree 8), the product with `y` in two parts, and
+`exp_inline` (a table of 2^(k/128) and a polynomial of degree 5). Where the
+FMA build contracts was read from the library's code (`libm.so.6`, build ID
+`d53fcbff9f855463606b25cfbe2a2e10856ea3a7`): beside the source's own fused
+steps, `kd*Ln2hi + logc`, `kd*Ln2lo + logctail`, every `a + r*b` of the two
+polynomials, their sums with the `ar2` and `r2` products,
+`ar3*(...) + (lo1 + lo2 + lo3 + lo4)`, `y*lo + (...)`, `InvLn2N*x + Shift`,
+`kd*NegLn2hiN + x`, `kd*NegLn2loN + (...)` and `scale*tmp + scale` are one
+fused operation each.
+
+`tools/reference/glibc_pow/model.c` is the whole function in C (`FUSED=1`,
+and `FUSED=0` for the SSE2 build: the source's branch without `fma`), with
+the tables as words; they are the words of the library.
+`run_exhaustive.sh` compares the models with the host's `pow` (the SSE2 one
+with `GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX2,-FMA,-FMA4`) and with each other
+on every float `x` and that exponent: on Ubuntu 24.04, glibc 2.39-0ubuntu8.9
+(`tools/reference/glibc_pow/results`):
+
+| Comparison | Floats | Doubles that differ | Narrowed floats that differ |
+|---|---:|---:|---:|
+| FMA model and host | 4,294,967,296 | 0 | 0 |
+| SSE2 model and host | 4,294,967,296 | 0 | 0 |
+| the two models | 4,294,967,296 | 1,515,625 | 0 |
+
+So the two builds give the same float for every float, and the port computes
+one (the FMA one). A zero of either sign gives +0 (`pow`'s `x*x`); a
+negative `x` (a NaN in C), the infinities and NaN are `None`, as is a step
+the exact binary64 helpers do not take (none of the gate's positive finite
+floats does).
+Below 2^-54 the exponential answers `1 + x`, which only `x = 1` reaches.
+
+Gate `pow-third` (`tools/pow_third_probe.py`, with `tools/glibc_pow.py`)
+compiles the model on the host, requires it to reproduce 32 recorded
+results where the two builds' doubles differ (two in each of sixteen ranges
+of the exponent, with the floats they narrow to), compares it with the
+host's `pow` where that reproduces them too, and requires the port to equal
+it on floats of every exponent (the subnormal ones too), a float in each of
+the logarithm table's 128 intervals at three exponents, 1 and its
+neighbours, the cubes of 1 to 40, every power of two, the smallest and
+largest floats, the zeros and what is refused, on CPU-1, CPU-2 and
+JavaScript.

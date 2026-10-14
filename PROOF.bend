@@ -4195,3 +4195,27 @@ def Laws.glibc_acos64_apple_refused(value):
 
 def Laws.glibc_acos64_glibc241_refused(value):
   {==}
+
+def Laws.power64_third_of_zero():
+  {==}
+
+def Laws.power64_third_of_negative_zero():
+  {==}
+
+def Laws.power64_third_of_minus_one_refused():
+  {==}
+
+def Laws.power64_third_of_infinity_refused():
+  {==}
+
+def Laws.power64_third_of_nan_refused():
+  {==}
+
+def Laws.power64_tiny_exponential_is_one_plus_x():
+  {==}
+
+def Laws.power64_exponential_of_one_is_the_main_path():
+  {==}
+
+def Laws.power64_exponential_from_512_has_no_answer():
+  {==}

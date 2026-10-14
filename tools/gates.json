@@ -1839,6 +1839,20 @@
    "minutes": 6
   },
   {
+   "id": "pow-third",
+   "title": "The cube root of stb_truetype's cubic solver, (float) pow((double) x, (double) (1.0f/3.0f)) (src/power64.bend: Arm's pow as glibc 2.39's x86_64 FMA variant runs it) against the glibc pow model on floats of every exponent, every interval of the logarithm's table, 1 and its neighbours, cubes, powers of two, the extremes, the variant controls, the zeros and what is refused, and against the host pow where it qualifies",
+   "run": [
+    "{python}",
+    "tools/pow_third_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 6
+  },
+  {
    "id": "perspective",
    "title": "MatrixPerspective rounding record (diagnostic)",
    "run": [

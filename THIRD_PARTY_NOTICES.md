@@ -563,6 +563,12 @@ on [-0, 1] and for `powf(2, y)`, which is `exp2f(y)`, with `|y| < 126` (glibc
 and `math/logf_data.c` at that revision (`expf` for `|x| < 87`, `logf` for
 positive normal `x`), as do the C model in `tools/reference/glibc_explog`
 and the arithmetic in `tools/explog_probe.py`.
+`src/power64.bend` and the C model in `tools/reference/glibc_pow` (with its
+exhaustive check, used by `tools/glibc_pow.py` and
+`tools/pow_third_probe.py`) adapt `math/pow.c`, `math/pow_log_data.c` and
+`math/exp_data.c` (as glibc 2.39 ships them on x86_64) at the same
+revision, for `(float) pow((double) x, (double) (1.0f/3.0f))`, the cube
+root of stb_truetype's cubic solver.
 These are altered Bend/tooling implementations, limited to the documented
 sinf/cosf and power profiles. Jonlib selects the upstream MIT alternative; source copyright
 notices and the selected license are retained in [LICENSES/arm-math.txt](LICENSES/arm-math.txt).

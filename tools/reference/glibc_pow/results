@@ -1,0 +1,3 @@
+{"comparison": "fma", "floats": 4294967296, "doubles_that_differ": 0, "narrowed_floats_that_differ": 0, "refused": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "sse2", "floats": 4294967296, "doubles_that_differ": 0, "narrowed_floats_that_differ": 0, "refused": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "variants", "floats": 4294967296, "doubles_that_differ": 1515625, "narrowed_floats_that_differ": 0, "refused": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
