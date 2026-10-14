@@ -8,18 +8,20 @@
 # the version-2 antialiasing rasterizer (stbtt__rasterize, its quicksort and
 # insertion sort of edges, stbtt__rasterize_sorted_edges,
 # stbtt__fill_active_edges_new, stbtt__handle_clipped_edge),
-# stbtt_GetGlyphBitmapSubpixel and stbtt_GetGlyphSDF for glyphs whose distance
-# search never reaches the cubic solver. F32 arithmetic follows the C source
+# stbtt_GetGlyphBitmapSubpixel and stbtt_GetGlyphSDF (whose cubic solver,
+# with the C library's pow, acos and cos, is ./stb_cubic.bend under the glibc
+# 2.39 profile). F32 arithmetic follows the C source
 # order, uncontracted (raylib built with -ffp-contract=off); release build, so
 # STBTT_assert is a no-op. C ints are U32 two's-complement words.
 #
 # stb_truetype does no bounds checking. Every byte it reads is checked here
 # against the font data; a read outside it, a signed int overflow, a float to
 # int conversion out of range, an uninitialized bitmap, a CFF (OpenType)
-# outline, composite nesting deeper than 6 and an SDF needing the cubic solver
-# (which uses double pow/acos/cos from the C library) are refused instead of
-# reproduced. See docs/FONTS.md.
+# outline, composite nesting deeper than 6 and, under another libm profile,
+# an SDF needing the cubic solver are refused instead of reproduced. See
+# docs/FONTS.md.
 import Base
+import ./stb_cubic.bend as Cubic
 
 # -----------------------------------------------------------------------------
 # C int helpers
@@ -1433,19 +1435,9 @@ def near.root(+t: F32, +valid: Bool, +x0: F32, +y0: F32, +x1: F32, +y1: F32, +x2
   +py = ((((it * it : F32) * y0 : F32) + (((2.0 * t : F32) * it : F32) * y1 : F32) : F32) + ((t * t : F32) * y2 : F32) : F32)
   Bool.pick(F32, valid && (t >= 0.0 : F32) && (t <= 1.0 : F32), near.to(min, (((px - scx : F32) * (px - scx : F32) : F32) + ((py - scy : F32) * (py - scy : F32) : F32) : F32)), min)
 
-def near.curve(+g: Seg, +sx: F32, +sy: F32, +scx: F32, +scy: F32, +min0: F32) -> Near:
-  Seg{_, px, py, vx, vy, cx, cy, pre} = g
-  +x0 = (i2f(vx) * sx : F32)
-  +y0 = (i2f(vy) * sy : F32)
-  +x2 = (i2f(px) * sx : F32)
-  +y2 = (i2f(py) * sy : F32)
-  +x1 = (i2f(cx) * sx : F32)
-  +y1 = (i2f(cy) * sy : F32)
-  +bx0 = Bool.pick(F32, (Bool.pick(F32, (x0 < x1 : F32), x0, x1) < x2 : F32), Bool.pick(F32, (x0 < x1 : F32), x0, x1), x2)
-  +by0 = Bool.pick(F32, (Bool.pick(F32, (y0 < y1 : F32), y0, y1) < y2 : F32), Bool.pick(F32, (y0 < y1 : F32), y0, y1), y2)
-  +bx1 = Bool.pick(F32, (Bool.pick(F32, (x0 < x1 : F32), x1, x0) < x2 : F32), x2, Bool.pick(F32, (x0 < x1 : F32), x1, x0))
-  +by1 = Bool.pick(F32, (Bool.pick(F32, (y0 < y1 : F32), y1, y0) < y2 : F32), y2, Bool.pick(F32, (y0 < y1 : F32), y1, y0))
-  +near = (scx > (bx0 - min0 : F32) : F32) && (scx < (bx1 + min0 : F32) : F32) && (scy > (by0 - min0 : F32) : F32) && (scy < (by1 + min0 : F32) : F32)
+# The quadratic of a curve whose cubic term vanishes (a_inv == 0): its roots
+# by the quadratic formula, or the linear one.
+def near.quadratic(+x0: F32, +y0: F32, +x1: F32, +y1: F32, +x2: F32, +y2: F32, +scx: F32, +scy: F32, +min0: F32) -> Near:
   +ax = (x1 - x0 : F32)
   +ay = (y1 - y0 : F32)
   +bx = ((x0 - (2.0 * x1 : F32) : F32) + x2 : F32)
@@ -1464,8 +1456,65 @@ def near.curve(+g: Seg, +sx: F32, +sy: F32, +scx: F32, +scy: F32, +min0: F32) ->
   +r1 = ((F32.neg(b) + root : F32) / (2.0 * a : F32) : F32)
   +m1 = near.to(min0, (((x0 - scx : F32) * (x0 - scx : F32) : F32) + ((y0 - scy : F32) * (y0 - scy : F32) : F32) : F32))
   +m2 = near.root(r0, (n >= 1 : U32), x0, y0, x1, y1, x2, y2, scx, scy, m1)
+  Near{True{}, near.root(r1, (n >= 2 : U32), x0, y0, x1, y1, x2, y2, scx, scy, m2)}
+
+# The roots stbtt__solve_cubic leaves: one, three, or three NaN ones that
+# none passes; with no answer the pixel is refused.
+def near.cubic.roots(+roots: Cubic.Roots, +x0: F32, +y0: F32, +x1: F32, +y1: F32, +x2: F32, +y2: F32, +scx: F32, +scy: F32, +m1: F32) -> Near:
+  Cubic.Roots{+state, +r0, +r1, +r2} = roots
+  +n = Bool.pick(U32, U32.is_eq(state, 1), 1, Bool.pick(U32, U32.is_eq(state, 3), 3, 0))
+  +m2 = near.root(r0, (n >= 1 : U32), x0, y0, x1, y1, x2, y2, scx, scy, m1)
   +m3 = near.root(r1, (n >= 2 : U32), x0, y0, x1, y1, x2, y2, scx, scy, m2)
-  Near{Bool.not(near) || F32.is_eq(pre, 0.0), Bool.pick(F32, near, m3, min0)}
+  Near{U32.is_ne(state, 0), near.root(r2, (n >= 3 : U32), x0, y0, x1, y1, x2, y2, scx, scy, m3)}
+
+# b = 3*(ax*bx + ay*by)*a_inv; c = (2*(ax*ax + ay*ay) + (mx*bx + my*by))*a_inv;
+# d = (mx*ax + my*ay)*a_inv; stbtt__solve_cubic(b, c, d).
+def near.cubic.solved(+pre: F32, +x0: F32, +y0: F32, +x1: F32, +y1: F32, +x2: F32, +y2: F32, +scx: F32, +scy: F32, +min0: F32) -> Near:
+  +ax = (x1 - x0 : F32)
+  +ay = (y1 - y0 : F32)
+  +bx = ((x0 - (2.0 * x1 : F32) : F32) + x2 : F32)
+  +by = ((y0 - (2.0 * y1 : F32) : F32) + y2 : F32)
+  +mx = (x0 - scx : F32)
+  +my = (y0 - scy : F32)
+  +b = ((3.0 * ((ax * bx : F32) + (ay * by : F32) : F32) : F32) * pre : F32)
+  +c = (((2.0 * ((ax * ax : F32) + (ay * ay : F32) : F32) : F32) + ((mx * bx : F32) + (my * by : F32) : F32) : F32) * pre : F32)
+  +d = (((mx * ax : F32) + (my * ay : F32) : F32) * pre : F32)
+  near.cubic.roots(Cubic.solve(b, c, d), x0, y0, x1, y1, x2, y2, scx, scy,
+    near.to(min0, (((x0 - scx : F32) * (x0 - scx : F32) : F32) + ((y0 - scy : F32) * (y0 - scy : F32) : F32) : F32)))
+
+# A curve with a cubic term needs the solver: refused unless `cubic` (the
+# glibc 2.39 profile, whose pow, acos and cos the solver reproduces).
+def near.cubic(cubic: Bool, +pre: F32, +x0: F32, +y0: F32, +x1: F32, +y1: F32, +x2: F32, +y2: F32, +scx: F32, +scy: F32, +min0: F32) -> Near:
+  match cubic:
+    case False{}: Near{False{}, min0}
+    case True{}: near.cubic.solved(pre, x0, y0, x1, y1, x2, y2, scx, scy, min0)
+
+def near.curve.solve(quadratic: Bool, +cubic: Bool, +pre: F32, +x0: F32, +y0: F32, +x1: F32, +y1: F32, +x2: F32, +y2: F32, +scx: F32, +scy: F32, +min0: F32) -> Near:
+  match quadratic:
+    case True{}: near.quadratic(x0, y0, x1, y1, x2, y2, scx, scy, min0)
+    case False{}: near.cubic(cubic, pre, x0, y0, x1, y1, x2, y2, scx, scy, min0)
+
+def near.curve.at(near: Bool, +cubic: Bool, +pre: F32, +x0: F32, +y0: F32, +x1: F32, +y1: F32, +x2: F32, +y2: F32, +scx: F32, +scy: F32, +min0: F32) -> Near:
+  match near:
+    case False{}: Near{True{}, min0}
+    case True{}: near.curve.solve(F32.is_eq(pre, 0.0), cubic, pre, x0, y0, x1, y1, x2, y2, scx, scy, min0)
+
+# A curve's distance, when the pixel is within min_dist of its box: the
+# endpoint, then the roots, a_inv choosing the quadratic or the cubic.
+def near.curve(+g: Seg, +sx: F32, +sy: F32, +scx: F32, +scy: F32, +min0: F32, +cubic: Bool) -> Near:
+  Seg{_, px, py, vx, vy, cx, cy, pre} = g
+  +x0 = (i2f(vx) * sx : F32)
+  +y0 = (i2f(vy) * sy : F32)
+  +x2 = (i2f(px) * sx : F32)
+  +y2 = (i2f(py) * sy : F32)
+  +x1 = (i2f(cx) * sx : F32)
+  +y1 = (i2f(cy) * sy : F32)
+  +bx0 = Bool.pick(F32, (Bool.pick(F32, (x0 < x1 : F32), x0, x1) < x2 : F32), Bool.pick(F32, (x0 < x1 : F32), x0, x1), x2)
+  +by0 = Bool.pick(F32, (Bool.pick(F32, (y0 < y1 : F32), y0, y1) < y2 : F32), Bool.pick(F32, (y0 < y1 : F32), y0, y1), y2)
+  +bx1 = Bool.pick(F32, (Bool.pick(F32, (x0 < x1 : F32), x1, x0) < x2 : F32), x2, Bool.pick(F32, (x0 < x1 : F32), x1, x0))
+  +by1 = Bool.pick(F32, (Bool.pick(F32, (y0 < y1 : F32), y1, y0) < y2 : F32), y2, Bool.pick(F32, (y0 < y1 : F32), y1, y0))
+  near.curve.at((scx > (bx0 - min0 : F32) : F32) && (scx < (bx1 + min0 : F32) : F32) && (scy > (by0 - min0 : F32) : F32) && (scy < (by1 + min0 : F32) : F32),
+    cubic, pre, x0, y0, x1, y1, x2, y2, scx, scy, min0)
 
 def Near.ok(+n: Near) -> Bool:
   Near{ok, _} = n
@@ -1475,17 +1524,26 @@ def Near.min(+n: Near) -> F32:
   Near{_, min} = n
   min
 
-def near.seg(+g: Seg, +sx: F32, +sy: F32, +scx: F32, +scy: F32, +st: Near) -> Near:
+def near.seg.curved(+ok: Bool, +c: Near) -> Near:
+  Near{ok && Near.ok(c), Near.min(c)}
+
+# 2: a line of nonzero length; 3: a curve; 0: anything else, which leaves
+# the distance as it is.
+def near.seg.at(code: U32, +g: Seg, +sx: F32, +sy: F32, +scx: F32, +scy: F32, +ok: Bool, +min: F32, +cubic: Bool) -> Near:
+  match code:
+    case 2: Near{ok, near.line(g, sx, sy, scx, scy, min)}
+    case 3: near.seg.curved(ok, near.curve(g, sx, sy, scx, scy, min, cubic))
+    case _: Near{ok, min}
+
+def near.seg(+g: Seg, +sx: F32, +sy: F32, +scx: F32, +scy: F32, +st: Near, +cubic: Bool) -> Near:
   Seg{kind, _, _, _, _, _, _, pre} = g
   Near{ok, min} = st
-  +c = near.curve(g, sx, sy, scx, scy, min)
-  Bool.pick(Near, U32.is_eq(kind, 2) && F32.is_ne(pre, 0.0), Near{ok, near.line(g, sx, sy, scx, scy, min)},
-    Bool.pick(Near, U32.is_eq(kind, 3), Near{ok && Near.ok(c), Near.min(c)}, st))
+  near.seg.at(Bool.pick(U32, U32.is_eq(kind, 2) && F32.is_ne(pre, 0.0), 2, Bool.pick(U32, U32.is_eq(kind, 3), 3, 0)), g, sx, sy, scx, scy, ok, min, cubic)
 
-def near.go(+gs: +List<Seg>, +sx: F32, +sy: F32, +scx: F32, +scy: F32, +st: Near) -> Near:
+def near.go(+gs: +List<Seg>, +sx: F32, +sy: F32, +scx: F32, +scy: F32, +st: Near, +cubic: Bool) -> Near:
   match gs:
     case Nil{}: st
-    case Con{+g, rest}: near.go(rest, sx, sy, scx, scy, near.seg(g, sx, sy, scx, scy, st))
+    case Con{+g, rest}: near.go(rest, sx, sy, scx, scy, near.seg(g, sx, sy, scx, scy, st, cubic), cubic)
 
 def sdf.value(+winding: U32, +onedge: U32, +dist_scale: F32, +n: Near) -> SdfPixel:
   Near{ok, min0} = n
@@ -1496,11 +1554,11 @@ def sdf.value(+winding: U32, +onedge: U32, +dist_scale: F32, +n: Near) -> SdfPix
 type SdfPixel is Data:
   SdfPixel{ok: Bool, value: U32}
 
-def sdf.pixel(+gs: +List<Seg>, +x: U32, +y: U32, +s: F32, +onedge: U32, +dist_scale: F32) -> SdfPixel:
+def sdf.pixel(+gs: +List<Seg>, +x: U32, +y: U32, +s: F32, +onedge: U32, +dist_scale: F32, +cubic: Bool) -> SdfPixel:
   +scx = (i2f(x) + 0.5 : F32)
   +scy = (i2f(y) + 0.5 : F32)
   +sy = F32.neg(s)
-  sdf.value(crossings(gs, (scx / s : F32), (scy / sy : F32)), onedge, dist_scale, near.go(gs, s, sy, scx, scy, Near{True{}, 999999.0}))
+  sdf.value(crossings(gs, (scx / s : F32), (scy / sy : F32)), onedge, dist_scale, near.go(gs, s, sy, scx, scy, Near{True{}, 999999.0}, cubic))
 
 def SdfPixel.ok(+p: SdfPixel) -> Bool:
   SdfPixel{ok, _} = p
@@ -1510,17 +1568,17 @@ def SdfPixel.value(+p: SdfPixel) -> U32:
   SdfPixel{_, v} = p
   v
 
-def sdf.row(n: Nat, +gs: +List<Seg>, +x: U32, +y: U32, +s: F32, +onedge: U32, +dist_scale: F32, +ok: Bool, +out: +List<U32>) -> Row:
+def sdf.row(n: Nat, +gs: +List<Seg>, +x: U32, +y: U32, +s: F32, +onedge: U32, +dist_scale: F32, +ok: Bool, +out: +List<U32>, +cubic: Bool) -> Row:
   match n:
     case 0n: Row{ok, out}
     case 1n+k:
-      +p = sdf.pixel(gs, x, y, s, onedge, dist_scale)
-      sdf.row(k, gs, (x + 1 : U32), y, s, onedge, dist_scale, ok && SdfPixel.ok(p), Con{SdfPixel.value(p), out})
+      +p = sdf.pixel(gs, x, y, s, onedge, dist_scale, cubic)
+      sdf.row(k, gs, (x + 1 : U32), y, s, onedge, dist_scale, ok && SdfPixel.ok(p), Con{SdfPixel.value(p), out}, cubic)
 
-def sdf.rows(n: Nat, +gs: +List<Seg>, +x0: U32, +w: U32, +y: U32, +s: F32, +onedge: U32, +dist_scale: F32, r: Row) -> Row:
+def sdf.rows(n: Nat, +gs: +List<Seg>, +x0: U32, +w: U32, +y: U32, +s: F32, +onedge: U32, +dist_scale: F32, r: Row, +cubic: Bool) -> Row:
   match n r:
     case 0n r2: r2
-    case 1n+k Row{+ok, +out}: sdf.rows(k, gs, x0, w, (y + 1 : U32), s, onedge, dist_scale, sdf.row(U32.to_nat(w), gs, x0, y, s, onedge, dist_scale, ok, out))
+    case 1n+k Row{+ok, +out}: sdf.rows(k, gs, x0, w, (y + 1 : U32), s, onedge, dist_scale, sdf.row(U32.to_nat(w), gs, x0, y, s, onedge, dist_scale, ok, out, cubic), cubic)
 
 def sdf.done(+w: U32, +h: U32, +x0: U32, +y0: U32, r: Row) -> Bitmap:
   Row{ok, out} = r
@@ -1530,20 +1588,22 @@ def Vertex.kind(+v: Vertex) -> U32:
   Vertex{kind, _, _, _, _} = v
   kind
 
-def sdf.verts(ok: Bool, +vs: +List<Vertex>, +w: U32, +h: U32, +x0: U32, +y0: U32, +s: F32, +onedge: U32, +dist_scale: F32) -> Bitmap:
+def sdf.moved(moved: Bool, +gs: +List<Seg>, +w: U32, +h: U32, +x0: U32, +y0: U32, +s: F32, +onedge: U32, +dist_scale: F32, +cubic: Bool) -> Bitmap:
+  match moved:
+    case False{}: Bitmap{3, w, h, x0, y0, Nil{}}
+    case True{}: sdf.done(w, h, x0, y0, sdf.rows(U32.to_nat(h), gs, x0, w, y0, s, onedge, dist_scale, Row{True{}, Nil{}}, cubic))
+
+def sdf.verts(ok: Bool, +vs: +List<Vertex>, +w: U32, +h: U32, +x0: U32, +y0: U32, +s: F32, +onedge: U32, +dist_scale: F32, +cubic: Bool) -> Bitmap:
   match ok vs:
     case False{} _: Bitmap{3, w, h, x0, y0, Nil{}}
-    case True{} Nil{}: sdf.done(w, h, x0, y0, sdf.rows(U32.to_nat(h), Nil{}, x0, w, y0, s, onedge, dist_scale, Row{True{}, Nil{}}))
-    case True{} Con{+v, rest}:
-      +gs = sdf.segs(rest, v, s, F32.neg(s), Nil{})
-      +moved = U32.is_eq(Vertex.kind(v), 1)
-      Bool.pick(Bitmap, moved, sdf.done(w, h, x0, y0, sdf.rows(U32.to_nat(h), gs, x0, w, y0, s, onedge, dist_scale, Row{True{}, Nil{}})), Bitmap{3, w, h, x0, y0, Nil{}})
+    case True{} Nil{}: sdf.done(w, h, x0, y0, sdf.rows(U32.to_nat(h), Nil{}, x0, w, y0, s, onedge, dist_scale, Row{True{}, Nil{}}, cubic))
+    case True{} Con{+v, rest}: sdf.moved(U32.is_eq(Vertex.kind(v), 1), sdf.segs(rest, v, s, F32.neg(s), Nil{}), w, h, x0, y0, s, onedge, dist_scale, cubic)
 
-def sdf.shaped(+w: U32, +h: U32, +x0: U32, +y0: U32, +s: F32, +onedge: U32, +dist_scale: F32, sh: Shape) -> Bitmap:
+def sdf.shaped(+w: U32, +h: U32, +x0: U32, +y0: U32, +s: F32, +onedge: U32, +dist_scale: F32, sh: Shape, +cubic: Bool) -> Bitmap:
   Shape{ok, vs} = sh
-  sdf.verts(ok, vs, w, h, x0, y0, s, onedge, dist_scale)
+  sdf.verts(ok, vs, w, h, x0, y0, s, onedge, dist_scale, cubic)
 
-def sdf.boxed(+b: Blob, +info: Info, +g: U32, +s: F32, +pad: U32, +onedge: U32, +dist_scale: F32, +ib: IBox) -> Bitmap:
+def sdf.boxed(+b: Blob, +info: Info, +g: U32, +s: F32, +pad: U32, +onedge: U32, +dist_scale: F32, +ib: IBox, +cubic: Bool) -> Bitmap:
   IBox{ok, bx0, by0, bx1, by1} = ib
   +x0 = (bx0 - pad : U32)
   +y0 = (by0 - pad : U32)
@@ -1555,14 +1615,17 @@ def sdf.boxed(+b: Blob, +info: Info, +g: U32, +s: F32, +pad: U32, +onedge: U32, 
   +defined = sub.ok(bx0, pad) && sub.ok(by0, pad) && add.ok(bx1, pad) && add.ok(by1, pad) && sub.ok(x1, x0) && sub.ok(y1, y0) &&
     Bool.not(neg(w)) && Bool.not(neg(h)) && Bool.not(U32.is_eq(w, 0)) && Bool.not(U32.is_eq(h, 0)) && (w <= 4096 : U32) && (h <= 4096 : U32)
   Bool.pick(Bitmap, ok, Bool.pick(Bitmap, empty, Bitmap{0, 0, 0, 0, 0, Nil{}},
-    Bool.pick(Bitmap, defined, sdf.shaped(w, h, x0, y0, s, onedge, dist_scale, shape(b, info, g)), Bitmap{3, 0, 0, 0, 0, Nil{}})),
+    Bool.pick(Bitmap, defined, sdf.shaped(w, h, x0, y0, s, onedge, dist_scale, shape(b, info, g), cubic), Bitmap{3, 0, 0, 0, 0, Nil{}})),
     Bitmap{3, 0, 0, 0, 0, Nil{}})
 
-def sdf.scaled(zero: Bool, +b: Blob, +info: Info, +g: U32, +s: F32, +pad: U32, +onedge: U32, +dist_scale: F32) -> Bitmap:
+def sdf.scaled(zero: Bool, +b: Blob, +info: Info, +g: U32, +s: F32, +pad: U32, +onedge: U32, +dist_scale: F32, +cubic: Bool) -> Bitmap:
   match zero:
     case True{}: Bitmap{0, 0, 0, 0, 0, Nil{}}
-    case False{}: sdf.boxed(b, info, g, s, pad, onedge, dist_scale, ibox(box(b, info, g), s))
+    case False{}: sdf.boxed(b, info, g, s, pad, onedge, dist_scale, ibox(box(b, info, g), s), cubic)
 
-# The glyph's signed distance field at scale s.
-def sdf(+b: Blob, +info: Info, +g: U32, +s: F32, +pad: U32, +onedge: U32, +dist_scale: F32) -> Bitmap:
-  sdf.scaled(F32.is_eq(s, 0.0), b, info, g, s, pad, onedge, dist_scale)
+# The glyph's signed distance field at scale s. A pixel near a curve with a
+# cubic term takes stbtt__solve_cubic, whose roots are glibc 2.39's
+# (src/stb_cubic.bend): with `cubic` false (another libm profile) such a
+# pixel is refused.
+def sdf(+b: Blob, +info: Info, +g: U32, +s: F32, +pad: U32, +onedge: U32, +dist_scale: F32, +cubic: Bool) -> Bitmap:
+  sdf.scaled(F32.is_eq(s, 0.0), b, info, g, s, pad, onedge, dist_scale, cubic)

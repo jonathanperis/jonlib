@@ -27,6 +27,7 @@ import ./src/lgpl/acos.bend as GlibcAcos
 import ./src/sincosf.bend as Sincosf
 import ./src/power.bend as Power
 import ./src/power64.bend as Power64
+import ./src/stb_cubic.bend as Cubic
 import ./src/msf_gif.bend as MsfGif
 import ./src/libc_rand.bend as CRand
 import ./src/hypot.bend as Hypot
@@ -5428,3 +5429,26 @@ law power64_exponential_of_one_is_the_main_path:
 
 law power64_exponential_from_512_has_no_answer:
   {Power64.exp.range(1082130432) == 2 : U32}
+
+# stb_truetype's cubic solver (src/stb_cubic.bend) and its profile: an acos
+# argument above 1 leaves three NaN roots, none used; terms that are not
+# finite, and a cube root the port has no answer for, leave no answer; and
+# Font.load_data_for solves only under the glibc 2.39 profile.
+
+law cubic_acos_above_one_leaves_no_root:
+  {Cubic.three.inside(True{}, 0.5, 0.25, 1072693248, 1) == Cubic.Roots{4, 0.0, 0.0, 0.0} : Cubic.Roots}
+
+law cubic_without_finite_terms_has_no_answer:
+  {Cubic.three.at(False{}, 0.5, 0.25, 0.125, 1.0) == Cubic.Roots{0, 0.0, 0.0, 0.0} : Cubic.Roots}
+
+law cubic_one_root_of_an_unknown_cube_root_has_no_answer:
+  {Cubic.one.rooted(0.5, None{}, Some{0.25}) == Cubic.Roots{0, 0.0, 0.0, 0.0} : Cubic.Roots}
+
+law font_cubic_under_glibc239:
+  {J.Font.cubic(M.Glibc239Libm{}) == True{} : Bool}
+
+law font_no_cubic_under_apple:
+  {J.Font.cubic(M.AppleLibm{}) == False{} : Bool}
+
+law font_no_cubic_under_glibc241:
+  {J.Font.cubic(M.Glibc241Libm{}) == False{} : Bool}

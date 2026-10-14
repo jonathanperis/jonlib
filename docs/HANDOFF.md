@@ -1106,6 +1106,20 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
        curves in `src/truetype.bend` under the glibc 2.39 profile only
        (the solver reached from the profile's entry, so that the default
        font path does not compile the tables); (4) the example.
+       **(2) is done** (`src/power64.bend`, gate `pow-third`). **(3)**:
+       `src/stb_cubic.bend` (gate `stb-cubic`: raylib's own static
+       `stbtt__solve_cubic` against the port on 1350 triples, its
+       `STBTT_pow`/`STBTT_acos`/`STBTT_cos` bound to the glibc models so it
+       holds on any host) and the SDF in
+       `src/truetype.bend` with a `cubic` flag that `Font.load_data_for`
+       sets under Glibc239Libm. The flag is static reachability all the
+       same (a function cannot be passed and reused in Bend 2: `+f` with a
+       function type is refused), so every font-data program compiles the
+       solver; measured +0.3 GB and +23 s on a font-data-only program. The
+       `ttf` gate (with its new scenes `data-sdf-curves` and
+       `data-sdf-example`, and 'J' contracts that do run Jonlib and require
+       its refusal; the old 'R' ones never ran Jonlib) does not compile on
+       this 8 GiB machine even with `--smol`: it is held on CI.
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`

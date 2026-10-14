@@ -205,9 +205,16 @@ formats map nothing) gives a glyph:
   lines and to quadratic curves whose quadratic term vanishes. A pixel whose
   search reaches a curve with a nonzero quadratic term needs
   `stbtt__solve_cubic`, which calls the C library's double `pow`, `acos` and
-  `cos`: the whole load is refused (outside the profile). Fonts made of lines
-  (pixel fonts such as DotGothic16 and the generated box fonts) are
-  reproduced.
+  `cos` and narrows them. `Font.load_data_for(libm, ...)` under
+  `M.Glibc239Libm` solves it as a glibc 2.39 host does
+  (`src/stb_cubic.bend`: the cube root of `src/power64.bend`, `acos` of
+  `src/lgpl/acos.bend` and `cos` of `src/lgpl/sin.bend`, the FMA variants;
+  docs/MATH.md); one root or three, or none used where `acos`'s argument
+  comes out above 1 (NaN roots in C). `Font.load_data`, and the other
+  profiles, refuse the whole load there. Fonts made of lines (pixel fonts
+  such as DotGothic16 and the generated box fonts) are reproduced either
+  way. Only the profile's entry decides it: every program that loads font
+  data compiles the solver (about 0.3 GB more to compile).
 - The space and U+3000 always get an empty `advanceX x fontSize` image (data
   when advanceX > 0; a negative advance keeps its width and advanceX 0).
 - A glyph whose box is empty (or whose `w*h` is negative, which `malloc`
@@ -396,8 +403,9 @@ selects the rectangle sort by the host's `M.Libm` profile; this host
 - CFF (OpenType `CFF ` outlines, stb's Type 2 charstring interpreter) is not
   ported: such fonts are refused.
 - FONT_SDF glyphs with curves need `stbtt__solve_cubic` (the C library's
-  double `pow`, `acos` and `cos`): refused; only line outlines (and degenerate
-  curves) are reproduced.
+  double `pow`, `acos` and `cos`): reproduced only under the glibc 2.39
+  profile (`Font.load_data_for`); refused without a profile and under
+  AppleLibm and Glibc241Libm, whose functions are not modeled.
 - BMFont files with other than one page, atlas sizes in the 64 floats above a
   power of two (host `logf` rounding), composites nested deeper than 6,
   bitmaps and atlases beyond 4096 and more than 65536 codepoints are refused;

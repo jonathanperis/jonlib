@@ -94,14 +94,21 @@ def glyph.made(+b: TT.Blob, +info: TT.Info, +s: F32, +size: U32, +ascent: U32, +
     Glyph{cp, Bool.pick(U32, written, xoff, 0), Bool.pick(U32, data, (oy + asc : U32), oy), Bool.pick(U32, data, advx, 0),
       Bool.pick(U32, data, cw, 0), Bool.pick(U32, data, ch, 0), data, Bool.pick(+List<U32>, data, pixels, Nil{})})}
 
-# The glyph's image: stbtt_GetCodepointBitmap, or stbtt_GetCodepointSDF
-# (padding 4, on-edge 128, distance scale 64) except for the space.
-def glyph.image(+b: TT.Blob, +info: TT.Info, +s: F32, +kind: U32, +cp: U32, +idx: U32) -> TT.Bitmap:
-  Bool.pick(TT.Bitmap, U32.is_eq(kind, 2), Bool.pick(TT.Bitmap, U32.is_eq(cp, 32), TT.Bitmap{0, 0, 0, 0, 0, Nil{}}, TT.sdf(b, info, idx, s, 4, 128, 64.0)),
-    TT.bitmap(b, info, idx, s))
+def glyph.image.sdf(space: Bool, +b: TT.Blob, +info: TT.Info, +s: F32, +idx: U32, +cubic: Bool) -> TT.Bitmap:
+  match space:
+    case True{}: TT.Bitmap{0, 0, 0, 0, 0, Nil{}}
+    case False{}: TT.sdf(b, info, idx, s, 4, 128, 64.0, cubic)
 
-def glyph.load(+b: TT.Blob, +info: TT.Info, +s: F32, +size: U32, +ascent: U32, +kind: U32, +cp: U32, +idx: U32) -> Made:
-  glyph.made(b, info, s, size, ascent, kind, cp, idx, glyph.image(b, info, s, kind, cp, idx))
+# The glyph's image: stbtt_GetCodepointBitmap, or stbtt_GetCodepointSDF
+# (padding 4, on-edge 128, distance scale 64) except for the space; the SDF's
+# cubic solver only with `cubic` (TT.sdf).
+def glyph.image(sdf: Bool, +b: TT.Blob, +info: TT.Info, +s: F32, +cp: U32, +idx: U32, +cubic: Bool) -> TT.Bitmap:
+  match sdf:
+    case True{}: glyph.image.sdf(U32.is_eq(cp, 32), b, info, s, idx, cubic)
+    case False{}: TT.bitmap(b, info, idx, s)
+
+def glyph.load(+b: TT.Blob, +info: TT.Info, +s: F32, +size: U32, +ascent: U32, +kind: U32, +cp: U32, +idx: U32, +cubic: Bool) -> Made:
+  glyph.made(b, info, s, size, ascent, kind, cp, idx, glyph.image(U32.is_eq(kind, 2), b, info, s, cp, idx, cubic))
 
 type Gathered is Data:
   Gathered{ok: Bool, glyphs: +List<Glyph>}
@@ -110,8 +117,8 @@ def gather.add(+ok: Bool, +acc: +List<Glyph>, +m: Made) -> Gathered:
   Made{mok, g} = m
   Gathered{ok && mok, Con{g, acc}}
 
-def gather.found(+found: Bool, +b: TT.Blob, +info: TT.Info, +s: F32, +size: U32, +ascent: U32, +kind: U32, +cp: U32, +idx: U32, +ok: Bool, +acc: +List<Glyph>) -> Gathered:
-  Bool.pick(Gathered, found, gather.add(ok, acc, glyph.load(b, info, s, size, ascent, kind, cp, idx)), Gathered{ok, acc})
+def gather.found(+found: Bool, +b: TT.Blob, +info: TT.Info, +s: F32, +size: U32, +ascent: U32, +kind: U32, +cp: U32, +idx: U32, +ok: Bool, +acc: +List<Glyph>, +cubic: Bool) -> Gathered:
+  Bool.pick(Gathered, found, gather.add(ok, acc, glyph.load(b, info, s, size, ascent, kind, cp, idx, cubic)), Gathered{ok, acc})
 
 def Gathered.ok(+g: Gathered) -> Bool:
   Gathered{ok, _} = g
@@ -121,42 +128,47 @@ def Gathered.glyphs(+g: Gathered) -> +List<Glyph>:
   Gathered{_, glyphs} = g
   glyphs
 
-def gather(+cps: +List<U32>, +b: TT.Blob, +info: TT.Info, +s: F32, +size: U32, +ascent: U32, +kind: U32, +g: Gathered) -> Gathered:
+def gather(+cps: +List<U32>, +b: TT.Blob, +info: TT.Info, +s: F32, +size: U32, +ascent: U32, +kind: U32, +g: Gathered, +cubic: Bool) -> Gathered:
   match cps:
     case Nil{}: Gathered{Gathered.ok(g), List.reverse(&2, Glyph, Gathered.glyphs(g))}
     case Con{+cp, rest}:
       +idx = TT.index(b, info, cp)
       +i = TT.Got.value(idx)
       +found = Bool.not(neg(i)) && Bool.not(U32.is_eq(i, 0))
-      gather(rest, b, info, s, size, ascent, kind, gather.found(found, b, info, s, size, ascent, kind, cp, i, Gathered.ok(g) && TT.Got.ok(idx), Gathered.glyphs(g)))
+      gather(rest, b, info, s, size, ascent, kind, gather.found(found, b, info, s, size, ascent, kind, cp, i, Gathered.ok(g) && TT.Got.ok(idx), Gathered.glyphs(g), cubic), cubic)
 
 def load.gathered(+g: Gathered) -> Loaded:
   Gathered{ok, glyphs} = g
   Loaded{Bool.pick(U32, ok, 1, 2), glyphs}
 
-def load.metrics(+b: TT.Blob, +size: U32, +cps: +List<U32>, +kind: U32, +info: TT.Info, +vm: TT.VMetrics) -> Loaded:
+def load.metrics(+b: TT.Blob, +size: U32, +cps: +List<U32>, +kind: U32, +info: TT.Info, +vm: TT.VMetrics, +cubic: Bool) -> Loaded:
   TT.VMetrics{vok, ascent, _, _} = vm
   +h = TT.Info.hhea(info)
   +s = TT.scale_for_pixel_height(b, info, TT.i2f(size))
   +status = TT.Info.status(info)
   Bool.pick(Loaded, U32.is_eq(status, 1), Bool.pick(Loaded, vok && TT.in(b, (h + 4 : U32), 4),
-    load.gathered(gather(cps, b, info, s, size, ascent, kind, Gathered{True{}, Nil{}})), Loaded{2, Nil{}}),
+    load.gathered(gather(cps, b, info, s, size, ascent, kind, Gathered{True{}, Nil{}}, cubic)), Loaded{2, Nil{}}),
     Loaded{Bool.pick(U32, U32.is_eq(status, 0), 0, 2), Nil{}})
 
-def load.init(+b: TT.Blob, +size: U32, +cps: +List<U32>, +kind: U32, +info: TT.Info) -> Loaded:
-  load.metrics(b, size, cps, kind, info, TT.vmetrics(b, info))
+def load.init(+b: TT.Blob, +size: U32, +cps: +List<U32>, +kind: U32, +info: TT.Info, +cubic: Bool) -> Loaded:
+  load.metrics(b, size, cps, kind, info, TT.vmetrics(b, info), cubic)
 
 # LoadFontData(fileData, dataSize, fontSize, codepoints, codepointCount, type):
 # `codepoints` empty is NULL (codepointCount consecutive codepoints from 32,
 # 95 when not positive); a list shorter than the count is refused (raylib
-# reads past it). type 0 FONT_DEFAULT, 1 FONT_BITMAP, 2 FONT_SDF.
-def load(+bytes: +List<U32>, +size: U32, +cps: +List<U32>, +n: U32, +kind: U32) -> Loaded:
+# reads past it). type 0 FONT_DEFAULT, 1 FONT_BITMAP, 2 FONT_SDF; `cubic`:
+# whether an SDF's cubic solver is reproduced (the glibc 2.39 profile).
+def load.with(+cubic: Bool, +bytes: +List<U32>, +size: U32, +cps: +List<U32>, +n: U32, +kind: U32) -> Loaded:
   +total = Bool.pick(U32, neg(n) || U32.is_eq(n, 0), 95, n)
   +given = Bool.not(U32.is_eq(count(cps, 0), 0))
   +required = Bool.pick(+List<U32>, given, take(U32.to_nat(total), cps, Nil{}), range(U32.to_nat(total), 32, Nil{}))
   +b = TT.Blob.new(bytes)
   +valid = (total <= 65536 : U32) && (kind <= 2 : U32) && (Bool.not(given) || Bool.not((count(cps, 0) < total : U32)))
-  Bool.pick(Loaded, valid, load.init(b, size, required, kind, TT.init(b)), Loaded{2, Nil{}})
+  Bool.pick(Loaded, valid, load.init(b, size, required, kind, TT.init(b), cubic), Loaded{2, Nil{}})
+
+# LoadFontData without the cubic solver: an SDF that needs it is refused.
+def load(+bytes: +List<U32>, +size: U32, +cps: +List<U32>, +n: U32, +kind: U32) -> Loaded:
+  load.with(False{}, bytes, size, cps, n, kind)
 
 # -----------------------------------------------------------------------------
 # GenImageFontAtlas
