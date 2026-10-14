@@ -2243,6 +2243,21 @@
    "minutes": 15
   },
   {
+   "id": "xm-mixer",
+   "title": "An XM player's mixer (jar_xm jar_xm_mixdown and jar_xm_generate_samples) against jar_xm.h itself: every float generated, the count of samples and the whole context after each call of scripts of frames, lengths and resets on raylib's mini1111.xm as raylib plays it and on the xm-player gate's built modules at 8000 Hz; what jar_xm leaves undefined is found as in that gate (most frames by the program's copy of the generating loop around jar_xm_mixdown, with each tick's row and each channel's next read looked at), and the port's player must have stopped there",
+   "run": [
+    "{python}",
+    "tools/xm_mixer_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 10
+  },
+  {
    "id": "wave-format",
    "title": "WaveFormat (miniaudio ma_convert_frames: formats, channel maps, linear resampling and its low-pass filter) against raylib with its audio module and the host contraction profile",
    "run": [

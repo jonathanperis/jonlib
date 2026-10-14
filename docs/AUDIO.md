@@ -1282,10 +1282,11 @@ Still to come: the music (`LoadMusicStream` for `.ogg`, with
 
 ## XM modules (in progress)
 
-`src/xm_module.bend`, `src/xm_pitch.bend`, `src/xm_sample.bend` and
-`src/xm_player.bend` are the start of an adaptation of jar_xm (pinned
+`src/xm_module.bend`, `src/xm_pitch.bend`, `src/xm_sample.bend`,
+`src/xm_player.bend` and `src/xm_mixer.bend` are an adaptation of jar_xm
+(pinned
 raylib's `src/external/jar_xm.h`), which raylib's `LoadMusicStream` calls
-for `.xm` files. Nothing plays yet: `Music.load` does not take the format.
+for `.xm` files. `Music.load` does not take the format yet.
 What is here is the module read from its file,
 `jar_xm_create_context_safe`: `load(bytes)` is `Loaded{module}`,
 `Failed{code}` (jar_xm's own failure) or `Refused{why}`.
@@ -1507,7 +1508,38 @@ out itself, before each tick, as `jar_xm_row` does. Each module is played
 in a process of its own, because of the random waveform's state. 10 runs
 end undefined, and the port's player has stopped at the same call in each.
 
-Still to come: the mixer (`jar_xm_generate_samples`) and the music stream.
+### The mixer
+
+`src/xm_mixer.bend` is `jar_xm_mixdown` and `jar_xm_generate_samples`, as
+raylib plays a module (ramping on, no limit of loops): `generate(player,
+count)` is `count` frames of two floats, `Generated{player, samples}`.
+
+A frame: where the tick's samples are spent, a tick; one sample less left
+in it; then each channel that has an instrument, a sample and a position
+not below 0 takes its next sample, adds it times its volume and times one
+less its panning to the left sum and times its volume and its panning to
+the right one, counts its frame, and moves its volume and panning a 128th
+towards what the tick set. The sums are multiplied by the global volume
+(unless that is 1) and kept from -1 to 1. `generated.of(player)` is the
+count of samples asked for so far (`generated_samples`, a 32-bit count
+here), which is what raylib's `GetMusicTimePlayed` reads for a module.
+
+A player that stops (a sample step that is not fine, or anything a tick
+stops for) gives the frames before that; `Pl.Player.why` says so.
+
+`tools/xm_mixer_probe.py` (gate `xm-mixer`) generates 164741 frames in 23
+runs and hashes every float with the count and the whole context after
+each call: raylib's `mini1111.xm` as raylib plays it (the length, the
+reset, then 4096, 4096, 2048 and 1 frames by `jar_xm_generate_samples`
+itself at 48000 Hz) and by frames with a reset between, and the xm-player
+gate's built modules at 8000 Hz, where a tick is a hundred samples or so
+and a few thousand frames go through many rows. What is undefined is found
+as in that gate; for it most runs' frames are made by the program's copy
+of `jar_xm_generate_samples`' loop, which makes each tick itself where one
+is due and then calls `jar_xm_mixdown`. 6 runs end undefined, and the
+port's player has stopped in the same call.
+
+Still to come: the music stream (`LoadMusicStream` for `.xm`).
 
 ## WaveFormat
 
