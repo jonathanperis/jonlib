@@ -104,7 +104,9 @@ if __name__ == '__main__':
 class CompileTests(unittest.TestCase):
     def test_one_compiler_process_per_output(self):
         calls = []
-        with mock.patch.object(probekit, 'run', side_effect=lambda command, **kw: calls.append((command, kw))):
+        # on a host without a lower memory limit (compiler_command)
+        with mock.patch.object(probekit, 'run', side_effect=lambda command, **kw: calls.append((command, kw))), \
+             mock.patch.object(probekit, 'memory_limits', return_value=(16 << 30, 0)):
             probekit.compile_outputs(['bun', 'main.ts'], 'p.bend', 'p', 'p.js')
         self.assertEqual([c for c, _ in calls], [['bun', 'main.ts', 'p.bend', '-o', 'p'], ['bun', 'main.ts', 'p.bend', '-o', 'p.js']])
         self.assertTrue(all(kw['timeout'] == probekit.COMPILE_TIMEOUT for _, kw in calls))
@@ -139,6 +141,37 @@ class CompilerEnvTests(unittest.TestCase):
              mock.patch.object(probekit, 'compiler_env', return_value={'X': '1'}):
             probekit.compile_outputs(['bun', 'main.ts'], 'p.bend', 'p')
         self.assertEqual([kw['env'] for kw in calls], [{'X': '1'}])
+
+
+class CompilerCommandTests(unittest.TestCase):
+    def command(self, gib, cgroup=None, cli=('bun', 'main.ts')):
+        pages = {'SC_PAGE_SIZE': 4096, 'SC_PHYS_PAGES': gib * (1 << 30) // 4096}
+        with tempfile.TemporaryDirectory() as tmp:
+            limit = Path(tmp) / 'memory.max'
+            if cgroup is not None:
+                limit.write_text(cgroup)
+            with mock.patch.object(probekit.os, 'sysconf', side_effect=pages.__getitem__), \
+                 mock.patch.object(probekit, 'CGROUP_MEMORY', limit):
+                return probekit.compiler_command(list(cli))
+
+    def test_a_lower_cgroup_limit_asks_for_the_small_heap(self):
+        self.assertEqual(self.command(16, str(8 << 30)), ['bun', '--smol', 'main.ts'])
+
+    def test_hosts_without_a_lower_limit_are_unchanged(self):
+        self.assertEqual(self.command(16), ['bun', 'main.ts'])
+        self.assertEqual(self.command(16, 'max\n'), ['bun', 'main.ts'])
+        self.assertEqual(self.command(7, str(16 << 30)), ['bun', 'main.ts'])
+
+    def test_only_bun_and_only_once(self):
+        self.assertEqual(self.command(16, str(8 << 30), ('bun', '--smol', 'main.ts')), ['bun', '--smol', 'main.ts'])
+        self.assertEqual(self.command(16, str(8 << 30), ('node', 'main.js')), ['node', 'main.js'])
+
+    def test_compiles_use_it(self):
+        calls = []
+        with mock.patch.object(probekit, 'run', side_effect=lambda command, **kw: calls.append(command)), \
+             mock.patch.object(probekit, 'compiler_command', return_value=['bun', '--smol', 'main.ts']):
+            probekit.compile_outputs(['bun', 'main.ts'], 'p.bend', 'p', 'p.js')
+        self.assertEqual(calls, [['bun', '--smol', 'main.ts', 'p.bend', '-o', 'p'], ['bun', '--smol', 'main.ts', 'p.bend', '-o', 'p.js']])
 
 
 class JobTests(unittest.TestCase):

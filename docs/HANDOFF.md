@@ -195,6 +195,14 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
   half the limit to Bun's engine (`BUN_JSC_forceRAMSize`): the engine paces
   its collections by physical memory, and an OBJ example's compile passed an
   8 GiB limit without it (5 GB with it, the same output, 1.5x the time).
+  There it also runs Bun in its small-heap mode (`bun --smol`,
+  `probekit.compiler_command`): since `Music.update` reaches the XM player
+  beside the MP3 decoder, the C emission of a program with a music peaked at
+  6.2 GB and more and a batch in three was killed; with `--smol` the same
+  batch peaks at 4.4 GB in the same time, the JavaScript byte for byte the
+  same, and the sound gate's eleven batches all compile (the largest at 6.4
+  GB beside the C compiler's 1.1: still close, so a kill, exit -9, is to be
+  tried again). The hosted runners have no such limit and compile as before.
 
 ## Next steps, in order
 
@@ -1056,14 +1064,21 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
        samples}` (left and right in turn) and `Mx.generated.of(player)`
        the samples asked for. The gate plays the built modules at 8000
        Hz so that a few thousand frames pass many rows.
-       Next: (4) `Music.load` for `.xm` (raylib: a stream of the device's
-       rate, 32 bits and 2 channels, `frameCount` the remaining samples,
-       looping on, `jar_xm_reset`; `UpdateMusicStream` asks
-       `jar_xm_generate_samples` for each half; `StopMusicStream` is
-       `jar_xm_reset`; `GetMusicTimePlayed` is `generated_samples` over
-       the rate), under a libm profile, and the example. Mind the compile
-       size: `Music.load` reaching the XM player adds it to every program
-       that loads music (see the note on the 8 GiB limit above).
+       **(4) is done** (`MusicXm{player}` in `jonlib.bend`, gate
+       `xm-music`): `Music.load_for(libm, device, path)` and
+       `Music.load_from_memory_for` load a module under a libm profile
+       (`Music.load` is the AppleLibm profile, which gives no sine and
+       no power of two: only an Amiga module without a vibrato loads);
+       `Music.update` has the player generate each half, `Music.stop`
+       resets it, `Music.seek` leaves it, `Music.time_played` is its
+       count over the rate, and `Music.why` says why a player stopped
+       (silence from there). The gate is the sound gate's two programs
+       (`tools/sound_probe.py`'s `NATIVE` with `-DALONE`, a case a
+       process, and its `PROGRAM` with the loader changed): there is no
+       Python model of jar_xm, so the expected rows are raylib's own,
+       and a contract's are raylib's after a file it does not take.
+       Every program that loads music now compiles the XM player too.
+       Next: the example `audio_module_playing` (211 of 212).
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`

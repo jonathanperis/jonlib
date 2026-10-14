@@ -1280,14 +1280,14 @@ wave.
 Still to come: the music (`LoadMusicStream` for `.ogg`, with
 `stb_vorbis_seek_start` and `stb_vorbis_seek_frame`).
 
-## XM modules (in progress)
+## XM modules
 
 `src/xm_module.bend`, `src/xm_pitch.bend`, `src/xm_sample.bend`,
 `src/xm_player.bend` and `src/xm_mixer.bend` are an adaptation of jar_xm
 (pinned
 raylib's `src/external/jar_xm.h`), which raylib's `LoadMusicStream` calls
-for `.xm` files. `Music.load` does not take the format yet.
-What is here is the module read from its file,
+for `.xm` files, and `Music.load_for` plays a module with them (see
+"Musics", below). First the module read from its file,
 `jar_xm_create_context_safe`: `load(bytes)` is `Loaded{module}`,
 `Failed{code}` (jar_xm's own failure) or `Refused{why}`.
 
@@ -1521,8 +1521,10 @@ less its panning to the left sum and times its volume and its panning to
 the right one, counts its frame, and moves its volume and panning a 128th
 towards what the tick set. The sums are multiplied by the global volume
 (unless that is 1) and kept from -1 to 1. `generated.of(player)` is the
-count of samples asked for so far (`generated_samples`, a 32-bit count
-here), which is what raylib's `GetMusicTimePlayed` reads for a module.
+count of samples asked for so far (`generated_samples`), which is what
+raylib's `GetMusicTimePlayed` reads for a module. jar_xm keeps it in 64
+bits and this port in 32: a call that would take it past 2^32 (a day of
+sound at 48000 Hz) stops the player (4) without a frame.
 
 A player that stops (a sample step that is not fine, or anything a tick
 stops for) gives the frames before that; `Pl.Player.why` says so.
@@ -1538,6 +1540,77 @@ as in that gate; for it most runs' frames are made by the program's copy
 of `jar_xm_generate_samples`' loop, which makes each tick itself where one
 is due and then calls `jar_xm_mixdown`. 6 runs end undefined, and the
 port's player has stopped in the same call.
+
+### Musics
+
+`Music.load_for(libm, device, path)` and `Music.load_from_memory_for(libm,
+device, ".xm", bytes)` are raylib's `LoadMusicStream` and
+`LoadMusicStreamFromMemory` for a module, under a libm profile: the
+player's sines (the vibrato and tremolo waveforms) and powers of two
+(linear frequencies) are libm's. `Music.load` and `Music.load_from_memory`
+are the same under the AppleLibm profile, which gives neither yet: they
+load a module that asks for neither (Amiga frequencies, and no sine
+waveform), and not one that does.
+
+What raylib does, and Jonlib with it:
+
+- **Loading.** `jar_xm_create_context_safe` at the device's rate
+  (`AUDIO.System.device.sampleRate`: 48000, and 0 for a device that is not
+  ready), a float stream of that rate and two channels, and the music's
+  frames: `jar_xm_get_remaining_samples`, the samples of the song's ticks
+  until a row comes again (2974098 for raylib's `mini1111.xm`, 61.96 s).
+  Then `jar_xm_reset`. The count plays the whole song once, without sound,
+  and the reset does not take everything back (the samples left in the
+  tick, the random waveform's state, the row counts): the music starts
+  from what the count left, as in raylib.
+- **A device that is not ready** gives a rate of 0: a music of no frames,
+  no buffer and a length of 0/0 seconds (NaN), which is not valid.
+- **Updating.** `jar_xm_generate_samples` for the frames of each half the
+  device has read through. The player goes on as its patterns say and
+  knows nothing of the music's frames: a music that loops is just played
+  on, and one that does not gets what is left of its frames, then stops.
+- **Stopping** is `jar_xm_reset`; **seeking does nothing** for a module.
+- **The time played** is the player's count of samples over the rate
+  (`jar_xm_get_position`), not the stream's: it counts what was generated
+  (ahead of what was heard by what the halves hold), it passes the length
+  when the song comes round, and a stop takes it to 0. raylib reads
+  neither the buffer nor the device for it, so `Music.time_played` is
+  `Some` for a module in every state; 0 without a buffer.
+
+Where Jonlib differs:
+
+- **A module is not loaded** (a typed error and no stream) when jar_xm
+  does not take it (`InvalidWaveHeader`); when its loading or its first
+  time through the song meets what C leaves undefined, or the song does
+  not come to a row again in 4096 times 4096 ticks (`InvalidWaveData`);
+  when it is past the port's limits or needs what the libm profile does
+  not give (`UnsupportedWaveFormat`). raylib plays such a module with
+  whatever the machine makes of it.
+- **A player that stops while it plays** (the same reasons, met later than
+  the first time through; a sample that is NaN, whose bits are the
+  machine's; 2^32 samples generated) gives silence from there.
+  `Music.why(music)` is 0 for a music that plays as raylib plays it, and
+  else the player's reason (1, 4 or 5).
+- **The random waveform's state** is one `static` in jar_xm, shared by
+  every module of the process. Here each music has its own, starting as a
+  process's first module's does (24492): a program that plays two modules
+  which both use the random waveform hears them as raylib would play each
+  alone.
+
+`tools/xm_music_probe.py` (gate `xm-music`) runs the sound gate's scripts
+on raudio.c itself, each case in a process of its own, and compares every
+step's state: the music's fields, the samples generated, the times, each
+buffer's halves (a hash of their samples), cursor and counts, and what the
+device mixed. 15 cases, 278 steps: raylib's `mini1111.xm` played through
+its halves, stopped and played again, sought, paused, resumed and with its
+volume, pitch and pan changed; the xm-player gate's seeded modules of
+linear and of Amiga frequencies; a song of four rows played to its end
+without looping, where it stops, and again; a module loaded before the
+device is ready; two at once; a module of Amiga frequencies without a
+vibrato under `Music.load`; and a file that is no module. 6 are
+contracts: the modules the other XM gates find undefined by jar_xm.h
+itself, and raylib's module under `Music.load`. For those the expected
+state is raylib's after a file jar_xm does not take, with Jonlib's error.
 
 Still to come: the music stream (`LoadMusicStream` for `.xm`).
 
@@ -1945,7 +2018,7 @@ what moves it gives the music back.
 
 | Function | raylib | Contract |
 |---|---|---|
-| `Music.load(device, path)` / `Music.load_from_memory(device, type, bytes)` | `LoadMusicStream` / `LoadMusicStreamFromMemory` | A WAV, QOA or MP3 file: a stream of the file's rate and channels, the frame count, looping on. 16- and 24-bit WAV files play as 16-bit samples (`drwav_read_pcm_frames_s16`), 32-bit ones as floats (`drwav_read_pcm_frames_f32`: a PCM sample `x` is `(float)(x/2147483648.0)`, an IEEE float its own bits). A QOA file plays as floats, `sample/32768.0` (`qoaplay_decode`), and its frames are the header's count. An MP3 file plays as floats too, its 16-bit samples over 32768 (`drmp3_read_pcm_frames_f32`), at its first frame's rate and channels; its frames are `drmp3_get_pcm_frame_count`: an Xing/Info frame's count less the LAME delay and padding, or every frame counted. The stream has no buffer on an unready device; the music is still loaded. |
+| `Music.load(device, path)` / `Music.load_from_memory(device, type, bytes)`, and `Music.load_for(libm, device, path)` / `Music.load_from_memory_for(libm, device, type, bytes)` under a libm profile | `LoadMusicStream` / `LoadMusicStreamFromMemory` | A WAV, QOA or MP3 file: a stream of the file's rate and channels, the frame count, looping on. An XM module: a float stream of the device's rate and two channels and the frames of its song (see "XM modules": only a module's player uses the profile). 16- and 24-bit WAV files play as 16-bit samples (`drwav_read_pcm_frames_s16`), 32-bit ones as floats (`drwav_read_pcm_frames_f32`: a PCM sample `x` is `(float)(x/2147483648.0)`, an IEEE float its own bits). A QOA file plays as floats, `sample/32768.0` (`qoaplay_decode`), and its frames are the header's count. An MP3 file plays as floats too, its 16-bit samples over 32768 (`drmp3_read_pcm_frames_f32`), at its first frame's rate and channels; its frames are `drmp3_get_pcm_frame_count`: an Xing/Info frame's count less the LAME delay and padding, or every frame counted. The stream has no buffer on an unready device; the music is still loaded. |
 | `Music.is_valid(music)` | `IsMusicValid` | A decoder, frames, and a rate, sample size and channels that are not 0. |
 | `Music.unload(device, music)` | `UnloadMusicStream` | The stream's buffer is untracked. |
 | `Music.play` / `pause` / `resume` / `is_playing` / `set_volume` / `set_pitch` / `set_pan` | `PlayMusicStream` ... | The stream's. |
@@ -1966,12 +2039,12 @@ Not loaded (a typed error, and no stream): WAV sample sizes other than 16,
 what `Wave.decode` refuses, a QOA file that does not hold every frame its
 header counts (qoaplay decodes a frame at a time and would play what is
 there), an MP3 file dr_mp3 does not open or whose first frame is of Layer I
-or II (not decoded yet), and every other format. OGG, FLAC, XM and MOD
-music are not ported yet. Left as they are: `Music.update` for a
+or II (not decoded yet), a module as "XM modules" says, and every other
+format. OGG, FLAC and MOD music are not ported yet. Left as they are: `Music.update` for a
 music without frames (raylib reads it for ever when it loops);
-`Music.seek` for a position whose frame is not an unsigned int, a stream
-without a tracked buffer (raylib writes through the pointer) and an unready
-device. `Music.time_played` is None for a music without frames (raylib
+`Music.seek` for a module (raylib does not seek in one), a position whose
+frame is not an unsigned int, a stream without a tracked buffer (raylib
+writes through the pointer) and an unready device. `Music.time_played` is None for a music without frames (raylib
 divides by them), counts that do not fit an int, an untracked buffer and an
 unready device. A WAV or QOA file's frames are all decoded when it is
 loaded.

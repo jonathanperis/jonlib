@@ -4114,3 +4114,51 @@ def Laws.xm_mixer_frames_asked_for_are_added_to_the_count():
 
 def Laws.xm_mixer_samples_come_in_the_order_they_were_made():
   {==}
+
+def Laws.xm_mixer_count_of_32_bits_takes_the_frames_that_fit():
+  {==}
+
+def Laws.xm_mixer_count_past_32_bits_does_not_fit():
+  {==}
+
+def Laws.xm_mixer_player_whose_count_is_full_stops_without_a_frame():
+  {==}
+
+def Laws.music_token_of_a_module():
+  {==}
+
+def Laws.music_device_rate_is_0_until_the_device_is_ready():
+  {==}
+
+def Laws.music_module_past_the_port_s_limits_is_unsupported():
+  {==}
+
+def Laws.music_module_that_needs_what_the_profile_lacks_is_unsupported():
+  {==}
+
+def Laws.music_module_that_is_undefined_is_invalid_data():
+  {==}
+
+def Laws.music_module_that_does_not_end_is_invalid_data():
+  {==}
+
+def Laws.music_of_a_file_has_nothing_to_stop_for():
+  {==}
+
+def Laws.music_why_is_its_player_s():
+  {==}
+
+def Laws.music_module_is_a_decoder():
+  {==}
+
+def Laws.music_module_does_not_seek():
+  {==}
+
+def Laws.music_file_seeks():
+  {==}
+
+def Laws.music_module_sought_stays_where_it_is():
+  {==}
+
+def Laws.music_module_stopped_goes_back_to_its_start():
+  {==}

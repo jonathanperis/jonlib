@@ -10,7 +10,8 @@
 # C ints are U32 two's-complement words. A player whose `why` is not 0 has
 # met what C leaves undefined (1: a read or a write outside an array or
 # jar_xm's block of memory, a null pointer, a float that is no int) or what
-# the libm profile does not give (5), and plays no further.
+# the libm profile does not give (5), a song that does not come to a row
+# again (2) or a count past this port's limits (4), and plays no further.
 import Base
 import ../jonmath.bend as M
 import ./xm_module.bend as Xm

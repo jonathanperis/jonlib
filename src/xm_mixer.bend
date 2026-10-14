@@ -175,14 +175,24 @@ def generated.ended(made: Generated) -> Generated:
   Generated{player, samples} = made
   Generated{player, List.reverse(&2, F32, samples)}
 
-# jar_xm_generate_samples(ctx, output, count): `count` frames of two
-# floats. A player that stops gives the frames before that, and its `why`
-# says so.
-def generate(+player: Pl.Player, +count: U32) -> Generated:
-  generated.ended(frames(U32.to_nat(count), True{}, player.generated(player, count), Nil{}))
-
 # The count of samples jar_xm_generate_samples has been asked for
 # (generated_samples), which raylib's GetMusicTimePlayed reads.
 def generated.of(player: Pl.Player) -> U32:
   Pl.Player{_, _, _, _, _, _, _, _, _, _, _, generated, _} = player
   generated
+
+# Whether a count with `count` more is still one of 32 bits.
+def generated.fits(+generated: U32, +count: U32) -> Bool:
+  ((generated + count : U32) >= generated : U32)
+
+def generate.fitting(fits: Bool, +player: Pl.Player, +count: U32) -> Generated:
+  match fits:
+    case False{}: Generated{Pl.player.stopped(player, 4), Nil{}}
+    case True{}: generated.ended(frames(U32.to_nat(count), True{}, player.generated(player, count), Nil{}))
+
+# jar_xm_generate_samples(ctx, output, count): `count` frames of two
+# floats. A player that stops gives the frames before that, and its `why`
+# says so. jar_xm counts the samples in 64 bits: a count past 32 is past
+# this port's limits, and the player stops (4) without a frame.
+def generate(+player: Pl.Player, +count: U32) -> Generated:
+  generate.fitting(generated.fits(generated.of(player), count), player, count)

@@ -72,6 +72,9 @@ import ./src/vorbis_setup.bend as VorbisS
 import ./src/vorbis_packet.bend as VorbisK
 import ./src/vorbis_frame.bend as VorbisF
 import ./src/vorbis_length.bend as VorbisL
+import ./src/xm_module.bend as XmM
+import ./src/xm_player.bend as XmPl
+import ./src/xm_mixer.bend as XmX
 import ./src/input.bend as InputCore
 import ./src/gestures.bend as GestureCore
 import ./src/automation.bend as AutomationCore
@@ -7336,15 +7339,17 @@ def AudioClock.advance_processing(~P: Type, ~answer: U32 -> U32 -> P -> P & +Lis
 # program copies while its ctxData points at the decoder's state; here the
 # decoder's state is in the Music value, so what changes it (an update, a
 # stop, a seek) gives the Music back. `kind` is raylib's ctxType (1:
-# MUSIC_AUDIO_WAV, 5: MUSIC_AUDIO_QOA) and `looping` a field the program
-# sets, as in raylib. A decoder is the file's frames as the stream holds
-# them and the frame it is at (dr_wav's read cursor, qoaplay's
-# sample_position).
+# MUSIC_AUDIO_WAV, 4: MUSIC_AUDIO_MP3, 5: MUSIC_AUDIO_QOA, 6:
+# MUSIC_MODULE_XM) and `looping` a field the program sets, as in raylib. A
+# decoder is the file's frames as the stream holds them and the frame it is
+# at (dr_wav's read cursor, qoaplay's sample_position), an MP3 stream, or
+# an XM module's player (jar_xm's context).
 type Music.Context is Data:
   MusicNone{}
   MusicWav{samples: +List<U32>, at: U32}
   MusicQoa{samples: +List<U32>, at: U32}
   MusicMp3{player: Mp3S.Player}
+  MusicXm{player: XmPl.Player}
 
 type Music is Data:
   Music{stream: AudioStream, frames: U32, looping: Bool, kind: U32, context: Music.Context}
@@ -7449,16 +7454,52 @@ def Music.decode.mp3.opened(memory: Bool, +bytes: +List<U32>) -> Maybe<Mp3S.Play
     case False{}: Mp3S.open(bytes)
     case True{}: Mp3S.open.memory(bytes)
 
-def Music.decode.selected(kind: U32, +memory: Bool, +audio: AudioDevice, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+# An XM music as raylib leaves it: the player back at the song's start
+# (jar_xm_reset), which keeps what the count of its length left elsewhere.
+def Music.loaded.xm(loaded: AudioDevice & AudioStream, +frames: U32, +player: XmPl.Player) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  (+audio, +stream) = loaded
+  (audio, Done{Music{stream, frames, True{}, 6, MusicXm{XmPl.reset(player)}}})
+
+# Why a module is not loaded or a player stopped, as a load's error: past
+# this port's limits (4) or what the libm profile does not give (5), else
+# what C leaves undefined.
+def Music.xm.error(+why: U32) -> Wave.Error:
+  Bool.pick(Wave.Error, U32.is_eq(why, 4) || U32.is_eq(why, 5), UnsupportedWaveFormat{}, InvalidWaveData{})
+
+def Music.decode.xm.counted(fine: Bool, +player: XmPl.Player, +frames: U32, +rate: U32, +audio: AudioDevice) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  match fine:
+    case False{}: (audio, Fail{Music.xm.error(XmPl.Player.why(player))})
+    case True{}: Music.loaded.xm(AudioStream.load(audio, rate, 32, 2), frames, player)
+
+def Music.decode.xm.length(counted: XmPl.Counted, +rate: U32, +audio: AudioDevice) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  XmPl.Counted{+player, +samples} = counted
+  Music.decode.xm.counted(U32.is_eq(XmPl.Player.why(player), 0), player, samples, rate, audio)
+
+# jar_xm_create_context_safe at the device's rate, then the song's length
+# (jar_xm_get_remaining_samples) by a player whose random waveform starts
+# as a process's first module's does.
+def Music.decode.xm(loaded: XmM.Loaded, +libm: M.Libm, +rate: U32, +audio: AudioDevice) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  match loaded:
+    case XmM.Loaded{+module}: Music.decode.xm.length(XmPl.remaining.samples(XmPl.player.new(libm, module, rate, 24492)), rate, audio)
+    case XmM.Failed{_}: (audio, Fail{InvalidWaveHeader{}})
+    case XmM.Refused{+why}: (audio, Fail{Music.xm.error(why)})
+
+# The device's rate as raylib reads it (AUDIO.System.device.sampleRate): 0
+# for a device that is not ready.
+def Music.device.rate(+ready: Bool) -> U32:
+  Bool.pick(U32, ready, 48000, 0)
+
+def Music.decode.selected(kind: U32, +memory: Bool, +libm: M.Libm, +audio: AudioDevice, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
   match kind:
     case 1: Music.decode.wav(Wav.bits(bytes), audio, bytes)
     case 4: Music.decode.mp3(Music.decode.mp3.opened(memory, bytes), audio)
     case 5: Music.decode.qoa(Qoa.decode(bytes), audio, Music.qoa.declared(bytes))
+    case 6: Music.decode.xm(XmM.load(bytes), libm, Music.device.rate(AudioDevice.is_ready(audio)), audio)
     case _: (audio, Fail{UnsupportedWaveFormat{}})
 
 def Music.decode.kind(+file_type: String) -> U32:
   Bool.pick(U32, String.eq(file_type, ".wav") || String.eq(file_type, ".WAV"), 1, Bool.pick(U32, String.eq(file_type, ".qoa") || String.eq(file_type, ".QOA"), 5,
-    Bool.pick(U32, String.eq(file_type, ".mp3") || String.eq(file_type, ".MP3"), 4, 0)))
+    Bool.pick(U32, String.eq(file_type, ".mp3") || String.eq(file_type, ".MP3"), 4, Bool.pick(U32, String.eq(file_type, ".xm") || String.eq(file_type, ".XM"), 6, 0))))
 
 # LoadMusicStreamFromMemory. ".wav" (".WAV") data: every file Wave.decode
 # reads whose samples are 16, 24 or 32 bits wide, with a stream of the file's
@@ -7470,29 +7511,48 @@ def Music.decode.kind(+file_type: String) -> U32:
 # sample/32768.0) and the frames drmp3_get_pcm_frame_count gives; it is
 # decoded as it plays. Looping is on, as raylib sets it. The stream has no
 # buffer where AudioStream.load gives none (an unready device), and the
-# music is still loaded. Fail, and no stream: other tokens (OGG, FLAC, XM
-# and MOD music are not ported), other WAV sample sizes, what Wave.decode
-# refuses (raylib would read such a file again and again), and an MP3 file
-# dr_mp3 does not open or that begins with a Layer I or II frame. MP3 data
-# is opened as drmp3_init_memory opens it.
+# music is still loaded. ".xm" (".XM") data: every module
+# jar_xm_create_context_safe makes whose song comes to a row again, with a
+# float stream of the device's rate (48000, or 0 for a device that is not
+# ready) and two channels and the frames jar_xm_get_remaining_samples
+# counts; the player's sines and powers of two are the libm profile's. Fail,
+# and no stream: other tokens (OGG, FLAC and MOD music are not ported),
+# other WAV sample sizes, what Wave.decode refuses (raylib would read such
+# a file again and again), an MP3 file dr_mp3 does not open or that begins
+# with a Layer I or II frame, and a module jar_xm does not take
+# (InvalidWaveHeader), whose loading or first time through the song meets
+# what C leaves undefined or does not end (InvalidWaveData), or that is
+# past this port's limits or needs what the profile does not give
+# (UnsupportedWaveFormat). MP3 data is opened as drmp3_init_memory opens
+# it.
+def Music.load_from_memory_for(+libm: M.Libm, +audio: AudioDevice, +file_type: String, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  Music.decode.selected(Music.decode.kind(file_type), True{}, libm, audio, bytes)
+
+# LoadMusicStreamFromMemory under the AppleLibm profile, which gives an XM
+# player no sine and no power of two: a module that needs one is not loaded.
 def Music.load_from_memory(+audio: AudioDevice, +file_type: String, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
-  Music.decode.selected(Music.decode.kind(file_type), True{}, audio, bytes)
+  Music.load_from_memory_for(M.AppleLibm{}, audio, file_type, bytes)
 
 def Music.load.decoded(result: AudioDevice & Result<&1, &1, Wave.Error, Music>) -> AudioDevice & Result<&1, &1, Wave.IOError, Music>:
   match result:
     case Tuple{+audio, Fail{error}}: (audio, Fail{WaveDataError{error}})
     case Tuple{+audio, Done{music}}: (audio, Done{music})
 
-def Music.load.read(+token: String, +audio: AudioDevice, result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(AudioDevice & Result<&1, &1, Wave.IOError, Music>):
+def Music.load.read(+token: String, +libm: M.Libm, +audio: AudioDevice, result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(AudioDevice & Result<&1, &1, Wave.IOError, Music>):
   match result:
     case Fail{FileError{code, message}}: IO.pure(AudioDevice & Result<&1, &1, Wave.IOError, Music>, (audio, Fail{WaveFileError{code, message}}))
     case Fail{_}: IO.pure(AudioDevice & Result<&1, &1, Wave.IOError, Music>, (audio, Fail{WaveDataError{InvalidWaveHeader{}}}))
-    case Done{+bytes}: IO.pure(AudioDevice & Result<&1, &1, Wave.IOError, Music>, Music.load.decoded(Music.decode.selected(Music.decode.kind(token), False{}, audio, bytes)))
+    case Done{+bytes}: IO.pure(AudioDevice & Result<&1, &1, Wave.IOError, Music>, Music.load.decoded(Music.decode.selected(Music.decode.kind(token), False{}, libm, audio, bytes)))
 
-# LoadMusicStream: the file's bytes, by its extension; an MP3 file is opened
-# as drmp3_init_file opens it.
+# LoadMusicStream: the file's bytes, by its extension, under a libm profile
+# (an XM module's: see Music.load_from_memory_for); an MP3 file is opened as
+# drmp3_init_file opens it.
+def Music.load_for(+libm: M.Libm, +audio: AudioDevice, +path: String) -> IO(AudioDevice & Result<&1, &1, Wave.IOError, Music>):
+  IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, AudioDevice & Result<&1, &1, Wave.IOError, Music>, Files.load_data(path), result => Music.load.read(Image.file.token(path), libm, audio, result))
+
+# LoadMusicStream under the AppleLibm profile.
 def Music.load(+audio: AudioDevice, +path: String) -> IO(AudioDevice & Result<&1, &1, Wave.IOError, Music>):
-  IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, AudioDevice & Result<&1, &1, Wave.IOError, Music>, Files.load_data(path), result => Music.load.read(Image.file.token(path), audio, result))
+  Music.load_for(M.AppleLibm{}, audio, path)
 
 def Music.context.loaded(context: Music.Context) -> Bool:
   match context:
@@ -7500,6 +7560,22 @@ def Music.context.loaded(context: Music.Context) -> Bool:
     case MusicWav{_, _}: True{}
     case MusicQoa{_, _}: True{}
     case MusicMp3{_}: True{}
+    case MusicXm{_}: True{}
+
+# 0 for a music that plays as raylib plays it. An XM music whose player has
+# stopped gives silence from there, and this is why: 1 where jar_xm meets
+# what C leaves undefined (a read or a write outside an array or its block
+# of memory, a float that is no int) or gives a sample that is NaN, whose
+# bits are the machine's; 4 past this port's limits (2^32 samples
+# generated); 5 what the libm profile does not give.
+def Music.context.why(context: Music.Context) -> U32:
+  match context:
+    case MusicXm{player}: XmPl.Player.why(player)
+    case _: 0
+
+def Music.why(music: Music) -> U32:
+  Music{_, _, _, _, context} = music
+  Music.context.why(context)
 
 # IsMusicValid: a decoder, frames, and a rate, sample size and channels that
 # are not 0.
@@ -7543,6 +7619,7 @@ def Music.context.rewound(context: Music.Context) -> Music.Context:
     case MusicWav{samples, _}: MusicWav{samples, 0}
     case MusicQoa{samples, _}: MusicQoa{samples, 0}
     case MusicMp3{player}: MusicMp3{Mp3S.rewind(player)}
+    case MusicXm{player}: MusicXm{XmPl.reset(player)}
 
 # StopMusicStream: the stream stops and the decoder goes back to its first
 # frame (whether the stream was playing or not).
@@ -7618,15 +7695,40 @@ def Music.read.mp3(state: Music.Mp3, +samples: U32) -> Music.Read:
   MusicMp3Read{player, _, chunks, _, _} = state
   MusicRead{Music.qoa.floats(Mp3S.pcm.taken(U32.to_nat(samples), Music.mp3.joined(chunks, Nil{}), Nil{}), Nil{}), MusicMp3{player}}
 
+# `n` words for the stream from an XM player's floats, and whether they are
+# all the player's: zeros follow where the floats end (a player that
+# stopped) and from a float that is NaN.
+def Music.xm.words(n: Nat, fine: Bool, samples: +List<F32>, acc: +List<U32>) -> +List<U32> & Bool:
+  match n:
+    case 0n: (List.reverse(&2, U32, acc), fine)
+    case 1n+k:
+      match samples:
+        case Nil{}: Music.xm.words(k, fine, Nil{}, Con{0, acc})
+        case Con{x, +rest}:
+          +word = F32.bits(x)
+          +nan = Mixer.nan(word)
+          Music.xm.words(k, fine && Bool.not(nan), Bool.pick(+List<F32>, nan, Nil{}, rest), Con{Bool.pick(U32, nan, 0, word), acc})
+
+def Music.read.xm.done(words: +List<U32> & Bool, +player: XmPl.Player) -> Music.Read:
+  (+data, +fine) = words
+  MusicRead{data, MusicXm{Bool.pick(XmPl.Player, fine, player, XmPl.player.stopped(player, 1))}}
+
+# jar_xm_generate_samples for the frames to stream: two floats a frame.
+def Music.read.xm(made: XmX.Generated, +need: U32) -> Music.Read:
+  XmX.Generated{+player, +samples} = made
+  Music.read.xm.done(Music.xm.words(U32.to_nat((need * 2 : U32)), True{}, samples, Nil{}), player)
+
 # qoaplay_decode reads the same way: at the end of the file it goes back to
 # the first frame (qoaplay_rewind) for the next sample. An MP3 music reads
-# its stream (Music.mp3.read).
+# its stream (Music.mp3.read), and an XM music has its player generate the
+# frames: its song goes on as its patterns say, whatever the music's frames.
 def Music.read(context: Music.Context, +channels: U32, +total: U32, +need: U32) -> Music.Read:
   match context:
     case MusicNone{}: MusicRead{Nil{}, MusicNone{}}
     case MusicWav{+samples, +at}: Music.read.wav(Music.wav.read(U32.to_nat(((need / U32.max(total, 1)) + 3 : U32)), False{}, samples, channels, total, U32.min(at, total), need, Nil{}), samples)
     case MusicQoa{+samples, +at}: Music.read.qoa(Music.wav.read(U32.to_nat(((need / U32.max(total, 1)) + 3 : U32)), False{}, samples, channels, total, U32.min(at, total), need, Nil{}), samples)
     case MusicMp3{+player}: Music.read.mp3(Music.mp3.read(U32.to_nat((need + 2 : U32)), MusicMp3Read{player, need, Nil{}, False{}, U32.is_eq(need, 0)}), (need * channels : U32))
+    case MusicXm{+player}: Music.read.xm(XmX.generate(player, need), need)
 
 def Music.fed(read: Music.Read, +audio: AudioDevice, +stream: AudioStream, +frames: U32, +looping: Bool, +kind: U32, +count: U32) -> AudioDevice & Music:
   MusicRead{+data, context} = read
@@ -7709,6 +7811,14 @@ def Music.context.sought(context: Music.Context, +position: U32, +total: U32) ->
     case MusicWav{samples, +at}: MusicWav{samples, Bool.pick(U32, U32.is_eq(total, 0), at, U32.min(position, total))}
     case MusicQoa{samples, _}: MusicQoa{samples, Music.qoa.sought(position, total)}
     case MusicMp3{+player}: Music.mp3.sought(Mp3S.seek(player, position))
+    case MusicXm{player}: MusicXm{player}
+
+# Whether SeekMusicStream does anything for the decoder: raylib returns at
+# once for a module.
+def Music.context.seeks(context: Music.Context) -> Bool:
+  match context:
+    case MusicXm{_}: False{}
+    case _: True{}
 
 # What SeekMusicStream writes to the stream's framesProcessed: the frame
 # sought, or for QOA the frame its decoder went to.
@@ -7740,14 +7850,15 @@ def Music.seek.frame(+position: F32, +rate: U32) -> F32:
 # framesProcessed is that frame, not clamped, and both halves are processed,
 # so the next update fills them from there. A QOA music goes to the start of
 # the QOA frame the position is in, and that is its framesProcessed. Nothing, and the music as it is:
-# a position whose frame is not an unsigned int (negative from -1 down, 2^32
-# and more, NaN), a stream without a tracked buffer (raylib writes through
-# the pointer) and an unready device.
+# an XM music (raylib does not seek in a module), a position whose frame is
+# not an unsigned int (negative from -1 down, 2^32 and more, NaN), a stream
+# without a tracked buffer (raylib writes through the pointer) and an
+# unready device.
 def Music.seek(+audio: AudioDevice, music: Music, +position: F32) -> AudioDevice & Music:
   Music{+stream, +frames, +looping, +kind, +context} = music
   AudioStream{_, +rate, _, _} = stream
   +frame = Music.seek.frame(position, rate)
-  Music.seek.checked(AudioProcessors.tracked(AudioDevice.buffer.tracked(audio, AudioStream.buffer(stream))) && (frame > F32.neg(1.0) : F32) && (frame < 4294967296.0 : F32), audio, stream,
+  Music.seek.checked(Music.context.seeks(context) && AudioProcessors.tracked(AudioDevice.buffer.tracked(audio, AudioStream.buffer(stream))) && (frame > F32.neg(1.0) : F32) && (frame < 4294967296.0 : F32), audio, stream,
     frames, looping, kind, context, F32.to_u32(frame))
 
 # a % n as C computes it for ints, n in 1..2^31-1, plus n when it is
@@ -7783,10 +7894,18 @@ def Music.played.none(zero: Bool, found: Maybe<&2, AudioDevice.Buffer>, +frames:
 # the mix, modulo the music's frames, in seconds:
 # (float)framesPlayed/sampleRate. 0 for a stream without a buffer. None: a
 # buffer that is not tracked or an unready device, a music without frames
-# (raylib divides by them), and counts that do not fit an int.
+# (raylib divides by them), and counts that do not fit an int. An XM music:
+# the samples its player has generated since its start or its last stop
+# (jar_xm_get_position), in seconds, whatever the stream holds; it goes past
+# the music's length when the song comes round.
+def Music.played.of(context: Music.Context, +zero: Bool, found: Maybe<&2, AudioDevice.Buffer>, +frames: U32, +looping: Bool, +rate: U32) -> Maybe<F32>:
+  match context:
+    case MusicXm{player}: Some{Bool.pick(F32, zero, 0.0, (U32.to_f32(XmX.generated.of(player)) / U32.to_f32(rate) : F32))}
+    case _: Music.played.none(zero, found, frames, looping, rate)
+
 def Music.time_played(+audio: AudioDevice, music: Music) -> Maybe<F32>:
-  Music{AudioStream{+buffer, +rate, _, _}, +frames, +looping, _, _} = music
-  Music.played.none(U32.is_eq(buffer, 0), AudioDevice.buffer.tracked(audio, buffer), frames, looping, rate)
+  Music{AudioStream{+buffer, +rate, _, _}, +frames, +looping, _, context} = music
+  Music.played.of(context, U32.is_eq(buffer, 0), AudioDevice.buffer.tracked(audio, buffer), frames, looping, rate)
 
 # -----------------------------------------------------------------------------
 # Text: rtext.c byte strings and UTF-8 codepoints

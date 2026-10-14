@@ -98,6 +98,25 @@ def compiler_env(env=None):
     return dict(env, BUN_JSC_forceRAMSize=str(limit // 2))
 
 
+def compiler_command(cli):
+    """The Bend compiler's command.
+
+    Under a cgroup limit below the machine's memory Bun runs in its small-heap
+    mode (`--smol`), which collects sooner: the engine's memory size alone
+    (compiler_env) leaves the C emission of a program that reaches the audio
+    decoders and the XM player at 6.2 GB and more, and a batch in three was
+    killed under an 8 GiB limit (measured October 2026: the same batch at 4.4
+    GB with `--smol`, in the same seconds, the JavaScript byte for byte the
+    same; the sound gate's eleven batches then all compiled, the largest at
+    6.4 GB beside the C compiler's 1.1). Elsewhere, and for a command that is
+    not Bun's or has the flag, the command is unchanged."""
+    memory, limit = memory_limits()
+    command = list(cli)
+    if not limit or (memory and limit >= memory) or command[:1] != ['bun'] or '--smol' in command:
+        return command
+    return ['bun', '--smol', *command[1:]]
+
+
 def default_jobs():
     """Concurrent batches bounded by CPUs (at most 4) and available memory."""
     return max(1, min(4, os.cpu_count() or 1, available_memory() // MEMORY_PER_BATCH or 1))
@@ -165,7 +184,7 @@ def compile_outputs(cli, source, *outputs, timeout=COMPILE_TIMEOUT):
     C compiler (about 8.5 GB against 6.5 and 4 GB for a probe that reaches the
     TrueType and frame paths), which exceeds the hosted macOS runners' memory."""
     for output in outputs:
-        run([*cli, source, '-o', output], timeout=timeout, env=compiler_env())
+        run([*compiler_command(cli), source, '-o', output], timeout=timeout, env=compiler_env())
 
 
 class Probe:

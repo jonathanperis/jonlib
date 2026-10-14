@@ -1086,6 +1086,11 @@ NATIVE = r'''#include "raudio.c"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef ALONE
+#include <sys/mman.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
 
 #define SLOTS 4
 #define MADE 64
@@ -1151,6 +1156,8 @@ static void tags(rAudioProcessor *list)
 static unsigned rd(FILE *f) { unsigned v = 0; if (fread(&v, 4, 1, f) != 1) exit(3); return v; }
 static unsigned word(float x) { unsigned v; memcpy(&v, &x, 4); return v; }
 static float real(unsigned v) { float x; memcpy(&x, &v, 4); return x; }
+// a time's bits; a NaN (the length of a music without a rate) as one NaN, whatever sign the machine gives it
+static unsigned timed(float x) { return (x != x)? 2143289344u : word(x); }
 
 static int number(rAudioBuffer *b)
 {
@@ -1208,11 +1215,13 @@ static void state(int first)
         Music m = musics[s];
         int live = (slot_id[s] > 0) && !gone[slot_id[s] - 1];
         if (m.ctxData == NULL) { printf(" U-"); continue; }
-        if ((m.ctxType != MUSIC_AUDIO_WAV) && (m.ctxType != MUSIC_AUDIO_QOA) && (m.ctxType != MUSIC_AUDIO_MP3)) exit(10);
+        if ((m.ctxType != MUSIC_AUDIO_WAV) && (m.ctxType != MUSIC_AUDIO_QOA) && (m.ctxType != MUSIC_AUDIO_MP3) && (m.ctxType != MUSIC_MODULE_XM)) exit(10);
         printf(" U%d,%u,%d,%u,%u,", (int)IsMusicValid(m), m.frameCount, (int)m.looping,
                (m.ctxType == MUSIC_AUDIO_WAV)? (unsigned)((drwav *)m.ctxData)->readCursorInPCMFrames :
-               (m.ctxType == MUSIC_AUDIO_MP3)? (unsigned)((drmp3 *)m.ctxData)->currentPCMFrame : ((qoaplay_desc *)m.ctxData)->sample_position, word(GetMusicTimeLength(m)));
-        if ((m.stream.buffer == NULL) || (AUDIO.System.isReady && live)) printf("%u", word(GetMusicTimePlayed(m)));
+               (m.ctxType == MUSIC_AUDIO_MP3)? (unsigned)((drmp3 *)m.ctxData)->currentPCMFrame :
+               (m.ctxType == MUSIC_MODULE_XM)? (unsigned)((jar_xm_context_t *)m.ctxData)->generated_samples : ((qoaplay_desc *)m.ctxData)->sample_position, timed(GetMusicTimeLength(m)));
+        // a module's time is its player's count of samples: raylib reads neither the buffer nor the device for it
+        if ((m.stream.buffer == NULL) || (AUDIO.System.isReady && live) || (m.ctxType == MUSIC_MODULE_XM)) printf("%u", timed(GetMusicTimePlayed(m)));
         else printf("-");
     }
     for (rAudioBuffer *b = AUDIO.Buffer.first; b != NULL; b = b->next)
@@ -1246,8 +1255,26 @@ int main(void)
     FILE *f = fopen("PATH", "rb");
     if (!f) return 2;
     unsigned count = rd(f);
+#ifdef ALONE
+    long *place = (long *)mmap(NULL, sizeof(long), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    if (place == MAP_FAILED) return 13;
+#endif
     for (unsigned k = 0; k < count; k++)
     {
+#ifdef ALONE
+        // A case in a process of its own (jar_xm's random waveform keeps its state in a static): the child runs it and says where
+        // in the script it ends.
+        fflush(stdout);
+        pid_t child = fork();
+        if (child < 0) return 13;
+        if (child > 0)
+        {
+            int status = 0;
+            if ((waitpid(child, &status, 0) != child) || !WIFEXITED(status) || (WEXITSTATUS(status) != 0)) return 14;
+            if (fseek(f, *place, SEEK_SET) != 0) return 13;
+            continue;
+        }
+#endif
         unsigned steps = rd(f), quiet = rd(f);
         memset(&AUDIO, 0, sizeof(AUDIO));
         memset(slots, 0, sizeof(slots)); memset(slot_id, 0, sizeof(slot_id));
@@ -1405,6 +1432,11 @@ int main(void)
         if (!quiet) printf("\n");
         if (AUDIO.System.isReady) CloseAudioDevice();
         AUDIO.mixedProcessor = NULL;
+#ifdef ALONE
+        *place = ftell(f);
+        fflush(stdout);
+        _exit(0);
+#endif
     }
     return 0;
 }
@@ -1416,6 +1448,7 @@ import ../../jonmath.bend as M
 import ../../src/mixer.bend as Mixer
 import ../../src/resampler.bend as Resampler
 import ../../src/mp3_stream.bend as Mp3S
+import ../../src/xm_mixer.bend as XmX
 
 type Op is Data:
   OpInit{}
@@ -1556,18 +1589,24 @@ def music.at(context: J.Music.Context) -> String:
     case J.MusicWav{_, at}: U32.show(at)
     case J.MusicQoa{_, at}: U32.show(at)
     case J.MusicMp3{player}: U32.show(Mp3S.Player.current(player))
+    case J.MusicXm{player}: U32.show(XmX.generated.of(player))
+
+# A time's bits; a NaN (the length of a music without a rate) as one NaN, whatever sign the machine gives it.
+def timed(time: F32) -> String:
+  +word = F32.bits(time)
+  U32.show(Bool.pick(U32, Mixer.nan(word), 2143289344, word))
 
 def played.text(played: Maybe<F32>) -> String:
   match played:
     case None{}: "-"
-    case Some{t}: U32.show(F32.bits(t))
+    case Some{t}: timed(t)
 
 def music.text(+audio: J.AudioDevice, +music: J.Music) -> String:
   J.Music{_, +frames, +looping, _, +context} = music
   match context:
     case J.MusicNone{}: " U-"
     case +loaded:
-      " U" ++ flag(J.Music.is_valid(music)) ++ "," ++ U32.show(frames) ++ "," ++ flag(looping) ++ "," ++ music.at(loaded) ++ "," ++ U32.show(F32.bits(J.Music.time_length(music))) ++ "," ++ played.text(J.Music.time_played(audio, music))
+      " U" ++ flag(J.Music.is_valid(music)) ++ "," ++ U32.show(frames) ++ "," ++ flag(looping) ++ "," ++ music.at(loaded) ++ "," ++ timed(J.Music.time_length(music)) ++ "," ++ played.text(J.Music.time_played(audio, music))
 
 def musics.text(musics: +List<J.Music>, +audio: J.AudioDevice) -> String:
   match musics:

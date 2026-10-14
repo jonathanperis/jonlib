@@ -5301,3 +5301,57 @@ law xm_mixer_frames_asked_for_are_added_to_the_count:
 
 law xm_mixer_samples_come_in_the_order_they_were_made:
   {XmX.generated.ended(XmX.Generated{XmPl.Player{M.Glibc239Libm{}, Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, Nil{}, 48000, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}, 0, 0, 0, 0.0, St.Index.new(0, 0), 0, 7, Nil{}}, [4.0, 3.0, 2.0, 1.0]}) == XmX.Generated{XmPl.Player{M.Glibc239Libm{}, Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, Nil{}, 48000, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}, 0, 0, 0, 0.0, St.Index.new(0, 0), 0, 7, Nil{}}, [1.0, 2.0, 3.0, 4.0]} : XmX.Generated}
+
+# XM musics (Music.load_for on a module, src/xm_mixer.bend's count): the
+# count of samples generated is one of 32 bits, past which the player stops;
+# a module's token, the device's rate for its player, and a load's error for
+# what stops a player; a module's music has its player's reason, is a
+# decoder, does not seek, and a stop is its player's reset.
+
+law xm_mixer_count_of_32_bits_takes_the_frames_that_fit:
+  {XmX.generated.fits(4294967290, 5) == True{} : Bool}
+
+law xm_mixer_count_past_32_bits_does_not_fit:
+  {XmX.generated.fits(4294967295, 1) == False{} : Bool}
+
+law xm_mixer_player_whose_count_is_full_stops_without_a_frame:
+  {XmX.generate(XmPl.Player{M.Glibc239Libm{}, Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, Nil{}, 48000, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}, 0, 0, 0, 0.0, St.Index.new(0, 0), 0, 4294967295, Nil{}}, 1) == XmX.Generated{XmPl.Player{M.Glibc239Libm{}, Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, Nil{}, 48000, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 4}, 0, 0, 0, 0.0, St.Index.new(0, 0), 0, 4294967295, Nil{}}, Nil{}} : XmX.Generated}
+
+law music_token_of_a_module:
+  {((J.Music.decode.kind(".xm") * 100) + (J.Music.decode.kind(".XM") * 10) + J.Music.decode.kind(".Xm") : U32) == 660 : U32}
+
+law music_device_rate_is_0_until_the_device_is_ready:
+  {((J.Music.device.rate(True{}) * 2) + J.Music.device.rate(False{}) : U32) == 96000 : U32}
+
+law music_module_past_the_port_s_limits_is_unsupported:
+  {J.Music.xm.error(4) == J.UnsupportedWaveFormat{} : J.Wave.Error}
+
+law music_module_that_needs_what_the_profile_lacks_is_unsupported:
+  {J.Music.xm.error(5) == J.UnsupportedWaveFormat{} : J.Wave.Error}
+
+law music_module_that_is_undefined_is_invalid_data:
+  {J.Music.xm.error(1) == J.InvalidWaveData{} : J.Wave.Error}
+
+law music_module_that_does_not_end_is_invalid_data:
+  {J.Music.xm.error(2) == J.InvalidWaveData{} : J.Wave.Error}
+
+law music_of_a_file_has_nothing_to_stop_for:
+  {J.Music.why(J.Music{J.AudioStream{0, 44100, 16, 2}, 700, True{}, 1, J.MusicWav{[1, 2], 0}}) == 0 : U32}
+
+law music_why_is_its_player_s:
+  {J.Music.context.why(J.MusicXm{XmPl.Player{M.Glibc239Libm{}, Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, Nil{}, 48000, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 5}, 0, 0, 0, 0.0, St.Index.new(0, 0), 0, 7, Nil{}}}) == 5 : U32}
+
+law music_module_is_a_decoder:
+  {J.Music.context.loaded(J.MusicXm{XmPl.Player{M.Glibc239Libm{}, Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, Nil{}, 48000, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}, 0, 0, 0, 0.0, St.Index.new(0, 0), 0, 7, Nil{}}}) == True{} : Bool}
+
+law music_module_does_not_seek:
+  {J.Music.context.seeks(J.MusicXm{XmPl.Player{M.Glibc239Libm{}, Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, Nil{}, 48000, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}, 0, 0, 0, 0.0, St.Index.new(0, 0), 0, 7, Nil{}}}) == False{} : Bool}
+
+law music_file_seeks:
+  {J.Music.context.seeks(J.MusicWav{[1, 2], 0}) == True{} : Bool}
+
+law music_module_sought_stays_where_it_is:
+  {J.Music.context.sought(J.MusicXm{XmPl.Player{M.Glibc239Libm{}, Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, Nil{}, 48000, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}, 0, 0, 0, 0.0, St.Index.new(0, 0), 0, 7, Nil{}}}, 9, 4) == J.MusicXm{XmPl.Player{M.Glibc239Libm{}, Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, Nil{}, 48000, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}, 0, 0, 0, 0.0, St.Index.new(0, 0), 0, 7, Nil{}}} : J.Music.Context}
+
+law music_module_stopped_goes_back_to_its_start:
+  {J.Music.context.rewound(J.MusicXm{XmPl.Player{M.Glibc239Libm{}, Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, Nil{}, 48000, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}, 0, 0, 0, 0.0, St.Index.new(0, 0), 0, 7, Nil{}}}) == J.MusicXm{XmPl.Player{M.Glibc239Libm{}, Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, Nil{}, 48000, XmPl.Song{6, 125, 1.0, False{}, False{}, 0, 0, 0, 24492, 0}, 0, 0, 0, 0.0, St.Index.new(0, 0), 0, 0, Nil{}}} : J.Music.Context}
