@@ -14,6 +14,8 @@ TESTS = [
     'reg/spin_refs_dead_seg', 'reg/brw_spin_lent', 'reg/borrow_nested_flat',
     'reg/brw_arrays', 'compile/array_dynamic_closure',
     'compile/fork_leaf_budget', 'compile/fork_leaf_handoff',
+    # the OS effects patch (patches/bend-os-effects.patch)
+    'io/path_dir', 'io/cwd_process',
 ]
 
 
@@ -23,7 +25,7 @@ def main():
     parser.add_argument('--gpu', action='store_true', help='Also force device execution for tests containing bang calls')
     args = parser.parse_args()
     lock = json.loads((ROOT / 'toolchain.json').read_text())['bend']
-    checkout(args.bend_source, lock['revision'], lock.get('patch'))
+    checkout(args.bend_source, lock['revision'], lock.get('overlay'))
     work = BUILD / 'bend-regressions'
     work.mkdir(parents=True, exist_ok=True)
     report = dict(passed=False, toolchain=lock, results=[])

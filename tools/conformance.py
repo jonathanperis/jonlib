@@ -189,9 +189,9 @@ def checkout(path, revision, overlay=None):
         if run(["git", "status", "--porcelain", "--untracked-files=no"], path).strip():
             raise ValueError(f"{path}: tracked changes invalidate the pinned reference")
         return
-    patch = ROOT / overlay['path']
-    if hashlib.sha256(patch.read_bytes()).hexdigest() != overlay['sha256']:
-        raise ValueError('Declared compiler patch hash mismatch')
+    for declared in overlay['patches']:
+        if hashlib.sha256((ROOT / declared['path']).read_bytes()).hexdigest() != declared['sha256']:
+            raise ValueError(f"Declared compiler patch hash mismatch: {declared['path']}")
     files = overlay['files']
     if not files:
         raise ValueError('A compiler overlay must declare its resulting source files')
@@ -1580,7 +1580,7 @@ def main():
     report_path.write_text(json.dumps(report, indent=2) + '\n')
     started = time.monotonic()
     lock = json.loads((ROOT / 'toolchain.json').read_text())
-    checkout(args.bend_source, lock['bend']['revision'], lock['bend'].get('patch'))
+    checkout(args.bend_source, lock['bend']['revision'], lock['bend'].get('overlay'))
     checkout(args.raylib_source, lock['raylib']['revision'])
     run([sys.executable, ROOT / 'tools/api_plan.py', 'check', '--raylib-source', args.raylib_source])
     report['toolchain'] = lock

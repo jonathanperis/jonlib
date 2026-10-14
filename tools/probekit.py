@@ -154,7 +154,7 @@ def pinned(args):
     from conformance import checkout
     lock = json.loads((ROOT / 'toolchain.json').read_text())
     if getattr(args, 'bend_source', None) is not None:
-        checkout(args.bend_source, lock['bend']['revision'], lock['bend'].get('patch'))
+        checkout(args.bend_source, lock['bend']['revision'], lock['bend'].get('overlay'))
         version = run(['bun', '--version']).strip()
         if version != lock['bun']['version']:
             raise ProbeFailure(f'bun {version} differs from pinned {lock["bun"]["version"]}')
