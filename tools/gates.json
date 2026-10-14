@@ -1839,6 +1839,21 @@
    "minutes": 6
   },
   {
+   "id": "stb-cubic",
+   "title": "stbtt__solve_cubic (src/stb_cubic.bend: its cube root, acos and cos glibc 2.39's) against raylib's stb_truetype.h itself with its pow, acos and cos bound to the glibc 2.39 FMA-variant models, on the cubics stbtt_GetGlyphSDF forms for curves and pixels near them, triples of every magnitude, double roots and the edges: one root, three, three NaN ones and none to answer",
+   "run": [
+    "{python}",
+    "tools/stb_cubic_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 8
+  },
+  {
    "id": "pow-third",
    "title": "The cube root of stb_truetype's cubic solver, (float) pow((double) x, (double) (1.0f/3.0f)) (src/power64.bend: Arm's pow as glibc 2.39's x86_64 FMA variant runs it) against the glibc pow model on floats of every exponent, every interval of the logarithm's table, 1 and its neighbours, cubes, powers of two, the extremes, the variant controls, the zeros and what is refused, and against the host pow where it qualifies",
    "run": [

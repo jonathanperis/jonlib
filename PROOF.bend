@@ -4219,3 +4219,21 @@ def Laws.power64_exponential_of_one_is_the_main_path():
 
 def Laws.power64_exponential_from_512_has_no_answer():
   {==}
+
+def Laws.cubic_acos_above_one_leaves_no_root():
+  {==}
+
+def Laws.cubic_without_finite_terms_has_no_answer():
+  {==}
+
+def Laws.cubic_one_root_of_an_unknown_cube_root_has_no_answer():
+  {==}
+
+def Laws.font_cubic_under_glibc239():
+  {==}
+
+def Laws.font_no_cubic_under_apple():
+  {==}
+
+def Laws.font_no_cubic_under_glibc241():
+  {==}

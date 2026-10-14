@@ -31,8 +31,18 @@ ImageTextEx, ExportFontAsCode's file bytes and DrawTextEx frames.
 
 Contracts: operations marked 'R' are not run natively; Jonlib must refuse
 them (undefined C behavior: reads past the font data, the BDF reader's NULL
-pointer write; or outside Jonlib's profile: CFF outlines, SDF glyphs needing
-the cubic solver). CPU-1, CPU-2 and JavaScript lanes.
+pointer write; or outside Jonlib's profile: CFF outlines). Those marked 'J'
+are not run natively either, and Jonlib does run them and must answer a
+refusal: SDF glyphs needing the cubic solver without a profile
+(Font.load_data) or under one whose pow, acos and cos are not glibc 2.39's
+(Font.load_data_for).
+
+The SDF of fonts with curves under the profile (Font.load_data_for, and its
+atlas): raylib's own LoadFontData, whose stbtt__solve_cubic calls this
+host's pow, acos and cos. Compared where the profile is Glibc239Libm and the
+host's functions reproduce the controls of the glibc-sin, glibc-acos and
+pow-third gates (the CI's Linux runners); elsewhere they are 'J'
+contracts. CPU-1, CPU-2 and JavaScript lanes.
 """
 import hashlib
 import json
@@ -44,6 +54,9 @@ import zlib
 from conformance import gradient_reference
 import font_probe as fpb
 import frame_probe as fp
+import glibc_acos
+import glibc_pow
+import glibc_sin
 import probekit
 import ttf_fonts as T
 from probekit import ROOT, ProbeFailure
@@ -174,7 +187,8 @@ def synth(rng, n, sizes):
     """Synthetic GRAYSCALE glyph images: (w, h, seed) triples."""
     return [(rng.choice(sizes)[0], rng.choice(sizes)[1], rng.randrange(1000)) for _ in range(n)]
 
-def scenes(paths, libm):
+def scenes(paths, libm, cubic=False):
+    """`cubic`: whether this host's pow, acos and cos are the ones Font.load_data_for reproduces under its profile."""
     out = []
     rng = random.Random(0x77F1)
 
@@ -196,7 +210,12 @@ def scenes(paths, libm):
     add('data-odd', 4, 4, [('data', P['f2.ttf'], 20, [], 0, 0), ('data', P['nocmap.ttf'], 20, [], 0, 0), ('data', P['outline_space.ttf'], 20, [32, 33], 2, 0), ('data', P['outline_space.ttf'], 20, [32, 33], 2, 1, 'R'),
                            ('data', P['negative_space.ttf'], 20, [32, 65], 2, 0)])
     add('data-refused', 4, 4, [('data', P['truncated.ttf'], 20, [], 0, 0, 'R'), ('data', P['cff.otf'], 20, [], 0, 0, 'R'),
-                               ('data', P['f4.ttf'], 20, [65, 66], 2, 2, 'R'), ('data', P['f4.ttf'], 20, [65, 66, 67], 5, 0, 'R')])
+                               ('data', P['f4.ttf'], 20, [65, 66], 2, 2, 'J'), ('data', P['f4.ttf'], 20, [65, 66, 67], 5, 0, 'R')])
+    # the cubic solver under the profile: compared on a glibc 2.39 host, a refusal Jonlib must give elsewhere
+    mark = () if cubic and libm == 'Glibc239Libm' else ('J',)
+    add('data-sdf-curves', 4, 4, [('datafor', P['f4.ttf'], 20, [65, 66, 67, 103], 4, 2, *mark), ('datafor', P['f4.ttf'], 20, [65, 66], 2, 0),
+                                  ('datafor', P['DotGothic16-Regular.ttf'], 20, [65, 103, 0x3042], 3, 2, *mark)])
+    add('data-sdf-example', 4, 4, [('atlas_datafor', P['anonymous_pro_bold.ttf'], 16, [], 0, 2, 95, 16, 0, 1, *mark)])
     # GenImageFontAtlas over loaded glyphs.
     for k, (name, size, pad, method, count) in enumerate((('f4.ttf', 20, 4, 0, 0), ('f4.ttf', 20, 4, 1, 0), ('f12.ttf', 13, 0, 0, 0), ('f12.ttf', 13, 0, 1, 0),
                                                          ('f13.ttf', 31, 2, 1, 0), ('anonymous_pro_bold.ttf', 18, 1, 1, 0), ('anonymous_pro_bold.ttf', 18, 4, 0, 40),
@@ -249,7 +268,7 @@ def scenes(paths, libm):
     return out
 
 def declared(op):
-    return op[-1] == 'R'
+    return op[-1] in ('R', 'J')
 
 def strip(op):
     return op[:-1] if declared(op) else op
@@ -389,6 +408,8 @@ def c_op(op, codes):
     calls = {
         'begin': lambda: 'BeginDrawing();', 'end': lambda: 'EndDrawing();', 'clear': lambda: f'ClearBackground({fp.cc(a[0])});',
         'data': lambda: f'data_op({cstr(a[0])}, {cint(a[1])}, {cints(a[2])}, {cint(a[3])}, {a[4]});',
+        'datafor': lambda: f'data_op({cstr(a[0])}, {cint(a[1])}, {cints(a[2])}, {cint(a[3])}, {a[4]});',
+        'atlas_datafor': lambda: f'atlas_data({cstr(a[0])}, {cint(a[1])}, {cints(a[2])}, {cint(a[3])}, {a[4]}, {cint(a[5])}, {cint(a[6])}, {cint(a[7])}, {a[8]});',
         'atlas_data': lambda: f'atlas_data({cstr(a[0])}, {cint(a[1])}, {cints(a[2])}, {cint(a[3])}, {a[4]}, {cint(a[5])}, {cint(a[6])}, {cint(a[7])}, {a[8]});',
         'atlas_synth': lambda: (f'atlas_synth((const int[]){{ {", ".join(str(v) for s in a[0] for v in s)} }}, {len(a[0])}, {cint(a[1])}, {cint(a[2])}, '
                                 f'{cint(a[3])}, {a[4]});'),
@@ -561,8 +582,8 @@ type Op is Data:
   OBegin{}
   OEnd{}
   OClear{color: U32}
-  OData{path: String, size: U32, cps: +List<U32>, count: U32, kind: U32}
-  OAtlasData{path: String, size: U32, cps: +List<U32>, count: U32, kind: U32, acount: U32, asize: U32, pad: U32, method: U32}
+  OData{path: String, size: U32, cps: +List<U32>, count: U32, kind: U32, profiled: U32}
+  OAtlasData{path: String, size: U32, cps: +List<U32>, count: U32, kind: U32, acount: U32, asize: U32, pad: U32, method: U32, profiled: U32}
   OAtlasSynth{specs: +List<U32>, acount: U32, asize: U32, pad: U32, method: U32}
   OMem{slot: U32, path: String, ext: String, size: U32, cps: +List<U32>, count: U32}
   OEx{slot: U32, path: String, size: U32, cps: +List<U32>, count: U32}
@@ -800,10 +821,16 @@ def St.frame(s: St, f: J.Frame -> J.Frame) -> St:
   St{frame, f0, f1, log} = s
   St{f(frame), f0, f1, log}
 
+# LoadFontData: without a profile (0), or under the machine's (1).
+def font.data(profiled: U32, +bytes: +List<U32>, +size: U32, +cps: +List<U32>, +count: U32, +kind: U32) -> J.Font.Data:
+  match profiled:
+    case 0: J.Font.load_data(bytes, size, cps, count, kind)
+    case _: J.Font.load_data_for(libm(), bytes, size, cps, count, kind)
+
 def step.data.text(+op: Op, +bytes: +List<U32>) -> String:
   match op:
-    case OData{_, +size, +cps, +count, +kind}: data.out(J.Font.load_data(bytes, size, cps, count, kind))
-    case OAtlasData{_, +size, +cps, +count, +kind, +acount, +asize, +pad, +method}: atlas.of(acount, asize, pad, method, J.Font.load_data(bytes, size, cps, count, kind))
+    case OData{_, +size, +cps, +count, +kind, +profiled}: data.out(font.data(profiled, bytes, size, cps, count, kind))
+    case OAtlasData{_, +size, +cps, +count, +kind, +acount, +asize, +pad, +method, +profiled}: atlas.of(acount, asize, pad, method, font.data(profiled, bytes, size, cps, count, kind))
     case _: ""
 
 def step.loaded.data(s: St, +op: Op, loaded: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> St:
@@ -821,11 +848,11 @@ def step(op: Op, s: St) -> IO(St):
     case OEnd{}: IO.pure(St, St.frame(s, f => J.Frame.end_drawing(f)))
     case OClear{+color}: IO.pure(St, St.frame(s, f => J.Frame.clear_background(f, color)))
     case ORefused{}: IO.pure(St, St.note(s, " R"))
-    case OData{path, +size, +cps, +count, +kind}:
-      IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, St, J.Files.load_data(path), r => IO.pure(St, step.loaded.data(s, OData{"", size, cps, count, kind}, r)))
-    case OAtlasData{path, +size, +cps, +count, +kind, +acount, +asize, +pad, +method}:
+    case OData{path, +size, +cps, +count, +kind, +profiled}:
+      IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, St, J.Files.load_data(path), r => IO.pure(St, step.loaded.data(s, OData{"", size, cps, count, kind, profiled}, r)))
+    case OAtlasData{path, +size, +cps, +count, +kind, +acount, +asize, +pad, +method, +profiled}:
       IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, St, J.Files.load_data(path),
-        r => IO.pure(St, step.loaded.data(s, OAtlasData{"", size, cps, count, kind, acount, asize, pad, method}, r)))
+        r => IO.pure(St, step.loaded.data(s, OAtlasData{"", size, cps, count, kind, acount, asize, pad, method, profiled}, r)))
     case OAtlasSynth{+specs, +acount, +asize, +pad, +method}: IO.pure(St, St.note(s, atlas.out(J.Font.gen_image_atlas_for(libm(), synth.glyphs(specs, 0), acount, asize, pad, method))))
     case OMem{+slot, path, ext, +size, +cps, +count}:
       IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, St, J.Files.load_data(path), r => IO.pure(St, St.mem(s, slot, ext, size, cps, count, r)))
@@ -860,13 +887,16 @@ def blist(values):
     return '[' + ', '.join(str(v & 0xFFFFFFFF) for v in values) + ']' if values else 'Nil{}'
 
 def b_op(op):
-    if declared(op):
+    if op[-1] == 'R':
         return 'ORefused{}'
+    op = strip(op)
     name, a = op[0], op[1:]
     calls = {
         'begin': lambda: 'OBegin{}', 'end': lambda: 'OEnd{}', 'clear': lambda: f'OClear{{{a[0]}}}',
-        'data': lambda: f'OData{{{bstr(a[0])}, {a[1] & 0xFFFFFFFF}, {blist(a[2])}, {a[3] & 0xFFFFFFFF}, {a[4]}}}',
-        'atlas_data': lambda: f'OAtlasData{{{bstr(a[0])}, {a[1]}, {blist(a[2])}, {a[3]}, {a[4]}, {a[5]}, {a[6]}, {a[7]}, {a[8]}}}',
+        'data': lambda: f'OData{{{bstr(a[0])}, {a[1] & 0xFFFFFFFF}, {blist(a[2])}, {a[3] & 0xFFFFFFFF}, {a[4]}, 0}}',
+        'datafor': lambda: f'OData{{{bstr(a[0])}, {a[1] & 0xFFFFFFFF}, {blist(a[2])}, {a[3] & 0xFFFFFFFF}, {a[4]}, 1}}',
+        'atlas_data': lambda: f'OAtlasData{{{bstr(a[0])}, {a[1]}, {blist(a[2])}, {a[3]}, {a[4]}, {a[5]}, {a[6]}, {a[7]}, {a[8]}, 0}}',
+        'atlas_datafor': lambda: f'OAtlasData{{{bstr(a[0])}, {a[1]}, {blist(a[2])}, {a[3]}, {a[4]}, {a[5]}, {a[6]}, {a[7]}, {a[8]}, 1}}',
         'atlas_synth': lambda: f'OAtlasSynth{{{blist([v for s in a[0] for v in s])}, {a[1]}, {a[2]}, {a[3]}, {a[4]}}}',
         'mem': lambda: f'OMem{{{a[0]}, {bstr(a[1])}, {bstr(a[2])}, {a[3]}, {blist(a[4])}, {a[5] & 0xFFFFFFFF}}}',
         'ex': lambda: f'OEx{{{a[0]}, {bstr(a[1])}, {a[2]}, {blist(a[3])}, {a[4] & 0xFFFFFFFF}}}',
@@ -898,6 +928,13 @@ def render(libm, codes):
         return '\n\n'.join(body)
     return build
 
+def qualified(probe):
+    """Whether this host's sin, cos, acos and pow reproduce the glibc 2.39 FMA variants' controls."""
+    glibc_sin.objects(probe)
+    glibc_acos.objects(probe)
+    glibc_pow.objects(probe)
+    return glibc_sin.host_is_model(probe) and glibc_acos.host_is_model(probe) and glibc_pow.host_is_model(probe)
+
 def main():
     args = probekit.arguments(__doc__)
     probe = probekit.Probe('ttf', args, raylib_options=fp.OPTIONS)
@@ -909,13 +946,14 @@ def main():
     paths = font_files(probe.work, args.raylib_source)
     codes = probe.work / 'codes'
     codes.mkdir(exist_ok=True)
-    items = scenes(paths, libm)
+    cubic = libm == 'Glibc239Libm' and qualified(probe)
+    items = scenes(paths, libm, cubic)
     expected = native_rows(probe, items, str(codes))
     actions = list(enumerate(items))
     lanes = probe.candidates(render(libm, str(codes)), actions, batch=12, parse=lambda text, selected: [line for line in text.splitlines() if line.strip()])
     probe.compare(expected, lanes, describe=lambda i: f'scene {items[i]["id"]}')
     probe.finish(scenes=len(items), operations=sum(len(s['ops']) for s in items), refused_operations=sum(declared(op) for s in items for op in s['ops']),
-                 libm=libm, fused_free_objects=len(fused), scenes_sha256=hashlib.sha256(json.dumps(items, default=repr).encode()).hexdigest())
+                 libm=libm, cubic_compared=cubic, fused_free_objects=len(fused), scenes_sha256=hashlib.sha256(json.dumps(items, default=repr).encode()).hexdigest())
 
 if __name__ == '__main__':
     main()

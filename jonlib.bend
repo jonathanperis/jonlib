@@ -11771,6 +11771,21 @@ def Font.data.loaded(+l: FontData.Loaded) -> Font.Data:
 def Font.load_data(+bytes: +List<U32>, +size: U32, +codepoints: +List<U32>, +count: U32, +kind: U32) -> Font.Data:
   Font.data.loaded(FontData.load(bytes, size, codepoints, count, kind))
 
+# Whether a profile's pow, acos and cos are the ones stb_truetype's cubic
+# solver is reproduced with (glibc 2.39's: src/stb_cubic.bend).
+def Font.cubic(libm: M.Libm) -> Bool:
+  match libm:
+    case M.Glibc239Libm{}: True{}
+    case _: False{}
+
+# LoadFontData under a libm profile: as Font.load_data, and an SDF glyph
+# whose distances need stbtt__solve_cubic (a curve with a cubic term near a
+# pixel) takes it under Glibc239Libm, with glibc 2.39's pow, acos and cos;
+# under the other profiles such a glyph is refused, as Font.load_data
+# refuses it.
+def Font.load_data_for(libm: M.Libm, +bytes: +List<U32>, +size: U32, +codepoints: +List<U32>, +count: U32, +kind: U32) -> Font.Data:
+  Font.data.loaded(FontData.load.with(Font.cubic(libm), bytes, size, codepoints, count, kind))
+
 # UnloadFontData: the glyphs are dropped.
 def Font.unload_data(glyphs: List<GlyphInfo>) -> Unit:
   Unit{}
