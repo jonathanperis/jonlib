@@ -2402,6 +2402,15 @@ def Laws.color_hsv_steps_largest():
 def Laws.mesh_upload_unchanged(mesh, dynamic):
   {==}
 
+def Laws.mesh_buffer_last_exists():
+  {==}
+
+def Laws.mesh_buffer_past_the_last():
+  {==}
+
+def Laws.mesh_buffer_negative_index():
+  {==}
+
 def Laws.mesh_cube_vertex_count(width, height, length):
   {==}
 
