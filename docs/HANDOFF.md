@@ -72,7 +72,7 @@ at the branch's head.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 582/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **210/212 ported** with the stack (`audio_music_stream`, `audio_stream_effects` and `audio_mixed_processor` play `country.mp3` through the MP3 decoder and `audio_spectrum_visualizer` loads it whole; `audio_sound_loading` loads `target.ogg` through the Ogg Vorbis decoder; `core_screen_recording` writes its GIF with the msf_gif port; `core_directory_files` is handed its directory listings; `text_unicode_ranges` loads a 7 MiB font; `textures_sprite_stacking` a 112x11468 texture), 2 ready (`audio_module_playing` waits for a decoder, which the plan does not count: `mini1111.xm`; `text_font_sdf` for the binary64 `pow` and `acos`), 0 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **211/212 ported** with the stack (`audio_music_stream`, `audio_stream_effects` and `audio_mixed_processor` play `country.mp3` through the MP3 decoder and `audio_spectrum_visualizer` loads it whole; `audio_sound_loading` loads `target.ogg` through the Ogg Vorbis decoder; `audio_module_playing` plays `mini1111.xm` through the XM player; `core_screen_recording` writes its GIF with the msf_gif port; `core_directory_files` is handed its directory listings; `text_unicode_ranges` loads a 7 MiB font; `textures_sprite_stacking` a 112x11468 texture), 1 ready (`text_font_sdf` waits for the binary64 `pow` and `acos`, which the plan does not count), 0 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -1078,7 +1078,16 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
        Python model of jar_xm, so the expected rows are raylib's own,
        and a contract's are raylib's after a file it does not take.
        Every program that loads music now compiles the XM player too.
-       Next: the example `audio_module_playing` (211 of 212).
+       **The example `audio_module_playing` is ported** (211 of 212):
+       its 53 frames equal the native example's. Its state is a `Type`
+       record (it holds the random state beside the device, the clock
+       and the music), its circles a list in the order the C loops go
+       through them (the last of the array first), and the setup and
+       the respawn draw their random values in different orders (speed
+       then color; color then speed), as the C does. On macOS it is a
+       contract from its first frame (`PERSPECTIVE`): the AppleLibm
+       profile gives the player no sine and no power of two.
+       Next: `text_font_sdf`, the last example.
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`
