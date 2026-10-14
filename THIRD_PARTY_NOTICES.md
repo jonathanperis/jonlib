@@ -447,8 +447,9 @@ and `src/xm_mixer.bend` is `jar_xm_mixdown` and
 `jar_xm_generate_samples`. `tools/xm_module_probe.py`,
 `tools/xm_pitch_probe.py`, `tools/xm_sample_probe.py`,
 `tools/xm_player_probe.py` and `tools/xm_mixer_probe.py` include the
-unmodified file in their reference programs only; no jar_xm code is linked
-into the Bend candidate. jar_xm is under the WTFPL, version 2, retained
+unmodified file in their reference programs only, and
+`tools/xm_music_probe.py` has it as raudio.c includes it; no jar_xm code
+is linked into the Bend candidate. jar_xm is under the WTFPL, version 2, retained
 with its notice in [LICENSES/jar_xm.txt](LICENSES/jar_xm.txt).
 
 ## QOA

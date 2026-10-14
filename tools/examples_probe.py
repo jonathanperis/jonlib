@@ -2192,7 +2192,7 @@ def interactive(probe, frames):
     results = {}
     for name in (probe.args.example or EXAMPLES):
         binary = probe.work / f'interactive-{name}'
-        probekit.run([*cli, ROOT / f'examples/{name}.bend', '-o', binary], timeout=probekit.COMPILE_TIMEOUT)
+        probekit.run([*probekit.compiler_command(cli), ROOT / f'examples/{name}.bend', '-o', binary], timeout=probekit.COMPILE_TIMEOUT, env=probekit.compiler_env())
         results[name] = {}
         for lane, threads in (('cpu-1', '1'), ('cpu-2', '2')):
             command = [binary, '--gpu', 'off', '--threads', threads, '--frames', str(frames)]
