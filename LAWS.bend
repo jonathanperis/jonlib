@@ -26,6 +26,7 @@ import ./src/lgpl/sin.bend as GlibcSin
 import ./src/lgpl/acos.bend as GlibcAcos
 import ./src/sincosf.bend as Sincosf
 import ./src/power.bend as Power
+import ./src/power64.bend as Power64
 import ./src/msf_gif.bend as MsfGif
 import ./src/libc_rand.bend as CRand
 import ./src/hypot.bend as Hypot
@@ -5398,3 +5399,32 @@ law glibc_acos64_apple_refused:
 law glibc_acos64_glibc241_refused:
   for value: M.Float64
   {M.Libm.acos64(M.Glibc241Libm{}, value) == None{} : Maybe<M.Float64>}
+
+# The cube root of stb_truetype's cubic solver (src/power64.bend,
+# docs/MATH.md): a zero of either sign has the root +0; a negative float,
+# an infinity and NaN are refused; and the exponential answers 1 + x below
+# 2^-54, takes its main path at 1 and has no answer from 512 up.
+
+law power64_third_of_zero:
+  {Power64.third(0) == Some{0} : Maybe<U32>}
+
+law power64_third_of_negative_zero:
+  {Power64.third(2147483648) == Some{0} : Maybe<U32>}
+
+law power64_third_of_minus_one_refused:
+  {Power64.third(3212836864) == None{} : Maybe<U32>}
+
+law power64_third_of_infinity_refused:
+  {Power64.third(2139095040) == None{} : Maybe<U32>}
+
+law power64_third_of_nan_refused:
+  {Power64.third(2143289344) == None{} : Maybe<U32>}
+
+law power64_tiny_exponential_is_one_plus_x:
+  {Power64.exp.range(0) == 0 : U32}
+
+law power64_exponential_of_one_is_the_main_path:
+  {Power64.exp.range(1072693248) == 1 : U32}
+
+law power64_exponential_from_512_has_no_answer:
+  {Power64.exp.range(1082130432) == 2 : U32}
