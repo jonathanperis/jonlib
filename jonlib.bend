@@ -7339,8 +7339,8 @@ def AudioClock.advance_processing(~P: Type, ~answer: U32 -> U32 -> P -> P & +Lis
 # program copies while its ctxData points at the decoder's state; here the
 # decoder's state is in the Music value, so what changes it (an update, a
 # stop, a seek) gives the Music back. `kind` is raylib's ctxType (1:
-# MUSIC_AUDIO_WAV, 4: MUSIC_AUDIO_MP3, 5: MUSIC_AUDIO_QOA, 6:
-# MUSIC_MODULE_XM) and `looping` a field the program sets, as in raylib. A
+# MUSIC_AUDIO_WAV, 2: MUSIC_AUDIO_OGG, 4: MUSIC_AUDIO_MP3, 5:
+# MUSIC_AUDIO_QOA, 6: MUSIC_MODULE_XM) and `looping` a field the program sets, as in raylib. A
 # decoder is the file's frames as the stream holds them and the frame it is
 # at (dr_wav's read cursor, qoaplay's sample_position), an MP3 stream, or
 # an XM module's player (jar_xm's context).
@@ -7350,6 +7350,7 @@ type Music.Context is Data:
   MusicQoa{samples: +List<U32>, at: U32}
   MusicMp3{player: Mp3S.Player}
   MusicXm{player: XmPl.Player}
+  MusicOgg{plan: VorbisK.Plan, frames: VorbisF.Frames, start: VorbisF.Frames, why: U32}
 
 type Music is Data:
   Music{stream: AudioStream, frames: U32, looping: Bool, kind: U32, context: Music.Context}
@@ -7489,9 +7490,48 @@ def Music.decode.xm(loaded: XmM.Loaded, +libm: M.Libm, +rate: U32, +audio: Audio
 def Music.device.rate(+ready: Bool) -> U32:
   Bool.pick(U32, ready, 48000, 0)
 
+# An Ogg Vorbis music: a 16-bit stream of the file's rate and channels, the
+# frames stb_vorbis_stream_length_in_samples gives, and the decoder after
+# them, which is also the state stb_vorbis_seek_start goes back to: in a
+# stream whose audio begins on a page of its own, going back to the first
+# audio page and pumping the first frame again makes the state the open
+# made. A stream whose audio does not begin on its own page has
+# first_audio_page_offset 0 (stb_vorbis's mark), which this port does not
+# go back to, and one whose length stb gives as 0 would be read for ever:
+# both are UnsupportedWaveFormat.
+def Music.loaded.ogg(loaded: AudioDevice & AudioStream, +frames: U32, +plan: VorbisK.Plan, +state: VorbisF.Frames) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  (+audio, +stream) = loaded
+  (audio, Done{Music{stream, frames, True{}, 2, MusicOgg{plan, state, state, 0}}})
+
+def Music.ogg.counted(fine: Bool, +audio: AudioDevice, +plan: VorbisK.Plan, +state: VorbisF.Frames, +rate: U32, +frames: U32) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  match fine:
+    case False{}: (audio, Fail{Bool.pick(Wave.Error, VorbisF.Frames.refused(state), InvalidWaveData{}, UnsupportedWaveFormat{})})
+    case True{}: Music.loaded.ogg(AudioStream.load(audio, rate, 16, VorbisK.Plan.channels(plan)), frames, plan, state)
+
+def Music.ogg.measured(measured: VorbisL.Measured, +audio: AudioDevice, +plan: VorbisK.Plan, +rate: U32) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  VorbisL.Measured{+state, _, +value} = measured
+  Music.ogg.counted(Bool.not(VorbisF.Frames.refused(state)) && U32.is_ne(value, 0), audio, plan, state, rate, value)
+
+def Music.ogg.ready(fine: Bool, +refused: Bool, +audio: AudioDevice, +plan: VorbisK.Plan, +frames: VorbisF.Frames, +rate: U32, +first: U32) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  match fine:
+    case False{}: (audio, Fail{Bool.pick(Wave.Error, refused, InvalidWaveData{}, UnsupportedWaveFormat{})})
+    case True{}: Music.ogg.measured(VorbisL.stream.length(frames, first, 0), audio, plan, rate)
+
+def Music.ogg.status(+audio: AudioDevice, result: Result<&1, &1, Wave.Error, Wave>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  match result:
+    case Fail{error}: (audio, Fail{error})
+    case Done{_}: (audio, Fail{InvalidWaveData{}})
+
+def Music.decode.ogg(started: VorbisF.Started, +audio: AudioDevice) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  match started:
+    case VorbisF.Unready{+status}: Music.ogg.status(audio, Wave.ogg.unready(status))
+    case VorbisF.Ready{+plan, +frames, +rate, +first}:
+      Music.ogg.ready(Bool.not(VorbisF.Frames.refused(frames)) && U32.is_ne(first, 0), VorbisF.Frames.refused(frames), audio, plan, frames, rate, first)
+
 def Music.decode.selected(kind: U32, +memory: Bool, +libm: M.Libm, +audio: AudioDevice, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
   match kind:
     case 1: Music.decode.wav(Wav.bits(bytes), audio, bytes)
+    case 2: Music.decode.ogg(VorbisF.memory.open(libm, bytes), audio)
     case 4: Music.decode.mp3(Music.decode.mp3.opened(memory, bytes), audio)
     case 5: Music.decode.qoa(Qoa.decode(bytes), audio, Music.qoa.declared(bytes))
     case 6: Music.decode.xm(XmM.load(bytes), libm, Music.device.rate(AudioDevice.is_ready(audio)), audio)
@@ -7499,7 +7539,8 @@ def Music.decode.selected(kind: U32, +memory: Bool, +libm: M.Libm, +audio: Audio
 
 def Music.decode.kind(+file_type: String) -> U32:
   Bool.pick(U32, String.eq(file_type, ".wav") || String.eq(file_type, ".WAV"), 1, Bool.pick(U32, String.eq(file_type, ".qoa") || String.eq(file_type, ".QOA"), 5,
-    Bool.pick(U32, String.eq(file_type, ".mp3") || String.eq(file_type, ".MP3"), 4, Bool.pick(U32, String.eq(file_type, ".xm") || String.eq(file_type, ".XM"), 6, 0))))
+    Bool.pick(U32, String.eq(file_type, ".mp3") || String.eq(file_type, ".MP3"), 4, Bool.pick(U32, String.eq(file_type, ".xm") || String.eq(file_type, ".XM"), 6,
+      Bool.pick(U32, String.eq(file_type, ".ogg") || String.eq(file_type, ".OGG"), 2, 0)))))
 
 # LoadMusicStreamFromMemory. ".wav" (".WAV") data: every file Wave.decode
 # reads whose samples are 16, 24 or 32 bits wide, with a stream of the file's
@@ -7561,6 +7602,7 @@ def Music.context.loaded(context: Music.Context) -> Bool:
     case MusicQoa{_, _}: True{}
     case MusicMp3{_}: True{}
     case MusicXm{_}: True{}
+    case MusicOgg{_, _, _, _}: True{}
 
 # 0 for a music that plays as raylib plays it. An XM music whose player has
 # stopped gives silence from there, and this is why: 1 where jar_xm meets
@@ -7568,9 +7610,14 @@ def Music.context.loaded(context: Music.Context) -> Bool:
 # of memory, a float that is no int) or gives a sample that is NaN, whose
 # bits are the machine's; 4 past this port's limits (2^32 samples
 # generated); 5 what the libm profile does not give.
+# An Ogg Vorbis music gives silence from a step its decoder refuses (1,
+# what C leaves undefined there), from a read that comes short at once
+# after going back to the start (3: raylib would read for ever) and from a
+# seek, which this port does not make (6: stb_vorbis_seek_frame).
 def Music.context.why(context: Music.Context) -> U32:
   match context:
     case MusicXm{player}: XmPl.Player.why(player)
+    case MusicOgg{_, _, _, why}: why
     case _: 0
 
 def Music.why(music: Music) -> U32:
@@ -7620,6 +7667,7 @@ def Music.context.rewound(context: Music.Context) -> Music.Context:
     case MusicQoa{samples, _}: MusicQoa{samples, 0}
     case MusicMp3{player}: MusicMp3{Mp3S.rewind(player)}
     case MusicXm{player}: MusicXm{XmPl.reset(player)}
+    case MusicOgg{plan, _, +start, why}: MusicOgg{plan, start, start, why}
 
 # StopMusicStream: the stream stops and the decoder goes back to its first
 # frame (whether the stream was playing or not).
@@ -7718,6 +7766,57 @@ def Music.read.xm(made: XmX.Generated, +need: U32) -> Music.Read:
   XmX.Generated{+player, +samples} = made
   Music.read.xm.done(Music.xm.words(U32.to_nat((need * 2 : U32)), True{}, samples, Nil{}), player)
 
+# An Ogg Vorbis music's read as it goes: the decoder, the frames still
+# needed, the shorts read (a list a read, the last first), whether the
+# decoder is at its start with nothing read since, and why the read ended
+# early (0: it did not).
+type Music.Ogg is Data:
+  MusicOggRead{frames: VorbisF.Frames, need: U32, chunks: +List<+List<U32>>, fresh: Bool, why: U32, over: Bool}
+
+# stb_vorbis_get_samples_short_interleaved for the frames still needed; on
+# a short read stb_vorbis_seek_start (the start state). A read that refuses
+# a step ends with 1, and one that comes short right after going back with
+# 3 (raylib's loop would not end).
+def Music.ogg.turn(read: VorbisF.Read, +start: VorbisF.Frames, +need: U32, +chunks: +List<+List<U32>>, +fresh: Bool) -> Music.Ogg:
+  VorbisF.Read{+state, +count, +samples, _} = read
+  +refused = VorbisF.Frames.refused(state)
+  +short = (count < need : U32)
+  +why = Bool.pick(U32, refused, 1, Bool.pick(U32, short && fresh && U32.is_eq(count, 0), 3, 0))
+  MusicOggRead{Bool.pick(VorbisF.Frames, short, start, state), (need - U32.min(count, need) : U32), Con{samples, chunks}, True{}, why,
+    Bool.not(short) || U32.is_ne(why, 0)}
+
+def Music.ogg.read(fuel: Nat, +plan: VorbisK.Plan, +start: VorbisF.Frames, +channels: U32, state: Music.Ogg) -> Music.Ogg:
+  match fuel:
+    case 0n: state
+    case 1n+rest:
+      match state:
+        case MusicOggRead{frames, need, chunks, fresh, why, True{}}: MusicOggRead{frames, need, chunks, fresh, why, True{}}
+        case MusicOggRead{+frames, +need, +chunks, +fresh, _, False{}}:
+          Music.ogg.read(rest, plan, start, channels, Music.ogg.turn(VorbisF.samples.read(plan, frames, (need * channels : U32)), start, need, chunks, fresh))
+
+def Music.ogg.padded(n: Nat, +samples: +List<U32>, +acc: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: List.reverse(&2, U32, acc)
+    case 1n+k:
+      match samples:
+        case Nil{}: Music.ogg.padded(k, Nil{}, Con{0, acc})
+        case Con{+x, rest}: Music.ogg.padded(k, rest, Con{x, acc})
+
+# The shorts read as the stream takes them, zeros where the read ended
+# early; the decoder after them.
+def Music.read.ogg(state: Music.Ogg, +plan: VorbisK.Plan, +start: VorbisF.Frames, +samples: U32) -> Music.Read:
+  MusicOggRead{+frames, _, +chunks, _, +why, _} = state
+  MusicRead{Music.ogg.padded(U32.to_nat(samples), Music.mp3.joined(chunks, Nil{}), Nil{}), MusicOgg{plan, frames, start, why}}
+
+def Music.ogg.silent(+plan: VorbisK.Plan, +frames: VorbisF.Frames, +start: VorbisF.Frames, +why: U32, +samples: U32) -> Music.Read:
+  MusicRead{Music.ogg.padded(U32.to_nat(samples), Nil{}, Nil{}), MusicOgg{plan, frames, start, why}}
+
+def Music.read.ogg.at(silent: Bool, +plan: VorbisK.Plan, +frames: VorbisF.Frames, +start: VorbisF.Frames, +why: U32, +channels: U32, +need: U32) -> Music.Read:
+  match silent:
+    case True{}: Music.ogg.silent(plan, frames, start, why, (need * channels : U32))
+    case False{}: Music.read.ogg(Music.ogg.read(U32.to_nat((need + 2 : U32)), plan, start, channels, MusicOggRead{frames, need, Nil{}, False{}, 0, U32.is_eq(need, 0)}), plan, start,
+      (need * channels : U32))
+
 # qoaplay_decode reads the same way: at the end of the file it goes back to
 # the first frame (qoaplay_rewind) for the next sample. An MP3 music reads
 # its stream (Music.mp3.read), and an XM music has its player generate the
@@ -7729,6 +7828,7 @@ def Music.read(context: Music.Context, +channels: U32, +total: U32, +need: U32) 
     case MusicQoa{+samples, +at}: Music.read.qoa(Music.wav.read(U32.to_nat(((need / U32.max(total, 1)) + 3 : U32)), False{}, samples, channels, total, U32.min(at, total), need, Nil{}), samples)
     case MusicMp3{+player}: Music.read.mp3(Music.mp3.read(U32.to_nat((need + 2 : U32)), MusicMp3Read{player, need, Nil{}, False{}, U32.is_eq(need, 0)}), (need * channels : U32))
     case MusicXm{+player}: Music.read.xm(XmX.generate(player, need), need)
+    case MusicOgg{+plan, +frames, +start, +why}: Music.read.ogg.at(U32.is_ne(why, 0), plan, frames, start, why, channels, need)
 
 def Music.fed(read: Music.Read, +audio: AudioDevice, +stream: AudioStream, +frames: U32, +looping: Bool, +kind: U32, +count: U32) -> AudioDevice & Music:
   MusicRead{+data, context} = read
@@ -7812,6 +7912,7 @@ def Music.context.sought(context: Music.Context, +position: U32, +total: U32) ->
     case MusicQoa{samples, _}: MusicQoa{samples, Music.qoa.sought(position, total)}
     case MusicMp3{+player}: Music.mp3.sought(Mp3S.seek(player, position))
     case MusicXm{player}: MusicXm{player}
+    case MusicOgg{plan, frames, start, _}: MusicOgg{plan, frames, start, 6}
 
 # Whether SeekMusicStream does anything for the decoder: raylib returns at
 # once for a module.

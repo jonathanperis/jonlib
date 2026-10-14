@@ -2047,8 +2047,9 @@ Not loaded (a typed error, and no stream): WAV sample sizes other than 16,
 what `Wave.decode` refuses, a QOA file that does not hold every frame its
 header counts (qoaplay decodes a frame at a time and would play what is
 there), an MP3 file dr_mp3 does not open or whose first frame is of Layer I
-or II (not decoded yet), a module as "XM modules" says, and every other
-format. OGG, FLAC and MOD music are not ported yet. Left as they are: `Music.update` for a
+or II (not decoded yet), a module as "XM modules" says, an Ogg Vorbis
+stream as below, and every other format. FLAC and MOD music are not ported
+yet. Left as they are: `Music.update` for a
 music without frames (raylib reads it for ever when it loops);
 `Music.seek` for a module (raylib does not seek in one), a position whose
 frame is not an unsigned int, a stream without a tracked buffer (raylib
@@ -2075,6 +2076,32 @@ stream that stops at a frame the decoder refuses plays what came before
 it, round and round: that differs from raylib, which decodes Layer I and
 II frames. On the JavaScript target a frame takes about 95 ms to decode,
 3.6 times its 26 ms of sound.
+
+An Ogg Vorbis music (`MusicOgg`, raylib's `MUSIC_AUDIO_OGG`) is a 16-bit
+stream of the file's rate and channels, its frames
+`stb_vorbis_stream_length_in_samples`, and stb_vorbis's decoder (the
+Ogg Vorbis section, above) decoding as it plays: `Music.update` reads the
+frames a half needs (`stb_vorbis_get_samples_short_interleaved`) and, on a
+short read, goes back to the start (`stb_vorbis_seek_start`) and reads on,
+as raylib does whether the music loops or not; `Music.stop` goes back too.
+Going back is the decoder's state right after the open: `seek_start` moves
+to the first audio page, forgets the previous frame and pumps the first one
+again, which is what the open did, in a stream whose audio begins on a page
+of its own. In one whose audio shares the setup header's page stb_vorbis
+marks the first audio page as offset 0 and would decode from the file's
+start; that, and a length of 0 (raylib would read for ever), are not
+loaded (UnsupportedWaveFormat), nor is a stream the decoder refuses
+(InvalidWaveData). A step the decoder refuses while playing gives silence
+from there, as does a read that comes short right after going back
+(raylib would loop for ever): `Music.why` is 1 and 3. `Music.seek` of an
+Ogg music (`stb_vorbis_seek_frame`, a search over the pages) is not
+ported: it moves the stream as for the other formats and the music gives
+silence from there (`Music.why` 6). Gate `ogg-music`
+(`tools/ogg_music_probe.py`) runs the sound gate's programs on
+`target.ogg` (22050 Hz, two channels, 44100 frames) through its end and
+round, stopped, to its end without looping, paused with volume, pitch and
+pan changed, on an unready device, two at once, and a file that is no Ogg
+stream.
 
 ### The clock
 

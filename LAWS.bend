@@ -5462,3 +5462,15 @@ law font_assemble_pairs_a_glyph_with_its_rectangle:
 
 law font_assemble_stops_at_the_shorter_list:
   {J.Font.assemble.glyphs([J.GlyphInfo{65, 1, 2, 9, J.GlyphEmpty{0, 0}}], Nil{}) == Nil{} : +List<FontCore.Glyph>}
+
+# Ogg Vorbis musics: the ".ogg" token in either case, and a read padded with
+# zeros where it ended early, cut to the samples the stream takes.
+
+law music_token_of_an_ogg_stream:
+  {((J.Music.decode.kind(".ogg") * 10) + J.Music.decode.kind(".OGG") : U32) == 22 : U32}
+
+law music_ogg_read_padded_with_zeros:
+  {J.Music.ogg.padded(3n, [7], Nil{}) == [7, 0, 0] : +List<U32>}
+
+law music_ogg_read_cut_to_the_frames_asked:
+  {J.Music.ogg.padded(2n, [7, 8, 9], Nil{}) == [7, 8] : +List<U32>}
