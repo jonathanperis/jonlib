@@ -5452,3 +5452,13 @@ law font_no_cubic_under_apple:
 
 law font_no_cubic_under_glibc241:
   {J.Font.cubic(M.Glibc241Libm{}) == False{} : Bool}
+
+# A Font a program assembles itself (Font.assemble): each glyph of
+# LoadFontData with its GenImageFontAtlas rectangle, in order, as many as
+# there are pairs.
+
+law font_assemble_pairs_a_glyph_with_its_rectangle:
+  {J.Font.assemble.glyph(J.GlyphInfo{65, 1, 2, 9, J.GlyphEmpty{0, 0}}, J.Rectangle{1.0, 2.0, 3.0, 4.0}) == FontCore.Glyph{65, 1, 2, 9, 1.0, 2.0, 3.0, 4.0} : FontCore.Glyph}
+
+law font_assemble_stops_at_the_shorter_list:
+  {J.Font.assemble.glyphs([J.GlyphInfo{65, 1, 2, 9, J.GlyphEmpty{0, 0}}], Nil{}) == Nil{} : +List<FontCore.Glyph>}

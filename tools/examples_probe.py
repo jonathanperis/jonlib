@@ -327,6 +327,7 @@ EXAMPLES = {
     'text_sprite_fonts': ('text/text_sprite_fonts.c', 'Ex.setup(RESOURCES, core, frame)'),
     'text_font_loading': ('text/text_font_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
     'text_font_filters': ('text/text_font_filters.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'text_font_sdf': ('text/text_font_sdf.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'text_words_alignment': ('text/text_words_alignment.c', 'Ex.setup(core, frame)'),
     'text_rectangle_bounds': ('text/text_rectangle_bounds.c', 'Ex.setup(core, frame)'),
     'text_inline_styling': ('text/text_inline_styling.c', 'Ex.setup(seed, core, frame)'),
@@ -447,6 +448,8 @@ PERSPECTIVE.add('audio_raw_stream')
 PERSPECTIVE.add('audio_spectrum_visualizer')
 IO_SETUP.add('audio_stream_callback')
 PERSPECTIVE.add('audio_sound_positioning')
+# The SDF font's cubic solver takes glibc 2.39's pow, acos and cos; the AppleLibm profile has none: the same contract.
+IO_SETUP.add('text_font_sdf'); PERSPECTIVE.add('text_font_sdf')
 # The module's player takes its sines and powers of two from libm, and the AppleLibm profile gives it none: the same contract.
 SEEDED.add('audio_module_playing'); PERSPECTIVE.add('audio_module_playing'); CONFIG_FLAGS['audio_module_playing'] = 32
 PERSPECTIVE.add('core_vr_simulator')
@@ -999,6 +1002,11 @@ def scripts():
                                                    quick([button(0, False), mouse_at(420, 300)]), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False), mouse_at(395, 165)]),
                                                    quick([button(0)]), quick([mouse_at(600, 300)]), quick([mouse_at(150, 150)]), quick([button(0, False)]), quick()]),
         # frame), RIGHT then LEFT move it, 1 returns to POINT.
+        # The default font's text and atlas; space held shows the SDF font's (its distances drawn as they are: the software renderer
+        # runs no shader) at the wheel's sizes, smaller and larger, then the default font again.
+        script('text_font_sdf', 'sizes', [quick(), quick(), quick([key(KEY_SPACE)]), quick(), quick([(MOUSE_WHEEL, 0, 3, 0)]), quick(),
+                                          quick([(MOUSE_WHEEL, 0, -5, 0)]), quick(), quick([key(KEY_SPACE, False)]), quick(),
+                                          quick([(MOUSE_WHEEL, 0, 6, 0)]), quick([key(KEY_SPACE)]), quick(), quick([key(KEY_SPACE, False)]), quick()]),
         script('text_font_filters', 'filters', [quick(), quick([(MOUSE_WHEEL, 0, -6, 0)]), quick([key(KEY_TWO)]), slow([key(KEY_RIGHT)]),
                                                 quick([key(KEY_THREE), (MOUSE_WHEEL, 0, 9, 0)]), quick([key(KEY_TWO, False), key(KEY_THREE, False), key(KEY_LEFT)]),
                                                 quick([key(KEY_RIGHT, False)]), quick([key(KEY_ONE), key(KEY_LEFT, False)]), quick([key(KEY_ONE, False)])]),

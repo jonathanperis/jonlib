@@ -3708,7 +3708,7 @@
   {
    "name": "text_font_sdf",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",

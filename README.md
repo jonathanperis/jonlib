@@ -42,7 +42,7 @@ and the [progress dashboard](docs/PROGRESS.md). At the time of writing
 (2026-10-12) the ledger marks 582 of raylib.h's 600 functions, all 146 of
 raymath.h's, 142 of rlgl.h's 163 and all of rcamera.h's 12 and rgestures.h's
 10 as partial, and none as complete (no API is complete before the platform
-phase); the dashboard always has the current counts. 211 of raylib's 212
+phase); the dashboard always has the current counts. 212 of raylib's 212
 examples are ported ([EXAMPLES.md](docs/EXAMPLES.md)); three of those ports
 refuse every frame, because the native example is undefined behavior in C.
 

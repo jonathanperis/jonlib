@@ -4237,3 +4237,9 @@ def Laws.font_no_cubic_under_apple():
 
 def Laws.font_no_cubic_under_glibc241():
   {==}
+
+def Laws.font_assemble_pairs_a_glyph_with_its_rectangle():
+  {==}
+
+def Laws.font_assemble_stops_at_the_shorter_list():
+  {==}

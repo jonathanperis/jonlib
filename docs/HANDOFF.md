@@ -72,7 +72,7 @@ at the branch's head.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 582/600 partial
 with the stack; raymath.h 146/146; rlgl.h 142/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **211/212 ported** with the stack (`audio_music_stream`, `audio_stream_effects` and `audio_mixed_processor` play `country.mp3` through the MP3 decoder and `audio_spectrum_visualizer` loads it whole; `audio_sound_loading` loads `target.ogg` through the Ogg Vorbis decoder; `audio_module_playing` plays `mini1111.xm` through the XM player; `core_screen_recording` writes its GIF with the msf_gif port; `core_directory_files` is handed its directory listings; `text_unicode_ranges` loads a 7 MiB font; `textures_sprite_stacking` a 112x11468 texture), 1 ready (`text_font_sdf` waits for the binary64 `pow` and `acos`, which the plan does not count), 0 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **212/212 ported** with the stack (`audio_music_stream`, `audio_stream_effects` and `audio_mixed_processor` play `country.mp3` through the MP3 decoder and `audio_spectrum_visualizer` loads it whole; `audio_sound_loading` loads `target.ogg` through the Ogg Vorbis decoder; `audio_module_playing` plays `mini1111.xm` through the XM player; `core_screen_recording` writes its GIF with the msf_gif port; `core_directory_files` is handed its directory listings; `text_unicode_ranges` loads a 7 MiB font; `textures_sprite_stacking` a 112x11468 texture), 0 ready (`text_font_sdf` makes its SDF font with the cubic solver under the glibc 2.39 profile), 0 waiting (three ports are documented refusals, their native examples being undefined behavior: `textures_image_kernel`, [CONVOLUTION.md](CONVOLUTION.md); `text_codepoints_loading`, [TEXT.md](TEXT.md); `audio_stream_callback`, [AUDIO.md](AUDIO.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -1120,6 +1120,13 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
        `data-sdf-example`, and 'J' contracts that do run Jonlib and require
        its refusal; the old 'R' ones never ran Jonlib) does not compile on
        this 8 GiB machine even with `--smol`: it is held on CI.
+       **(4) is done: `text_font_sdf` is ported (212 of 212)**: 15 frames
+       equal to the native example's on the three lanes, the SDF atlas of
+       all 95 glyphs drawn in them. It assembles its fonts as the C does
+       its structs (`Font.assemble`: LoadFontData's glyphs, the atlas's
+       rectangles, the atlas's texture, glyphPadding 0) and draws each
+       atlas with `Draw.font_texture`. Under AppleLibm it is a contract
+       from its first frame (`PERSPECTIVE`).
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`
