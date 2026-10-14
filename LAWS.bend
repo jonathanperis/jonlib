@@ -3421,6 +3421,17 @@ law mesh_upload_unchanged:
   for dynamic: Bool
   {J.Mesh.upload(mesh, dynamic) == mesh : J.Mesh}
 
+# UpdateMeshBuffer reaches vboId[index]: UploadMesh allocates 7 of them in
+# raylib's build; index 7 and an int index of -1 are outside.
+law mesh_buffer_last_exists:
+  {J.Mesh.buffer_exists(6) == True{} : Bool}
+
+law mesh_buffer_past_the_last:
+  {J.Mesh.buffer_exists(7) == False{} : Bool}
+
+law mesh_buffer_negative_index:
+  {J.Mesh.buffer_exists(4294967295) == False{} : Bool}
+
 # Meshes (rmodels.c): GenMeshCube always has 24 vertices and 12 triangles;
 # GenMeshPoly with fewer than 3 sides is the empty mesh (all arrays NULL).
 law mesh_cube_vertex_count:

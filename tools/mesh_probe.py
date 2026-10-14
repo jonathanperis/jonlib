@@ -2,7 +2,7 @@
 """Compare Jonlib's rmodels.c meshes with the pinned raylib.
 
 GenMeshPoly, GenMeshPlane, GenMeshCube, GenMeshHeightmap, GenMeshCubicmap,
-GenMeshTangents, UploadMesh, GetMeshBoundingBox, the ExportMesh (OBJ) and
+GenMeshTangents, UploadMesh, UpdateMeshBuffer, GetMeshBoundingBox, the ExportMesh (OBJ) and
 ExportMeshAsCode file bytes, GetRayCollisionMesh and GetModelBoundingBox:
 every vertex, texcoord, normal, tangent, color and index word, each
 bounding-box and collision result bit, and every exported byte (meshes above
@@ -20,7 +20,8 @@ arguments outside the profile's verified sinf/cosf set or above 4096 sides,
 GenMeshPlane resolutions of 0 (0/0 NaN of platform-defined sign),
 GetMeshBoundingBox of a zero-count mesh with vertices, OBJ export of a mesh
 without normals, ExportMeshAsCode of an empty array, and triangle indices
-beyond the vertex count. CPU-1, CPU-2 and JavaScript lanes.
+beyond the vertex count, and UpdateMeshBuffer of an index outside the 7
+vertex buffers. CPU-1, CPU-2 and JavaScript lanes.
 """
 import hashlib
 import math
@@ -38,7 +39,7 @@ DEG2RAD = fp.DEG2RAD
 LIMIT = 3000
 
 MESHES = {'poly': 1, 'plane': 2, 'cube': 3, 'heightmap': 4, 'cubicmap': 5, 'custom': 6, 'sphere': 7, 'hemisphere': 8, 'torus': 9}
-ACTIONS = {'show': 0, 'tangents': 1, 'bbox': 2, 'obj': 3, 'code': 4, 'ray': 5, 'model': 6, 'upload': 7}
+ACTIONS = {'show': 0, 'tangents': 1, 'bbox': 2, 'obj': 3, 'code': 4, 'ray': 5, 'model': 6, 'upload': 7, 'update': 8}
 
 
 # -----------------------------------------------------------------------------
@@ -162,6 +163,13 @@ def cases(libm, gnu):
     add('upload-custom-dynamic', custom, 'upload', [1])
     add('upload-cube', ('cube', 1.0, 2.0, 3.0), 'upload', [0])
     add('upload-plane', ('plane', 2.0, 3.0, 2, 3), 'upload', [1])
+    # UpdateMeshBuffer after UploadMesh: vboId[index] is 0 on the software renderer and the mesh is unchanged; an index
+    # outside the 7 buffers reads past vboId (a contract).
+    add('update-custom-positions', custom, 'update', [0, 48, 0])
+    add('update-cube-last', ('cube', 1.0, 2.0, 3.0), 'update', [6, 16, 8])
+    add('update-plane-texcoords', ('plane', 2.0, 3.0, 2, 3), 'update', [1, 8, 4])
+    add('update-index-past', custom, 'update', [7, 48, 0], contract=True)
+    add('update-index-negative', custom, 'update', [0xFFFFFFFF, 48, 0], contract=True)
     # Tangents.
     for name, mesh in (('plane', ('plane', 2.0, 3.0, 2, 3)), ('cube', ('cube', 1.0, 2.0, 3.0)), ('poly', ('poly', 6, 1.0)),
                        ('heightmap', ('heightmap', 5, 4, 4.0, 2.0, 3.0, rgba(5, 4, 31))), ('cubicmap', ('cubicmap', 4, 3, 1.0, 1.0, 1.0, rgba(4, 3, 32, palette))),
@@ -339,6 +347,8 @@ def c_case(case, work):
         lines.append('    GenMeshTangents(&m); show(m);')
     elif action == 'upload':
         lines.append(f'    UploadMesh(&m, {"true" if words[0] else "false"}); show(m);')
+    elif action == 'update':
+        lines.append(f'    UploadMesh(&m, false); UpdateMeshBuffer(m, {words[0]}, m.vertices, {words[1]}, {words[2]}); show(m);')
     elif action == 'bbox':
         lines.append('    box(GetMeshBoundingBox(m));')
     elif action == 'obj':
@@ -568,6 +578,7 @@ def act(action: U32, +aw: +List<U32>, +path: String, +mesh: J.Mesh) -> String:
     case 4: file.text(code.of(U32.is_eq(wu(0n, aw), 1), mesh, path))
     case 5: ray.text(J.Collision.ray_mesh_for(arith(), J.Ray{wv3(0n, aw), wv3(3n, aw)}, mesh, wmatrix(word.drop(6n, aw))))
     case 7: show(J.Mesh.upload(mesh, U32.is_eq(wu(0n, aw), 1)))
+    case 8: show.maybe(J.Mesh.update_buffer(J.Mesh.upload(mesh, False{}), wu(0n, aw), wu(1n, aw), wu(2n, aw)))
     case _: box.text(J.Model.bounding_box_for(arith(), libm(), J.Model{wmatrix(aw), [mesh, model.plane()], [J.Material.load_default()], [0, 0]}))
 
 def run.with(+action: U32, +aw: +List<U32>, +path: String, m: Maybe<J.Mesh>) -> String:

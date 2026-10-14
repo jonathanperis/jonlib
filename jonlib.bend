@@ -12739,6 +12739,24 @@ def Mesh.unload(mesh: Mesh) -> Unit:
 def Mesh.upload(+mesh: Mesh, +dynamic: Bool) -> Mesh:
   mesh
 
+# Whether vboId[index] is one of the MAX_MESH_VERTEX_BUFFERS ids UploadMesh
+# allocates: 7 in raylib's build, without GPU skinning (an int index below
+# 0 is above them as a U32).
+def Mesh.buffer_exists(+index: U32) -> Bool:
+  (index < 7 : U32)
+
+def Mesh.update_buffer.of(exists: Bool, +mesh: Mesh) -> Maybe<Mesh>:
+  match exists:
+    case True{}: Some{mesh}
+    case False{}: None{}
+
+# UpdateMeshBuffer(mesh, index, data, size, offset): rlUpdateVertexBuffer on
+# the mesh's vboId[index], which is 0 on the software renderer, where the
+# update does nothing: the mesh is unchanged and its data is not read. An
+# index past the buffers reads outside vboId: None.
+def Mesh.update_buffer(+mesh: Mesh, +index: U32, +size: U32, +offset: U32) -> Maybe<Mesh>:
+  Mesh.update_buffer.of(Mesh.buffer_exists(index), mesh)
+
 # An attribute list holds exactly count*size values.
 def Mesh.sized(values: Maybe<&2, +List<F32>>, +count: U32, +size: U32) -> Bool:
   match values:

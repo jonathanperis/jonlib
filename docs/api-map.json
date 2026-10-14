@@ -5374,6 +5374,17 @@
     "api_id": "raylib:function:UploadMesh",
     "milestone": "models"
   },
+  "UpdateMeshBuffer": {
+    "jonlib": "Mesh.update_buffer",
+    "status": "profile-covered",
+    "scope": "The software renderer: rlUpdateVertexBuffer on vboId[index], which UploadMesh leaves 0, does nothing; the mesh is unchanged and the data is not read. An index outside the 7 vertex buffers UploadMesh allocates (raylib's build, without GPU skinning) reads past vboId and is None.",
+    "gaps": [
+      "GPU buffers are not modeled",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:UpdateMeshBuffer",
+    "milestone": "models"
+  },
   "UnloadMesh": {
     "jonlib": "Mesh.unload",
     "status": "profile-covered",

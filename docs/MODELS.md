@@ -85,6 +85,7 @@ answers `None`.
 | `ExportMeshAsCode` | `Mesh.code_text(mesh, path) -> Maybe<String>`, `Mesh.export_as_code(mesh, path)` | text / `IO(Result<...>)` |
 | `UnloadMesh` | `Mesh.unload(mesh) -> Unit` | |
 | `UploadMesh` | `Mesh.upload(mesh, dynamic) -> Mesh` | the mesh given: vertex buffers are OpenGL 3.3/ES2's |
+| `UpdateMeshBuffer` | `Mesh.update_buffer(mesh, index, size, offset) -> Maybe<Mesh>` | the mesh given: `vboId[index]` is 0 on the software renderer and `rlUpdateVertexBuffer` does nothing, the data is not read; `None` for an index outside the 7 vertex buffers `UploadMesh` allocates (`vboId` read past its end) |
 | `LoadModelFromMesh` / `UnloadModel` | `Model.from_mesh(mesh)`, `Model.unload(model)` | |
 | `IsModelValid` | `Model.is_valid(model)` | `Bool` |
 | `SetModelMeshMaterial` | `Model.set_mesh_material(model, mesh_id, material_id)` | `Maybe<Model>` |
@@ -896,7 +897,7 @@ attribute builders are tail-recursive.
   the Apple profile's `sinf`/`cosf` beyond the integral degrees (most curved
   shapes are verified only under the glibc profile).
 - Shaders (no shader is compiled under OpenGL 1.1), `UploadMesh`/GPU
-  buffers, `UpdateMeshBuffer` and
+  buffers, `UpdateMeshBuffer`'s buffer contents and
   `UpdateModelAnimation*` (the reference only fills a pose and bone
   matrices Jonlib's `Model` does not have).
 - glTF as text: `LoadModel` answers `UnsupportedFileType` (raylib loads it;
