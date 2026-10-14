@@ -98,8 +98,11 @@ SIZES['shaders_rlgl_compute'] = (768, 768)
 def size_of(name):
     return SIZES.get(name, (WIDTH, HEIGHT))
 TARGET = 1.0 / 60
-# Examples whose SetTargetFPS is not 60 (the scripted wait ends where raylib's does).
 LANE_TIMEOUT = 1800
+# Examples whose lanes take longer: text_font_sdf's SDF glyphs with curves solve thousands of cubics in software
+# binary64 under the Glibc239 profile (about 30 minutes on the JavaScript lane of a CI runner).
+SLOW_LANES = {'text_font_sdf': 3600}
+# Examples whose SetTargetFPS is not 60 (the scripted wait ends where raylib's does).
 TARGET_FPS = {'shapes_kaleidoscope': 20, 'shapes_penrose_tile': 120, 'textures_mouse_painting': 120}
 # shaders_rlgl_compute never calls SetTargetFPS: with a target of a nanosecond no scripted frame is short enough to wait.
 TARGET_FPS['shaders_rlgl_compute'] = 10**9
@@ -2281,7 +2284,7 @@ def main():
     # The listings are read from the reference's directories, which are put again, the same way, before it runs.
     scratch_reset(probe, items, native=True)
     listed = {index: listings(scratch(probe, index, native=True).resolve(), WORKING[item['example']]) for index, item in enumerate(items) if item['example'] in LISTED}
-    lanes = probe.candidates(render(items, libm, logo, probe.args.raylib_source, directories, listed), names, batch=1, timeout=LANE_TIMEOUT, parse_lane=parse_lane)
+    lanes = probe.candidates(render(items, libm, logo, probe.args.raylib_source, directories, listed), names, batch=1, timeout=max([LANE_TIMEOUT] + [SLOW_LANES.get(name, 0) for name in names]), parse_lane=parse_lane)
 
     def reported(item):
         """The first frame the CPU-1 lane refused in this script (None when it refused none)."""
