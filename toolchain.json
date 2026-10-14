@@ -1,18 +1,52 @@
 {
   "bend": {
-    "version": "2.0.27+jonlib-metal.1",
+    "version": "2.0.27+jonlib-metal.1.os-effects.1",
     "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
-    "patch": {
-      "path": "patches/bend-metal-dispatch.patch",
-      "sha256": "d4fbe3723f78bbcd456d4937b8f52f48454e7748d86799b22a95165a04cd9879",
+    "overlay": {
+      "patches": [
+        {
+          "path": "patches/bend-metal-dispatch.patch",
+          "sha256": "d4fbe3723f78bbcd456d4937b8f52f48454e7748d86799b22a95165a04cd9879"
+        },
+        {
+          "path": "patches/bend-os-effects.patch",
+          "sha256": "13a9dbfc3875d203f5c2798b9908b89f4d3979ed75db4aed62350bd222357eba"
+        }
+      ],
       "files": {
         ".gitignore": "8915b2338d9a3dd712510d95efbec55daa5f2d5a50f825f7cffbb791f3883024",
+        "bend2/base.bend": "ad85cf6741b0e8d2e5c4ce712d69a52a00fe4923218b5ff4b4bcb9a3335c690f",
         "bend2/comp.ts": "0095ff214fdf353b3644923a46050507cd2caf09e0da212e446d9fb3dab531a6",
+        "bend2/effs/dir_change.c": "62ca879ceb6af1d66e6fe05fce14b3564a28731fb9614195ea5025c1b7922569",
+        "bend2/effs/dir_change.js": "7ef0bc59d75771689e7848ab29b30559372f19c69635e960936993cbcb861ead",
+        "bend2/effs/dir_current.c": "cddcca66838559d8c5e1a995fa9634de127c18d9e46eda806141da9f3aee979e",
+        "bend2/effs/dir_current.js": "8b80c4d7f4e23619b3d36e3a3c653f9b66bfc46b5adea279a4dac2065a1d93af",
+        "bend2/effs/dir_make.c": "28a66643c3a5d6bd7d28793a49e0f93e1c59039f1fe44d2f137b69ac9646673d",
+        "bend2/effs/dir_make.js": "9aea32fde9ca090b435b53802a0516c3adfc5159326a45b931143fb9258539b6",
+        "bend2/effs/dir_read.c": "8b1cc93136ba6f845fa909873369e2766f872ae87742bda8efae4e6a35c817db",
+        "bend2/effs/dir_read.js": "b43412391e42366a27834a642cb664157d9e8d50a9f60c53bdf90a57e88c59a1",
+        "bend2/effs/path_remove.c": "2ae092b66c4f2eaf0115c9bf77e9b792e7f84d47b47b1ccbf73661dea6265ebd",
+        "bend2/effs/path_remove.js": "2fb27f4a5d9618006bd6fd31e4591a6580971837d67afdc6f807235117f76aff",
+        "bend2/effs/path_rename.c": "a117e4f81d888061a1f0b5f9c2b61049756f3bc51d484857212816452bbd4a56",
+        "bend2/effs/path_rename.js": "ff168f8b4d634c4312b9f3207c283626b40b2f7880f1e1f8a59395f10f86e223",
+        "bend2/effs/path_stat.c": "a5469baf0856e42100e88f5909aff49fbdb8a174bc7feec985b5c86e57c4d4cb",
+        "bend2/effs/path_stat.js": "8da70ebfd8cf7126c58e812fc015f5b97dfa46e244c6ffa2525b3f0fff82ca6b",
+        "bend2/effs/process_path.c": "51a731f953f4c7d155fa85fc9f5be646862a8cf46d5fe32f74e40a2de41ec9dd",
+        "bend2/effs/process_path.js": "01d5e2a2e93bfba0f641346866f10039910bfc565786ce422e64fef9861f1a2b",
+        "bend2/effs/process_run.c": "a54eebdb8fc2b66f3cc827cc0ff16559bd19d2dca78d03919b21f81c419616e6",
+        "bend2/effs/process_run.js": "7fae8df11253f395813cea7ff996cea0a693fe65e5f892b68c28d1fd76050dff",
+        "tests/io/cwd_process.bend": "0272537c4e1fa423872841187628675871d13910b078c6b3263395c062109fbb",
+        "tests/io/path_dir.bend": "17c7a66b872b3b929a676104e7f52c7cb940456d3decb3eea6ab0d30b4c01578",
         "tests/run/metal_inline_budget.bend": "13a2696795e014f55d3d196cc3a4c3691e4e44d2e71f2fed55e04fe6fd4c87f7"
       }
     }
   },
-  "raylib": {"version": "6.0", "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"},
-  "bun": {"version": "1.3.12"},
+  "raylib": {
+    "version": "6.0",
+    "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+  },
+  "bun": {
+    "version": "1.3.12"
+  },
   "profile": "rgba8-cpu-images-v1"
 }

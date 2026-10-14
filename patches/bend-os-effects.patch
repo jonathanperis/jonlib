@@ -1,0 +1,899 @@
+diff --git a/bend2/base.bend b/bend2/base.bend
+index 515949f6..4a35ff9d 100644
+--- a/bend2/base.bend
++++ b/bend2/base.bend
+@@ -1,3 +1,5 @@
++# Modified 2026-10-14: path, directory and process effects (Path.*, Dir.*, Process.*).
++
+ # Types
+ # =====
+ 
+@@ -277,6 +279,53 @@ def File.close(file: File) -> IO(Unit):
+   import "./effs/file_close.c"
+   import "./effs/file_close.js"
+ 
++# Paths and directories: a path's kind (1 a regular file, 2 a directory, 3
++# anything else), size in bytes and last modification in seconds since the
++# epoch, links followed; a directory's names in the host's order, without
++# "." and ".."; rename, remove (a file, or an empty directory), make (mode
++# 0777 under the umask) and the working directory.
++def Path.stat(path: String) ->
++  IO(Result<&1, &1, U32 & String, U32 & Nat & Nat>):
++  import "./effs/path_stat.c"
++  import "./effs/path_stat.js"
++
++def Path.rename(source: String, target: String) ->
++  IO(Result<&1, &1, U32 & String, Unit>):
++  import "./effs/path_rename.c"
++  import "./effs/path_rename.js"
++
++def Path.remove(path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
++  import "./effs/path_remove.c"
++  import "./effs/path_remove.js"
++
++def Dir.read(path: String) -> IO(Result<&1, &1, U32 & String, List<String>>):
++  import "./effs/dir_read.c"
++  import "./effs/dir_read.js"
++
++def Dir.make(path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
++  import "./effs/dir_make.c"
++  import "./effs/dir_make.js"
++
++def Dir.change(path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
++  import "./effs/dir_change.c"
++  import "./effs/dir_change.js"
++
++def Dir.current() -> IO(Result<&1, &1, U32 & String, String>):
++  import "./effs/dir_current.c"
++  import "./effs/dir_current.js"
++
++# The process: the running program's own file (the executable, or the script
++# the JS runtime runs), and a shell command run to its end (/bin/sh -c, its
++# output where the program's goes): the exit status, or 128 plus the signal
++# that ended it.
++def Process.path() -> IO(Result<&1, &1, U32 & String, String>):
++  import "./effs/process_path.c"
++  import "./effs/process_path.js"
++
++def Process.run(command: String) -> IO(Result<&1, &1, U32 & String, U32>):
++  import "./effs/process_run.c"
++  import "./effs/process_run.js"
++
+ def TCP.listen(port: U32) -> IO(Result<&1, &1, U32 & String, Listener>):
+   import "./effs/tcp_listen.c"
+   import "./effs/tcp_listen.js"
+diff --git a/bend2/effs/dir_change.c b/bend2/effs/dir_change.c
+new file mode 100644
+index 00000000..ca1db3cb
+--- /dev/null
++++ b/bend2/effs/dir_change.c
+@@ -0,0 +1,28 @@
++// Dir
++// ===
++
++#include <unistd.h>
++
++// chdir(2): the process's working directory, for every thread.
++static void dir_change_call(IoWork* w) {
++  io_sys_end(w, chdir(w->data));
++}
++
++static Term dir_change_pack(Env e, IoWork* w) {
++  free(w->data);
++  return w->code != 0 ? io_fail(e, w->code, NULL)
++    : io_done(e, term_pak(CID_UNIT, 0));
++}
++
++Term dir_change_run(Env e, Term* f, IoWork* w) {
++  w->data = io_cstr(e, f[0], &w->size);
++  if (io_nul(w->data, w->size)) {
++    w->code = EILSEQ;
++    return dir_change_pack(e, w);
++  }
++  return io_work(w, dir_change_call, dir_change_pack);
++}
++
++static void __attribute__((constructor)) dir_change_use(void) {
++  io_eff(CID_DIR_CHANGE, dir_change_run, 0);
++}
+diff --git a/bend2/effs/dir_change.js b/bend2/effs/dir_change.js
+new file mode 100644
+index 00000000..f26c84f4
+--- /dev/null
++++ b/bend2/effs/dir_change.js
+@@ -0,0 +1,15 @@
++// Dir
++// ===
++
++function dir_change(path) {
++  const name = io_bytes(path);
++  if (name.includes(0)) {
++    return io_fail(process.platform === "darwin" ? 92 : 84);
++  }
++  try {
++    process.chdir(io_text(name, name.length));
++    return io_done({ $: "Unit" });
++  } catch (e) {
++    return io_fail(Math.abs(e.errno ?? 5));
++  }
++}
+diff --git a/bend2/effs/dir_current.c b/bend2/effs/dir_current.c
+new file mode 100644
+index 00000000..62bc9850
+--- /dev/null
++++ b/bend2/effs/dir_current.c
+@@ -0,0 +1,27 @@
++// Dir
++// ===
++
++#include <unistd.h>
++
++// getcwd(3), whatever its length.
++Term dir_current_run(Env e, Term* f, IoWork* w) {
++  u64 cap = 256;
++  for (;;) {
++    char* buf = io_mem(malloc(cap));
++    if (getcwd(buf, cap) != NULL) {
++      Term s = io_str(e, buf, strlen(buf));
++      free(buf);
++      return io_done(e, s);
++    }
++    u32 code = (u32)errno;
++    free(buf);
++    if (code != ERANGE) {
++      return io_fail(e, code, NULL);
++    }
++    cap *= 2;
++  }
++}
++
++static void __attribute__((constructor)) dir_current_use(void) {
++  io_eff(CID_DIR_CURRENT, dir_current_run, 0);
++}
+diff --git a/bend2/effs/dir_current.js b/bend2/effs/dir_current.js
+new file mode 100644
+index 00000000..747f6078
+--- /dev/null
++++ b/bend2/effs/dir_current.js
+@@ -0,0 +1,10 @@
++// Dir
++// ===
++
++function dir_current() {
++  try {
++    return io_done(process.cwd());
++  } catch (e) {
++    return io_fail(Math.abs(e.errno ?? 5));
++  }
++}
+diff --git a/bend2/effs/dir_make.c b/bend2/effs/dir_make.c
+new file mode 100644
+index 00000000..765edd8c
+--- /dev/null
++++ b/bend2/effs/dir_make.c
+@@ -0,0 +1,28 @@
++// Dir
++// ===
++
++#include <sys/stat.h>
++
++// mkdir(2) with mode 0777 (the umask applies); the parent must exist.
++static void dir_make_call(IoWork* w) {
++  io_sys_end(w, mkdir(w->data, 0777));
++}
++
++static Term dir_make_pack(Env e, IoWork* w) {
++  free(w->data);
++  return w->code != 0 ? io_fail(e, w->code, NULL)
++    : io_done(e, term_pak(CID_UNIT, 0));
++}
++
++Term dir_make_run(Env e, Term* f, IoWork* w) {
++  w->data = io_cstr(e, f[0], &w->size);
++  if (io_nul(w->data, w->size)) {
++    w->code = EILSEQ;
++    return dir_make_pack(e, w);
++  }
++  return io_work(w, dir_make_call, dir_make_pack);
++}
++
++static void __attribute__((constructor)) dir_make_use(void) {
++  io_eff(CID_DIR_MAKE, dir_make_run, 0);
++}
+diff --git a/bend2/effs/dir_make.js b/bend2/effs/dir_make.js
+new file mode 100644
+index 00000000..4bbc6239
+--- /dev/null
++++ b/bend2/effs/dir_make.js
+@@ -0,0 +1,15 @@
++// Dir
++// ===
++
++function dir_make(path) {
++  const name = io_bytes(path);
++  if (name.includes(0)) {
++    return io_fail(process.platform === "darwin" ? 92 : 84);
++  }
++  try {
++    require("fs").mkdirSync(Buffer.from(name), { mode: 0o777 });
++    return io_done({ $: "Unit" });
++  } catch (e) {
++    return io_fail(Math.abs(e.errno ?? 5));
++  }
++}
+diff --git a/bend2/effs/dir_read.c b/bend2/effs/dir_read.c
+new file mode 100644
+index 00000000..386a6e4c
+--- /dev/null
++++ b/bend2/effs/dir_read.c
+@@ -0,0 +1,78 @@
++// Dir
++// ===
++
++#include <dirent.h>
++
++// The names in a directory in the order readdir(3) gives them, without "."
++// and "..": gathered on the helper thread, NUL-separated in w->text.
++static void dir_read_call(IoWork* w) {
++  DIR* dir = opendir(w->data);
++  if (dir == NULL) {
++    w->code = (u32)errno;
++    return;
++  }
++  u64   cap  = 256;
++  u64   used = 0;
++  char* buf  = io_mem(malloc(cap));
++  u32   count = 0;
++  for (;;) {
++    errno = 0;
++    struct dirent* entry = readdir(dir);
++    if (entry == NULL) {
++      w->code = (u32)errno;
++      break;
++    }
++    const char* name = entry->d_name;
++    if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
++      continue;
++    }
++    u64 n = strlen(name) + 1;
++    while (used + n > cap) {
++      cap *= 2;
++      buf = io_mem(realloc(buf, cap));
++    }
++    memcpy(buf + used, name, n);
++    used  += n;
++    count += 1;
++  }
++  closedir(dir);
++  w->text = buf;
++  w->size = used;
++  w->word = count;
++}
++
++static Term dir_read_pack(Env e, IoWork* w) {
++  free(w->data);
++  if (w->code != 0) {
++    free(w->text);
++    return io_fail(e, w->code, NULL);
++  }
++  u64* at = io_mem(malloc(sizeof(u64) * (w->word + 1)));
++  u64  p  = 0;
++  for (u32 i = 0; i < w->word; i += 1) {
++    at[i] = p;
++    p += strlen(w->text + p) + 1;
++  }
++  Term xs = term_pak(CID_NIL, 0);
++  for (u32 i = w->word; i > 0; i -= 1) {
++    const char* name = w->text + at[i - 1];
++    xs = io_node(e, CID_CON, io_str(e, name, strlen(name)), xs);
++  }
++  free(at);
++  free(w->text);
++  return io_done(e, xs);
++}
++
++Term dir_read_run(Env e, Term* f, IoWork* w) {
++  w->data = io_cstr(e, f[0], &w->size);
++  w->text = NULL;
++  if (io_nul(w->data, w->size)) {
++    w->code = EILSEQ;
++    return dir_read_pack(e, w);
++  }
++  return io_work(w, dir_read_call, dir_read_pack);
++}
++
++static void __attribute__((constructor)) dir_read_use(void) {
++  io_eff(CID_DIR_READ, dir_read_run, 0);
++}
+diff --git a/bend2/effs/dir_read.js b/bend2/effs/dir_read.js
+new file mode 100644
+index 00000000..40a1033f
+--- /dev/null
++++ b/bend2/effs/dir_read.js
+@@ -0,0 +1,21 @@
++// Dir
++// ===
++
++function dir_read(path) {
++  const name = io_bytes(path);
++  if (name.includes(0)) {
++    return io_fail(process.platform === "darwin" ? 92 : 84);
++  }
++  try {
++    const names = require("fs")
++      .readdirSync(Buffer.from(name), { encoding: "buffer" });
++    let xs = { $: "Nil" };
++    for (let i = names.length; i > 0; i -= 1) {
++      const b = new Uint8Array(names[i - 1]);
++      xs = { $: "Con", head: io_text(b, b.length), tail: xs };
++    }
++    return io_done(xs);
++  } catch (e) {
++    return io_fail(Math.abs(e.errno ?? 5));
++  }
++}
+diff --git a/bend2/effs/path_remove.c b/bend2/effs/path_remove.c
+new file mode 100644
+index 00000000..752d67cc
+--- /dev/null
++++ b/bend2/effs/path_remove.c
+@@ -0,0 +1,28 @@
++// Path
++// ====
++
++#include <stdio.h>
++
++// remove(3): a file is unlinked, an empty directory removed.
++static void path_remove_call(IoWork* w) {
++  io_sys_end(w, remove(w->data));
++}
++
++static Term path_remove_pack(Env e, IoWork* w) {
++  free(w->data);
++  return w->code != 0 ? io_fail(e, w->code, NULL)
++    : io_done(e, term_pak(CID_UNIT, 0));
++}
++
++Term path_remove_run(Env e, Term* f, IoWork* w) {
++  w->data = io_cstr(e, f[0], &w->size);
++  if (io_nul(w->data, w->size)) {
++    w->code = EILSEQ;
++    return path_remove_pack(e, w);
++  }
++  return io_work(w, path_remove_call, path_remove_pack);
++}
++
++static void __attribute__((constructor)) path_remove_use(void) {
++  io_eff(CID_PATH_REMOVE, path_remove_run, 0);
++}
+diff --git a/bend2/effs/path_remove.js b/bend2/effs/path_remove.js
+new file mode 100644
+index 00000000..a73538af
+--- /dev/null
++++ b/bend2/effs/path_remove.js
+@@ -0,0 +1,27 @@
++// Path
++// ====
++
++// remove(3): unlink, and rmdir where unlink refuses a directory (EISDIR on
++// Linux, EPERM on macOS).
++function path_remove(path) {
++  const name = io_bytes(path);
++  if (name.includes(0)) {
++    return io_fail(process.platform === "darwin" ? 92 : 84);
++  }
++  const fs = require("fs");
++  const at = Buffer.from(name);
++  try {
++    fs.unlinkSync(at);
++    return io_done({ $: "Unit" });
++  } catch (e) {
++    if (e.code !== "EISDIR" && e.code !== "EPERM") {
++      return io_fail(Math.abs(e.errno ?? 5));
++    }
++  }
++  try {
++    fs.rmdirSync(at);
++    return io_done({ $: "Unit" });
++  } catch (e) {
++    return io_fail(Math.abs(e.errno ?? 5));
++  }
++}
+diff --git a/bend2/effs/path_rename.c b/bend2/effs/path_rename.c
+new file mode 100644
+index 00000000..24ed51fe
+--- /dev/null
++++ b/bend2/effs/path_rename.c
+@@ -0,0 +1,31 @@
++// Path
++// ====
++
++#include <stdio.h>
++
++// rename(2): `target` replaced if it exists, as the host allows.
++static void path_rename_call(IoWork* w) {
++  io_sys_end(w, rename(w->data, w->text));
++}
++
++static Term path_rename_pack(Env e, IoWork* w) {
++  free(w->data);
++  free(w->text);
++  return w->code != 0 ? io_fail(e, w->code, NULL)
++    : io_done(e, term_pak(CID_UNIT, 0));
++}
++
++Term path_rename_run(Env e, Term* f, IoWork* w) {
++  uint64_t n = 0;
++  w->data = io_cstr(e, f[0], &w->size);
++  w->text = io_cstr(e, f[1], &n);
++  if (io_nul(w->data, w->size) || io_nul(w->text, n)) {
++    w->code = EILSEQ;
++    return path_rename_pack(e, w);
++  }
++  return io_work(w, path_rename_call, path_rename_pack);
++}
++
++static void __attribute__((constructor)) path_rename_use(void) {
++  io_eff(CID_PATH_RENAME, path_rename_run, 0);
++}
+diff --git a/bend2/effs/path_rename.js b/bend2/effs/path_rename.js
+new file mode 100644
+index 00000000..71924047
+--- /dev/null
++++ b/bend2/effs/path_rename.js
+@@ -0,0 +1,16 @@
++// Path
++// ====
++
++function path_rename(source, target) {
++  const from = io_bytes(source);
++  const to = io_bytes(target);
++  if (from.includes(0) || to.includes(0)) {
++    return io_fail(process.platform === "darwin" ? 92 : 84);
++  }
++  try {
++    require("fs").renameSync(Buffer.from(from), Buffer.from(to));
++    return io_done({ $: "Unit" });
++  } catch (e) {
++    return io_fail(Math.abs(e.errno ?? 5));
++  }
++}
+diff --git a/bend2/effs/path_stat.c b/bend2/effs/path_stat.c
+new file mode 100644
+index 00000000..edb7e220
+--- /dev/null
++++ b/bend2/effs/path_stat.c
+@@ -0,0 +1,40 @@
++// Path
++// ====
++
++#include <sys/stat.h>
++
++// stat(2), links followed: the kind (1 a regular file, 2 a directory, 3
++// anything else), the size in bytes and the last modification in whole
++// seconds since the epoch (0 before it). A size past a Nat fails with
++// EOVERFLOW.
++static void path_stat_call(IoWork* w) {
++  struct stat st;
++  int n = stat(w->data, &st);
++  io_sys_end(w, n);
++  if (n == 0) {
++    w->code = (u64)st.st_size > NAT_IMM ? EOVERFLOW : 0;
++    w->word = S_ISREG(st.st_mode) ? 1 : S_ISDIR(st.st_mode) ? 2 : 3;
++    w->made = (intptr_t)st.st_size;
++    w->hand = st.st_mtime < 0 ? 0 : (intptr_t)st.st_mtime;
++  }
++}
++
++static Term path_stat_pack(Env e, IoWork* w) {
++  free(w->data);
++  return w->code != 0 ? io_fail(e, w->code, NULL)
++    : io_done(e, io_tup(e, w->word, io_tup(e, (Term)(u64)w->made,
++      (Term)(u64)w->hand)));
++}
++
++Term path_stat_run(Env e, Term* f, IoWork* w) {
++  w->data = io_cstr(e, f[0], &w->size);
++  if (io_nul(w->data, w->size)) {
++    w->code = EILSEQ;
++    return path_stat_pack(e, w);
++  }
++  return io_work(w, path_stat_call, path_stat_pack);
++}
++
++static void __attribute__((constructor)) path_stat_use(void) {
++  io_eff(CID_PATH_STAT, path_stat_run, 0);
++}
+diff --git a/bend2/effs/path_stat.js b/bend2/effs/path_stat.js
+new file mode 100644
+index 00000000..53d030d2
+--- /dev/null
++++ b/bend2/effs/path_stat.js
+@@ -0,0 +1,20 @@
++// Path
++// ====
++
++function path_stat(path) {
++  const name = io_bytes(path);
++  if (name.includes(0)) {
++    return io_fail(process.platform === "darwin" ? 92 : 84);
++  }
++  try {
++    const st = require("fs").statSync(Buffer.from(name), { bigint: true });
++    if (st.size > 281474976710655n) {
++      return io_fail(process.platform === "darwin" ? 84 : 75);
++    }
++    const kind = st.isFile() ? 1 : st.isDirectory() ? 2 : 3;
++    const seconds = st.mtimeNs < 0n ? 0n : st.mtimeNs / 1000000000n;
++    return io_done(io_tup(kind, st.size, seconds));
++  } catch (e) {
++    return io_fail(Math.abs(e.errno ?? 5));
++  }
++}
+diff --git a/bend2/effs/process_path.c b/bend2/effs/process_path.c
+new file mode 100644
+index 00000000..5ff0e832
+--- /dev/null
++++ b/bend2/effs/process_path.c
+@@ -0,0 +1,34 @@
++// Process
++// =======
++
++#include <stdlib.h>
++#if defined(__APPLE__)
++#include <mach-o/dyld.h>
++#endif
++
++// The running program's own file as an absolute path, links resolved:
++// /proc/self/exe on Linux, _NSGetExecutablePath on macOS.
++Term process_path_run(Env e, Term* f, IoWork* w) {
++  char* path = NULL;
++#if defined(__APPLE__)
++  uint32_t n = 0;
++  _NSGetExecutablePath(NULL, &n);
++  char* raw = io_mem(malloc((size_t)n + 1));
++  if (_NSGetExecutablePath(raw, &n) == 0) {
++    path = realpath(raw, NULL);
++  }
++  free(raw);
++#else
++  path = realpath("/proc/self/exe", NULL);
++#endif
++  if (path == NULL) {
++    return io_fail(e, errno != 0 ? (u32)errno : ENOENT, NULL);
++  }
++  Term s = io_str(e, path, strlen(path));
++  free(path);
++  return io_done(e, s);
++}
++
++static void __attribute__((constructor)) process_path_use(void) {
++  io_eff(CID_PROCESS_PATH, process_path_run, 0);
++}
+diff --git a/bend2/effs/process_path.js b/bend2/effs/process_path.js
+new file mode 100644
+index 00000000..00c62229
+--- /dev/null
++++ b/bend2/effs/process_path.js
+@@ -0,0 +1,11 @@
++// Process
++// =======
++
++// The running program's own file: the script the runtime was given.
++function process_path() {
++  try {
++    return io_done(require("fs").realpathSync(process.argv[1]));
++  } catch (e) {
++    return io_fail(Math.abs(e.errno ?? 5));
++  }
++}
+diff --git a/bend2/effs/process_run.c b/bend2/effs/process_run.c
+new file mode 100644
+index 00000000..d26c1a93
+--- /dev/null
++++ b/bend2/effs/process_run.c
+@@ -0,0 +1,38 @@
++// Process
++// =======
++
++#include <stdlib.h>
++#include <sys/wait.h>
++
++// system(3): `command` through /bin/sh -c, the program waiting for it; its
++// output goes where the program's goes (flushed first). The exit status, or
++// 128 plus the signal that ended it.
++static void process_run_call(IoWork* w) {
++  int status = system(w->data);
++  if (status == -1) {
++    w->code = (u32)errno;
++    return;
++  }
++  w->code = 0;
++  w->word = WIFEXITED(status) ? (u32)WEXITSTATUS(status)
++    : WIFSIGNALED(status) ? 128 + (u32)WTERMSIG(status) : 255;
++}
++
++static Term process_run_pack(Env e, IoWork* w) {
++  free(w->data);
++  return w->code != 0 ? io_fail(e, w->code, NULL) : io_done(e, w->word);
++}
++
++Term process_run_run(Env e, Term* f, IoWork* w) {
++  w->data = io_cstr(e, f[0], &w->size);
++  if (io_nul(w->data, w->size)) {
++    w->code = EILSEQ;
++    return process_run_pack(e, w);
++  }
++  io_sync();
++  return io_work(w, process_run_call, process_run_pack);
++}
++
++static void __attribute__((constructor)) process_run_use(void) {
++  io_eff(CID_PROCESS_RUN, process_run_run, 0);
++}
+diff --git a/bend2/effs/process_run.js b/bend2/effs/process_run.js
+new file mode 100644
+index 00000000..dfab2d6c
+--- /dev/null
++++ b/bend2/effs/process_run.js
+@@ -0,0 +1,18 @@
++// Process
++// =======
++
++function process_run(command) {
++  if (io_bytes(command).includes(0)) {
++    return io_fail(process.platform === "darwin" ? 92 : 84);
++  }
++  const r = require("child_process")
++    .spawnSync("/bin/sh", ["-c", command], { stdio: "inherit" });
++  if (r.error) {
++    return io_fail(Math.abs(r.error.errno ?? 5));
++  }
++  if (r.status !== null) {
++    return io_done(r.status >>> 0);
++  }
++  const signal = require("os").constants.signals[r.signal];
++  return io_done(128 + (signal ?? 127));
++}
+diff --git a/tests/io/cwd_process.bend b/tests/io/cwd_process.bend
+new file mode 100644
+index 00000000..cc7b8584
+--- /dev/null
++++ b/tests/io/cwd_process.bend
+@@ -0,0 +1,97 @@
++# io (io_cwd_process): the working directory and the process: Dir.change
++# to "/" and Dir.current, Dir.change to a missing directory (ENOENT),
++# Process.path (a regular file), and Process.run of a command that exits
++# with 3, of one that prints (its output lands before the status that
++# follows it) and of one that a signal ends (128 + SIGTERM).
++import Base
++
++law said:
++  for r: Result<&1, &1, (U32 & String), Unit>
++  IO(Unit)
++
++def said(r):
++  match r:
++    case Done{u}:
++      IO.print("ok")
++    case Fail{error}:
++      (code, message) = error
++      IO.print(message)
++
++law text_said:
++  for r: Result<&1, &1, (U32 & String), String>
++  IO(Unit)
++
++def text_said(r):
++  match r:
++    case Done{text}:
++      IO.print(text)
++    case Fail{error}:
++      (code, message) = error
++      IO.print(message)
++
++law status_said:
++  for r: Result<&1, &1, (U32 & String), U32>
++  IO(Unit)
++
++def status_said(r):
++  match r:
++    case Done{status}:
++      IO.print(U32.show(status))
++    case Fail{error}:
++      (code, message) = error
++      IO.print(message)
++
++law kind_said:
++  for r: Result<&1, &1, (U32 & String), U32 & Nat & Nat>
++  IO(Unit)
++
++def kind_said(r):
++  match r:
++    case Done{stat}:
++      (kind, rest) = stat
++      IO.print(U32.show(kind))
++    case Fail{error}:
++      (code, message) = error
++      IO.print(message)
++
++law self_said:
++  for r: Result<&1, &1, (U32 & String), String>
++  IO(Unit)
++
++def self_said(r):
++  match r:
++    case Done{path}:
++      IO.bind(Result<&1, &1, (U32 & String), U32 & Nat & Nat>, Unit, Path.stat(path), kind_said)
++    case Fail{error}:
++      (code, message) = error
++      IO.print(message)
++
++law main:
++  IO(U32)
++
++def main():
++  do IO<U32>:
++    a : Result<&1, &1, (U32 & String), Unit> <- Dir.change("/")
++    a1 : Unit <- said(a)
++    b : Result<&1, &1, (U32 & String), String> <- Dir.current()
++    b1 : Unit <- text_said(b)
++    c : Result<&1, &1, (U32 & String), Unit> <- Dir.change("/no/such/dir")
++    c1 : Unit <- said(c)
++    d : Result<&1, &1, (U32 & String), String> <- Process.path()
++    d1 : Unit <- self_said(d)
++    e : Result<&1, &1, (U32 & String), U32> <- Process.run("exit 3")
++    e1 : Unit <- status_said(e)
++    f : Result<&1, &1, (U32 & String), U32> <- Process.run("echo from-sh")
++    f1 : Unit <- status_said(f)
++    g : Result<&1, &1, (U32 & String), U32> <- Process.run("kill -TERM $$")
++    g1 : Unit <- status_said(g)
++    return 0
++
++#|ok
++#|/
++#|No such file or directory
++#|1
++#|3
++#|from-sh
++#|0
++#|143
+diff --git a/tests/io/path_dir.bend b/tests/io/path_dir.bend
+new file mode 100644
+index 00000000..28186caa
+--- /dev/null
++++ b/tests/io/path_dir.bend
+@@ -0,0 +1,133 @@
++# io (io_path_dir): the path and directory surface end to end in a
++# directory of its own under /tmp: Dir.make, Dir.make again (EEXIST), a
++# file written in it, Path.stat of the file (its kind and size) and of the
++# directory (its kind), Dir.read, Path.rename, Dir.read again, Path.remove
++# of the file and then of the empty directory, and Path.stat of the path
++# removed (ENOENT). Whatever an earlier run left is removed first.
++import Base
++
++law said:
++  for r: Result<&1, &1, (U32 & String), Unit>
++  IO(Unit)
++
++def said(r):
++  match r:
++    case Done{u}:
++      IO.print("ok")
++    case Fail{error}:
++      (code, message) = error
++      IO.print(message)
++
++law kind_said:
++  for kind: U32
++  for rest: Nat & Nat
++  IO(Unit)
++
++def kind_said(kind, rest):
++  match kind:
++    case 1:
++      (size, time) = rest
++      IO.print("1 " ++ Nat.show(size))
++    case _:
++      IO.print(U32.show(kind))
++
++law stat_said:
++  for r: Result<&1, &1, (U32 & String), U32 & Nat & Nat>
++  IO(Unit)
++
++def stat_said(r):
++  match r:
++    case Done{stat}:
++      (kind, rest) = stat
++      kind_said(kind, rest)
++    case Fail{error}:
++      (code, message) = error
++      IO.print(message)
++
++law names_more:
++  for xs: List<String>
++  String
++
++def names_more(xs):
++  match xs:
++    case Nil{}:
++      ""
++    case Con{x, rest}:
++      "," ++ x ++ names_more(rest)
++
++law names_text:
++  for xs: List<String>
++  String
++
++def names_text(xs):
++  match xs:
++    case Nil{}:
++      ""
++    case Con{x, rest}:
++      x ++ names_more(rest)
++
++law names_said:
++  for r: Result<&1, &1, (U32 & String), List<String>>
++  IO(Unit)
++
++def names_said(r):
++  match r:
++    case Done{names}:
++      IO.print(names_text(names))
++    case Fail{error}:
++      (code, message) = error
++      IO.print(message)
++
++law write_go:
++  for w: File & Result<&1, &1, (U32 & String), Unit>
++  IO(Unit)
++
++def write_go(w):
++  (f, r) = w
++  do IO<Unit>:
++    u : Unit <- IO.pass(Unit, r)
++    File.close(f)
++
++law main:
++  IO(U32)
++
++def main():
++  do IO<U32>:
++    o : Result<&1, &1, (U32 & String), Unit> <- Path.remove("/tmp/bend_io_dir.tmp/bend_io_moved")
++    p : Result<&1, &1, (U32 & String), Unit> <- Path.remove("/tmp/bend_io_dir.tmp/bend_io_entry")
++    q : Result<&1, &1, (U32 & String), Unit> <- Path.remove("/tmp/bend_io_dir.tmp")
++    a : Result<&1, &1, (U32 & String), Unit> <- Dir.make("/tmp/bend_io_dir.tmp")
++    a1 : Unit <- said(a)
++    b : Result<&1, &1, (U32 & String), Unit> <- Dir.make("/tmp/bend_io_dir.tmp")
++    b1 : Unit <- said(b)
++    f : File <- IO.try(File, File.open("/tmp/bend_io_dir.tmp/bend_io_entry", "w"))
++    w : File & Result<&1, &1, (U32 & String), Unit> <- File.write(f, "bend")
++    w1 : Unit <- write_go(w)
++    s : Result<&1, &1, (U32 & String), U32 & Nat & Nat> <- Path.stat("/tmp/bend_io_dir.tmp/bend_io_entry")
++    s1 : Unit <- stat_said(s)
++    t : Result<&1, &1, (U32 & String), U32 & Nat & Nat> <- Path.stat("/tmp/bend_io_dir.tmp")
++    t1 : Unit <- stat_said(t)
++    l : Result<&1, &1, (U32 & String), List<String>> <- Dir.read("/tmp/bend_io_dir.tmp")
++    l1 : Unit <- names_said(l)
++    r : Result<&1, &1, (U32 & String), Unit> <- Path.rename("/tmp/bend_io_dir.tmp/bend_io_entry", "/tmp/bend_io_dir.tmp/bend_io_moved")
++    r1 : Unit <- said(r)
++    m : Result<&1, &1, (U32 & String), List<String>> <- Dir.read("/tmp/bend_io_dir.tmp")
++    m1 : Unit <- names_said(m)
++    x : Result<&1, &1, (U32 & String), Unit> <- Path.remove("/tmp/bend_io_dir.tmp/bend_io_moved")
++    x1 : Unit <- said(x)
++    y : Result<&1, &1, (U32 & String), Unit> <- Path.remove("/tmp/bend_io_dir.tmp")
++    y1 : Unit <- said(y)
++    z : Result<&1, &1, (U32 & String), U32 & Nat & Nat> <- Path.stat("/tmp/bend_io_dir.tmp")
++    z1 : Unit <- stat_said(z)
++    return 0
++
++#|ok
++#|File exists
++#|1 4
++#|2
++#|bend_io_entry
++#|ok
++#|bend_io_moved
++#|ok
++#|ok
++#|No such file or directory

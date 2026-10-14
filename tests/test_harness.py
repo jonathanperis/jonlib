@@ -212,8 +212,7 @@ class HarnessTests(unittest.TestCase):
             source.write_text('reviewed compiler')
             manifest_patch = root / 'compiler.patch'
             manifest_patch.write_text('reviewed patch')
-            overlay = dict(path='compiler.patch',
-                           sha256=hashlib.sha256(manifest_patch.read_bytes()).hexdigest(),
+            overlay = dict(patches=[dict(path='compiler.patch', sha256=hashlib.sha256(manifest_patch.read_bytes()).hexdigest())],
                            files={'bend2/comp.ts': hashlib.sha256(source.read_bytes()).hexdigest()})
             with patch('tools.conformance.ROOT', root):
                 with patch('tools.conformance.run', side_effect=[revision, 'bend2/comp.ts\n']):

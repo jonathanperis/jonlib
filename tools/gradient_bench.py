@@ -17,7 +17,7 @@ def main():
     parser.add_argument('--gpu', action='store_true')
     args = parser.parse_args()
     pins = json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source,pins['bend']['revision'],pins['bend'].get('patch'))
+    checkout(args.bend_source,pins['bend']['revision'],pins['bend'].get('overlay'))
     checkout(args.raylib_source,pins['raylib']['revision'])
     work = BUILD/'gradient-bench'
     work.mkdir(exist_ok=True)

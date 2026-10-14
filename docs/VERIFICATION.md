@@ -58,7 +58,7 @@ of each results file) and fails if any parity gate fails.
 | Benchmark | `tools/gradient_bench.py` | Serial versus balanced generation timing, checked against raylib first ([GRADIENTS.md](GRADIENTS.md)); not a gate |
 | Resampling | `tools/resize_conformance.py` | Default-filter coefficients, kernels and whole-image resize outputs ([RESAMPLING.md](RESAMPLING.md)) |
 | API audit | `tools/api_plan.py check` | Pinned header catalog, generated ledger files and progress-record lint ([API-TRACKING.md](API-TRACKING.md)) |
-| Compiler overlay | `tools/verify_bend.py` | Selected upstream Bend regressions under the declared overlay |
+| Compiler overlay | `tools/verify_bend.py` | Selected upstream Bend regressions and the OS effects' tests (`io/path_dir`, `io/cwd_process`) under the declared overlay |
 | Diagnostics | gates marked `"diagnostic": true` | Records for open gaps (host libm behavior, filter precision, perspective rounding, inverse trig); never parity claims |
 
 Probes write their full results under `.build/`; those files are local

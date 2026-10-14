@@ -753,8 +753,16 @@ under **Apache-2.0**, including its modifications. The original copyright is
 2026 HigherOrderCO; the modifications were authored for Jonathan Peris's Jonlib
 project in 2026. The modified compiler carries a change notice.
 
+`patches/bend-os-effects.patch` adds path, directory and process effects to
+Bend's base library under the same license: nine foreign defs in
+`bend2/base.bend` (which carries its own change notice), their C and
+JavaScript sources in `bend2/effs/` (`path_*`, `dir_*`, `process_*`) and the
+tests `tests/io/path_dir.bend` and `tests/io/cwd_process.bend`, authored for
+Jonlib in 2026 in the style of Bend's `File.*` effects and offered to Bend as
+a proposal ([patches/bend-os-effects.md](patches/bend-os-effects.md)).
+
 The upstream license is retained verbatim in [LICENSES/bend.txt](LICENSES/bend.txt).
-No upstream NOTICE file was present at the base revision. This overlay is not
+No upstream NOTICE file was present at the base revision. These patches are not
 an upstream-approved Bend release. See [patches/README.md](patches/README.md) for
 provenance and application instructions. Distributions containing Bend runtime
 artifacts must also retain their applicable Apache-2.0 notices.

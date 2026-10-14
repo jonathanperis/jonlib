@@ -18,10 +18,13 @@ def main():
             raise ValueError(f'{dependency}: expected a complete immutable commit SHA')
     if not re.fullmatch(r'\d+\.\d+\.\d+', pins['bun']['version']):
         raise ValueError('Bun must have a pinned release version')
-    overlay = pins['bend'].get('patch')
+    overlay = pins['bend'].get('overlay')
     if overlay is not None:
-        if hashlib.sha256((ROOT / overlay['path']).read_bytes()).hexdigest() != overlay['sha256']:
-            raise ValueError('Compiler patch does not match toolchain.json')
+        if not overlay['patches']:
+            raise ValueError('A compiler overlay declares its patches')
+        for declared in overlay['patches']:
+            if hashlib.sha256((ROOT / declared['path']).read_bytes()).hexdigest() != declared['sha256']:
+                raise ValueError(f"Compiler patch {declared['path']} does not match toolchain.json")
         if not overlay['files'] or not all(re.fullmatch(r'[0-9a-f]{64}', value) for value in overlay['files'].values()):
             raise ValueError('Compiler overlay requires exact resulting file hashes')
     cases = cases_from(json.loads((ROOT / 'tests/fixtures/images.json').read_text()))
