@@ -10946,6 +10946,32 @@ def Rlgl.get_texture_id_default() -> U32:
 def Rlgl.get_shader_id_default() -> U32:
   0
 
+# rlGetGlTextureFormats' answer: glInternalFormat, glFormat and glType.
+type Rlgl.GlFormats is Data:
+  Rlgl.GlFormats{internal: U32, format: U32, kind: U32}
+
+# rlGetGlTextureFormats under OpenGL 1.1 (the software renderer): the seven
+# uncompressed formats of 8-bit channels or packed 16-bit pixels, as rlsw's
+# GL_LUMINANCE (0x1909), GL_LUMINANCE_ALPHA (0x190A), GL_RGB (0x1907) and
+# GL_RGBA (0x1908) with GL_UNSIGNED_BYTE (0x1401) or the packed types
+# (0x8363, 0x8034, 0x8033); 0, 0 and 0 for every other format, the float and
+# compressed ones included.
+def Rlgl.get_gl_texture_formats(+format: U32) -> Rlgl.GlFormats:
+  match format:
+    case 1: Rlgl.GlFormats{6409, 6409, 5121}
+    case 2: Rlgl.GlFormats{6410, 6410, 5121}
+    case 3: Rlgl.GlFormats{6407, 6407, 33635}
+    case 4: Rlgl.GlFormats{6407, 6407, 5121}
+    case 5: Rlgl.GlFormats{6408, 6408, 32820}
+    case 6: Rlgl.GlFormats{6408, 6408, 32819}
+    case 7: Rlgl.GlFormats{6408, 6408, 5121}
+    case _: Rlgl.GlFormats{0, 0, 0}
+
+# rlGenTextureMipmaps: GPU mipmap generation is OpenGL 3.3/ES2's; the
+# software renderer leaves the texture and `*mipmaps` as they are.
+def Rlgl.gen_texture_mipmaps(frame: Frame, +id: U32, +width: U32, +height: U32, +format: U32, +mipmaps: U32) -> Frame & U32:
+  (frame, mipmaps)
+
 # Render batches only exist for OpenGL 3.3/ES2: drawing the active batch does
 # nothing and the batch limit is never reached.
 def Rlgl.draw_render_batch_active(frame: Frame) -> Frame:

@@ -2249,6 +2249,18 @@ def Laws.rlgl_blend_mode_unchanged(frame, mode):
 def Laws.rlgl_set_uniform_unchanged(frame, location, value, kind):
   {==}
 
+def Laws.rlgl_gl_formats_rgba8():
+  {==}
+
+def Laws.rlgl_gl_formats_r5g6b5():
+  {==}
+
+def Laws.rlgl_gl_formats_float_none():
+  {==}
+
+def Laws.rlgl_gen_texture_mipmaps_unchanged(frame, id, mipmaps):
+  {==}
+
 def Laws.rlgl_set_uniform_matrix_unchanged(frame, location, matrix):
   {==}
 

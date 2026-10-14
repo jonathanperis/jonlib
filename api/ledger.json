@@ -98865,23 +98865,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.get_gl_texture_formats",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 1.1 (the software renderer): rlsw's internal format, format and type for the seven uncompressed formats of 8-bit channels or packed 16-bit pixels, 0, 0 and 0 for every other format (float and compressed ones too); formats -1 to 25 compared.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -98894,7 +98898,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlGetGlTextureFormats semantics from the linked source, add a reference fixture, then implement Rlgl.get_gl_texture_formats.",
+      "next_step": "Close documented gaps and unverified gates for rlGetGlTextureFormats.",
       "priority": 728
     },
     {
@@ -99038,23 +99042,28 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.gen_texture_mipmaps",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "GPU mipmap generation is OpenGL 3.3/ES2's: the software renderer leaves the texture and the mipmap count given.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Its trace-log warning is not reproduced",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99067,7 +99076,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlGenTextureMipmaps semantics from the linked source, add a reference fixture, then implement Rlgl.gen_texture_mipmaps.",
+      "next_step": "Close documented gaps and unverified gates for rlGenTextureMipmaps.",
       "priority": 728
     },
     {
