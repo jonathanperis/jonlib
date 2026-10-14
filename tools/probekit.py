@@ -89,13 +89,18 @@ def compiler_env(env=None):
     October 2026 under an 8 GiB limit on a 16 GB host: the C emission of an
     example with the OBJ loader, about 4 GB live, passed 8 GB; with half the
     limit as the engine's memory size it peaks near 5 GB, emits the same C and
-    takes 1.5x the time). Without a lower limit (the hosted runners) and when
-    the caller already set the size, the environment is unchanged."""
+    takes 1.5x the time). A quarter of the limit since the programs with a
+    sound or a music reach the Ogg Vorbis, MP3 and XM decoders: with half,
+    audio_sound_positioning's compile still grew to 7.3 GB and was killed;
+    with a quarter and the small heap (compiler_command) it peaks at 4.2 GB
+    in the same four and a half minutes. Without a lower limit (the hosted
+    runners) and when the caller already set the size, the environment is
+    unchanged."""
     env = ENV if env is None else env
     memory, limit = memory_limits()
     if 'BUN_JSC_forceRAMSize' in env or not limit or (memory and limit >= memory):
         return env
-    return dict(env, BUN_JSC_forceRAMSize=str(limit // 2))
+    return dict(env, BUN_JSC_forceRAMSize=str(limit // 4))
 
 
 def compiler_command(cli):
@@ -107,9 +112,9 @@ def compiler_command(cli):
     decoders and the XM player at 6.2 GB and more, and a batch in three was
     killed under an 8 GiB limit (measured October 2026: the same batch at 4.4
     GB with `--smol`, in the same seconds, the JavaScript byte for byte the
-    same; the sound gate's eleven batches then all compiled, the largest at
-    6.4 GB beside the C compiler's 1.1). Elsewhere, and for a command that is
-    not Bun's or has the flag, the command is unchanged."""
+    same). The two go together: `--smol` with half the limit as the memory
+    size still let a compile reach 7.3 GB. Elsewhere, and for a command that
+    is not Bun's or has the flag, the command is unchanged."""
     memory, limit = memory_limits()
     command = list(cli)
     if not limit or (memory and limit >= memory) or command[:1] != ['bun'] or '--smol' in command:

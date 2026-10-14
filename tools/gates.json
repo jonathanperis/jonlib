@@ -1825,6 +1825,20 @@
    "minutes": 8
   },
   {
+   "id": "glibc-acos",
+   "title": "M.Libm.acos64 (LGPL module src/lgpl/acos.bend) against the glibc 2.39 x86_64 FMA-variant acos model on random binary64 words of every exponent up to 1, every interval, promoted binary32 values, interval bounds, table entries, every reciprocal root and power of two below 1 and the variant controls, and against the host acos where it qualifies",
+   "run": [
+    "{python}",
+    "tools/glibc_acos_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 6
+  },
+  {
    "id": "perspective",
    "title": "MatrixPerspective rounding record (diagnostic)",
    "run": [

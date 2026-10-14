@@ -723,3 +723,87 @@ operators (one rounding each through the exact helper; `None` for a
 nonfinite or subnormal operand or result and a zero divisor) and
 `M.Float64.to_int` or `to_f32` converts back. The same gate compares the
 four operators with C's on 1206 pairs of its arguments.
+
+## Binary64 acos
+
+`M.Libm.acos64(libm, x: M.Float64)` is the C `acos` of a `double`
+(`M.Libm.acos` is `acosf`): what stb_truetype's cubic solver calls for a
+signed distance field. Under `M.Glibc239Libm` it is glibc 2.39's x86_64
+function as its FMA ifunc variant runs it on CPUs with FMA and AVX2,
+through the LGPL module `src/lgpl/acos.bend` with its tables
+`src/lgpl/acos_table.bend`. The function is not correctly rounded (about
+0.52 ulp) and glibc builds `e_asin.c` once a variant, so the kernel
+reproduces the selected variant operation by operation:
+
+- below 2^-55 (2.77556e-17) `pi/2`'s high part;
+- below 1/8 `pi/2 - x` in two parts with a polynomial of `x*x`;
+- below 0.96875 one of 216 entries of a table (32 from 1/8, 64 from 1/4, 64
+  from 1/2, 44 from 3/4, 8 from 0.921875 and 4 from 0.953125): a polynomial
+  of 5 to 9 coefficients in the distance to the entry's argument, and the
+  entry's angle taken from or added to `pi/2`;
+- below 1 a square root of `z = (1 - |x|)/2` made by hand (a table of 128
+  reciprocal roots, a power of two, a polynomial correction and a split in
+  two parts) with a polynomial of `z`, doubled;
+- 1 and -1 are 0 and `2*(pi/2)`; anything else is a NaN in C and `None`
+  here.
+
+Every `a*b + c` the FMA build contracts is one fused operation, in the
+positions read from the Ubuntu 24.04 library (`libm.so.6`, build ID
+`d53fcbff9f855463606b25cfbe2a2e10856ea3a7`): every polynomial is a chain of
+fused steps; the products that close one are fused with the sum that
+follows; below 1, `1 - t*t*z`, `1.5 - 0.5*t*c`, `t27*c + c`, the split
+`(t27*c + c) - t27*c`, `t + y` and `z - y*y` are one each, and `p*(y + cc)`
+is a product by itself. `tools/reference/glibc_acos/model.c` is that
+arithmetic in C (`FUSED=1`; `FUSED=0` is the source without contraction,
+which is the SSE2 variant), with the tables as words.
+`tools/reference/glibc_acos/run_sample.sh` compares each model with the
+host's `acos` (the SSE2 one with
+`GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX2,-FMA,-FMA4`) and the two models with
+each other on seeded samples; on Ubuntu 24.04, glibc 2.39-0ubuntu8.9, a
+billion arguments each (`tools/reference/glibc_acos/results`):
+
+| Arguments drawn | FMA model and host | SSE2 model and host | Doubles on which the two models differ |
+|---|---:|---:|---:|
+| any binary64 word | 0 differences | 0 | 381 |
+| a magnitude of any exponent from 2^-60 to 1 | 0 | 0 | 13,025 |
+| a binary32 value of [-1, 1], widened | 0 | 0 | 6,095 |
+| within 2048 doubles of an interval's bound | 0 | 0 | 880,469 |
+| a magnitude in [1/8, 1), any double as likely | 0 | 0 | 257,660 |
+
+Each model is its build on every argument. The builds are not each other
+(a double in 4000 of [1/8, 1) differs, by a unit in the last place), which
+is why the profile is one variant's and not the function's; none of the
+five billion pairs narrows to two different floats.
+
+Unmodified glibc 2.39 files in `tools/reference/glibc239`, identical to
+release commit `ef321e23c20eebc6d6fb4044425c00e6df27b05f`
+(`sysdeps/ieee754/dbl-64/`):
+
+| File | SHA-256 |
+|---|---|
+| `e_asin.c` | `cf56fcbf627fd8d57ca280e95ec891b978c70ae54f0f5929cc017003a3256eeb` |
+| `uasncs.h` | `27a627aae3639ad30b30cd77193c6e2f62ea662b24e5fc94b7617ffbaf61fff7` |
+| `asincos.tbl` | `067c3b7047ab28b087262ba26a839ad23bf39236a843897306d5c828d69904f0` |
+| `root.tbl` | `f3c9d14fdf380e8db2098a183266721cd800ddeb4745ef14f2a491c35b17f5eb` |
+| `powtwo.tbl` | `e66e94adcd700010aa6ea5407130486ef4dba610311c1aab74bda7952bd67f53` |
+
+The port's table lists hold, an interval a list, the doubles `acos` reads
+of each entry in the order it reads them (2136 of the table's 2568; `asin`
+reads the others); the unit tests hold the model's and the port's tables
+and constants against the pinned files.
+
+`M.Glibc241Libm` and `M.AppleLibm` answer `None` (a 2.41 library's
+contraction has not been read; macOS's function is not modeled), as do
+arguments outside [-1, 1], infinities and NaN on every profile. Out of
+contract: errno, exception flags and rounding modes other than to nearest.
+
+Gate `glibc-acos` (`tools/glibc_acos_probe.py`, with `tools/glibc_acos.py`)
+compiles the model on the host, requires it to reproduce 32 recorded
+results where the FMA and SSE2 variants differ (four an interval, two a
+sign), compares it with the host's `acos` where that reproduces them too,
+and requires Jonmath to equal it on 4062 arguments: random words of every
+exponent up to 1, 48 in each interval, promoted binary32 values, every
+interval's bound and every table entry's first argument with their
+neighbours, arguments below 1 through all 128 reciprocal roots and every
+power of two, 1 and -1, and nine that are `None`, on CPU-1, CPU-2 and
+JavaScript.

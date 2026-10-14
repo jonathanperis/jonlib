@@ -124,7 +124,7 @@ class CompilerEnvTests(unittest.TestCase):
                 return probekit.compiler_env({'PATH': '/bin'} if env is None else env)
 
     def test_a_lower_cgroup_limit_sizes_the_engine_memory(self):
-        self.assertEqual(self.env(16, str(8 << 30)), {'PATH': '/bin', 'BUN_JSC_forceRAMSize': str(4 << 30)})
+        self.assertEqual(self.env(16, str(8 << 30)), {'PATH': '/bin', 'BUN_JSC_forceRAMSize': str(2 << 30)})
 
     def test_hosts_without_a_lower_limit_are_unchanged(self):
         self.assertEqual(self.env(16), {'PATH': '/bin'})                  # no cgroup file (macOS)
