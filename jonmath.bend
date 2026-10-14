@@ -31,6 +31,7 @@ import ./src/lgpl/tan.bend as GlibcTan
 import ./src/lgpl/asin.bend as GlibcAsin
 import ./src/lgpl/tanf.bend as GlibcTanf
 import ./src/lgpl/sin.bend as GlibcSin
+import ./src/lgpl/acos.bend as GlibcAcos
 
 # -----------------------------------------------------------------------------
 # Shared types: vectors, matrix, binary64 words
@@ -599,6 +600,22 @@ def Libm.sin64(libm: Libm, value: Float64) -> Maybe<Float64>:
 def Libm.cos64.words(value: Float64) -> Maybe<Float64>:
   Float64{high, low} = value
   Float64.internal.lift(GlibcSin.cos(high, low))
+
+def Libm.acos64.words(value: Float64) -> Maybe<Float64>:
+  Float64{high, low} = value
+  Float64.internal.lift(GlibcAcos.acos(high, low))
+
+# The binary64 acos under a reference profile (Libm.acos is acosf).
+# Glibc239Libm: glibc 2.39's x86_64 acos as its FMA ifunc variant runs it on
+# CPUs with FMA and AVX2, through the LGPL-2.1+ module src/lgpl/acos.bend;
+# equal to the native function on every argument compared (docs/MATH.md).
+# None for AppleLibm (Apple's acos is unpublished), Glibc241Libm (its binary
+# is not verified), arguments outside [-1, 1] (a NaN in C), infinities and
+# NaN.
+def Libm.acos64(libm: Libm, value: Float64) -> Maybe<Float64>:
+  match libm:
+    case Glibc239Libm{}: Libm.acos64.words(value)
+    case _: None{}
 
 # The binary64 cos under a reference profile, as Libm.sin64.
 def Libm.cos64(libm: Libm, value: Float64) -> Maybe<Float64>:

@@ -668,7 +668,20 @@ table as binary64 words and the refused non-finite arguments.
 `tools/reference/glibc_sin/model.c` is the same arithmetic in C under the
 same notices.
 
-These six Bend files are licensed under
+`src/lgpl/acos.bend` and its tables `src/lgpl/acos_table.bend` are an
+altered Bend adaptation of glibc 2.39's binary64 `acos`
+(`sysdeps/ieee754/dbl-64/e_asin.c`, `uasncs.h`, `asincos.tbl`, `root.tbl`
+and `powtwo.tbl`, same commit; pinned copies in `tools/reference/glibc239`):
+the IBM Accurate Mathematical Library, written by International Business
+Machines Corp., Copyright (C) 2001-2024 Free Software Foundation, Inc.,
+LGPL-2.1-or-later. Their change notices record the Bend rewrite, every
+double operation through Jonlib's exact binary64 helpers, the
+`__ieee754_acos_fma` build's FMA contraction made explicit, the tables as
+binary64 words in the order `acos` reads them, and the refused arguments
+(outside [-1, 1] and non-finite). `tools/reference/glibc_acos/model.c` is
+the same arithmetic in C under the same notices.
+
+These eight Bend files are licensed under
 the **GNU Lesser General Public License, version 2.1 or (at your option) any
 later version**, whose text is in [LICENSES/lgpl-2.1.txt](LICENSES/lgpl-2.1.txt);
 each carries the original notices and a dated change notice (for the tangent:
@@ -676,8 +689,8 @@ written in Bend, every double operation through Jonlib's exact binary64
 helpers in the source's order, the `__tan_fma` build's FMA contraction made
 explicit, errno/flags/rounding modes out of contract). They are the only LGPL
 files of Jonlib: Jonmath imports them as separate modules for `M.Libm.tan`,
-`M.Libm.tanf`, `M.Libm.sin64`, `M.Libm.cos64` and the `Glibc239Libm` profile
-of `M.Libm.asin`, and the
+`M.Libm.tanf`, `M.Libm.sin64`, `M.Libm.cos64`, `M.Libm.acos64` and the
+`Glibc239Libm` profile of `M.Libm.asin`, and the
 rest of Jonlib and Jonmath stays under the zlib license. A combined work must
 let its users replace or modify these modules as LGPL-2.1 section 6 requires;
 the Bend sources are the preferred form for modification.
@@ -686,7 +699,11 @@ Reference tooling, never part of the library: the unmodified glibc 2.39
 sources in `tools/reference/glibc239` (SHA-256 recorded in
 [docs/PERSPECTIVE.md](docs/PERSPECTIVE.md), for `s_sin.c`, `sincostab.c` and
 `usncs.h` in [docs/MATH.md](docs/MATH.md) with their LGPL-2.1+ model
-`tools/reference/glibc_sin/model.c` built by `tools/glibc_sin.py`, and, for
+`tools/reference/glibc_sin/model.c` built by `tools/glibc_sin.py`, for
+`e_asin.c`, `uasncs.h`, `asincos.tbl`, `root.tbl` and `powtwo.tbl` there too
+with their LGPL-2.1+ model `tools/reference/glibc_acos/model.c` (and its
+`sample.c`, `variants.c` and `run_sample.sh`) built by
+`tools/glibc_acos.py`, and, for
 the `sinf`/`cosf` files
 `s_sinf.c`, `s_cosf.c`, `s_sincosf.h`, `sincosf_poly.h` and
 `s_sincosf_data.c`, in [docs/SINCOSF.md](docs/SINCOSF.md); Jonlib's

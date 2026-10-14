@@ -23,6 +23,7 @@ import ./src/asin.bend as Asin
 import ./src/lgpl/asin.bend as GlibcAsin
 import ./src/lgpl/tanf.bend as GlibcTanf
 import ./src/lgpl/sin.bend as GlibcSin
+import ./src/lgpl/acos.bend as GlibcAcos
 import ./src/sincosf.bend as Sincosf
 import ./src/power.bend as Power
 import ./src/msf_gif.bend as MsfGif
@@ -5355,3 +5356,45 @@ law music_module_sought_stays_where_it_is:
 
 law music_module_stopped_goes_back_to_its_start:
   {J.Music.context.rewound(J.MusicXm{XmPl.Player{M.Glibc239Libm{}, Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, Nil{}, 48000, XmPl.Song{3, 99, 0.5, False{}, False{}, 0, 0, 0, 24492, 0}, 0, 0, 0, 0.0, St.Index.new(0, 0), 0, 7, Nil{}}}) == J.MusicXm{XmPl.Player{M.Glibc239Libm{}, Xm.Module{2, 1, 1, 0, 6, 125, [0, 0], Nil{}, Nil{}, 0}, Nil{}, 48000, XmPl.Song{6, 125, 1.0, False{}, False{}, 0, 0, 0, 24492, 0}, 0, 0, 0, 0.0, St.Index.new(0, 0), 0, 0, Nil{}}} : J.Music.Context}
+
+# glibc 2.39's binary64 acos (src/lgpl/acos.bend, docs/MATH.md): a zero of
+# either sign has pi/2 (its high part), 1 has 0 and -1 has pi; what is above
+# 1, infinite or NaN is refused; a half is in the table's third interval and
+# the last double below 1 in the root's; and only the glibc 2.39 profile
+# answers.
+
+law glibc_acos_of_zero:
+  {GlibcAcos.acos(0, 0) == Some{F.Words{1073291771, 1413754136}} : Maybe<F.Words>}
+
+law glibc_acos_of_negative_zero:
+  {GlibcAcos.acos(2147483648, 0) == Some{F.Words{1073291771, 1413754136}} : Maybe<F.Words>}
+
+law glibc_acos_of_one:
+  {GlibcAcos.acos(1072693248, 0) == Some{F.Words{0, 0}} : Maybe<F.Words>}
+
+law glibc_acos_of_minus_one:
+  {GlibcAcos.acos(3220176896, 0) == Some{F.Words{1074340347, 1413754136}} : Maybe<F.Words>}
+
+law glibc_acos_above_one_refused:
+  {GlibcAcos.acos(1072693248, 1) == None{} : Maybe<F.Words>}
+
+law glibc_acos_of_infinity_refused:
+  {GlibcAcos.acos(2146435072, 0) == None{} : Maybe<F.Words>}
+
+law glibc_acos_of_nan_refused:
+  for low: U32
+  {GlibcAcos.acos(2146959360, low) == None{} : Maybe<F.Words>}
+
+law glibc_acos_interval_of_a_half:
+  {GlibcAcos.interval(1071644672) == 4 : U32}
+
+law glibc_acos_interval_below_one:
+  {GlibcAcos.interval(1072693247) == 8 : U32}
+
+law glibc_acos64_apple_refused:
+  for value: M.Float64
+  {M.Libm.acos64(M.AppleLibm{}, value) == None{} : Maybe<M.Float64>}
+
+law glibc_acos64_glibc241_refused:
+  for value: M.Float64
+  {M.Libm.acos64(M.Glibc241Libm{}, value) == None{} : Maybe<M.Float64>}

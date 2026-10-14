@@ -200,9 +200,12 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
   beside the MP3 decoder, the C emission of a program with a music peaked at
   6.2 GB and more and a batch in three was killed; with `--smol` the same
   batch peaks at 4.4 GB in the same time, the JavaScript byte for byte the
-  same, and the sound gate's eleven batches all compile (the largest at 6.4
-  GB beside the C compiler's 1.1: still close, so a kill, exit -9, is to be
-  tried again). The hosted runners have no such limit and compile as before.
+  same. The memory size passed is now a quarter of the limit, not half:
+  with half and `--smol`, `audio_sound_positioning`'s compile still reached
+  7.3 GB and was killed; with a quarter it peaks at 4.2 GB in the same four
+  and a half minutes. A kill (exit -9) can still happen when another
+  session builds in the same container: try again. The hosted runners have
+  no such limit and compile as before.
 
 ## Next steps, in order
 
@@ -1087,7 +1090,22 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
        then color; color then speed), as the C does. On macOS it is a
        contract from its first frame (`PERSPECTIVE`): the AppleLibm
        profile gives the player no sine and no power of two.
-       Next: `text_font_sdf`, the last example.
+       Next: `text_font_sdf`, the last example. Its font's 95 glyphs at
+       16 px make 15301 calls of `stbtt__solve_cubic`, every one with
+       three roots (`acos` and two `cos`, no `pow`; counted by hooking
+       `STBTT_pow`/`STBTT_acos`/`STBTT_cos` in a C build). In pieces:
+       (1) **done**: `M.Libm.acos64`, glibc 2.39's binary64 `acos` as its
+       FMA variant runs it (`src/lgpl/acos.bend`, gate `glibc-acos`; the
+       contraction read from the library's code, as for `sin`); (2) the
+       cube root, `(float) pow((double) x, (double) (1.0f/3.0f))`: Arm's
+       `pow` as glibc's FMA variant runs it, whose C model
+       (`tools/reference/glibc_pow`) equals the library on every float and
+       whose two variants narrow to the same float on every float, so one
+       build is enough (`src/power64.bend`, gate `pow-third`); (3)
+       `stbtt__solve_cubic` itself (`src/stb_cubic.bend`) and the SDF's
+       curves in `src/truetype.bend` under the glibc 2.39 profile only
+       (the solver reached from the profile's entry, so that the default
+       font path does not compile the tables); (4) the example.
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`

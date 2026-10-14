@@ -4162,3 +4162,36 @@ def Laws.music_module_sought_stays_where_it_is():
 
 def Laws.music_module_stopped_goes_back_to_its_start():
   {==}
+
+def Laws.glibc_acos_of_zero():
+  {==}
+
+def Laws.glibc_acos_of_negative_zero():
+  {==}
+
+def Laws.glibc_acos_of_one():
+  {==}
+
+def Laws.glibc_acos_of_minus_one():
+  {==}
+
+def Laws.glibc_acos_above_one_refused():
+  {==}
+
+def Laws.glibc_acos_of_infinity_refused():
+  {==}
+
+def Laws.glibc_acos_of_nan_refused(low):
+  {==}
+
+def Laws.glibc_acos_interval_of_a_half():
+  {==}
+
+def Laws.glibc_acos_interval_below_one():
+  {==}
+
+def Laws.glibc_acos64_apple_refused(value):
+  {==}
+
+def Laws.glibc_acos64_glibc241_refused(value):
+  {==}

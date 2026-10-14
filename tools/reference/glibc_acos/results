@@ -1,0 +1,15 @@
+{"comparison": "fma", "mode": 0, "arguments": 1000000000, "differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "sse2", "mode": 0, "arguments": 1000000000, "differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "variants", "mode": 0, "arguments": 1000000000, "doubles": 381, "floats": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "fma", "mode": 1, "arguments": 1000000000, "differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "sse2", "mode": 1, "arguments": 1000000000, "differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "variants", "mode": 1, "arguments": 1000000000, "doubles": 13025, "floats": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "fma", "mode": 2, "arguments": 1000000000, "differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "sse2", "mode": 2, "arguments": 1000000000, "differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "variants", "mode": 2, "arguments": 1000000000, "doubles": 6095, "floats": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "fma", "mode": 3, "arguments": 1000000000, "differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "sse2", "mode": 3, "arguments": 1000000000, "differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "variants", "mode": 3, "arguments": 1000000000, "doubles": 880469, "floats": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "fma", "mode": 4, "arguments": 1000000000, "differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "sse2", "mode": 4, "arguments": 1000000000, "differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"comparison": "variants", "mode": 4, "arguments": 1000000000, "doubles": 257660, "floats": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
