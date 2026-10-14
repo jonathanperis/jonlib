@@ -304,6 +304,7 @@ EXAMPLES = {
     'audio_raw_stream': ('audio/audio_raw_stream.c', 'Ex.setup(core, frame)'),
     'audio_stream_callback': ('audio/audio_stream_callback.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'audio_music_stream': ('audio/audio_music_stream.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'audio_module_playing': ('audio/audio_module_playing.c', 'Ex.setup(seed, M.LIBM{}, RESOURCES, core, frame)'),
     'audio_stream_effects': ('audio/audio_stream_effects.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_mixed_processor': ('audio/audio_mixed_processor.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'audio_spectrum_visualizer': ('audio/audio_spectrum_visualizer.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
@@ -437,7 +438,7 @@ IO_SETUP.add('models_loading_m3d'); PERSPECTIVE.add('models_loading_m3d')
 AUDIO = {'textures_sprite_button', 'textures_sprite_explosion', 'audio_sound_multi', 'audio_sound_positioning', 'audio_sound_loading'}
 # Examples whose frames show what the device did: its thread is stopped and the scripted clock asks for its callbacks
 # (tools/reference/audio_clock.c; AudioClock in Jonlib).
-AUDIO_CLOCK = {'audio_raw_stream', 'audio_music_stream', 'audio_stream_effects', 'audio_mixed_processor', 'audio_spectrum_visualizer'}
+AUDIO_CLOCK = {'audio_raw_stream', 'audio_music_stream', 'audio_stream_effects', 'audio_mixed_processor', 'audio_spectrum_visualizer', 'audio_module_playing'}
 AUDIO.update(AUDIO_CLOCK)
 IO_SETUP.update(AUDIO)
 # The binary64 sin of its samples and of its wave has no AppleLibm profile (docs/MATH.md): the same contract.
@@ -446,6 +447,8 @@ PERSPECTIVE.add('audio_raw_stream')
 PERSPECTIVE.add('audio_spectrum_visualizer')
 IO_SETUP.add('audio_stream_callback')
 PERSPECTIVE.add('audio_sound_positioning')
+# The module's player takes its sines and powers of two from libm, and the AppleLibm profile gives it none: the same contract.
+SEEDED.add('audio_module_playing'); PERSPECTIVE.add('audio_module_playing'); CONFIG_FLAGS['audio_module_playing'] = 32
 PERSPECTIVE.add('core_vr_simulator')
 IO_SETUP.add('shaders_game_of_life'); SEEDED.add('shaders_game_of_life')
 IO_SETUP.add('text_unicode_ranges'); EFFECTS.add('text_unicode_ranges')
@@ -1284,6 +1287,15 @@ def scripts():
                                               quick([key(KEY_UP, False), key(KEY_P)]), quick([key(KEY_P, False)]), quick([key(KEY_P)]),
                                               quick([key(KEY_P, False), key(KEY_LEFT)]), long([key(KEY_LEFT, False), key(KEY_DOWN)]),
                                               quick([key(KEY_DOWN, False), key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), quick()]),
+        # mini1111.xm plays once from the first frame: at 60 FPS the clock asks for one or two callbacks a frame and UpdateMusicStream
+        # has the module's player generate the halves they read through (two halves of 12800 frames before the first frame). Up
+        # raises the speed a hundredth a frame and down lowers it (the stream is resampled from there on); P pauses the music and the
+        # circles and resumes them; the fastest circles fade out after 43 frames that move them and are made again; space stops the
+        # music (its time goes back to 0) and plays it from its start.
+        script('audio_module_playing', 'keys', [quick(), quick(), quick([key(KEY_UP)]), quick(), quick([key(KEY_UP, False), key(KEY_DOWN)]), slow(),
+                                                quick([key(KEY_DOWN, False), key(KEY_P)]), quick([key(KEY_P, False)]), quick([key(KEY_P)]),
+                                                quick([key(KEY_P, False)]), long(), *[quick() for _ in range(38)], quick([key(KEY_SPACE)]),
+                                                quick([key(KEY_SPACE, False)]), quick(), quick()]),
         # country.mp3 again, at 60 FPS (one or two callbacks a frame). F puts the low-pass filter on the music's stream and
         # D the delay after it: both run in the callbacks of the frames that follow; P pauses and resumes; F takes the
         # filter off over a slow frame; space restarts the music with the delay still on.

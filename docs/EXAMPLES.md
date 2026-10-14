@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 210 ported, 2 ready, 0 waiting.
+Totals: 212 examples; 211 ported, 1 ready, 0 waiting.
 
 ## APIs that unblock the most examples
 
@@ -227,7 +227,7 @@ Totals: 212 examples; 210 ported, 2 ready, 0 waiting.
 | `shaders_game_of_life` | shaders | ported |  |
 | `shaders_rlgl_compute` | shaders | ported |  |
 | `shaders_cel_shading` | shaders | ported |  |
-| `audio_module_playing` | audio | ready |  |
+| `audio_module_playing` | audio | ported |  |
 | `audio_music_stream` | audio | ported |  |
 | `audio_raw_stream` | audio | ported |  |
 | `audio_sound_loading` | audio | ported |  |

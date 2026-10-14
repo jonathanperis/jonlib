@@ -1612,6 +1612,14 @@ contracts: the modules the other XM gates find undefined by jar_xm.h
 itself, and raylib's module under `Music.load`. For those the expected
 state is raylib's after a file jar_xm does not take, with Jonlib's error.
 
+The example `audio_module_playing` plays `mini1111.xm` once
+(`music.looping = false`) under 64 fading circles, with a bar of
+`GetMusicTimePlayed/GetMusicTimeLength`: its 53 frames replay equal to the
+native example's on the three lanes, with the speed raised and lowered
+(`SetMusicPitch`, the stream resampled from there on), a pause and a
+restart. A frame is refused where the module is not loaded: under the
+AppleLibm profile every frame is a contract.
+
 Still to come: the music stream (`LoadMusicStream` for `.xm`).
 
 ## WaveFormat
