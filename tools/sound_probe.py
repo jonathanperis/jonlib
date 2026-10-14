@@ -1215,11 +1215,12 @@ static void state(int first)
         Music m = musics[s];
         int live = (slot_id[s] > 0) && !gone[slot_id[s] - 1];
         if (m.ctxData == NULL) { printf(" U-"); continue; }
-        if ((m.ctxType != MUSIC_AUDIO_WAV) && (m.ctxType != MUSIC_AUDIO_QOA) && (m.ctxType != MUSIC_AUDIO_MP3) && (m.ctxType != MUSIC_MODULE_XM)) exit(10);
+        if ((m.ctxType != MUSIC_AUDIO_WAV) && (m.ctxType != MUSIC_AUDIO_QOA) && (m.ctxType != MUSIC_AUDIO_MP3) && (m.ctxType != MUSIC_MODULE_XM) && (m.ctxType != MUSIC_AUDIO_OGG)) exit(10);
         printf(" U%d,%u,%d,%u,%u,", (int)IsMusicValid(m), m.frameCount, (int)m.looping,
                (m.ctxType == MUSIC_AUDIO_WAV)? (unsigned)((drwav *)m.ctxData)->readCursorInPCMFrames :
                (m.ctxType == MUSIC_AUDIO_MP3)? (unsigned)((drmp3 *)m.ctxData)->currentPCMFrame :
-               (m.ctxType == MUSIC_MODULE_XM)? (unsigned)((jar_xm_context_t *)m.ctxData)->generated_samples : ((qoaplay_desc *)m.ctxData)->sample_position, timed(GetMusicTimeLength(m)));
+               (m.ctxType == MUSIC_MODULE_XM)? (unsigned)((jar_xm_context_t *)m.ctxData)->generated_samples :
+               (m.ctxType == MUSIC_AUDIO_OGG)? (unsigned)stb_vorbis_get_sample_offset((stb_vorbis *)m.ctxData) : ((qoaplay_desc *)m.ctxData)->sample_position, timed(GetMusicTimeLength(m)));
         // a module's time is its player's count of samples: raylib reads neither the buffer nor the device for it
         if ((m.stream.buffer == NULL) || (AUDIO.System.isReady && live) || (m.ctxType == MUSIC_MODULE_XM)) printf("%u", timed(GetMusicTimePlayed(m)));
         else printf("-");
@@ -1449,6 +1450,8 @@ import ../../src/mixer.bend as Mixer
 import ../../src/resampler.bend as Resampler
 import ../../src/mp3_stream.bend as Mp3S
 import ../../src/xm_mixer.bend as XmX
+import ../../src/vorbis_packet.bend as VorbisK
+import ../../src/vorbis_frame.bend as VorbisF
 
 type Op is Data:
   OpInit{}
@@ -1583,6 +1586,11 @@ def buffers.text(buffers: +List<J.AudioDevice.Buffer>, +blocks: +List<J.AudioDev
     case Con{J.AudioBuffer{+id, +block, +frames, +volume, +pitch, +pan, +playing, +paused, head}, rest}:
       " B" ++ U32.show(id) ++ "," ++ U32.show(block) ++ "," ++ U32.show(frames) ++ "," ++ U32.show(F32.bits(volume)) ++ "," ++ U32.show(F32.bits(pitch)) ++ "," ++ U32.show(F32.bits(pan)) ++ "," ++ flag(playing) ++ "," ++ flag(paused) ++ "," ++ hashed(block, J.AudioDevice.block.find(blocks, block)) ++ head.text(head) ++ ",p" ++ tags.text(J.AudioProcessors.tags(attached, id, Nil{}), True{}) ++ buffers.text(rest, blocks, attached)
 
+# stb_vorbis_get_sample_offset: current_loc where it is valid, else -1.
+def ogg.offset(state: VorbisK.State) -> String:
+  VorbisK.State{_, _, loc, known, _} = state
+  U32.show(Bool.pick(U32, known, loc, 4294967295))
+
 def music.at(context: J.Music.Context) -> String:
   match context:
     case J.MusicNone{}: "-"
@@ -1590,6 +1598,7 @@ def music.at(context: J.Music.Context) -> String:
     case J.MusicQoa{_, at}: U32.show(at)
     case J.MusicMp3{player}: U32.show(Mp3S.Player.current(player))
     case J.MusicXm{player}: U32.show(XmX.generated.of(player))
+    case J.MusicOgg{_, frames, _, _}: ogg.offset(VorbisF.Frames.state(frames))
 
 # A time's bits; a NaN (the length of a music without a rate) as one NaN, whatever sign the machine gives it.
 def timed(time: F32) -> String:

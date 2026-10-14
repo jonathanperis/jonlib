@@ -4243,3 +4243,12 @@ def Laws.font_assemble_pairs_a_glyph_with_its_rectangle():
 
 def Laws.font_assemble_stops_at_the_shorter_list():
   {==}
+
+def Laws.music_token_of_an_ogg_stream():
+  {==}
+
+def Laws.music_ogg_read_padded_with_zeros():
+  {==}
+
+def Laws.music_ogg_read_cut_to_the_frames_asked():
+  {==}

@@ -2301,6 +2301,21 @@
    "minutes": 10
   },
   {
+   "id": "ogg-music",
+   "title": "Ogg Vorbis musics (LoadMusicStream, UpdateMusicStream, StopMusicStream, GetMusicTimeLength and GetMusicTimePlayed on target.ogg) against raudio.c itself with miniaudio's null backend: through the end and round, stopped, to the end without looping, paused, on an unready device, two at once, and a file that is no Ogg stream",
+   "run": [
+    "{python}",
+    "tools/ogg_music_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 25
+  },
+  {
    "id": "xm-music",
    "title": "XM musics (LoadMusicStream, UpdateMusicStream, StopMusicStream, SeekMusicStream, GetMusicTimeLength and GetMusicTimePlayed on a module) against raudio.c itself with miniaudio's null backend, each case in a process of its own: raylib's mini1111.xm and built modules of linear and Amiga frequencies played through the halves of their streams, stopped, played to their end without looping, loaded on an unready device and two at once, with the modules jar_xm.h leaves undefined and what the AppleLibm profile does not give as contracts",
    "run": [
