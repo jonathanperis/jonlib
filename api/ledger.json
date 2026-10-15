@@ -31833,24 +31833,28 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "blocked",
-      "jonlib": "Window.open_url",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "System.open_url",
+      "mapping_state": "implemented",
+      "scope": "The reference platform (rcore_memory.c): system with explorer and the quoted URL through /bin/sh; nothing for a URL with a single quote.",
       "gaps": [
-        "Runtime process/URL-launch primitive in Bend Base"
+        "Desktop platforms run xdg-open, open or start instead",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
-      "blocker": "The memory platform spawns a shell (system(\"explorer ...\")) unless the URL contains ' ; Base has no process or URL-launch primitive.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/DRIVER.md"
+        "tools/files_os_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend",
+        "patches/bend-os-effects.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -31863,7 +31867,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Resolve: The memory platform spawns a shell (system(\"explorer ...\")) unless the URL contains ' ; Base has no process or URL-launch primitive.",
+      "next_step": "Close documented gaps and unverified gates for OpenURL.",
       "priority": 310
     },
     {
@@ -32871,24 +32875,28 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "blocked",
-      "jonlib": "File.file_rename",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Files.rename",
+      "mapping_state": "implemented",
+      "scope": "rename(2)'s result, -1 for a source FileExists does not see.",
       "gaps": [
-        "Runtime OS primitive in Bend's Base"
+        "Paths are Base strings (UTF-8 at the edge)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
-      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/FILES.md"
+        "tools/files_os_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend",
+        "patches/bend-os-effects.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -32900,7 +32908,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "next_step": "Close documented gaps and unverified gates for FileRename.",
       "priority": 204
     },
     {
@@ -32926,24 +32934,28 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "blocked",
-      "jonlib": "File.file_remove",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Files.remove",
+      "mapping_state": "implemented",
+      "scope": "remove(3)'s result (a file, or an empty directory), -1 for a path FileExists does not see.",
       "gaps": [
-        "Runtime OS primitive in Bend's Base"
+        "Paths are Base strings (UTF-8 at the edge)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
-      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/FILES.md"
+        "tools/files_os_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend",
+        "patches/bend-os-effects.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -32955,7 +32967,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "next_step": "Close documented gaps and unverified gates for FileRemove.",
       "priority": 204
     },
     {
@@ -32981,24 +32993,28 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "blocked",
-      "jonlib": "File.file_copy",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Files.copy",
+      "mapping_state": "implemented",
+      "scope": "LoadFileData, the target's directory made where DirectoryExists does not see it, then SaveFileData when there are bytes: 1, 0 or MakeDirectory's -1 as raylib gives them.",
       "gaps": [
-        "Runtime OS primitive in Bend's Base"
+        "GetDirectoryPath overflow is None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
-      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/FILES.md"
+        "tools/files_os_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend",
+        "patches/bend-os-effects.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33010,7 +33026,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "next_step": "Close documented gaps and unverified gates for FileCopy.",
       "priority": 204
     },
     {
@@ -33036,24 +33052,28 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "blocked",
-      "jonlib": "File.file_move",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Files.move",
+      "mapping_state": "implemented",
+      "scope": "-1 for a missing source; FileCopy, then FileRemove of the source when the copy gave 0 (a successful copy gives 1: the source stays and the result is -1, as in raylib).",
       "gaps": [
-        "Runtime OS primitive in Bend's Base"
+        "GetDirectoryPath overflow is None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
-      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/FILES.md"
+        "tools/files_os_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend",
+        "patches/bend-os-effects.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33065,7 +33085,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "next_step": "Close documented gaps and unverified gates for FileMove.",
       "priority": 204
     },
     {
@@ -33210,9 +33230,8 @@
       "status": "partial",
       "jonlib": "Files.exists",
       "mapping_state": "implemented",
-      "scope": "True when the path opens for reading, directories included.",
+      "scope": "access(F_OK), as stat(2) answers it: a file that exists, readable or not, or a directory.",
       "gaps": [
-        "raylib's access() also accepts existing unreadable files",
         "Pointer/allocator ABI and complete target/resource coverage"
       ],
       "blocker": null,
@@ -33266,24 +33285,28 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "blocked",
-      "jonlib": "File.directory_exists",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Files.directory_exists",
+      "mapping_state": "implemented",
+      "scope": "opendir succeeds (Dir.read).",
       "gaps": [
-        "Runtime OS primitive in Bend's Base"
+        "Paths are Base strings (UTF-8 at the edge)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
-      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/FILES.md"
+        "tools/files_os_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend",
+        "patches/bend-os-effects.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33297,7 +33320,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "next_step": "Close documented gaps and unverified gates for DirectoryExists.",
       "priority": 204
     },
     {
@@ -33439,24 +33462,28 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "blocked",
-      "jonlib": "File.get_file_mod_time",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Files.mod_time",
+      "mapping_state": "implemented",
+      "scope": "st_mtime in seconds, 0 where stat fails.",
       "gaps": [
-        "Runtime OS primitive in Bend's Base"
+        "A modification before 1970 is 0 (raylib's long is negative)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
-      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/FILES.md"
+        "tools/files_os_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend",
+        "patches/bend-os-effects.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33468,7 +33495,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "next_step": "Close documented gaps and unverified gates for GetFileModTime.",
       "priority": 204
     },
     {
@@ -33776,24 +33803,28 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "blocked",
-      "jonlib": "File.get_working_directory",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Files.working_directory",
+      "mapping_state": "implemented",
+      "scope": "getcwd(3) into raylib's 4095 bytes, None where it fails or the path does not fit.",
       "gaps": [
-        "Runtime OS primitive in Bend's Base"
+        "Paths are Base strings (UTF-8 at the edge)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
-      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/FILES.md"
+        "tools/files_os_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend",
+        "patches/bend-os-effects.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33805,7 +33836,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "next_step": "Close documented gaps and unverified gates for GetWorkingDirectory.",
       "priority": 204
     },
     {
@@ -33831,24 +33862,29 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "blocked",
-      "jonlib": "File.get_application_directory",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Files.application_directory",
+      "mapping_state": "implemented",
+      "scope": "The running program's file up to and with its last slash (Linux /proc/self/exe; the script on the JavaScript target), ./ where it is not found.",
       "gaps": [
-        "Runtime OS primitive in Bend's Base"
+        "Each program answers its own directory: compared for its trailing slash and for being a directory",
+        "macOS resolves links in _NSGetExecutablePath where raylib does not",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
-      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/FILES.md"
+        "tools/files_os_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend",
+        "patches/bend-os-effects.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33860,7 +33896,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "next_step": "Close documented gaps and unverified gates for GetApplicationDirectory.",
       "priority": 204
     },
     {
@@ -33886,24 +33922,28 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "blocked",
-      "jonlib": "File.make_directory",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Files.make_directory",
+      "mapping_state": "implemented",
+      "scope": "Every prefix before a slash or backslash made where it is missing (a colon passes the next character), then the path; 0 when it is a directory then, -1 otherwise or for an empty path.",
       "gaps": [
-        "Runtime OS primitive in Bend's Base"
+        "Paths are Base strings (UTF-8 at the edge)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
-      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/FILES.md"
+        "tools/files_os_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend",
+        "patches/bend-os-effects.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33915,7 +33955,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "next_step": "Close documented gaps and unverified gates for MakeDirectory.",
       "priority": 204
     },
     {
@@ -33941,24 +33981,28 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "blocked",
-      "jonlib": "File.change_directory",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Files.change_directory",
+      "mapping_state": "implemented",
+      "scope": "chdir(2) succeeds.",
       "gaps": [
-        "Runtime OS primitive in Bend's Base"
+        "Its trace-log messages are not reproduced",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
-      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/FILES.md"
+        "tools/files_os_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend",
+        "patches/bend-os-effects.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33972,7 +34016,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "next_step": "Close documented gaps and unverified gates for ChangeDirectory.",
       "priority": 204
     },
     {
@@ -33998,24 +34042,28 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "blocked",
-      "jonlib": "File.is_path_file",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Files.is_path_file",
+      "mapping_state": "implemented",
+      "scope": "stat(2), links followed: a regular file.",
       "gaps": [
-        "Runtime OS primitive in Bend's Base"
+        "Paths are Base strings (UTF-8 at the edge)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
-      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/FILES.md"
+        "tools/files_os_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend",
+        "patches/bend-os-effects.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -34029,7 +34077,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "next_step": "Close documented gaps and unverified gates for IsPathFile.",
       "priority": 204
     },
     {
@@ -34113,24 +34161,28 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "blocked",
-      "jonlib": "File.load_directory_files",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Files.load_directory_files",
+      "mapping_state": "implemented",
+      "scope": "LoadDirectoryFilesEx with the *.* filter and without subdirectories.",
       "gaps": [
-        "Runtime OS primitive in Bend's Base"
+        "IsFileExtension overflow (an extension of 16+ bytes) is None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
-      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/FILES.md"
+        "tools/files_os_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend",
+        "patches/bend-os-effects.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -34144,7 +34196,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "next_step": "Close documented gaps and unverified gates for LoadDirectoryFiles.",
       "priority": 204
     },
     {
@@ -34170,24 +34222,28 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "blocked",
-      "jonlib": "File.load_directory_files_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Files.load_directory_files_ex",
+      "mapping_state": "implemented",
+      "scope": "Each entry's path/name in readdir order, a subdirectory's entries right after it; the NULL or empty filter, the *.*, FILES* and DIRS* tags and extension lists as ScanDirectoryFiles applies them; paths from 4096 bytes skipped and of 4095 cut to 4094 as snprintf leaves them.",
       "gaps": [
-        "Runtime OS primitive in Bend's Base"
+        "IsFileExtension overflow (an extension of 16+ bytes), or a cut splitting a character, is None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
-      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/FILES.md"
+        "tools/files_os_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend",
+        "patches/bend-os-effects.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -34202,7 +34258,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "next_step": "Close documented gaps and unverified gates for LoadDirectoryFilesEx.",
       "priority": 204
     },
     {
@@ -34228,24 +34284,28 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "blocked",
-      "jonlib": "File.unload_directory_files",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Files.unload_directory_files",
+      "mapping_state": "implemented",
+      "scope": "Consuming the list frees it.",
       "gaps": [
-        "Runtime OS primitive in Bend's Base"
+        "Pointer/allocator ABI",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
-      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/FILES.md"
+        "tools/files_os_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend",
+        "patches/bend-os-effects.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -34259,7 +34319,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "next_step": "Close documented gaps and unverified gates for UnloadDirectoryFiles.",
       "priority": 204
     },
     {
@@ -34468,24 +34528,28 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "blocked",
-      "jonlib": "File.get_directory_file_count",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Files.directory_file_count",
+      "mapping_state": "implemented",
+      "scope": "GetDirectoryFileCountEx with the *.* filter and without subdirectories.",
       "gaps": [
-        "Runtime OS primitive in Bend's Base"
+        "IsFileExtension overflow is None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
-      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/FILES.md"
+        "tools/files_os_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend",
+        "patches/bend-os-effects.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -34497,7 +34561,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "next_step": "Close documented gaps and unverified gates for GetDirectoryFileCount.",
       "priority": 204
     },
     {
@@ -34523,24 +34587,28 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "blocked",
-      "jonlib": "File.get_directory_file_count_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Files.directory_file_count_ex",
+      "mapping_state": "implemented",
+      "scope": "What the listing would hold, counted, the filter as given (an empty one counts nothing).",
       "gaps": [
-        "Runtime OS primitive in Bend's Base"
+        "IsFileExtension overflow is None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
-      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/FILES.md"
+        "tools/files_os_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend",
+        "patches/bend-os-effects.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -34554,7 +34622,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
+      "next_step": "Close documented gaps and unverified gates for GetDirectoryFileCountEx.",
       "priority": 204
     },
     {

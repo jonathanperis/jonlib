@@ -14,7 +14,19 @@ byte, on every lane.
 | `Files.previous_directory(path) -> Maybe<String>` | `GetPrevDirectoryPath` | Up to 3 bytes unchanged; otherwise the path up to its last separator, keeping a root `/` or `C:\`; `""` without a separator. Paths up to 4096 bytes. |
 | `Files.has_extension(path, extensions) -> Maybe<Bool>` | `IsFileExtension` | ASCII-case-insensitive match against a `;`-separated list of at most 31 entries (the last keeps further separators); entries without a leading `.` compare without it. A file extension of 16+ bytes overflows raylib's buffer: `None`. |
 | `Files.valid_name(name) -> Bool` | `IsFileNameValid` | Empty names are valid; `<>:"/\|?*`, control characters and all-period names are not. |
-| `Files.exists(path) -> IO(Bool)` | `FileExists` | The path opens for reading (directories included). raylib asks `access()`, which also accepts existing unreadable files. |
+| `Files.exists(path) -> IO(Bool)` | `FileExists` | `access(F_OK)`, as `stat(2)` answers it (Base's `Path.stat`): a file that exists, readable or not, or a directory; a dangling link does not. |
+| `Files.is_path_file(path) -> IO(Bool)` | `IsPathFile` | `stat(2)`, links followed: a regular file. |
+| `Files.directory_exists(path) -> IO(Bool)` | `DirectoryExists` | `opendir` succeeds (Base's `Dir.read`): a directory that cannot be read is not one. |
+| `Files.mod_time(path) -> IO(Nat)` | `GetFileModTime` | `st_mtime` in seconds, 0 where `stat` fails. A file modified before 1970 is 0 here, where raylib's `long` is negative. |
+| `Files.rename(source, target) -> IO(U32)`, `Files.remove(path) -> IO(U32)` | `FileRename`, `FileRemove` | `rename(2)`'s or `remove(3)`'s result (a file, or an empty directory), -1 (4294967295) for a path `FileExists` does not see. |
+| `Files.copy(source, target) -> IO(Maybe<U32>)` | `FileCopy` | The source's bytes, the target's directory (`GetDirectoryPath`) made where it is missing, then the bytes saved when there are any: 1 when `SaveFileData` succeeds, 0 when it fails or there was nothing to write, -1 when `MakeDirectory` fails; `None` where `GetDirectoryPath` overflows. |
+| `Files.move(source, target) -> IO(Maybe<U32>)` | `FileMove` | -1 for a missing source; otherwise `FileCopy`, then `FileRemove` of the source only when the copy gave 0. A successful copy gives 1, which raylib takes as a failure: the source stays and the result is -1. |
+| `Files.make_directory(path) -> IO(U32)` | `MakeDirectory` | -1 for an empty path, 0 for an existing directory; otherwise every prefix before a `/` or `\` (a `:` passes the character after it) is made where it is missing, then the path with those separators turned into `/`, mode 0777 under the umask; 0 when the path given is a directory then, -1 otherwise. |
+| `Files.change_directory(path) -> IO(Bool)`, `Files.working_directory() -> IO(Maybe<String>)` | `ChangeDirectory`, `GetWorkingDirectory` | `chdir(2)`; `getcwd(3)` into raylib's 4095 bytes, `None` where it fails or the path does not fit. |
+| `Files.application_directory() -> IO(String)` | `GetApplicationDirectory` | The running program's file (`/proc/self/exe`; the script on the JavaScript target) up to and with its last `/`, `"./"` where it is not found. |
+| `Files.load_directory_files(path)`, `Files.load_directory_files_ex(path, filter, subdirs) -> IO(Maybe<FilePathList>)`, `Files.unload_directory_files(files)` | `LoadDirectoryFiles(Ex)`, `UnloadDirectoryFiles` | The paths `path/name` of a directory's entries in `readdir`'s order, a subdirectory's (with `subdirs`) right after it. `filter` `None` (or empty) is `NULL`: every regular file. Otherwise a regular file is listed for the `*.*` or `FILES*` tag or an extension of the list (`IsFileExtension`), anything else (a directory, or a path `stat` fails on) for `*.*` or `DIRS*`. A path of 4096 bytes or more is skipped and one of 4095 is cut to 4094 bytes, as `snprintf` leaves it. No directory gives no paths. `None` where `IsFileExtension`'s buffer overflows (an extension of 16+ bytes) or the cut would split a character. `LoadDirectoryFiles` is the `*.*` filter without subdirectories. |
+| `Files.directory_file_count(path)`, `Files.directory_file_count_ex(path, filter, subdirs) -> IO(Maybe<U32>)` | `GetDirectoryFileCount(Ex)` | What the listing would hold, counted; the filter as given (an empty one counts nothing). |
+| `System.open_url(url) -> IO(Unit)` | `OpenURL` | The reference platform's (`rcore_memory.c`): `system()` of `explorer "url"` through `/bin/sh` (Base's `Process.run`), its result unused; nothing for a URL with a `'`. |
 | `Files.length(path) -> IO(U32)` | `GetFileLength` | The size in bytes; 0 when the file does not open. |
 | `Files.load_data(path)` / `unload_data` | `LoadFileData` / `UnloadFileData` | Every byte, up to raylib's `INT_MAX` size, as `Result<&1, &1, Surface.IOError, +List<U32>>`; an existing empty file is an empty list (raylib: `NULL` with size 0). |
 | `Files.save_data(path, bytes)` | `SaveFileData` | Writes every byte; values above 255 are `InvalidRequest` before opening. |
@@ -53,17 +65,15 @@ Failures are typed `Surface.IOError` values instead of `NULL`/`false`.
 Requests the plain form rejects before opening a file (bytes above 255,
 invalid raw parameters) are rejected before calling the callback.
 
-## Not yet available
+## The host's file system
 
-Base's file effects (pinned Bend revision, re-checked for this slice) are
-`File.open`, `File.read`/`read_bytes`/`read_at`, `File.size`, `File.write`/
-`write_bytes` and `File.close`: no rename, remove, stat, directory listing or
-working-directory primitive. The functions needing them stay blocked (runtime
-workstream, [MASTER-PLAN.md](MASTER-PLAN.md#compiler-and-runtime-workstream)):
-`FileRename`, `FileRemove`, `FileCopy`/`FileMove` (remove and the modification
-check), `DirectoryExists`, `IsPathFile`, `GetFileModTime`, `GetWorkingDirectory`,
-`GetApplicationDirectory`, `MakeDirectory`, `ChangeDirectory`,
-`LoadDirectoryFiles(Ex)`, `UnloadDirectoryFiles` and `GetDirectoryFileCount(Ex)`.
+The functions that look at or change the file system beyond a file's bytes
+are built on Bend Base's path, directory and process effects (`Path.stat`,
+`Path.rename`, `Path.remove`, `Dir.read`, `Dir.make`, `Dir.change`,
+`Dir.current`, `Process.path`, `Process.run`), which the declared compiler
+overlay adds to Base ([bend-os-effects.md](../patches/bend-os-effects.md)).
+Paths are Base strings, as `Files.load_data`'s are, and raylib's `int`
+results are the int's U32 bits.
 
 `shaders_hot_reloading` only shows its shader file's modification time and
 compares it with a later reading: its port takes that time as a setup
@@ -95,6 +105,20 @@ follows, instead of the memory platform's bottom-up one with red and blue
 swapped ([FRAME.md](FRAME.md#readback)).
 
 ## How it is verified
+
+`tools/files_os_probe.py` (gate `files-os`) runs one script of 206 operations
+over the file system functions, on a tree it builds afresh before the
+reference runs and before each lane does (files of several extensions, an
+empty, an unreadable and a linked one, a directory that cannot be opened,
+nested directories, paths past 4096 bytes and one of exactly 4095), with
+fixed modification times: the queries, every listing filter with and without
+subdirectories, renames, removals, directories made, copies and moves
+(raylib's -1 after a successful move's copy included), `OpenURL` through a
+fake `explorer` that logs its arguments, and `ChangeDirectory` and
+`GetWorkingDirectory` last. `GetApplicationDirectory` is checked for its
+trailing `/` and for being a directory, the programs being different on each
+side. An extension that overflows `IsFileExtension` is a `None` contract.
+
 
 `tools/files_probe.py` (gate `files`) runs the pure functions over a corpus of
 drive, root, relative, dotted and long paths, extension lists and names, then

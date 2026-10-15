@@ -14,12 +14,6 @@ Totals: 212 examples; 212 ported, 0 ready, 0 waiting.
 | API | Examples waiting on it |
 |---|---|
 | `GuiProgressBar` | 2 |
-| `GetApplicationDirectory` | 1 |
-| `GetFileModTime` | 1 |
-| `GetWorkingDirectory` | 1 |
-| `LoadDirectoryFiles` | 1 |
-| `LoadDirectoryFilesEx` | 1 |
-| `UnloadDirectoryFiles` | 1 |
 
 ## Examples
 
@@ -66,9 +60,9 @@ Totals: 212 examples; 212 ported, 0 ready, 0 waiting.
 | `core_undo_redo` | core | ported |  |
 | `core_viewport_scaling` | core | ported |  |
 | `core_input_actions` | core | ported |  |
-| `core_directory_files` | core | ported | `GetWorkingDirectory`, `LoadDirectoryFiles`, `LoadDirectoryFilesEx`, `UnloadDirectoryFiles` |
+| `core_directory_files` | core | ported |  |
 | `core_highdpi_testbed` | core | ported |  |
-| `core_screen_recording` | core | ported | `GetApplicationDirectory` |
+| `core_screen_recording` | core | ported |  |
 | `core_clipboard_text` | core | ported |  |
 | `core_text_file_loading` | core | ported |  |
 | `core_compute_hash` | core | ported |  |
@@ -209,7 +203,7 @@ Totals: 212 examples; 212 ported, 0 ready, 0 waiting.
 | `shaders_eratosthenes_sieve` | shaders | ported |  |
 | `shaders_fog_rendering` | shaders | ported |  |
 | `shaders_simple_mask` | shaders | ported |  |
-| `shaders_hot_reloading` | shaders | ported | `GetFileModTime` |
+| `shaders_hot_reloading` | shaders | ported |  |
 | `shaders_mesh_instancing` | shaders | ported |  |
 | `shaders_multi_sample2d` | shaders | ported |  |
 | `shaders_normalmap_rendering` | shaders | ported |  |

@@ -27,10 +27,15 @@ binary64 `acos` and the cube root of stb_truetype's cubic solver (SDF glyphs
 with curves, `text_font_sdf`), and MP3 Layers I and II (`src/mp3_layer12.bend`,
 with dr_mp3's read chunks for waves and music). Left of the port: FLAC data
 and FLAC/MOD music, the rlgl.h and raylib.h gaps the ledger lists
-(`python3 tools/api_plan.py check`), the 17 functions that need OS
-primitives the pinned Bend Base does not have (directory listing, file
-stat/rename/remove, working directory, `OpenURL`: extending the declared
-compiler overlay is Jonathan's call), and then the owed macOS validation.
+(`python3 tools/api_plan.py check`), and then the owed macOS validation.
+The 17 functions that needed OS primitives (directory listing, file
+stat/rename/remove, working directory, `OpenURL`) are built on path,
+directory and process effects the overlay adds to Bend's Base
+(`patches/bend-os-effects.patch`, approved by Jonathan on 2026-10-14 and
+written up for Bend's author in `patches/bend-os-effects.md`): raylib.h's
+600 core functions are all ported (partial until the final validation).
+Next: every ray*-family header as its own jon* module (rlgl, rcamera,
+rgestures, rlights, reasings), the rest of rlgl.h, FLAC and MOD.
 
 | Branch | Content | State |
 |---|---|---|

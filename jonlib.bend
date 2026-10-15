@@ -5421,18 +5421,15 @@ def Files.valid_name(+name: String) -> Bool:
   Bool.pick(Bool, String.is_empty(name), True{}, Files.valid_name.scan(name, True{}))
 
 # File data. Reads close their handle before returning; the byte domain is 0..255.
-def Files.exists.opened(opened: Result<&1, &1, U32 & String, File>) -> IO(Bool):
-  match opened:
-    case Fail{_}: IO.pure(Bool, False{})
-    case Done{file}:
-      do IO<Bool>:
-        Unit <- File.close(file)
-        IO.pure(Bool, True{})
+def Files.exists.stat(r: Result<&1, &1, U32 & String, U32 & Nat & Nat>) -> Bool:
+  match r:
+    case Fail{_}: False{}
+    case Done{_}: True{}
 
-# FileExists: the path opens for reading (raylib asks access(), which also
-# accepts unreadable files).
+# FileExists: access(F_OK) succeeds where stat(2) does: a file that exists,
+# readable or not, or a directory (Path.stat, patches/bend-os-effects.patch).
 def Files.exists(path: String) -> IO(Bool):
-  IO.bind(Result<&1, &1, U32 & String, File>, Bool, File.open(path, "r"), Files.exists.opened)
+  IO.bind(Result<&1, &1, U32 & String, U32 & Nat & Nat>, Bool, Path.stat(path), r => IO.pure(Bool, Files.exists.stat(r)))
 
 def Files.length.value(size: Result<&1, &1, U32 & String, U32>) -> U32:
   match size:
@@ -5603,6 +5600,410 @@ def Files.export.text_with(~save: String -> String -> IO(Result<&1, &1, Surface.
 
 def Files.export_data_as_code_with(~save: String -> String -> IO(Result<&1, &1, Surface.IOError, Unit>), bytes: +List<U32>, +path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
   Files.export.text_with(~save, path, Files.data_as_code(bytes, path))
+
+# FilePathList: the entries count and the paths.
+type FilePathList is Data:
+  FilePathList{count: U32, paths: +List<String>}
+
+# -----------------------------------------------------------------------------
+# The file system: rcore.c's file and directory functions over Bend Base's
+# Path, Dir and Process effects (patches/bend-os-effects.patch). Paths are
+# Base strings, as Files.load_data's are. raylib's int results are given as
+# the int's U32 bits (4294967295 for -1).
+
+def Files.stat.kind(r: Result<&1, &1, U32 & String, U32 & Nat & Nat>) -> U32:
+  match r:
+    case Fail{_}: 0
+    case Done{stat}:
+      (kind, rest) = stat
+      kind
+
+def Files.stat.second(rest: Nat & Nat) -> Nat:
+  (size, seconds) = rest
+  seconds
+
+def Files.stat.seconds(r: Result<&1, &1, U32 & String, U32 & Nat & Nat>) -> Nat:
+  match r:
+    case Fail{_}: 0n
+    case Done{stat}:
+      (kind, rest) = stat
+      Files.stat.second(rest)
+
+# IsPathFile: stat's mode is a regular file's (a path stat fails on has the
+# mode 0 raylib starts from).
+def Files.is_path_file(path: String) -> IO(Bool):
+  IO.bind(Result<&1, &1, U32 & String, U32 & Nat & Nat>, Bool, Path.stat(path), r => IO.pure(Bool, U32.is_eq(Files.stat.kind(r), 1)))
+
+# GetFileModTime: st_mtime in seconds, 0 where stat fails. A modification
+# before 1970 (raylib's long is negative then) is 0 here too.
+def Files.mod_time(path: String) -> IO(Nat):
+  IO.bind(Result<&1, &1, U32 & String, U32 & Nat & Nat>, Nat, Path.stat(path), r => IO.pure(Nat, Files.stat.seconds(r)))
+
+def Files.listed(r: Result<&1, &1, U32 & String, List<String>>) -> Bool:
+  match r:
+    case Fail{_}: False{}
+    case Done{_}: True{}
+
+# DirectoryExists: opendir succeeds (a directory that cannot be read is not
+# one for raylib).
+def Files.directory_exists(path: String) -> IO(Bool):
+  IO.bind(Result<&1, &1, U32 & String, List<String>>, Bool, Dir.read(path), r => IO.pure(Bool, Files.listed(r)))
+
+def Files.done(r: Result<&1, &1, U32 & String, Unit>) -> U32:
+  match r:
+    case Fail{_}: 4294967295
+    case Done{_}: 0
+
+def Files.rename.existing(exists: Bool, +source: String, +target: String) -> IO(U32):
+  match exists:
+    case False{}: IO.pure(U32, 4294967295)
+    case True{}: IO.bind(Result<&1, &1, U32 & String, Unit>, U32, Path.rename(source, target), r => IO.pure(U32, Files.done(r)))
+
+# FileRename: rename(2)'s result, -1 for a source FileExists does not see.
+def Files.rename(+source: String, +target: String) -> IO(U32):
+  IO.bind(Bool, U32, Files.exists(source), exists => Files.rename.existing(exists, source, target))
+
+def Files.remove.existing(exists: Bool, +path: String) -> IO(U32):
+  match exists:
+    case False{}: IO.pure(U32, 4294967295)
+    case True{}: IO.bind(Result<&1, &1, U32 & String, Unit>, U32, Path.remove(path), r => IO.pure(U32, Files.done(r)))
+
+# FileRemove: remove(3)'s result (a file, or an empty directory), -1 for a
+# path FileExists does not see.
+def Files.remove(+path: String) -> IO(U32):
+  IO.bind(Bool, U32, Files.exists(path), exists => Files.remove.existing(exists, path))
+
+# MakeDirectory's walk: the prefixes it makes, each up to a '/' or '\\' (a
+# ':' passes the character after it unread), and the path with those
+# separators turned into '/'.
+type Files.Making is Data:
+  Files.Making{prefixes: List<&2, String>, path: String}
+
+def Files.made.char(+skip: Bool, +code: U32) -> U32:
+  Bool.pick(U32, skip, 0, Bool.pick(U32, U32.is_eq(code, 58), 1, Bool.pick(U32, U32.is_eq(code, 47) || U32.is_eq(code, 92), 2, 0)))
+
+# `class` is what the head of `text` is to the walk: 1 a ':', 2 a separator,
+# 0 anything else or a character a ':' passes.
+def Files.made.walk(text: String, +class: U32, +done: String, acc: List<&2, String>) -> Files.Making:
+  match text class:
+    case SNil{} _: Files.Making{List.reverse(&2, String, acc), String.reverse(done)}
+    case SCon{+character, +rest} 1: Files.made.walk(rest, 0, SCon{character, done}, acc)
+    case SCon{+character, +rest} 2: Files.made.walk(rest, Files.made.char(False{}, Files.code(rest, 0n)), SCon{'/', done}, Con{String.reverse(done), acc})
+    case SCon{+character, +rest} _: Files.made.walk(rest, Files.made.char(False{}, Files.code(rest, 0n)), SCon{character, done}, acc)
+
+def Files.made(+path: String) -> Files.Making:
+  Files.made.walk(path, Files.made.char(False{}, Files.code(path, 0n)), "", Nil{})
+
+def Files.make.one.exists(exists: Bool, +path: String) -> IO(Unit):
+  match exists:
+    case True{}: IO.pure(Unit, Unit{})
+    case False{}: IO.bind(Result<&1, &1, U32 & String, Unit>, Unit, Dir.make(path), r => IO.pure(Unit, Unit{}))
+
+# MKDIR where DirectoryExists does not see a directory.
+def Files.make.one(+path: String) -> IO(Unit):
+  IO.bind(Bool, Unit, Files.directory_exists(path), exists => Files.make.one.exists(exists, path))
+
+def Files.make.all(prefixes: List<&2, String>) -> IO(Unit):
+  match prefixes:
+    case Nil{}: IO.pure(Unit, Unit{})
+    case Con{+prefix, rest}: IO.bind(Unit, Unit, Files.make.one(prefix), u => Files.make.all(rest))
+
+def Files.make.checked(exists: Bool) -> U32:
+  match exists:
+    case True{}: 0
+    case False{}: 4294967295
+
+def Files.make.walked(made: Files.Making, +original: String) -> IO(U32):
+  Files.Making{+prefixes, +path} = made
+  IO.bind(Unit, U32, Files.make.all(prefixes), u =>
+    IO.bind(Unit, U32, Files.make.one(path), v =>
+      IO.bind(Bool, U32, Files.directory_exists(original), exists => IO.pure(U32, Files.make.checked(exists)))))
+
+def Files.make.existing(exists: Bool, +path: String) -> IO(U32):
+  match exists:
+    case True{}: IO.pure(U32, 0)
+    case False{}: Files.make.walked(Files.made(path), path)
+
+# MakeDirectory: -1 for an empty path, 0 for a directory that exists;
+# otherwise each prefix before a separator is made where it is no directory,
+# then the path, and the result is 0 when the path is a directory then, -1
+# otherwise. Directories are made with mode 0777 under the umask.
+def Files.make_directory(+path: String) -> IO(U32):
+  Bool.pick(IO(U32), String.is_empty(path), IO.pure(U32, 4294967295),
+    IO.bind(Bool, U32, Files.directory_exists(path), exists => Files.make.existing(exists, path)))
+
+# ChangeDirectory: chdir(2) succeeds.
+def Files.change_directory(path: String) -> IO(Bool):
+  IO.bind(Result<&1, &1, U32 & String, Unit>, Bool, Dir.change(path), r => IO.pure(Bool, U32.is_eq(Files.done(r), 0)))
+
+# The bytes of a string's UTF-8 encoding.
+def Files.utf8.length(text: String, +n: U32) -> U32:
+  match text:
+    case SNil{}: n
+    case SCon{+character, rest}:
+      +code = Char.to_u32(character)
+      Files.utf8.length(rest, (n + Bool.pick(U32, (code < 128 : U32), 1, Bool.pick(U32, (code < 2048 : U32), 2, Bool.pick(U32, (code < 65536 : U32), 3, 4))) : U32))
+
+def Files.working.of(r: Result<&1, &1, U32 & String, String>) -> Maybe<String>:
+  match r:
+    case Fail{_}: None{}
+    case Done{+path}: Bool.pick(Maybe<String>, (Files.utf8.length(path, 0) < 4095 : U32), Some{path}, None{})
+
+# GetWorkingDirectory: getcwd(3) into raylib's buffer of 4095 bytes: None
+# where it fails or the path does not fit.
+def Files.working_directory() -> IO(Maybe<String>):
+  IO.bind(Result<&1, &1, U32 & String, String>, Maybe<String>, Dir.current(), r => IO.pure(Maybe<String>, Files.working.of(r)))
+
+# The position after a string's last '/' (0 for none).
+def Files.after_last_slash(text: String, +at: Nat, +after: Nat) -> Nat:
+  match text:
+    case SNil{}: after
+    case SCon{+character, rest}: Files.after_last_slash(rest, Nat.add(at, 1n), Bool.pick(Nat, U32.is_eq(Char.to_u32(character), 47), Nat.add(at, 1n), after))
+
+# The path up to and with its last '/'; "./" for none.
+def Files.application.cut(+path: String) -> String:
+  +after = Files.after_last_slash(path, 0n, 0n)
+  Bool.pick(String, Nat.is_eq(after, 0n), "./", String.take(path, after))
+
+def Files.application.of(r: Result<&1, &1, U32 & String, String>) -> String:
+  match r:
+    case Fail{_}: "./"
+    case Done{+path}: Files.application.cut(path)
+
+# GetApplicationDirectory (Linux): the running program's file
+# (/proc/self/exe) up to and with its last '/', "./" where it is not found.
+def Files.application_directory() -> IO(String):
+  IO.bind(Result<&1, &1, U32 & String, String>, String, Process.path(), r => IO.pure(String, Files.application.of(r)))
+
+def Files.is_some(found: Maybe<U32>) -> Bool:
+  match found:
+    case None{}: False{}
+    case Some{_}: True{}
+
+# A scan's filter: none (NULL), or its text.
+type Files.Filter is Data:
+  Files.Filter{given: Bool, text: String}
+
+def Files.filter.of(filter: Maybe<String>) -> Files.Filter:
+  match filter:
+    case None{}: Files.Filter{False{}, ""}
+    case Some{+text}: Files.Filter{True{}, text}
+
+# The filter tags of LoadDirectoryFilesEx: "*.*" (files and directories),
+# "FILES*" and "DIRS*".
+def Files.tagged(filter: Files.Filter, +tag: String) -> Bool:
+  Files.Filter{+given, +text} = filter
+  given && Files.is_some(Files.found(text, tag))
+
+# Whether a regular file is listed: no filter, a tag that takes files, or
+# its extension in the filter (None where IsFileExtension overflows).
+def Files.scan.file.given(given: Bool, +text: String, +path: String) -> Maybe<Bool>:
+  match given:
+    case False{}: Some{True{}}
+    case True{}:
+      Bool.pick(Maybe<Bool>, Files.is_some(Files.found(text, "*.*")) || Files.is_some(Files.found(text, "FILES*")), Some{True{}}, Files.has_extension(path, text))
+
+def Files.scan.file(filter: Files.Filter, +path: String) -> Maybe<Bool>:
+  Files.Filter{+given, +text} = filter
+  Files.scan.file.given(given, text, path)
+
+# An entry of a directory read: its path base/name and what its length
+# makes of it: 0 skipped from 4096 bytes on; at 4095 bytes snprintf cuts the
+# path to its first 4094 bytes, which raylib then looks at and lists (2
+# with the cut path, 1 refused where the cut would split a character); 2
+# looked at.
+type Files.Entry is Data:
+  Files.Entry{path: String, class: U32}
+
+def Files.ascii(text: String) -> Bool:
+  match text:
+    case SNil{}: True{}
+    case SCon{+character, rest}: (Char.to_u32(character) < 128 : U32) && Files.ascii(rest)
+
+def Files.entry.cut(+path: String) -> Files.Entry:
+  Bool.pick(Files.Entry, Files.ascii(path), Files.Entry{String.take(path, 4094n), 2}, Files.Entry{path, 1})
+
+def Files.entry(+base: String, +name: String) -> Files.Entry:
+  +path = base ++ "/" ++ name
+  +length = Files.utf8.length(path, 0)
+  Bool.pick(Files.Entry, (length >= 4096 : U32), Files.Entry{path, 0}, Bool.pick(Files.Entry, U32.is_eq(length, 4095), Files.entry.cut(path), Files.Entry{path, 2}))
+
+def Files.entries(+base: String, names: List<String>, acc: +List<Files.Entry>) -> +List<Files.Entry>:
+  match names:
+    case Nil{}: List.reverse(&2, Files.Entry, acc)
+    case Con{+name, rest}: Files.entries(base, rest, Con{Files.entry(base, name), acc})
+
+# A directory still to be read, or the entries of one being read.
+type Files.Pending is Data:
+  Files.Unread{path: String}
+  Files.Reading{entries: +List<Files.Entry>}
+
+# A scan: whether it is fine (a refusal stops it), what it listed (the last
+# first) and the directories pending (the next first).
+type Files.Walk is Data:
+  Files.Walk{fine: Bool, listed: +List<String>, stack: +List<Files.Pending>}
+
+def Files.walk.read(r: Result<&1, &1, U32 & String, List<String>>, +path: String, +stack: +List<Files.Pending>) -> +List<Files.Pending>:
+  match r:
+    case Fail{_}: stack
+    case Done{names}: Con{Files.Reading{Files.entries(path, names, Nil{})}, stack}
+
+def Files.walk.file(taken: Maybe<Bool>, +path: String, +listed: +List<String>, +stack: +List<Files.Pending>) -> Files.Walk:
+  match taken:
+    case None{}: Files.Walk{False{}, listed, stack}
+    case Some{+take}: Files.Walk{True{}, Bool.pick(+List<String>, take, Con{path, listed}, listed), stack}
+
+def Files.walk.other(+filter: Files.Filter, +subdirs: Bool, +path: String, +listed: +List<String>, +stack: +List<Files.Pending>) -> Files.Walk:
+  +shown = Files.tagged(filter, "*.*") || Files.tagged(filter, "DIRS*")
+  Files.Walk{True{}, Bool.pick(+List<String>, shown, Con{path, listed}, listed), Bool.pick(+List<Files.Pending>, subdirs, Con{Files.Unread{path}, stack}, stack)}
+
+# What an entry stat looked at adds: a regular file listed as the filter
+# says; anything else (a directory, or a path stat fails on) listed for the
+# "*.*" and "DIRS*" tags and, for subdirectories, read next.
+def Files.walk.stated(file: Bool, +filter: Files.Filter, +subdirs: Bool, +path: String, +listed: +List<String>, +stack: +List<Files.Pending>) -> Files.Walk:
+  match file:
+    case True{}: Files.walk.file(Files.scan.file(filter, path), path, listed, stack)
+    case False{}: Files.walk.other(filter, subdirs, path, listed, stack)
+
+# ScanDirectoryFiles and GetDirectoryFileCountEx: the directories read one
+# after another, each entry in readdir's order, a subdirectory's entries
+# before the ones after it. `fuel` bounds the steps: None where it runs out
+# or the walk is refused.
+def Files.scan(fuel: Nat, +filter: Files.Filter, +subdirs: Bool, walk: Files.Walk) -> IO(Maybe<+List<String>>):
+  match fuel:
+    case 0n: IO.pure(Maybe<+List<String>>, None{})
+    case 1n+k:
+      Files.Walk{+fine, +listed, stack} = walk
+      match fine stack:
+        case False{} _: IO.pure(Maybe<+List<String>>, None{})
+        case True{} Nil{}: IO.pure(Maybe<+List<String>>, Some{List.reverse(&2, String, listed)})
+        case True{} Con{Files.Unread{+path}, rest}:
+          IO.bind(Result<&1, &1, U32 & String, List<String>>, Maybe<+List<String>>, Dir.read(path), r =>
+            Files.scan(k, filter, subdirs, Files.Walk{True{}, listed, Files.walk.read(r, path, rest)}))
+        case True{} Con{Files.Reading{Nil{}}, rest}: Files.scan(k, filter, subdirs, Files.Walk{True{}, listed, rest})
+        case True{} Con{Files.Reading{Con{Files.Entry{_, 0}, more}}, rest}: Files.scan(k, filter, subdirs, Files.Walk{True{}, listed, Con{Files.Reading{more}, rest}})
+        case True{} Con{Files.Reading{Con{Files.Entry{_, 1}, more}}, rest}: IO.pure(Maybe<+List<String>>, None{})
+        case True{} Con{Files.Reading{Con{Files.Entry{+path, _}, more}}, rest}:
+          IO.bind(Result<&1, &1, U32 & String, U32 & Nat & Nat>, Maybe<+List<String>>, Path.stat(path), r =>
+            Files.scan(k, filter, subdirs, Files.walk.stated(U32.is_eq(Files.stat.kind(r), 1), filter, subdirs, path, listed, Con{Files.Reading{more}, rest})))
+
+# The steps a scan may take before it is refused.
+def Files.scan.fuel() -> Nat:
+  16777216n
+
+def Files.scanned(+path: String, filter: Maybe<String>, +subdirs: Bool) -> IO(Maybe<+List<String>>):
+  Files.scan(Files.scan.fuel(), Files.filter.of(filter), subdirs, Files.Walk{True{}, Nil{}, [Files.Unread{path}]})
+
+def Files.listing(found: Maybe<+List<String>>) -> Maybe<FilePathList>:
+  match found:
+    case None{}: None{}
+    case Some{+paths}: Some{FilePathList{U32.from_nat(List.length(&2, String, paths)), paths}}
+
+def Files.counted(found: Maybe<+List<String>>) -> Maybe<U32>:
+  match found:
+    case None{}: None{}
+    case Some{+paths}: Some{U32.from_nat(List.length(&2, String, paths))}
+
+def Files.filter.given(filter: Maybe<String>) -> Maybe<String>:
+  match filter:
+    case None{}: None{}
+    case Some{+text}: Bool.pick(Maybe<String>, String.is_empty(text), None{}, Some{text})
+
+# LoadDirectoryFilesEx: the paths base/name of a directory's entries (and
+# its subdirectories' with `subdirs`) in readdir's order. `filter` None is
+# NULL (an empty filter is too): every regular file; otherwise a file is
+# listed for the "*.*" or "FILES*" tag or an extension of its ';'-separated
+# list (IsFileExtension), and anything else for "*.*" or "DIRS*". No
+# directory gives no paths. A path of 4096 bytes or more is skipped and one
+# of 4095 is cut to 4094, as raylib's snprintf leaves it. None where
+# IsFileExtension's buffer overflows or the cut would split a character.
+def Files.load_directory_files_ex(+path: String, filter: Maybe<String>, +subdirs: Bool) -> IO(Maybe<FilePathList>):
+  IO.bind(Maybe<+List<String>>, Maybe<FilePathList>, Files.scanned(path, Files.filter.given(filter), subdirs), found => IO.pure(Maybe<FilePathList>, Files.listing(found)))
+
+# LoadDirectoryFiles: LoadDirectoryFilesEx with "*.*", without
+# subdirectories.
+def Files.load_directory_files(+path: String) -> IO(Maybe<FilePathList>):
+  Files.load_directory_files_ex(path, Some{"*.*"}, False{})
+
+# UnloadDirectoryFiles: consuming the list frees it.
+def Files.unload_directory_files(files: FilePathList) -> Unit:
+  Unit{}
+
+# GetDirectoryFileCountEx: what LoadDirectoryFilesEx would list, counted;
+# the filter as given (an empty one lists no file and no directory).
+def Files.directory_file_count_ex(+path: String, filter: Maybe<String>, +subdirs: Bool) -> IO(Maybe<U32>):
+  IO.bind(Maybe<+List<String>>, Maybe<U32>, Files.scanned(path, filter, subdirs), found => IO.pure(Maybe<U32>, Files.counted(found)))
+
+# GetDirectoryFileCount: GetDirectoryFileCountEx with "*.*", without
+# subdirectories.
+def Files.directory_file_count(+path: String) -> IO(Maybe<U32>):
+  Files.directory_file_count_ex(path, Some{"*.*"}, False{})
+
+def Files.copy.saved(r: Result<&1, &1, Surface.IOError, Unit>) -> U32:
+  match r:
+    case Fail{_}: 0
+    case Done{_}: 1
+
+def Files.copy.write(+made: U32, data: Result<&1, &1, Surface.IOError, +List<U32>>, +target: String) -> IO(U32):
+  match data:
+    case Fail{_}: IO.pure(U32, made)
+    case Done{+bytes}:
+      Bool.pick(IO(U32), U32.is_eq(made, 0) && Bool.not(List.is_empty(&2, U32, bytes)),
+        IO.bind(Result<&1, &1, Surface.IOError, Unit>, U32, Files.save_data(target, bytes), r => IO.pure(U32, Files.copy.saved(r))), IO.pure(U32, made))
+
+def Files.copy.made(exists: Bool, +directory: String) -> IO(U32):
+  match exists:
+    case True{}: IO.pure(U32, 0)
+    case False{}: Files.make_directory(directory)
+
+def Files.copy.at(directory: Maybe<String>, data: Result<&1, &1, Surface.IOError, +List<U32>>, +target: String) -> IO(Maybe<U32>):
+  match directory:
+    case None{}: IO.pure(Maybe<U32>, None{})
+    case Some{+dir}:
+      IO.bind(Bool, Maybe<U32>, Files.directory_exists(dir), exists =>
+        IO.bind(U32, Maybe<U32>, Files.copy.made(exists, dir), made =>
+          IO.bind(U32, Maybe<U32>, Files.copy.write(made, data, target), r => IO.pure(Maybe<U32>, Some{r}))))
+
+# FileCopy: the source's bytes (LoadFileData), the target's directory
+# (GetDirectoryPath) made where DirectoryExists does not see it, then the
+# bytes saved when there are any: 1 when SaveFileData succeeds, 0 when it
+# fails or nothing was read, MakeDirectory's -1 when the directory could not
+# be made. None where GetDirectoryPath overflows its buffer.
+def Files.copy(+source: String, +target: String) -> IO(Maybe<U32>):
+  IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Maybe<U32>, Files.load_data(source), data => Files.copy.at(Files.directory(target), data, target))
+
+def Files.move.copied(copied: Maybe<U32>, +source: String) -> IO(Maybe<U32>):
+  match copied:
+    case None{}: IO.pure(Maybe<U32>, None{})
+    case Some{+result}:
+      Bool.pick(IO(Maybe<U32>), U32.is_eq(result, 0), IO.bind(U32, Maybe<U32>, Files.remove(source), r => IO.pure(Maybe<U32>, Some{r})), IO.pure(Maybe<U32>, Some{4294967295}))
+
+def Files.move.existing(exists: Bool, +source: String, +target: String) -> IO(Maybe<U32>):
+  match exists:
+    case False{}: IO.pure(Maybe<U32>, Some{4294967295})
+    case True{}: IO.bind(Maybe<U32>, Maybe<U32>, Files.copy(source, target), copied => Files.move.copied(copied, source))
+
+# FileMove: -1 for a source FileExists does not see; otherwise FileCopy,
+# and FileRemove of the source when FileCopy gave 0 (it gives 1 for a
+# successful copy, which raylib takes as a failure: the source stays and the
+# result is -1).
+def Files.move(+source: String, +target: String) -> IO(Maybe<U32>):
+  IO.bind(Bool, Maybe<U32>, Files.exists(source), exists => Files.move.existing(exists, source, target))
+
+# The command OpenURL runs on the reference platform (rcore_memory.c):
+# explorer "url". None for a URL with a "'", which raylib does not open.
+def System.url.command(+url: String) -> Maybe<String>:
+  Bool.pick(Maybe<String>, Files.is_some(Files.found(url, "'")), None{}, Some{"explorer \"" ++ url ++ "\""})
+
+def System.url.run(command: Maybe<String>) -> IO(Unit):
+  match command:
+    case None{}: IO.pure(Unit, Unit{})
+    case Some{+text}: IO.bind(Result<&1, &1, U32 & String, U32>, Unit, Process.run(text), r => IO.pure(Unit, Unit{}))
+
+# OpenURL on the reference platform: system("explorer \"url\"") through
+# /bin/sh, its result unused; nothing for a URL with a "'".
+def System.open_url(+url: String) -> IO(Unit):
+  System.url.run(System.url.command(url))
 
 # -----------------------------------------------------------------------------
 # Logging and memory: rcore.c TraceLog and MemAlloc/MemRealloc/MemFree
@@ -8647,9 +9048,6 @@ def Core.get_time(+core: Core) -> M.Float64:
 def Core.wait_time(+core: Core, +seconds: M.Float64) -> Maybe<Core>:
   Core.wrap(CoreState.Core.wait_time(Core.state(core), Core.words(seconds)))
 
-# FilePathList: the entries count and the paths.
-type FilePathList is Data:
-  FilePathList{count: U32, paths: +List<String>}
 
 # IsFileDropped: no platform Jonlib runs on delivers dropped files (the memory
 # platform has no events, Base has no drop event), so dropFileCount stays 0.
