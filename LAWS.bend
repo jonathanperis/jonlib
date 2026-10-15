@@ -3208,6 +3208,22 @@ law rlgl_set_uniform_unchanged:
 # rlGetGlTextureFormats under OpenGL 1.1: R8G8B8A8 is GL_RGBA with
 # GL_UNSIGNED_BYTE, R5G6B5 GL_RGB with GL_UNSIGNED_SHORT_5_6_5, and a float
 # format (R32) has no answer; rlGenTextureMipmaps leaves the count.
+# The render batch is OpenGL 3.3/ES2's: the software renderer's is zeroed,
+# drawing it leaves it, and rlGetProcAddress is NULL.
+law rlgl_render_batch_zeroed:
+  for frame: J.Frame
+  for buffers: U32
+  for elements: U32
+  {J.Rlgl.load_render_batch(frame, buffers, elements) == (frame, J.Rlgl.RenderBatch{0, 0, Nil{}, Nil{}, 0, 0.0}) : J.Frame & J.Rlgl.RenderBatch}
+
+law rlgl_draw_render_batch_unchanged:
+  for frame: J.Frame
+  for batch: J.Rlgl.RenderBatch
+  {J.Rlgl.draw_render_batch(frame, batch) == (frame, batch) : J.Frame & J.Rlgl.RenderBatch}
+
+law rlgl_proc_address_null:
+  {J.Rlgl.get_proc_address("glClear") == 0 : U32}
+
 law rlgl_gl_formats_rgba8:
   {J.Rlgl.get_gl_texture_formats(7) == J.Rlgl.GlFormats{6408, 6408, 5121} : J.Rlgl.GlFormats}
 

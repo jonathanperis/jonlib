@@ -11378,6 +11378,46 @@ def Rlgl.draw_render_batch_active(frame: Frame) -> Frame:
 def Rlgl.check_render_batch_limit(frame: Frame, +count: F32) -> Frame & Bool:
   (frame, False{})
 
+# rlVertexBuffer: the element count and the GL objects; the vertex arrays
+# themselves are OpenGL 3.3/ES2's and not modeled.
+type Rlgl.VertexBuffer is Data:
+  Rlgl.VertexBuffer{element_count: U32, vao_id: U32, vbo_ids: +List<U32>}
+
+# rlDrawCall: mode, vertex count and alignment, texture id.
+type Rlgl.DrawCall is Data:
+  Rlgl.DrawCall{mode: U32, vertex_count: U32, vertex_alignment: U32, texture_id: U32}
+
+# rlRenderBatch: its buffers and draws, the draw counter and the depth of the
+# next draw.
+type Rlgl.RenderBatch is Data:
+  Rlgl.RenderBatch{buffer_count: U32, current_buffer: U32, vertex_buffers: +List<Rlgl.VertexBuffer>, draws: +List<Rlgl.DrawCall>, draw_counter: U32, current_depth: F32}
+
+# rlLoadRenderBatch: the batch is zeroed and its buffers are OpenGL 3.3/ES2's,
+# so the software renderer's is all zeros and NULLs, whatever the counts.
+def Rlgl.load_render_batch(frame: Frame, +buffers: U32, +elements: U32) -> Frame & Rlgl.RenderBatch:
+  (frame, Rlgl.RenderBatch{0, 0, Nil{}, Nil{}, 0, 0.0})
+
+# rlUnloadRenderBatch, rlDrawRenderBatch and rlSetRenderBatchActive have
+# bodies under OpenGL 3.3/ES2 only: nothing changes (a NULL batch for
+# rlSetRenderBatchActive is None).
+def Rlgl.unload_render_batch(frame: Frame, batch: Rlgl.RenderBatch) -> Frame:
+  frame
+
+def Rlgl.draw_render_batch(frame: Frame, batch: Rlgl.RenderBatch) -> Frame & Rlgl.RenderBatch:
+  (frame, batch)
+
+def Rlgl.set_render_batch_active(frame: Frame, batch: Maybe<Rlgl.RenderBatch>) -> Frame & Maybe<Rlgl.RenderBatch>:
+  (frame, batch)
+
+# rlLoadExtensions loads OpenGL 3.3/ES2 extensions: nothing on the software
+# renderer, whatever the loader.
+def Rlgl.load_extensions(frame: Frame) -> Frame:
+  frame
+
+# rlGetProcAddress asks the OpenGL 3.3/ES2 loader: NULL (0) here.
+def Rlgl.get_proc_address(+name: String) -> U32:
+  0
+
 def Frame.matrix.of(+m: FrameCore.Matrix4) -> M.Matrix:
   FrameCore.Matrix4{m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15} = m
   M.Matrix{m0, m4, m8, m12, m1, m5, m9, m13, m2, m6, m10, m14, m3, m7, m11, m15}

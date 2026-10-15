@@ -84278,23 +84278,28 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
-      "jonlib": "rlVertexBuffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Rlgl.VertexBuffer",
+      "mapping_state": "implemented",
+      "scope": "The element count and the GL object ids; the vertex arrays are OpenGL 3.3/ES2 memory and are not modeled.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The vertex, texcoord, normal, color and index arrays are not modeled",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -84303,7 +84308,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive rlVertexBuffer semantics from the linked source, add a reference fixture, then implement rlVertexBuffer.",
+      "next_step": "Close documented gaps and unverified gates for rlVertexBuffer.",
       "priority": 100
     },
     {
@@ -84334,23 +84339,27 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
-      "jonlib": "rlDrawCall",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Rlgl.DrawCall",
+      "mapping_state": "implemented",
+      "scope": "Mode, vertex count, vertex alignment and texture id.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -84359,7 +84368,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive rlDrawCall semantics from the linked source, add a reference fixture, then implement rlDrawCall.",
+      "next_step": "Close documented gaps and unverified gates for rlDrawCall.",
       "priority": 100
     },
     {
@@ -84392,23 +84401,27 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
-      "jonlib": "rlRenderBatch",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Rlgl.RenderBatch",
+      "mapping_state": "implemented",
+      "scope": "Buffer count, current buffer, vertex buffers, draws, draw counter and current depth.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -84420,7 +84433,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive rlRenderBatch semantics from the linked source, add a reference fixture, then implement rlRenderBatch.",
+      "next_step": "Close documented gaps and unverified gates for rlRenderBatch.",
       "priority": 100
     },
     {
@@ -96866,23 +96879,28 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.load_extensions",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 3.3/ES2 extension loading: nothing on the software renderer.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Its trace-log messages are not reproduced",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -96895,7 +96913,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlLoadExtensions semantics from the linked source, add a reference fixture, then implement Rlgl.load_extensions.",
+      "next_step": "Close documented gaps and unverified gates for rlLoadExtensions.",
       "priority": 713
     },
     {
@@ -96921,23 +96939,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.get_proc_address",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "NULL (0): the loader is OpenGL 3.3/ES2's.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -96950,7 +96972,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlGetProcAddress semantics from the linked source, add a reference fixture, then implement Rlgl.get_proc_address.",
+      "next_step": "Close documented gaps and unverified gates for rlGetProcAddress.",
       "priority": 713
     },
     {
@@ -97455,23 +97477,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.load_render_batch",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 1.1 (software renderer): the zeroed batch, whatever the counts.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -97486,7 +97512,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlLoadRenderBatch semantics from the linked source, add a reference fixture, then implement Rlgl.load_render_batch.",
+      "next_step": "Close documented gaps and unverified gates for rlLoadRenderBatch.",
       "priority": 713
     },
     {
@@ -97512,23 +97538,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.unload_render_batch",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "No body outside OpenGL 3.3/ES2: nothing changes.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -97543,7 +97573,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlUnloadRenderBatch semantics from the linked source, add a reference fixture, then implement Rlgl.unload_render_batch.",
+      "next_step": "Close documented gaps and unverified gates for rlUnloadRenderBatch.",
       "priority": 713
     },
     {
@@ -97569,23 +97599,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.draw_render_batch",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "No body outside OpenGL 3.3/ES2: the frame and the batch are unchanged.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -97600,7 +97634,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlDrawRenderBatch semantics from the linked source, add a reference fixture, then implement Rlgl.draw_render_batch.",
+      "next_step": "Close documented gaps and unverified gates for rlDrawRenderBatch.",
       "priority": 713
     },
     {
@@ -97626,23 +97660,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.set_render_batch_active",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "No body outside OpenGL 3.3/ES2: nothing changes (None is a NULL batch).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -97657,7 +97695,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlSetRenderBatchActive semantics from the linked source, add a reference fixture, then implement Rlgl.set_render_batch_active.",
+      "next_step": "Close documented gaps and unverified gates for rlSetRenderBatchActive.",
       "priority": 713
     },
     {
