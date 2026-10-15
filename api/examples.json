@@ -1233,12 +1233,7 @@
     "GuiListViewEx",
     "GuiSetStyle"
    ],
-   "missing": [
-    "GetWorkingDirectory",
-    "LoadDirectoryFiles",
-    "LoadDirectoryFilesEx",
-    "UnloadDirectoryFiles"
-   ]
+   "missing": []
   },
   {
    "name": "core_highdpi_testbed",
@@ -1310,9 +1305,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "GetApplicationDirectory"
-   ]
+   "missing": []
   },
   {
    "name": "core_clipboard_text",
@@ -5860,9 +5853,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "GetFileModTime"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_mesh_instancing",

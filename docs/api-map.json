@@ -1173,6 +1173,17 @@
     "api_id": "raylib:function:SetConfigFlags",
     "milestone": "window"
   },
+  "OpenURL": {
+    "jonlib": "System.open_url",
+    "status": "profile-covered",
+    "scope": "The reference platform (rcore_memory.c): system with explorer and the quoted URL through /bin/sh; nothing for a URL with a single quote.",
+    "gaps": [
+      "Desktop platforms run xdg-open, open or start instead",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+    ],
+    "api_id": "raylib:function:OpenURL",
+    "milestone": "window"
+  },
   "SetTraceLogLevel": {
     "jonlib": "Log.level / Log.default",
     "status": "profile-covered",
@@ -1352,6 +1363,50 @@
     "api_id": "raylib:function:SetSaveFileTextCallback",
     "milestone": "files"
   },
+  "FileRename": {
+    "jonlib": "Files.rename",
+    "status": "profile-covered",
+    "scope": "rename(2)'s result, -1 for a source FileExists does not see.",
+    "gaps": [
+      "Paths are Base strings (UTF-8 at the edge)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+    ],
+    "api_id": "raylib:function:FileRename",
+    "milestone": "files"
+  },
+  "FileRemove": {
+    "jonlib": "Files.remove",
+    "status": "profile-covered",
+    "scope": "remove(3)'s result (a file, or an empty directory), -1 for a path FileExists does not see.",
+    "gaps": [
+      "Paths are Base strings (UTF-8 at the edge)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+    ],
+    "api_id": "raylib:function:FileRemove",
+    "milestone": "files"
+  },
+  "FileCopy": {
+    "jonlib": "Files.copy",
+    "status": "profile-covered",
+    "scope": "LoadFileData, the target's directory made where DirectoryExists does not see it, then SaveFileData when there are bytes: 1, 0 or MakeDirectory's -1 as raylib gives them.",
+    "gaps": [
+      "GetDirectoryPath overflow is None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+    ],
+    "api_id": "raylib:function:FileCopy",
+    "milestone": "files"
+  },
+  "FileMove": {
+    "jonlib": "Files.move",
+    "status": "profile-covered",
+    "scope": "-1 for a missing source; FileCopy, then FileRemove of the source when the copy gave 0 (a successful copy gives 1: the source stays and the result is -1, as in raylib).",
+    "gaps": [
+      "GetDirectoryPath overflow is None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+    ],
+    "api_id": "raylib:function:FileMove",
+    "milestone": "files"
+  },
   "FileTextReplace": {
     "jonlib": "Files.text_replace",
     "status": "profile-covered",
@@ -1377,12 +1432,22 @@
   "FileExists": {
     "jonlib": "Files.exists",
     "status": "profile-covered",
-    "scope": "True when the path opens for reading, directories included.",
+    "scope": "access(F_OK), as stat(2) answers it: a file that exists, readable or not, or a directory.",
     "gaps": [
-      "raylib's access() also accepts existing unreadable files",
       "Pointer/allocator ABI and complete target/resource coverage"
     ],
     "api_id": "raylib:function:FileExists",
+    "milestone": "files"
+  },
+  "DirectoryExists": {
+    "jonlib": "Files.directory_exists",
+    "status": "profile-covered",
+    "scope": "opendir succeeds (Dir.read).",
+    "gaps": [
+      "Paths are Base strings (UTF-8 at the edge)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+    ],
+    "api_id": "raylib:function:DirectoryExists",
     "milestone": "files"
   },
   "IsFileExtension": {
@@ -1405,6 +1470,17 @@
       "Pointer/allocator ABI and complete target/resource coverage"
     ],
     "api_id": "raylib:function:GetFileLength",
+    "milestone": "files"
+  },
+  "GetFileModTime": {
+    "jonlib": "Files.mod_time",
+    "status": "profile-covered",
+    "scope": "st_mtime in seconds, 0 where stat fails.",
+    "gaps": [
+      "A modification before 1970 is 0 (raylib's long is negative)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+    ],
+    "api_id": "raylib:function:GetFileModTime",
     "milestone": "files"
   },
   "GetFileExtension": {
@@ -1459,6 +1535,62 @@
     "api_id": "raylib:function:GetPrevDirectoryPath",
     "milestone": "files"
   },
+  "GetWorkingDirectory": {
+    "jonlib": "Files.working_directory",
+    "status": "profile-covered",
+    "scope": "getcwd(3) into raylib's 4095 bytes, None where it fails or the path does not fit.",
+    "gaps": [
+      "Paths are Base strings (UTF-8 at the edge)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+    ],
+    "api_id": "raylib:function:GetWorkingDirectory",
+    "milestone": "files"
+  },
+  "GetApplicationDirectory": {
+    "jonlib": "Files.application_directory",
+    "status": "profile-covered",
+    "scope": "The running program's file up to and with its last slash (Linux /proc/self/exe; the script on the JavaScript target), ./ where it is not found.",
+    "gaps": [
+      "Each program answers its own directory: compared for its trailing slash and for being a directory",
+      "macOS resolves links in _NSGetExecutablePath where raylib does not",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+    ],
+    "api_id": "raylib:function:GetApplicationDirectory",
+    "milestone": "files"
+  },
+  "MakeDirectory": {
+    "jonlib": "Files.make_directory",
+    "status": "profile-covered",
+    "scope": "Every prefix before a slash or backslash made where it is missing (a colon passes the next character), then the path; 0 when it is a directory then, -1 otherwise or for an empty path.",
+    "gaps": [
+      "Paths are Base strings (UTF-8 at the edge)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+    ],
+    "api_id": "raylib:function:MakeDirectory",
+    "milestone": "files"
+  },
+  "ChangeDirectory": {
+    "jonlib": "Files.change_directory",
+    "status": "profile-covered",
+    "scope": "chdir(2) succeeds.",
+    "gaps": [
+      "Its trace-log messages are not reproduced",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+    ],
+    "api_id": "raylib:function:ChangeDirectory",
+    "milestone": "files"
+  },
+  "IsPathFile": {
+    "jonlib": "Files.is_path_file",
+    "status": "profile-covered",
+    "scope": "stat(2), links followed: a regular file.",
+    "gaps": [
+      "Paths are Base strings (UTF-8 at the edge)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+    ],
+    "api_id": "raylib:function:IsPathFile",
+    "milestone": "files"
+  },
   "IsFileNameValid": {
     "jonlib": "Files.valid_name",
     "status": "profile-covered",
@@ -1467,6 +1599,39 @@
       "Non-ASCII byte paths compare per character, not per byte"
     ],
     "api_id": "raylib:function:IsFileNameValid",
+    "milestone": "files"
+  },
+  "LoadDirectoryFiles": {
+    "jonlib": "Files.load_directory_files",
+    "status": "profile-covered",
+    "scope": "LoadDirectoryFilesEx with the *.* filter and without subdirectories.",
+    "gaps": [
+      "IsFileExtension overflow (an extension of 16+ bytes) is None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+    ],
+    "api_id": "raylib:function:LoadDirectoryFiles",
+    "milestone": "files"
+  },
+  "LoadDirectoryFilesEx": {
+    "jonlib": "Files.load_directory_files_ex",
+    "status": "profile-covered",
+    "scope": "Each entry's path/name in readdir order, a subdirectory's entries right after it; the NULL or empty filter, the *.*, FILES* and DIRS* tags and extension lists as ScanDirectoryFiles applies them; paths from 4096 bytes skipped and of 4095 cut to 4094 as snprintf leaves them.",
+    "gaps": [
+      "IsFileExtension overflow (an extension of 16+ bytes), or a cut splitting a character, is None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+    ],
+    "api_id": "raylib:function:LoadDirectoryFilesEx",
+    "milestone": "files"
+  },
+  "UnloadDirectoryFiles": {
+    "jonlib": "Files.unload_directory_files",
+    "status": "profile-covered",
+    "scope": "Consuming the list frees it.",
+    "gaps": [
+      "Pointer/allocator ABI",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+    ],
+    "api_id": "raylib:function:UnloadDirectoryFiles",
     "milestone": "files"
   },
   "IsFileDropped": {
@@ -1500,6 +1665,28 @@
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:UnloadDroppedFiles",
+    "milestone": "files"
+  },
+  "GetDirectoryFileCount": {
+    "jonlib": "Files.directory_file_count",
+    "status": "profile-covered",
+    "scope": "GetDirectoryFileCountEx with the *.* filter and without subdirectories.",
+    "gaps": [
+      "IsFileExtension overflow is None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+    ],
+    "api_id": "raylib:function:GetDirectoryFileCount",
+    "milestone": "files"
+  },
+  "GetDirectoryFileCountEx": {
+    "jonlib": "Files.directory_file_count_ex",
+    "status": "profile-covered",
+    "scope": "What the listing would hold, counted, the filter as given (an empty one counts nothing).",
+    "gaps": [
+      "IsFileExtension overflow is None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+    ],
+    "api_id": "raylib:function:GetDirectoryFileCountEx",
     "milestone": "files"
   },
   "CompressData": {

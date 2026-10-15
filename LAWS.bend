@@ -530,6 +530,35 @@ law png_signature_selects_the_decoder:
 law file_bytes_beyond_a_count:
   {(J.Image.file.beyond(2n, [1, 2, 3]), J.Image.file.beyond(3n, [1, 2, 3])) == (True{}, False{}) : Bool & Bool}
 
+# The file system (rcore.c over Bend Base's Path, Dir and Process effects).
+# MakeDirectory's walk makes each prefix before a '/' or '\\' and turns those
+# separators into '/'; a ':' passes the character after it unread.
+law files_made_prefixes:
+  {J.Files.made("a/b\\c") == J.Files.Making{["a", "a/b"], "a/b/c"} : J.Files.Making}
+
+law files_made_colon_passes_a_separator:
+  {J.Files.made("c:/d/e") == J.Files.Making{["c:/d"], "c:/d/e"} : J.Files.Making}
+
+# GetApplicationDirectory keeps the program's path up to and with its last
+# '/', and is "./" without one.
+law files_application_cut:
+  {J.Files.application.cut("/usr/bin/tool") == "/usr/bin/" : String}
+
+law files_application_without_slash:
+  {J.Files.application.cut("tool") == "./" : String}
+
+# OpenURL on the reference platform runs explorer "url", and nothing for a
+# URL with a "'".
+law system_url_command:
+  {J.System.url.command("https://www.raylib.com") == Some{"explorer \"https://www.raylib.com\""} : Maybe<String>}
+
+law system_url_quote_refused:
+  {J.System.url.command("it's") == None{} : Maybe<String>}
+
+# A path's bytes as UTF-8 decide where a scan skips (4096 on) or cuts (4095).
+law files_utf8_length:
+  {J.Files.utf8.length("a\u{e9}\u{20ac}\u{1f600}", 0) == 10 : U32}
+
 law png_named_other_contents_over_the_raster_cap_refused:
   for reference: M.Contraction
   for bytes: List<&2, U32>

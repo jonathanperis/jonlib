@@ -354,6 +354,27 @@ def Laws.png_signature_selects_the_decoder():
 def Laws.file_bytes_beyond_a_count():
   {==}
 
+def Laws.files_made_prefixes():
+  {==}
+
+def Laws.files_made_colon_passes_a_separator():
+  {==}
+
+def Laws.files_application_cut():
+  {==}
+
+def Laws.files_application_without_slash():
+  {==}
+
+def Laws.system_url_command():
+  {==}
+
+def Laws.system_url_quote_refused():
+  {==}
+
+def Laws.files_utf8_length():
+  {==}
+
 def Laws.png_named_other_contents_over_the_raster_cap_refused(reference, bytes):
   {==}
 

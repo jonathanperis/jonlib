@@ -3,19 +3,19 @@
   "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
   "declaration_inventory": {
     "total": 1884,
-    "blocked": 17,
+    "blocked": 0,
     "complete": 0,
     "in-progress": 0,
     "not-started": 314,
-    "partial": 1553
+    "partial": 1570
   },
   "core_functions": {
     "total": 600,
-    "blocked": 17,
+    "blocked": 0,
     "complete": 0,
     "in-progress": 0,
     "not-started": 0,
-    "partial": 583
+    "partial": 600
   },
   "math_functions": {
     "total": 146,
@@ -27,11 +27,11 @@
   },
   "function_declarations": {
     "total": 931,
-    "blocked": 17,
+    "blocked": 0,
     "complete": 0,
     "in-progress": 0,
     "not-started": 19,
-    "partial": 895
+    "partial": 912
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -51,11 +51,11 @@
   "headers": {
     "raylib.h": {
       "total": 1037,
-      "blocked": 17,
+      "blocked": 0,
       "complete": 0,
       "in-progress": 0,
       "not-started": 38,
-      "partial": 982
+      "partial": 999
     },
     "raymath.h": {
       "total": 254,
@@ -161,11 +161,11 @@
         "memory"
       ],
       "total": 49,
-      "blocked": 16,
+      "blocked": 0,
       "complete": 0,
       "in-progress": 0,
       "not-started": 0,
-      "partial": 33
+      "partial": 49
     },
     {
       "id": "random",
@@ -266,11 +266,11 @@
         "memory"
       ],
       "total": 57,
-      "blocked": 1,
+      "blocked": 0,
       "complete": 0,
       "in-progress": 0,
       "not-started": 0,
-      "partial": 56
+      "partial": 57
     },
     {
       "id": "input",
@@ -571,7 +571,7 @@
   ],
   "phase1_exit": {
     "total": 315,
-    "implemented": 299,
+    "implemented": 315,
     "behavior_ownership_verified": 0,
     "only_allowed_gaps": 3,
     "meeting": 0
