@@ -2270,6 +2270,15 @@ def Laws.rlgl_blend_mode_unchanged(frame, mode):
 def Laws.rlgl_set_uniform_unchanged(frame, location, value, kind):
   {==}
 
+def Laws.rlgl_render_batch_zeroed(frame, buffers, elements):
+  {==}
+
+def Laws.rlgl_draw_render_batch_unchanged(frame, batch):
+  {==}
+
+def Laws.rlgl_proc_address_null():
+  {==}
+
 def Laws.rlgl_gl_formats_rgba8():
   {==}
 
