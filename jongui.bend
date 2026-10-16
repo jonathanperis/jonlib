@@ -2585,3 +2585,392 @@ def Gui.text_input_box(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rect
   +items = Gui.split(TextCore.bytes(buttons), 59, 0, Nil{})
   +count = Gui.drop.count(items, 0)
   Gui.input.of((count < 128 : U32) && (TextCore.len(TextCore.bytes(buttons)) < 1024 : U32), gui, core, frame, bounds, title, message, items, count, size, input)
+
+# -----------------------------------------------------------------------------
+# GuiColorPanel, GuiColorBarAlpha, GuiColorBarHue, GuiColorPicker and their
+# HSV forms
+
+# ConvertRGBtoHSV (raygui's static): the hue in degrees, saturation and value
+# in [0, 1]; a gray (a spread below 0.00001) or a value at or below 0 has hue
+# and saturation 0.
+def Gui.hsv.of(+r: F32, +g: F32, +b: F32) -> M.Vector3:
+  +low = Bool.pick(F32, (r < g : F32), r, g)
+  +min = Bool.pick(F32, (low < b : F32), low, b)
+  +high = Bool.pick(F32, (r > g : F32), r, g)
+  +max = Bool.pick(F32, (high > b : F32), high, b)
+  +delta = (max - min : F32)
+  +sixth = Bool.pick(F32, (r >= max : F32), ((g - b : F32) / delta : F32),
+    Bool.pick(F32, (g >= max : F32), (2.0 + ((b - r : F32) / delta : F32) : F32), (4.0 + ((r - g : F32) / delta : F32) : F32)))
+  +degrees = (sixth * 60.0 : F32)
+  Bool.pick(M.Vector3, (delta < 0.00001 : F32) || Bool.not((max > 0.0 : F32)), M.Vector3{0.0, 0.0, max},
+    M.Vector3{Bool.pick(F32, (degrees < 0.0 : F32), (degrees + 360.0 : F32), degrees), (delta / max : F32), max})
+
+def Gui.hsv.hue(hsv: M.Vector3) -> F32:
+  M.Vector3{h, _, _} = hsv
+  h
+
+def Gui.hsv.same(a: M.Vector3, b: M.Vector3) -> Bool:
+  M.Vector3{+h0, +s0, +v0} = a
+  M.Vector3{+h1, +s1, +v1} = b
+  F32.is_eq(h0, h1) && F32.is_eq(s0, s1) && F32.is_eq(v0, v1)
+
+# A color's channels over 255, its HSV.
+def Gui.hsv.of_color(+color: U32) -> M.Vector3:
+  Gui.hsv.of((U32.to_f32(J.Color.red(color)) / 255.0 : F32), (U32.to_f32(J.Color.green(color)) / 255.0 : F32), (U32.to_f32(J.Color.blue(color)) / 255.0 : F32))
+
+def Gui.rgb.sector(i: U32, +v: F32, +p: F32, +q: F32, +t: F32) -> M.Vector3:
+  match i:
+    case 0: M.Vector3{v, t, p}
+    case 1: M.Vector3{q, v, p}
+    case 2: M.Vector3{p, v, t}
+    case 3: M.Vector3{p, q, v}
+    case 4: M.Vector3{t, p, v}
+    case _: M.Vector3{v, p, q}
+
+# The sixth of the hue ConvertHSVtoRGB takes ((long)(hue/60), a hue of 360
+# or more being 0).
+def Gui.rgb.sixth(+h: F32) -> F32:
+  (Bool.pick(F32, (h >= 360.0 : F32), 0.0, h) / 60.0 : F32)
+
+# ConvertHSVtoRGB (raygui's static): a saturation at or below 0 is the value
+# in gray; sectors 0 to 4 by (long)(hue/60), any other the last.
+def Gui.rgb.of(hsv: M.Vector3) -> M.Vector3:
+  M.Vector3{+h, +s, +v} = hsv
+  +hh = Gui.rgb.sixth(h)
+  +i = F32.trunc(hh)
+  +ff = (hh - i : F32)
+  +p = (v * (1.0 - s : F32) : F32)
+  +q = (v * (1.0 - (s * ff : F32) : F32) : F32)
+  +t = (v * (1.0 - (s * (1.0 - ff : F32) : F32) : F32) : F32)
+  Bool.pick(M.Vector3, (s <= 0.0 : F32), M.Vector3{v, v, v},
+    Gui.rgb.sector(Bool.pick(U32, (hh > F32.neg(1.0) : F32) && (hh < 5.0 : F32), F32.to_u32(F32.abs(i)), 5), v, p, q, t))
+
+# Whether ConvertHSVtoRGB is defined: (long)(hue/60) needs a hue/60 in
+# long's range (no NaN), unless the saturation returns first.
+def Gui.rgb.fine(hsv: M.Vector3) -> Bool:
+  M.Vector3{+h, +s, _} = hsv
+  +hh = Gui.rgb.sixth(h)
+  (s <= 0.0 : F32) || ((hh > F32.neg(9.2e18) : F32) && (hh < 9.2e18 : F32))
+
+# (unsigned char)x: defined for x above -1 and below 256.
+def Gui.uchar.fine(+x: F32) -> Bool:
+  (x > F32.neg(1.0) : F32) && (x < 256.0 : F32)
+
+def Gui.uchar(+x: F32) -> U32:
+  Bool.pick(U32, (x > 0.0 : F32), F32.to_u32(F32.trunc(x)), 0)
+
+# (unsigned char)(255*channel) of each channel, and whether all are defined.
+def Gui.rgb.bytes(rgb: M.Vector3, +alpha: U32) -> U32 & Bool:
+  M.Vector3{+r, +g, +b} = rgb
+  +r1 = (255.0 * r : F32)
+  +g1 = (255.0 * g : F32)
+  +b1 = (255.0 * b : F32)
+  (J.Color.rgba(Gui.uchar(r1), Gui.uchar(g1), Gui.uchar(b1), alpha), Gui.uchar.fine(r1) && Gui.uchar.fine(g1) && Gui.uchar.fine(b1))
+
+# roundf, half away from zero.
+def Gui.roundf(+x: F32) -> F32:
+  +t = F32.trunc(x)
+  Bool.pick(F32, (F32.abs((x - t : F32)) >= 0.5 : F32), Bool.pick(F32, (x < 0.0 : F32), (t - 1.0 : F32), (t + 1.0 : F32)), t)
+
+# (unsigned char)roundf(255*channel) of each channel (GuiColorPicker's), and
+# whether all are defined.
+def Gui.rgb.rounded(rgb: M.Vector3, +alpha: U32) -> U32 & Bool:
+  M.Vector3{+r, +g, +b} = rgb
+  +r1 = Gui.roundf((r * 255.0 : F32))
+  +g1 = Gui.roundf((g * 255.0 : F32))
+  +b1 = Gui.roundf((b * 255.0 : F32))
+  (J.Color.rgba(Gui.uchar(r1), Gui.uchar(g1), Gui.uchar(b1), alpha), Gui.uchar.fine(r1) && Gui.uchar.fine(g1) && Gui.uchar.fine(b1))
+
+def Gui.vec.x(v: M.Vector2) -> F32:
+  M.Vector2{x, _} = v
+  x
+
+def Gui.vec.y(v: M.Vector2) -> F32:
+  M.Vector2{_, y} = v
+  y
+
+# The update of a color control: 0 untouched (or disabled, locked, or
+# another control's drag), 1 this control's drag with the button down, 2
+# the drag ended, 3 a press over the control (`hit`), 4 hovered.
+def Gui.pick.kind(+gui: Gui, +core: J.Core, +bounds: J.Rectangle, +hit: Bool) -> U32:
+  +down = Gui.down(core)
+  +dragging = Bool.pick(U32, down, Bool.pick(U32, Gui.same(bounds, Gui.exclusive_rec(gui)), 1, 0), 2)
+  +free = Bool.pick(U32, hit, Bool.pick(U32, down, 3, 4), 0)
+  Bool.pick(U32, Gui.active(gui), Bool.pick(U32, Gui.exclusive(gui), dragging, free), 0)
+
+# The drag after an update: started by a press, ended when the button is up.
+def Gui.pick.drag(+kind: U32, +gui: Gui, +bounds: J.Rectangle) -> Gui:
+  Bool.pick(Gui, U32.is_eq(kind, 3), Gui.with_drag(gui, True{}, bounds), Bool.pick(Gui, U32.is_eq(kind, 2), Gui.with_drag(gui, False{}, J.Rectangle{0.0, 0.0, 0.0, 0.0}), gui))
+
+def Gui.pick.clamp(+v: F32, +low: F32, +high: F32) -> F32:
+  Bool.pick(F32, (v < low : F32), low, Bool.pick(F32, (v > high : F32), high, v))
+
+# The panel after its update: the gui, the state, the HSV and the selector's
+# center.
+type Gui.Panel is Data:
+  GuiPanel{gui: Gui, state: U32, hsv: M.Vector3, x: F32, y: F32}
+
+# A drag clamps the selector to the bounds; a press puts it at the pointer;
+# either sets the saturation and value from it. Only a press makes the
+# state PRESSED.
+def Gui.panel_hsv.update(+kind: U32, +gui: Gui, +bounds: J.Rectangle, +mouse: M.Vector2, +hsv: M.Vector3) -> Gui.Panel:
+  J.Rectangle{+bx, +by, +bw, +bh} = bounds
+  M.Vector2{+mx, +my} = mouse
+  M.Vector3{+h, +s, +v} = hsv
+  +dragged = U32.is_eq(kind, 1)
+  +pressed = U32.is_eq(kind, 3)
+  +px = Bool.pick(F32, dragged, Gui.pick.clamp(mx, bx, (bx + bw : F32)), Bool.pick(F32, pressed, mx, (bx + (s * bw : F32) : F32)))
+  +py = Bool.pick(F32, dragged, Gui.pick.clamp(my, by, (by + bh : F32)), Bool.pick(F32, pressed, my, (by + ((1.0 - v : F32) * bh : F32) : F32)))
+  GuiPanel{Gui.pick.drag(kind, gui, bounds), Bool.pick(U32, pressed, 2, Bool.pick(U32, U32.is_eq(kind, 4), 1, Gui.get_state(gui))),
+    Bool.pick(M.Vector3, dragged || pressed, M.Vector3{h, ((px - bx : F32) / bw : F32), (1.0 - ((py - by : F32) / bh : F32) : F32)}, M.Vector3{h, s, v}), px, py}
+
+def Gui.panel_hsv.surface(disabled: Bool, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +hue: U32, +sx: F32, +sy: F32) -> J.Frame:
+  match disabled:
+    case True{}:
+      +alpha = Gui.alpha.of(gui)
+      J.Draw.rectangle_gradient_ex(frame, bounds, J.Color.with_alpha(J.Color.with_alpha(Gui.get_style(gui, 13, 10), 0.1), alpha), J.Color.with_alpha(J.Color.with_alpha(255, 0.6), alpha),
+        J.Color.with_alpha(J.Color.with_alpha(255, 0.6), alpha), J.Color.with_alpha(J.Color.with_alpha(Gui.get_style(gui, 13, 9), 0.6), alpha))
+    case False{}:
+      +alpha = Gui.alpha.of(gui)
+      f1 = J.Draw.rectangle_gradient_ex(frame, bounds, J.Color.with_alpha(4294967295, alpha), J.Color.with_alpha(4294967295, alpha), J.Color.with_alpha(hue, alpha), J.Color.with_alpha(hue, alpha))
+      f2 = J.Draw.rectangle_gradient_ex(f1, bounds, J.Color.with_alpha(255, 0.0), J.Color.with_alpha(255, alpha), J.Color.with_alpha(255, alpha), J.Color.with_alpha(255, 0.0))
+      +size = Gui.get_style(gui, 13, 16)
+      +half = FontCore.int.f32(Gui.int.over(size, 2))
+      Gui.draw_rectangle(f2, J.Rectangle{(sx - half : F32), (sy - half : F32), FontCore.int.f32(size), FontCore.int.f32(size)}, 0, 0, Gui.fade(4294967295, alpha))
+
+def Gui.panel_hsv.drawn(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +converts: Bool, hue: U32 & Bool, panel: Gui.Panel) -> J.Frame & (Gui & M.Vector3):
+  (+top, +top_bytes) = hue
+  GuiPanel{+after, +state, +hsv, +sx, +sy} = panel
+  +top_fine = converts && top_bytes
+  +size = Gui.get_style(gui, 13, 16)
+  +half = FontCore.int.f32(Gui.int.over(size, 2))
+  +disabled = U32.is_eq(state, 3)
+  +fine = top_fine && (disabled || (FontCore.int.valid((sx - half : F32)) && FontCore.int.valid((sy - half : F32))))
+  f1 = Gui.panel_hsv.surface(disabled, gui, frame, bounds, top, sx, sy)
+  f2 = Gui.draw_rectangle(f1, bounds, Gui.get_style(gui, 13, 12), Gui.color(gui, 13, (state * 3 : U32)), 0)
+  (Gui.refused(Bool.not(fine), f2), (after, hsv))
+
+# GuiColorPanelHSV(bounds, text, &colorHsv): a white-to-hue gradient under a
+# clear-to-black one, a selector of COLOR_SELECTOR_SIZE (white) at the
+# saturation and value, and the border. A press over the panel or a drag
+# that started there sets the saturation and value from the pointer (a drag
+# keeps the selector inside the bounds). The frame, the gui (the drag) and
+# the HSV. The text is not drawn (raygui does not). A hue whose RGB raygui
+# cannot convert, or a selector outside int's range, marks the frame
+# undefined.
+def Gui.panel_hsv.topped(+top: M.Vector3, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +hsv: M.Vector3) -> J.Frame & (Gui & M.Vector3):
+  Gui.panel_hsv.drawn(gui, frame, bounds, Gui.rgb.fine(top), Gui.rgb.bytes(Gui.rgb.of(top), 255),
+    Gui.panel_hsv.update(Gui.pick.kind(gui, core, bounds, J.Collision.point_rec(J.Input.get_mouse_position(core), bounds)), gui, bounds, J.Input.get_mouse_position(core), hsv))
+
+def Gui.color_panel_hsv(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, +hsv: M.Vector3) -> J.Frame & (Gui & M.Vector3):
+  Gui.panel_hsv.topped(M.Vector3{Gui.hsv.hue(hsv), 1.0, 1.0}, gui, core, frame, bounds, hsv)
+
+def Gui.color_panel.set(+changed: Bool, +converts: Bool, +color: U32, frame: J.Frame, +gui: Gui, rgb: U32 & Bool) -> J.Frame & (Gui & U32):
+  (+bytes, +fine) = rgb
+  (Gui.refused(changed && Bool.not(fine && converts), frame), (gui, Bool.pick(U32, changed, bytes, color)))
+
+def Gui.color_panel.of(+before: M.Vector3, +color: U32, frame: J.Frame, rest: Gui & M.Vector3) -> J.Frame & (Gui & U32):
+  (+gui, +hsv) = rest
+  Gui.color_panel.set(Bool.not(Gui.hsv.same(before, hsv)), Gui.rgb.fine(hsv), color, frame, gui, Gui.rgb.bytes(Gui.rgb.of(hsv), J.Color.alpha(color)))
+
+def Gui.color_panel.changed(+before: M.Vector3, +color: U32, r: J.Frame & (Gui & M.Vector3)) -> J.Frame & (Gui & U32):
+  (frame, rest) = r
+  Gui.color_panel.of(before, color, frame, rest)
+
+# GuiColorPanel(bounds, text, &color): GuiColorPanelHSV over the color's
+# HSV; when the panel changes it, the color becomes (unsigned
+# char)(255*channel) of its RGB, the alpha kept. A changed HSV raygui cannot
+# convert marks the frame undefined.
+def Gui.color_panel(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, +color: U32) -> J.Frame & (Gui & U32):
+  +hsv = Gui.hsv.of_color(color)
+  Gui.color_panel.changed(hsv, color, Gui.color_panel_hsv(gui, core, frame, bounds, text, hsv))
+
+# A bar's update: the gui, the state and the value.
+type Gui.Picked is Data:
+  GuiPicked{gui: Gui, state: U32, value: F32}
+
+def Gui.bar.update(+kind: U32, +gui: Gui, +bounds: J.Rectangle, +value: F32, +pointed: F32) -> Gui.Picked:
+  +moved = U32.is_eq(kind, 1) || U32.is_eq(kind, 3)
+  GuiPicked{Gui.pick.drag(kind, gui, bounds), Bool.pick(U32, moved, 2, Bool.pick(U32, U32.is_eq(kind, 4), 1, Gui.get_state(gui))), Bool.pick(F32, moved, pointed, value)}
+
+# The bar's border and its selector, in BORDER + state*3.
+def Gui.bar.edges(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +selector: J.Rectangle, +state: U32) -> J.Frame:
+  f1 = Gui.draw_rectangle(frame, bounds, Gui.get_style(gui, 13, 12), Gui.color(gui, 13, (state * 3 : U32)), 0)
+  Gui.draw_rectangle(f1, selector, 0, 0, Gui.color(gui, 13, (state * 3 : U32)))
+
+def Gui.rec.ints(rec: J.Rectangle) -> Bool:
+  J.Rectangle{+x, +y, +w, +h} = rec
+  FontCore.int.valid(x) && FontCore.int.valid(y) && FontCore.int.valid(w) && FontCore.int.valid(h)
+
+# The alpha bar's checkerboard: RAYGUI_COLORBARALPHA_CHECKED_SIZE (10)
+# squares, columns outside and rows inside, BORDER_COLOR_DISABLED on odd
+# squares and BASE_COLOR_DISABLED on even ones, each faded to 0.4.
+def Gui.alpha.checks.column(n: Nat, +gui: Gui, +bx: F32, +by: F32, +x: U32, +y: U32, frame: J.Frame) -> J.Frame:
+  match n:
+    case 0n: frame
+    case 1n+p: Gui.alpha.checks.column(p, gui, bx, by, x, (y + 1 : U32),
+      Gui.draw_rectangle(frame, J.Rectangle{(bx + U32.to_f32((x * 10 : U32)) : F32), (by + U32.to_f32((y * 10 : U32)) : F32), 10.0, 10.0}, 0, 0,
+        Gui.fade(J.Color.with_alpha(Gui.get_style(gui, 13, Bool.pick(U32, U32.is_eq(((x + y) % 2 : U32), 1), 9, 10)), 0.4), Gui.alpha.of(gui))))
+
+def Gui.alpha.checks(n: Nat, +rows: U32, +gui: Gui, +bx: F32, +by: F32, +x: U32, frame: J.Frame) -> J.Frame:
+  match n:
+    case 0n: frame
+    case 1n+p: Gui.alpha.checks(p, rows, gui, bx, by, (x + 1 : U32), Gui.alpha.checks.column(U32.to_nat(rows), gui, bx, by, x, 0, frame))
+
+# (int)width/10 as a count: 0 for a width below 10 (negative ones too).
+def Gui.alpha.count(+w: F32) -> U32:
+  Bool.pick(U32, (w >= 10.0 : F32), (F32.to_u32(F32.trunc(w)) / 10 : U32), 0)
+
+def Gui.alpha.surface(disabled: Bool, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle) -> J.Frame:
+  match disabled:
+    case True{}:
+      J.Draw.rectangle_gradient_ex(frame, bounds, J.Color.with_alpha(Gui.get_style(gui, 13, 10), 0.1), J.Color.with_alpha(Gui.get_style(gui, 13, 10), 0.1),
+        J.Color.with_alpha(Gui.get_style(gui, 13, 9), Gui.alpha.of(gui)), J.Color.with_alpha(Gui.get_style(gui, 13, 9), Gui.alpha.of(gui)))
+    case False{}:
+      J.Rectangle{+bx, +by, +bw, +bh} = bounds
+      +alpha = Gui.alpha.of(gui)
+      f1 = Gui.alpha.checks(U32.to_nat(Gui.alpha.count(bw)), Gui.alpha.count(bh), gui, bx, by, 0, frame)
+      J.Draw.rectangle_gradient_ex(f1, J.Rectangle{bx, by, bw, bh}, 4294967040, 4294967040, J.Color.with_alpha(255, alpha), J.Color.with_alpha(255, alpha))
+
+def Gui.alpha.drawn(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +selector: J.Rectangle, bar: Gui.Picked) -> J.Frame & (Gui & F32):
+  GuiPicked{+after, +state, +value} = bar
+  +disabled = U32.is_eq(state, 3)
+  +fine = Gui.rec.ints(selector) && (disabled || Gui.rec.ints(J.Rectangle{0.0, 0.0, Gui.rec.width(bounds), Gui.rec.height(bounds)}))
+  (Gui.refused(Bool.not(fine), Gui.bar.edges(gui, Gui.alpha.surface(disabled, gui, frame, bounds), bounds, selector, state)), (after, value))
+
+# The alpha bar's selector, placed by the alpha before the update.
+def Gui.alpha.selector(+gui: Gui, +bounds: J.Rectangle, +alpha: F32) -> J.Rectangle:
+  J.Rectangle{+bx, +by, +bw, +bh} = bounds
+  +height = Gui.get_style(gui, 13, 19)
+  +over = Gui.get_style(gui, 13, 20)
+  J.Rectangle{((bx + (alpha * bw : F32) : F32) - FontCore.int.f32(Gui.int.over(height, 2)) : F32), (by - FontCore.int.f32(over) : F32), FontCore.int.f32(height), (bh + FontCore.int.f32((over * 2 : U32)) : F32)}
+
+def Gui.alpha.run(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +selector: J.Rectangle, +alpha: F32) -> J.Frame & (Gui & F32):
+  +mouse = J.Input.get_mouse_position(core)
+  +pointed = ((Gui.vec.x(mouse) - Gui.rec.x(bounds) : F32) / Gui.rec.width(bounds) : F32)
+  Gui.alpha.drawn(gui, frame, bounds, selector,
+    Gui.bar.update(Gui.pick.kind(gui, core, bounds, J.Collision.point_rec(mouse, bounds) || J.Collision.point_rec(mouse, selector)),
+      gui, bounds, alpha, Bool.pick(F32, (pointed <= 0.0 : F32), 0.0, Bool.pick(F32, (pointed >= 1.0 : F32), 1.0, pointed))))
+
+# GuiColorBarAlpha(bounds, text, &alpha): a checkerboard under a clear-to-
+# black gradient, the border, and a selector HUEBAR_SELECTOR_HEIGHT wide
+# (placed by the alpha before the update) passing the bar by
+# HUEBAR_SELECTOR_OVERFLOW. A press over the bar or the selector, or a drag
+# that started there, sets the alpha from the pointer, clamped to [0, 1].
+# The frame, the gui (the drag) and the alpha. A bar or selector outside
+# int's range marks the frame undefined.
+def Gui.color_bar_alpha(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, +alpha: F32) -> J.Frame & (Gui & F32):
+  Gui.alpha.run(gui, core, frame, bounds, Gui.alpha.selector(gui, bounds, alpha), alpha)
+
+# One sixth of the hue bar: DrawRectangleGradientV with C int arguments.
+def Gui.hue.band(frame: J.Frame, +bx: F32, +y: F32, +bw: F32, +h: F32, +top: U32, +bottom: U32, +alpha: F32) -> J.Frame:
+  J.Draw.rectangle_gradient_v(frame, F32.trunc(bx), F32.trunc(y), F32.trunc(bw), F32.trunc(h), J.Color.with_alpha(top, alpha), J.Color.with_alpha(bottom, alpha))
+
+def Gui.hue.surface(disabled: Bool, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle) -> J.Frame:
+  match disabled:
+    case True{}:
+      J.Rectangle{+bx, +by, +bw, +bh} = bounds
+      Gui.hue.band(frame, bx, by, bw, bh, J.Color.with_alpha(Gui.get_style(gui, 13, 10), 0.1), Gui.get_style(gui, 13, 9), Gui.alpha.of(gui))
+    case False{}:
+      J.Rectangle{+bx, +by, +bw, +bh} = bounds
+      +alpha = Gui.alpha.of(gui)
+      +sixth = (bh / 6.0 : F32)
+      +tall = F32.ceil(sixth)
+      f1 = Gui.hue.band(frame, bx, by, bw, tall, 4278190335, 4294902015, alpha)
+      f2 = Gui.hue.band(f1, bx, (by + sixth : F32), bw, tall, 4294902015, 16711935, alpha)
+      f3 = Gui.hue.band(f2, bx, (by + (2.0 * sixth : F32) : F32), bw, tall, 16711935, 16777215, alpha)
+      f4 = Gui.hue.band(f3, bx, (by + (3.0 * sixth : F32) : F32), bw, tall, 16777215, 65535, alpha)
+      f5 = Gui.hue.band(f4, bx, (by + (4.0 * sixth : F32) : F32), bw, tall, 65535, 4278255615, alpha)
+      Gui.hue.band(f5, bx, (by + (5.0 * sixth : F32) : F32), bw, sixth, 4278255615, 4278190335, alpha)
+
+def Gui.hue.drawn(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +selector: J.Rectangle, bar: Gui.Picked) -> J.Frame & (Gui & F32):
+  GuiPicked{+after, +state, +value} = bar
+  +disabled = U32.is_eq(state, 3)
+  (Gui.refused(Bool.not(Gui.rec.ints(selector)), Gui.bar.edges(gui, Gui.hue.surface(disabled, gui, frame, bounds), bounds, selector, state)), (after, value))
+
+# The hue bar's selector, placed by the hue before the update.
+def Gui.hue.selector(+gui: Gui, +bounds: J.Rectangle, +hue: F32) -> J.Rectangle:
+  J.Rectangle{+bx, +by, +bw, +bh} = bounds
+  +height = Gui.get_style(gui, 13, 19)
+  +over = Gui.get_style(gui, 13, 20)
+  J.Rectangle{(bx - FontCore.int.f32(over) : F32), ((by + ((hue / 360.0 : F32) * bh : F32) : F32) - FontCore.int.f32(Gui.int.over(height, 2)) : F32), (bw + FontCore.int.f32((over * 2 : U32)) : F32), FontCore.int.f32(height)}
+
+def Gui.hue.run(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +selector: J.Rectangle, +hue: F32) -> J.Frame & (Gui & F32):
+  +mouse = J.Input.get_mouse_position(core)
+  +pointed = (((Gui.vec.y(mouse) - Gui.rec.y(bounds) : F32) * 360.0 : F32) / Gui.rec.height(bounds) : F32)
+  Gui.hue.drawn(gui, frame, bounds, selector,
+    Gui.bar.update(Gui.pick.kind(gui, core, bounds, J.Collision.point_rec(mouse, bounds) || J.Collision.point_rec(mouse, selector)),
+      gui, bounds, hue, Bool.pick(F32, (pointed <= 0.0 : F32), 0.0, Bool.pick(F32, (pointed >= 359.0 : F32), 359.0, pointed))))
+
+# GuiColorBarHue(bounds, text, &hue): six vertical gradients through red,
+# yellow, green, cyan, blue, magenta and back to red (ceil(height/6) high but
+# the last), the border, and a selector HUEBAR_SELECTOR_HEIGHT high (placed
+# by the hue before the update) passing the bar by HUEBAR_SELECTOR_OVERFLOW
+# on each side. A press over the bar or the selector, or a drag that started
+# there, sets the hue from the pointer, clamped to [0, 359]. The frame, the
+# gui (the drag) and the hue. A selector outside int's range marks the frame
+# undefined, and so does a band (DrawRectangleGradientV's ints).
+def Gui.color_bar_hue(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, +hue: F32) -> J.Frame & (Gui & F32):
+  Gui.hue.run(gui, core, frame, bounds, Gui.hue.selector(gui, bounds, hue), hue)
+
+# The hue bar beside a picker: HUEBAR_PADDING to its right, HUEBAR_WIDTH
+# wide, as high as the panel.
+def Gui.picker.hue_bounds(+gui: Gui, +bounds: J.Rectangle) -> J.Rectangle:
+  J.Rectangle{+bx, +by, +bw, +bh} = bounds
+  J.Rectangle{((bx + bw : F32) + FontCore.int.f32(Gui.get_style(gui, 13, 18)) : F32), by, FontCore.int.f32(Gui.get_style(gui, 13, 17)), bh}
+
+def Gui.picker.set(+converts: Bool, frame: J.Frame, +gui: Gui, rgb: U32 & Bool) -> J.Frame & (Gui & U32):
+  (+bytes, +fine) = rgb
+  (Gui.refused(Bool.not(fine && converts), frame), (gui, bytes))
+
+def Gui.picker.after(+after: M.Vector3, +color: U32, frame: J.Frame, +gui: Gui) -> J.Frame & (Gui & U32):
+  Gui.picker.set(Gui.rgb.fine(after), frame, gui, Gui.rgb.rounded(Gui.rgb.of(after), J.Color.alpha(color)))
+
+def Gui.picker.done(+color: U32, +hsv: M.Vector3, frame: J.Frame, rest: Gui & F32) -> J.Frame & (Gui & U32):
+  M.Vector3{_, +s, +v} = hsv
+  (+gui, +hue) = rest
+  Gui.picker.after(M.Vector3{hue, s, v}, color, frame, gui)
+
+def Gui.picker.hued(+color: U32, +hsv: M.Vector3, r: J.Frame & (Gui & F32)) -> J.Frame & (Gui & U32):
+  (frame, rest) = r
+  Gui.picker.done(color, hsv, frame, rest)
+
+def Gui.picker.panel_done(+core: J.Core, +bounds: J.Rectangle, frame: J.Frame, rest: Gui & U32) -> J.Frame & (Gui & U32):
+  (+gui, +color) = rest
+  +hsv = Gui.hsv.of_color(color)
+  Gui.picker.hued(color, hsv, Gui.color_bar_hue(gui, core, frame, Gui.picker.hue_bounds(gui, bounds), None{}, Gui.hsv.hue(hsv)))
+
+def Gui.picker.paneled(+core: J.Core, +bounds: J.Rectangle, r: J.Frame & (Gui & U32)) -> J.Frame & (Gui & U32):
+  (frame, rest) = r
+  Gui.picker.panel_done(core, bounds, frame, rest)
+
+# GuiColorPicker(bounds, text, &color): GuiColorPanel, then GuiColorBarHue
+# beside it over the (new) color's hue; the color becomes (unsigned
+# char)roundf(255*channel) of the HSV with the bar's hue, every frame, the
+# alpha kept. The frame, the gui and the color. The panel's and the bar's
+# refusals apply, and an HSV raygui cannot convert marks the frame undefined.
+def Gui.color_picker(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, +color: U32) -> J.Frame & (Gui & U32):
+  Gui.picker.paneled(core, bounds, Gui.color_panel(gui, core, frame, bounds, None{}, color))
+
+def Gui.picker_hsv.done(+hsv: M.Vector3, frame: J.Frame, rest: Gui & F32) -> J.Frame & (Gui & M.Vector3):
+  M.Vector3{_, +s, +v} = hsv
+  (+gui, +hue) = rest
+  (frame, (gui, M.Vector3{hue, s, v}))
+
+def Gui.picker_hsv.hued(+hsv: M.Vector3, r: J.Frame & (Gui & F32)) -> J.Frame & (Gui & M.Vector3):
+  (frame, rest) = r
+  Gui.picker_hsv.done(hsv, frame, rest)
+
+def Gui.picker_hsv.panel_done(+core: J.Core, +bounds: J.Rectangle, frame: J.Frame, rest: Gui & M.Vector3) -> J.Frame & (Gui & M.Vector3):
+  (+gui, +hsv) = rest
+  Gui.picker_hsv.hued(hsv, Gui.color_bar_hue(gui, core, frame, Gui.picker.hue_bounds(gui, bounds), None{}, Gui.hsv.hue(hsv)))
+
+def Gui.picker_hsv.paneled(+core: J.Core, +bounds: J.Rectangle, r: J.Frame & (Gui & M.Vector3)) -> J.Frame & (Gui & M.Vector3):
+  (frame, rest) = r
+  Gui.picker_hsv.panel_done(core, bounds, frame, rest)
+
+# GuiColorPickerHSV(bounds, text, &colorHsv): GuiColorPanelHSV, then
+# GuiColorBarHue beside it over the HSV's hue. The frame, the gui and the
+# HSV. The panel's and the bar's refusals apply.
+def Gui.color_picker_hsv(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, +hsv: M.Vector3) -> J.Frame & (Gui & M.Vector3):
+  Gui.picker_hsv.paneled(core, bounds, Gui.color_panel_hsv(gui, core, frame, bounds, None{}, hsv))

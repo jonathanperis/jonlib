@@ -91,7 +91,7 @@ SHIM = ROOT / 'tools/reference/example_driver.h'
 AUDIO_CLOCK_UNIT = ROOT / 'tools/reference/audio_clock.c'
 WIDTH, HEIGHT = 800, 450
 # Examples whose InitWindow is not 800x450.
-SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation': (720, 400), 'gui_window_grid': (400, 300), 'gui_toggle_combo_list': (400, 300), 'gui_message_tabs': (500, 300), 'gui_value_input': (500, 360), 'gui_tooltip_icons': (500, 300)}
+SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation': (720, 400), 'gui_window_grid': (400, 300), 'gui_toggle_combo_list': (400, 300), 'gui_message_tabs': (500, 300), 'gui_value_input': (500, 360), 'gui_tooltip_icons': (500, 300), 'gui_color_pickers': (500, 320)}
 SIZES['shaders_rlgl_compute'] = (768, 768)
 
 
@@ -351,6 +351,7 @@ GUI_SCENES = {
     'gui_message_tabs': ('jonlib/gui/gui_message_tabs.c', 'Ex.setup(core, frame)'),
     'gui_value_input': ('jonlib/gui/gui_value_input.c', 'Ex.setup(core, frame)'),
     'gui_tooltip_icons': ('jonlib/gui/gui_tooltip_icons.c', 'Ex.setup(core, frame)'),
+    'gui_color_pickers': ('jonlib/gui/gui_color_pickers.c', 'Ex.setup(core, frame)'),
 }
 EXAMPLES.update(GUI_SCENES)
 
@@ -1542,6 +1543,14 @@ def scripts():
     # pressed) and released, and the toggle switched on.
     out.append(script('gui_tooltip_icons', 'controls', [quick(), quick([mouse_at(70, 25)]), quick([mouse_at(435, 25)]), quick([mouse_at(85, 270)]),
                                                         quick([mouse_at(70, 75)]), quick([mouse_at(70, 125)])] + clicks(70, 25) + clicks(435, 25) + [slow()]))
+    # The picker's panel hovered, pressed and dragged out of it (the selector stays inside), its hue bar pressed and dragged
+    # above it (the hue clamps to 0); the HSV picker's panel and hue bar pressed; the panel dragged; the alpha bar pressed and
+    # dragged past its right end, then pressed on the selector's overflow; the hue bar dragged above it; a disabled panel
+    # pressed.
+    drag = lambda x0, y0, x1, y1: [quick([mouse_at(x0, y0)]), quick([button(0)]), quick([mouse_at(x1, y1)]), quick([button(0, False)])]
+    out.append(script('gui_color_pickers', 'controls', [quick(), quick([mouse_at(85, 85)])] + drag(40, 50, 300, 200) + drag(176, 100, 176, 2)
+                      + clicks(250, 60) + clicks(366, 120) + drag(70, 230, 20, 190) + drag(200, 210, 400, 210) + clicks(160, 198)
+                      + drag(330, 250, 330, 170) + clicks(440, 50) + [slow()]))
     repeated = sorted({item['name'] for item in out if sum(other['name'] == item['name'] for other in out) > 1})
     if repeated:
         raise ProbeFailure(f'examples: script names used more than once: {repeated}')

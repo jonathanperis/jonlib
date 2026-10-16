@@ -843,22 +843,112 @@
    ]
   },
   "GuiColorPicker": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.color_picker",
+   "scope": "GuiColorPanel, then GuiColorBarHue HUEBAR_PADDING to its right (HUEBAR_WIDTH wide) over the new color's hue; the color is rebuilt every frame as (unsigned char)roundf(255*channel) of the HSV with the bar's hue, the alpha kept.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_color_pickers.c",
+    "tests/gui/gui_color_pickers.bend",
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "A value, not a pointer: the NULL pointer (raygui's temporary color) has no counterpart",
+    "The panel's and bar's refusals apply; an HSV raygui cannot convert marks the frame undefined",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiColorPanel": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.color_panel",
+   "scope": "GuiColorPanelHSV over the color's HSV (ConvertRGBtoHSV); when the HSV changes, the color becomes (unsigned char)(255*channel) of its RGB, the alpha kept.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_color_pickers.c",
+    "tests/gui/gui_color_pickers.bend",
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "A value, not a pointer: the NULL pointer (raygui's temporary color) has no counterpart",
+    "A changed HSV whose RGB is not a byte marks the frame undefined",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiColorBarAlpha": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.color_bar_alpha",
+   "scope": "A checkerboard of 10-pixel squares (disabled colors at 0.4) under a clear-to-black gradient, the border and a selector HUEBAR_SELECTOR_HEIGHT wide placed by the alpha before the update; a press over the bar or the selector, or a drag that started there, sets the alpha from the pointer, clamped to [0, 1].",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_color_pickers.c",
+    "tests/gui/gui_color_pickers.bend",
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "A value, not a pointer: the NULL pointer (raygui's temporary color) has no counterpart",
+    "A bar or selector outside int range marks the frame undefined",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiColorBarHue": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.color_bar_hue",
+   "scope": "Six vertical gradients (red, yellow, green, cyan, blue, magenta, red; ceil(height/6) high but the last) as DrawRectangleGradientV ints, the border and a selector placed by the hue before the update; a press or drag sets the hue from the pointer, clamped to [0, 359].",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_color_pickers.c",
+    "tests/gui/gui_color_pickers.bend",
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "A value, not a pointer: the NULL pointer (raygui's temporary color) has no counterpart",
+    "A selector or band outside int range marks the frame undefined",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiColorPickerHSV": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.color_picker_hsv",
+   "scope": "GuiColorPanelHSV, then GuiColorBarHue beside it over the HSV's hue.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_color_pickers.c",
+    "tests/gui/gui_color_pickers.bend",
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "A value, not a pointer: the NULL pointer (raygui's temporary color) has no counterpart",
+    "The panel's and bar's refusals apply",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiColorPanelHSV": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.color_panel_hsv",
+   "scope": "A white-to-hue gradient (the hue's RGB as (unsigned char)(255*channel)) under a clear-to-black one, a white selector of COLOR_SELECTOR_SIZE at the saturation and value, the border; a press over the panel or a drag that started there sets the saturation and value (a drag clamps the selector to the bounds); disabled, one gradient of the disabled colors.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_color_pickers.c",
+    "tests/gui/gui_color_pickers.bend",
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "A value, not a pointer: the NULL pointer (raygui's temporary color) has no counterpart",
+    "A hue whose RGB raygui cannot convert to bytes, and a selector outside int range, mark the frame undefined",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   }
  }
 }

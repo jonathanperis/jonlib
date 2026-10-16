@@ -3944,6 +3944,28 @@ law gui_tip_lines_counted:
 law gui_tip_lines_capped:
   {JG.Gui.tip.count([[97]], 128) == 128 : U32}
 
+# ConvertHSVtoRGB's switch: sector 0 is (v, t, p); a (long)(hue/60) outside
+# 0..4 takes the last case, (v, p, q). A hovered color control leaves the
+# drag as it was.
+law gui_rgb_sector_first:
+  for v: F32
+  for p: F32
+  for q: F32
+  for t: F32
+  {JG.Gui.rgb.sector(0, v, p, q, t) == M.Vector3{v, t, p} : M.Vector3}
+
+law gui_rgb_sector_other:
+  for v: F32
+  for p: F32
+  for q: F32
+  for t: F32
+  {JG.Gui.rgb.sector(9, v, p, q, t) == M.Vector3{v, p, q} : M.Vector3}
+
+law gui_pick_hover_keeps_drag:
+  for gui: JG.Gui
+  for bounds: J.Rectangle
+  {JG.Gui.pick.drag(4, gui, bounds) == gui : JG.Gui}
+
 # dr_mp3's memory streams (src/mp3.bend): opened from memory, a stream has
 # every byte before its tags at hand and none after them, is never filled,
 # goes on while a decode passes bytes and is over when one passes none; a
