@@ -46,7 +46,8 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiScrollPanel` | `Gui.scroll_panel(gui, core, frame, bounds, text, content, scroll)` | `Frame & (Gui & (Vector2 & Rectangle))` (the scroll offset and the view) |
 | `GuiProgressBar` | `Gui.progress_bar(gui, frame, bounds, left, right, value, min, max)` | `Frame & F32` (the value, which one above `max` becomes; a value is always given) |
 | `GuiListViewEx` | `Gui.list_view_ex(gui, core, frame, bounds, items, scroll, active, focus)` | `Frame & (Gui & Gui.Listed)` (`GuiListed{scroll, active, focus}`: the three ints as words, -1 being 4294967295) |
-| `GuiGetFont().baseSize` | `Gui.font_base_size(gui)` | `U32` (the default font's 10) |
+| `GuiSetFont` | `Gui.set_font(gui, font)` | `Gui & Font` (the gui keeps a copy, `J.Font.Shared`, when the font's texture id is above 0; the font comes back) |
+| `GuiGetFont` | `Gui.get_font(gui)`, `Gui.font_base_size(gui)` | `Font` (the default font, or one equal to the font set) / `U32` (its base size) |
 | `GuiScrollBar` (static in raygui) | `Gui.scroll_bar(gui, core, frame, bounds, value, min, max)` | `Frame & (Gui & U32)` (the int value as a word) |
 | `GuiTextBox` | `Gui.text_box(gui, core, frame, bounds, text, size, edit, editing)` | `Frame & (Core & (String & (Gui.Editing & Bool)))` (the text, raygui's two text box globals, its result) |
 | `GuiWindowBox` | `Gui.window_box(gui, core, frame, bounds, title)` | `Frame & Bool` (the close button clicked; `title` is `Maybe<String>`) |
@@ -197,8 +198,10 @@ example waiting on each raygui function it calls that is not delivered.
 
 ## Gaps
 
-- Not delivered yet: `GuiLoadStyle`, `GuiSetFont` and `GuiGetFont`'s
-  Font (its base size is `Gui.font_base_size`).
+- Not delivered yet: `GuiLoadStyle`.
+- A gui with a font set rebuilds the font from its copy for each text it
+  draws (a word list to an array, a word a pixel of the atlas): correct,
+  and slower than raygui's shared pointers for a large atlas.
 - The color controls take their value, not a pointer: raygui's NULL color
   (its temporary 200, 0, 0) has no counterpart. They mark the frame
   undefined where raygui's conversions are: an HSV whose RGB is not a byte
@@ -251,7 +254,6 @@ example waiting on each raygui function it calls that is not delivered.
   and marks the frame undefined.
 - An ellipsis narrower than 3 pixels makes raygui's dot loop endless; Jongui
   marks the frame undefined.
-- The default font only.
 - Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified.
 
 ## Verification
@@ -329,7 +331,12 @@ hue bar dragged above itself (the hue held at 0); a `GuiColorPickerHSV`'s
 panel and hue bar pressed; a `GuiColorPanel` with a translucent color
 dragged; a `GuiColorBarAlpha` dragged past its end and pressed on the
 selector's overflow; a `GuiColorBarHue` dragged; the three disabled; and
-the values printed each frame.
+the values printed each frame. `gui_font` covers `GuiSetFont` with an image
+font (the text examples' `custom_alagard.png` through `LoadFont`, its
+resources borrowed by the scene): labels, a button with an icon, a toggle
+and a text box hovered and clicked, a label cut by its ellipsis, a label at
+`TEXT_SIZE` 20, a tooltip measured and drawn in the font, and
+`GuiGetFont().baseSize` printed.
 
 The `gui-icon-files` gate (`tools/gui_icon_files_probe.py`) compares
 `GuiLoadIcons`, `GuiGetIcons` and `GuiIconText` with raygui without a

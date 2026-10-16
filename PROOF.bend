@@ -1210,11 +1210,11 @@ def Laws.gui_extended_property_stays():
   {==}
 
 def Laws.gui_disable_then_enable(gui):
-  JG.Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons} = gui
+  JG.Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons, font} = gui
   {==}
 
 def Laws.gui_disable_keeps_focus(gui):
-  JG.Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons} = gui
+  JG.Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons, font} = gui
   {==}
 
 def Laws.gui_line_color_property():
@@ -1323,15 +1323,15 @@ def Laws.gui_icon_scale_starts_at_one():
   {==}
 
 def Laws.gui_icon_scale_set(gui):
-  JG.Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons} = gui
+  JG.Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons, font} = gui
   {==}
 
 def Laws.gui_icon_scale_zero_ignored(gui):
-  JG.Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons} = gui
+  JG.Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons, font} = gui
   {==}
 
 def Laws.gui_icon_scale_negative_ignored(gui):
-  JG.Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons} = gui
+  JG.Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons, font} = gui
   {==}
 
 def Laws.gui_scroll_clamp_above():
@@ -2823,6 +2823,12 @@ def Laws.gui_rgb_sector_first(v, p, q, t):
   {==}
 
 def Laws.gui_rgb_sector_other(v, p, q, t):
+  {==}
+
+def Laws.font_shared_count():
+  {==}
+
+def Laws.gui_default_font_base_size():
   {==}
 
 def Laws.gui_pick_hover_keeps_drag(gui, bounds):

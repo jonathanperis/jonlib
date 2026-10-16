@@ -98,22 +98,40 @@
    ]
   },
   "GuiSetFont": {
-   "status": "not-started"
-  },
-  "GuiGetFont": {
    "status": "partial",
-   "jongui": "Gui.font_base_size",
-   "scope": "GuiGetFont().baseSize: the gui's font is raylib's default one.",
+   "jongui": "Gui.set_font",
+   "scope": "When the font texture id is above 0, the gui draws and measures its texts with the font (glyph widths, TEXT_SIZE over its base size, DrawTextCodepoint with its texture, MeasureTextEx for tooltips); the gui keeps a Data copy (J.Font.Shared) and the font comes back.",
    "evidence": [
     "tools/examples_probe.py",
-    "examples/core_directory_files.bend",
+    "tools/reference/gui/gui_font.c",
+    "tests/gui/gui_font.bend",
     "docs/GUI.md",
     "jongui.bend",
+    "jonlib.bend",
     "LAWS.bend"
    ],
    "gaps": [
-    "The Font value is not returned: only its baseSize",
-    "The default font only (GuiSetFont is not delivered)"
+    "A copy instead of the struct with shared pointers (language adaptation): each text drawn rebuilds the font from the copy, slower for a large atlas",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
+  },
+  "GuiGetFont": {
+   "status": "partial",
+   "jongui": "Gui.get_font, Gui.font_base_size",
+   "scope": "GetFontDefault for a new gui, or a font equal to the one GuiSetFont set; Gui.font_base_size is its baseSize.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_font.c",
+    "tests/gui/gui_font.bend",
+    "docs/GUI.md",
+    "jongui.bend",
+    "jonlib.bend",
+    "LAWS.bend",
+    "examples/core_directory_files.bend"
+   ],
+   "gaps": [
+    "An equal font instead of the same struct (language adaptation)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
   },
   "GuiSetStyle": {
