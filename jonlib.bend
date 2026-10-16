@@ -10124,7 +10124,7 @@ def Rlgl.rotatef(frame: Frame, +degrees: F32, +x: F32, +y: F32, +z: F32) -> Fram
 # (min and mag are always equal) and alpha whether rlsw found a texel with
 # alpha below 255 at load time. Mipmaps are always 1.
 type Texture is Type:
-  Texture{id: U32, width: U32, height: U32, format: U32, linear: Bool, alpha: Bool, texels: Maybe<Array<U32>>}
+  Texture{id: U32, width: U32, height: U32, format: U32, linear: FrameCore.Filtering, alpha: Bool, texels: Maybe<Array<U32>>}
 
 # RenderTexture2D: the framebuffer id, its R8G8B8A8 color texture and the id
 # of its depth renderbuffer. The fields may be read; the texture must be put
@@ -10151,16 +10151,16 @@ def Texture.convert(n: Nat, +index: U32, +format: U32, +found: Bool, read: Array
 
 def Texture.converted(+id: U32, +width: U32, +height: U32, +format: U32, result: Array<U32> & Bool) -> Texture:
   (texels, alpha) = result
-  Texture{id, width, height, format, False{}, alpha, Some{texels}}
+  Texture{id, width, height, format, FrameCore.Filtering.nearest(), alpha, Some{texels}}
 
 def Texture.words(+id: U32, +width: U32, +height: U32, +format: U32, pixels: Surface.Pixels) -> Texture:
   match pixels:
     case Words{values}: Texture.converted(id, width, height, format, Texture.convert(U32.to_nat((width * height : U32)), 0, format, False{}, Array.get(U32, values, 0)))
-    case Quads{_}: Texture{id, width, height, format, False{}, False{}, None{}}
+    case Quads{_}: Texture{id, width, height, format, FrameCore.Filtering.nearest(), False{}, None{}}
 
 def Texture.stored(complete: Bool, +id: U32, +width: U32, +height: U32, +format: U32, pixels: Surface.Pixels) -> Texture:
   match complete:
-    case False{}: Texture{id, width, height, format, False{}, False{}, None{}}
+    case False{}: Texture{id, width, height, format, FrameCore.Filtering.nearest(), False{}, None{}}
     case True{}: Texture.words(id, width, height, format, pixels)
 
 def Texture.made(failed: Bool, +id: U32, +width: U32, +height: U32, +format: U32, pixels: Surface.Pixels) -> Maybe<Texture>:
@@ -10271,11 +10271,15 @@ def Texture.is_valid(texture: Texture) -> Texture & Bool:
 def Texture.gen_mipmaps(texture: Texture) -> Texture:
   texture
 
-def Texture.filter(filter: U32, linear: Bool) -> Bool:
+def Texture.filter.both(+on: Bool, linear: FrameCore.Filtering) -> FrameCore.Filtering:
+  FrameCore.Filtering{_, _, +s_clamp, +t_clamp} = linear
+  FrameCore.Filtering{on, on, s_clamp, t_clamp}
+
+def Texture.filter(filter: U32, linear: FrameCore.Filtering) -> FrameCore.Filtering:
   match filter:
-    case 0: False{}
-    case 1: True{}
-    case 2: True{}
+    case 0: Texture.filter.both(False{}, linear)
+    case 1: Texture.filter.both(True{}, linear)
+    case 2: Texture.filter.both(True{}, linear)
     case _: linear
 
 # SetTextureFilter: POINT is NEAREST, BILINEAR and TRILINEAR (one mipmap) are
@@ -10285,22 +10289,59 @@ def Texture.set_filter(texture: Texture, +filter: U32) -> Texture:
   Texture{id, width, height, format, linear, alpha, texels} = texture
   Texture{id, width, height, format, Texture.filter(filter, linear), alpha, texels}
 
-# SetTextureWrap: raylib passes GL_CLAMP_TO_EDGE (and the mirror modes), which
-# rlsw's swTexParameteri rejects, so every texture keeps REPEAT.
-def Texture.set_wrap(texture: Texture, +wrap: U32) -> Texture:
-  texture
+def Texture.wrap.both(linear: FrameCore.Filtering) -> FrameCore.Filtering:
+  FrameCore.Filtering{+mag, +min, _, _} = linear
+  FrameCore.Filtering{mag, min, False{}, False{}}
 
-def Texture.replaced(+id: U32, +width: U32, +height: U32, +format: U32, +linear: Bool, +alpha: Bool, result: Array<U32> & Bool) -> Texture:
+def Texture.wrap.repeated(repeat: Bool, linear: FrameCore.Filtering) -> FrameCore.Filtering:
+  match repeat:
+    case False{}: linear
+    case True{}: Texture.wrap.both(linear)
+
+# SetTextureWrap: TEXTURE_WRAP_REPEAT sets REPEAT on both axes (GL_REPEAT);
+# for the others raylib passes GL_CLAMP_TO_EDGE and the mirror modes, which
+# rlsw's swTexParameteri rejects: the texture keeps its wraps.
+def Texture.set_wrap(texture: Texture, +wrap: U32) -> Texture:
+  Texture{id, width, height, format, linear, alpha, texels} = texture
+  Texture{id, width, height, format, Texture.wrap.repeated(U32.is_eq(wrap, 0), linear), alpha, texels}
+
+# rlTextureParameters(id, param, value) as swTexParameteri takes it:
+# RL_TEXTURE_MAG_FILTER and RL_TEXTURE_MIN_FILTER with GL_NEAREST or
+# GL_LINEAR, RL_TEXTURE_WRAP_S and RL_TEXTURE_WRAP_T with GL_REPEAT or
+# GL_CLAMP; any other value is rejected (GL_CLAMP_TO_EDGE and the mipmap
+# filters among them), and rlgl skips the mirror clamp, the anisotropic
+# filter and the mipmap bias under OpenGL 1.1.
+def Rlgl.texture.param(+param: U32, +value: U32, linear: FrameCore.Filtering) -> FrameCore.Filtering:
+  FrameCore.Filtering{+mag, +min, +s_clamp, +t_clamp} = linear
+  +filter = U32.is_eq(value, 9728) || U32.is_eq(value, 9729)
+  +wrap = U32.is_eq(value, 10497) || U32.is_eq(value, 10496)
+  FrameCore.Filtering{Bool.pick(Bool, U32.is_eq(param, 10240) && filter, U32.is_eq(value, 9729), mag), Bool.pick(Bool, U32.is_eq(param, 10241) && filter, U32.is_eq(value, 9729), min),
+    Bool.pick(Bool, U32.is_eq(param, 10242) && wrap, U32.is_eq(value, 10496), s_clamp), Bool.pick(Bool, U32.is_eq(param, 10243) && wrap, U32.is_eq(value, 10496), t_clamp)}
+
+def Rlgl.texture.bound(bound: Bool, +param: U32, +value: U32, linear: FrameCore.Filtering) -> FrameCore.Filtering:
+  match bound:
+    case False{}: linear
+    case True{}: Rlgl.texture.param(param, value, linear)
+
+# rlTextureParameters on a texture value (Jonlib's textures are values, not
+# ids): its filters and wraps as rlsw's texture object holds them; texture
+# id 0 binds nothing and changes nothing. rlsw picks the minification
+# filter where a span's or quad's texture derivatives minify (L2 > 1).
+def Rlgl.texture_parameters(texture: Texture, +param: U32, +value: U32) -> Texture:
+  Texture{+id, +width, +height, +format, linear, +alpha, texels} = texture
+  Texture{id, width, height, format, Rlgl.texture.bound(U32.is_ne(id, 0), param, value, linear), alpha, texels}
+
+def Texture.replaced(+id: U32, +width: U32, +height: U32, +format: U32, +linear: FrameCore.Filtering, +alpha: Bool, result: Array<U32> & Bool) -> Texture:
   (texels, _) = result
   Texture{id, width, height, format, linear, alpha, Some{texels}}
 
-def Texture.replace(texels: Maybe<Array<U32>>, +id: U32, +width: U32, +height: U32, +format: U32, +linear: Bool, +alpha: Bool, pixels: Surface.Pixels) -> Texture:
+def Texture.replace(texels: Maybe<Array<U32>>, +id: U32, +width: U32, +height: U32, +format: U32, +linear: FrameCore.Filtering, +alpha: Bool, pixels: Surface.Pixels) -> Texture:
   match texels pixels:
     case Some{_} Words{values}:
       Texture.replaced(id, width, height, format, linear, alpha, Texture.convert(U32.to_nat((width * height : U32)), 0, format, False{}, Array.get(U32, values, 0)))
     case _ _: Texture{id, width, height, format, linear, alpha, texels}
 
-def Texture.update.checked(valid: Bool, +id: U32, +width: U32, +height: U32, +format: U32, +linear: Bool, +alpha: Bool, texels: Maybe<Array<U32>>, pixels: Surface.Pixels) -> Result<&1, &1, Texture & Surface.Error, Texture>:
+def Texture.update.checked(valid: Bool, +id: U32, +width: U32, +height: U32, +format: U32, +linear: FrameCore.Filtering, +alpha: Bool, texels: Maybe<Array<U32>>, pixels: Surface.Pixels) -> Result<&1, &1, Texture & Surface.Error, Texture>:
   match valid:
     case False{}: Fail{(Texture{id, width, height, format, linear, alpha, texels}, InvalidRequest{})}
     case True{}: Done{Texture.replace(texels, id, width, height, format, linear, alpha, pixels)}
@@ -10320,20 +10361,20 @@ def Texture.blit(n: Nat, +i: U32, +format: U32, +w: U32, +x: U32, +y: U32, +tw: 
       Texture.blit(rest, (i + 1 : U32), format, w, x, y, tw, Array.get(U32, source, (i + 1 : U32)),
         Array.set(U32, texels, ((y + i / w) * tw + x + i % w : U32), FrameCore.texel.word(format, word)))
 
-def Texture.patched(texels: Maybe<Array<U32>>, +id: U32, +width: U32, +height: U32, +format: U32, +linear: Bool, +alpha: Bool, +x: U32, +y: U32, +w: U32, +h: U32, pixels: Surface.Pixels) -> Texture:
+def Texture.patched(texels: Maybe<Array<U32>>, +id: U32, +width: U32, +height: U32, +format: U32, +linear: FrameCore.Filtering, +alpha: Bool, +x: U32, +y: U32, +w: U32, +h: U32, pixels: Surface.Pixels) -> Texture:
   match texels pixels:
     case Some{old} Words{values}:
       Texture{id, width, height, format, linear, alpha, Some{Texture.blit(U32.to_nat((w * h : U32)), 0, format, w, x, y, width, Array.get(U32, values, 0), old)}}
     case _ _: Texture{id, width, height, format, linear, alpha, texels}
 
-def Texture.update_rec.applied(applies: Bool, matches: Bool, +id: U32, +width: U32, +height: U32, +format: U32, +linear: Bool, +alpha: Bool, texels: Maybe<Array<U32>>, +x: F32, +y: F32, +w: F32, +h: F32, pixels: Surface.Pixels) -> Result<&1, &1, Texture & Surface.Error, Texture>:
+def Texture.update_rec.applied(applies: Bool, matches: Bool, +id: U32, +width: U32, +height: U32, +format: U32, +linear: FrameCore.Filtering, +alpha: Bool, texels: Maybe<Array<U32>>, +x: F32, +y: F32, +w: F32, +h: F32, pixels: Surface.Pixels) -> Result<&1, &1, Texture & Surface.Error, Texture>:
   match applies matches:
     case False{} _: Done{Texture{id, width, height, format, linear, alpha, texels}}
     case True{} False{}: Fail{(Texture{id, width, height, format, linear, alpha, texels}, InvalidRequest{})}
     case True{} True{}:
       Done{Texture.patched(texels, id, width, height, format, linear, alpha, F32.to_u32(x), F32.to_u32(y), F32.to_u32(w), F32.to_u32(h), pixels)}
 
-def Texture.update_rec.converted(defined: Bool, +id: U32, +width: U32, +height: U32, +format: U32, +linear: Bool, +alpha: Bool, texels: Maybe<Array<U32>>, +x: F32, +y: F32, +w: F32, +h: F32, +pw: U32, +ph: U32, +pf: U32, pixels: Surface.Pixels) -> Result<&1, &1, Texture & Surface.Error, Texture>:
+def Texture.update_rec.converted(defined: Bool, +id: U32, +width: U32, +height: U32, +format: U32, +linear: FrameCore.Filtering, +alpha: Bool, texels: Maybe<Array<U32>>, +x: F32, +y: F32, +w: F32, +h: F32, +pw: U32, +ph: U32, +pf: U32, pixels: Surface.Pixels) -> Result<&1, &1, Texture & Surface.Error, Texture>:
   match defined:
     case False{}: Fail{(Texture{id, width, height, format, linear, alpha, texels}, OutOfDomain{})}
     case True{}:
@@ -10377,7 +10418,7 @@ def Texture.load_image(texture: Texture) -> Texture & Maybe<Surface>:
 def Texture.kind(+format: U32, +alpha: Bool) -> U32:
   Bool.pick(U32, (format <= 7 : U32), Bool.pick(U32, alpha, 2, 3), 4)
 
-def Texture.sampler(+width: U32, +height: U32, +linear: Bool, texels: Maybe<Array<U32>>) -> FrameCore.Sampler:
+def Texture.sampler(+width: U32, +height: U32, +linear: FrameCore.Filtering, texels: Maybe<Array<U32>>) -> FrameCore.Sampler:
   match texels:
     case None{}: FrameCore.Unbound{}
     case Some{values}: FrameCore.Texels{width, height, linear, values}
@@ -10387,11 +10428,11 @@ def Texture.unsampled(sampler: FrameCore.Sampler) -> Maybe<Array<U32>>:
     case FrameCore.Unbound{}: None{}
     case FrameCore.Texels{_, _, _, values}: Some{values}
 
-def Draw.sampled.back(+id: U32, +width: U32, +height: U32, +format: U32, +linear: Bool, +alpha: Bool, result: FrameCore.Canvas & FrameCore.Sampler) -> Frame & Texture:
+def Draw.sampled.back(+id: U32, +width: U32, +height: U32, +format: U32, +linear: FrameCore.Filtering, +alpha: Bool, result: FrameCore.Canvas & FrameCore.Sampler) -> Frame & Texture:
   (canvas, sampler) = result
   (Frame{canvas, Nil{}}, Texture{id, width, height, format, linear, alpha, Texture.unsampled(sampler)})
 
-def Draw.sampled(frame: Frame, plan: Shapes.Plan, +id: U32, +width: U32, +height: U32, +format: U32, +linear: Bool, +alpha: Bool, texels: Maybe<Array<U32>>) -> Frame & Texture:
+def Draw.sampled(frame: Frame, plan: Shapes.Plan, +id: U32, +width: U32, +height: U32, +format: U32, +linear: FrameCore.Filtering, +alpha: Bool, texels: Maybe<Array<U32>>) -> Frame & Texture:
   Frame{canvas, _} = frame
   Shapes.Plan{valid, commands} = plan
   Draw.sampled.back(id, width, height, format, linear, alpha, FrameCore.Canvas.draw_sampled(valid, commands, Texture.sampler(width, height, linear, texels), canvas))
@@ -10483,7 +10524,7 @@ def Draw.texture_npatch(frame: Frame, texture: Texture, info: NPatchInfo, dest: 
 
 def RenderTexture.depth(+fbo: U32, +color: U32, +width: U32, +height: U32, taken: FrameCore.Canvas & U32) -> Frame & Maybe<RenderTexture>:
   (canvas, +depth) = taken
-  (Frame{canvas, Nil{}}, Some{RenderTexture{fbo, Texture{color, width, height, 7, False{}, True{}, Some{Array.new(U32, FrameCore.depth((width * height : U32)), 0)}}, depth}})
+  (Frame{canvas, Nil{}}, Some{RenderTexture{fbo, Texture{color, width, height, 7, FrameCore.Filtering.nearest(), True{}, Some{Array.new(U32, FrameCore.depth((width * height : U32)), 0)}}, depth}})
 
 def RenderTexture.made(+fbo: U32, +width: U32, +height: U32, taken: FrameCore.Canvas & U32) -> Frame & Maybe<RenderTexture>:
   (canvas, +color) = taken
@@ -10587,9 +10628,9 @@ def Frame.begin_texture_mode(frame: Frame, target: RenderTexture) -> Frame:
   RenderTexture{+fbo, texture, +depth} = target
   Frame.texture_mode.texture(frame, fbo, depth, texture)
 
-def RenderTexture.of.color(none: Bool, +id: U32, +color: U32, +depth: U32, +linear: Bool, +alpha: Bool, +width: U32, +height: U32, texels: Array<U32>) -> RenderTexture:
+def RenderTexture.of.color(none: Bool, +id: U32, +color: U32, +depth: U32, +linear: FrameCore.Filtering, +alpha: Bool, +width: U32, +height: U32, texels: Array<U32>) -> RenderTexture:
   match none:
-    case True{}: RenderTexture{id, Texture{0, width, height, 0, False{}, False{}, None{}}, depth}
+    case True{}: RenderTexture{id, Texture{0, width, height, 0, FrameCore.Filtering.nearest(), False{}, None{}}, depth}
     case False{}: RenderTexture{id, Texture{color, width, height, 7, linear, alpha, Some{texels}}, depth}
 
 def RenderTexture.of.meta(+meta: FrameCore.RenderTarget, +width: U32, +height: U32, texels: Array<U32>) -> RenderTexture:
@@ -10666,8 +10707,8 @@ def Rlgl.load_framebuffer(frame: Frame) -> Frame & Rlgl.Framebuffer:
 def Rlgl.texture.with(kind: U32, +id: U32, +width: U32, +height: U32, +format: U32, canvas: FrameCore.Canvas) -> Frame & Maybe<Texture>:
   match kind:
     case 0: (Frame{canvas, Nil{}}, None{})
-    case 1: (Frame{canvas, Nil{}}, Some{Texture{id, width, height, 7, False{}, True{}, Some{Array.new(U32, FrameCore.depth((width * height : U32)), 0)}}})
-    case _: (Frame{canvas, Nil{}}, Some{Texture{id, width, height, format, False{}, False{}, None{}}})
+    case 1: (Frame{canvas, Nil{}}, Some{Texture{id, width, height, 7, FrameCore.Filtering.nearest(), True{}, Some{Array.new(U32, FrameCore.depth((width * height : U32)), 0)}}})
+    case _: (Frame{canvas, Nil{}}, Some{Texture{id, width, height, format, FrameCore.Filtering.nearest(), False{}, None{}}})
 
 def Rlgl.texture.taken(+width: U32, +height: U32, +format: U32, taken: FrameCore.Canvas & U32) -> Frame & Maybe<Texture>:
   (canvas, +id) = taken
@@ -10840,7 +10881,7 @@ def Rlgl.render_texture(fb: Rlgl.Framebuffer, texture: Texture, +depth: U32) -> 
 def Rlgl.render_texture_depth.with(valid: Bool, +fbo: U32, +width: U32, +height: U32, +depth: U32) -> Maybe<RenderTexture>:
   match valid:
     case False{}: None{}
-    case True{}: Some{RenderTexture{fbo, Texture{0, width, height, 0, False{}, False{}, None{}}, depth}}
+    case True{}: Some{RenderTexture{fbo, Texture{0, width, height, 0, FrameCore.Filtering.nearest(), False{}, None{}}, depth}}
 
 # The RenderTexture2D an example fills by hand from a framebuffer without a
 # color attachment (a shadow map's): texture.id 0 with the width and height
@@ -11924,7 +11965,7 @@ def Font.face(+base: U32, +padding: U32, +glyphs: +List<FontCore.Glyph>) -> Font
 # id 1, 128x128 GRAY_ALPHA (gray 255, alpha 255 where the 1-bit atlas is set,
 # 0 elsewhere). The frame samples the same atlas for shapes and DrawText.
 def Font.default() -> Font:
-  Font{10, 0, FontCore.default.glyphs(), Texture{1, 128, 128, 2, False{}, True{}, Some{FontCore.expand(4294967295, 4294967040)}},
+  Font{10, 0, FontCore.default.glyphs(), Texture{1, 128, 128, 2, FrameCore.Filtering.nearest(), True{}, Some{FontCore.expand(4294967295, 4294967040)}},
     Surface{128, 128, 2, Words{FontCore.expand(65535, 255)}}}
 
 # A Font as Data, for a value copied the way C copies a Font (a struct of
@@ -11933,7 +11974,7 @@ def Font.default() -> Font:
 # as word lists. Font.shared takes a font apart (it comes back);
 # Font.of_shared builds an equal one.
 type Font.Shared is Data:
-  FontShared{base: U32, padding: U32, glyphs: +List<FontCore.Glyph>, id: U32, width: U32, height: U32, format: U32, linear: Bool, alpha: Bool,
+  FontShared{base: U32, padding: U32, glyphs: +List<FontCore.Glyph>, id: U32, width: U32, height: U32, format: U32, linear: FrameCore.Filtering, alpha: Bool,
     textured: Bool, texels: +List<U32>, atlas_width: U32, atlas_height: U32, atlas_format: U32, quads: Bool, words: +List<U32>, wide: +List<Surface.Quad>}
 
 # The words of a list, in order (a loop: an atlas has a word a pixel).
@@ -11985,14 +12026,14 @@ def Font.shared.pixels(pixels: Surface.Pixels) -> Surface.Pixels & (+List<U32> &
     case Words{values}: Font.shared.word_pixels(Array.clone(U32, values))
     case Quads{values}: Font.shared.quad_pixels(Array.clone(Surface.Quad, values))
 
-def Font.shared.listed(+base: U32, +padding: U32, +glyphs: +List<FontCore.Glyph>, +id: U32, +width: U32, +height: U32, +format: U32, +linear: Bool, +alpha: Bool,
+def Font.shared.listed(+base: U32, +padding: U32, +glyphs: +List<FontCore.Glyph>, +id: U32, +width: U32, +height: U32, +format: U32, +linear: FrameCore.Filtering, +alpha: Bool,
     kept: Maybe<Array<U32>>, rest: Bool & +List<U32>, +aw: U32, +ah: U32, +af: U32, +quads: Bool, kept_pixels: Surface.Pixels, lists: +List<U32> & +List<Surface.Quad>) -> Font & Font.Shared:
   (+textured, +list) = rest
   (+words, +wide) = lists
   (Font{base, padding, glyphs, Texture{id, width, height, format, linear, alpha, kept}, Surface{aw, ah, af, kept_pixels}},
     FontShared{base, padding, glyphs, id, width, height, format, linear, alpha, textured, list, aw, ah, af, quads, words, wide})
 
-def Font.shared.atlas(+base: U32, +padding: U32, +glyphs: +List<FontCore.Glyph>, +id: U32, +width: U32, +height: U32, +format: U32, +linear: Bool, +alpha: Bool,
+def Font.shared.atlas(+base: U32, +padding: U32, +glyphs: +List<FontCore.Glyph>, +id: U32, +width: U32, +height: U32, +format: U32, +linear: FrameCore.Filtering, +alpha: Bool,
     texels: Maybe<Array<U32>> & (Bool & +List<U32>), +aw: U32, +ah: U32, +af: U32, +quads: Bool, pixels: Surface.Pixels & (+List<U32> & +List<Surface.Quad>)) -> Font & Font.Shared:
   (kept, rest) = texels
   (kept_pixels, lists) = pixels

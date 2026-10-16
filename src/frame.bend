@@ -334,12 +334,20 @@ def project.all(+port: View, polygon: +List<Vertex>) -> +List<Vertex>:
 # 0xRRGGBBAA words), the shapes atlas, the bound user texture and whether
 # every step was defined.
 
+# A texture's sampling state, rlsw's magFilter, minFilter, sWrap and tWrap:
+# LINEAR or NEAREST each filter, CLAMP (GL_CLAMP) or REPEAT each wrap.
+type Filtering is Data:
+  Filtering{mag: Bool, min: Bool, s_clamp: Bool, t_clamp: Bool}
+
+# A new texture's: NEAREST both ways, REPEAT both ways.
+def Filtering.nearest() -> Filtering:
+  Filtering{False{}, False{}, False{}, False{}}
+
 # A bound user texture: texel (x, y) at y*width + x holds rlsw's readColor8
-# result as a canonical word; rlsw samples it with REPEAT wrapping (raylib's
-# CLAMP value is not one rlsw accepts) and the nearest or bilinear filter.
+# result as a canonical word; rlsw samples it with its filters and wraps.
 type Sampler is Type:
   Unbound{}
-  Texels{width: U32, height: U32, linear: Bool, texels: Array<U32>}
+  Texels{width: U32, height: U32, linear: Filtering, texels: Array<U32>}
 
 # The screen's depth buffer (F32 bits of rlsw's D32 buffer, bottom-up rows like
 # the color buffer) and the user textures the frame holds: the shapes texture
@@ -522,19 +530,72 @@ def bilinear(+u: F32, +v: F32, +width: U32, +height: U32, texels: Array<U32>) ->
   +y0 = wrap.mod(F32.trunc(Bool.pick(F32, valid, yf, 0.0)), height)
   bilinear.at(fract(xf), fract(yf), valid, width, x0, y0, ((x0 + 1) % width : U32), ((y0 + 1) % height : U32), texels)
 
-def sample.filter(linear: Bool, +u: F32, +v: F32, +width: U32, +height: U32, texels: Array<U32>) -> Array<U32> & (Texel & Bool):
-  match linear:
-    case False{}: nearest(u, v, width, height, texels)
-    case True{}: bilinear(u, v, width, height, texels)
+# sw_saturate: a set sign bit (-0, negatives, negative NaNs) is 0; bits above
+# 1.0f's (+infinity and positive NaNs too) are 1.
+def saturate(+x: F32) -> F32:
+  +bits = F32.bits(x)
+  Bool.pick(F32, (bits >= 2147483648 : U32), 0.0, Bool.pick(F32, (bits > 1065353216 : U32), 1.0, x))
 
-def sample.rewrap(+width: U32, +height: U32, +linear: Bool, result: Array<U32> & (Texel & Bool)) -> Sampler & (Texel & Bool):
+# sw_texture_sample_nearest: u saturated under CLAMP, its fraction under
+# REPEAT, then (int)(u*width); CLAMP's u of 1 reads texel `width`, the next
+# row's first (past the texture on the last row: undefined).
+def nearest.wrapped(+s_clamp: Bool, +t_clamp: Bool, +u: F32, +v: F32, +width: U32, +height: U32, texels: Array<U32>) -> Array<U32> & (Texel & Bool):
+  +x = F32.trunc((Bool.pick(F32, s_clamp, saturate(u), fract(u)) * U32.to_f32(width) : F32))
+  +y = F32.trunc((Bool.pick(F32, t_clamp, saturate(v), fract(v)) * U32.to_f32(height) : F32))
+  +inside = (x >= 0.0 : F32) && (x <= U32.to_f32(width) : F32) && (y >= 0.0 : F32) && (y <= U32.to_f32(height) : F32)
+  +index = (F32.to_u32(Bool.pick(F32, inside, y, 0.0)) * width + F32.to_u32(Bool.pick(F32, inside, x, 0.0)) : U32)
+  +valid = inside && (index < (width * height : U32) : U32)
+  texel.got(valid, Array.get(U32, texels, Bool.pick(U32, valid, index, 0)))
+
+# One axis of sw_texture_sample_linear: (int)xf and the next texel, REPEAT
+# wrapped both, or CLAMP's min(x, size - 1) (rlsw does not clamp below 0: a
+# coordinate below -1 reads before the texture, undefined).
+def bilinear.axis(clamp: Bool, +t: F32, +size: U32) -> U32 & (U32 & Bool):
+  match clamp:
+    case True{}:
+      +low = F32.to_u32(F32.max(t, 0.0))
+      (U32.min(low, (size - 1 : U32)), (U32.min((low + 1 : U32), (size - 1 : U32)), (t >= 0.0 : F32)))
+    case False{}: (wrap.mod(t, size), ((wrap.mod(t, size) + 1) % size : U32), True{})
+
+def bilinear.wrapped.ends(+fx: F32, +fy: F32, valid: Bool, +width: U32, +x0: U32, +y0: U32, xr: U32 & Bool, yr: U32 & Bool, texels: Array<U32>) -> Array<U32> & (Texel & Bool):
+  (+x1, +xok) = xr
+  (+y1, +yok) = yr
+  bilinear.at(fx, fy, valid && xok && yok, width, x0, y0, x1, y1, texels)
+
+def bilinear.wrapped.at(+fx: F32, +fy: F32, valid: Bool, +width: U32, xs: U32 & (U32 & Bool), ys: U32 & (U32 & Bool), texels: Array<U32>) -> Array<U32> & (Texel & Bool):
+  (+x0, xr) = xs
+  (+y0, yr) = ys
+  bilinear.wrapped.ends(fx, fy, valid, width, x0, y0, xr, yr, texels)
+
+# sw_texture_sample_linear: xf = u*width - 0.5, weights fract(xf), the texels
+# of each axis by its wrap. A coordinate whose (int) conversion is undefined
+# is refused.
+def bilinear.wrapped(+s_clamp: Bool, +t_clamp: Bool, +u: F32, +v: F32, +width: U32, +height: U32, texels: Array<U32>) -> Array<U32> & (Texel & Bool):
+  +xf = ((u * U32.to_f32(width) : F32) - 0.5 : F32)
+  +yf = ((v * U32.to_f32(height) : F32) - 0.5 : F32)
+  +valid = int.range(xf) && int.range(yf)
+  bilinear.wrapped.at(fract(xf), fract(yf), valid, width, bilinear.axis(s_clamp, F32.trunc(Bool.pick(F32, valid, xf, 0.0)), width),
+    bilinear.axis(t_clamp, F32.trunc(Bool.pick(F32, valid, yf, 0.0)), height), texels)
+
+def sample.filter.by(linear: Bool, +s_clamp: Bool, +t_clamp: Bool, +u: F32, +v: F32, +width: U32, +height: U32, texels: Array<U32>) -> Array<U32> & (Texel & Bool):
+  match linear:
+    case False{}: nearest.wrapped(s_clamp, t_clamp, u, v, width, height, texels)
+    case True{}: bilinear.wrapped(s_clamp, t_clamp, u, v, width, height, texels)
+
+# sw_texture_sample: the minification filter where the span's derivatives
+# make L2 above 1, the magnification filter otherwise.
+def sample.filter(linear: Filtering, +minified: Bool, +u: F32, +v: F32, +width: U32, +height: U32, texels: Array<U32>) -> Array<U32> & (Texel & Bool):
+  Filtering{+mag, +min, +s_clamp, +t_clamp} = linear
+  sample.filter.by(Bool.pick(Bool, minified, min, mag), s_clamp, t_clamp, u, v, width, height, texels)
+
+def sample.rewrap(+width: U32, +height: U32, +linear: Filtering, result: Array<U32> & (Texel & Bool)) -> Sampler & (Texel & Bool):
   (texels, rest) = result
   (Texels{width, height, linear, texels}, rest)
 
-def sample.sampler(+u: F32, +v: F32, sampler: Sampler) -> Sampler & (Texel & Bool):
+def sample.sampler(+minified: Bool, +u: F32, +v: F32, sampler: Sampler) -> Sampler & (Texel & Bool):
   match sampler:
     case Unbound{}: (Unbound{}, (Texel{0.0, 0.0, 0.0, 0.0}, False{}))
-    case Texels{+width, +height, +linear, texels}: sample.rewrap(width, height, linear, sample.filter(linear, u, v, width, height, texels))
+    case Texels{+width, +height, +linear, texels}: sample.rewrap(width, height, linear, sample.filter(linear, minified, u, v, width, height, texels))
 
 def sample.done(pixels: Array<U32>, atlas: Array<U32>, ok: Bool, extra: Extra, sampler: Sampler, rest: Texel & Bool) -> Raster & Texel:
   (texel, valid) = rest
@@ -558,25 +619,26 @@ def sample.slot.done(shapes_slot: Bool, pixels: Array<U32>, atlas: Array<U32>, s
   (chosen, rest) = result
   sample.slot.rest(shapes_slot, pixels, atlas, sampler, ok, depth, other, chosen, rest)
 
-def sample.slot.go(shapes_slot: Bool, +u: F32, +v: F32, pixels: Array<U32>, atlas: Array<U32>, sampler: Sampler, ok: Bool, depth: Array<U32>, shapes: Sampler, held: Sampler) -> Raster & Texel:
+def sample.slot.go(shapes_slot: Bool, +minified: Bool, +u: F32, +v: F32, pixels: Array<U32>, atlas: Array<U32>, sampler: Sampler, ok: Bool, depth: Array<U32>, shapes: Sampler, held: Sampler) -> Raster & Texel:
   match shapes_slot:
-    case True{}: sample.slot.done(True{}, pixels, atlas, sampler, ok, depth, held, sample.sampler(u, v, shapes))
-    case False{}: sample.slot.done(False{}, pixels, atlas, sampler, ok, depth, shapes, sample.sampler(u, v, held))
+    case True{}: sample.slot.done(True{}, pixels, atlas, sampler, ok, depth, held, sample.sampler(minified, u, v, shapes))
+    case False{}: sample.slot.done(False{}, pixels, atlas, sampler, ok, depth, shapes, sample.sampler(minified, u, v, held))
 
-def sample.slot.pick(+slot: U32, +u: F32, +v: F32, pixels: Array<U32>, atlas: Array<U32>, sampler: Sampler, ok: Bool, extra: Extra) -> Raster & Texel:
+def sample.slot.pick(+slot: U32, +minified: Bool, +u: F32, +v: F32, pixels: Array<U32>, atlas: Array<U32>, sampler: Sampler, ok: Bool, extra: Extra) -> Raster & Texel:
   Extra{depth, shapes, held} = extra
-  sample.slot.go(U32.is_eq(slot, 3), u, v, pixels, atlas, sampler, ok, depth, shapes, held)
+  sample.slot.go(U32.is_eq(slot, 3), minified, u, v, pixels, atlas, sampler, ok, depth, shapes, held)
 
-def sample.user.at(temp: Bool, +slot: U32, +u: F32, +v: F32, pixels: Array<U32>, atlas: Array<U32>, sampler: Sampler, ok: Bool, extra: Extra) -> Raster & Texel:
+def sample.user.at(temp: Bool, +slot: U32, +minified: Bool, +u: F32, +v: F32, pixels: Array<U32>, atlas: Array<U32>, sampler: Sampler, ok: Bool, extra: Extra) -> Raster & Texel:
   match temp:
-    case True{}: sample.rebuild(pixels, atlas, ok, extra, sample.sampler(u, v, sampler))
-    case False{}: sample.slot.pick(slot, u, v, pixels, atlas, sampler, ok, extra)
+    case True{}: sample.rebuild(pixels, atlas, ok, extra, sample.sampler(minified, u, v, sampler))
+    case False{}: sample.slot.pick(slot, minified, u, v, pixels, atlas, sampler, ok, extra)
 
 # A user texture in slot 2 (one Draw* call), 3 (the shapes texture) or 4
-# (rlSetTexture).
-def sample.user(+slot: U32, +u: F32, +v: F32, raster: Raster) -> Raster & Texel:
+# (rlSetTexture); bit 16 of tex marks a minified span or quad.
+def sample.user(+tex: U32, +u: F32, +v: F32, raster: Raster) -> Raster & Texel:
   Raster{pixels, atlas, sampler, ok, extra} = raster
-  sample.user.at(U32.is_eq(slot, 2), slot, u, v, pixels, atlas, sampler, ok, extra)
+  +slot = (tex .&. 7 : U32)
+  sample.user.at(U32.is_eq(slot, 2), slot, U32.is_ne((tex .&. 16 : U32), 0), u, v, pixels, atlas, sampler, ok, extra)
 
 def pixel.user.mix(blend: Bool, +offset: U32, +r: F32, +g: F32, +b: F32, +a: F32, texel: Texel, raster: Raster) -> Raster:
   Texel{tr, tg, tb, ta} = texel
@@ -603,11 +665,12 @@ def pixel.sampled(atlas: Bool, +tex: U32, blend: Bool, +offset: U32, +at: Attr, 
 def pixel.kind(plain: Bool, +tex: U32, blend: Bool, +offset: U32, +at: Attr, raster: Raster) -> Raster:
   match plain:
     case True{}: pixel.plain(blend, offset, at, raster)
-    case False{}: pixel.sampled(U32.is_eq(tex, 1), tex, blend, offset, at, raster)
+    case False{}: pixel.sampled(U32.is_eq((tex .&. 7 : U32), 1), tex, blend, offset, at, raster)
 
-# tex: 0 untextured, 1 the shapes atlas, 2..4 a user texture slot.
+# tex: 0 untextured, 1 the shapes atlas, 2..4 a user texture slot; 8 adds
+# the depth test and 16 marks a minified span or quad.
 def pixel.base(+tex: U32, blend: Bool, +offset: U32, +at: Attr, raster: Raster) -> Raster:
-  pixel.kind(U32.is_eq(tex, 0), tex, blend, offset, at, raster)
+  pixel.kind(U32.is_eq((tex .&. 7 : U32), 0), tex, blend, offset, at, raster)
 
 def depth.store(pass: Bool, +offset: U32, +z: F32, depth: Array<U32>) -> Array<U32>:
   match pass:
@@ -639,11 +702,11 @@ def pixel.depth(+tex: U32, +blend: Bool, +offset: U32, +at: Attr, raster: Raster
 def pixel.select(tested: Bool, +tex: U32, +blend: Bool, +offset: U32, +at: Attr, raster: Raster) -> Raster:
   match tested:
     case False{}: pixel.base(tex, blend, offset, at, raster)
-    case True{}: pixel.depth((tex - 8 : U32), blend, offset, at, raster)
+    case True{}: pixel.depth((tex .&. 4294967287 : U32), blend, offset, at, raster)
 
 # tex 0..4 as pixel.base; tex + 8 adds the depth test.
 def pixel(+tex: U32, +blend: Bool, +offset: U32, +at: Attr, raster: Raster) -> Raster:
-  pixel.select((tex >= 8 : U32), tex, blend, offset, at, raster)
+  pixel.select(U32.is_ne((tex .&. 8 : U32), 0), tex, blend, offset, at, raster)
 
 # Consecutive pixels of a row, attributes stepped after each one; the
 # attributes after the last pixel come back with the raster.
@@ -683,11 +746,28 @@ def rows(n: Nat, +tex: U32, +blend: Bool, +offset: U32, +stride: U32, +columns: 
     case 0n: raster
     case 1n+rest: rows(rest, tex, blend, (offset + stride : U32), stride, columns, Attr.add(row, dy), dx, dy, cols.raster(cols(columns, tex, blend, offset, row, dx, raster)))
 
+# sw_texture_sample's choice: the larger of dU2 = dUdx^2 + dUdy^2 and
+# dV2 = dVdx^2 + dVdy^2 above 1 is minification.
+def minified(+dudx: F32, +dvdx: F32, +dudy: F32, +dvdy: F32) -> Bool:
+  +du2 = ((dudx * dudx : F32) + (dudy * dudy : F32) : F32)
+  +dv2 = ((dvdx * dvdx : F32) + (dvdy * dvdy : F32) : F32)
+  (Bool.pick(F32, (du2 > dv2 : F32), du2, dv2) > 1.0 : F32)
+
+def Vertex.uv(+v: Vertex) -> F32 & F32:
+  Vertex{_, _, _, _, _, _, _, _, u, t} = v
+  (u, t)
+
+# tex with bit 16 when the texture derivatives (along x, then y) minify.
+def tex.minified(+tex: U32, dx: F32 & F32, dy: F32 & F32) -> U32:
+  (+dudx, +dvdx) = dx
+  (+dudy, +dvdy) = dy
+  Bool.pick(U32, minified(dudx, dvdx, dudy, dvdy), (tex .|. 16 : U32), tex)
+
 def quad.fill(+tex: U32, +blend: Bool, +width: U32, +x0: F32, +y0: F32, +w: F32, +h: F32, +tl: Vertex, +tr: Vertex, +bl: Vertex, raster: Raster) -> Raster:
   +dx = Vertex.grad(tl, tr, (1.0 / w : F32))
   +dy = Vertex.grad(tl, bl, (1.0 / h : F32))
   +start = Vertex.add_scaled(Vertex.add_scaled(tl, dx, (1.0 - fract(Vertex.x(tl)) : F32)), dy, (1.0 - fract(Vertex.y(tl)) : F32))
-  rows(U32.to_nat(F32.to_u32(h)), tex, blend, (F32.to_u32(y0) * width + F32.to_u32(x0) : U32), width, U32.to_nat(F32.to_u32(w)),
+  rows(U32.to_nat(F32.to_u32(h)), tex.minified(tex, Vertex.uv(dx), Vertex.uv(dy)), blend, (F32.to_u32(y0) * width + F32.to_u32(x0) : U32), width, U32.to_nat(F32.to_u32(w)),
     Vertex.attr(start), Vertex.attr(dx), Vertex.attr(dy), raster)
 
 def quad.inside(inside: Bool, +tex: U32, +blend: Bool, +width: U32, +x0: F32, +y0: F32, +w: F32, +h: F32, +tl: Vertex, +tr: Vertex, +bl: Vertex, raster: Raster) -> Raster:
@@ -772,39 +852,41 @@ def blocks(n: Nat, +tex: U32, +blend: Bool, +offset: U32, +x: F32, +x_end: F32, 
 def Attr.depth(+z: F32) -> Attr:
   Attr{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, z}
 
-def span.blocks(+tex: U32, +blend: Bool, +width: U32, +x0: F32, +x1: F32, +y: F32, +start: Vertex, +grad: Vertex, raster: Raster) -> Raster:
+def span.blocks(+tex: U32, +blend: Bool, +width: U32, +x0: F32, +x1: F32, +y: F32, +start: Vertex, +grad: Vertex, +gy: Vertex, raster: Raster) -> Raster:
   +slope = Span.of(grad)
   +xsub = (1.0 - fract(Vertex.x(start)) : F32)
   +dz = Vertex.z(grad)
-  blocks(U32.to_nat(((F32.to_u32((x1 - x0 : F32)) + 15) / 16 : U32)), tex, blend, (F32.to_u32(y) * width + F32.to_u32(x0) : U32),
+  blocks(U32.to_nat(((F32.to_u32((x1 - x0 : F32)) + 15) / 16 : U32)), tex.minified(tex, Vertex.uv(grad), Vertex.uv(gy)), blend, (F32.to_u32(y) * width + F32.to_u32(x0) : U32),
     x0, x1, Span.at(Span.of(start), slope, xsub), slope, dz, (raster, Attr.depth((Vertex.z(start) + dz * xsub : F32))))
 
-def span.fill(+tex: U32, +blend: Bool, +width: U32, +x0: F32, +x1: F32, +y: F32, +start: Vertex, +end: Vertex, raster: Raster) -> Raster:
-  span.blocks(tex, blend, width, x0, x1, y, start, Vertex.grad(start, end, (1.0 / (Vertex.x(end) - Vertex.x(start)) : F32)), raster)
+def span.fill(+tex: U32, +blend: Bool, +width: U32, +x0: F32, +x1: F32, +y: F32, +start: Vertex, +end: Vertex, +gy: Vertex, raster: Raster) -> Raster:
+  span.blocks(tex, blend, width, x0, x1, y, start, Vertex.grad(start, end, (1.0 / (Vertex.x(end) - Vertex.x(start)) : F32)), gy, raster)
 
-def span.inside(inside: Bool, +tex: U32, +blend: Bool, +width: U32, +x0: F32, +x1: F32, +y: F32, +start: Vertex, +end: Vertex, raster: Raster) -> Raster:
+def span.inside(inside: Bool, +tex: U32, +blend: Bool, +width: U32, +x0: F32, +x1: F32, +y: F32, +start: Vertex, +end: Vertex, +gy: Vertex, raster: Raster) -> Raster:
   match inside:
     case False{}: Raster.refuse(raster)
-    case True{}: span.fill(tex, blend, width, x0, x1, y, start, end, raster)
+    case True{}: span.fill(tex, blend, width, x0, x1, y, start, end, gy, raster)
 
-def span.ordered(nonempty: Bool, +tex: U32, +blend: Bool, +width: U32, +height: U32, +x0: F32, +x1: F32, +start: Vertex, +end: Vertex, raster: Raster) -> Raster:
+def span.ordered(nonempty: Bool, +tex: U32, +blend: Bool, +width: U32, +height: U32, +x0: F32, +x1: F32, +start: Vertex, +end: Vertex, +gy: Vertex, raster: Raster) -> Raster:
   match nonempty:
     case False{}: raster
     case True{}:
       +y = F32.trunc(Vertex.y(start))
       +inside = (y >= 0.0 : F32) && (y < U32.to_f32(height) : F32) && (x0 >= 0.0 : F32) && (x1 <= U32.to_f32(width) : F32)
-      span.inside(inside, tex, blend, width, x0, x1, y, start, end, raster)
+      span.inside(inside, tex, blend, width, x0, x1, y, start, end, gy, raster)
 
-def span.checked(valid: Bool, +tex: U32, +blend: Bool, +width: U32, +height: U32, +start: Vertex, +end: Vertex, raster: Raster) -> Raster:
+def span.checked(valid: Bool, +tex: U32, +blend: Bool, +width: U32, +height: U32, +start: Vertex, +end: Vertex, +gy: Vertex, raster: Raster) -> Raster:
   match valid:
     case False{}: Raster.refuse(raster)
     case True{}:
       +x0 = F32.trunc(Vertex.x(start))
       +x1 = F32.trunc(Vertex.x(end))
-      span.ordered((x0 < x1 : F32), tex, blend, width, height, x0, x1, start, end, raster)
+      span.ordered((x0 < x1 : F32), tex, blend, width, height, x0, x1, start, end, gy, raster)
 
-def span(+tex: U32, +blend: Bool, +width: U32, +height: U32, +start: Vertex, +end: Vertex, raster: Raster) -> Raster:
-  span.checked(raster_int.valid(Vertex.x(start)) && raster_int.valid(Vertex.x(end)), tex, blend, width, height, start, end, raster)
+# A span between the edges; gy is the triangle's long-edge gradient (rlsw's
+# dVXdy02), whose texture terms are the span's y derivatives.
+def span(+tex: U32, +blend: Bool, +width: U32, +height: U32, +start: Vertex, +end: Vertex, +gy: Vertex, raster: Raster) -> Raster:
+  span.checked(raster_int.valid(Vertex.x(start)) && raster_int.valid(Vertex.x(end)), tex, blend, width, height, start, end, gy, raster)
 
 def tri.rows(n: Nat, +tex: U32, +blend: Bool, +width: U32, +height: U32, +row: F32, +left: Vertex, +right: Vertex, +gl: Vertex, +gr: Vertex, raster: Raster) -> Raster & Vertex:
   match n:
@@ -814,7 +896,7 @@ def tri.rows(n: Nat, +tex: U32, +blend: Bool, +width: U32, +height: U32, +row: F
       +r = Vertex.with_y(right, row)
       +long = (Vertex.x(l) < Vertex.x(r) : F32)
       tri.rows(rest, tex, blend, width, height, (row + 1.0 : F32), Vertex.add(l, gl), Vertex.add(r, gr), gl, gr,
-        span(tex, blend, width, height, Bool.pick(Vertex, long, l, r), Bool.pick(Vertex, long, r, l), raster))
+        span(tex, blend, width, height, Bool.pick(Vertex, long, l, r), Bool.pick(Vertex, long, r, l), gl, raster))
 
 def tri.count(+from: F32, +to: F32) -> Nat:
   U32.to_nat(F32.to_u32(F32.max((to - from : F32), 0.0)))
@@ -1366,7 +1448,7 @@ type Rig is Data:
 
 # A render texture's ids and color texture state while it is the target.
 type RenderTarget is Data:
-  RenderTarget{id: U32, color: U32, depth: U32, linear: Bool, alpha: Bool}
+  RenderTarget{id: U32, color: U32, depth: U32, linear: Filtering, alpha: Bool}
 
 # The color buffer drawn: the screen, or a render texture with the screen's
 # size and pixels set aside.
@@ -1388,10 +1470,10 @@ type Detached is Type:
 # A user texture held by the frame (the texels live in the raster's Extra);
 # id 0 for none.
 type Meta is Data:
-  Meta{id: U32, width: U32, height: U32, format: U32, linear: Bool, alpha: Bool, complete: Bool}
+  Meta{id: U32, width: U32, height: U32, format: U32, linear: Filtering, alpha: Bool, complete: Bool}
 
 def Meta.none() -> Meta:
-  Meta{0, 0, 0, 0, False{}, False{}, False{}}
+  Meta{0, 0, 0, 0, Filtering.nearest(), False{}, False{}}
 
 def Meta.id(+meta: Meta) -> U32:
   Meta{id, _, _, _, _, _, _} = meta
@@ -2329,12 +2411,12 @@ def Canvas.blind.bound(+id: U32, +width: U32, +height: U32, matrix: Matrix4, sta
   Raster{pixels, atlas, sampler, ok, extra} = raster
   Extra{screen, shapes, held} = extra
   Canvas{width, height, matrix, state, Raster{Array.new(U32, 0n, 0), atlas, sampler, ok, Extra{Array.new(U32, 0n, 0), shapes, held}}, rig,
-    Offscreen{width, height, pixels, screen, stash, RenderTarget{id, 0, 0, False{}, True{}}}, gl}
+    Offscreen{width, height, pixels, screen, stash, RenderTarget{id, 0, 0, Filtering.nearest(), True{}}}, gl}
 
 def Canvas.blind.rebound(direct: Bool, +id: U32, +sw: U32, +sh: U32, pixels: Array<U32>, depth: Array<U32>, stash: List<Stash>, +meta: RenderTarget, +width: U32, +height: U32, matrix: Matrix4,
     state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas:
   match direct:
-    case True{}: Canvas{width, height, matrix, state, raster, rig, Offscreen{sw, sh, pixels, depth, stash, RenderTarget{id, 0, 0, False{}, True{}}}, gl}
+    case True{}: Canvas{width, height, matrix, state, raster, rig, Offscreen{sw, sh, pixels, depth, stash, RenderTarget{id, 0, 0, Filtering.nearest(), True{}}}, gl}
     case False{}: Canvas{width, height, matrix, state, Raster.refuse(raster), rig, Offscreen{sw, sh, pixels, depth, stash, meta}, gl}
 
 def Canvas.blind.bind(target: Target, +id: U32, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas:

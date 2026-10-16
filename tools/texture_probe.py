@@ -223,6 +223,33 @@ def scenes(libm):
                    ('draw_pro', 0, (-7.0, 5.0, 4.0, 3.0), (17.25, 12.75, 6.5, 9.0), (1.0, 2.0), 0.0, C(255, 200, 100, 220)),
                    ('draw_rec', 0, (1.0, 1.0, -3.0, 2.0), 25.0, 13.0, white), ('draw_ex', 0, 26.0, 18.0, 0.0, 0.75, white), ('end',)]
             add(f'filter-{filt}-wrap-{wrap}', 32, 24, ops)
+    # rlTextureParameters: a minification filter apart from the magnification one (rlsw picks it where a span's or quad's
+    # texture derivatives make L2 above 1), GL_CLAMP on either axis (rlsw clamps the nearest coordinate to [0, 1], so u = 1
+    # reads the next row's first texel, and the bilinear indices only from above), values rlsw rejects (GL_CLAMP_TO_EDGE,
+    # a mipmap filter), parameters OpenGL 1.1 skips, and SetTextureWrap(REPEAT) and SetTextureFilter after them.
+    MAG, MIN, WRAP_S, WRAP_T = 0x2800, 0x2801, 0x2802, 0x2803
+    NEAREST, LINEAR, REPEAT, CLAMP = 0x2600, 0x2601, 0x2901, 0x2900
+    for k, (minf, magf) in enumerate(((LINEAR, NEAREST), (NEAREST, LINEAR))):
+        add(f'params-min-mag-{k}', 32, 32, [('begin',), ('clear', black), ('load', 0, image(8, 8, 7, 410 + k)), ('params', 0, MIN, minf), ('params', 0, MAG, magf),
+                                           ('draw_pro', 0, (0.0, 0.0, 8.0, 8.0), (1.0, 1.0, 14.0, 14.0), (0.0, 0.0), 0.0, white),
+                                           ('draw_pro', 0, (0.0, 0.0, 8.0, 8.0), (17.0, 1.0, 5.0, 5.0), (0.0, 0.0), 0.0, white),
+                                           ('draw_pro', 0, (0.0, 0.0, 8.0, 8.0), (24.0, 2.0, 3.0, 13.0), (0.0, 0.0), 0.0, white),
+                                           ('draw_pro', 0, (0.0, 0.0, 8.0, 8.0), (16.0, 24.0, 12.0, 6.0), (6.0, 3.0), 30.0, white),
+                                           ('draw_pro', 0, (0.0, 0.0, 8.0, 8.0), (6.0, 25.0, 6.0, 4.0), (3.0, 2.0), -60.0, half[0]), ('end',)])
+    for k, (s, tt, filt) in enumerate(((CLAMP, REPEAT, NEAREST), (CLAMP, REPEAT, LINEAR), (REPEAT, CLAMP, LINEAR), (CLAMP, CLAMP, LINEAR))):
+        src = (0.0, 0.0, 10.0, 2.0) if tt == REPEAT else (0.0, 0.0, 2.0, 6.0)
+        add(f'params-clamp-{k}', 32, 24, [('begin',), ('clear', C(30, 40, 50)), ('load', 0, image(4, 4, 7, 420 + k)), ('params', 0, MIN, filt), ('params', 0, MAG, filt),
+                                         ('params', 0, WRAP_S, s), ('params', 0, WRAP_T, tt),
+                                         ('draw_pro', 0, src, (1.0, 1.0, 20.0, 10.0), (0.0, 0.0), 0.0, white),
+                                         ('draw_pro', 0, (0.5, 0.25, 3.0, 2.0), (22.0, 1.0, 9.0, 7.0), (0.0, 0.0), 0.0, white),
+                                         ('wrap', 0, 0), ('draw_pro', 0, src, (1.0, 13.0, 20.0, 10.0), (0.0, 0.0), 0.0, white), ('end',)])
+    add('params-rejected', 32, 24, [('begin',), ('clear', black), ('load', 0, image(4, 4, 7, 430)), ('params', 0, MAG, LINEAR),
+                                    ('params', 0, WRAP_S, 0x812F), ('params', 0, MIN, 0x2703), ('params', 0, 0x3000, 4), ('params', 0, 0x4000, 50),
+                                    ('params', 0, WRAP_T, 0x8742), ('params', 0, 0x1234, LINEAR),
+                                    ('draw_pro', 0, (-2.0, -2.0, 8.0, 8.0), (1.0, 1.0, 22.0, 22.0), (0.0, 0.0), 0.0, white),
+                                    ('filter', 0, 0), ('draw_pro', 0, (0.0, 0.0, 4.0, 4.0), (24.0, 2.0, 7.0, 7.0), (0.0, 0.0), 0.0, white), ('end',)])
+    add('params-clamp-last-row', 16, 12, [('load', 0, image(2, 2, 7, 431)), ('params', 0, WRAP_S, CLAMP), ('params', 0, WRAP_T, CLAMP),
+                                          ('draw_pro', 0, (0.0, 0.0, 4.0, 4.0), (0.0, 0.0, 8.0, 8.0), (0.0, 0.0), 0.0, white)], contract=True)
     add('filter-magnify', 32, 32, [('begin',), ('clear', black), ('load', 0, image(2, 2, 7, 77)), ('filter', 0, 1),
                                    ('draw_ex', 0, 0.0, 0.0, 0.0, 15.5, white), ('load', 1, image(3, 3, 4, 78)), ('filter', 1, 1),
                                    ('draw_pro', 1, (0.0, 0.0, 3.0, 3.0), (16.0, 16.0, 16.0, 16.0), (0.0, 0.0), 0.0, white), ('end',)])
@@ -475,6 +502,7 @@ def c_op(op):
                               f'{c_bytes(a[2])}, {len(image_bytes(a[2]))});'),
         'unload': lambda: f'UnloadTexture(t[{a[0]}]); t[{a[0]}] = (Texture2D){{ 0 }};',
         'wrap': lambda: f'SetTextureWrap(t[{a[0]}], {a[1]});', 'mipmaps': lambda: f'GenTextureMipmaps(&t[{a[0]}]);',
+        'params': lambda: f'rlTextureParameters(t[{a[0]}].id, {a[1]}, {a[2]});',
         'update': lambda: f'UpdateTexture(t[{a[0]}], {c_bytes(a[1])});',
         'update_rec': lambda: f'UpdateTextureRec(t[{a[0]}], {crec(a[1])}, {c_bytes(a[2])});',
         'info': lambda: f'info(t[{a[0]}]);', 'image': lambda: f'image_info(t[{a[0]}]);',
@@ -905,6 +933,7 @@ def texop(kind: U32, +w: +List<U32>, frame: J.Frame, tex: J.Texture) -> J.Frame 
     case 105: J.Draw.texture_npatch_for(libm(), frame, tex, wnpatch(w), wrect(9n, w), wv(13n, w), wf(15n, w), wu(16n, w))
     case 106: (frame, J.Texture.set_filter(tex, wu(0n, w)))
     case 107: (frame, J.Texture.set_wrap(tex, wu(0n, w)))
+    case 111: (frame, J.Rlgl.texture_parameters(tex, wu(0n, w), wu(1n, w)))
     case 108: (frame, J.Texture.gen_mipmaps(tex))
     case 109: update.with(frame, tex, Img.surface(wimg(0n, w)))
     case _: update_rec.with(frame, tex, wrect(0n, w), Img.surface(wimg(4n, w)))
@@ -1002,7 +1031,7 @@ FRAME_KINDS = {'begin': 0, 'end': 1, 'clear': 2, 'rect': 3, 'rect_rec': 4, 'rect
 SLOT_KINDS = {'load': 40, 'load_many': 41, 'unload': 42, 'info': 43, 'image': 44, 'load_rt': 45, 'unload_rt': 46, 'begin_rt': 47, 'end_rt': 48,
               'rt_info': 49, 'image_rt': 50}
 TEX_KINDS = {'draw': 100, 'draw_v': 101, 'draw_ex': 102, 'draw_rec': 103, 'draw_pro': 104, 'npatch': 105, 'filter': 106, 'wrap': 107,
-             'mipmaps': 108, 'update': 109, 'update_rec': 110}
+             'mipmaps': 108, 'update': 109, 'update_rec': 110, 'params': 111}
 COLOR_LAST = {'clear', 'rect', 'rect_rec', 'rect_lines', 'circle_v', 'line', 'line_v', 'tri', 'pixel', 'pixel_v'}
 
 
@@ -1033,7 +1062,7 @@ def op_words(op):
         'draw_rec': lambda: wrec(b[0]) + [fp.word(b[1]), fp.word(b[2]), b[3]],
         'draw_pro': lambda: wrec(b[0]) + wrec(b[1]) + [fp.word(b[2][0]), fp.word(b[2][1]), fp.word(b[3]), b[4]],
         'npatch': lambda: wrec(b[0][0]) + [fp.word(x) for x in b[0][1:]] + wrec(b[1]) + [fp.word(b[2][0]), fp.word(b[2][1]), fp.word(b[3]), b[4]],
-        'filter': lambda: [b[0]], 'wrap': lambda: [b[0]], 'mipmaps': lambda: [],
+        'filter': lambda: [b[0]], 'wrap': lambda: [b[0]], 'mipmaps': lambda: [], 'params': lambda: [b[0], b[1]],
         'update': lambda: bimg(b[0]), 'update_rec': lambda: wrec(b[0]) + bimg(b[1]),
     }[base]()
     return 99, [slot, int(rt), TEX_KINDS[base]] + words

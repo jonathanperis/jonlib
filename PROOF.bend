@@ -2222,10 +2222,11 @@ def Laws.desktop_key_unknown():
 def Laws.frame_blend_mode_unchanged(frame, mode):
   {==}
 
-def Laws.texture_set_wrap_unchanged(texture, wrap):
+def Laws.texture_set_wrap_clamp_unchanged(texture):
+  J.Texture{id, width, height, format, linear, alpha, texels} = texture
   {==}
 
-def Laws.texture_filter_point(linear):
+def Laws.texture_filter_point(mag, min, s_clamp, t_clamp):
   {==}
 
 def Laws.texture_pool_reuses_freed(next, capacity, id, rest):
@@ -2856,6 +2857,18 @@ def Laws.macro_mouse_left_button_is_its_enumerator():
   {==}
 
 def Laws.macro_shader_loc_map_diffuse_is_albedo():
+  {==}
+
+def Laws.texture_params_min_linear():
+  {==}
+
+def Laws.texture_params_gl_clamp():
+  {==}
+
+def Laws.texture_params_clamp_to_edge_rejected():
+  {==}
+
+def Laws.texture_wrap_repeat_clears_clamps():
   {==}
 
 def Laws.gui_pick_hover_keeps_drag(gui, bounds):

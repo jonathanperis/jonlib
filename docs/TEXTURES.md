@@ -23,13 +23,22 @@ Traced in the pinned sources and checked by the probe:
   is empty, so every `BeginBlendMode` keeps rlglInit's
   `SRC_ALPHA, ONE_MINUS_SRC_ALPHA`. rlsw implements all 121 factor pairs, but
   nothing in raylib reaches them.
-- **Wrap modes do nothing.** `SetTextureWrap(CLAMP)` passes
-  `RL_TEXTURE_WRAP_CLAMP` (`GL_CLAMP_TO_EDGE`, 0x812F), which rlsw's
-  `swTexParameteri` rejects (it accepts `GL_REPEAT` and `GL_CLAMP` only); the
-  mirror modes are rejected too. Every texture samples with REPEAT.
+- **Wrap modes.** `SetTextureWrap(CLAMP)` passes `RL_TEXTURE_WRAP_CLAMP`
+  (`GL_CLAMP_TO_EDGE`, 0x812F), which rlsw's `swTexParameteri` rejects (it
+  accepts `GL_REPEAT` and `GL_CLAMP` only); the mirror modes are rejected
+  too. `SetTextureWrap(REPEAT)` sets REPEAT. Only `rlTextureParameters` with
+  `GL_CLAMP` (`Rlgl.texture_parameters`) clamps a texture: nearest sampling
+  saturates the coordinate, so u = 1 reads texel `width` (the next row's
+  first, past the texture on the last row: undefined), and bilinear sampling
+  clamps the indices from above only (a coordinate below -1 reads before the
+  texture: undefined).
 - **Filters.** `TEXTURE_FILTER_POINT` sets NEAREST for minification and
   magnification, `BILINEAR` and `TRILINEAR` (a texture always has one level
   here) set LINEAR; the anisotropic modes change nothing under OpenGL 1.1.
+  `rlTextureParameters` sets either filter alone: rlsw samples with the
+  minification filter where a span's (or an axis-aligned quad's) texture
+  derivatives give L2 = max(dUdx² + dUdy², dVdx² + dVdy²) above 1, with the
+  magnification filter otherwise.
   Minification and magnification are always equal, so rlsw's derivative test
   never matters.
 - **Mipmaps.** `rlGenTextureMipmaps` only warns under OpenGL 1.1:
