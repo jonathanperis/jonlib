@@ -522,7 +522,22 @@
    ]
   },
   "GuiValueBoxFloat": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.value_box_float",
+   "scope": "Outside edit mode: the box as GuiValueBox draws it with the caller's text buffer, focused under the pointer, the side label, and whether it was pressed.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_value_input.c",
+    "tests/gui/gui_value_input.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "Edit mode (keyboard entry) marks the frame undefined",
+    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiTextBox": {
    "status": "partial",
@@ -710,7 +725,23 @@
    ]
   },
   "GuiTextInputBox": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.text_input_box",
+   "scope": "A GuiWindowBox, the message centered, a GuiTextBox (with the secret view's toggle and stars), the buttons along the bottom, raygui's static edit mode carried by the caller; 0 closed, a button's number, or -1.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_value_input.c",
+    "tests/gui/gui_value_input.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "The text box's own refusals apply",
+    "A buttons text of 1024 bytes or more or 128 items or more marks the frame undefined (GuiTextSplit's static buffers)",
+    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiColorPicker": {
    "status": "not-started"

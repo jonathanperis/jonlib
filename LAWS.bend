@@ -3911,6 +3911,14 @@ law gui_message_unclicked_keeps_result:
   for frame: J.Frame
   {JG.Gui.message.step(1, 0, (frame, False{})) == JG.GuiButtons{frame, 0} : JG.Gui.Buttons}
 
+# GuiTextInputBox places its box with C's int division of the message
+# height, truncated toward zero: 77/4 is 19, -7/2 is -3.
+law gui_int_over_positive:
+  {JG.Gui.int.over(77, 4) == 19 : U32}
+
+law gui_int_over_negative:
+  {JG.Gui.int.over(4294967289, 2) == 4294967293 : U32}
+
 law gui_grid_lines_counted:
   {JG.Gui.grid.n(3) == 3n : Nat}
 
