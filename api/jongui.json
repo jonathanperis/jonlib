@@ -154,16 +154,73 @@
    ]
   },
   "GuiEnableTooltip": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.enable_tooltip",
+   "scope": "Sets guiTooltip; a new gui starts with tooltips off.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_tooltip_icons.c",
+    "tests/gui/gui_tooltip_icons.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiDisableTooltip": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.disable_tooltip",
+   "scope": "Clears guiTooltip.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_tooltip_icons.c",
+    "tests/gui/gui_tooltip_icons.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiSetTooltip": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.set_tooltip",
+   "scope": "The tooltip text (None for NULL). GuiButton, GuiToggle and GuiTextBox (out of edit mode) draw it when focused, unlocked and no control is dragged: a GuiPanel 4 pixels below the control, 16 wider than MeasureTextEx of the text and 8 higher a line (GetTextLines, at most 128), moved left to end at the control right edge where it would pass the screen width and above the control where it would pass its height, the text centered as a GuiLabel without padding.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_tooltip_icons.c",
+    "tests/gui/gui_tooltip_icons.bend",
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "raygui keeps the caller pointer; Jongui keeps the text",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiIconText": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.icon_text",
+   "scope": "snprintf \"#%03i#\" of the id, then the text from the sixth byte (a prefix of six or more bytes loses its last ones); NULL text gives the whole prefix.",
+   "evidence": [
+    "tools/gui_icon_files_probe.py",
+    "tests/test_gui_icon_files_probe.py",
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend",
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_tooltip_icons.c",
+    "tests/gui/gui_tooltip_icons.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "A text of 1019 bytes or more leaves raygui's static buffer unterminated: None",
+    "A string result instead of a pointer to a static buffer (language adaptation)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiSetIconScale": {
    "status": "partial",
@@ -182,13 +239,55 @@
    ]
   },
   "GuiGetIcons": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.get_icons",
+   "scope": "The gui's icon table: 2048 words, eight an icon.",
+   "evidence": [
+    "tools/gui_icon_files_probe.py",
+    "tests/test_gui_icon_files_probe.py",
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "A list instead of a pointer into the table (language adaptation)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiLoadIcons": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.load_icons",
+   "scope": "Reads an .rgi file (rGI signature, little-endian count and size, 32-byte name ids, then icon count times size*size/32 words, as many as the file holds) over the table from its start; the name ids when asked, else NULL; NULL for a file that does not open or a wrong signature.",
+   "evidence": [
+    "tools/gui_icon_files_probe.py",
+    "tests/test_gui_icon_files_probe.py",
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "A negative icon count answers undefined (host-dependent fseek and calloc)",
+    "Undefined (gui unchanged): a count of words past int range, data past the 2048-word table, a file that ends inside the count, the size or a word",
+    "The name ids are lists of 32 bytes instead of allocated strings (language adaptation)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiDrawIcon": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.draw_icon",
+   "scope": "One GuiDrawRectangle of pixelSize square for each set bit of the icon in the gui's table (GuiLoadIcons changes it), at C int offsets, faded by guiAlpha.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_tooltip_icons.c",
+    "tests/gui/gui_tooltip_icons.bend",
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "An id outside 0..255 (raygui reads past its table) and coordinates that may leave int range (|x| or |y| at 2^30 or more, |pixelSize| at 2^26 or more) mark the frame undefined",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiGetTextWidth": {
    "status": "partial",
