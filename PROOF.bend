@@ -2831,6 +2831,24 @@ def Laws.font_shared_count():
 def Laws.gui_default_font_base_size():
   {==}
 
+def Laws.gui_style_index_next_row():
+  {==}
+
+def Laws.gui_style_index_negative_control():
+  {==}
+
+def Laws.gui_style_index_past_table():
+  {==}
+
+def Laws.gui_scan_int_negative():
+  {==}
+
+def Laws.gui_scan_int_past_int():
+  {==}
+
+def Laws.gui_rgs_span_through_newline():
+  {==}
+
 def Laws.gui_pick_hover_keeps_drag(gui, bounds):
   {==}
 

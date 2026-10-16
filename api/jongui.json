@@ -137,13 +137,19 @@
   "GuiSetStyle": {
    "status": "partial",
    "jongui": "Gui.set_style",
-   "scope": "The 16x24 style table; a DEFAULT base property reaches every control.",
+   "scope": "guiStyle[control*24 + property] (a property of 24 or more reaches the next rows, as raygui writes them); a DEFAULT base property reaches every control.",
    "evidence": [
-    "tools/examples_probe.py",
+    "LAWS.bend",
+    "docs/GUI.md",
     "examples/core_compute_hash.bend",
     "examples/shapes_circle_sector_drawing.bend",
-    "docs/GUI.md",
-    "jongui.bend"
+    "jongui.bend",
+    "tests/gui/gui_style.bend",
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_style.c"
+   ],
+   "gaps": [
+    "An index outside the 16x24 table changes nothing (raygui writes outside its array)"
    ]
   },
   "GuiGetStyle": {
@@ -158,7 +164,23 @@
    ]
   },
   "GuiLoadStyle": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.load_style",
+   "scope": "A file whose first byte is '#' is read as text: fgets chunks of up to 255 bytes (a last line without a newline is not read), 'p' lines through sscanf(\"p %d %d 0x%x\") whose targets keep their values between lines, 'f' lines loading a font (LoadFontEx with the charmap's codepoints, relative to the style's directory) or the default font with TEXT_SIZE 10 and TEXT_SPACING 1. Any other file is GuiLoadStyleFromMemory: properties, then an optional font whose atlas, rects and glyphs are raw or DEFLATE-compressed (version 400 sizes), set with GuiSetFont, its positive white rectangle becoming the shapes texture's source.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_style.c",
+    "tests/gui/gui_style.bend",
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "Undefined in raygui and marked so: GuiSetStyle indices outside the table, sscanf values outside their types, reads past the file, data that does not inflate to what is read next, fonts with no glyphs or a base size below 1",
+    "Refused although raygui runs them: an 'f' line without a charmap name, a sign or second 0x in a hex value, image formats above 13 and samples Jonlib's images refuse, a style path past GetDirectoryPath's buffer",
+    "A directory is a file that does not open",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiLoadStyleDefault": {
    "status": "partial",
