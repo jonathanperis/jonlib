@@ -11927,6 +11927,119 @@ def Font.default() -> Font:
   Font{10, 0, FontCore.default.glyphs(), Texture{1, 128, 128, 2, False{}, True{}, Some{FontCore.expand(4294967295, 4294967040)}},
     Surface{128, 128, 2, Words{FontCore.expand(65535, 255)}}}
 
+# A Font as Data, for a value copied the way C copies a Font (a struct of
+# pointers), as raygui's guiFont is: the glyphs and sizes, the texture's
+# binding and its texels (when it holds them), and the atlas, the arrays
+# as word lists. Font.shared takes a font apart (it comes back);
+# Font.of_shared builds an equal one.
+type Font.Shared is Data:
+  FontShared{base: U32, padding: U32, glyphs: +List<FontCore.Glyph>, id: U32, width: U32, height: U32, format: U32, linear: Bool, alpha: Bool,
+    textured: Bool, texels: +List<U32>, atlas_width: U32, atlas_height: U32, atlas_format: U32, quads: Bool, words: +List<U32>, wide: +List<Surface.Quad>}
+
+# The words of a list, in order (a loop: an atlas has a word a pixel).
+def Font.shared.words.go(xs: List<U32>, +acc: +List<U32>) -> +List<U32>:
+  match xs:
+    case Nil{}: List.reverse(&2, U32, acc)
+    case Con{x, rest}: Font.shared.words.go(rest, Con{x, acc})
+
+def Font.shared.words(xs: List<U32>) -> +List<U32>:
+  Font.shared.words.go(xs, Nil{})
+
+def Font.shared.quads.go(xs: List<Surface.Quad>, +acc: +List<Surface.Quad>) -> +List<Surface.Quad>:
+  match xs:
+    case Nil{}: List.reverse(&2, Surface.Quad, acc)
+    case Con{x, rest}: Font.shared.quads.go(rest, Con{x, acc})
+
+def Font.shared.quads(xs: List<Surface.Quad>) -> +List<Surface.Quad>:
+  Font.shared.quads.go(xs, Nil{})
+
+def Font.shared.count(xs: +List<U32>, +n: U32) -> U32:
+  match xs:
+    case Nil{}: n
+    case Con{_, rest}: Font.shared.count(rest, (n + 1 : U32))
+
+def Font.shared.quad_count(xs: +List<Surface.Quad>, +n: U32) -> U32:
+  match xs:
+    case Nil{}: n
+    case Con{_, rest}: Font.shared.quad_count(rest, (n + 1 : U32))
+
+def Font.shared.cloned(r: Array<U32> & Array<U32>) -> Maybe<Array<U32>> & (Bool & +List<U32>):
+  (kept, read) = r
+  (Some{kept}, (True{}, Font.shared.words(Array.to_list(U32, read))))
+
+def Font.shared.texels(texels: Maybe<Array<U32>>) -> Maybe<Array<U32>> & (Bool & +List<U32>):
+  match texels:
+    case None{}: (None{}, (False{}, Nil{}))
+    case Some{values}: Font.shared.cloned(Array.clone(U32, values))
+
+def Font.shared.word_pixels(r: Array<U32> & Array<U32>) -> Surface.Pixels & (+List<U32> & +List<Surface.Quad>):
+  (kept, read) = r
+  (Words{kept}, (Font.shared.words(Array.to_list(U32, read)), Nil{}))
+
+def Font.shared.quad_pixels(r: Array<Surface.Quad> & Array<Surface.Quad>) -> Surface.Pixels & (+List<U32> & +List<Surface.Quad>):
+  (kept, read) = r
+  (Quads{kept}, (Nil{}, Font.shared.quads(Array.to_list(Surface.Quad, read))))
+
+def Font.shared.pixels(pixels: Surface.Pixels) -> Surface.Pixels & (+List<U32> & +List<Surface.Quad>):
+  match pixels:
+    case Words{values}: Font.shared.word_pixels(Array.clone(U32, values))
+    case Quads{values}: Font.shared.quad_pixels(Array.clone(Surface.Quad, values))
+
+def Font.shared.listed(+base: U32, +padding: U32, +glyphs: +List<FontCore.Glyph>, +id: U32, +width: U32, +height: U32, +format: U32, +linear: Bool, +alpha: Bool,
+    kept: Maybe<Array<U32>>, rest: Bool & +List<U32>, +aw: U32, +ah: U32, +af: U32, +quads: Bool, kept_pixels: Surface.Pixels, lists: +List<U32> & +List<Surface.Quad>) -> Font & Font.Shared:
+  (+textured, +list) = rest
+  (+words, +wide) = lists
+  (Font{base, padding, glyphs, Texture{id, width, height, format, linear, alpha, kept}, Surface{aw, ah, af, kept_pixels}},
+    FontShared{base, padding, glyphs, id, width, height, format, linear, alpha, textured, list, aw, ah, af, quads, words, wide})
+
+def Font.shared.atlas(+base: U32, +padding: U32, +glyphs: +List<FontCore.Glyph>, +id: U32, +width: U32, +height: U32, +format: U32, +linear: Bool, +alpha: Bool,
+    texels: Maybe<Array<U32>> & (Bool & +List<U32>), +aw: U32, +ah: U32, +af: U32, +quads: Bool, pixels: Surface.Pixels & (+List<U32> & +List<Surface.Quad>)) -> Font & Font.Shared:
+  (kept, rest) = texels
+  (kept_pixels, lists) = pixels
+  Font.shared.listed(base, padding, glyphs, id, width, height, format, linear, alpha, kept, rest, aw, ah, af, quads, kept_pixels, lists)
+
+def Font.shared.wide(pixels: Surface.Pixels) -> Surface.Pixels & Bool:
+  match pixels:
+    case Words{values}: (Words{values}, False{})
+    case Quads{values}: (Quads{values}, True{})
+
+def Font.shared.surface(+base: U32, +padding: U32, +glyphs: +List<FontCore.Glyph>, texture: Texture, +aw: U32, +ah: U32, +af: U32, pixels: Surface.Pixels & Bool) -> Font & Font.Shared:
+  Texture{+id, +width, +height, +format, +linear, +alpha, texels} = texture
+  (kept, +quads) = pixels
+  Font.shared.atlas(base, padding, glyphs, id, width, height, format, linear, alpha, Font.shared.texels(texels), aw, ah, af, quads, Font.shared.pixels(kept))
+
+def Font.shared(font: Font) -> Font & Font.Shared:
+  Font{+base, +padding, +glyphs, texture, atlas} = font
+  Surface{+aw, +ah, +af, pixels} = atlas
+  Font.shared.surface(base, padding, glyphs, texture, aw, ah, af, Font.shared.wide(pixels))
+
+def Font.shared.fill_quads(xs: +List<Surface.Quad>, +i: U32, out: Array<Surface.Quad>) -> Array<Surface.Quad>:
+  match xs:
+    case Nil{}: out
+    case Con{+q, rest}: Font.shared.fill_quads(rest, (i + 1 : U32), Array.set(Surface.Quad, out, i, q))
+
+def Font.shared.fill_words(xs: +List<U32>, +i: U32, out: Array<U32>) -> Array<U32>:
+  match xs:
+    case Nil{}: out
+    case Con{+w, rest}: Font.shared.fill_words(rest, (i + 1 : U32), Array.set(U32, out, i, w))
+
+def Font.shared.array(+xs: +List<U32>) -> Array<U32>:
+  Font.shared.fill_words(xs, 0, Array.new(U32, Storage.depth(Font.shared.count(xs, 0)), 0))
+
+def Font.shared.made_texels(textured: Bool, +xs: +List<U32>) -> Maybe<Array<U32>>:
+  match textured:
+    case False{}: None{}
+    case True{}: Some{Font.shared.array(xs)}
+
+def Font.shared.made_pixels(quads: Bool, +words: +List<U32>, +wide: +List<Surface.Quad>) -> Surface.Pixels:
+  match quads:
+    case False{}: Words{Font.shared.array(words)}
+    case True{}: Quads{Font.shared.fill_quads(wide, 0, Array.new(Surface.Quad, Storage.depth(Font.shared.quad_count(wide, 0)), Quad{0, 0, 0, 0}))}
+
+def Font.of_shared(shared: Font.Shared) -> Font:
+  FontShared{+base, +padding, +glyphs, +id, +width, +height, +format, +linear, +alpha, +textured, +texels, +aw, +ah, +af, +quads, +words, +wide} = shared
+  Font{base, padding, glyphs, Texture{id, width, height, format, linear, alpha, Font.shared.made_texels(textured, texels)}, Surface{aw, ah, af, Font.shared.made_pixels(quads, words, wide)}}
+
 def Font.texture.id(texture: Texture) -> Texture & U32:
   Texture{+id, +width, +height, +format, +linear, +alpha, texels} = texture
   (Texture{id, width, height, format, linear, alpha, texels}, id)

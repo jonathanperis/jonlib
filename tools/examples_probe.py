@@ -91,7 +91,7 @@ SHIM = ROOT / 'tools/reference/example_driver.h'
 AUDIO_CLOCK_UNIT = ROOT / 'tools/reference/audio_clock.c'
 WIDTH, HEIGHT = 800, 450
 # Examples whose InitWindow is not 800x450.
-SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation': (720, 400), 'gui_window_grid': (400, 300), 'gui_toggle_combo_list': (400, 300), 'gui_message_tabs': (500, 300), 'gui_value_input': (500, 360), 'gui_tooltip_icons': (500, 300), 'gui_color_pickers': (500, 320)}
+SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation': (720, 400), 'gui_window_grid': (400, 300), 'gui_toggle_combo_list': (400, 300), 'gui_message_tabs': (500, 300), 'gui_value_input': (500, 360), 'gui_tooltip_icons': (500, 300), 'gui_color_pickers': (500, 320), 'gui_font': (400, 260)}
 SIZES['shaders_rlgl_compute'] = (768, 768)
 
 
@@ -352,8 +352,18 @@ GUI_SCENES = {
     'gui_value_input': ('jonlib/gui/gui_value_input.c', 'Ex.setup(core, frame)'),
     'gui_tooltip_icons': ('jonlib/gui/gui_tooltip_icons.c', 'Ex.setup(core, frame)'),
     'gui_color_pickers': ('jonlib/gui/gui_color_pickers.c', 'Ex.setup(core, frame)'),
+    'gui_font': ('jonlib/gui/gui_font.c', 'Ex.setup(RESOURCES, core, frame)'),
 }
 EXAMPLES.update(GUI_SCENES)
+# The raylib examples directory an IO setup reads its resources from (and the reference runs in): the example's own module,
+# or, for a GUI scene, the module whose resources it borrows.
+RESOURCE_MODULES = {'gui_font': 'text'}
+
+
+def resource_module(name):
+    return RESOURCE_MODULES.get(name, EXAMPLES[name][0].split('/')[0])
+
+
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
 # examples/<module>/ directory) and the flags SetConfigFlags sets before InitWindow.
@@ -399,6 +409,8 @@ CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_r
                 'shaders_normalmap_rendering': 32, 'shaders_cel_shading': 32, 'shapes_math_sine_cosine': 32,
                 'shapes_splines_drawing': 32}
 IO_SETUP.add('shaders_lightmap_rendering'); PERSPECTIVE.add('shaders_lightmap_rendering'); CONFIG_FLAGS['shaders_lightmap_rendering'] = 32
+# gui_font: LoadFont of the text examples' custom_alagard.png in the setup (RESOURCE_MODULES).
+IO_SETUP.add('gui_font')
 IO_SETUP.add('models_animation_gpu_skinning'); PERSPECTIVE.add('models_animation_gpu_skinning')
 IO_SETUP.add('models_bone_socket'); PERSPECTIVE.add('models_bone_socket')
 IO_SETUP.add('models_loading_gltf'); PERSPECTIVE.add('models_loading_gltf')
@@ -1551,6 +1563,9 @@ def scripts():
     out.append(script('gui_color_pickers', 'controls', [quick(), quick([mouse_at(85, 85)])] + drag(40, 50, 300, 200) + drag(176, 100, 176, 2)
                       + clicks(250, 60) + clicks(366, 120) + drag(70, 230, 20, 190) + drag(200, 210, 400, 210) + clicks(160, 198)
                       + drag(330, 250, 330, 170) + clicks(440, 50) + [slow()]))
+    # The button hovered and clicked, the toggle switched on, the text box hovered, the tooltip's button hovered.
+    out.append(script('gui_font', 'controls', [quick(), quick([mouse_at(80, 65)])] + clicks(80, 65) + clicks(230, 65)
+                      + [quick([mouse_at(100, 105)]), quick([mouse_at(270, 105)]), slow()]))
     repeated = sorted({item['name'] for item in out if sum(other['name'] == item['name'] for other in out) > 1})
     if repeated:
         raise ProbeFailure(f'examples: script names used more than once: {repeated}')
@@ -2006,7 +2021,7 @@ def native_frames(probe, binary, index, item):
     path.write_text(script_text(item if cut is None else dict(item, frames=item['frames'][:cut])))
     source, _ = EXAMPLES[item['example']]
     in_module = item['example'] == 'textures_logo_raylib' or item['example'] in IO_SETUP
-    cwd = probe.args.raylib_source / 'examples' / source.split('/')[0] if in_module else probe.work
+    cwd = probe.args.raylib_source / 'examples' / resource_module(item['example']) if in_module else probe.work
     if item['example'] in SCRATCH:
         cwd = scratch(probe, index, native=True) / WORKING.get(item['example'], '')
     result = subprocess.run([str(binary)], cwd=cwd, env=dict(probekit.ENV, JONLIB_EXAMPLE_SCRIPT=str(path)), stdin=subprocess.DEVNULL,
@@ -2232,7 +2247,7 @@ def render(items, libm, logo, raylib_source, directories=None, listed=None):
         effects = name in EFFECTS
         if effects and not io:
             raise ProbeFailure(f'examples: {name}: an Effects program is replayed in IO (add it to IO_SETUP, its setup in IO)')
-        resources = 'dir' if name in SCRATCH else json.dumps(str(raylib_source / 'examples' / EXAMPLES[name][0].split('/')[0]) + '/')
+        resources = 'dir' if name in SCRATCH else json.dumps(str(raylib_source / 'examples' / resource_module(name)) + '/')
         body = (PROGRAM.replace('MODULE', MODULES.get(name, f'../../examples/{name}.bend')).replace('READY', EFFECTS_READY if effects else PURE_READY)
                 .replace('REPLAY', EFFECTS_REPLAY if effects else IO_REPLAY if io else PURE_REPLAY).replace('EXAMPLE', name)
                 .replace('SETUP_PARAMS ', setup_params).replace('SETUP', setup).replace('LIBM', libm).replace('RESOURCES', resources))
@@ -2285,7 +2300,7 @@ def interactive(probe, frames):
             if name == 'textures_logo_raylib':
                 command += ['--logo', logo]
             if name in IO_SETUP:
-                command += ['--resources', str(probe.args.raylib_source / 'examples' / EXAMPLES[name][0].split('/')[0]) + '/']
+                command += ['--resources', str(probe.args.raylib_source / 'examples' / resource_module(name)) + '/']
             output = probekit.run(command, timeout=600).strip().splitlines()
             line = output[-1] if output else ''
             match = re.search(r'(\d+) frames in (\d+) ms \(([\d.]+) FPS\); per frame: render (\d+) ms, present (\d+) ms, wait (\d+) ms', line)

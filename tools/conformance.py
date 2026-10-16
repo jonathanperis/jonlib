@@ -1622,12 +1622,15 @@ def main():
     report['palette_observations'] = sum('palette' in case for case in cases)
     cli = ['bun', args.bend_source / 'bend2/main.ts']
     report['modules'] = {}
+    # Checking time grows with the library and its laws (PROOF.bend took 234 s on a small Linux machine in October
+    # 2026): a budget, not a check; the verdicts below are compared in full.
+    check_budget = 900
     for module in ('jonlib','jonmath'):
-        library_verdict = run([*cli, ROOT / f'{module}.bend', '--check-only'])
+        library_verdict = run([*cli, ROOT / f'{module}.bend', '--check-only'], timeout=check_budget)
         if library_verdict.strip() != 'All terms check.':
             raise ValueError(f"Unexpected {module} verdict: {library_verdict}")
         report['modules'][module] = library_verdict.strip()
-    proof_verdict = run([*cli, ROOT / 'PROOF.bend', '--check-only'])
+    proof_verdict = run([*cli, ROOT / 'PROOF.bend', '--check-only'], timeout=check_budget)
     if proof_verdict.strip() != 'All terms check.':
         raise ValueError(f"Unexpected proof verdict: {proof_verdict}")
     report['proof'] = proof_verdict.strip()

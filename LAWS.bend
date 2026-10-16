@@ -3961,6 +3961,14 @@ law gui_rgb_sector_other:
   for t: F32
   {JG.Gui.rgb.sector(9, v, p, q, t) == M.Vector3{v, p, q} : M.Vector3}
 
+# Font.Shared counts the words it copies; a new gui's font is the default
+# one, of base size 10 (GuiGetFont().baseSize).
+law font_shared_count:
+  {J.Font.shared.count([7, 8, 9], 0) == 3 : U32}
+
+law gui_default_font_base_size:
+  {JG.Gui.font.base(JG.GuiFontDefault{}) == 10 : U32}
+
 law gui_pick_hover_keeps_drag:
   for gui: JG.Gui
   for bounds: J.Rectangle
