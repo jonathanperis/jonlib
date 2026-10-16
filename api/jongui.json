@@ -392,7 +392,23 @@
    ]
   },
   "GuiToggleSlider": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.toggle_slider",
+   "scope": "The knob (width - 2 border - (count + 1) padding) / count wide at the active item, moved on (cyclically) by a release over the bounds; the item's text centered on the knob over the whole text's width; the active index and whether it moved.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_toggle_combo_list.c",
+    "tests/gui/gui_toggle_combo_list.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "A text of 1024 bytes or more or 128 items or more marks the frame undefined (GuiTextSplit's static buffers)",
+    "An active index below 0 marks the frame undefined",
+    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiCheckBox": {
    "status": "partial",
@@ -414,7 +430,22 @@
    ]
   },
   "GuiComboBox": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.combo_box",
+   "scope": "The box less the button's width and spacing with the active item (clamped), a GuiButton showing active/count; a press over either (more than one item) moves to the next item cyclically.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_toggle_combo_list.c",
+    "tests/gui/gui_toggle_combo_list.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "A text of 1024 bytes or more or 128 items or more marks the frame undefined (GuiTextSplit's static buffers)",
+    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiDropdownBox": {
    "status": "partial",
@@ -609,7 +640,22 @@
    ]
   },
   "GuiListView": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.list_view",
+   "scope": "GuiListViewEx over the items of the text (none for NULL) without a focus pointer.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_toggle_combo_list.c",
+    "tests/gui/gui_toggle_combo_list.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "A text of 1024 bytes or more or 128 items or more marks the frame undefined (GuiTextSplit's static buffers)",
+    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiListViewEx": {
    "status": "partial",

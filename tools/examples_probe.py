@@ -91,7 +91,7 @@ SHIM = ROOT / 'tools/reference/example_driver.h'
 AUDIO_CLOCK_UNIT = ROOT / 'tools/reference/audio_clock.c'
 WIDTH, HEIGHT = 800, 450
 # Examples whose InitWindow is not 800x450.
-SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation': (720, 400), 'gui_window_grid': (400, 300)}
+SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation': (720, 400), 'gui_window_grid': (400, 300), 'gui_toggle_combo_list': (400, 300)}
 SIZES['shaders_rlgl_compute'] = (768, 768)
 
 
@@ -347,6 +347,7 @@ EXAMPLES = {
 # examples: tools/examples_plan.py counts the literal table above only.
 GUI_SCENES = {
     'gui_window_grid': ('jonlib/gui/gui_window_grid.c', 'Ex.setup(core, frame)'),
+    'gui_toggle_combo_list': ('jonlib/gui/gui_toggle_combo_list.c', 'Ex.setup(core, frame)'),
 }
 EXAMPLES.update(GUI_SCENES)
 
@@ -1507,6 +1508,17 @@ def scripts():
                                                      quick([button(0)]), quick([button(0, False)]), quick([mouse_at(15, 145)]), quick([mouse_at(389, 289)]),
                                                      quick([mouse_at(130, 200)]), quick([mouse_at(10, 140)]), quick([mouse_at(395, 145)]),
                                                      quick([mouse_at(320, 85)]), slow()]))
+    # The toggle slider clicked three times (to its last item and back to the first), the combo box pressed on its box and on
+    # its selector button, a list item chosen, the list scrolled by the wheel and another item chosen, and the disabled
+    # controls pressed.
+    out.append(script('gui_toggle_combo_list', 'controls', [quick(), quick([mouse_at(100, 25)]), quick([button(0)]), quick([button(0, False)]),
+                                                           quick([button(0)]), quick([button(0, False)]), quick([button(0)]), slow([button(0, False)]),
+                                                           quick([mouse_at(60, 75)]), quick([button(0)]), quick([button(0, False)]), quick([mouse_at(200, 75)]),
+                                                           quick([button(0)]), quick([button(0, False)]), quick([mouse_at(300, 30)]), quick([button(0)]),
+                                                           slow([button(0, False)]), quick([(MOUSE_WHEEL, 0, -1, 0)]), quick([(MOUSE_WHEEL, 0, -1, 0)]),
+                                                           quick([mouse_at(300, 100)]), quick([button(0)]), quick([button(0, False)]),
+                                                           quick([mouse_at(60, 150)]), quick([button(0)]), quick([button(0, False)]),
+                                                           quick([mouse_at(300, 170)]), slow()]))
     repeated = sorted({item['name'] for item in out if sum(other['name'] == item['name'] for other in out) > 1})
     if repeated:
         raise ProbeFailure(f'examples: script names used more than once: {repeated}')

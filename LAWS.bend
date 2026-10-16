@@ -3893,6 +3893,14 @@ law gui_font_base_size_is_the_default_font_s:
 
 # GuiGrid draws (int)(size / spacing) + 1 lines of each kind: none for a
 # count that comes out at 0 or below as an int (its loop never runs).
+# GuiTextSplit's items picked by index (GuiToggleSlider, GuiComboBox): the
+# second of "A;B" is "B"; none past the last.
+law gui_item_at_second:
+  {JG.Gui.item.at(JG.Gui.split([65, 59, 66], 59, 0, Nil{}), 1) == [66] : +List<U32>}
+
+law gui_item_at_past_the_last:
+  {JG.Gui.item.at(JG.Gui.split([65, 59, 66], 59, 0, Nil{}), 2) == [] : +List<U32>}
+
 law gui_grid_lines_counted:
   {JG.Gui.grid.n(3) == 3n : Nat}
 
