@@ -3790,23 +3790,28 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
-      "jonlib": "TextureCubemap",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Texture",
+      "mapping_state": "implemented",
+      "scope": "raylib's TextureCubemap is Texture; LoadTextureCubemap answers one with id 0 on the software renderer (rlLoadTextureCubemap has no OpenGL 1.1 body).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The cubemap faces are not uploaded under the software renderer",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/TEXTURES.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -3817,7 +3822,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive TextureCubemap semantics from the linked source, add a reference fixture, then implement TextureCubemap.",
+      "next_step": "Close documented gaps and unverified gates for TextureCubemap.",
       "priority": 100
     },
     {
@@ -4413,23 +4418,29 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Shader",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Shader{id, locs}: the program id and its 32 locations (C ints as words, -1 unset); LoadShader answers id 0 with every location -1 on the software renderer.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Programmable shaders do not run under the software renderer (rlsw draws with its fixed pipeline)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/shader_probe.py",
+        "tools/rlgl_probe.py",
+        "docs/SHADERS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -4438,7 +4449,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive Shader semantics from the linked source, add a reference fixture, then implement Shader.",
+      "next_step": "Close documented gaps and unverified gates for Shader.",
       "priority": 100
     },
     {
@@ -4648,23 +4659,29 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
-      "jonlib": "ModelAnimPose",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "+List<Transform>",
+      "mapping_state": "implemented",
+      "scope": "A pose, one Transform a bone in the skeleton order: the keyframe poses of ModelAnimation, the bind pose of ModelSkeleton and the current pose of ModelPose.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "An owned list instead of a pointer into the animation (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/gltf_anim_probe.py",
+        "tools/model_pose_probe.py",
+        "docs/MODELS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -4675,7 +4692,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive ModelAnimPose semantics from the linked source, add a reference fixture, then implement ModelAnimPose.",
+      "next_step": "Close documented gaps and unverified gates for ModelAnimPose.",
       "priority": 100
     },
     {
@@ -4704,23 +4721,30 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "BoneInfo",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "BoneInfo{name, parent}: the bone's name (31 bytes at most, as raylib's char[32] holds it) and its parent's index among the bones as a C int word (a root's -1 is all ones).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A String instead of a char[32] (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/gltf_anim_probe.py",
+        "tools/iqm_probe.py",
+        "tools/m3d_probe.py",
+        "docs/MODELS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -4729,7 +4753,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive BoneInfo semantics from the linked source, add a reference fixture, then implement BoneInfo.",
+      "next_step": "Close documented gaps and unverified gates for BoneInfo.",
       "priority": 100
     },
     {
@@ -4759,23 +4783,30 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "ModelSkeleton",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "ModelSkeleton{bones, bind_pose}: the BoneInfo list (boneCount is its length) and the bind pose, one Transform a bone.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Lists instead of counted pointers (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/gltf_anim_probe.py",
+        "tools/iqm_probe.py",
+        "tools/m3d_probe.py",
+        "docs/MODELS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -4787,7 +4818,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive ModelSkeleton semantics from the linked source, add a reference fixture, then implement ModelSkeleton.",
+      "next_step": "Close documented gaps and unverified gates for ModelSkeleton.",
       "priority": 100
     },
     {
@@ -4889,23 +4920,30 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "ModelAnimation",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "ModelAnimation{name, bone_count, keyframe_count, keyframe_poses}: the name, the counts and one pose (a Transform a bone) a keyframe.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Lists instead of counted pointers (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/gltf_anim_probe.py",
+        "tools/model_pose_probe.py",
+        "tools/iqm_probe.py",
+        "docs/MODELS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -4916,7 +4954,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive ModelAnimation semantics from the linked source, add a reference fixture, then implement ModelAnimation.",
+      "next_step": "Close documented gaps and unverified gates for ModelAnimation.",
       "priority": 100
     },
     {
@@ -5184,23 +5222,28 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
-      "jonlib": "rAudioBuffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "AudioStream.buffer (a U32 handle into the AudioDevice)",
+      "mapping_state": "implemented",
+      "scope": "raylib's opaque audio buffer is a handle: AudioStream{buffer, ...} names a buffer the AudioDevice tracks (its data, cursor, volume, pitch, pan, looping and attached processors), as Sound and Music streams do.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A handle into an explicit device value instead of a pointer into raudio.c globals (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -5209,7 +5252,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive rAudioBuffer semantics from the linked source, add a reference fixture, then implement rAudioBuffer.",
+      "next_step": "Close documented gaps and unverified gates for rAudioBuffer.",
       "priority": 100
     },
     {
@@ -5234,23 +5277,28 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
-      "jonlib": "rAudioProcessor",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "AudioDevice.Processor",
+      "mapping_state": "implemented",
+      "scope": "AudioProcessor{buffer, tag}: the buffer it is attached to (0 the mixed output) and the program's tag, in attachment order; AudioDevice.mix_processed calls the program's one function with the tag and the samples.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A tag the program chooses instead of a function pointer (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -5259,7 +5307,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive rAudioProcessor semantics from the linked source, add a reference fixture, then implement rAudioProcessor.",
+      "next_step": "Close documented gaps and unverified gates for rAudioProcessor.",
       "priority": 100
     },
     {

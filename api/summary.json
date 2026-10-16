@@ -6,8 +6,8 @@
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 302,
-    "partial": 1582
+    "not-started": 294,
+    "partial": 1590
   },
   "core_functions": {
     "total": 600,
@@ -54,8 +54,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 38,
-      "partial": 999
+      "not-started": 30,
+      "partial": 1007
     },
     "raymath.h": {
       "total": 254,
@@ -108,8 +108,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 8,
-      "partial": 541
+      "not-started": 0,
+      "partial": 549
     },
     {
       "id": "numerics",
