@@ -80,6 +80,7 @@ import re
 import shutil
 import struct
 import subprocess
+import zlib
 
 from conformance import gradient_reference
 import frame_probe as fp
@@ -91,7 +92,7 @@ SHIM = ROOT / 'tools/reference/example_driver.h'
 AUDIO_CLOCK_UNIT = ROOT / 'tools/reference/audio_clock.c'
 WIDTH, HEIGHT = 800, 450
 # Examples whose InitWindow is not 800x450.
-SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation': (720, 400), 'gui_window_grid': (400, 300), 'gui_toggle_combo_list': (400, 300), 'gui_message_tabs': (500, 300), 'gui_value_input': (500, 360), 'gui_tooltip_icons': (500, 300), 'gui_color_pickers': (500, 320), 'gui_font': (400, 260)}
+SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation': (720, 400), 'gui_window_grid': (400, 300), 'gui_toggle_combo_list': (400, 300), 'gui_message_tabs': (500, 300), 'gui_value_input': (500, 360), 'gui_tooltip_icons': (500, 300), 'gui_color_pickers': (500, 320), 'gui_font': (400, 260), 'gui_style': (420, 300)}
 SIZES['shaders_rlgl_compute'] = (768, 768)
 
 
@@ -353,6 +354,7 @@ GUI_SCENES = {
     'gui_tooltip_icons': ('jonlib/gui/gui_tooltip_icons.c', 'Ex.setup(core, frame)'),
     'gui_color_pickers': ('jonlib/gui/gui_color_pickers.c', 'Ex.setup(core, frame)'),
     'gui_font': ('jonlib/gui/gui_font.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'gui_style': ('jonlib/gui/gui_style.c', 'Ex.setup(RESOURCES, core, frame)'),
 }
 EXAMPLES.update(GUI_SCENES)
 # The raylib examples directory an IO setup reads its resources from (and the reference runs in): the example's own module,
@@ -498,6 +500,82 @@ FILES['core_directory_files-browse'] = {**{f'top/mid/cwd/{name}': b'' for name i
 # that dot for the extension and copies 16 bytes of it into a char[16] it then reads as a string. Refused from the start.
 FILES['core_directory_files-noext'] = {'top/mid/cwd/alpha.png': b'', 'top/mid/cwd/noext': b''}
 UNDEFINED_FROM['core_directory_files-noext'] = 0
+# gui_style: GuiLoadStyle("style.rgs") in the setup, from the script's own directory. Text styles (properties, a
+# sscanf that matches part of a line and keeps the last line's values, an index past a control's row, a line longer
+# than fgets's buffer, a last line without '\n', a TTF font with and without a charmap, a font that does not load)
+# and binary ones (properties and a font of 95 glyphs, raw and DEFLATE-compressed, whose white rectangle tints every
+# shape; a font image of width 0). Two are undefined from the start: a property index outside the table, and a
+# binary file cut inside its font.
+IO_SETUP.add('gui_style'); SCRATCH.add('gui_style')
+
+
+def rgs_text(lines, last=''):
+    return ''.join(line + '\n' for line in lines).encode() + last.encode()
+
+
+def rgs_font_atlas():
+    """A GRAY_ALPHA atlas of 16x6 cells of 6x8 pixels: glyphs 32..126 as 5x7 patterns, and the last cell opaque gray."""
+    width, height = 96, 48
+    pixels = bytearray(width * height * 2)
+    seed = 12345
+    for i in range(96):
+        col, row = i % 16, i // 16
+        for y in range(8):
+            for x in range(6):
+                seed = (seed * 1103515245 + 12345) & 0x7FFFFFFF
+                if i == 95:
+                    on, gray = True, 128
+                else:
+                    on, gray = i > 0 and x < 5 and y < 7 and (seed >> 16) % 3 != 0, 255
+                at = ((row * 8 + y) * width + col * 6 + x) * 2
+                pixels[at:at + 2] = bytes((gray, 255 if on else 0))
+    recs = [(float(i % 16 * 6), float(i // 16 * 8), 5.0, 7.0) for i in range(95)]
+    glyphs = [(32 + i, 0, 1, 6) for i in range(95)]
+    return (width, height, 2, bytes(pixels)), recs, glyphs
+
+
+def rgs_binary(version, properties, font=None, white=(91.0, 41.0, 4.0, 4.0), compress=False, cut=None, image=None):
+    deflate = lambda data: (lambda c: c.compress(data) + c.flush())(zlib.compressobj(9, zlib.DEFLATED, -15))
+    out = b'rGS ' + struct.pack('<hhi', version, 0, len(properties))
+    out += b''.join(struct.pack('<hhI', c, p, v) for c, p, v in properties)
+    if not font:
+        out += struct.pack('<i', 0)
+    else:
+        (w, h, fmt, pixels), recs, glyphs = rgs_font_atlas()
+        if image is not None:
+            w, h = image
+        body = struct.pack('<iii', 8, len(recs), 0) + struct.pack('<4f', *white)
+        packed = deflate(pixels) if compress else pixels
+        body += struct.pack('<ii', len(pixels), len(packed) if compress else 0) + struct.pack('<iii', w, h, fmt) + packed
+        for block in (b''.join(struct.pack('<4f', *r) for r in recs), b''.join(struct.pack('<4i', *g) for g in glyphs)):
+            packed_block = deflate(block) if compress else block
+            if version >= 400:
+                body += struct.pack('<i', len(packed_block) if compress else 0)
+            body += packed_block
+        out += struct.pack('<i', len(body)) + body
+    return out if cut is None else out[:cut]
+
+
+TTF = lambda probe: (probe.args.raylib_source / 'examples/text/resources/pixantiqua.ttf').read_bytes()
+STYLE_LINES = ['#', '# rgs style text file: a test style', '#',
+               'p 00 00 0x2f7486ff    DEFAULT_BORDER_COLOR_NORMAL', 'p 00 01 0x024658ff    DEFAULT_BASE_COLOR_NORMAL',
+               'p 00 02 0x51bfd3ff', 'p 00 16 0x00000010    TEXT_SIZE', 'p 00 17 0x00000002    TEXT_SPACING',
+               'p 01 02 0x8a3412ff    LABEL_TEXT_COLOR_NORMAL', 'p 2 12 0x00000002', 'p   3   14   0x2',
+               'p 4', 'p 0 18 0xFFAA00FF', 'p 1 24 0x00ff00ff    BUTTON_BORDER_COLOR_NORMAL through LABEL',
+               'x' * 254 + 'p 00 01 0x804020ff', 'p 05 13 0x00000004']
+FILES['gui_style-text'] = {'style.rgs': rgs_text(STYLE_LINES + ['f 16 0 pixantiqua.ttf'], 'p 00 19 0xF5F5F5FF'), 'pixantiqua.ttf': TTF}
+FILES['gui_style-charmap'] = {'style.rgs': rgs_text(['#', 'p 00 16 0x0000000c', 'f 12 charmap.txt pixantiqua.ttf']),
+                              'charmap.txt': 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 #?/'.encode(), 'pixantiqua.ttf': TTF}
+FILES['gui_style-missing'] = {'style.rgs': rgs_text(['#', 'p 00 16 0x00000014', 'p 00 17 0x00000003', 'f 20 0 missing.ttf'])}
+BINARY_PROPS = [(0, 0, 0x2f7486ff), (0, 16, 16), (0, 17, 1), (2, 12, 3), (0, 18, 0xff8800ff), (1, 24, 0x123456ff), (4, 16, 12)]
+FILES['gui_style-binary'] = {'style.rgs': rgs_binary(200, BINARY_PROPS, font=True)}
+FILES['gui_style-compressed'] = {'style.rgs': rgs_binary(400, BINARY_PROPS, font=True, compress=True)}
+FILES['gui_style-empty-image'] = {'style.rgs': rgs_binary(400, BINARY_PROPS, font=True, image=(0, 48))}
+FILES['gui_style-index'] = {'style.rgs': rgs_text(['#', 'p 00 16 0x00000010', 'p 16 0 0x00000001'])}
+FILES['gui_style-cut'] = {'style.rgs': rgs_binary(400, BINARY_PROPS, font=True, cut=12 + 8 * 7 + 4 + 48 + 96 * 48 * 2 + 4 + 100)}
+UNDEFINED_FROM['gui_style-index'] = 0
+UNDEFINED_FROM['gui_style-cut'] = 0
+
 # core_screen_recording: the recording is saved in the loop, in the application's directory, which the reference's hook
 # and the port's setup argument both make the script's own. Its sines have no AppleLibm profile (docs/MATH.md).
 IO_SETUP.add('core_screen_recording'); EFFECTS.add('core_screen_recording'); SCRATCH.add('core_screen_recording'); PERSPECTIVE.add('core_screen_recording')
@@ -517,7 +595,7 @@ def scratch_reset(probe, items, name=None, native=False):
             directory.mkdir(parents=True)
             for file, data in FILES.get(item['name'], {}).items():
                 (directory / file).parent.mkdir(parents=True, exist_ok=True)
-                (directory / file).write_bytes(data)
+                (directory / file).write_bytes(data(probe) if callable(data) else data)
 
 
 def scratch_left(probe, index, native=False):
@@ -1564,6 +1642,9 @@ def scripts():
                       + clicks(250, 60) + clicks(366, 120) + drag(70, 230, 20, 190) + drag(200, 210, 400, 210) + clicks(160, 198)
                       + drag(330, 250, 330, 170) + clicks(440, 50) + [slow()]))
     # The button hovered and clicked, the toggle switched on, the text box hovered, the tooltip's button hovered.
+    # Each style: a button hovered, pressed and released, a check box clicked.
+    for variant in ('text', 'charmap', 'missing', 'binary', 'compressed', 'empty-image', 'index', 'cut'):
+        out.append(script('gui_style', variant, [quick(), quick([mouse_at(80, 65)])] + clicks(80, 65) + clicks(20, 112) + [slow()]))
     out.append(script('gui_font', 'controls', [quick(), quick([mouse_at(80, 65)])] + clicks(80, 65) + clicks(230, 65)
                       + [quick([mouse_at(100, 105)]), quick([mouse_at(270, 105)]), slow()]))
     repeated = sorted({item['name'] for item in out if sum(other['name'] == item['name'] for other in out) > 1})

@@ -3969,6 +3969,29 @@ law font_shared_count:
 law gui_default_font_base_size:
   {JG.Gui.font.base(JG.GuiFontDefault{}) == 10 : U32}
 
+# GuiSetStyle's index is control*24 + property in C's int: a property of 24
+# reaches the next control's row, -1*24 + 30 is 6, and 16*24 is past the
+# table (undefined in raygui, 4294967295).
+law gui_style_index_next_row:
+  {JG.Gui.style.index(1, 24) == 48 : U32}
+
+law gui_style_index_negative_control:
+  {JG.Gui.style.index(4294967295, 30) == 6 : U32}
+
+law gui_style_index_past_table:
+  {JG.Gui.style.index(16, 0) == 4294967295 : U32}
+
+# GuiLoadStyle's sscanf: %d skips spaces and takes a sign (" -12" is -12);
+# 2147483648 is past int (undefined). fgets reads a line through its '\n'.
+law gui_scan_int_negative:
+  {JG.Gui.scan.value(JG.Gui.scan.int([32, 45, 49, 50])) == 4294967284 : U32}
+
+law gui_scan_int_past_int:
+  {JG.Gui.scan.fine(JG.Gui.scan.int([50, 49, 52, 55, 52, 56, 51, 54, 52, 56])) == False{} : Bool}
+
+law gui_rgs_span_through_newline:
+  {JG.Gui.rgs.span(255n, [97, 10, 98], 0) == 2 : U32}
+
 law gui_pick_hover_keeps_drag:
   for gui: JG.Gui
   for bounds: J.Rectangle

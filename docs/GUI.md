@@ -22,7 +22,8 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | raygui | Jongui | Returns |
 |---|---|---|
 | `GuiLoadStyleDefault` | `Gui.new()`, `Gui.style.default()` | the default 16x24 style table (as raygui fills it) |
-| `GuiSetStyle` / `GuiGetStyle` | `Gui.set_style(gui, control, property, value)` / `Gui.get_style(gui, control, property)` | `Gui` / `U32`; a DEFAULT base property (below 16) reaches every control |
+| `GuiSetStyle` / `GuiGetStyle` | `Gui.set_style(gui, control, property, value)` / `Gui.get_style(gui, control, property)` | `Gui` / `U32`; the table entry control*24 + property (a property of 24 or more is the next rows', as in raygui); a DEFAULT base property (below 16) reaches every control |
+| `GuiLoadStyle` | `Gui.load_style(gui, frame, path)` | `IO(Frame & Gui)` (text and binary .rgs files, their fonts loaded into the frame; a binary style's white rectangle sets the shapes texture) |
 | `GuiEnable` / `GuiDisable` | `Gui.enable(gui)` / `Gui.disable(gui)` | `Gui` |
 | `GuiLock` / `GuiUnlock` / `GuiIsLocked` | `Gui.lock`, `Gui.unlock`, `Gui.is_locked` | `Gui` / `Bool` |
 | `GuiSetState` / `GuiGetState` | `Gui.set_state(gui, state)` / `Gui.get_state(gui)` | `Gui` / `U32` |
@@ -198,7 +199,16 @@ example waiting on each raygui function it calls that is not delivered.
 
 ## Gaps
 
-- Not delivered yet: `GuiLoadStyle`.
+- `GuiLoadStyle` marks the frame undefined for what raygui leaves
+  undefined: a `GuiSetStyle` index outside the table, an `sscanf` value
+  outside its type, reads past the file, compressed data that does not
+  inflate to what is read next, a font with no glyphs or a base size below
+  1. Gaps: an `f` line without a charmap name (raygui reads the style's
+  directory as a text file), a sign or a second `0x` in a property's hex
+  value, image formats above 13 and samples Jonlib's images refuse, and a
+  style path past `GetDirectoryPath`'s buffer are refused too; a directory
+  is a file that does not open. `GuiSetStyle` changes nothing for an index
+  outside the table.
 - A gui with a font set rebuilds the font from its copy for each text it
   draws (a word list to an array, a word a pixel of the atlas): correct,
   and slower than raygui's shared pointers for a large atlas.
@@ -336,7 +346,19 @@ font (the text examples' `custom_alagard.png` through `LoadFont`, its
 resources borrowed by the scene): labels, a button with an icon, a toggle
 and a text box hovered and clicked, a label cut by its ellipsis, a label at
 `TEXT_SIZE` 20, a tooltip measured and drawn in the font, and
-`GuiGetFont().baseSize` printed.
+`GuiGetFont().baseSize` printed. `gui_style` covers `GuiLoadStyle` with a
+style file in each script's directory, then a label, a button, a check box,
+a slider bar, a text box, a line and a status bar drawn in it and its
+values printed: a text style (DEFAULT properties that reach every control,
+a line `sscanf` matches only in part, which sets the previous line's values
+again, a property index past a control's row, a line longer than `fgets`'s
+buffer whose second part starts a property, a last line without `\n` that
+is not read, and pixantiqua.ttf at 16), one with a charmap, one whose font
+does not load (the default font with `TEXT_SIZE` 10 and `TEXT_SPACING` 1),
+binary styles with a 95-glyph font raw (version 200) and DEFLATE-compressed
+(version 400) whose white rectangle (gray) tints every shape, one whose
+font image has width 0 (the default font), and two undefined from the
+start (an index outside the table, a binary file cut inside its font).
 
 The `gui-icon-files` gate (`tools/gui_icon_files_probe.py`) compares
 `GuiLoadIcons`, `GuiGetIcons` and `GuiIconText` with raygui without a

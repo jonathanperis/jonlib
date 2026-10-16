@@ -149,18 +149,33 @@ def Gui.get_style(gui: Gui, +control: U32, +property: U32) -> U32:
   Gui{_, _, _, _, _, style, _, _, _, _, _, _} = gui
   Gui.head(List.drop(&2, U32, style, U32.to_nat((control * 24 + property : U32))))
 
-def Gui.style.put(style: +List<U32>, +i: U32, +control: U32, +property: U32, +value: U32) -> +List<U32>:
+# The index GuiSetStyle writes, control*24 + property in C's int arithmetic,
+# or 4294967295 where it overflows or falls outside the 16x24 table
+# (undefined in raygui).
+def Gui.style.index(+control: U32, +property: U32) -> U32:
+  +product = (control * 24 : U32)
+  +sum = (product + property : U32)
+  +np = (product >= 2147483648 : U32)
+  +nq = (property >= 2147483648 : U32)
+  +ns = (sum >= 2147483648 : U32)
+  +wide = Bool.not((control <= 89478485 : U32) || (control >= 4205488811 : U32))
+  +over = (np && nq && Bool.not(ns)) || (Bool.not(np) && Bool.not(nq) && ns)
+  Bool.pick(U32, wide || over || (sum >= 384 : U32), 4294967295, sum)
+
+def Gui.style.put(style: +List<U32>, +i: U32, +index: U32, +control: U32, +property: U32, +value: U32) -> +List<U32>:
   match style:
     case Nil{}: Nil{}
     case Con{+v, rest}:
-      +hit = U32.is_eq((i % 24 : U32), property) && (U32.is_eq((i / 24 : U32), control) || (U32.is_eq(control, 0) && (property < 16 : U32)))
-      Con{Bool.pick(U32, hit, value, v), Gui.style.put(rest, (i + 1 : U32), control, property, value)}
+      +hit = U32.is_eq(i, index) || (U32.is_eq(control, 0) && (property < 16 : U32) && U32.is_eq((i % 24 : U32), property))
+      Con{Bool.pick(U32, hit, value, v), Gui.style.put(rest, (i + 1 : U32), index, control, property, value)}
 
-# GuiSetStyle(control, property, value): a DEFAULT base property (below 16)
-# reaches every control. Nothing changes outside the 16x24 table.
+# GuiSetStyle(control, property, value): guiStyle[control*24 + property]
+# (a property of 24 or more reaches the next controls' rows, as in raygui),
+# and a DEFAULT base property (below 16) every control's. An index outside
+# the table changes nothing (raygui writes outside its array).
 def Gui.set_style(gui: Gui, +control: U32, +property: U32, +value: U32) -> Gui:
   Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons, font} = gui
-  Gui{state, locked, alpha, exclusive, rec, Gui.style.put(style, 0, control, property, value), scale, tips, tip, tipped, icons, font}
+  Gui{state, locked, alpha, exclusive, rec, Gui.style.put(style, 0, Gui.style.index(control, property), control, property, value), scale, tips, tip, tipped, icons, font}
 
 # GuiEnable: STATE_DISABLED becomes STATE_NORMAL.
 def Gui.enable(gui: Gui) -> Gui:
@@ -2165,7 +2180,6 @@ def Gui.list_view_ex(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectan
   Gui.list.barred(use, gui, core, Gui.refused(Bool.not(sound) || (wheel && Bool.not(FontCore.int.valid(delta))), f2), bounds, start1, U32.min((start1 + visible : U32), count), count, visible, selected,
     focused)
 
-
 # -----------------------------------------------------------------------------
 # GuiWindowBox, GuiLabelButton, GuiDummyRec, GuiGrid
 
@@ -3069,3 +3083,619 @@ def Gui.picker_hsv.paneled(+core: J.Core, +bounds: J.Rectangle, r: J.Frame & (Gu
 # HSV. The panel's and the bar's refusals apply.
 def Gui.color_picker_hsv(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, +hsv: M.Vector3) -> J.Frame & (Gui & M.Vector3):
   Gui.picker_hsv.paneled(core, bounds, Gui.color_panel_hsv(gui, core, frame, bounds, None{}, hsv))
+
+# -----------------------------------------------------------------------------
+# GuiLoadStyle
+
+# A file's state while GuiLoadStyle reads it: the gui, the frame (fonts load
+# their textures into it), sscanf's targets of the 'p' lines (they keep their
+# values from one line to the next) and whether everything so far is
+# defined.
+type Gui.Loading is Type:
+  GuiLoading{gui: Gui, frame: J.Frame, control: U32, property: U32, value: U32, fine: Bool}
+
+# fgets(buffer, 256, file): up to 255 bytes, through the first '\n'; complete
+# when fgets stopped before the end of the file (a '\n' or 255 bytes).
+type Gui.Chunk is Data:
+  GuiChunk{bytes: +List<U32>, rest: +List<U32>, complete: Bool}
+
+# How many bytes fgets reads: through the first '\n' within 255, else 255
+# or what is left.
+def Gui.rgs.span(n: Nat, bytes: +List<U32>, +i: U32) -> U32:
+  match n bytes:
+    case 0n _: i
+    case 1n+p Nil{}: i
+    case 1n+p Con{+b, +rest}: Bool.pick(U32, U32.is_eq(b, 10), (i + 1 : U32), Gui.rgs.span(p, rest, (i + 1 : U32)))
+
+def Gui.rgs.cut(+bytes: +List<U32>) -> Gui.Chunk:
+  +length = Gui.rgs.span(255n, bytes, 0)
+  +chunk = TextCore.take(bytes, length)
+  GuiChunk{chunk, TextCore.drop(bytes, length), U32.is_eq(length, 255) || ((length > 0 : U32) && U32.is_eq(Gui.byte(chunk, (length - 1 : U32)), 10))}
+
+# The chunks raygui's loop reads, in order, while fgets does not reach the
+# end of the file; at most n (the file's length bounds them).
+def Gui.rgs.chunks(n: Nat, chunk: Gui.Chunk) -> +List<+List<U32>>:
+  match n:
+    case 0n: Nil{}
+    case 1n+p:
+      GuiChunk{+bytes, +rest, +complete} = chunk
+      match complete:
+        case False{}: Nil{}
+        case True{}: Con{bytes, Gui.rgs.chunks(p, Gui.rgs.cut(rest))}
+
+# sscanf's view of the buffer: the bytes before its first NUL.
+def Gui.scan.text(bytes: +List<U32>) -> +List<U32>:
+  match bytes:
+    case Nil{}: Nil{}
+    case Con{+b, rest}: Bool.pick(+List<U32>, U32.is_eq(b, 0), Nil{}, Con{b, Gui.scan.text(rest)})
+
+def Gui.scan.space(+b: U32) -> Bool:
+  U32.is_eq(b, 32) || ((b >= 9 : U32) && (b <= 13 : U32))
+
+# A whitespace directive (and the skip of %d, %s and %x): every space.
+def Gui.scan.skip(bytes: +List<U32>) -> +List<U32>:
+  match bytes:
+    case Nil{}: Nil{}
+    case Con{+b, +rest}: Bool.pick(+List<U32>, Gui.scan.space(b), Gui.scan.skip(rest), Con{b, rest})
+
+# A conversion: whether it matched, its value, the bytes after it, and
+# whether C defines it (a value out of the target's range is undefined).
+type Gui.Scan is Data:
+  GuiScan{matched: Bool, value: U32, rest: +List<U32>, fine: Bool}
+
+def Gui.scan.digit(+b: U32) -> Bool:
+  (b >= 48 : U32) && (b <= 57 : U32)
+
+# Decimal digits after the sign: the magnitude (capped at 2^31 + 1, which
+# no int holds) and how many.
+def Gui.scan.decimal(n: Nat, bytes: +List<U32>, +acc: U32, +count: U32) -> Gui.Scan:
+  match n bytes:
+    case 0n _: GuiScan{(count > 0 : U32), acc, bytes, True{}}
+    case 1n+p Nil{}: GuiScan{(count > 0 : U32), acc, Nil{}, True{}}
+    case 1n+p Con{+b, +rest}:
+      Bool.pick(Gui.Scan, Gui.scan.digit(b),
+        Gui.scan.decimal(p, rest, Bool.pick(U32, (acc > 214748365 : U32), 2147483649, U32.min(((acc * 10 : U32) + (b - 48) : U32), 2147483649)), (count + 1 : U32)),
+        GuiScan{(count > 0 : U32), acc, Con{b, rest}, True{}})
+
+def Gui.scan.signed(+minus: Bool, scan: Gui.Scan) -> Gui.Scan:
+  GuiScan{+matched, +magnitude, +rest, _} = scan
+  GuiScan{matched, Bool.pick(U32, minus, (0 - magnitude : U32), magnitude), rest, Bool.not(matched) || (magnitude < Bool.pick(U32, minus, 2147483649, 2147483648) : U32)}
+
+def Gui.scan.sign(bytes: +List<U32>) -> Gui.Scan:
+  match bytes:
+    case Nil{}: GuiScan{False{}, 0, Nil{}, True{}}
+    case Con{+b, +rest}:
+      +sign = U32.is_eq(b, 45) || U32.is_eq(b, 43)
+      Gui.scan.signed(U32.is_eq(b, 45), Gui.scan.decimal(1000000n, Bool.pick(+List<U32>, sign, rest, Con{b, rest}), 0, 0))
+
+# %d: spaces, an optional sign, decimal digits; a value outside int is
+# undefined.
+def Gui.scan.int(bytes: +List<U32>) -> Gui.Scan:
+  Gui.scan.sign(Gui.scan.skip(bytes))
+
+def Gui.scan.hex.value(+b: U32) -> U32:
+  Bool.pick(U32, Gui.scan.digit(b), (b - 48 : U32), Bool.pick(U32, (b >= 97 : U32), (b - 87 : U32), (b - 55 : U32)))
+
+def Gui.scan.hex.digit(+b: U32) -> Bool:
+  Gui.scan.digit(b) || ((b >= 97 : U32) && (b <= 102 : U32)) || ((b >= 65 : U32) && (b <= 70 : U32))
+
+def Gui.scan.hex.go(n: Nat, bytes: +List<U32>, +acc: U32, +count: U32, +big: Bool) -> Gui.Scan:
+  match n bytes:
+    case 0n _: GuiScan{(count > 0 : U32), acc, bytes, Bool.not(big)}
+    case 1n+p Nil{}: GuiScan{(count > 0 : U32), acc, Nil{}, Bool.not(big)}
+    case 1n+p Con{+b, +rest}:
+      Bool.pick(Gui.Scan, Gui.scan.hex.digit(b),
+        Gui.scan.hex.go(p, rest, ((acc << 4n : U32) .|. Gui.scan.hex.value(b) : U32), (count + 1 : U32), big || (acc > 268435455 : U32)),
+        GuiScan{(count > 0 : U32), acc, Con{b, rest}, Bool.not(big)})
+
+def Gui.scan.hex.x(bytes: +List<U32>) -> Bool:
+  match bytes:
+    case Nil{}: False{}
+    case Con{+b, _}: U32.is_eq(b, 120) || U32.is_eq(b, 88)
+
+# A sign or a "0x" prefix of its own after the literal "0x" (where glibc and
+# the C standard part ways) is outside what Jongui reads: undefined.
+def Gui.scan.hex.lead(bytes: +List<U32>) -> Bool:
+  match bytes:
+    case Nil{}: False{}
+    case Con{+b, +rest}: U32.is_eq(b, 45) || U32.is_eq(b, 43) || (U32.is_eq(b, 48) && Gui.scan.hex.x(rest))
+
+def Gui.scan.hex.checked(+odd: Bool, scan: Gui.Scan) -> Gui.Scan:
+  GuiScan{+matched, +value, +rest, +fine} = scan
+  GuiScan{matched, value, rest, fine && Bool.not(odd)}
+
+# %x into an unsigned int: spaces, hex digits; past 32 bits is undefined.
+def Gui.scan.hex(bytes: +List<U32>) -> Gui.Scan:
+  +text = Gui.scan.skip(bytes)
+  Gui.scan.hex.checked(Gui.scan.hex.lead(text), Gui.scan.hex.go(1000000n, text, 0, 0, False{}))
+
+# A literal byte of the format: matched, and the bytes after it.
+def Gui.scan.literal(bytes: +List<U32>, +c: U32) -> Gui.Scan:
+  match bytes:
+    case Nil{}: GuiScan{False{}, 0, Nil{}, True{}}
+    case Con{+b, +rest}: GuiScan{U32.is_eq(b, c), 0, rest, True{}}
+
+def Gui.scan.matched(scan: Gui.Scan) -> Bool:
+  GuiScan{matched, _, _, _} = scan
+  matched
+
+def Gui.scan.value(scan: Gui.Scan) -> U32:
+  GuiScan{_, value, _, _} = scan
+  value
+
+def Gui.scan.rest(scan: Gui.Scan) -> +List<U32>:
+  GuiScan{_, _, rest, _} = scan
+  rest
+
+def Gui.scan.fine(scan: Gui.Scan) -> Bool:
+  GuiScan{_, _, _, fine} = scan
+  fine
+
+# A 'p' line, sscanf(buffer, "p %d %d 0x%x", &controlId, &propertyId,
+# &propertyValue): the conversions that match are assigned, in order, then
+# GuiSetStyle runs with the targets as they are (a line that matches
+# nothing sets the previous line's values again).
+def Gui.rgs.property(+chunk: +List<U32>, state: Gui.Loading) -> Gui.Loading:
+  GuiLoading{+gui, frame, +control, +property, +value, +fine} = state
+  +text = Gui.scan.text(chunk)
+  +first = Gui.scan.int(List.drop(&2, U32, text, 1n))
+  +second = Gui.scan.int(Gui.scan.rest(first))
+  +zero = Gui.scan.literal(Gui.scan.skip(Gui.scan.rest(second)), 48)
+  +ex = Gui.scan.literal(Gui.scan.rest(zero), 120)
+  +third = Gui.scan.hex(Gui.scan.rest(ex))
+  +m1 = Gui.scan.matched(first)
+  +m2 = m1 && Gui.scan.matched(second)
+  +literals = m2 && Gui.scan.matched(zero) && Gui.scan.matched(ex)
+  +m3 = literals && Gui.scan.matched(third)
+  +c = Bool.pick(U32, m1, Gui.scan.value(first), control)
+  +p = Bool.pick(U32, m2, Gui.scan.value(second), property)
+  +v = Bool.pick(U32, m3, Gui.scan.value(third), value)
+  +defined = Gui.scan.fine(first) && (Bool.not(m1) || Gui.scan.fine(second)) && (Bool.not(literals) || Gui.scan.fine(third))
+    && U32.is_ne(Gui.style.index(c, p), 4294967295)
+  GuiLoading{Bool.pick(Gui, defined, Gui.set_style(gui, c, p, v), gui), frame, c, p, v, fine && defined}
+
+# %s: spaces, then the bytes up to the next space (at least one).
+def Gui.scan.word(bytes: +List<U32>) -> +List<U32>:
+  match bytes:
+    case Nil{}: Nil{}
+    case Con{+b, +rest}: Bool.pick(+List<U32>, Gui.scan.space(b), Nil{}, Con{b, Gui.scan.word(rest)})
+
+# %[^\r\n]: the bytes up to the next '\r' or '\n'.
+def Gui.scan.line(bytes: +List<U32>) -> +List<U32>:
+  match bytes:
+    case Nil{}: Nil{}
+    case Con{+b, +rest}: Bool.pick(+List<U32>, U32.is_eq(b, 13) || U32.is_eq(b, 10), Nil{}, Con{b, Gui.scan.line(rest)})
+
+# An 'f' line, sscanf(buffer, "f %d %s %[^\r\n]s", &fontSize,
+# charmapFileName, fontFileName): what matched (0 and empty names
+# otherwise) and whether the size is an int.
+type Gui.FontLine is Data:
+  GuiFontLine{size: U32, charmap: +List<U32>, file: +List<U32>, fine: Bool}
+
+def Gui.rgs.font.line(+chunk: +List<U32>) -> Gui.FontLine:
+  +text = Gui.scan.text(chunk)
+  +size = Gui.scan.int(List.drop(&2, U32, text, 1n))
+  +charmap = Bool.pick(+List<U32>, Gui.scan.matched(size), Gui.scan.word(Gui.scan.skip(Gui.scan.rest(size))), Nil{})
+  +after = List.drop(&2, U32, Gui.scan.skip(Gui.scan.rest(size)), U32.to_nat(TextCore.len(charmap)))
+  +file = Bool.pick(+List<U32>, Gui.scan.matched(size) && Bool.not(Gui.empty(charmap)), Gui.scan.line(Gui.scan.skip(after)), Nil{})
+  GuiFontLine{Bool.pick(U32, Gui.scan.matched(size), Gui.scan.value(size), 0), charmap, file, Gui.scan.fine(size)}
+
+def Gui.scan.path_fits(+dir: String, +name: +List<U32>) -> Bool:
+  ((TextCore.len(TextCore.bytes(dir)) + (1 + TextCore.len(name)) : U32) < 1024 : U32)
+
+# TextFormat("%s/%s", GetDirectoryPath(fileName), name): None past
+# TextFormat's 1024-byte buffer.
+def Gui.rgs.path(+dir: String, +name: +List<U32>) -> Maybe<String>:
+  +path = TextCore.glue(TextCore.bytes(dir), Con{47, name})
+  Bool.pick(Maybe<String>, (TextCore.len(path) < 1024 : U32), Some{TextCore.string(path)}, None{})
+
+def Gui.rgs.state.put(+gui: Gui, frame: J.Frame, +control: U32, +property: U32, +value: U32, +fine: Bool) -> Gui.Loading:
+  GuiLoading{gui, frame, control, property, value, fine}
+
+def Gui.rgs.undefined(state: Gui.Loading) -> Gui.Loading:
+  GuiLoading{+gui, frame, +control, +property, +value, _} = state
+  GuiLoading{gui, frame, control, property, value, False{}}
+
+def Gui.rgs.font.set(+control: U32, +property: U32, +value: U32, frame: J.Frame, r: Gui & J.Font) -> Gui.Loading:
+  (+gui, _) = r
+  GuiLoading{gui, frame, control, property, value, True{}}
+
+# The default font, TEXT_SIZE 10 and TEXT_SPACING 1, when the font's texture
+# did not load; GuiSetFont of the default font.
+def Gui.rgs.font.fallback(+gui: Gui, frame: J.Frame, +control: U32, +property: U32, +value: U32) -> Gui.Loading:
+  Gui.rgs.font.set(control, property, value, frame, Gui.set_font(Gui.set_style(Gui.set_style(gui, 0, 16, 10), 0, 17, 1), J.Font.default()))
+
+# A font whose texture loaded: GuiSetFont when it has glyphs.
+def Gui.rgs.font.counted(glyphs: Bool, +gui: Gui, frame: J.Frame, +control: U32, +property: U32, +value: U32, font: J.Font) -> Gui.Loading:
+  match glyphs:
+    case True{}: Gui.rgs.font.set(control, property, value, frame, Gui.set_font(gui, font))
+    case False{}: GuiLoading{gui, frame, control, property, value, True{}}
+
+def Gui.rgs.font.textured(zero: Bool, +count: U32, +gui: Gui, frame: J.Frame, +control: U32, +property: U32, +value: U32, font: J.Font) -> Gui.Loading:
+  match zero:
+    case True{}: Gui.rgs.font.fallback(gui, frame, control, property, value)
+    case False{}: Gui.rgs.font.counted((count > 0 : U32), gui, frame, control, property, value, font)
+
+def Gui.rgs.font.informed(+gui: Gui, frame: J.Frame, +control: U32, +property: U32, +value: U32, r: J.Font & J.FontInfo) -> Gui.Loading:
+  (font, info) = r
+  J.FontInfo{_, +count, _, +id} = info
+  Gui.rgs.font.textured(U32.is_eq(id, 0), count, gui, frame, control, property, value, font)
+
+# LoadFontEx's answer: a file that does not load is raylib's empty font
+# (texture id 0, the fallback); a font LoadFontFromMemory refuses is
+# undefined.
+def Gui.rgs.font.result(+gui: Gui, +control: U32, +property: U32, +value: U32, frame: J.Frame, result: Result<&1, &1, J.Surface.IOError, Maybe<J.Font>>) -> Gui.Loading:
+  match result:
+    case Fail{_}: Gui.rgs.font.fallback(gui, frame, control, property, value)
+    case Done{None{}}: GuiLoading{gui, frame, control, property, value, False{}}
+    case Done{Some{font}}: Gui.rgs.font.informed(gui, frame, control, property, value, J.Font.info(font))
+
+def Gui.rgs.font.loaded(+gui: Gui, +control: U32, +property: U32, +value: U32, r: J.Frame & Result<&1, &1, J.Surface.IOError, Maybe<J.Font>>) -> Gui.Loading:
+  (frame, result) = r
+  Gui.rgs.font.result(gui, control, property, value, frame, result)
+
+# The font file, when the line names one (else raylib's zeroed Font, whose
+# texture id 0 is the fallback).
+def Gui.rgs.state.fallback(state: Gui.Loading) -> Gui.Loading:
+  GuiLoading{+gui, frame, +control, +property, +value, _} = state
+  Gui.rgs.font.fallback(gui, frame, control, property, value)
+
+def Gui.rgs.font.loading(+file: String, +size: U32, +codepoints: +List<U32>, state: Gui.Loading) -> IO(Gui.Loading):
+  GuiLoading{+gui, frame, +control, +property, +value, _} = state
+  IO.bind(J.Frame & Result<&1, &1, J.Surface.IOError, Maybe<J.Font>>, Gui.Loading, J.Font.load_ex(frame, file, size, codepoints, TextCore.len(codepoints)),
+    r => IO.pure(Gui.Loading, Gui.rgs.font.loaded(gui, control, property, value, r)))
+
+def Gui.rgs.font.file(path: Maybe<String>, +named: Bool, +size: U32, +codepoints: +List<U32>, state: Gui.Loading) -> IO(Gui.Loading):
+  match path named:
+    case _ False{}: IO.pure(Gui.Loading, Gui.rgs.state.fallback(state))
+    case None{} True{}: IO.pure(Gui.Loading, Gui.rgs.undefined(state))
+    case Some{file} True{}: Gui.rgs.font.loading(file, size, codepoints, state)
+
+def Gui.rgs.charmap.text(result: Result<&1, &1, J.Surface.IOError, String>) -> +List<U32>:
+  match result:
+    case Fail{_}: Nil{}
+    case Done{text}: J.Codepoint.load(text)
+
+# The charmap: none when its name starts with '0'; else LoadCodepoints of
+# LoadFileText (no codepoints when the file does not load).
+def Gui.rgs.charmap(path: Maybe<String>, +none: Bool) -> IO(+List<U32>):
+  match path none:
+    case _ True{}: IO.pure(+List<U32>, Nil{})
+    case None{} False{}: IO.pure(+List<U32>, Nil{})
+    case Some{file} False{}: IO.bind(Result<&1, &1, J.Surface.IOError, String>, +List<U32>, J.Files.load_text(file), r => IO.pure(+List<U32>, Gui.rgs.charmap.text(r)))
+
+def Gui.rgs.font.run(ok: Bool, +dir: String, +size: U32, +charmap: +List<U32>, +file: +List<U32>, +none: Bool, state: Gui.Loading) -> IO(Gui.Loading):
+  match ok:
+    case False{}: IO.pure(Gui.Loading, Gui.rgs.undefined(state))
+    case True{}: IO.bind(+List<U32>, Gui.Loading, Gui.rgs.charmap(Gui.rgs.path(dir, charmap), none),
+      codepoints => Gui.rgs.font.file(Gui.rgs.path(dir, file), Bool.not(Gui.empty(file)), size, codepoints, state))
+
+def Gui.rgs.font.parsed(line: Gui.FontLine, +dir: String, state: Gui.Loading) -> IO(Gui.Loading):
+  GuiFontLine{+size, +charmap, +file, +fine} = line
+  +none = U32.is_eq(Gui.first(charmap), 48)
+  +paths_fine = (none || Gui.scan.path_fits(dir, charmap)) && (Gui.empty(file) || Gui.scan.path_fits(dir, file))
+  Gui.rgs.font.run(fine && Bool.not(Gui.empty(charmap)) && paths_fine, dir, size, charmap, file, none, state)
+
+# An 'f' line: the charmap's codepoints, then LoadFontEx (95 codepoints from
+# 32 for none) and GuiSetFont, or the default font with TEXT_SIZE 10 and
+# TEXT_SPACING 1. Undefined: a size outside int, a line without a charmap
+# name (raygui reads the directory itself as the charmap), a path past
+# TextFormat's buffer, and a font LoadFontFromMemory refuses.
+def Gui.rgs.font(+chunk: +List<U32>, +dir: String, state: Gui.Loading) -> IO(Gui.Loading):
+  Gui.rgs.font.parsed(Gui.rgs.font.line(chunk), dir, state)
+
+def Gui.rgs.line.by(first: U32, +chunk: +List<U32>, +dir: String, state: Gui.Loading) -> IO(Gui.Loading):
+  match first:
+    case 112: IO.pure(Gui.Loading, Gui.rgs.property(chunk, state))
+    case 102: Gui.rgs.font(chunk, dir, state)
+    case _: IO.pure(Gui.Loading, state)
+
+def Gui.rgs.line.kind(+chunk: +List<U32>, +dir: String, state: Gui.Loading) -> IO(Gui.Loading):
+  Gui.rgs.line.by(Gui.first(chunk), chunk, dir, state)
+
+def Gui.rgs.fine(state: Gui.Loading) -> Gui.Loading & Bool:
+  GuiLoading{+gui, frame, +control, +property, +value, +fine} = state
+  (GuiLoading{gui, frame, control, property, value, fine}, fine)
+
+def Gui.rgs.line.go(fine: Bool, +chunk: +List<U32>, +dir: String, state: Gui.Loading) -> IO(Gui.Loading):
+  match fine:
+    case False{}: IO.pure(Gui.Loading, state)
+    case True{}: Gui.rgs.line.kind(chunk, dir, state)
+
+def Gui.rgs.line.checked(+chunk: +List<U32>, +dir: String, r: Gui.Loading & Bool) -> IO(Gui.Loading):
+  (state, +fine) = r
+  Gui.rgs.line.go(fine, chunk, dir, state)
+
+# raygui's text loop: each chunk by its first byte ('p' a property, 'f' a
+# font, anything else nothing); nothing more once a line is undefined.
+def Gui.rgs.lines(chunks: +List<+List<U32>>, +dir: String, state: Gui.Loading) -> IO(Gui.Loading):
+  match chunks:
+    case Nil{}: IO.pure(Gui.Loading, state)
+    case Con{+chunk, +rest}: IO.bind(Gui.Loading, Gui.Loading, Gui.rgs.line.checked(chunk, dir, Gui.rgs.fine(state)), s => Gui.rgs.lines(rest, dir, s))
+
+# The answer: the gui as loaded and the frame, or the gui as it was and the
+# frame marked undefined.
+def Gui.rgs.done(+before: Gui, state: Gui.Loading) -> J.Frame & Gui:
+  GuiLoading{+gui, frame, _, _, _, +fine} = state
+  (Gui.refused(Bool.not(fine), frame), Bool.pick(Gui, fine, gui, before))
+
+def Gui.rgs.text(dir: Maybe<String>, +bytes: +List<U32>, +gui: Gui, frame: J.Frame) -> IO(J.Frame & Gui):
+  match dir:
+    case None{}: IO.pure(J.Frame & Gui, (J.Frame.refuse(frame), gui))
+    case Some{+d}: IO.bind(Gui.Loading, J.Frame & Gui, Gui.rgs.lines(Gui.rgs.chunks(U32.to_nat((TextCore.len(bytes) + 1 : U32)), Gui.rgs.cut(bytes)), d, GuiLoading{gui, frame, 0, 0, 0, True{}}),
+      s => IO.pure(J.Frame & Gui, Gui.rgs.done(gui, s)))
+
+# ----- The binary format (GuiLoadStyleFromMemory)
+
+# Little-endian reads of the file at an offset; past its end is 0 (the
+# callers check the bounds first).
+def Gui.rgs.u16(+bytes: +List<U32>, +at: U32) -> U32:
+  (Gui.byte(bytes, at) .|. (Gui.byte(bytes, (at + 1 : U32)) << 8n) : U32)
+
+def Gui.rgs.u32(+bytes: +List<U32>, +at: U32) -> U32:
+  (Gui.rgs.u16(bytes, at) .|. (Gui.rgs.u16(bytes, (at + 2 : U32)) << 16n) : U32)
+
+# A short as a C int (sign-extended).
+def Gui.rgs.short(+bytes: +List<U32>, +at: U32) -> U32:
+  +v = Gui.rgs.u16(bytes, at)
+  Bool.pick(U32, (v >= 32768 : U32), (v + 4294901760 : U32), v)
+
+def Gui.f32.of_bits(+bits: U32) -> F32:
+  U32{b} = bits
+  F32{b}
+
+# The properties: GuiSetStyle(controlId, propertyId, value) each, a DEFAULT
+# one also set into every control for a base property; undefined where
+# GuiSetStyle's index is.
+def Gui.rgs.binary.properties(n: Nat, +bytes: +List<U32>, +at: U32, +gui: Gui, +fine: Bool) -> Gui & Bool:
+  match n:
+    case 0n: (gui, fine)
+    case 1n+p:
+      +control = Gui.rgs.short(bytes, at)
+      +property = Gui.rgs.short(bytes, (at + 2 : U32))
+      +value = Gui.rgs.u32(bytes, (at + 4 : U32))
+      +ok = U32.is_ne(Gui.style.index(control, property), 4294967295)
+      Gui.rgs.binary.properties(p, bytes, (at + 8 : U32), Bool.pick(Gui, ok, Gui.set_style(gui, control, property, value), gui), fine && ok)
+
+# The font section, read later: its fields and offsets.
+type Gui.FontBlock is Data:
+  GuiFontBlock{base: U32, count: U32, white: J.Rectangle, uncompressed: U32, compressed: U32, width: U32, height: U32, format: U32, at: U32}
+
+def Gui.rgs.slice(+bytes: +List<U32>, +at: U32, +length: U32) -> +List<U32>:
+  TextCore.take(TextCore.drop(bytes, at), length)
+
+# A block of the file, DEFLATE-compressed when its compressed size is above
+# 0 and differs from its size (DecompressData, MAX_DECOMPRESSION_SIZE 64
+# MiB): its bytes and where the next block starts, None where raygui reads
+# past the file or the data does not inflate to at least `needed` bytes.
+type Gui.Block is Data:
+  GuiBlock{bytes: +List<U32>, next: U32, fine: Bool}
+
+def Gui.rgs.inflated.words(+words: +List<U32>, +needed: U32, +next: U32) -> Gui.Block:
+  GuiBlock{words, next, (TextCore.len(words) >= needed : U32)}
+
+def Gui.rgs.inflated(found: Maybe<List<U32>>, +needed: U32, +next: U32) -> Gui.Block:
+  match found:
+    case None{}: GuiBlock{Nil{}, next, False{}}
+    case Some{list}: Gui.rgs.inflated.words(J.Font.shared.words(list), needed, next)
+
+def Gui.rgs.block(+bytes: +List<U32>, +at: U32, +size: U32, +compressed: U32, +needed: U32) -> Gui.Block:
+  +n = TextCore.len(bytes)
+  +packed = (compressed > 0 : U32) && (compressed < 2147483648 : U32) && U32.is_ne(compressed, size)
+  +fits_packed = (at <= n : U32) && (compressed <= (n - at) : U32)
+  +fits_raw = (size < 2147483648 : U32) && (at <= n : U32) && (size <= (n - at) : U32) && (size >= needed : U32)
+  Bool.pick(Gui.Block, packed,
+    Bool.pick(Gui.Block, fits_packed, Gui.rgs.inflated(J.Compression.decompress(Gui.rgs.slice(bytes, at, compressed), 67108864), needed, (at + compressed : U32)), GuiBlock{Nil{}, at, False{}}),
+    GuiBlock{Gui.rgs.slice(bytes, at, size), (at + size : U32), fits_raw})
+
+def Gui.rgs.block.bytes(block: Gui.Block) -> +List<U32>:
+  GuiBlock{bytes, _, _} = block
+  bytes
+
+def Gui.rgs.block.next(block: Gui.Block) -> U32:
+  GuiBlock{_, next, _} = block
+  next
+
+def Gui.rgs.block.fine(block: Gui.Block) -> Bool:
+  GuiBlock{_, _, fine} = block
+  fine
+
+# Glyph i: its value and offsets from the glyph data, its rectangle from the
+# recs data (four floats).
+def Gui.rgs.glyphs(n: Nat, +recs: +List<U32>, +infos: +List<U32>, +i: U32) -> +List<FontCore.Glyph>:
+  match n:
+    case 0n: Nil{}
+    case 1n+p:
+      +r = (16 * i : U32)
+      Con{FontCore.Glyph{Gui.rgs.u32(infos, r), Gui.rgs.u32(infos, (r + 4 : U32)), Gui.rgs.u32(infos, (r + 8 : U32)), Gui.rgs.u32(infos, (r + 12 : U32)),
+          Gui.f32.of_bits(Gui.rgs.u32(recs, r)), Gui.f32.of_bits(Gui.rgs.u32(recs, (r + 4 : U32))), Gui.f32.of_bits(Gui.rgs.u32(recs, (r + 8 : U32))), Gui.f32.of_bits(Gui.rgs.u32(recs, (r + 12 : U32)))},
+        Gui.rgs.glyphs(p, recs, infos, (i + 1 : U32))}
+
+def Gui.rgs.white.taken(r: J.Frame & (Maybe<J.Texture> & Maybe<J.Texture>)) -> J.Frame:
+  (frame, _) = r
+  frame
+
+def Gui.rgs.texture(font: J.Font) -> J.Texture:
+  J.Font{_, _, _, texture, _} = font
+  texture
+
+# The white rectangle: SetShapesTexture(font.texture, fontWhiteRec) when all
+# four fields are above 0.
+def Gui.rgs.white.set(white: Bool, frame: J.Frame, +rec: J.Rectangle, font: J.Font) -> J.Frame:
+  match white:
+    case False{}: frame
+    case True{}: Gui.rgs.white.taken(J.Frame.set_shapes_texture(frame, Some{Gui.rgs.texture(font)}, rec))
+
+def Gui.rgs.white.positive(rec: J.Rectangle) -> Bool:
+  J.Rectangle{+x, +y, +w, +h} = rec
+  (x > 0.0 : F32) && (y > 0.0 : F32) && (w > 0.0 : F32) && (h > 0.0 : F32)
+
+def Gui.rgs.font.applied(+white: J.Rectangle, frame: J.Frame, r: Gui & J.Font) -> J.Frame & Gui:
+  (+gui, font) = r
+  (Gui.rgs.white.set(Gui.rgs.white.positive(white), frame, white, font), gui)
+
+def Gui.rgs.block.white(block: Gui.FontBlock) -> J.Rectangle:
+  GuiFontBlock{_, _, white, _, _, _, _, _, _} = block
+  white
+
+def Gui.rgs.font.glyphed(fine: Bool, +gui: Gui, frame: J.Frame, font: J.Font, +white: J.Rectangle) -> J.Frame & Gui:
+  match fine:
+    case False{}: (J.Frame.refuse(frame), gui)
+    case True{}: Gui.rgs.font.applied(white, frame, Gui.set_font(gui, font))
+
+def Gui.rgs.atlas(found: Maybe<J.Surface>) -> J.Surface:
+  match found:
+    case Some{s}: s
+    case None{}: J.Surface{0, 0, 7, J.Words{Array.new(U32, 0n, 0)}}
+
+# The recs and glyph blocks after the texture: version 400 and later give
+# each one's compressed size first.
+def Gui.rgs.font.with_texture(t: J.Texture, +gui: Gui, frame: J.Frame, +bytes: +List<U32>, +block: Gui.FontBlock, +version: U32, +atlas: +List<U32>) -> J.Frame & Gui:
+  GuiFontBlock{+base, +count, +white, _, _, +width, +height, +format, +at} = block
+  +modern = (version >= 400 : U32) && (version < 32768 : U32)
+  +n = TextCore.len(bytes)
+  +recs_at = Bool.pick(U32, modern, (at + 4 : U32), at)
+  +recs = Gui.rgs.block(bytes, recs_at, (16 * count : U32), Bool.pick(U32, modern, Gui.rgs.u32(bytes, at), 0), (16 * count : U32))
+  +glyphs_at = Gui.rgs.block.next(recs)
+  +infos = Gui.rgs.block(bytes, Bool.pick(U32, modern, (glyphs_at + 4 : U32), glyphs_at), (16 * count : U32), Bool.pick(U32, modern, Gui.rgs.u32(bytes, glyphs_at), 0), (16 * count : U32))
+  +fine = (Bool.not(modern) || ((at + 4 : U32) <= n : U32)) && Gui.rgs.block.fine(recs) && (Bool.not(modern) || ((glyphs_at + 4 : U32) <= n : U32)) && Gui.rgs.block.fine(infos)
+  Gui.rgs.font.glyphed(fine, gui, frame, J.Font{base, 0, Gui.rgs.glyphs(U32.to_nat(count), Gui.rgs.block.bytes(recs), Gui.rgs.block.bytes(infos), 0), t,
+    Gui.rgs.atlas(J.Surface.from_bytes(width, height, format, atlas))}, white)
+
+# The font block once its texture is loaded, or GetFontDefault when it is
+# not (raygui's fallback).
+def Gui.rgs.atlas.textured(texture: Maybe<J.Texture>, +gui: Gui, frame: J.Frame, +bytes: +List<U32>, +block: Gui.FontBlock, +version: U32, +atlas: +List<U32>) -> J.Frame & Gui:
+  match texture:
+    case None{}: Gui.rgs.font.applied(Gui.rgs.block.white(block), frame, Gui.set_font(gui, J.Font.default()))
+    case Some{t}: Gui.rgs.font.with_texture(t, gui, frame, bytes, block, version, atlas)
+
+def Gui.rgs.font.texture_loaded(r: J.Frame & Maybe<J.Texture>, +gui: Gui, +bytes: +List<U32>, +block: Gui.FontBlock, +version: U32, +pixels: +List<U32>) -> J.Frame & Gui:
+  (frame, texture) = r
+  Gui.rgs.atlas.textured(texture, gui, frame, bytes, block, version, pixels)
+
+def Gui.rgs.font.surface(found: Maybe<J.Surface>, +gui: Gui, frame: J.Frame, +bytes: +List<U32>, +block: Gui.FontBlock, +version: U32, +pixels: +List<U32>) -> J.Frame & Gui:
+  match found:
+    case None{}: (J.Frame.refuse(frame), gui)
+    case Some{s}: Gui.rgs.font.texture_loaded(J.Texture.load_from_image(frame, s), gui, bytes, block, version, pixels)
+
+def Gui.rgs.block.at(+block: Gui.FontBlock, +at: U32) -> Gui.FontBlock:
+  GuiFontBlock{+base, +count, +white, +uncompressed, +compressed, +width, +height, +format, _} = block
+  GuiFontBlock{base, count, white, uncompressed, compressed, width, height, format, at}
+
+# The image: a width or height of 0 is LoadTextureFromImage's id 0 (the
+# default font); otherwise its pixels, which must be at least the format's
+# data size.
+def Gui.rgs.font.sized(zero: Bool, +gui: Gui, frame: J.Frame, +bytes: +List<U32>, +block: Gui.FontBlock, +version: U32, +pixels: +List<U32>, +width: U32, +height: U32, +format: U32) -> J.Frame & Gui:
+  match zero:
+    case True{}: Gui.rgs.atlas.textured(None{}, gui, frame, bytes, block, version, pixels)
+    case False{}: Gui.rgs.font.surface(J.Surface.from_bytes(width, height, format, pixels), gui, frame, bytes, block, version, pixels)
+
+def Gui.rgs.font.pixels(fine: Bool, +zero: Bool, +gui: Gui, frame: J.Frame, +bytes: +List<U32>, +block: Gui.FontBlock, +version: U32, +image: Gui.Block, +needed: U32) -> J.Frame & Gui:
+  match fine:
+    case False{}: (J.Frame.refuse(frame), gui)
+    case True{}:
+      GuiFontBlock{_, _, _, _, _, +width, +height, +format, _} = block
+      +pixels = TextCore.take(Gui.rgs.block.bytes(image), needed)
+      +next = Gui.rgs.block.at(block, Gui.rgs.block.next(image))
+      Gui.rgs.font.sized(zero, gui, frame, bytes, next, version, pixels, width, height, format)
+
+def Gui.rgs.pixels.of(found: Maybe<&2, U32>) -> U32:
+  match found:
+    case None{}: 4294967295
+    case Some{v}: v
+
+def Gui.rgs.font.image(+bytes: +List<U32>, +block: Gui.FontBlock, +version: U32, +gui: Gui, frame: J.Frame) -> J.Frame & Gui:
+  GuiFontBlock{+base, +count, _, +uncompressed, +compressed, +width, +height, +format, +at} = block
+  +zero = U32.is_eq(width, 0) || U32.is_eq(height, 0)
+  +needed = Bool.pick(U32, zero, 0, Gui.rgs.pixels.of(J.Pixel.data_size(width, height, format)))
+  +sound = (base > 0 : U32) && (base < 2147483648 : U32) && (count > 0 : U32) && (count <= 134217727 : U32) && (width < 2147483648 : U32) && (height < 2147483648 : U32)
+    && (format >= 1 : U32) && (format <= 13 : U32) && U32.is_ne(needed, 4294967295)
+  +image = Gui.rgs.block(bytes, at, uncompressed, compressed, needed)
+  Gui.rgs.font.pixels(sound && Gui.rgs.block.fine(image), zero, gui, frame, bytes, block, version, image, needed)
+
+# The font block's header after fontDataSize: baseSize, glyphCount,
+# fontType (unused), fontWhiteRec, the image's uncompressed and compressed
+# sizes, and its width, height and format; then the image data.
+def Gui.rgs.font.block(+bytes: +List<U32>, +at: U32) -> Gui.FontBlock:
+  GuiFontBlock{Gui.rgs.u32(bytes, at), Gui.rgs.u32(bytes, (at + 4 : U32)),
+    J.Rectangle{Gui.f32.of_bits(Gui.rgs.u32(bytes, (at + 12 : U32))), Gui.f32.of_bits(Gui.rgs.u32(bytes, (at + 16 : U32))), Gui.f32.of_bits(Gui.rgs.u32(bytes, (at + 20 : U32))), Gui.f32.of_bits(Gui.rgs.u32(bytes, (at + 24 : U32)))},
+    Gui.rgs.u32(bytes, (at + 28 : U32)), Gui.rgs.u32(bytes, (at + 32 : U32)), Gui.rgs.u32(bytes, (at + 36 : U32)), Gui.rgs.u32(bytes, (at + 40 : U32)), Gui.rgs.u32(bytes, (at + 44 : U32)), (at + 48 : U32)}
+
+def Gui.rgs.font.header(fits: Bool, +bytes: +List<U32>, +at: U32, +version: U32, +gui: Gui, frame: J.Frame) -> J.Frame & Gui:
+  match fits:
+    case False{}: (J.Frame.refuse(frame), gui)
+    case True{}: Gui.rgs.font.image(bytes, Gui.rgs.font.block(bytes, at), version, gui, frame)
+
+# fontDataSize above 0: a font follows.
+def Gui.rgs.binary.fonted(has: Bool, +bytes: +List<U32>, +at: U32, +version: U32, +gui: Gui, frame: J.Frame) -> J.Frame & Gui:
+  match has:
+    case False{}: (frame, gui)
+    case True{}: Gui.rgs.font.header(((at + 52 : U32) <= TextCore.len(bytes) : U32), bytes, (at + 4 : U32), version, gui, frame)
+
+def Gui.rgs.binary.kept(fine: Bool, +before: Gui, +gui: Gui, +bytes: +List<U32>, +at: U32, +version: U32, frame: J.Frame) -> J.Frame & Gui:
+  match fine:
+    case False{}: (J.Frame.refuse(frame), before)
+    case True{}:
+      +size = Gui.rgs.u32(bytes, at)
+      Gui.rgs.binary.fonted((size > 0 : U32) && (size < 2147483648 : U32), bytes, at, version, gui, frame)
+
+def Gui.rgs.binary.styled(+before: Gui, +bytes: +List<U32>, +at: U32, +version: U32, frame: J.Frame, r: Gui & Bool) -> J.Frame & Gui:
+  (+gui, +fine) = r
+  Gui.rgs.binary.kept(fine, before, gui, bytes, at, version, frame)
+
+def Gui.rgs.binary.props(fits: Bool, +bytes: +List<U32>, +count: U32, +version: U32, +gui: Gui, frame: J.Frame) -> J.Frame & Gui:
+  match fits:
+    case False{}: (J.Frame.refuse(frame), gui)
+    case True{}: Gui.rgs.binary.styled(gui, bytes, (12 + 8 * count : U32), version, frame, Gui.rgs.binary.properties(U32.to_nat(count), bytes, 12, gui, True{}))
+
+# A signed file: the property count (none when negative), the properties,
+# then fontDataSize; undefined where raygui reads past the file.
+def Gui.rgs.binary.signed(+bytes: +List<U32>, +gui: Gui, frame: J.Frame) -> J.Frame & Gui:
+  +n = TextCore.len(bytes)
+  +raw = Gui.rgs.u32(bytes, 8)
+  +count = Bool.pick(U32, (raw >= 2147483648 : U32), 0, raw)
+  Gui.rgs.binary.props((n >= 16 : U32) && (count <= ((n - 16 : U32) / 8 : U32) : U32), bytes, count, Gui.rgs.short(bytes, 4), gui, frame)
+
+def Gui.rgs.binary.kind(kind: U32, +bytes: +List<U32>, +gui: Gui, frame: J.Frame) -> J.Frame & Gui:
+  match kind:
+    case 0: (frame, gui)
+    case 1: (J.Frame.refuse(frame), gui)
+    case _: Gui.rgs.binary.signed(bytes, gui, frame)
+
+# GuiLoadStyleFromMemory: nothing for an empty file or another signature
+# than "rGS "; a file shorter than its 12-byte header is undefined.
+def Gui.rgs.binary(+bytes: +List<U32>, +gui: Gui, frame: J.Frame) -> J.Frame & Gui:
+  +n = TextCore.len(bytes)
+  +signed = U32.is_eq(Gui.byte(bytes, 0), 114) && U32.is_eq(Gui.byte(bytes, 1), 71) && U32.is_eq(Gui.byte(bytes, 2), 83) && U32.is_eq(Gui.byte(bytes, 3), 32)
+  Gui.rgs.binary.kind(Bool.pick(U32, U32.is_eq(n, 0), 0, Bool.pick(U32, (n < 12 : U32), 1, Bool.pick(U32, signed, 2, 0))), bytes, gui, frame)
+
+def Gui.style.kind(text: Bool, +bytes: +List<U32>, +path: String, +gui: Gui, frame: J.Frame) -> IO(J.Frame & Gui):
+  match text:
+    case True{}: Gui.rgs.text(J.Files.directory(path), bytes, gui, frame)
+    case False{}: IO.pure(J.Frame & Gui, Gui.rgs.binary(bytes, gui, frame))
+
+def Gui.style.file(r: Result<&1, &1, J.Surface.IOError, +List<U32>>, +path: String, +gui: Gui, frame: J.Frame) -> IO(J.Frame & Gui):
+  match r:
+    case Fail{_}: IO.pure(J.Frame & Gui, (frame, gui))
+    case Done{+bytes}: Gui.style.kind(U32.is_eq(Gui.first(bytes), 35), bytes, path, gui, frame)
+
+# GuiLoadStyle(fileName) over the gui, with the frame (a style's font loads
+# its texture into it, and a binary style may set the shapes texture). A
+# file whose first byte is '#' is read as text: each line (fgets's chunks of
+# up to 255 bytes; a last line without '\n' is not read) by its first
+# byte, 'p' a property ("p <control> <property> 0x<value>" through sscanf,
+# whose targets keep their values from one line to the next) and 'f' a font
+# ("f <size> <charmap or 0> <font file>", relative to the style's
+# directory). Any other file is the binary format: "rGS ", version,
+# reserved, the property count and the properties, then an optional font
+# (its atlas image, rects and glyphs, raw or DEFLATE-compressed; the white
+# rectangle, when positive, becomes the shapes texture's source). A file
+# that does not open changes nothing. What raygui leaves undefined marks the
+# frame undefined: GuiSetStyle indices outside
+# the table, sscanf values outside their types, reads past the file,
+# compressed data that does not inflate to what the next step reads, a
+# font with no glyphs or a base size below 1, and (gaps) image formats
+# above 13, samples Jonlib's images refuse, an 'f' line without a charmap
+# name and a style path past GetDirectoryPath's buffer.
+def Gui.load_style(gui: Gui, frame: J.Frame, +path: String) -> IO(J.Frame & Gui):
+  IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, J.Frame & Gui, J.Files.load_data(path), r => Gui.style.file(r, path, gui, frame))
