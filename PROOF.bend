@@ -2849,6 +2849,15 @@ def Laws.gui_scan_int_past_int():
 def Laws.gui_rgs_span_through_newline():
   {==}
 
+def Laws.macro_rlgl_texture_wrap_s():
+  {==}
+
+def Laws.macro_mouse_left_button_is_its_enumerator():
+  {==}
+
+def Laws.macro_shader_loc_map_diffuse_is_albedo():
+  {==}
+
 def Laws.gui_pick_hover_keeps_drag(gui, bounds):
   {==}
 

@@ -8,8 +8,8 @@ Each row inherits its milestone verification recipe and the six completion gates
 | Stable ID / source | Kind | Reference contract | Bend mapping | Status | Step |
 |---|---|---|---|---|---|
 | [`rgestures:macro:RGESTURES_H`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/rgestures.h#L44) | macro | `#define RGESTURES_H` | `Config.RGESTURES_H` (proposed) | not-started | `configuration` |
-| [`rgestures:macro:PI`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/rgestures.h#L47) | macro | `#define PI 3.14159265358979323846` | `Math.PI` (proposed) | not-started | `numerics` |
-| [`rgestures:macro:MAX_TOUCH_POINTS`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/rgestures.h#L54) | macro | `#define MAX_TOUCH_POINTS 8` | `Config.MAX_TOUCH_POINTS` (proposed) | not-started | `configuration` |
+| [`rgestures:macro:PI`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/rgestures.h#L47) | macro | `#define PI 3.14159265358979323846` | `Math.PI` (implemented) | partial | `numerics` |
+| [`rgestures:macro:MAX_TOUCH_POINTS`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/rgestures.h#L54) | macro | `#define MAX_TOUCH_POINTS 8` | `Config.MAX_TOUCH_POINTS` (implemented) | partial | `configuration` |
 | [`rgestures:switch:RL_BOOL_TYPE`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/rgestures.h#L64) | switch | `#elif !defined(__cplusplus) && !defined(bool) && !defined(RL_BOOL_TYPE)` | `Config.RL_BOOL_TYPE` (proposed) | not-started | `configuration` |
 | [`rgestures:enum:bool`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/rgestures.h#L65) | enum | `bool — false = 0; true = !false` | `Bool` (implemented) | partial | `types` |
 | [`rgestures:enumerator:false`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/rgestures.h#L65) | enumerator | `false = 0` | `False{}` (implemented) | partial | `types` |

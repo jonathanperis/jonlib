@@ -128,6 +128,18 @@ constants named as in their header under their enum, e.g.
 `jonlib.bend` by `tools/enums_probe.py --write` and checked against each
 compiled header (gate `enums`). rgestures.h's and rcamera.h's standalone copies
 of raylib.h enums share its constants. C's `bool` is Base's `Bool`.
+The value macros of raylib.h, rlgl.h, rcamera.h and rgestures.h are constants
+named as the API ledger proposes for their work package (docs/MODULES.md):
+`Rlgl.RL_TEXTURE_WRAP_S()` (U32), `Rlgl.RL_CULL_DISTANCE_NEAR()` (M.Float64,
+a C double), `Config.MOUSE_LEFT_BUTTON()` (a macro naming an enumerator has
+the enumerator's value), `Config.JONLIB_VERSION()` (raylib's
+`RAYLIB_VERSION`, the release Jonlib ports, branded as project configuration
+is) and `Math.PI()` (rgestures.h's double). They are generated into the
+section before the enumerations by `tools/macros_probe.py --write` and checked
+against each header compiled in Jonlib's configuration (rlgl.h with
+`GRAPHICS_API_OPENGL_SOFTWARE`, rcamera.h and rgestures.h standalone; gate
+`macros`). The color macros and raylib's and raymath's math macros are
+Jonlib's `Color.*` and Jonmath's `M.Math.*`.
 
 ## Shared types
 
