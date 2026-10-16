@@ -510,7 +510,23 @@
    ]
   },
   "GuiProgressBar": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.progress_bar",
+   "scope": "The bar value/(maxValue - minValue) of the inside wide (from the right with PROGRESS_SIDE 1), a value above maxValue capped, the border BORDER_COLOR_FOCUSED along the bar and BORDER_COLOR_NORMAL past it, both side texts; no input.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/models_animation_timing.bend",
+    "examples/models_animation_blending.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "The disabled state is not compared with raygui yet",
+    "A NULL value (half the range natively) has no counterpart",
+    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiStatusBar": {
    "status": "partial",

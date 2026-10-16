@@ -5169,9 +5169,7 @@
     "GuiSetStyle",
     "GuiSlider"
    ],
-   "missing": [
-    "GuiProgressBar"
-   ]
+   "missing": []
   },
   {
    "name": "models_animation_timing",
@@ -5212,9 +5210,7 @@
     "GuiSetStyle",
     "GuiSlider"
    ],
-   "missing": [
-    "GuiProgressBar"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_ascii_rendering",
