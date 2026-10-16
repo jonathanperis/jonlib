@@ -91,7 +91,7 @@ SHIM = ROOT / 'tools/reference/example_driver.h'
 AUDIO_CLOCK_UNIT = ROOT / 'tools/reference/audio_clock.c'
 WIDTH, HEIGHT = 800, 450
 # Examples whose InitWindow is not 800x450.
-SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation': (720, 400), 'gui_window_grid': (400, 300), 'gui_toggle_combo_list': (400, 300)}
+SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation': (720, 400), 'gui_window_grid': (400, 300), 'gui_toggle_combo_list': (400, 300), 'gui_message_tabs': (500, 300)}
 SIZES['shaders_rlgl_compute'] = (768, 768)
 
 
@@ -348,6 +348,7 @@ EXAMPLES = {
 GUI_SCENES = {
     'gui_window_grid': ('jonlib/gui/gui_window_grid.c', 'Ex.setup(core, frame)'),
     'gui_toggle_combo_list': ('jonlib/gui/gui_toggle_combo_list.c', 'Ex.setup(core, frame)'),
+    'gui_message_tabs': ('jonlib/gui/gui_message_tabs.c', 'Ex.setup(core, frame)'),
 }
 EXAMPLES.update(GUI_SCENES)
 
@@ -1519,6 +1520,15 @@ def scripts():
                                                            quick([mouse_at(300, 100)]), quick([button(0)]), quick([button(0, False)]),
                                                            quick([mouse_at(60, 150)]), quick([button(0)]), quick([button(0, False)]),
                                                            quick([mouse_at(300, 170)]), slow()]))
+    # The first tab clicked, the last one (the bar then moves left by 240), a tab's close button after the move, a middle press
+    # over a tab; the message box's second and third buttons and its close button; the disabled box pressed.
+    out.append(script('gui_message_tabs', 'controls', [quick(), quick([mouse_at(80, 12)]), quick([button(0)]), quick([button(0, False)]),
+                                                      quick([mouse_at(470, 12)]), quick([button(0)]), slow([button(0, False)]), quick([mouse_at(200, 10)]),
+                                                      quick([button(0)]), quick([button(0, False)]), quick([mouse_at(100, 12)]), quick([button(2)]),
+                                                      quick([button(2, False)]), quick([mouse_at(200, 195)]), quick([button(0)]), quick([button(0, False)]),
+                                                      quick([mouse_at(300, 195)]), quick([button(0)]), quick([button(0, False)]), quick([mouse_at(347, 72)]),
+                                                      quick([button(0)]), quick([button(0, False)]), quick([mouse_at(430, 140)]), quick([button(0)]),
+                                                      slow([button(0, False)])]))
     repeated = sorted({item['name'] for item in out if sum(other['name'] == item['name'] for other in out) > 1})
     if repeated:
         raise ProbeFailure(f'examples: script names used more than once: {repeated}')

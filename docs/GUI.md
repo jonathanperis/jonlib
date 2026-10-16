@@ -55,6 +55,8 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiGrid` | `Gui.grid(gui, core, frame, bounds, text, spacing, subdivs)` | `Frame & Vector2` (the cell under the pointer, or (-1, -1); `subdivs` is a C int as a word) |
 | `GuiToggleSlider` | `Gui.toggle_slider(gui, core, frame, bounds, text, active)` | `Frame & (U32 & Bool)` (the active item, moved on by a release) |
 | `GuiComboBox` | `Gui.combo_box(gui, core, frame, bounds, text, active)` | `Frame & U32` (the active item, moved on by a press over the box or its button) |
+| `GuiTabBar` | `Gui.tab_bar(gui, core, frame, bounds, items, active)` | `Frame & (U32 & U32)` (the active tab, and the tab whose close button was clicked or that a middle press is over, or -1, as int bits) |
+| `GuiMessageBox` | `Gui.message_box(gui, core, frame, bounds, title, message, buttons)` | `Frame & U32` (0 for the close button, a button's number from 1, or -1 as 4294967295) |
 | `GuiListView` | `Gui.list_view(gui, core, frame, bounds, text, scroll, active)` | `Frame & (Gui & (U32 & U32))` (`GuiListViewEx` over the items of `text`, `None` for NULL; the scroll index and active item as words) |
 
 Two additions have no raygui counterpart. They run a row of controls in order
@@ -181,8 +183,8 @@ example waiting on each raygui function it calls that is not delivered.
 
 ## Gaps
 
-- Not delivered yet: `GuiTextBoxMulti`, `GuiValueBoxFloat`, `GuiTabBar`,
-  `GuiColor*`, `GuiMessageBox`, `GuiTextInputBox`, the style file loaders, `GuiSetFont` and `GuiGetFont`'s
+- Not delivered yet: `GuiTextBoxMulti`, `GuiValueBoxFloat`,
+  `GuiColor*`, `GuiTextInputBox`, the style file loaders, `GuiSetFont` and `GuiGetFont`'s
   Font (its base size is `Gui.font_base_size`),
   `GuiDrawIcon`/`GuiIconText` as functions, `GuiLoadIcons` and tooltips.
 - An icon id above 255 reads past raygui's table and marks the frame
@@ -280,4 +282,8 @@ released three times, to its last item and back to the first; its text
 centered over the whole text's width), `GuiComboBox` (pressed on its box and
 on its selector button, which draws as a button of its own), `GuiListView`
 (an item chosen, the list scrolled by the wheel, another chosen) and the
-three disabled, the list view with a NULL text.
+three disabled, the list view with a NULL text. `gui_message_tabs` covers
+`GuiTabBar` with more tabs than the window holds (a tab clicked, the last one
+clicked so that the bar moves left, a tab's close button and a middle press)
+and `GuiMessageBox` (its buttons and its close button, a two-line message, an
+icon in the title, and a disabled box with a NULL title).
