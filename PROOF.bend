@@ -2786,6 +2786,12 @@ def Laws.gui_item_at_second():
 def Laws.gui_item_at_past_the_last():
   {==}
 
+def Laws.gui_message_button_number(frame):
+  {==}
+
+def Laws.gui_message_unclicked_keeps_result(frame):
+  {==}
+
 def Laws.gui_grid_lines_counted():
   {==}
 

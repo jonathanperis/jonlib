@@ -2114,3 +2114,113 @@ def Gui.list_view(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle
     case Some{+t}:
       +items = Gui.split(TextCore.bytes(t), 59, 0, Nil{})
       Gui.list_view.of((Gui.drop.count(items, 0) < 128 : U32) && (TextCore.len(TextCore.bytes(t)) < 1024 : U32), gui, core, frame, bounds, Gui.list.strings(items, Nil{}), scroll, active)
+
+# -----------------------------------------------------------------------------
+# GuiMessageBox, GuiTabBar
+
+# A row of controls drawn so far: the frame and an int result (as its bits).
+type Gui.Buttons is Type:
+  GuiButtons{frame: J.Frame, result: U32}
+
+def Gui.buttons.pair(row: Gui.Buttons) -> J.Frame & U32:
+  GuiButtons{frame, +result} = row
+  (frame, result)
+
+def Gui.message.step(+i: U32, +result: U32, r: J.Frame & Bool) -> Gui.Buttons:
+  (frame, +clicked) = r
+  GuiButtons{frame, Bool.pick(U32, clicked, (i + 1 : U32), result)}
+
+# The message box's buttons in a row, each `w` wide and 12 apart: the clicked
+# one's number (from 1), or the result so far.
+def Gui.message.buttons(items: +List<Gui.Item>, +gui: Gui, +core: J.Core, +x: F32, +y: F32, +w: F32, +i: U32, row: Gui.Buttons) -> Gui.Buttons:
+  match items:
+    case Nil{}: row
+    case Con{+item, rest}:
+      GuiButtons{frame, +result} = row
+      Gui.message.buttons(rest, gui, core, ((x + w : F32) + 12.0 : F32), y, w, (i + 1 : U32),
+        Gui.message.step(i, result, Gui.button(gui, core, frame, J.Rectangle{x, y, w, 24.0}, TextCore.string(Gui.item.bytes(item)))))
+
+def Gui.message.closed(+gui: Gui, +core: J.Core, +x: F32, +y: F32, +w: F32, +h: F32, +message: String, +items: +List<Gui.Item>, +bw: F32, r: J.Frame & Bool) -> J.Frame & U32:
+  (frame, +closed) = r
+  f1 = Gui.label(Gui.set_style(gui, 1, 14, 1), frame, J.Rectangle{(x + 12.0 : F32), ((y + 24.0 : F32) + 12.0 : F32), (w - 24.0 : F32), (((h - 24.0 : F32) - 36.0 : F32) - 24.0 : F32)}, message)
+  Gui.buttons.pair(Gui.message.buttons(items, Gui.set_style(gui, 2, 14, 1), core, (x + 12.0 : F32), (((y + h : F32) - 24.0 : F32) - 12.0 : F32), bw, 0,
+    GuiButtons{f1, Bool.pick(U32, closed, 0, 4294967295)}))
+
+def Gui.message.run(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, title: Maybe<String>, +message: String, +items: +List<Gui.Item>, +count: U32) -> J.Frame & U32:
+  J.Rectangle{+x, +y, +w, +h} = bounds
+  +bw = ((w - U32.to_f32((12 * (count + 1) : U32)) : F32) / U32.to_f32(count) : F32)
+  Gui.message.closed(gui, core, x, y, w, h, message, items, bw, Gui.window_box(gui, core, frame, J.Rectangle{x, y, w, h}, title))
+
+def Gui.message.of(fine: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, title: Maybe<String>, +message: String, +items: +List<Gui.Item>, +count: U32) -> J.Frame & U32:
+  match fine:
+    case False{}: (J.Frame.refuse(frame), 4294967295)
+    case True{}: Gui.message.run(gui, core, frame, bounds, title, message, items, count)
+
+# GuiMessageBox(bounds, title, message, buttons): a GuiWindowBox, the message
+# centered in a label below its bar (12 pixels in, 24 + 36 + 24 pixels less
+# high than the box), and the ';'-separated buttons in a row along the
+# bottom, centered, 24 high and 12 apart. The frame and raygui's result: 0
+# for the close button, a button's number from 1, or -1 (4294967295). A
+# buttons text of 1024 bytes or more or 128 items or more marks the frame
+# undefined.
+def Gui.message_box(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, title: Maybe<String>, +message: String, +buttons: String) -> J.Frame & U32:
+  +items = Gui.split(TextCore.bytes(buttons), 59, 0, Nil{})
+  +count = Gui.drop.count(items, 0)
+  Gui.message.of((count < 128 : U32) && (TextCore.len(TextCore.bytes(buttons)) < 1024 : U32), gui, core, frame, bounds, title, message, items, count)
+
+# The tab bar so far: the frame, the active tab and raygui's result.
+type Gui.Tabs is Type:
+  GuiTabs{frame: J.Frame, active: U32, result: U32}
+
+def Gui.tabs.closed(+i: U32, +active: U32, +result: U32, r: J.Frame & Bool) -> Gui.Tabs:
+  (frame, +clicked) = r
+  GuiTabs{frame, active, Bool.pick(U32, clicked, i, result)}
+
+# After the tab's toggle: a middle press over it, then its close button (14
+# pixels, BUTTON's border 1 and centered, #128#), each request the result.
+def Gui.tabs.toggled(+gui: Gui, +core: J.Core, +x: F32, +y: F32, +w: F32, +h: F32, +i: U32, +active: U32, +result: U32, r: J.Frame & Bool) -> Gui.Tabs:
+  (frame, +on) = r
+  +now = Bool.pick(U32, on && U32.is_ne(i, active), i, active)
+  +middle = J.Collision.point_rec(J.Input.get_mouse_position(core), J.Rectangle{x, y, w, h}) && J.Input.is_mouse_button_pressed(core, 2)
+  Gui.tabs.closed(i, now, Bool.pick(U32, middle, i, result),
+    Gui.button(Gui.set_style(Gui.set_style(gui, 2, 12, 1), 2, 14, 1), core, frame, J.Rectangle{(((x + w : F32) - 14.0 : F32) - 5.0 : F32), (y + 5.0 : F32), 14.0, 14.0}, "#128#"))
+
+# A tab left of the screen's right edge: its GuiToggle (TOGGLE's text left
+# aligned with a padding of 8), on for the active tab; an off tab switched
+# on becomes the active one.
+def Gui.tabs.step(visible: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +tab: J.Rectangle, +text: String, +i: U32, +active: U32, +result: U32) -> Gui.Tabs:
+  match visible:
+    case False{}: GuiTabs{frame, active, result}
+    case True{}:
+      J.Rectangle{+x, +y, +w, +h} = tab
+      Gui.tabs.toggled(gui, core, x, y, w, h, i, active, result, Gui.toggle(Gui.set_style(Gui.set_style(gui, 3, 14, 0), 3, 13, 8), core, frame, J.Rectangle{x, y, w, h}, text, U32.is_eq(i, active)))
+
+def Gui.tabs.run(items: +List<String>, +gui: Gui, +core: J.Core, +x: F32, +y: F32, +h: F32, +offset: U32, +screen: U32, +i: U32, tabs: Gui.Tabs) -> Gui.Tabs:
+  match items:
+    case Nil{}: tabs
+    case Con{+text, rest}:
+      GuiTabs{frame, +active, +result} = tabs
+      +tx = ((x + U32.to_f32((152 * i : U32)) : F32) - U32.to_f32(offset) : F32)
+      Gui.tabs.run(rest, gui, core, x, y, h, offset, screen, (i + 1 : U32),
+        Gui.tabs.step((tx < U32.to_f32(screen) : F32), gui, core, frame, J.Rectangle{tx, y, 148.0, h}, text, i, active, result))
+
+def Gui.tabs.done(+gui: Gui, +bounds: J.Rectangle, tabs: Gui.Tabs) -> J.Frame & (U32 & U32):
+  J.Rectangle{+x, +y, +w, +h} = bounds
+  GuiTabs{frame, +active, +result} = tabs
+  (Gui.draw_rectangle(frame, J.Rectangle{x, ((y + h : F32) - 1.0 : F32), w, 1.0}, 0, 0, Gui.color(gui, 3, 0)), (active, result))
+
+# GuiTabBar(bounds, text, count, &active): the active tab clamped to the
+# tabs (-1 without any), the bar moved left by (active + 2) * 148 - the
+# screen's width when that is positive, then each tab 148 wide and 152
+# apart, the ones left of the screen's right edge drawn and live, and a line
+# along the bottom in TOGGLE's border color. The frame, the active tab and
+# raygui's result: the tab whose close button was clicked or that a middle
+# press is over (the last such tab), or -1, as int bits.
+def Gui.tab_bar(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +items: +List<String>, +active: U32) -> J.Frame & (U32 & U32):
+  J.Rectangle{+x, +y, +w, +h} = bounds
+  +count = U32.from_nat(List.length(&2, String, items))
+  +low = Bool.pick(U32, Gui.int.less(active, 0), 0, active)
+  +clamped = Bool.pick(U32, Gui.int.less((count - 1 : U32), low), (count - 1 : U32), low)
+  +screen = J.Core.get_screen_width(core)
+  +offset = (((clamped + 2 : U32) * 148 : U32) - screen : U32)
+  Gui.tabs.done(gui, J.Rectangle{x, y, w, h}, Gui.tabs.run(items, gui, core, x, y, h, Bool.pick(U32, Gui.int.less(offset, 0), 0, offset), screen, 0, GuiTabs{frame, clamped, 4294967295}))

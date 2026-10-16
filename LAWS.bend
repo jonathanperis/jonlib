@@ -3901,6 +3901,16 @@ law gui_item_at_second:
 law gui_item_at_past_the_last:
   {JG.Gui.item.at(JG.Gui.split([65, 59, 66], 59, 0, Nil{}), 2) == [] : +List<U32>}
 
+# GuiMessageBox numbers its buttons from 1: a click on the second sets the
+# result to 2, and a button not clicked keeps the result.
+law gui_message_button_number:
+  for frame: J.Frame
+  {JG.Gui.message.step(1, 4294967295, (frame, True{})) == JG.GuiButtons{frame, 2} : JG.Gui.Buttons}
+
+law gui_message_unclicked_keeps_result:
+  for frame: J.Frame
+  {JG.Gui.message.step(1, 0, (frame, False{})) == JG.GuiButtons{frame, 0} : JG.Gui.Buttons}
+
 law gui_grid_lines_counted:
   {JG.Gui.grid.n(3) == 3n : Nat}
 
