@@ -1210,11 +1210,11 @@ def Laws.gui_extended_property_stays():
   {==}
 
 def Laws.gui_disable_then_enable(gui):
-  JG.Gui{state, locked, alpha, exclusive, rec, style, scale} = gui
+  JG.Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons} = gui
   {==}
 
 def Laws.gui_disable_keeps_focus(gui):
-  JG.Gui{state, locked, alpha, exclusive, rec, style, scale} = gui
+  JG.Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons} = gui
   {==}
 
 def Laws.gui_line_color_property():
@@ -1323,15 +1323,15 @@ def Laws.gui_icon_scale_starts_at_one():
   {==}
 
 def Laws.gui_icon_scale_set(gui):
-  JG.Gui{state, locked, alpha, exclusive, rec, style, scale} = gui
+  JG.Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons} = gui
   {==}
 
 def Laws.gui_icon_scale_zero_ignored(gui):
-  JG.Gui{state, locked, alpha, exclusive, rec, style, scale} = gui
+  JG.Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons} = gui
   {==}
 
 def Laws.gui_icon_scale_negative_ignored(gui):
-  JG.Gui{state, locked, alpha, exclusive, rec, style, scale} = gui
+  JG.Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons} = gui
   {==}
 
 def Laws.gui_scroll_clamp_above():
@@ -2802,6 +2802,21 @@ def Laws.gui_grid_lines_counted():
   {==}
 
 def Laws.gui_grid_no_lines_below_one():
+  {==}
+
+def Laws.gui_icons_word_little_endian():
+  {==}
+
+def Laws.gui_icon_negative_size_near():
+  {==}
+
+def Laws.gui_icon_size_past_range():
+  {==}
+
+def Laws.gui_tip_lines_counted():
+  {==}
+
+def Laws.gui_tip_lines_capped():
   {==}
 
 def Laws.mp3_memory_stream_has_its_bytes_at_hand():

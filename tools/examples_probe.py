@@ -91,7 +91,7 @@ SHIM = ROOT / 'tools/reference/example_driver.h'
 AUDIO_CLOCK_UNIT = ROOT / 'tools/reference/audio_clock.c'
 WIDTH, HEIGHT = 800, 450
 # Examples whose InitWindow is not 800x450.
-SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation': (720, 400), 'gui_window_grid': (400, 300), 'gui_toggle_combo_list': (400, 300), 'gui_message_tabs': (500, 300), 'gui_value_input': (500, 360)}
+SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation': (720, 400), 'gui_window_grid': (400, 300), 'gui_toggle_combo_list': (400, 300), 'gui_message_tabs': (500, 300), 'gui_value_input': (500, 360), 'gui_tooltip_icons': (500, 300)}
 SIZES['shaders_rlgl_compute'] = (768, 768)
 
 
@@ -350,6 +350,7 @@ GUI_SCENES = {
     'gui_toggle_combo_list': ('jonlib/gui/gui_toggle_combo_list.c', 'Ex.setup(core, frame)'),
     'gui_message_tabs': ('jonlib/gui/gui_message_tabs.c', 'Ex.setup(core, frame)'),
     'gui_value_input': ('jonlib/gui/gui_value_input.c', 'Ex.setup(core, frame)'),
+    'gui_tooltip_icons': ('jonlib/gui/gui_tooltip_icons.c', 'Ex.setup(core, frame)'),
 }
 EXAMPLES.update(GUI_SCENES)
 
@@ -1536,6 +1537,11 @@ def scripts():
     clicks = lambda x, y: [quick([mouse_at(x, y)]), quick([button(0)]), quick([button(0, False)])]
     out.append(script('gui_value_input', 'controls', [quick()] + clicks(100, 20) + clicks(285, 130) + clicks(100, 130) + clicks(230, 175)
                       + clicks(100, 258) + clicks(150, 315) + clicks(297, 62) + clicks(285, 130) + clicks(420, 20) + [slow()]))
+    # Each control hovered: the button's tooltip below it, the toggle's moved left from the right edge, the text box's two
+    # lines moved above it, none for a NULL tooltip and none with tooltips off; then the button pressed (no tooltip while
+    # pressed) and released, and the toggle switched on.
+    out.append(script('gui_tooltip_icons', 'controls', [quick(), quick([mouse_at(70, 25)]), quick([mouse_at(435, 25)]), quick([mouse_at(85, 270)]),
+                                                        quick([mouse_at(70, 75)]), quick([mouse_at(70, 125)])] + clicks(70, 25) + clicks(435, 25) + [slow()]))
     repeated = sorted({item['name'] for item in out if sum(other['name'] == item['name'] for other in out) > 1})
     if repeated:
         raise ProbeFailure(f'examples: script names used more than once: {repeated}')

@@ -60,6 +60,12 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiValueBoxFloat` | `Gui.value_box_float(gui, core, frame, bounds, text, text_value, value, edit)` | `Frame & (F32 & Bool)` (the value, unchanged outside edit mode, and whether the box was pressed; `text_value` is the buffer raygui shows) |
 | `GuiTextInputBox` | `Gui.text_input_box(gui, core, frame, bounds, title, message, buttons, size, input)` | `Frame & (Core & (Gui.Input & U32))` (`GuiInput{text, secret, edit, editing}`: the text, the secret view (0 off, 1 on, 2 for NULL), raygui's static edit mode and the text box globals, which a program passes from one input box to the next; the result: 0 closed, a button's number, or -1) |
 | `GuiListView` | `Gui.list_view(gui, core, frame, bounds, text, scroll, active)` | `Frame & (Gui & (U32 & U32))` (`GuiListViewEx` over the items of `text`, `None` for NULL; the scroll index and active item as words) |
+| `GuiEnableTooltip` / `GuiDisableTooltip` | `Gui.enable_tooltip(gui)` / `Gui.disable_tooltip(gui)` | `Gui` (tooltips are off in a new gui) |
+| `GuiSetTooltip` | `Gui.set_tooltip(gui, tooltip)` | `Gui` (`tooltip` is `Maybe<String>`: `None` for NULL, which shows none); a focused button, toggle or text box out of edit mode draws it below itself, moved left or above where it would leave the screen |
+| `GuiDrawIcon` | `Gui.draw_icon(gui, frame, id, x, y, pixel_size, color)` | `Frame` (the ints as words; the gui's icon table, faded by its alpha) |
+| `GuiIconText` | `Gui.icon_text(id, text)` | `Maybe<String>` (`"#%03i#"` then the text from the sixth byte; `text` `None` for NULL gives the prefix alone; `None` for a text raygui's buffer cannot terminate) |
+| `GuiGetIcons` | `Gui.get_icons(gui)` | `+List<U32>` (the 2048 words of the gui's icon table) |
+| `GuiLoadIcons` | `Gui.load_icons(gui, path, names)` | `IO(Gui & Gui.Names)` (`GuiNames{names}` with each name id's 32 bytes, `GuiNamesNull{}` for NULL, `GuiNamesUndefined{}` for a load raygui does not define) |
 
 Two additions have no raygui counterpart. They run a row of controls in order
 for programs that keep their values in lists (Bend has no pointers to write
@@ -185,9 +191,17 @@ example waiting on each raygui function it calls that is not delivered.
 
 ## Gaps
 
-- Not delivered yet: `GuiTextBoxMulti`, `GuiColor*`, the style file loaders, `GuiSetFont` and `GuiGetFont`'s
-  Font (its base size is `Gui.font_base_size`),
-  `GuiDrawIcon`/`GuiIconText` as functions, `GuiLoadIcons` and tooltips.
+- Not delivered yet: `GuiColor*`, `GuiLoadStyle`, `GuiSetFont` and `GuiGetFont`'s
+  Font (its base size is `Gui.font_base_size`).
+- `GuiLoadIcons` answers undefined (the gui unchanged) for a negative icon
+  count (a gap: raygui's `fseek` and `calloc` of a negative count are
+  host-dependent), a count of words past int's range, data that would pass
+  the 2048 words of the table, and a file that ends inside the icon count,
+  the icon size or a word (`fread`'s partial element is indeterminate).
+  `GuiDrawIcon` marks the frame undefined for an id outside 0..255 and
+  coordinates that may leave int's range (|x| or |y| at 2^30 or more,
+  |pixel size| at 2^26 or more); `GuiIconText` answers `None` for a text of
+  1019 bytes or more.
 - An icon id above 255 reads past raygui's table and marks the frame
   undefined, and so does an icon drawn at a scale above 65536. So does a line that is not the text's last, starts with `#`
   (after its icon, if it has one), and has fewer than four bytes after that
@@ -292,4 +306,19 @@ covers `GuiValueBoxFloat` (hovered, pressed, disabled) and two
 `GuiTextInputBox`es sharing raygui's static edit mode: the secret view
 switched on and off, a box entered and left by a button, the other box
 entered (which shows the first one's text, its stars gone, while edit mode is
-on), and the close button.
+on), and the close button. `gui_tooltip_icons` covers tooltips: a button's
+below it (with a `GuiIconText` label), a toggle's moved left from the right
+edge, a text box's two lines moved above it near the bottom, none for a NULL
+tooltip and none with tooltips off, none while the button is pressed; and
+`GuiDrawIcon` at pixel sizes 1, 2, 3 (at half alpha) and -2, and labels of
+`GuiIconText` with a negative id, a four-digit id and a NULL text.
+
+The `gui-icon-files` gate (`tools/gui_icon_files_probe.py`) compares
+`GuiLoadIcons`, `GuiGetIcons` and `GuiIconText` with raygui without a
+window: a corpus of .rgi files (icon sizes 16, 32, 0 and -16, with and
+without name ids, one 32 bytes long without a terminator, a full table,
+data and names cut short, headers cut before and at the count and size, a
+wrong signature, a missing file, a directory, and headers asking for more
+than the table holds over data that does not) loaded in order, the names
+and a hash of the 2048 table words after each load, then `GuiIconText` for
+eighteen ids (negative ones, four digits and more) and six texts.

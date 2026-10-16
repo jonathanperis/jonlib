@@ -23,10 +23,12 @@ import ./src/text.bend as TextCore
 import ./src/gui_icons.bend as Icons
 
 # raygui's globals: guiState, guiLocked, guiAlpha, the slider drag
-# (guiControlExclusiveMode and guiControlExclusiveRec) and guiStyle, 16
-# controls of 24 properties each.
+# (guiControlExclusiveMode and guiControlExclusiveRec), guiStyle (16
+# controls of 24 properties each), guiIconScale, guiTooltip, the tooltip's
+# text (guiTooltipPtr; tipped is False for NULL) and the icon table
+# (guiIcons, 256 icons of eight words).
 type Gui is Data:
-  Gui{state: U32, locked: Bool, alpha: F32, exclusive: Bool, exclusive_rec: J.Rectangle, style: +List<U32>, icon_scale: U32}
+  Gui{state: U32, locked: Bool, alpha: F32, exclusive: Bool, exclusive_rec: J.Rectangle, style: +List<U32>, icon_scale: U32, tips: Bool, tip: String, tipped: Bool, icons: +List<U32>}
 
 # guiStyle after GuiLoadStyleDefault (printed by raygui itself).
 def Gui.style.default() -> +List<U32>:
@@ -48,7 +50,7 @@ def Gui.style.default() -> +List<U32>:
     2206434303, 3385444863, 1751673087, 1538447871, 3387948799, 1822145791, 76728319, 2548629503, 915124223, 3049374463, 3874089471, 2931276031, 1, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 def Gui.new() -> Gui:
-  Gui{0, False{}, 1.0, False{}, J.Rectangle{0.0, 0.0, 0.0, 0.0}, Gui.style.default(), 1}
+  Gui{0, False{}, 1.0, False{}, J.Rectangle{0.0, 0.0, 0.0, 0.0}, Gui.style.default(), 1, False{}, "", False{}, Icons.words()}
 
 # -----------------------------------------------------------------------------
 # Controls, properties, states and alignments (raygui's enums)
@@ -138,7 +140,7 @@ def Gui.head(values: +List<U32>) -> U32:
 
 # GuiGetStyle(control, property): 0 outside the table.
 def Gui.get_style(gui: Gui, +control: U32, +property: U32) -> U32:
-  Gui{_, _, _, _, _, style, _} = gui
+  Gui{_, _, _, _, _, style, _, _, _, _, _} = gui
   Gui.head(List.drop(&2, U32, style, U32.to_nat((control * 24 + property : U32))))
 
 def Gui.style.put(style: +List<U32>, +i: U32, +control: U32, +property: U32, +value: U32) -> +List<U32>:
@@ -151,52 +153,88 @@ def Gui.style.put(style: +List<U32>, +i: U32, +control: U32, +property: U32, +va
 # GuiSetStyle(control, property, value): a DEFAULT base property (below 16)
 # reaches every control. Nothing changes outside the 16x24 table.
 def Gui.set_style(gui: Gui, +control: U32, +property: U32, +value: U32) -> Gui:
-  Gui{state, locked, alpha, exclusive, rec, style, scale} = gui
-  Gui{state, locked, alpha, exclusive, rec, Gui.style.put(style, 0, control, property, value), scale}
+  Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons} = gui
+  Gui{state, locked, alpha, exclusive, rec, Gui.style.put(style, 0, control, property, value), scale, tips, tip, tipped, icons}
 
 # GuiEnable: STATE_DISABLED becomes STATE_NORMAL.
 def Gui.enable(gui: Gui) -> Gui:
-  Gui{+state, locked, alpha, exclusive, rec, style, scale} = gui
-  Gui{Bool.pick(U32, U32.is_eq(state, 3), 0, state), locked, alpha, exclusive, rec, style, scale}
+  Gui{+state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons} = gui
+  Gui{Bool.pick(U32, U32.is_eq(state, 3), 0, state), locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons}
 
 # GuiDisable: STATE_NORMAL becomes STATE_DISABLED.
 def Gui.disable(gui: Gui) -> Gui:
-  Gui{+state, locked, alpha, exclusive, rec, style, scale} = gui
-  Gui{Bool.pick(U32, U32.is_eq(state, 0), 3, state), locked, alpha, exclusive, rec, style, scale}
+  Gui{+state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons} = gui
+  Gui{Bool.pick(U32, U32.is_eq(state, 0), 3, state), locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons}
 
 def Gui.lock(gui: Gui) -> Gui:
-  Gui{state, _, alpha, exclusive, rec, style, scale} = gui
-  Gui{state, True{}, alpha, exclusive, rec, style, scale}
+  Gui{state, _, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons} = gui
+  Gui{state, True{}, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons}
 
 def Gui.unlock(gui: Gui) -> Gui:
-  Gui{state, _, alpha, exclusive, rec, style, scale} = gui
-  Gui{state, False{}, alpha, exclusive, rec, style, scale}
+  Gui{state, _, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons} = gui
+  Gui{state, False{}, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons}
 
 def Gui.is_locked(gui: Gui) -> Bool:
-  Gui{_, locked, _, _, _, _, _} = gui
+  Gui{_, locked, _, _, _, _, _, _, _, _, _} = gui
   locked
 
 def Gui.set_state(gui: Gui, state: U32) -> Gui:
-  Gui{_, locked, alpha, exclusive, rec, style, scale} = gui
-  Gui{state, locked, alpha, exclusive, rec, style, scale}
+  Gui{_, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons} = gui
+  Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons}
 
 def Gui.get_state(gui: Gui) -> U32:
-  Gui{state, _, _, _, _, _, _} = gui
+  Gui{state, _, _, _, _, _, _, _, _, _, _} = gui
   state
 
 # GuiSetAlpha: clamped to [0, 1].
 def Gui.set_alpha(gui: Gui, +alpha: F32) -> Gui:
-  Gui{state, locked, _, exclusive, rec, style, scale} = gui
-  Gui{state, locked, Bool.pick(F32, (alpha < 0.0 : F32), 0.0, Bool.pick(F32, (alpha > 1.0 : F32), 1.0, alpha)), exclusive, rec, style, scale}
+  Gui{state, locked, _, exclusive, rec, style, scale, tips, tip, tipped, icons} = gui
+  Gui{state, locked, Bool.pick(F32, (alpha < 0.0 : F32), 0.0, Bool.pick(F32, (alpha > 1.0 : F32), 1.0, alpha)), exclusive, rec, style, scale, tips, tip, tipped, icons}
 
 # A style value as the C int raygui reads it, in F32 (exact below 2^24).
 # GuiSetIconScale: scales below 1 are ignored (a C int as a word).
 def Gui.set_icon_scale(gui: Gui, +scale: U32) -> Gui:
-  Gui{state, locked, alpha, exclusive, rec, style, old} = gui
-  Gui{state, locked, alpha, exclusive, rec, style, Bool.pick(U32, (scale >= 1 : U32) && (scale < 2147483648 : U32), scale, old)}
+  Gui{state, locked, alpha, exclusive, rec, style, old, tips, tip, tipped, icons} = gui
+  Gui{state, locked, alpha, exclusive, rec, style, Bool.pick(U32, (scale >= 1 : U32) && (scale < 2147483648 : U32), scale, old), tips, tip, tipped, icons}
+
+# GuiGetIcons: the icon table, 2048 words (eight an icon, two rows of 16
+# pixels a word, the low bit first).
+def Gui.icons(gui: Gui) -> +List<U32>:
+  Gui{_, _, _, _, _, _, _, _, _, _, icons} = gui
+  icons
+
+def Gui.get_icons(gui: Gui) -> +List<U32>:
+  Gui.icons(gui)
+
+def Gui.icons.put(gui: Gui, +icons: +List<U32>) -> Gui:
+  Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, _} = gui
+  Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons}
+
+# GuiEnableTooltip, GuiDisableTooltip: guiTooltip (off in a new gui).
+def Gui.enable_tooltip(gui: Gui) -> Gui:
+  Gui{state, locked, alpha, exclusive, rec, style, scale, _, tip, tipped, icons} = gui
+  Gui{state, locked, alpha, exclusive, rec, style, scale, True{}, tip, tipped, icons}
+
+def Gui.disable_tooltip(gui: Gui) -> Gui:
+  Gui{state, locked, alpha, exclusive, rec, style, scale, _, tip, tipped, icons} = gui
+  Gui{state, locked, alpha, exclusive, rec, style, scale, False{}, tip, tipped, icons}
+
+def Gui.tip.put(gui: Gui, tip: String, +tipped: Bool) -> Gui:
+  Gui{state, locked, alpha, exclusive, rec, style, scale, tips, _, _, icons} = gui
+  Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons}
+
+def Gui.tip.of(tooltip: Maybe<String>, gui: Gui) -> Gui:
+  match tooltip:
+    case None{}: Gui.tip.put(gui, "", False{})
+    case Some{t}: Gui.tip.put(gui, t, True{})
+
+# GuiSetTooltip(tooltip): the text tooltips show from now on (raygui keeps
+# the pointer); None is NULL, which shows none.
+def Gui.set_tooltip(gui: Gui, tooltip: Maybe<String>) -> Gui:
+  Gui.tip.of(tooltip, gui)
 
 def Gui.icon_scale(gui: Gui) -> U32:
-  Gui{_, _, _, _, _, _, scale} = gui
+  Gui{_, _, _, _, _, _, scale, _, _, _, _} = gui
   scale
 
 def Gui.style.f32(+gui: Gui, +control: U32, +property: U32) -> F32:
@@ -207,8 +245,17 @@ def Gui.fade(+color: U32, +alpha: F32) -> U32:
 
 # GuiFade(GetColor(style), guiAlpha): the alpha byte times guiAlpha, truncated.
 def Gui.color(+gui: Gui, +control: U32, +property: U32) -> U32:
-  Gui{_, _, +alpha, _, _, _, _} = gui
+  Gui{_, _, +alpha, _, _, _, _, _, _, _, _} = gui
   Gui.fade(Gui.get_style(gui, control, property), alpha)
+
+def Gui.alpha.of(gui: Gui) -> F32:
+  Gui{_, _, alpha, _, _, _, _, _, _, _, _} = gui
+  alpha
+
+def Gui.refused(refused: Bool, frame: J.Frame) -> J.Frame:
+  match refused:
+    case True{}: J.Frame.refuse(frame)
+    case False{}: frame
 
 # -----------------------------------------------------------------------------
 # Text: GuiGetTextWidth and GuiDrawText with the default font
@@ -419,24 +466,27 @@ def Gui.icon.bit(visible: Bool, frame: J.Frame, +x: F32, +y: F32, +pixel: F32, +
     case False{}: frame
     case True{}: Gui.draw_rectangle(frame, J.Rectangle{x, y, pixel, pixel}, 0, 0, color)
 
-# The 32 bits of one word: two rows of 16 pixels, the low bit first.
+# The 32 bits of one word: two rows of 16 pixels, the low bit first. The
+# offsets are C's int products (scale may be negative), then floats.
 def Gui.icon.word(n: Nat, +bits: U32, +k: U32, +x: F32, +y: F32, +row: U32, +scale: U32, +color: U32, frame: J.Frame) -> J.Frame:
   match n:
     case 0n: frame
     case 1n+p: Gui.icon.word(p, (bits >> 1n : U32), (k + 1 : U32), x, y, row, scale, color,
-      Gui.icon.bit(U32.is_eq((bits .&. 1 : U32), 1), frame, (x + U32.to_f32(((k % 16) * scale : U32)) : F32), (y + U32.to_f32(((row + k / 16) * scale : U32)) : F32), U32.to_f32(scale), color))
+      Gui.icon.bit(U32.is_eq((bits .&. 1 : U32), 1), frame, (x + FontCore.int.f32(((k % 16) * scale : U32)) : F32), (y + FontCore.int.f32(((row + k / 16) * scale : U32)) : F32), FontCore.int.f32(scale), color))
 
-def Gui.icon.rows(n: Nat, +id: U32, +index: U32, +x: F32, +y: F32, +scale: U32, +color: U32, frame: J.Frame) -> J.Frame:
-  match n:
-    case 0n: frame
-    case 1n+p: Gui.icon.rows(p, id, (index + 1 : U32), x, y, scale, color, Gui.icon.word(32n, Icons.word(id, index), 0, x, y, (2 * index : U32), scale, color, frame))
+def Gui.icon.rows(n: Nat, words: +List<U32>, +index: U32, +x: F32, +y: F32, +scale: U32, +color: U32, frame: J.Frame) -> J.Frame:
+  match n words:
+    case 0n _: frame
+    case 1n+p Nil{}: frame
+    case 1n+p Con{+bits, +rest}: Gui.icon.rows(p, rest, (index + 1 : U32), x, y, scale, color, Gui.icon.word(32n, bits, 0, x, y, (2 * index : U32), scale, color, frame))
 
-# GuiDrawIcon(iconId, x, y, guiIconScale, color), the color already faded:
-# one GuiDrawRectangle of scale x scale pixels for each set bit.
-def Gui.icon.drawn(has: Bool, +id: U32, +x: F32, +y: F32, +scale: U32, +color: U32, frame: J.Frame) -> J.Frame:
+# GuiDrawIcon(iconId, x, y, scale, color) over the gui's icon table, the
+# color already faded: one GuiDrawRectangle of scale x scale pixels for each
+# set bit.
+def Gui.icon.drawn(has: Bool, +icons: +List<U32>, +id: U32, +x: F32, +y: F32, +scale: U32, +color: U32, frame: J.Frame) -> J.Frame:
   match has:
     case False{}: frame
-    case True{}: Gui.icon.rows(8n, id, 0, x, y, scale, color, frame)
+    case True{}: Gui.icon.rows(8n, List.drop(&2, U32, icons, U32.to_nat((8 * id : U32))), 0, x, y, scale, color, frame)
 
 # One line: its icon, if any, at the line's x and centered on the bounds'
 # height (16 pixels times the icon scale), then the text 4 pixels after it. Only the text's last line can be
@@ -455,7 +505,7 @@ def Gui.text.line(+icon: Gui.Icon, +last: Bool, +gui: Gui, +bounds: J.Rectangle,
   +inset = Bool.pick(F32, has, (wide + 4.0 : F32), 0.0)
   +spec = {GuiLine{(x + inset : F32), y, bw, text_width, Gui.width.bytes(gui, [46, 46, 46]), Gui.scale(gui), Gui.style.f32(gui, 0, 17), size, tint, inset} : Gui.Line}
   Gui.glyphs(TextCore.codepoints(Gui.line.bytes(text, True{})), spec, 0.0, False{},
-    Gui.icon.drawn(has, id, x, F32.trunc((((by + bh / 2.0 : F32) - U32.to_f32((8 * scale : U32)) : F32) + Gui.pixel(bh) : F32)), scale, tint, frame))
+    Gui.icon.drawn(has, Gui.icons(gui), id, x, F32.trunc((((by + bh / 2.0 : F32) - U32.to_f32((8 * scale : U32)) : F32) + Gui.pixel(bh) : F32)), scale, tint, frame))
 
 def Gui.lines.last(rest: +List<+List<U32>>) -> Bool:
   match rest:
@@ -560,16 +610,128 @@ def Gui.released(+core: J.Core) -> Bool:
 
 # Whether a control reacts: not STATE_DISABLED and not locked.
 def Gui.active(+gui: Gui) -> Bool:
-  Gui{+state, +locked, _, _, _, _, _} = gui
+  Gui{+state, +locked, _, _, _, _, _, _, _, _, _} = gui
   U32.is_ne(state, 3) && Bool.not(locked)
 
 def Gui.exclusive(gui: Gui) -> Bool:
-  Gui{_, _, _, exclusive, _, _, _} = gui
+  Gui{_, _, _, exclusive, _, _, _, _, _, _, _} = gui
   exclusive
 
 # The state a hovered control takes: PRESSED while the button is down, else FOCUSED.
 def Gui.hover(+core: J.Core) -> U32:
   Bool.pick(U32, Gui.down(core), 2, 1)
+
+# -----------------------------------------------------------------------------
+# GuiDrawIcon, GuiIconText, GuiLoadIcons
+
+# Whether C's int stays in range for an icon at x, y of pixel size: |x| and
+# |y| below 2^30 and |size| below 2^26 (15 times the size added to either).
+def Gui.icon.near(+v: U32, +limit: U32) -> Bool:
+  (v < limit : U32) || ((0 - v : U32) < limit : U32)
+
+# GuiDrawIcon(iconId, posX, posY, pixelSize, color): a GuiDrawRectangle of
+# pixelSize square at (posX + (k%16)*pixelSize, posY + row*pixelSize) for
+# each set bit of the icon in the gui's table, faded by guiAlpha. Ints are
+# given as their bits. An id outside 0..255 (raygui reads past its table)
+# and coordinates that may leave int's range (see Gui.icon.near) mark the
+# frame undefined.
+def Gui.draw_icon(+gui: Gui, frame: J.Frame, +id: U32, +x: U32, +y: U32, +size: U32, +color: U32) -> J.Frame:
+  +fine = (id < 256 : U32) && Gui.icon.near(x, 1073741824) && Gui.icon.near(y, 1073741824) && Gui.icon.near(size, 67108864)
+  Gui.refused(Bool.not(fine), Gui.icon.drawn(fine, Gui.icons(gui), id, FontCore.int.f32(x), FontCore.int.f32(y), size, Gui.fade(color, Gui.alpha.of(gui)), frame))
+
+def Gui.icon_text.cut(+long: Bool, +bytes: +List<U32>) -> Maybe<String>:
+  match long:
+    case True{}: None{}
+    case False{}: Some{TextCore.string(bytes)}
+
+def Gui.icon_text.with(text: Maybe<String>, +prefix: +List<U32>) -> Maybe<String>:
+  match text:
+    case None{}: Some{TextCore.string(prefix)}
+    case Some{t}:
+      +bytes = TextCore.bytes(t)
+      Gui.icon_text.cut((TextCore.len(bytes) >= 1019 : U32), TextCore.glue(TextCore.take(prefix, 5), bytes))
+
+# GuiIconText(iconId, text): "#%03i#" (the id as C's int, at least three
+# digits after any sign), then the text from the prefix's sixth byte, so a
+# prefix of six or more bytes loses its last ones; a NULL text (None) gives
+# the whole prefix. A text of 1019 bytes or more leaves raygui's buffer
+# without its terminator: None.
+def Gui.icon_text(+id: U32, text: Maybe<String>) -> Maybe<String>:
+  Gui.icon_text.with(text, TextCore.glue([35], TextCore.glue(TextCore.integer.field(True{}, 10, False{}, id, 16, 3, False{}, 0), [35])))
+
+# What GuiLoadIcons returns: NULL, the name ids (32 bytes each, as read,
+# zeros past the end of the file), or a load raygui does not define.
+type Gui.Names is Data:
+  GuiNamesNull{}
+  GuiNames{names: +List<+List<U32>>}
+  GuiNamesUndefined{}
+
+def Gui.byte(bytes: +List<U32>, +i: U32) -> U32:
+  Icons.head(TextCore.drop(bytes, i))
+
+def Gui.icons.word(+bytes: +List<U32>) -> U32:
+  (Gui.byte(bytes, 0) .|. (Gui.byte(bytes, 1) << 8n) .|. (Gui.byte(bytes, 2) << 16n) .|. (Gui.byte(bytes, 3) << 24n) : U32)
+
+# The first n words of the bytes (little-endian) over the old table.
+def Gui.icons.words(n: Nat, +bytes: +List<U32>, +old: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: old
+    case 1n+p: Con{Gui.icons.word(bytes), Gui.icons.words(p, TextCore.drop(bytes, 4), List.drop(&2, U32, old, 1n))}
+
+def Gui.icons.name(n: Nat, +bytes: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: Nil{}
+    case 1n+p: Con{Icons.head(bytes), Gui.icons.name(p, TextCore.drop(bytes, 1))}
+
+def Gui.icons.names(n: Nat, +bytes: +List<U32>) -> +List<+List<U32>>:
+  match n:
+    case 0n: Nil{}
+    case 1n+p: Con{Gui.icons.name(32n, bytes), Gui.icons.names(p, TextCore.drop(bytes, 32))}
+
+def Gui.icons.named(names: Bool, +count: U32, +bytes: +List<U32>) -> Gui.Names:
+  match names:
+    case False{}: GuiNamesNull{}
+    case True{}: GuiNames{Gui.icons.names(U32.to_nat(count), TextCore.drop(bytes, 12))}
+
+def Gui.icons.fine(bad: Bool, +gui: Gui, +bytes: +List<U32>, +names: Bool, +count: U32, +read: U32) -> Gui & Gui.Names:
+  match bad:
+    case True{}: (gui, GuiNamesUndefined{})
+    case False{}: (Gui.icons.put(gui, Gui.icons.words(U32.to_nat(read), TextCore.drop(bytes, (12 + 32 * count : U32)), Gui.icons(gui))), Gui.icons.named(names, count, bytes))
+
+def Gui.icons.signed(signed: Bool, +gui: Gui, +bytes: +List<U32>, +names: Bool) -> Gui & Gui.Names:
+  match signed:
+    case False{}: (gui, GuiNamesNull{})
+    case True{}:
+      +n = TextCore.len(bytes)
+      +count = (Gui.byte(bytes, 8) .|. (Gui.byte(bytes, 9) << 8n) : U32)
+      +side = (Gui.byte(bytes, 10) .|. (Gui.byte(bytes, 11) << 8n) : U32)
+      +m = Bool.pick(U32, (side >= 32768 : U32), (65536 - side : U32), side)
+      +k = ((m * m : U32) / 32 : U32)
+      +over = (count > 0 : U32) && (k > (2147483647 / Bool.pick(U32, U32.is_eq(count, 0), 1, count) : U32) : U32)
+      +total = Bool.pick(U32, over, 0, (count * k : U32))
+      +start = (12 + 32 * (count .&. 32767 : U32) : U32)
+      +avail = Bool.pick(U32, (n > start : U32), (n - start : U32), 0)
+      +read = U32.min(total, (avail / 4 : U32))
+      +bad = (count >= 32768 : U32) || U32.is_eq(n, 9) || U32.is_eq(n, 11) || over || (read > 2048 : U32) || (((avail / 4 : U32) < total : U32) && U32.is_ne((avail % 4 : U32), 0))
+      Gui.icons.fine(bad, gui, bytes, names, count, read)
+
+def Gui.icons.loaded(r: Result<&1, &1, J.Surface.IOError, +List<U32>>, +gui: Gui, +names: Bool) -> Gui & Gui.Names:
+  match r:
+    case Fail{_}: (gui, GuiNamesNull{})
+    case Done{+bytes}: Gui.icons.signed(U32.is_eq(Gui.byte(bytes, 0), 114) && U32.is_eq(Gui.byte(bytes, 1), 71) && U32.is_eq(Gui.byte(bytes, 2), 73) && U32.is_eq(Gui.byte(bytes, 3), 32), gui, bytes, names)
+
+# GuiLoadIcons(fileName, loadIconsName) over a .rgi file ("rGI ", version,
+# reserved, icon count and size as little-endian shorts, a 32-byte name id
+# an icon, then the icons' words): the icon count times size*size/32 words
+# (C's int division), as many as the file holds, are read over the table
+# from its start, whatever the icon size. The gui and the name ids
+# (GuiNames, when asked) or NULL (GuiNamesNull: a file that does not open
+# or read, a wrong signature, or names not asked). Undefined
+# (GuiNamesUndefined, the gui unchanged): a negative icon count (a gap), a
+# count of words past int's range, data that would pass the 2048 words of
+# the table, a file that ends inside the count, the size or a word.
+def Gui.load_icons(gui: Gui, path: String, +names: Bool) -> IO(Gui & Gui.Names):
+  IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Gui & Gui.Names, J.Files.load_data(path), r => IO.pure(Gui & Gui.Names, Gui.icons.loaded(r, gui, names)))
 
 # -----------------------------------------------------------------------------
 # GuiLabel, GuiButton, GuiCheckBox
@@ -623,13 +785,66 @@ def Gui.group_box(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<S
   f3 = Gui.draw_rectangle(f2, J.Rectangle{((x + w : F32) - 1.0 : F32), y, 1.0, h}, 0, 0, color)
   Gui.line(gui, f3, J.Rectangle{x, (y - U32.to_f32((size / 2 : U32)) : F32), w, U32.to_f32(size)}, text)
 
+# -----------------------------------------------------------------------------
+# GuiTooltip
+
+# The panel's rectangle: a border of 1 in LINE_COLOR over BACKGROUND_COLOR
+# (BORDER_COLOR_DISABLED over BASE_COLOR_DISABLED when disabled).
+def Gui.panel.body(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle) -> J.Frame:
+  +disabled = U32.is_eq(Gui.get_state(gui), 3)
+  Gui.draw_rectangle(frame, bounds, 1, Gui.color(gui, 0, Bool.pick(U32, disabled, 9, 18)), Gui.color(gui, 0, Bool.pick(U32, disabled, 10, 19)))
+
+# Whether raygui draws a tooltip: unlocked, tooltips on, a tooltip set and no
+# slider dragged.
+def Gui.tip.shown(gui: Gui) -> Bool:
+  Gui{_, locked, _, exclusive, _, _, _, tips, _, tipped, _} = gui
+  Bool.not(locked) && tips && tipped && Bool.not(exclusive)
+
+def Gui.tip.text(gui: Gui) -> String:
+  Gui{_, _, _, _, _, _, _, _, tip, _, _} = gui
+  tip
+
+# GetTextLines's count: the lines, at most 128.
+def Gui.tip.count(lines: +List<+List<U32>>, +n: U32) -> U32:
+  match lines:
+    case Nil{}: n
+    case Con{_, rest}: Gui.tip.count(rest, U32.min((n + 1 : U32), 128))
+
+# The tooltip's GuiPanel (no text) and its text centered in it as a GuiLabel
+# without padding.
+def Gui.tip.boxed(+gui: Gui, frame: J.Frame, +rec: J.Rectangle) -> J.Frame:
+  Gui.label(Gui.set_style(Gui.set_style(gui, 1, 13, 0), 1, 14, 1), Gui.panel.body(gui, frame, rec), rec, Gui.tip.text(gui))
+
+def Gui.tip.placed(e: FontCore.Extent, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +lines: U32) -> J.Frame:
+  FontCore.Extent{+tx, +ty} = e
+  J.Rectangle{+x, +y, +w, +h} = bounds
+  +extra = U32.to_f32((8 * lines : U32))
+  +px = Bool.pick(F32, (((x + tx : F32) + 16.0 : F32) > FontCore.int.f32(J.Core.get_screen_width(core)) : F32), (x - ((tx + 16.0 : F32) - w : F32) : F32), x)
+  +py = Bool.pick(F32, (((((y + h : F32) + ty : F32) + 4.0 : F32) + extra : F32) > FontCore.int.f32(J.Core.get_screen_height(core)) : F32), (y - (((h + ty : F32) + 4.0 : F32) + extra : F32) : F32), y)
+  Gui.tip.boxed(gui, frame, J.Rectangle{px, ((py + h : F32) + 4.0 : F32), (tx + 16.0 : F32), (ty + (8.0 * U32.to_f32(lines) : F32) : F32)})
+
+# GuiTooltip(controlRec): the tooltip measured with MeasureTextEx (TEXT_SIZE,
+# TEXT_SPACING), moved left to end at the control's right edge when it would
+# pass the screen's width and above the control when it would pass its
+# height; a GuiPanel 4 pixels below the control, 16 pixels wider than the
+# text and 8 higher a line, and the text centered in it as a GuiLabel
+# without padding.
+def Gui.tip.drawn(on: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle) -> J.Frame:
+  match on:
+    case False{}: frame
+    case True{}:
+      +tip = Gui.tip.text(gui)
+      Gui.tip.placed(FontCore.measure(J.Font.codepoints(tip), FontCore.default.face(), Gui.style.f32(gui, 0, 16), Gui.style.f32(gui, 0, 17), 2.0),
+        gui, core, frame, bounds, Gui.tip.count(Gui.lines.go(TextCore.bytes(tip), Nil{}), 0))
+
 # GuiButton(bounds, text): the frame and whether the button was clicked (the
-# pointer released over it).
+# pointer released over it). A focused button shows the tooltip.
 def Gui.button(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: String) -> J.Frame & Bool:
   +over = Gui.active(gui) && Bool.not(Gui.exclusive(gui)) && J.Collision.point_rec(J.Input.get_mouse_position(core), bounds)
   +state = Bool.pick(U32, over, Gui.hover(core), Gui.get_state(gui))
   f1 = Gui.draw_rectangle(frame, bounds, Gui.get_style(gui, 2, 12), Gui.color(gui, 2, (state * 3 : U32)), Gui.color(gui, 2, (1 + state * 3 : U32)))
-  (Gui.draw_text(gui, f1, text, Gui.text_bounds(gui, 2, bounds), Gui.get_style(gui, 2, 14), Gui.color(gui, 2, (2 + state * 3 : U32))), over && Gui.released(core))
+  f2 = Gui.draw_text(gui, f1, text, Gui.text_bounds(gui, 2, bounds), Gui.get_style(gui, 2, 14), Gui.color(gui, 2, (2 + state * 3 : U32)))
+  (Gui.tip.drawn(U32.is_eq(state, 1) && Gui.tip.shown(gui), gui, core, f2, bounds), over && Gui.released(core))
 
 def Gui.check.mark(checked: Bool, +gui: Gui, +state: U32, +bounds: J.Rectangle, frame: J.Frame) -> J.Frame:
   match checked:
@@ -690,7 +905,8 @@ def Gui.toggle.bytes(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectan
   +state = Gui.toggle.state(kind, Gui.get_state(gui))
   +now = Bool.pick(Bool, U32.is_eq(kind, 2), Bool.not(active), active)
   f1 = Gui.draw_rectangle(frame, bounds, Gui.get_style(gui, 3, 12), Gui.color(gui, 3, Gui.toggle.property(0, state, now)), Gui.color(gui, 3, Gui.toggle.property(1, state, now)))
-  (Gui.draw_text.bytes(bytes, gui, f1, Gui.text_bounds(gui, 3, bounds), Gui.get_style(gui, 3, 14), Gui.color(gui, 3, Gui.toggle.property(2, state, now))), now)
+  f2 = Gui.draw_text.bytes(bytes, gui, f1, Gui.text_bounds(gui, 3, bounds), Gui.get_style(gui, 3, 14), Gui.color(gui, 3, Gui.toggle.property(2, state, now)))
+  (Gui.tip.drawn(U32.is_eq(state, 1) && Gui.tip.shown(gui), gui, core, f2, bounds), now)
 
 # GuiToggle(bounds, text, &active): the frame and the active flag (flipped
 # when the pointer is released over the toggle).
@@ -771,8 +987,8 @@ def Gui.same(+a: J.Rectangle, +b: J.Rectangle) -> Bool:
   F32.is_eq(F32.trunc(ax), F32.trunc(bx)) && F32.is_eq(F32.trunc(ay), F32.trunc(by)) && F32.is_eq(F32.trunc(aw), F32.trunc(bw)) && F32.is_eq(F32.trunc(ah), F32.trunc(bh))
 
 def Gui.with_drag(+gui: Gui, +exclusive: Bool, +rec: J.Rectangle) -> Gui:
-  Gui{state, locked, alpha, _, _, style, scale} = gui
-  Gui{state, locked, alpha, exclusive, rec, style, scale}
+  Gui{state, locked, alpha, _, _, style, scale, tips, tip, tipped, icons} = gui
+  Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons}
 
 # The value under the pointer: (max - min)*((mouse.x - bounds.x - sliderWidth/2)/(bounds.width - sliderWidth)) + min.
 def Gui.slide.value(+mx: F32, +bx: F32, +bw: F32, +sw: U32, +min: F32, +max: F32) -> F32:
@@ -794,7 +1010,7 @@ def Gui.slide.update(kind: U32, +gui: Gui, +pointed: F32, +bounds: J.Rectangle, 
 # 0: untouched; 1: dragging this slider; 2: the drag ended; 3: pressed
 # inside; 4: hovered.
 def Gui.slide.kind(+gui: Gui, +core: J.Core, +bounds: J.Rectangle, +slider: J.Rectangle) -> U32:
-  Gui{_, _, _, +exclusive, +rec, _, _} = gui
+  Gui{_, _, _, +exclusive, +rec, _, _, _, _, _, _} = gui
   +down = Gui.down(core)
   +inside = J.Collision.point_rec(J.Input.get_mouse_position(core), bounds)
   +dragging = Bool.pick(U32, down, Bool.pick(U32, Gui.same(bounds, rec), 1, 0), 2)
@@ -1063,12 +1279,6 @@ def Gui.status_bar(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<
   f1 = Gui.draw_rectangle(frame, bounds, Gui.get_style(gui, 15, 12), Gui.color(gui, 15, (state * 3 : U32)), Gui.color(gui, 15, (1 + state * 3 : U32)))
   Gui.draw_text.maybe(gui, f1, text, Gui.text_bounds(gui, 15, bounds), Gui.get_style(gui, 15, 14), Gui.color(gui, 15, (2 + state * 3 : U32)))
 
-# The panel's rectangle: a border of 1 in LINE_COLOR over BACKGROUND_COLOR
-# (BORDER_COLOR_DISABLED over BASE_COLOR_DISABLED when disabled).
-def Gui.panel.body(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle) -> J.Frame:
-  +disabled = U32.is_eq(Gui.get_state(gui), 3)
-  Gui.draw_rectangle(frame, bounds, 1, Gui.color(gui, 0, Bool.pick(U32, disabled, 9, 18)), Gui.color(gui, 0, Bool.pick(U32, disabled, 10, 19)))
-
 def Gui.panel.headed(text: Maybe<String>, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle) -> J.Frame:
   match text:
     case None{}: Gui.panel.body(gui, frame, bounds)
@@ -1080,11 +1290,6 @@ def Gui.panel.headed(text: Maybe<String>, +gui: Gui, frame: J.Frame, +bounds: J.
 # panel, which starts 23 pixels lower and is at least 48 high.
 def Gui.panel(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>) -> J.Frame:
   Gui.panel.headed(text, gui, frame, bounds)
-
-def Gui.refused(refused: Bool, frame: J.Frame) -> J.Frame:
-  match refused:
-    case True{}: J.Frame.refuse(frame)
-    case False{}: frame
 
 def Gui.drop.count(items: +List<Gui.Item>, +n: U32) -> U32:
   match items:
@@ -1389,8 +1594,10 @@ def Gui.box.out(edit: Gui.Edit, +core: J.Core, +gui: Gui, frame: J.Frame, +bound
   GuiEdit{+bytes, +cursor, +counter, +offset, +result, +state, +cx, +mouse, +refused} = edit
   f1 = Gui.draw_rectangle(frame, bounds, Gui.get_style(gui, 9, 12), Gui.color(gui, 9, (state * 3 : U32)), Gui.box.fill(state, gui))
   f2 = Gui.draw_text.bytes(TextCore.drop(bytes, offset), gui, f1, tb, Gui.get_style(gui, 9, 14), Gui.color(gui, 9, (2 + state * 3 : U32)))
-  f3 = Gui.box.cursors(editing && U32.is_eq(Gui.get_style(gui, 9, 16), 0), gui, bounds, tb, cx, mouse, f2)
-  (Gui.refused(refused, f3), (core, (TextCore.string(bytes), (GuiEditing{cursor, counter}, result))))
+  +cursor_drawn = editing && U32.is_eq(Gui.get_style(gui, 9, 16), 0)
+  f3 = Gui.box.cursors(cursor_drawn, gui, bounds, tb, cx, mouse, f2)
+  f4 = Gui.tip.drawn(Bool.not(cursor_drawn) && U32.is_eq(state, 1) && Gui.tip.shown(gui), gui, core, f3, bounds)
+  (Gui.refused(refused, f4), (core, (TextCore.string(bytes), (GuiEditing{cursor, counter}, result))))
 
 def Gui.box.done(r: J.Core & Gui.Edit, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +tb: J.Rectangle, +editing: Bool) -> J.Frame & (J.Core & (String & (Gui.Editing & Bool))):
   (+core, edit) = r
@@ -1422,7 +1629,7 @@ def Gui.rec.height(rec: J.Rectangle) -> F32:
   h
 
 def Gui.exclusive_rec(gui: Gui) -> J.Rectangle:
-  Gui{_, _, _, _, rec, _, _} = gui
+  Gui{_, _, _, _, rec, _, _, _, _, _, _} = gui
   rec
 
 # (int)x as a word, 0 where C's conversion is undefined (the callers refuse there).
@@ -1910,7 +2117,7 @@ def Gui.dummy_rec(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle, text: String)
 
 # A grid line: alpha 0.6 every subdivs lines, 0.15 between, then guiAlpha.
 def Gui.grid.color(+gui: Gui, +raw: U32, +major: Bool) -> U32:
-  Gui{_, _, +alpha, _, _, _, _} = gui
+  Gui{_, _, +alpha, _, _, _, _, _, _, _, _} = gui
   Gui.fade(Gui.fade(raw, Bool.pick(F32, major, (0.15 * 4.0 : F32), 0.15)), alpha)
 
 def Gui.grid.vertical(n: Nat, +gui: Gui, frame: J.Frame, +x: F32, +y: F32, +h: F32, +spacing: F32, +subdivs: U32, +raw: U32, +i: U32) -> J.Frame:
@@ -1978,10 +2185,6 @@ def Gui.grid(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, tex
 # GuiToggleSlider, GuiComboBox, GuiListView
 
 # guiAlpha.
-def Gui.alpha.of(gui: Gui) -> F32:
-  Gui{_, _, alpha, _, _, _, _} = gui
-  alpha
-
 # The bytes of item `index` (GuiTextSplit's), none past the last.
 def Gui.item.at(items: +List<Gui.Item>, +index: U32) -> +List<U32>:
   match items:

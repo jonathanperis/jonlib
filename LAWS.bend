@@ -3925,6 +3925,25 @@ law gui_grid_lines_counted:
 law gui_grid_no_lines_below_one:
   {JG.Gui.grid.n(4294967295) == 0n : Nat}
 
+# GuiLoadIcons reads the table's words little-endian. GuiDrawIcon keeps C's
+# int in range: a pixel size of -2 is near enough, 2^26 is not.
+law gui_icons_word_little_endian:
+  {JG.Gui.icons.word([1, 2, 3, 4]) == 67305985 : U32}
+
+law gui_icon_negative_size_near:
+  {JG.Gui.icon.near(4294967294, 67108864) == True{} : Bool}
+
+law gui_icon_size_past_range:
+  {JG.Gui.icon.near(67108864, 67108864) == False{} : Bool}
+
+# GuiTooltip's panel is 8 pixels higher a line, GetTextLines counting at
+# most 128 lines.
+law gui_tip_lines_counted:
+  {JG.Gui.tip.count([[97], [98]], 0) == 2 : U32}
+
+law gui_tip_lines_capped:
+  {JG.Gui.tip.count([[97]], 128) == 128 : U32}
+
 # dr_mp3's memory streams (src/mp3.bend): opened from memory, a stream has
 # every byte before its tags at hand and none after them, is never filled,
 # goes on while a decode passes bytes and is over when one passes none; a
