@@ -1973,3 +1973,144 @@ def Gui.grid(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, tex
   +raw = Gui.get_style(gui, 0, Bool.pick(U32, U32.is_eq(Gui.get_state(gui), 3), 9, 18))
   (Gui.grid.drawn(Gui.c_int((w / space : F32)), Gui.c_int((h / space : F32)), gui, frame, x, y, w, h, spacing, subdivs, raw),
     Gui.grid.cell(over, J.Input.get_mouse_position(core), x, y, spacing))
+
+# -----------------------------------------------------------------------------
+# GuiToggleSlider, GuiComboBox, GuiListView
+
+# guiAlpha.
+def Gui.alpha.of(gui: Gui) -> F32:
+  Gui{_, _, alpha, _, _, _, _} = gui
+  alpha
+
+# The bytes of item `index` (GuiTextSplit's), none past the last.
+def Gui.item.at(items: +List<Gui.Item>, +index: U32) -> +List<U32>:
+  match items:
+    case Nil{}: Nil{}
+    case Con{+item, rest}: Bool.pick(+List<U32>, U32.is_eq(index, 0), Gui.item.bytes(item), Gui.item.at(rest, (index - 1 : U32)))
+
+# The knob of GuiToggleSlider and its state: SLIDER's base color pressed for
+# the normal and pressed states, focused for the focused one; none disabled.
+def Gui.toggle_slider.knob(+gui: Gui, +state: U32, frame: J.Frame, +knob: J.Rectangle) -> J.Frame:
+  match state:
+    case 3: frame
+    case 1: Gui.draw_rectangle(frame, knob, 0, 0, Gui.color(gui, 4, 4))
+    case _: Gui.draw_rectangle(frame, knob, 0, 0, Gui.color(gui, 4, 7))
+
+def Gui.toggle_slider.drawn(width: Maybe<F32>, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +items: +List<Gui.Item>, +count: U32, +active: U32, +state: U32) -> J.Frame:
+  match width:
+    case None{}: J.Frame.refuse(frame)
+    case Some{+tw}:
+      J.Rectangle{+x, +y, +w, +h} = bounds
+      +border = Gui.get_style(gui, 4, 12)
+      +pad = Gui.get_style(gui, 4, 17)
+      +kw = ((((w - U32.to_f32((2 * border : U32)) : F32) - U32.to_f32(((count + 1) * pad : U32)) : F32)) / U32.to_f32(count) : F32)
+      +kx = (((x + U32.to_f32(border) : F32) + U32.to_f32(((active + 1) * pad : U32)) : F32) + (U32.to_f32(active) * kw : F32) : F32)
+      +ky = ((y + U32.to_f32(border) : F32) + U32.to_f32(pad) : F32)
+      +kh = ((h - U32.to_f32((2 * border : U32)) : F32) - U32.to_f32((2 * pad : U32)) : F32)
+      +alpha = Gui.alpha.of(gui)
+      +size = Gui.get_style(gui, 0, 16)
+      f1 = Gui.draw_rectangle(frame, J.Rectangle{x, y, w, h}, border, Gui.color(gui, 3, (state * 3 : U32)), Gui.color(gui, 3, 1))
+      f2 = Gui.toggle_slider.knob(gui, state, f1, J.Rectangle{kx, ky, kw, kh})
+      Gui.draw_text.bytes(Gui.item.at(items, active), gui, f2,
+        J.Rectangle{(((kx + (kw / 2.0 : F32)) : F32) - (tw / 2.0 : F32) : F32), ((y + (h / 2.0 : F32) : F32) - U32.to_f32((size / 2 : U32)) : F32), tw, U32.to_f32(size)},
+        Gui.get_style(gui, 3, 14), Gui.fade(J.Color.with_alpha(Gui.get_style(gui, 3, (2 + state * 3 : U32)), alpha), alpha))
+
+def Gui.toggle_slider.run(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +text: String, +items: +List<Gui.Item>, +count: U32, +active: U32) -> J.Frame & (U32 & Bool):
+  +live = U32.is_ne(Gui.get_state(gui), 3) && Bool.not(Gui.is_locked(gui))
+  +over = live && J.Collision.point_rec(J.Input.get_mouse_position(core), bounds)
+  +down = Gui.down(core)
+  +clicked = over && Bool.not(down) && Gui.released(core)
+  +moved = Bool.pick(U32, clicked, (active + 1 : U32), active)
+  +touched = Bool.pick(U32, over, Bool.pick(U32, down || clicked, 2, 1), Gui.get_state(gui))
+  +state = Bool.pick(U32, live && U32.is_ne(moved, 0) && U32.is_ne(touched, 1), 2, touched)
+  +shown = Bool.pick(U32, (moved >= count : U32), 0, moved)
+  (Gui.toggle_slider.drawn(Gui.get_text_width(gui, text), gui, frame, bounds, items, count, shown, state), (shown, clicked))
+
+def Gui.toggle_slider.of(fine: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +text: String, +items: +List<Gui.Item>, +count: U32, +active: U32) -> J.Frame & (U32 & Bool):
+  match fine:
+    case False{}: (J.Frame.refuse(frame), (active, False{}))
+    case True{}: Gui.toggle_slider.run(gui, core, frame, bounds, text, items, count, active)
+
+# GuiToggleSlider(bounds, text, &active): the items of `text` (';'
+# separated), a knob (width - 2 border - (count + 1) padding) / count wide at
+# the active item, the pointer's release over the bounds moving it on (back
+# to the first past the last), the item's text centered on the knob over the
+# width of the whole text, as raygui measures it. The frame, the active index
+# and whether it moved. An active index below 0 (raygui indexes the items
+# with it), a text of 1024 bytes or more or 128 items or more (GuiTextSplit's
+# static buffers), and a text raygui cannot measure mark the frame undefined.
+def Gui.toggle_slider(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +text: String, +active: U32) -> J.Frame & (U32 & Bool):
+  +items = Gui.split(TextCore.bytes(text), 59, 0, Nil{})
+  +count = Gui.drop.count(items, 0)
+  Gui.toggle_slider.of((active < 2147483648 : U32) && (count < 128 : U32) && (TextCore.len(TextCore.bytes(text)) < 1024 : U32), gui, core, frame, bounds, text, items, count, active)
+
+def Gui.combo.first(r: J.Frame & Bool) -> J.Frame:
+  (frame, _) = r
+  frame
+
+def Gui.combo.drawn(+gui: Gui, +core: J.Core, frame: J.Frame, +box: J.Rectangle, +selector: J.Rectangle, +items: +List<Gui.Item>, +count: U32, +active: U32, +state: U32) -> J.Frame & U32:
+  f1 = Gui.draw_rectangle(frame, box, Gui.get_style(gui, 7, 12), Gui.color(gui, 7, (state * 3 : U32)), Gui.color(gui, 7, (1 + state * 3 : U32)))
+  f2 = Gui.draw_text.bytes(Gui.item.at(items, active), gui, f1, Gui.text_bounds(gui, 7, box), Gui.get_style(gui, 7, 14), Gui.color(gui, 7, (2 + state * 3 : U32)))
+  (Gui.combo.first(Gui.button(Gui.set_style(Gui.set_style(gui, 2, 12, 1), 2, 14, 1), core, f2, selector, U32.show((active + 1 : U32)) ++ "/" ++ U32.show(count))), active)
+
+def Gui.combo.run(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +items: +List<Gui.Item>, +count: U32, +active: U32) -> J.Frame & U32:
+  J.Rectangle{+x, +y, +w, +h} = bounds
+  +bw = U32.to_f32(Gui.get_style(gui, 7, 16))
+  +spacing = U32.to_f32(Gui.get_style(gui, 7, 17))
+  +width = (w - U32.to_f32((Gui.get_style(gui, 7, 16) + Gui.get_style(gui, 7, 17) : U32)) : F32)
+  +clamped = Bool.pick(U32, (active >= 2147483648 : U32), 0, Bool.pick(U32, (active > (count - 1 : U32) : U32), (count - 1 : U32), active))
+  +live = U32.is_ne(Gui.get_state(gui), 3) && Bool.not(Gui.is_locked(gui)) && (count > 1 : U32) && Bool.not(Gui.exclusive(gui))
+  +mouse = J.Input.get_mouse_position(core)
+  +over = live && (J.Collision.point_rec(mouse, J.Rectangle{x, y, width, h}) || J.Collision.point_rec(mouse, J.Rectangle{((x + width : F32) + spacing : F32), y, bw, h}))
+  +next = Bool.pick(U32, over && Gui.pressed(core), Bool.pick(U32, ((clamped + 1 : U32) >= count : U32), 0, (clamped + 1 : U32)), clamped)
+  Gui.combo.drawn(gui, core, frame, J.Rectangle{x, y, width, h}, J.Rectangle{((x + width : F32) + spacing : F32), y, bw, h}, items, count, next,
+    Bool.pick(U32, over, Bool.pick(U32, Gui.down(core), 2, 1), Gui.get_state(gui)))
+
+def Gui.combo.of(fine: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +items: +List<Gui.Item>, +count: U32, +active: U32) -> J.Frame & U32:
+  match fine:
+    case False{}: (J.Frame.refuse(frame), active)
+    case True{}: Gui.combo.run(gui, core, frame, bounds, items, count, active)
+
+# GuiComboBox(bounds, text, &active): the box less COMBO_BUTTON_WIDTH and
+# COMBO_BUTTON_SPACING, the active item (clamped to the items) in it, and a
+# GuiButton beside it, BUTTON's border 1 and centered, showing "active/count";
+# a press over either (with more than one item) moves to the next item, back
+# to the first past the last. The frame and the active index. A text of 1024
+# bytes or more or 128 items or more marks the frame undefined.
+def Gui.combo_box(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +text: String, +active: U32) -> J.Frame & U32:
+  +items = Gui.split(TextCore.bytes(text), 59, 0, Nil{})
+  +count = Gui.drop.count(items, 0)
+  Gui.combo.of((count < 128 : U32) && (TextCore.len(TextCore.bytes(text)) < 1024 : U32), gui, core, frame, bounds, items, count, active)
+
+def Gui.list.strings(items: +List<Gui.Item>, acc: +List<String>) -> +List<String>:
+  match items:
+    case Nil{}: List.reverse(&2, String, acc)
+    case Con{+item, rest}: Gui.list.strings(rest, Con{TextCore.string(Gui.item.bytes(item)), acc})
+
+def Gui.list_view.words(frame: J.Frame, +gui: Gui, listed: Gui.Listed) -> J.Frame & (Gui & (U32 & U32)):
+  GuiListed{+scroll, +active, _} = listed
+  (frame, (gui, (scroll, active)))
+
+def Gui.list_view.listed(frame: J.Frame, rest: Gui & Gui.Listed) -> J.Frame & (Gui & (U32 & U32)):
+  (gui, listed) = rest
+  Gui.list_view.words(frame, gui, listed)
+
+def Gui.list_view.done(r: J.Frame & (Gui & Gui.Listed)) -> J.Frame & (Gui & (U32 & U32)):
+  (frame, rest) = r
+  Gui.list_view.listed(frame, rest)
+
+def Gui.list_view.of(fine: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +items: +List<String>, +scroll: U32, +active: U32) -> J.Frame & (Gui & (U32 & U32)):
+  match fine:
+    case False{}: (J.Frame.refuse(frame), (gui, (scroll, active)))
+    case True{}: Gui.list_view.done(Gui.list_view_ex(gui, core, frame, bounds, items, scroll, active, 4294967295))
+
+# GuiListView(bounds, text, &scrollIndex, &active): GuiListViewEx over the
+# items of `text` (none for a NULL text, None) with no focus pointer (-1).
+# The frame, the gui and the scroll index and active item as words. A text of
+# 1024 bytes or more or 128 items or more marks the frame undefined.
+def Gui.list_view(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, +scroll: U32, +active: U32) -> J.Frame & (Gui & (U32 & U32)):
+  match text:
+    case None{}: Gui.list_view.of(True{}, gui, core, frame, bounds, Nil{}, scroll, active)
+    case Some{+t}:
+      +items = Gui.split(TextCore.bytes(t), 59, 0, Nil{})
+      Gui.list_view.of((Gui.drop.count(items, 0) < 128 : U32) && (TextCore.len(TextCore.bytes(t)) < 1024 : U32), gui, core, frame, bounds, Gui.list.strings(items, Nil{}), scroll, active)

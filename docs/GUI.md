@@ -53,6 +53,9 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiLabelButton` | `Gui.label_button(gui, core, frame, bounds, text)` | `Frame & Bool` (clicked; the bounds widened to the text) |
 | `GuiDummyRec` | `Gui.dummy_rec(gui, frame, bounds, text)` | `Frame` |
 | `GuiGrid` | `Gui.grid(gui, core, frame, bounds, text, spacing, subdivs)` | `Frame & Vector2` (the cell under the pointer, or (-1, -1); `subdivs` is a C int as a word) |
+| `GuiToggleSlider` | `Gui.toggle_slider(gui, core, frame, bounds, text, active)` | `Frame & (U32 & Bool)` (the active item, moved on by a release) |
+| `GuiComboBox` | `Gui.combo_box(gui, core, frame, bounds, text, active)` | `Frame & U32` (the active item, moved on by a press over the box or its button) |
+| `GuiListView` | `Gui.list_view(gui, core, frame, bounds, text, scroll, active)` | `Frame & (Gui & (U32 & U32))` (`GuiListViewEx` over the items of `text`, `None` for NULL; the scroll index and active item as words) |
 
 Two additions have no raygui counterpart. They run a row of controls in order
 for programs that keep their values in lists (Bend has no pointers to write
@@ -178,9 +181,7 @@ example waiting on each raygui function it calls that is not delivered.
 
 ## Gaps
 
-- Not delivered yet: `GuiToggleSlider`,
-  `GuiComboBox`, `GuiTextBoxMulti`, `GuiValueBoxFloat`,
-  `GuiTabBar`, `GuiListView` (the one that splits a text; `GuiListViewEx` is in),
+- Not delivered yet: `GuiTextBoxMulti`, `GuiValueBoxFloat`, `GuiTabBar`,
   `GuiColor*`, `GuiMessageBox`, `GuiTextInputBox`, the style file loaders, `GuiSetFont` and `GuiGetFont`'s
   Font (its base size is `Gui.font_base_size`),
   `GuiDrawIcon`/`GuiIconText` as functions, `GuiLoadIcons` and tooltips.
@@ -190,6 +191,11 @@ example waiting on each raygui function it calls that is not delivered.
   `#` with no second `#`: raygui's `GuiGetTextWidth` would look for it in the
   lines that follow.
 - The `TEXT_WRAP_CHAR` and `TEXT_WRAP_WORD` modes mark the frame undefined.
+- `GuiToggleSlider`, `GuiComboBox` and `GuiListView` mark the frame
+  undefined for a text of 1024 bytes or more or 128 items or more
+  (`GuiTextSplit`'s static buffers), and `GuiToggleSlider` for an active
+  index below 0 (it indexes the items with it) and a text whose width raygui
+  cannot measure.
 - `GuiGrid` marks the frame undefined where C cannot convert its line counts,
   `(int)(size / (spacing / subdivs))`: a NaN or a count outside the int range.
 - `GuiListViewEx` marks the frame undefined for an item height or spacing
@@ -269,3 +275,9 @@ clicked), `GuiLabelButton` (a label wider than its bounds, hovered and
 clicked), `GuiDummyRec` (hovered and pressed, which draw nothing different,
 and disabled) and `GuiGrid` (the cell under the pointer at the corners, on an
 edge and outside, and a disabled grid that answers no cell).
+`gui_toggle_combo_list` covers `GuiToggleSlider` (hovered, pressed and
+released three times, to its last item and back to the first; its text
+centered over the whole text's width), `GuiComboBox` (pressed on its box and
+on its selector button, which draws as a button of its own), `GuiListView`
+(an item chosen, the list scrolled by the wheel, another chosen) and the
+three disabled, the list view with a NULL text.

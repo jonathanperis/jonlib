@@ -2780,6 +2780,12 @@ def Laws.gui_list_disabled_items():
 def Laws.gui_font_base_size_is_the_default_font_s():
   {==}
 
+def Laws.gui_item_at_second():
+  {==}
+
+def Laws.gui_item_at_past_the_last():
+  {==}
+
 def Laws.gui_grid_lines_counted():
   {==}
 
