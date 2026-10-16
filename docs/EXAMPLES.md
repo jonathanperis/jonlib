@@ -13,7 +13,6 @@ Totals: 212 examples; 212 ported, 0 ready, 0 waiting.
 
 | API | Examples waiting on it |
 |---|---|
-| `GuiProgressBar` | 2 |
 
 ## Examples
 
@@ -184,8 +183,8 @@ Totals: 212 examples; 212 ported, 0 ready, 0 waiting.
 | `models_decals` | models | ported |  |
 | `models_directional_billboard` | models | ported |  |
 | `models_animation_blend_custom` | models | ported |  |
-| `models_animation_blending` | models | ported | `GuiProgressBar` |
-| `models_animation_timing` | models | ported | `GuiProgressBar` |
+| `models_animation_blending` | models | ported |  |
+| `models_animation_timing` | models | ported |  |
 | `shaders_ascii_rendering` | shaders | ported |  |
 | `shaders_basic_lighting` | shaders | ported |  |
 | `shaders_model_shader` | shaders | ported |  |
