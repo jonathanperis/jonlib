@@ -30,7 +30,7 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 | Step | Phase | Work package | Entries | Partial | Complete | Prerequisites |
 |---|---:|---|---:|---:|---:|---|
 | 1 | 0 | `types` — Types, constants and language mappings | 549 | 549 | 0 | — |
-| 2 | 1 | `numerics` — Numeric fidelity and scalar contracts | 14 | 13 | 0 | types |
+| 2 | 1 | `numerics` — Numeric fidelity and scalar contracts | 14 | 14 | 0 | types |
 | 3 | 1 | `jonmath` — Jonmath vectors, matrices and quaternions | 221 | 221 | 0 | numerics |
 | 4 | 1 | `memory` — Buffers, memory and callback contracts | 12 | 12 | 0 | types |
 | 5 | 1 | `files` — Files, paths, compression and data utilities | 49 | 49 | 0 | memory |
@@ -43,7 +43,7 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 | 12 | 2 | `window` — Window, monitor, clipboard and cursor runtime | 57 | 57 | 0 | types, memory |
 | 13 | 2 | `input` — Keyboard, mouse, gamepad, touch and gestures | 57 | 57 | 0 | window, numerics |
 | 14 | 2 | `frame` — Timing, frame control and automation | 17 | 17 | 0 | window, input |
-| 15 | 6 | `rlgl-core` — rlgl state, matrices and immediate drawing | 187 | 105 | 0 | window, jonmath, memory |
+| 15 | 6 | `rlgl-core` — rlgl state, matrices and immediate drawing | 187 | 177 | 0 | window, jonmath, memory |
 | 16 | 2 | `shapes` — 2D drawing and splines | 62 | 62 | 0 | frame, rlgl-core, jonmath, pixels |
 | 17 | 2 | `textures` — Textures, render targets and sampling | 27 | 27 | 0 | rlgl-core, pixels, image-codecs |
 | 18 | 3 | `text-utils` — Byte strings and Unicode/codepoint utilities | 35 | 35 | 0 | memory, files |
@@ -58,7 +58,7 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 | 27 | 5 | `camera` — Camera controls and projection | 22 | 22 | 0 | jonmath, input, frame |
 | 28 | 5 | `vr` — VR stereo configuration and rendering | 4 | 4 | 0 | camera, shaders |
 | 29 | 6 | `rlgl-advanced` — rlgl buffers, compute and low-level interop | 52 | 48 | 0 | rlgl-core, shaders, textures |
-| 30 | 7 | `configuration` — Build switches, limits and source-package compatibility | 207 | 0 | 0 | types |
+| 30 | 7 | `configuration` — Build switches, limits and source-package compatibility | 207 | 29 | 0 | types |
 | 31 | 7 | `platforms` — Complete platform/backend validation | 0 | 0 | 0 | window, input, frame, audio-stream, rlgl-advanced |
 
 ## Next work queue

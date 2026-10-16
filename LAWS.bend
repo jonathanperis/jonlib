@@ -3992,6 +3992,17 @@ law gui_scan_int_past_int:
 law gui_rgs_span_through_newline:
   {JG.Gui.rgs.span(255n, [97, 10, 98], 0) == 2 : U32}
 
+# Header macros: a value macro is its literal, and one that names an
+# enumerator has the enumerator's value.
+law macro_rlgl_texture_wrap_s:
+  {J.Rlgl.RL_TEXTURE_WRAP_S() == 10242 : U32}
+
+law macro_mouse_left_button_is_its_enumerator:
+  {J.Config.MOUSE_LEFT_BUTTON() == J.MouseButton.MOUSE_BUTTON_LEFT() : U32}
+
+law macro_shader_loc_map_diffuse_is_albedo:
+  {J.Rlgl.RL_SHADER_LOC_MAP_DIFFUSE() == J.rlShaderLocationIndex.RL_SHADER_LOC_MAP_ALBEDO() : U32}
+
 law gui_pick_hover_keeps_drag:
   for gui: JG.Gui
   for bounds: J.Rectangle

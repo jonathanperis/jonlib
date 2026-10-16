@@ -81,23 +81,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.JONLIB_VERSION_MAJOR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RAYLIB_VERSION_MAJOR (6).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -108,7 +112,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RAYLIB_VERSION_MAJOR semantics from the linked source, add a reference fixture, then implement Config.JONLIB_VERSION_MAJOR.",
+      "next_step": "Close documented gaps and unverified gates for RAYLIB_VERSION_MAJOR.",
       "priority": 829
     },
     {
@@ -135,23 +139,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.JONLIB_VERSION_MINOR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RAYLIB_VERSION_MINOR (0).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -162,7 +170,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RAYLIB_VERSION_MINOR semantics from the linked source, add a reference fixture, then implement Config.JONLIB_VERSION_MINOR.",
+      "next_step": "Close documented gaps and unverified gates for RAYLIB_VERSION_MINOR.",
       "priority": 829
     },
     {
@@ -189,23 +197,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.JONLIB_VERSION_PATCH",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RAYLIB_VERSION_PATCH (0).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -216,7 +228,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RAYLIB_VERSION_PATCH semantics from the linked source, add a reference fixture, then implement Config.JONLIB_VERSION_PATCH.",
+      "next_step": "Close documented gaps and unverified gates for RAYLIB_VERSION_PATCH.",
       "priority": 829
     },
     {
@@ -243,23 +255,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.JONLIB_VERSION",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The String \"6.0\".",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -270,7 +286,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RAYLIB_VERSION semantics from the linked source, add a reference fixture, then implement Config.JONLIB_VERSION.",
+      "next_step": "Close documented gaps and unverified gates for RAYLIB_VERSION.",
       "priority": 829
     },
     {
@@ -13767,23 +13783,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.MOUSE_LEFT_BUTTON",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "MOUSE_LEFT_BUTTON is MOUSE_BUTTON_LEFT: the enumerator's U32 value.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -13794,7 +13814,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive MOUSE_LEFT_BUTTON semantics from the linked source, add a reference fixture, then implement Config.MOUSE_LEFT_BUTTON.",
+      "next_step": "Close documented gaps and unverified gates for MOUSE_LEFT_BUTTON.",
       "priority": 829
     },
     {
@@ -13821,23 +13841,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.MOUSE_RIGHT_BUTTON",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "MOUSE_RIGHT_BUTTON is MOUSE_BUTTON_RIGHT: the enumerator's U32 value.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -13848,7 +13872,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive MOUSE_RIGHT_BUTTON semantics from the linked source, add a reference fixture, then implement Config.MOUSE_RIGHT_BUTTON.",
+      "next_step": "Close documented gaps and unverified gates for MOUSE_RIGHT_BUTTON.",
       "priority": 829
     },
     {
@@ -13875,23 +13899,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.MOUSE_MIDDLE_BUTTON",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "MOUSE_MIDDLE_BUTTON is MOUSE_BUTTON_MIDDLE: the enumerator's U32 value.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -13902,7 +13930,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive MOUSE_MIDDLE_BUTTON semantics from the linked source, add a reference fixture, then implement Config.MOUSE_MIDDLE_BUTTON.",
+      "next_step": "Close documented gaps and unverified gates for MOUSE_MIDDLE_BUTTON.",
       "priority": 829
     },
     {
@@ -17278,23 +17306,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.MATERIAL_MAP_DIFFUSE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "MATERIAL_MAP_DIFFUSE is MATERIAL_MAP_ALBEDO: the enumerator's U32 value.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -17305,7 +17337,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive MATERIAL_MAP_DIFFUSE semantics from the linked source, add a reference fixture, then implement Config.MATERIAL_MAP_DIFFUSE.",
+      "next_step": "Close documented gaps and unverified gates for MATERIAL_MAP_DIFFUSE.",
       "priority": 829
     },
     {
@@ -17332,23 +17364,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.MATERIAL_MAP_SPECULAR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "MATERIAL_MAP_SPECULAR is MATERIAL_MAP_METALNESS: the enumerator's U32 value.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -17359,7 +17395,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive MATERIAL_MAP_SPECULAR semantics from the linked source, add a reference fixture, then implement Config.MATERIAL_MAP_SPECULAR.",
+      "next_step": "Close documented gaps and unverified gates for MATERIAL_MAP_SPECULAR.",
       "priority": 829
     },
     {
@@ -19181,23 +19217,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.SHADER_LOC_MAP_DIFFUSE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "SHADER_LOC_MAP_DIFFUSE is SHADER_LOC_MAP_ALBEDO: the enumerator's U32 value.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -19208,7 +19248,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive SHADER_LOC_MAP_DIFFUSE semantics from the linked source, add a reference fixture, then implement Config.SHADER_LOC_MAP_DIFFUSE.",
+      "next_step": "Close documented gaps and unverified gates for SHADER_LOC_MAP_DIFFUSE.",
       "priority": 829
     },
     {
@@ -19235,23 +19275,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.SHADER_LOC_MAP_SPECULAR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "SHADER_LOC_MAP_SPECULAR is SHADER_LOC_MAP_METALNESS: the enumerator's U32 value.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -19262,7 +19306,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive SHADER_LOC_MAP_SPECULAR semantics from the linked source, add a reference fixture, then implement Config.SHADER_LOC_MAP_SPECULAR.",
+      "next_step": "Close documented gaps and unverified gates for SHADER_LOC_MAP_SPECULAR.",
       "priority": 829
     },
     {
@@ -78277,23 +78321,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.RLGL_VERSION",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The String \"6.0\".",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -78304,7 +78352,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RLGL_VERSION semantics from the linked source, add a reference fixture, then implement Config.RLGL_VERSION.",
+      "next_step": "Close documented gaps and unverified gates for RLGL_VERSION.",
       "priority": 829
     },
     {
@@ -79267,23 +79315,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.RL_DEFAULT_BATCH_BUFFER_ELEMENTS",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DEFAULT_BATCH_BUFFER_ELEMENTS (8192).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -79294,7 +79346,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_DEFAULT_BATCH_BUFFER_ELEMENTS semantics from the linked source, add a reference fixture, then implement Config.RL_DEFAULT_BATCH_BUFFER_ELEMENTS.",
+      "next_step": "Close documented gaps and unverified gates for RL_DEFAULT_BATCH_BUFFER_ELEMENTS.",
       "priority": 829
     },
     {
@@ -79322,23 +79374,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.RL_DEFAULT_BATCH_BUFFERS",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DEFAULT_BATCH_BUFFERS (1).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -79349,7 +79405,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_DEFAULT_BATCH_BUFFERS semantics from the linked source, add a reference fixture, then implement Config.RL_DEFAULT_BATCH_BUFFERS.",
+      "next_step": "Close documented gaps and unverified gates for RL_DEFAULT_BATCH_BUFFERS.",
       "priority": 829
     },
     {
@@ -79377,23 +79433,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.RL_DEFAULT_BATCH_DRAWCALLS",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DEFAULT_BATCH_DRAWCALLS (256).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -79404,7 +79464,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_DEFAULT_BATCH_DRAWCALLS semantics from the linked source, add a reference fixture, then implement Config.RL_DEFAULT_BATCH_DRAWCALLS.",
+      "next_step": "Close documented gaps and unverified gates for RL_DEFAULT_BATCH_DRAWCALLS.",
       "priority": 829
     },
     {
@@ -79432,23 +79492,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.RL_DEFAULT_BATCH_MAX_TEXTURE_UNITS",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DEFAULT_BATCH_MAX_TEXTURE_UNITS (4).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -79459,7 +79523,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_DEFAULT_BATCH_MAX_TEXTURE_UNITS semantics from the linked source, add a reference fixture, then implement Config.RL_DEFAULT_BATCH_MAX_TEXTURE_UNITS.",
+      "next_step": "Close documented gaps and unverified gates for RL_DEFAULT_BATCH_MAX_TEXTURE_UNITS.",
       "priority": 829
     },
     {
@@ -79487,23 +79551,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_MAX_MATRIX_STACK_SIZE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_MAX_MATRIX_STACK_SIZE (32).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -79516,7 +79584,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_MAX_MATRIX_STACK_SIZE semantics from the linked source, add a reference fixture, then implement Rlgl.RL_MAX_MATRIX_STACK_SIZE.",
+      "next_step": "Close documented gaps and unverified gates for RL_MAX_MATRIX_STACK_SIZE.",
       "priority": 713
     },
     {
@@ -79544,23 +79612,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_MAX_SHADER_LOCATIONS",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_MAX_SHADER_LOCATIONS (32).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -79573,7 +79645,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_MAX_SHADER_LOCATIONS semantics from the linked source, add a reference fixture, then implement Rlgl.RL_MAX_SHADER_LOCATIONS.",
+      "next_step": "Close documented gaps and unverified gates for RL_MAX_SHADER_LOCATIONS.",
       "priority": 713
     },
     {
@@ -79601,23 +79673,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_CULL_DISTANCE_NEAR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The binary64 value of RL_CULL_DISTANCE_NEAR (0.05) as M.Float64.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -79630,7 +79706,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_CULL_DISTANCE_NEAR semantics from the linked source, add a reference fixture, then implement Rlgl.RL_CULL_DISTANCE_NEAR.",
+      "next_step": "Close documented gaps and unverified gates for RL_CULL_DISTANCE_NEAR.",
       "priority": 713
     },
     {
@@ -79658,23 +79734,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_CULL_DISTANCE_FAR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The binary64 value of RL_CULL_DISTANCE_FAR (4000.0) as M.Float64.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -79687,7 +79767,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_CULL_DISTANCE_FAR semantics from the linked source, add a reference fixture, then implement Rlgl.RL_CULL_DISTANCE_FAR.",
+      "next_step": "Close documented gaps and unverified gates for RL_CULL_DISTANCE_FAR.",
       "priority": 713
     },
     {
@@ -79714,23 +79794,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TEXTURE_WRAP_S",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TEXTURE_WRAP_S (0x2802).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -79743,7 +79827,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TEXTURE_WRAP_S semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TEXTURE_WRAP_S.",
+      "next_step": "Close documented gaps and unverified gates for RL_TEXTURE_WRAP_S.",
       "priority": 713
     },
     {
@@ -79770,23 +79854,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TEXTURE_WRAP_T",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TEXTURE_WRAP_T (0x2803).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -79799,7 +79887,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TEXTURE_WRAP_T semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TEXTURE_WRAP_T.",
+      "next_step": "Close documented gaps and unverified gates for RL_TEXTURE_WRAP_T.",
       "priority": 713
     },
     {
@@ -79826,23 +79914,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TEXTURE_MAG_FILTER",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TEXTURE_MAG_FILTER (0x2800).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -79855,7 +79947,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TEXTURE_MAG_FILTER semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TEXTURE_MAG_FILTER.",
+      "next_step": "Close documented gaps and unverified gates for RL_TEXTURE_MAG_FILTER.",
       "priority": 713
     },
     {
@@ -79882,23 +79974,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TEXTURE_MIN_FILTER",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TEXTURE_MIN_FILTER (0x2801).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -79911,7 +80007,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TEXTURE_MIN_FILTER semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TEXTURE_MIN_FILTER.",
+      "next_step": "Close documented gaps and unverified gates for RL_TEXTURE_MIN_FILTER.",
       "priority": 713
     },
     {
@@ -79938,23 +80034,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TEXTURE_FILTER_NEAREST",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TEXTURE_FILTER_NEAREST (0x2600).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -79967,7 +80067,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TEXTURE_FILTER_NEAREST semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TEXTURE_FILTER_NEAREST.",
+      "next_step": "Close documented gaps and unverified gates for RL_TEXTURE_FILTER_NEAREST.",
       "priority": 713
     },
     {
@@ -79994,23 +80094,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TEXTURE_FILTER_LINEAR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TEXTURE_FILTER_LINEAR (0x2601).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80023,7 +80127,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TEXTURE_FILTER_LINEAR semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TEXTURE_FILTER_LINEAR.",
+      "next_step": "Close documented gaps and unverified gates for RL_TEXTURE_FILTER_LINEAR.",
       "priority": 713
     },
     {
@@ -80050,23 +80154,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TEXTURE_FILTER_MIP_NEAREST",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TEXTURE_FILTER_MIP_NEAREST (0x2700).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80079,7 +80187,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TEXTURE_FILTER_MIP_NEAREST semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TEXTURE_FILTER_MIP_NEAREST.",
+      "next_step": "Close documented gaps and unverified gates for RL_TEXTURE_FILTER_MIP_NEAREST.",
       "priority": 713
     },
     {
@@ -80106,23 +80214,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TEXTURE_FILTER_NEAREST_MIP_LINEAR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TEXTURE_FILTER_NEAREST_MIP_LINEAR (0x2702).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80135,7 +80247,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TEXTURE_FILTER_NEAREST_MIP_LINEAR semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TEXTURE_FILTER_NEAREST_MIP_LINEAR.",
+      "next_step": "Close documented gaps and unverified gates for RL_TEXTURE_FILTER_NEAREST_MIP_LINEAR.",
       "priority": 713
     },
     {
@@ -80162,23 +80274,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TEXTURE_FILTER_LINEAR_MIP_NEAREST",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TEXTURE_FILTER_LINEAR_MIP_NEAREST (0x2701).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80191,7 +80307,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TEXTURE_FILTER_LINEAR_MIP_NEAREST semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TEXTURE_FILTER_LINEAR_MIP_NEAREST.",
+      "next_step": "Close documented gaps and unverified gates for RL_TEXTURE_FILTER_LINEAR_MIP_NEAREST.",
       "priority": 713
     },
     {
@@ -80218,23 +80334,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TEXTURE_FILTER_MIP_LINEAR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TEXTURE_FILTER_MIP_LINEAR (0x2703).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80247,7 +80367,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TEXTURE_FILTER_MIP_LINEAR semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TEXTURE_FILTER_MIP_LINEAR.",
+      "next_step": "Close documented gaps and unverified gates for RL_TEXTURE_FILTER_MIP_LINEAR.",
       "priority": 713
     },
     {
@@ -80274,23 +80394,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TEXTURE_FILTER_ANISOTROPIC",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TEXTURE_FILTER_ANISOTROPIC (0x3000).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80303,7 +80427,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TEXTURE_FILTER_ANISOTROPIC semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TEXTURE_FILTER_ANISOTROPIC.",
+      "next_step": "Close documented gaps and unverified gates for RL_TEXTURE_FILTER_ANISOTROPIC.",
       "priority": 713
     },
     {
@@ -80330,23 +80454,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TEXTURE_MIPMAP_BIAS_RATIO",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TEXTURE_MIPMAP_BIAS_RATIO (0x4000).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80359,7 +80487,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TEXTURE_MIPMAP_BIAS_RATIO semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TEXTURE_MIPMAP_BIAS_RATIO.",
+      "next_step": "Close documented gaps and unverified gates for RL_TEXTURE_MIPMAP_BIAS_RATIO.",
       "priority": 713
     },
     {
@@ -80386,23 +80514,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TEXTURE_WRAP_REPEAT",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TEXTURE_WRAP_REPEAT (0x2901).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80415,7 +80547,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TEXTURE_WRAP_REPEAT semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TEXTURE_WRAP_REPEAT.",
+      "next_step": "Close documented gaps and unverified gates for RL_TEXTURE_WRAP_REPEAT.",
       "priority": 713
     },
     {
@@ -80442,23 +80574,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TEXTURE_WRAP_CLAMP",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TEXTURE_WRAP_CLAMP (0x812F).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80471,7 +80607,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TEXTURE_WRAP_CLAMP semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TEXTURE_WRAP_CLAMP.",
+      "next_step": "Close documented gaps and unverified gates for RL_TEXTURE_WRAP_CLAMP.",
       "priority": 713
     },
     {
@@ -80498,23 +80634,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TEXTURE_WRAP_MIRROR_REPEAT",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TEXTURE_WRAP_MIRROR_REPEAT (0x8370).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80527,7 +80667,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TEXTURE_WRAP_MIRROR_REPEAT semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TEXTURE_WRAP_MIRROR_REPEAT.",
+      "next_step": "Close documented gaps and unverified gates for RL_TEXTURE_WRAP_MIRROR_REPEAT.",
       "priority": 713
     },
     {
@@ -80554,23 +80694,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TEXTURE_WRAP_MIRROR_CLAMP",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TEXTURE_WRAP_MIRROR_CLAMP (0x8742).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80583,7 +80727,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TEXTURE_WRAP_MIRROR_CLAMP semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TEXTURE_WRAP_MIRROR_CLAMP.",
+      "next_step": "Close documented gaps and unverified gates for RL_TEXTURE_WRAP_MIRROR_CLAMP.",
       "priority": 713
     },
     {
@@ -80610,23 +80754,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_MODELVIEW",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_MODELVIEW (0x1700).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80639,7 +80787,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_MODELVIEW semantics from the linked source, add a reference fixture, then implement Rlgl.RL_MODELVIEW.",
+      "next_step": "Close documented gaps and unverified gates for RL_MODELVIEW.",
       "priority": 713
     },
     {
@@ -80666,23 +80814,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_PROJECTION",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_PROJECTION (0x1701).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80695,7 +80847,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_PROJECTION semantics from the linked source, add a reference fixture, then implement Rlgl.RL_PROJECTION.",
+      "next_step": "Close documented gaps and unverified gates for RL_PROJECTION.",
       "priority": 713
     },
     {
@@ -80722,23 +80874,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TEXTURE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TEXTURE (0x1702).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80751,7 +80907,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TEXTURE semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TEXTURE.",
+      "next_step": "Close documented gaps and unverified gates for RL_TEXTURE.",
       "priority": 713
     },
     {
@@ -80778,23 +80934,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_LINES",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_LINES (0x0001).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80807,7 +80967,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_LINES semantics from the linked source, add a reference fixture, then implement Rlgl.RL_LINES.",
+      "next_step": "Close documented gaps and unverified gates for RL_LINES.",
       "priority": 713
     },
     {
@@ -80834,23 +80994,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_TRIANGLES",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_TRIANGLES (0x0004).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80863,7 +81027,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_TRIANGLES semantics from the linked source, add a reference fixture, then implement Rlgl.RL_TRIANGLES.",
+      "next_step": "Close documented gaps and unverified gates for RL_TRIANGLES.",
       "priority": 713
     },
     {
@@ -80890,23 +81054,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_QUADS",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_QUADS (0x0007).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80919,7 +81087,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_QUADS semantics from the linked source, add a reference fixture, then implement Rlgl.RL_QUADS.",
+      "next_step": "Close documented gaps and unverified gates for RL_QUADS.",
       "priority": 713
     },
     {
@@ -80946,23 +81114,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_UNSIGNED_BYTE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_UNSIGNED_BYTE (0x1401).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -80975,7 +81147,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_UNSIGNED_BYTE semantics from the linked source, add a reference fixture, then implement Rlgl.RL_UNSIGNED_BYTE.",
+      "next_step": "Close documented gaps and unverified gates for RL_UNSIGNED_BYTE.",
       "priority": 713
     },
     {
@@ -81002,23 +81174,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_FLOAT",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_FLOAT (0x1406).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81031,7 +81207,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_FLOAT semantics from the linked source, add a reference fixture, then implement Rlgl.RL_FLOAT.",
+      "next_step": "Close documented gaps and unverified gates for RL_FLOAT.",
       "priority": 713
     },
     {
@@ -81058,23 +81234,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_STREAM_DRAW",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_STREAM_DRAW (0x88E0).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81087,7 +81267,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_STREAM_DRAW semantics from the linked source, add a reference fixture, then implement Rlgl.RL_STREAM_DRAW.",
+      "next_step": "Close documented gaps and unverified gates for RL_STREAM_DRAW.",
       "priority": 713
     },
     {
@@ -81114,23 +81294,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_STREAM_READ",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_STREAM_READ (0x88E1).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81143,7 +81327,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_STREAM_READ semantics from the linked source, add a reference fixture, then implement Rlgl.RL_STREAM_READ.",
+      "next_step": "Close documented gaps and unverified gates for RL_STREAM_READ.",
       "priority": 713
     },
     {
@@ -81170,23 +81354,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_STREAM_COPY",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_STREAM_COPY (0x88E2).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81199,7 +81387,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_STREAM_COPY semantics from the linked source, add a reference fixture, then implement Rlgl.RL_STREAM_COPY.",
+      "next_step": "Close documented gaps and unverified gates for RL_STREAM_COPY.",
       "priority": 713
     },
     {
@@ -81226,23 +81414,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_STATIC_DRAW",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_STATIC_DRAW (0x88E4).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81255,7 +81447,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_STATIC_DRAW semantics from the linked source, add a reference fixture, then implement Rlgl.RL_STATIC_DRAW.",
+      "next_step": "Close documented gaps and unverified gates for RL_STATIC_DRAW.",
       "priority": 713
     },
     {
@@ -81282,23 +81474,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_STATIC_READ",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_STATIC_READ (0x88E5).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81311,7 +81507,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_STATIC_READ semantics from the linked source, add a reference fixture, then implement Rlgl.RL_STATIC_READ.",
+      "next_step": "Close documented gaps and unverified gates for RL_STATIC_READ.",
       "priority": 713
     },
     {
@@ -81338,23 +81534,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_STATIC_COPY",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_STATIC_COPY (0x88E6).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81367,7 +81567,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_STATIC_COPY semantics from the linked source, add a reference fixture, then implement Rlgl.RL_STATIC_COPY.",
+      "next_step": "Close documented gaps and unverified gates for RL_STATIC_COPY.",
       "priority": 713
     },
     {
@@ -81394,23 +81594,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_DYNAMIC_DRAW",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DYNAMIC_DRAW (0x88E8).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81423,7 +81627,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_DYNAMIC_DRAW semantics from the linked source, add a reference fixture, then implement Rlgl.RL_DYNAMIC_DRAW.",
+      "next_step": "Close documented gaps and unverified gates for RL_DYNAMIC_DRAW.",
       "priority": 713
     },
     {
@@ -81450,23 +81654,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_DYNAMIC_READ",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DYNAMIC_READ (0x88E9).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81479,7 +81687,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_DYNAMIC_READ semantics from the linked source, add a reference fixture, then implement Rlgl.RL_DYNAMIC_READ.",
+      "next_step": "Close documented gaps and unverified gates for RL_DYNAMIC_READ.",
       "priority": 713
     },
     {
@@ -81506,23 +81714,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_DYNAMIC_COPY",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DYNAMIC_COPY (0x88EA).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81535,7 +81747,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_DYNAMIC_COPY semantics from the linked source, add a reference fixture, then implement Rlgl.RL_DYNAMIC_COPY.",
+      "next_step": "Close documented gaps and unverified gates for RL_DYNAMIC_COPY.",
       "priority": 713
     },
     {
@@ -81562,23 +81774,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_FRAGMENT_SHADER",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_FRAGMENT_SHADER (0x8B30).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81591,7 +81807,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_FRAGMENT_SHADER semantics from the linked source, add a reference fixture, then implement Rlgl.RL_FRAGMENT_SHADER.",
+      "next_step": "Close documented gaps and unverified gates for RL_FRAGMENT_SHADER.",
       "priority": 713
     },
     {
@@ -81618,23 +81834,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_VERTEX_SHADER",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_VERTEX_SHADER (0x8B31).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81647,7 +81867,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_VERTEX_SHADER semantics from the linked source, add a reference fixture, then implement Rlgl.RL_VERTEX_SHADER.",
+      "next_step": "Close documented gaps and unverified gates for RL_VERTEX_SHADER.",
       "priority": 713
     },
     {
@@ -81674,23 +81894,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_COMPUTE_SHADER",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_COMPUTE_SHADER (0x91B9).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81703,7 +81927,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_COMPUTE_SHADER semantics from the linked source, add a reference fixture, then implement Rlgl.RL_COMPUTE_SHADER.",
+      "next_step": "Close documented gaps and unverified gates for RL_COMPUTE_SHADER.",
       "priority": 713
     },
     {
@@ -81730,23 +81954,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_ZERO",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_ZERO (0).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81759,7 +81987,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_ZERO semantics from the linked source, add a reference fixture, then implement Rlgl.RL_ZERO.",
+      "next_step": "Close documented gaps and unverified gates for RL_ZERO.",
       "priority": 713
     },
     {
@@ -81786,23 +82014,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_ONE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_ONE (1).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81815,7 +82047,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_ONE semantics from the linked source, add a reference fixture, then implement Rlgl.RL_ONE.",
+      "next_step": "Close documented gaps and unverified gates for RL_ONE.",
       "priority": 713
     },
     {
@@ -81842,23 +82074,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_SRC_COLOR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_SRC_COLOR (0x0300).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81871,7 +82107,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_SRC_COLOR semantics from the linked source, add a reference fixture, then implement Rlgl.RL_SRC_COLOR.",
+      "next_step": "Close documented gaps and unverified gates for RL_SRC_COLOR.",
       "priority": 713
     },
     {
@@ -81898,23 +82134,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_ONE_MINUS_SRC_COLOR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_ONE_MINUS_SRC_COLOR (0x0301).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81927,7 +82167,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_ONE_MINUS_SRC_COLOR semantics from the linked source, add a reference fixture, then implement Rlgl.RL_ONE_MINUS_SRC_COLOR.",
+      "next_step": "Close documented gaps and unverified gates for RL_ONE_MINUS_SRC_COLOR.",
       "priority": 713
     },
     {
@@ -81954,23 +82194,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_SRC_ALPHA",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_SRC_ALPHA (0x0302).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -81983,7 +82227,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_SRC_ALPHA semantics from the linked source, add a reference fixture, then implement Rlgl.RL_SRC_ALPHA.",
+      "next_step": "Close documented gaps and unverified gates for RL_SRC_ALPHA.",
       "priority": 713
     },
     {
@@ -82010,23 +82254,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_ONE_MINUS_SRC_ALPHA",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_ONE_MINUS_SRC_ALPHA (0x0303).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82039,7 +82287,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_ONE_MINUS_SRC_ALPHA semantics from the linked source, add a reference fixture, then implement Rlgl.RL_ONE_MINUS_SRC_ALPHA.",
+      "next_step": "Close documented gaps and unverified gates for RL_ONE_MINUS_SRC_ALPHA.",
       "priority": 713
     },
     {
@@ -82066,23 +82314,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_DST_ALPHA",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DST_ALPHA (0x0304).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82095,7 +82347,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_DST_ALPHA semantics from the linked source, add a reference fixture, then implement Rlgl.RL_DST_ALPHA.",
+      "next_step": "Close documented gaps and unverified gates for RL_DST_ALPHA.",
       "priority": 713
     },
     {
@@ -82122,23 +82374,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_ONE_MINUS_DST_ALPHA",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_ONE_MINUS_DST_ALPHA (0x0305).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82151,7 +82407,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_ONE_MINUS_DST_ALPHA semantics from the linked source, add a reference fixture, then implement Rlgl.RL_ONE_MINUS_DST_ALPHA.",
+      "next_step": "Close documented gaps and unverified gates for RL_ONE_MINUS_DST_ALPHA.",
       "priority": 713
     },
     {
@@ -82178,23 +82434,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_DST_COLOR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DST_COLOR (0x0306).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82207,7 +82467,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_DST_COLOR semantics from the linked source, add a reference fixture, then implement Rlgl.RL_DST_COLOR.",
+      "next_step": "Close documented gaps and unverified gates for RL_DST_COLOR.",
       "priority": 713
     },
     {
@@ -82234,23 +82494,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_ONE_MINUS_DST_COLOR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_ONE_MINUS_DST_COLOR (0x0307).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82263,7 +82527,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_ONE_MINUS_DST_COLOR semantics from the linked source, add a reference fixture, then implement Rlgl.RL_ONE_MINUS_DST_COLOR.",
+      "next_step": "Close documented gaps and unverified gates for RL_ONE_MINUS_DST_COLOR.",
       "priority": 713
     },
     {
@@ -82290,23 +82554,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_SRC_ALPHA_SATURATE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_SRC_ALPHA_SATURATE (0x0308).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82319,7 +82587,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_SRC_ALPHA_SATURATE semantics from the linked source, add a reference fixture, then implement Rlgl.RL_SRC_ALPHA_SATURATE.",
+      "next_step": "Close documented gaps and unverified gates for RL_SRC_ALPHA_SATURATE.",
       "priority": 713
     },
     {
@@ -82346,23 +82614,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_CONSTANT_COLOR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_CONSTANT_COLOR (0x8001).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82375,7 +82647,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_CONSTANT_COLOR semantics from the linked source, add a reference fixture, then implement Rlgl.RL_CONSTANT_COLOR.",
+      "next_step": "Close documented gaps and unverified gates for RL_CONSTANT_COLOR.",
       "priority": 713
     },
     {
@@ -82402,23 +82674,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_ONE_MINUS_CONSTANT_COLOR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_ONE_MINUS_CONSTANT_COLOR (0x8002).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82431,7 +82707,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_ONE_MINUS_CONSTANT_COLOR semantics from the linked source, add a reference fixture, then implement Rlgl.RL_ONE_MINUS_CONSTANT_COLOR.",
+      "next_step": "Close documented gaps and unverified gates for RL_ONE_MINUS_CONSTANT_COLOR.",
       "priority": 713
     },
     {
@@ -82458,23 +82734,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_CONSTANT_ALPHA",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_CONSTANT_ALPHA (0x8003).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82487,7 +82767,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_CONSTANT_ALPHA semantics from the linked source, add a reference fixture, then implement Rlgl.RL_CONSTANT_ALPHA.",
+      "next_step": "Close documented gaps and unverified gates for RL_CONSTANT_ALPHA.",
       "priority": 713
     },
     {
@@ -82514,23 +82794,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_ONE_MINUS_CONSTANT_ALPHA",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_ONE_MINUS_CONSTANT_ALPHA (0x8004).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82543,7 +82827,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_ONE_MINUS_CONSTANT_ALPHA semantics from the linked source, add a reference fixture, then implement Rlgl.RL_ONE_MINUS_CONSTANT_ALPHA.",
+      "next_step": "Close documented gaps and unverified gates for RL_ONE_MINUS_CONSTANT_ALPHA.",
       "priority": 713
     },
     {
@@ -82570,23 +82854,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_FUNC_ADD",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_FUNC_ADD (0x8006).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82599,7 +82887,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_FUNC_ADD semantics from the linked source, add a reference fixture, then implement Rlgl.RL_FUNC_ADD.",
+      "next_step": "Close documented gaps and unverified gates for RL_FUNC_ADD.",
       "priority": 713
     },
     {
@@ -82626,23 +82914,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_MIN",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_MIN (0x8007).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82655,7 +82947,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_MIN semantics from the linked source, add a reference fixture, then implement Rlgl.RL_MIN.",
+      "next_step": "Close documented gaps and unverified gates for RL_MIN.",
       "priority": 713
     },
     {
@@ -82682,23 +82974,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_MAX",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_MAX (0x8008).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82711,7 +83007,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_MAX semantics from the linked source, add a reference fixture, then implement Rlgl.RL_MAX.",
+      "next_step": "Close documented gaps and unverified gates for RL_MAX.",
       "priority": 713
     },
     {
@@ -82738,23 +83034,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_FUNC_SUBTRACT",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_FUNC_SUBTRACT (0x800A).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82767,7 +83067,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_FUNC_SUBTRACT semantics from the linked source, add a reference fixture, then implement Rlgl.RL_FUNC_SUBTRACT.",
+      "next_step": "Close documented gaps and unverified gates for RL_FUNC_SUBTRACT.",
       "priority": 713
     },
     {
@@ -82794,23 +83094,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_FUNC_REVERSE_SUBTRACT",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_FUNC_REVERSE_SUBTRACT (0x800B).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82823,7 +83127,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_FUNC_REVERSE_SUBTRACT semantics from the linked source, add a reference fixture, then implement Rlgl.RL_FUNC_REVERSE_SUBTRACT.",
+      "next_step": "Close documented gaps and unverified gates for RL_FUNC_REVERSE_SUBTRACT.",
       "priority": 713
     },
     {
@@ -82850,23 +83154,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_BLEND_EQUATION",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_BLEND_EQUATION (0x8009).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82879,7 +83187,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_BLEND_EQUATION semantics from the linked source, add a reference fixture, then implement Rlgl.RL_BLEND_EQUATION.",
+      "next_step": "Close documented gaps and unverified gates for RL_BLEND_EQUATION.",
       "priority": 713
     },
     {
@@ -82906,23 +83214,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_BLEND_EQUATION_RGB",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_BLEND_EQUATION_RGB (0x8009).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82935,7 +83247,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_BLEND_EQUATION_RGB semantics from the linked source, add a reference fixture, then implement Rlgl.RL_BLEND_EQUATION_RGB.",
+      "next_step": "Close documented gaps and unverified gates for RL_BLEND_EQUATION_RGB.",
       "priority": 713
     },
     {
@@ -82962,23 +83274,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_BLEND_EQUATION_ALPHA",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_BLEND_EQUATION_ALPHA (0x883D).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -82991,7 +83307,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_BLEND_EQUATION_ALPHA semantics from the linked source, add a reference fixture, then implement Rlgl.RL_BLEND_EQUATION_ALPHA.",
+      "next_step": "Close documented gaps and unverified gates for RL_BLEND_EQUATION_ALPHA.",
       "priority": 713
     },
     {
@@ -83018,23 +83334,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_BLEND_DST_RGB",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_BLEND_DST_RGB (0x80C8).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -83047,7 +83367,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_BLEND_DST_RGB semantics from the linked source, add a reference fixture, then implement Rlgl.RL_BLEND_DST_RGB.",
+      "next_step": "Close documented gaps and unverified gates for RL_BLEND_DST_RGB.",
       "priority": 713
     },
     {
@@ -83074,23 +83394,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_BLEND_SRC_RGB",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_BLEND_SRC_RGB (0x80C9).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -83103,7 +83427,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_BLEND_SRC_RGB semantics from the linked source, add a reference fixture, then implement Rlgl.RL_BLEND_SRC_RGB.",
+      "next_step": "Close documented gaps and unverified gates for RL_BLEND_SRC_RGB.",
       "priority": 713
     },
     {
@@ -83130,23 +83454,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_BLEND_DST_ALPHA",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_BLEND_DST_ALPHA (0x80CA).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -83159,7 +83487,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_BLEND_DST_ALPHA semantics from the linked source, add a reference fixture, then implement Rlgl.RL_BLEND_DST_ALPHA.",
+      "next_step": "Close documented gaps and unverified gates for RL_BLEND_DST_ALPHA.",
       "priority": 713
     },
     {
@@ -83186,23 +83514,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_BLEND_SRC_ALPHA",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_BLEND_SRC_ALPHA (0x80CB).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -83215,7 +83547,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_BLEND_SRC_ALPHA semantics from the linked source, add a reference fixture, then implement Rlgl.RL_BLEND_SRC_ALPHA.",
+      "next_step": "Close documented gaps and unverified gates for RL_BLEND_SRC_ALPHA.",
       "priority": 713
     },
     {
@@ -83242,23 +83574,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_BLEND_COLOR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_BLEND_COLOR (0x8005).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -83271,7 +83607,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_BLEND_COLOR semantics from the linked source, add a reference fixture, then implement Rlgl.RL_BLEND_COLOR.",
+      "next_step": "Close documented gaps and unverified gates for RL_BLEND_COLOR.",
       "priority": 713
     },
     {
@@ -83298,23 +83634,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_READ_FRAMEBUFFER",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_READ_FRAMEBUFFER (0x8CA8).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -83327,7 +83667,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_READ_FRAMEBUFFER semantics from the linked source, add a reference fixture, then implement Rlgl.RL_READ_FRAMEBUFFER.",
+      "next_step": "Close documented gaps and unverified gates for RL_READ_FRAMEBUFFER.",
       "priority": 713
     },
     {
@@ -83354,23 +83694,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_DRAW_FRAMEBUFFER",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DRAW_FRAMEBUFFER (0x8CA9).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -83383,7 +83727,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_DRAW_FRAMEBUFFER semantics from the linked source, add a reference fixture, then implement Rlgl.RL_DRAW_FRAMEBUFFER.",
+      "next_step": "Close documented gaps and unverified gates for RL_DRAW_FRAMEBUFFER.",
       "priority": 713
     },
     {
@@ -83411,23 +83755,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION (0).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -83438,7 +83786,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION semantics from the linked source, add a reference fixture, then implement Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION.",
+      "next_step": "Close documented gaps and unverified gates for RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION.",
       "priority": 829
     },
     {
@@ -83466,23 +83814,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD (1).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -83493,7 +83845,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD semantics from the linked source, add a reference fixture, then implement Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD.",
+      "next_step": "Close documented gaps and unverified gates for RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD.",
       "priority": 829
     },
     {
@@ -83521,23 +83873,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_NORMAL",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DEFAULT_SHADER_ATTRIB_LOCATION_NORMAL (2).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -83548,7 +83904,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_DEFAULT_SHADER_ATTRIB_LOCATION_NORMAL semantics from the linked source, add a reference fixture, then implement Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_NORMAL.",
+      "next_step": "Close documented gaps and unverified gates for RL_DEFAULT_SHADER_ATTRIB_LOCATION_NORMAL.",
       "priority": 829
     },
     {
@@ -83576,23 +83932,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR (3).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -83603,7 +83963,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR semantics from the linked source, add a reference fixture, then implement Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR.",
+      "next_step": "Close documented gaps and unverified gates for RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR.",
       "priority": 829
     },
     {
@@ -83631,23 +83991,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_TANGENT",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DEFAULT_SHADER_ATTRIB_LOCATION_TANGENT (4).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -83658,7 +84022,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_DEFAULT_SHADER_ATTRIB_LOCATION_TANGENT semantics from the linked source, add a reference fixture, then implement Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_TANGENT.",
+      "next_step": "Close documented gaps and unverified gates for RL_DEFAULT_SHADER_ATTRIB_LOCATION_TANGENT.",
       "priority": 829
     },
     {
@@ -83686,23 +84050,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD2",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD2 (5).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -83713,7 +84081,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD2 semantics from the linked source, add a reference fixture, then implement Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD2.",
+      "next_step": "Close documented gaps and unverified gates for RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD2.",
       "priority": 829
     },
     {
@@ -83741,23 +84109,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_INDICES",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DEFAULT_SHADER_ATTRIB_LOCATION_INDICES (6).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -83768,7 +84140,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_DEFAULT_SHADER_ATTRIB_LOCATION_INDICES semantics from the linked source, add a reference fixture, then implement Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_INDICES.",
+      "next_step": "Close documented gaps and unverified gates for RL_DEFAULT_SHADER_ATTRIB_LOCATION_INDICES.",
       "priority": 829
     },
     {
@@ -83796,23 +84168,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEINDICES",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEINDICES (7).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -83823,7 +84199,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEINDICES semantics from the linked source, add a reference fixture, then implement Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEINDICES.",
+      "next_step": "Close documented gaps and unverified gates for RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEINDICES.",
       "priority": 829
     },
     {
@@ -83851,23 +84227,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEWEIGHTS",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEWEIGHTS (8).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -83878,7 +84258,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEWEIGHTS semantics from the linked source, add a reference fixture, then implement Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEWEIGHTS.",
+      "next_step": "Close documented gaps and unverified gates for RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEWEIGHTS.",
       "priority": 829
     },
     {
@@ -83906,23 +84286,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_INSTANCETRANSFORM",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of RL_DEFAULT_SHADER_ATTRIB_LOCATION_INSTANCETRANSFORM (9).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -83933,7 +84317,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_DEFAULT_SHADER_ATTRIB_LOCATION_INSTANCETRANSFORM semantics from the linked source, add a reference fixture, then implement Config.RL_DEFAULT_SHADER_ATTRIB_LOCATION_INSTANCETRANSFORM.",
+      "next_step": "Close documented gaps and unverified gates for RL_DEFAULT_SHADER_ATTRIB_LOCATION_INSTANCETRANSFORM.",
       "priority": 829
     },
     {
@@ -89420,23 +89804,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_SHADER_LOC_MAP_DIFFUSE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "RL_SHADER_LOC_MAP_DIFFUSE is RL_SHADER_LOC_MAP_ALBEDO: the enumerator's U32 value.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -89449,7 +89837,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_SHADER_LOC_MAP_DIFFUSE semantics from the linked source, add a reference fixture, then implement Rlgl.RL_SHADER_LOC_MAP_DIFFUSE.",
+      "next_step": "Close documented gaps and unverified gates for RL_SHADER_LOC_MAP_DIFFUSE.",
       "priority": 713
     },
     {
@@ -89476,23 +89864,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.RL_SHADER_LOC_MAP_SPECULAR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "RL_SHADER_LOC_MAP_SPECULAR is RL_SHADER_LOC_MAP_METALNESS: the enumerator's U32 value.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -89505,7 +89897,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_SHADER_LOC_MAP_SPECULAR semantics from the linked source, add a reference fixture, then implement Rlgl.RL_SHADER_LOC_MAP_SPECULAR.",
+      "next_step": "Close documented gaps and unverified gates for RL_SHADER_LOC_MAP_SPECULAR.",
       "priority": 713
     },
     {
@@ -102167,23 +102559,28 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.CAMERA_CULL_DISTANCE_NEAR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The binary64 value of CAMERA_CULL_DISTANCE_NEAR (0.05) as M.Float64.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "rcamera.h defines it only with RCAMERA_STANDALONE (raylib's build takes rlgl's cull distances)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102194,7 +102591,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive CAMERA_CULL_DISTANCE_NEAR semantics from the linked source, add a reference fixture, then implement Config.CAMERA_CULL_DISTANCE_NEAR.",
+      "next_step": "Close documented gaps and unverified gates for CAMERA_CULL_DISTANCE_NEAR.",
       "priority": 829
     },
     {
@@ -102232,23 +102629,28 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.CAMERA_CULL_DISTANCE_FAR",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The binary64 value of CAMERA_CULL_DISTANCE_FAR (4000.0) as M.Float64.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "rcamera.h defines it only with RCAMERA_STANDALONE (raylib's build takes rlgl's cull distances)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102259,7 +102661,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive CAMERA_CULL_DISTANCE_FAR semantics from the linked source, add a reference fixture, then implement Config.CAMERA_CULL_DISTANCE_FAR.",
+      "next_step": "Close documented gaps and unverified gates for CAMERA_CULL_DISTANCE_FAR.",
       "priority": 829
     },
     {
@@ -104010,23 +104412,27 @@
       "milestone": "numerics",
       "phase": 1,
       "sequence": 1,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Math.PI",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The binary64 value of PI (3.14159265358979323846) as M.Float64.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -104040,7 +104446,7 @@
         "raymath:macro:PI"
       ],
       "verification": "Exact integer/bit-pattern vectors and operation-specific floating-point contracts, including the retained default-resampling precision counterexamples.",
-      "next_step": "Derive PI semantics from the linked source, add a reference fixture, then implement Math.PI.",
+      "next_step": "Close documented gaps and unverified gates for PI.",
       "priority": 201
     },
     {
@@ -104068,23 +104474,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.MAX_TOUCH_POINTS",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value of MAX_TOUCH_POINTS (8).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C preprocessor macros have no Bend counterpart (a zero-argument function)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -104095,7 +104505,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive MAX_TOUCH_POINTS semantics from the linked source, add a reference fixture, then implement Config.MAX_TOUCH_POINTS.",
+      "next_step": "Close documented gaps and unverified gates for MAX_TOUCH_POINTS.",
       "priority": 829
     },
     {
