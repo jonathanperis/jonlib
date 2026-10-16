@@ -65,6 +65,12 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiDrawIcon` | `Gui.draw_icon(gui, frame, id, x, y, pixel_size, color)` | `Frame` (the ints as words; the gui's icon table, faded by its alpha) |
 | `GuiIconText` | `Gui.icon_text(id, text)` | `Maybe<String>` (`"#%03i#"` then the text from the sixth byte; `text` `None` for NULL gives the prefix alone; `None` for a text raygui's buffer cannot terminate) |
 | `GuiGetIcons` | `Gui.get_icons(gui)` | `+List<U32>` (the 2048 words of the gui's icon table) |
+| `GuiColorPanelHSV` | `Gui.color_panel_hsv(gui, core, frame, bounds, text, hsv)` | `Frame & (Gui & Vector3)` (the HSV; the drag in the gui; the text is not drawn, as in raygui) |
+| `GuiColorPanel` | `Gui.color_panel(gui, core, frame, bounds, text, color)` | `Frame & (Gui & U32)` (the color, changed only when the panel changes its HSV) |
+| `GuiColorBarAlpha` | `Gui.color_bar_alpha(gui, core, frame, bounds, text, alpha)` | `Frame & (Gui & F32)` (the alpha in [0, 1]) |
+| `GuiColorBarHue` | `Gui.color_bar_hue(gui, core, frame, bounds, text, hue)` | `Frame & (Gui & F32)` (the hue in [0, 359]) |
+| `GuiColorPicker` | `Gui.color_picker(gui, core, frame, bounds, text, color)` | `Frame & (Gui & U32)` (the panel, then the hue bar beside it; the color rebuilt from the HSV every frame, as raygui does) |
+| `GuiColorPickerHSV` | `Gui.color_picker_hsv(gui, core, frame, bounds, text, hsv)` | `Frame & (Gui & Vector3)` |
 | `GuiLoadIcons` | `Gui.load_icons(gui, path, names)` | `IO(Gui & Gui.Names)` (`GuiNames{names}` with each name id's 32 bytes, `GuiNamesNull{}` for NULL, `GuiNamesUndefined{}` for a load raygui does not define) |
 
 Two additions have no raygui counterpart. They run a row of controls in order
@@ -191,8 +197,13 @@ example waiting on each raygui function it calls that is not delivered.
 
 ## Gaps
 
-- Not delivered yet: `GuiColor*`, `GuiLoadStyle`, `GuiSetFont` and `GuiGetFont`'s
+- Not delivered yet: `GuiLoadStyle`, `GuiSetFont` and `GuiGetFont`'s
   Font (its base size is `Gui.font_base_size`).
+- The color controls take their value, not a pointer: raygui's NULL color
+  (its temporary 200, 0, 0) has no counterpart. They mark the frame
+  undefined where raygui's conversions are: an HSV whose RGB is not a byte
+  ((unsigned char) of a value outside (-1, 256)), a hue whose `(long)(hue/60)`
+  is outside long's range or NaN, a selector or bar outside int's range.
 - `GuiLoadIcons` answers undefined (the gui unchanged) for a negative icon
   count (a gap: raygui's `fseek` and `calloc` of a negative count are
   host-dependent), a count of words past int's range, data that would pass
@@ -312,6 +323,13 @@ edge, a text box's two lines moved above it near the bottom, none for a NULL
 tooltip and none with tooltips off, none while the button is pressed; and
 `GuiDrawIcon` at pixel sizes 1, 2, 3 (at half alpha) and -2, and labels of
 `GuiIconText` with a negative id, a four-digit id and a NULL text.
+`gui_color_pickers` covers the color controls: a `GuiColorPicker`'s panel
+hovered, pressed and dragged out of it (the selector held at its edge), its
+hue bar dragged above itself (the hue held at 0); a `GuiColorPickerHSV`'s
+panel and hue bar pressed; a `GuiColorPanel` with a translucent color
+dragged; a `GuiColorBarAlpha` dragged past its end and pressed on the
+selector's overflow; a `GuiColorBarHue` dragged; the three disabled; and
+the values printed each frame.
 
 The `gui-icon-files` gate (`tools/gui_icon_files_probe.py`) compares
 `GuiLoadIcons`, `GuiGetIcons` and `GuiIconText` with raygui without a

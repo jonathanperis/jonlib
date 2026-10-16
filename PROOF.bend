@@ -2819,6 +2819,15 @@ def Laws.gui_tip_lines_counted():
 def Laws.gui_tip_lines_capped():
   {==}
 
+def Laws.gui_rgb_sector_first(v, p, q, t):
+  {==}
+
+def Laws.gui_rgb_sector_other(v, p, q, t):
+  {==}
+
+def Laws.gui_pick_hover_keeps_drag(gui, bounds):
+  {==}
+
 def Laws.mp3_memory_stream_has_its_bytes_at_hand():
   {==}
 
