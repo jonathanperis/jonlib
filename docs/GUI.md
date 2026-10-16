@@ -49,6 +49,10 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiGetFont().baseSize` | `Gui.font_base_size(gui)` | `U32` (the default font's 10) |
 | `GuiScrollBar` (static in raygui) | `Gui.scroll_bar(gui, core, frame, bounds, value, min, max)` | `Frame & (Gui & U32)` (the int value as a word) |
 | `GuiTextBox` | `Gui.text_box(gui, core, frame, bounds, text, size, edit, editing)` | `Frame & (Core & (String & (Gui.Editing & Bool)))` (the text, raygui's two text box globals, its result) |
+| `GuiWindowBox` | `Gui.window_box(gui, core, frame, bounds, title)` | `Frame & Bool` (the close button clicked; `title` is `Maybe<String>`) |
+| `GuiLabelButton` | `Gui.label_button(gui, core, frame, bounds, text)` | `Frame & Bool` (clicked; the bounds widened to the text) |
+| `GuiDummyRec` | `Gui.dummy_rec(gui, frame, bounds, text)` | `Frame` |
+| `GuiGrid` | `Gui.grid(gui, core, frame, bounds, text, spacing, subdivs)` | `Frame & Vector2` (the cell under the pointer, or (-1, -1); `subdivs` is a C int as a word) |
 
 Two additions have no raygui counterpart. They run a row of controls in order
 for programs that keep their values in lists (Bend has no pointers to write
@@ -176,10 +180,8 @@ example waiting on each raygui function it calls that is not delivered.
 
 - Not delivered yet: `GuiToggleSlider`,
   `GuiComboBox`, `GuiTextBoxMulti`, `GuiValueBoxFloat`,
-  `GuiDummyRec`, `GuiGrid`,
   `GuiTabBar`, `GuiListView` (the one that splits a text; `GuiListViewEx` is in),
-  `GuiColor*`, `GuiMessageBox`, `GuiTextInputBox`, `GuiWindowBox`,
-  `GuiLabelButton`, the style file loaders, `GuiSetFont` and `GuiGetFont`'s
+  `GuiColor*`, `GuiMessageBox`, `GuiTextInputBox`, the style file loaders, `GuiSetFont` and `GuiGetFont`'s
   Font (its base size is `Gui.font_base_size`),
   `GuiDrawIcon`/`GuiIconText` as functions, `GuiLoadIcons` and tooltips.
 - An icon id above 255 reads past raygui's table and marks the frame
@@ -188,6 +190,8 @@ example waiting on each raygui function it calls that is not delivered.
   `#` with no second `#`: raygui's `GuiGetTextWidth` would look for it in the
   lines that follow.
 - The `TEXT_WRAP_CHAR` and `TEXT_WRAP_WORD` modes mark the frame undefined.
+- `GuiGrid` marks the frame undefined where C cannot convert its line counts,
+  `(int)(size / (spacing / subdivs))`: a NaN or a count outside the int range.
 - `GuiListViewEx` marks the frame undefined for an item height or spacing
   above 32767 or more than 32767 items (raygui multiplies them as ints), a
   height and spacing that add up to 0 (its division), a list view's height
@@ -255,3 +259,13 @@ compared with raygui yet. `LAWS.bend` states the default text size, the propagat
 property, the enable/disable rules, how an icon prefix is read and which
 lines are refused. The `gui-icons` gate compares the icon set with every
 raygui.h of the pinned checkout.
+
+The controls no raylib example calls are replayed the same way in probe-only
+raygui programs: C sources in `tools/reference/gui/`, built and driven as the
+examples are (raygui.h is the pinned examples' own), against their ports in
+`tests/gui/` (gate `examples-gui`; they are not counted as raylib examples).
+`gui_window_grid` covers `GuiWindowBox` (its close button hovered, pressed and
+clicked), `GuiLabelButton` (a label wider than its bounds, hovered and
+clicked), `GuiDummyRec` (hovered and pressed, which draw nothing different,
+and disabled) and `GuiGrid` (the cell under the pointer at the corners, on an
+edge and outside, and a disabled grid that answers no cell).

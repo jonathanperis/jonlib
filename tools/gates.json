@@ -2484,6 +2484,22 @@
    "minutes": 52
   },
   {
+   "id": "examples-gui",
+   "title": "Probe-only raygui programs (tools/reference/gui) for the Jongui controls no raylib example calls, replayed frame by frame against native raygui on the clock-injected memory-platform raylib, framebuffers byte for byte",
+   "run": [
+    "{python}",
+    "tools/examples_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}",
+    "--category=gui"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 6
+  },
+  {
    "id": "examples-text",
    "title": "The ported raylib text examples replayed frame by frame against the unmodified native examples (clock-injected memory-platform raylib), framebuffers byte for byte and the presented Image",
    "run": [

@@ -2780,6 +2780,12 @@ def Laws.gui_list_disabled_items():
 def Laws.gui_font_base_size_is_the_default_font_s():
   {==}
 
+def Laws.gui_grid_lines_counted():
+  {==}
+
+def Laws.gui_grid_no_lines_below_one():
+  {==}
+
 def Laws.mp3_memory_stream_has_its_bytes_at_hand():
   {==}
 

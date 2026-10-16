@@ -3891,6 +3891,14 @@ law gui_list_disabled_items:
 law gui_font_base_size_is_the_default_font_s:
   {JG.Gui.font_base_size(JG.Gui.new()) == 10 : U32}
 
+# GuiGrid draws (int)(size / spacing) + 1 lines of each kind: none for a
+# count that comes out at 0 or below as an int (its loop never runs).
+law gui_grid_lines_counted:
+  {JG.Gui.grid.n(3) == 3n : Nat}
+
+law gui_grid_no_lines_below_one:
+  {JG.Gui.grid.n(4294967295) == 0n : Nat}
+
 # dr_mp3's memory streams (src/mp3.bend): opened from memory, a stream has
 # every byte before its tags at hand and none after them, is never filled,
 # goes on while a decode passes bytes and is over when one passes none; a
