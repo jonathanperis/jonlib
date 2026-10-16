@@ -209,7 +209,21 @@
    ]
   },
   "GuiWindowBox": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.window_box",
+   "scope": "A panel below a 24-pixel status bar (the window at least 48 high) and an 18-pixel close button (#128#, BUTTON border 1, centered) 3 pixels in from the bar's top right; whether it was clicked.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_window_grid.c",
+    "tests/gui/gui_window_grid.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiGroupBox": {
    "status": "partial",
@@ -325,7 +339,22 @@
    ]
   },
   "GuiLabelButton": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.label_button",
+   "scope": "The bounds widened to the text when it does not fit, LABEL's text color of the state, and whether it was clicked.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_window_grid.c",
+    "tests/gui/gui_window_grid.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "A text whose width raygui cannot measure marks the frame undefined",
+    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiToggle": {
    "status": "partial",
@@ -545,10 +574,39 @@
    ]
   },
   "GuiDummyRec": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.dummy_rec",
+   "scope": "DEFAULT's base color (or its disabled one) and the text centered in BUTTON's text color.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_window_grid.c",
+    "tests/gui/gui_window_grid.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiGrid": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.grid",
+   "scope": "Lines every spacing/subdivs, alpha 0.6 every subdivs-th and 0.15 between, LINE_COLOR (BORDER_COLOR_DISABLED when disabled); the cell under the pointer or (-1, -1). The text is not drawn, as in raygui.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_window_grid.c",
+    "tests/gui/gui_window_grid.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "A line count C cannot convert marks the frame undefined",
+    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiListView": {
    "status": "not-started"

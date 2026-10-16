@@ -91,7 +91,7 @@ SHIM = ROOT / 'tools/reference/example_driver.h'
 AUDIO_CLOCK_UNIT = ROOT / 'tools/reference/audio_clock.c'
 WIDTH, HEIGHT = 800, 450
 # Examples whose InitWindow is not 800x450.
-SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation': (720, 400)}
+SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation': (720, 400), 'gui_window_grid': (400, 300)}
 SIZES['shaders_rlgl_compute'] = (768, 768)
 
 
@@ -342,6 +342,14 @@ EXAMPLES = {
     'textures_particles_blending': ('textures/textures_particles_blending.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
 }
 
+# Probe-only raygui programs (category gui): Jongui's controls that no raylib example calls, each a C program of
+# tools/reference/gui/ (its source given as jonlib/gui/...) replayed against its port in tests/gui/. They are not raylib
+# examples: tools/examples_plan.py counts the literal table above only.
+GUI_SCENES = {
+    'gui_window_grid': ('jonlib/gui/gui_window_grid.c', 'Ex.setup(core, frame)'),
+}
+EXAMPLES.update(GUI_SCENES)
+
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
 # examples/<module>/ directory) and the flags SetConfigFlags sets before InitWindow.
 IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_background_scrolling', 'models_rotating_cube',
@@ -411,7 +419,7 @@ SEEDED.add('shaders_hot_reloading')
 # Examples whose loop does IO (a J.Effects program): replayed with J.Program.replay_io.
 EFFECTS = {'shaders_shadowmap_rendering'}
 # A program of another probe (tools/effects_probe.py) names its Bend module instead of examples/<name>.bend.
-MODULES = {}
+MODULES = {name: f'../../tests/gui/{name}.bend' for name in GUI_SCENES}
 # Examples that write files: each script runs in an empty directory of its own, natively (its working
 # directory) and with Jonlib (the directory is the setup's RESOURCES), and both must leave the same files.
 # FILES are the files a script starts from; UNDEFINED_FROM is the frame from which Jonlib must refuse
@@ -1491,6 +1499,14 @@ def scripts():
                                                        quick([key(KEY_LEFT)]), quick([key(KEY_UP, False), key(KEY_LEFT, False), key(83), key(87)]),
                                                        quick([key(83, False), key(87, False), key(65)]), quick([key(65, False)])]),
     ]
+    # The probe-only raygui programs (tools/reference/gui/).
+    # GuiWindowBox's close button (188..206 x 13..31) clicked, the label button clicked, the dummy rec hovered and pressed, the
+    # grid's cells under the pointer (corners, an edge, outside) and the disabled grid, which answers no cell.
+    out.append(script('gui_window_grid', 'controls', [quick(), quick([mouse_at(196, 20)]), quick([button(0)]), quick([button(0, False)]),
+                                                     quick([mouse_at(30, 60)]), quick([button(0)]), slow([button(0, False)]), quick([mouse_at(300, 40)]),
+                                                     quick([button(0)]), quick([button(0, False)]), quick([mouse_at(15, 145)]), quick([mouse_at(389, 289)]),
+                                                     quick([mouse_at(130, 200)]), quick([mouse_at(10, 140)]), quick([mouse_at(395, 145)]),
+                                                     quick([mouse_at(320, 85)]), slow()]))
     repeated = sorted({item['name'] for item in out if sum(other['name'] == item['name'] for other in out) > 1})
     if repeated:
         raise ProbeFailure(f'examples: script names used more than once: {repeated}')
@@ -1923,8 +1939,11 @@ def build_reference(probe, name):
     include = '-I' + str(probe.args.raylib_source / 'src')
     # -D_DEFAULT_SOURCE as raylib's examples/Makefile passes it (strnlen in shapes_penrose_tile).
     clock = ['-DJONLIB_EXAMPLE_AUDIO_CLOCK'] if name in AUDIO_CLOCK else []
-    probekit.run(['clang', '-std=c11', '-D_DEFAULT_SOURCE', '-O2', '-ffp-contract=off', *clock, '-include', SHIM, include, '-c',
-                  probe.args.raylib_source / 'examples' / source, '-o', probe.work / f'{name}.o'])
+    # A probe-only program (jonlib/...) is one of tools/reference/; raygui.h is the pinned examples' own.
+    path = ROOT / 'tools/reference' / source[len('jonlib/'):] if source.startswith('jonlib/') else probe.args.raylib_source / 'examples' / source
+    raygui = '-I' + str(probe.args.raylib_source / 'examples/core')
+    probekit.run(['clang', '-std=c11', '-D_DEFAULT_SOURCE', '-O2', '-ffp-contract=off', *clock, '-include', SHIM, include, raygui, '-c',
+                  path, '-o', probe.work / f'{name}.o'])
     probekit.run(['clang', '-std=c11', '-O2', '-ffp-contract=off', *clock, include, '-c', driver, '-o', probe.work / 'driver.o'])
     objects = [probe.work / f'{name}.o', probe.work / 'driver.o']
     if name in AUDIO:

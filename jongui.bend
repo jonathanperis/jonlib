@@ -1863,3 +1863,113 @@ def Gui.list_view_ex(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectan
 # GuiGetFont().baseSize: the gui's font is raylib's default one.
 def Gui.font_base_size(gui: Gui) -> U32:
   10
+
+# -----------------------------------------------------------------------------
+# GuiWindowBox, GuiLabelButton, GuiDummyRec, GuiGrid
+
+# GuiWindowBox(bounds, title): a panel below a status bar 24 pixels high (the
+# window at least 48 high), and a close button 18 pixels square, 3 from the
+# bar's top and right border, drawn with BUTTON's BORDER_WIDTH 1 and centered
+# text for its ICON_CROSS_SMALL (#128#). The frame and whether the button was
+# clicked. NULL titles are None.
+def Gui.window_box(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, title: Maybe<String>) -> J.Frame & Bool:
+  J.Rectangle{+x, +y, +w, +h} = bounds
+  +sbw = Gui.style.f32(gui, 15, 12)
+  +height = Bool.pick(F32, (h < 48.0 : F32), 48.0, h)
+  f1 = Gui.panel(gui, frame, J.Rectangle{x, ((y + 24.0 : F32) - sbw : F32), w, ((height - 24.0 : F32) + sbw : F32)}, None{})
+  f2 = Gui.status_bar(gui, f1, J.Rectangle{x, y, w, 24.0}, title)
+  Gui.button(Gui.set_style(Gui.set_style(gui, 2, 12, 1), 2, 14, 1), core, f2, J.Rectangle{((((x + w : F32) - sbw : F32) - 18.0 : F32) - 3.0 : F32), (y + 3.0 : F32), 18.0, 18.0}, "#128#")
+
+def Gui.label_button.at(+gui: Gui, +core: J.Core, frame: J.Frame, +wide: J.Rectangle, text: String) -> J.Frame & Bool:
+  +over = Gui.active(gui) && Bool.not(Gui.exclusive(gui)) && J.Collision.point_rec(J.Input.get_mouse_position(core), wide)
+  +state = Bool.pick(U32, over, Gui.hover(core), Gui.get_state(gui))
+  (Gui.draw_text(gui, frame, text, Gui.text_bounds(gui, 1, wide), Gui.get_style(gui, 1, 14), Gui.color(gui, 1, (2 + state * 3 : U32))), over && Gui.released(core))
+
+def Gui.label_button.drawn(width: Maybe<F32>, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: String) -> J.Frame & Bool:
+  match width:
+    case None{}: (J.Frame.refuse(frame), False{})
+    case Some{+tw}:
+      J.Rectangle{+x, +y, +w, +h} = bounds
+      +pad = U32.to_f32((2 * Gui.get_style(gui, 1, 12) + 2 * Gui.get_style(gui, 1, 13) : U32))
+      Gui.label_button.at(gui, core, frame, J.Rectangle{x, y, Bool.pick(F32, ((w - pad : F32) < tw : F32), ((tw + pad : F32) + 2.0 : F32), w), h}, text)
+
+# GuiLabelButton(bounds, text): the bounds widened to the text (its width,
+# LABEL's borders and paddings and 2 more pixels) when it does not fit, the
+# text in LABEL's color of the state (focused over it, pressed while the
+# button is down), and whether it was clicked (released over it). A text
+# whose width raygui cannot measure marks the frame undefined.
+def Gui.label_button(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +text: String) -> J.Frame & Bool:
+  Gui.label_button.drawn(Gui.get_text_width(gui, text), gui, core, frame, bounds, text)
+
+# GuiDummyRec(bounds, text): DEFAULT's base color (disabled or not; focus and
+# press change nothing drawn) and the text centered in BUTTON's text color.
+def Gui.dummy_rec(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle, text: String) -> J.Frame:
+  +disabled = U32.is_eq(Gui.get_state(gui), 3)
+  f1 = Gui.draw_rectangle(frame, bounds, 0, 0, Gui.color(gui, 0, Bool.pick(U32, disabled, 10, 1)))
+  Gui.draw_text(gui, f1, text, Gui.text_bounds(gui, 0, bounds), 1, Gui.color(gui, 2, Bool.pick(U32, disabled, 11, 2)))
+
+# A grid line: alpha 0.6 every subdivs lines, 0.15 between, then guiAlpha.
+def Gui.grid.color(+gui: Gui, +raw: U32, +major: Bool) -> U32:
+  Gui{_, _, +alpha, _, _, _, _} = gui
+  Gui.fade(Gui.fade(raw, Bool.pick(F32, major, (0.15 * 4.0 : F32), 0.15)), alpha)
+
+def Gui.grid.vertical(n: Nat, +gui: Gui, frame: J.Frame, +x: F32, +y: F32, +h: F32, +spacing: F32, +subdivs: U32, +raw: U32, +i: U32) -> J.Frame:
+  match n:
+    case 0n: frame
+    case 1n+k:
+      +at = ((x + ((spacing * U32.to_f32(i) : F32) / U32.to_f32(subdivs) : F32) : F32))
+      Gui.grid.vertical(k, gui, Gui.draw_rectangle(frame, J.Rectangle{at, y, 1.0, (h + 1.0 : F32)}, 0, 0, Gui.grid.color(gui, raw, U32.is_eq((i % subdivs : U32), 0))),
+        x, y, h, spacing, subdivs, raw, (i + 1 : U32))
+
+def Gui.grid.horizontal(n: Nat, +gui: Gui, frame: J.Frame, +x: F32, +y: F32, +w: F32, +spacing: F32, +subdivs: U32, +raw: U32, +i: U32) -> J.Frame:
+  match n:
+    case 0n: frame
+    case 1n+k:
+      +at = ((y + ((spacing * U32.to_f32(i) : F32) / U32.to_f32(subdivs) : F32) : F32))
+      Gui.grid.horizontal(k, gui, Gui.draw_rectangle(frame, J.Rectangle{x, at, (w + 1.0 : F32), 1.0}, 0, 0, Gui.grid.color(gui, raw, U32.is_eq((i % subdivs : U32), 0))),
+        x, y, w, spacing, subdivs, raw, (i + 1 : U32))
+
+# C's (int) of a float as the int's U32 bits: truncation toward zero; None
+# where the conversion is undefined (NaN, or outside the int range).
+def Gui.c_int(+value: F32) -> Maybe<U32>:
+  +t = F32.trunc(value)
+  Bool.pick(Maybe<U32>, (t >= F32.neg(2147483648.0) : F32) && (t < 2147483648.0 : F32),
+    Some{Bool.pick(U32, (t < 0.0 : F32), (0 - F32.to_u32(F32.neg(t)) : U32), F32.to_u32(t))}, None{})
+
+# A count of lines as an int: none from 0 down.
+def Gui.grid.n(+count: U32) -> Nat:
+  Bool.pick(Nat, (count >= 2147483648 : U32) || U32.is_eq(count, 0), 0n, U32.to_nat(count))
+
+def Gui.grid.when(draws: Bool, +v: U32, +h: U32, +gui: Gui, frame: J.Frame, +x: F32, +y: F32, +w: F32, +bh: F32, +spacing: F32, +subdivs: U32, +raw: U32) -> J.Frame:
+  match draws:
+    case False{}: frame
+    case True{}: Gui.grid.horizontal(Gui.grid.n((h + 1 : U32)), gui, Gui.grid.vertical(Gui.grid.n((v + 1 : U32)), gui, frame, x, y, bh, spacing, subdivs, raw, 0), x, y, w, spacing, subdivs, raw, 0)
+
+def Gui.grid.drawn(major: Maybe<U32>, minor: Maybe<U32>, +gui: Gui, frame: J.Frame, +x: F32, +y: F32, +w: F32, +bh: F32, +spacing: F32, +subdivs: U32, +raw: U32) -> J.Frame:
+  match major minor:
+    case Some{+v} Some{+h}: Gui.grid.when((subdivs >= 1 : U32) && (subdivs < 2147483648 : U32), v, h, gui, frame, x, y, w, bh, spacing, subdivs, raw)
+    case _ _: J.Frame.refuse(frame)
+
+def Gui.grid.cell(over: Bool, mouse: M.Vector2, +x: F32, +y: F32, +spacing: F32) -> M.Vector2:
+  match over:
+    case False{}: M.Vector2{F32.neg(1.0), F32.neg(1.0)}
+    case True{}:
+      M.Vector2{+mx, +my} = mouse
+      M.Vector2{F32.floor(((mx - x : F32) / spacing : F32)), F32.floor(((my - y : F32) / spacing : F32))}
+
+# GuiGrid(bounds, text, spacing, subdivs, &mouseCell): with subdivs above 0,
+# vertical lines every spacing/subdivs from the left edge, 1 wide and
+# height + 1 high, and horizontal ones the same way, in DEFAULT's LINE_COLOR
+# (BORDER_COLOR_DISABLED when disabled) faded to 0.6 on every subdivs-th line
+# and 0.15 between; the frame and the cell under the pointer (the cell's
+# column and row, floor((point - corner) / spacing)), or (-1, -1) outside
+# or when the gui is disabled, locked or in an exclusive control. The text
+# is not drawn. subdivs is a C int as its U32 bits; a line count C cannot
+# convert ((int) of a NaN or out of range) marks the frame undefined.
+def Gui.grid(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, +spacing: F32, +subdivs: U32) -> J.Frame & M.Vector2:
+  J.Rectangle{+x, +y, +w, +h} = bounds
+  +space = (spacing / Bool.pick(F32, (subdivs >= 2147483648 : U32), F32.neg(U32.to_f32((0 - subdivs : U32))), U32.to_f32(subdivs)) : F32)
+  +over = Gui.active(gui) && Bool.not(Gui.exclusive(gui)) && J.Collision.point_rec(J.Input.get_mouse_position(core), J.Rectangle{x, y, w, h})
+  +raw = Gui.get_style(gui, 0, Bool.pick(U32, U32.is_eq(Gui.get_state(gui), 3), 9, 18))
+  (Gui.grid.drawn(Gui.c_int((w / space : F32)), Gui.c_int((h / space : F32)), gui, frame, x, y, w, h, spacing, subdivs, raw),
+    Gui.grid.cell(over, J.Input.get_mouse_position(core), x, y, spacing))
