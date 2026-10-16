@@ -11418,6 +11418,191 @@ def Rlgl.load_extensions(frame: Frame) -> Frame:
 def Rlgl.get_proc_address(+name: String) -> U32:
   0
 
+# C ints passed as their U32 bits: negative from 2^31 on.
+def Rlgl.negative(+value: U32) -> Bool:
+  (value >= 2147483648 : U32)
+
+# sw_clamp_int(value, 0, high) of a C int.
+def Rlgl.clamped(+value: U32, +high: U32) -> U32:
+  Bool.pick(U32, Rlgl.negative(value), 0, U32.min(value, high))
+
+# A readback: the bytes written, or nothing; None where rlsw would read past
+# its color buffer.
+# sw_pixel_write_color8 for raylib's formats 1..7, after the red/blue swap
+# rlsw applies to the RGB and RGBA outputs; 16-bit pixels little-endian; the
+# bytes in reverse onto acc.
+def Rlgl.copy.put(+format: U32, +r: U32, +g: U32, +b: U32, +a: U32, acc: +List<U32>) -> +List<U32>:
+  match format:
+    case 1: Con{(((r * 77) + (g * 150) + (b * 29)) >> 8n : U32), acc}
+    case 2: Con{a, Con{(((r * 77) + (g * 150) + (b * 29)) >> 8n : U32), acc}}
+    case 3:
+      +p = (((r >> 3n : U32) << 11n : U32) .|. ((g >> 2n : U32) << 5n : U32) .|. (b >> 3n : U32) : U32)
+      Con{(p >> 8n : U32), Con{(p .&. 255 : U32), acc}}
+    case 4: Con{r, Con{g, Con{b, acc}}}
+    case 5:
+      +p = (((r >> 3n : U32) << 11n : U32) .|. ((g >> 3n : U32) << 6n : U32) .|. ((b >> 3n : U32) << 1n : U32) .|. (a >> 7n : U32) : U32)
+      Con{(p >> 8n : U32), Con{(p .&. 255 : U32), acc}}
+    case 6:
+      +p = (((r >> 4n : U32) << 12n : U32) .|. ((g >> 4n : U32) << 8n : U32) .|. ((b >> 4n : U32) << 4n : U32) .|. (a >> 4n : U32) : U32)
+      Con{(p >> 8n : U32), Con{(p .&. 255 : U32), acc}}
+    case _: Con{a, Con{r, Con{g, Con{b, acc}}}}
+
+def Rlgl.copy.bytes(+format: U32, +word: U32, acc: +List<U32>) -> +List<U32>:
+  Rlgl.copy.put(format, (word >> 24n : U32), ((word >> 16n : U32) .&. 255 : U32), ((word >> 8n : U32) .&. 255 : U32), (word .&. 255 : U32), acc)
+
+# A list as a duplicable one, in reverse.
+def Rlgl.copy.owned(xs: List<U32>, acc: +List<U32>) -> +List<U32>:
+  match xs:
+    case Nil{}: acc
+    case Con{x, rest}: Rlgl.copy.owned(rest, Con{x, acc})
+
+# The rows of `words`, `size` words each, in reverse.
+def Rlgl.copy.split(n: Nat, +words: +List<U32>, +size: U32, acc: +List<+List<U32>>) -> +List<+List<U32>>:
+  match n:
+    case 0n: acc
+    case 1n+k: Rlgl.copy.split(k, List.drop(&2, U32, words, U32.to_nat(size)), size, Con{List.take(&2, U32, words, U32.to_nat(size)), acc})
+
+def Rlgl.copy.joined(rows: +List<+List<U32>>, acc: +List<U32>) -> +List<U32>:
+  match rows:
+    case Nil{}: List.reverse(&2, U32, acc)
+    case Con{+row, rest}: Rlgl.copy.joined(rest, List.reverse.go(&2, U32, row, acc))
+
+# The lines sw_framebuffer_output_copy reads, the bottom one first: each w
+# pixels of rlsw's bottom-up color buffer from x on in a row (running on into
+# the next row past the right edge, as its memory does), one row apart.
+def Rlgl.copy.lines(n: Nat, +rest: +List<U32>, +w: U32, +stride: U32, acc: +List<+List<U32>>) -> +List<+List<U32>>:
+  match n:
+    case 0n: acc
+    case 1n+k: Rlgl.copy.lines(k, List.drop(&2, U32, rest, U32.to_nat(stride)), w, stride, Con{List.take(&2, U32, rest, U32.to_nat(w)), acc})
+
+def Rlgl.copy.pixels(line: +List<U32>, +format: U32, acc: +List<U32>) -> +List<U32>:
+  match line:
+    case Nil{}: acc
+    case Con{+word, rest}: Rlgl.copy.pixels(rest, format, Rlgl.copy.bytes(format, word, acc))
+
+def Rlgl.copy.written(lines: +List<+List<U32>>, +format: U32, acc: +List<U32>) -> +List<U32>:
+  match lines:
+    case Nil{}: List.reverse(&2, U32, acc)
+    case Con{+line, rest}: Rlgl.copy.written(rest, format, Rlgl.copy.pixels(line, format, acc))
+
+# The region's bytes, the top line first: the lines from y + h - 1 down to y.
+def Rlgl.copy.inside(past: Bool, +format: U32, +x: U32, +y: U32, +w: U32, +h: U32, +stride: U32, +height: U32, pixels: Array<U32>) -> Maybe<+List<U32>>:
+  match past:
+    case True{}: None{}
+    case False{}:
+      +top_down = List.reverse(&2, U32, Rlgl.copy.owned(Image.list.take(~U32, Array.to_list(~U32, pixels), U32.to_nat((stride * height : U32))), Nil{}))
+      +storage = Rlgl.copy.joined(Rlgl.copy.split(U32.to_nat(height), top_down, stride, Nil{}), Nil{})
+      +lines = Rlgl.copy.lines(U32.to_nat(h), List.drop(&2, U32, storage, U32.to_nat(((y * stride) + x : U32))), w, stride, Nil{})
+      Some{Rlgl.copy.written(lines, format, Nil{})}
+
+def Rlgl.copy.region(+format: U32, +x: U32, +y: U32, +w: U32, +h: U32, +stride: U32, +height: U32, pixels: Array<U32>) -> Maybe<+List<U32>>:
+  Rlgl.copy.inside((((((y + h) - 1 : U32) * stride + x) + w : U32) > (stride * height : U32) : U32), format, x, y, w, h, stride, height, pixels)
+
+def Rlgl.copy.when(empty: Bool, +format: U32, +x: U32, +y: U32, +w: U32, +h: U32, +stride: U32, +height: U32, pixels: Array<U32>) -> Maybe<+List<U32>>:
+  match empty:
+    case True{}: Some{Nil{}}
+    case False{}: Rlgl.copy.region(format, x, y, w, h, stride, height, pixels)
+
+# swReadPixels of a raylib format through rlGetGlTextureFormats: formats
+# 1..7 only; nothing for w or h below 1; w and h cut to the buffer, then x
+# and y clamped to [0, w] and [0, h], nothing where x >= w or y >= h.
+def Rlgl.copy.of(+format: U32, +x: U32, +y: U32, +w: U32, +h: U32, +stride: U32, +height: U32, pixels: Array<U32>) -> Maybe<+List<U32>>:
+  +fw = U32.min(w, stride)
+  +fh = U32.min(h, height)
+  +cx = Rlgl.clamped(x, fw)
+  +cy = Rlgl.clamped(y, fh)
+  +empty = (format < 1 : U32) || (format > 7 : U32) || Rlgl.negative(w) || Rlgl.negative(h) || U32.is_eq(w, 0) || U32.is_eq(h, 0)
+  Rlgl.copy.when(empty || (cx >= fw : U32) || (cy >= fh : U32), format, cx, cy, fw, fh, stride, height, pixels)
+
+def Rlgl.copy.read(+x: U32, +y: U32, +w: U32, +h: U32, +format: U32, surface: Maybe<Surface>) -> Maybe<+List<U32>>:
+  match surface:
+    case None{}: None{}
+    case Some{Surface{+stride, +height, _, Words{pixels}}}: Rlgl.copy.of(format, x, y, w, h, stride, height, pixels)
+    case Some{_}: None{}
+
+# A frame whose readback is undefined, as a draw Jonlib does not reproduce
+# leaves it.
+def Rlgl.refused(frame: Frame) -> Frame:
+  Frame{canvas, _} = frame
+  Frame{FrameCore.Canvas.refuse(canvas), Nil{}}
+
+def Rlgl.copy.marked(frame: Frame, m: Maybe<+List<U32>>) -> Frame & Maybe<+List<U32>>:
+  match m:
+    case None{}: (Rlgl.refused(frame), None{})
+    case Some{+bytes}: (frame, Some{bytes})
+
+def Rlgl.copy.surface(+x: U32, +y: U32, +w: U32, +h: U32, +format: U32, r: Frame & Maybe<Surface>) -> Frame & Maybe<+List<U32>>:
+  (frame, surface) = r
+  Rlgl.copy.marked(frame, Rlgl.copy.read(x, y, w, h, format, surface))
+
+# rlCopyFramebuffer(x, y, w, h, format, pixels) on the software renderer
+# (swReadPixels): the bytes written at the start of `pixels`, w x h pixels
+# of the format packed (w and h as rlsw cuts them), rows from the top of the
+# region down, RGB and RGBA bytes as BGR and BGRA. Nothing is written for a
+# format outside 1..7 or an empty region. Ints are their U32 bits. None, and
+# the frame undefined, where rlsw would read past its color buffer (or a
+# draw was refused).
+def Rlgl.copy_framebuffer(frame: Frame, +x: U32, +y: U32, +w: U32, +h: U32, +format: U32) -> Frame & Maybe<+List<U32>>:
+  Rlgl.copy.surface(x, y, w, h, format, Frame.framebuffer(frame))
+
+# The rows of `bytes`, `size` bytes each, in reverse.
+def Rlgl.screen.rows(n: Nat, +bytes: +List<U32>, +size: U32, acc: +List<+List<U32>>) -> +List<+List<U32>>:
+  match n:
+    case 0n: acc
+    case 1n+k: Rlgl.screen.rows(k, List.drop(&2, U32, bytes, U32.to_nat(size)), size, Con{List.take(&2, U32, bytes, U32.to_nat(size)), acc})
+
+# Every fourth byte (alpha) 255, the row's bytes in reverse onto acc.
+def Rlgl.screen.opaque(row: +List<U32>, +i: U32, acc: +List<U32>) -> +List<U32>:
+  match row:
+    case Nil{}: acc
+    case Con{+v, rest}: Rlgl.screen.opaque(rest, (i + 1 : U32), Con{Bool.pick(U32, U32.is_eq((i % 4 : U32), 3), 255, v), acc})
+
+# rlReadScreenPixels' flip: the rows end for end (bottom row first), every
+# alpha 255; `rows` are the rows bottom first, the result reversed back.
+def Rlgl.screen.flipped(rows: +List<+List<U32>>, acc: +List<U32>) -> +List<U32>:
+  match rows:
+    case Nil{}: List.reverse(&2, U32, acc)
+    case Con{+row, rest}: Rlgl.screen.flipped(rest, Rlgl.screen.opaque(row, 0, acc))
+
+def Rlgl.screen.of(+width: U32, +height: U32, read: Maybe<+List<U32>>) -> Maybe<+List<U32>>:
+  match read:
+    case None{}: None{}
+    case Some{+bytes}:
+      +size = (width * height * 4 : U32)
+      +filled = List.append(&2, U32, bytes, List.replicate(U32, U32.to_nat((size - U32.min(U32.from_nat(List.length(&2, U32, bytes)), size) : U32)), 0))
+      Some{Rlgl.screen.flipped(Rlgl.screen.rows(U32.to_nat(height), filled, (width * 4 : U32), Nil{}), Nil{})}
+
+def Rlgl.screen.surface(+width: U32, +height: U32, r: Frame & Maybe<+List<U32>>) -> Frame & Maybe<+List<U32>>:
+  (frame, read) = r
+  (frame, Rlgl.screen.of(width, height, read))
+
+def Rlgl.screen.when(fits: Bool, frame: Frame, +width: U32, +height: U32) -> Frame & Maybe<+List<U32>>:
+  match fits:
+    case False{}: (Rlgl.refused(frame), None{})
+    case True{}: Rlgl.screen.surface(width, height, Rlgl.copy_framebuffer(frame, 0, 0, width, height, 7))
+
+# rlReadScreenPixels(width, height): a zeroed width * height * 4 buffer,
+# glReadPixels(0, 0, width, height, GL_RGBA) at its start (rlsw cuts the
+# size to its buffer and writes the rows packed, top first, as BGRA), then
+# rows swapped end for end and every alpha 255. Sizes of 1 and more whose
+# buffer fits an int; None, and the frame undefined, otherwise (or where a
+# draw was refused).
+def Rlgl.read_screen_pixels(frame: Frame, +width: U32, +height: U32) -> Frame & Maybe<+List<U32>>:
+  +fits = Bool.not(Rlgl.negative(width)) && Bool.not(Rlgl.negative(height)) && (width >= 1 : U32) && (height >= 1 : U32) && (width <= 16384 : U32) && (height <= 16384 : U32)
+    && (((width * height : U32) < 536870912 : U32))
+  Rlgl.screen.when(fits, frame, width, height)
+
+# rlReadTexturePixels(id, width, height, format): glGetTexImage is a no-op in
+# rlsw, so formats 1..7 give a zeroed buffer of rlGetPixelDataSize bytes;
+# other formats are NULL (None).
+def Rlgl.texture.read(given: Bool, +width: U32, +height: U32, +format: U32) -> Maybe<+List<U32>>:
+  match given:
+    case False{}: None{}
+    case True{}: Some{List.replicate(U32, U32.to_nat(Image.Stored.size(width, height, format)), 0)}
+
+def Rlgl.read_texture_pixels(+width: U32, +height: U32, +format: U32) -> Maybe<+List<U32>>:
+  Rlgl.texture.read((format >= 1 : U32) && (format <= 7 : U32), width, height, format)
+
 def Frame.matrix.of(+m: FrameCore.Matrix4) -> M.Matrix:
   FrameCore.Matrix4{m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15} = m
   M.Matrix{m0, m4, m8, m12, m1, m5, m9, m13, m2, m6, m10, m14, m3, m7, m11, m15}

@@ -2276,6 +2276,18 @@ def Laws.rlgl_render_batch_zeroed(frame, buffers, elements):
 def Laws.rlgl_draw_render_batch_unchanged(frame, batch):
   {==}
 
+def Laws.rlgl_copy_luminance():
+  {==}
+
+def Laws.rlgl_copy_r5g6b5_red():
+  {==}
+
+def Laws.rlgl_read_texture_pixels_zeroed():
+  {==}
+
+def Laws.rlgl_read_texture_pixels_null():
+  {==}
+
 def Laws.rlgl_proc_address_null():
   {==}
 

@@ -15,7 +15,10 @@ rlMatrixMode with the projection and texture stacks, rlOrtho, rlFrustum,
 rlViewport, the blend/depth/cull/scissor/wire/point toggles, rlSetCullFace,
 rlScissor, rlSetLineWidth/rlGetLineWidth, rlSetPointSize/rlGetPointSize,
 rlClearColor/rlClearScreenBuffers, rlGetGlTextureFormats for the formats
--1 to 25, rlGenTextureMipmaps, the render batch functions (a zeroed batch,
+-1 to 25, rlGenTextureMipmaps, rlCopyFramebuffer (every format 1..7,
+regions cut, clamped, empty and running into the next row, other formats),
+rlReadScreenPixels (smaller and larger than the screen), rlReadTexturePixels,
+the render batch functions (a zeroed batch,
 rlDrawRenderBatch, rlSetRenderBatchActive, rlUnloadRenderBatch),
 rlLoadExtensions and rlGetProcAddress, the matrix and state getters and the
 OpenGL 3.3-only calls that do nothing on the software renderer. Getter
@@ -434,6 +437,17 @@ def scenes():
                                      ('rl_begin', 4), ('v2f', 0.0, 0.0), ('v2f', 0.0, 5.0), ('v2f', 6.0, 5.0), ('rl_end',), ('end_rt', 0),
                                      ('draw_rt', 0, 12.0, 8.0, WHITE), ('end',)], screen=True)
 
+    add('rl-readback', 24, 16, [('begin',), ('clear', C(10, 20, 30)), ('rect', 2.0, 1.0, 9.0, 6.0, RED), ('rect', 12.0, 8.0, 10.0, 7.0, C(40, 200, 90, 128)),
+                                ('rect', 5.0, 10.0, 4.0, 4.0, C(250, 250, 10, 7)), ('end',)]
+        + [('copy', 0, 0, 24, 16, f) for f in range(1, 8)]
+        + [('copy', 3, 2, 10, 5, 7), ('copy', 3, 2, 10, 5, 3), ('copy', 5, 0, 22, 3, 7), ('copy', -3, -2, 8, 4, 4), ('copy', 0, 0, 100, 40, 7),
+           ('copy', 30, 0, 10, 4, 7), ('copy', 0, 0, 0, 4, 7), ('copy', 0, 0, 5, -1, 7), ('copy', 0, 0, 24, 16, 8), ('copy', 0, 0, 24, 16, 0),
+           ('copy', 6, 9, 7, 7, 1), ('copy', 6, 9, 7, 7, 2), ('copy', 6, 9, 7, 7, 5), ('copy', 6, 9, 7, 7, 6),
+           ('screen_px', 24, 16), ('screen_px', 10, 5), ('screen_px', 30, 20), ('screen_px', 1, 1),
+           ('tex_px', 4, 4, 7), ('tex_px', 3, 5, 1), ('tex_px', 2, 2, 3), ('tex_px', 5, 3, 4), ('tex_px', 4, 4, 8), ('tex_px', 4, 4, 11)])
+    # rlCopyFramebuffer reading past rlsw's color buffer (the region's top row runs past the last pixel): undefined.
+    add('rl-readback-past', 24, 16, [('begin',), ('clear', C(10, 20, 30)), ('end',), ('copy', 5, 0, 24, 16, 7)], contract=True)
+
     # Contracts.
     add('rl-pop-projection', 16, 12, [('matrix_mode', 0x1701), ('pop',)], contract=True)
     add('rl-pop-texture', 16, 12, [('matrix_mode', 0x1702), ('pop',)], contract=True)
@@ -552,6 +566,41 @@ static void batch(void)
     snprintf(s, sizeof s, " z%d", rlGetProcAddress("glClear") == NULL);
     note(s);
 }
+static unsigned bytes_fnv(const unsigned char *b, size_t n)
+{
+    unsigned h = 2166136261u;
+    for (size_t i = 0; i < n; i++) h = (h ^ b[i])*16777619u;
+    return h;
+}
+// rlCopyFramebuffer into a buffer of w*h*4 bytes (none for an empty size) set to 0xAA first: its hash and size.
+static void copy_fb(int x, int y, int w, int h, int format)
+{
+    char s[64];
+    size_t size = ((w > 0) && (h > 0))? (size_t)w*(size_t)h*4 : 0;
+    unsigned char *b = malloc(size + 4);
+    memset(b, 0xAA, size + 4);
+    rlCopyFramebuffer(x, y, w, h, format, b);
+    snprintf(s, sizeof s, " c%u,%zu", bytes_fnv(b, size), size);
+    note(s);
+    free(b);
+}
+static void screen_px(int w, int h)
+{
+    char s[64];
+    unsigned char *b = rlReadScreenPixels(w, h);
+    snprintf(s, sizeof s, " k%u", bytes_fnv(b, (size_t)w*(size_t)h*4));
+    note(s);
+    RL_FREE(b);
+}
+static void tex_px(int w, int h, int format)
+{
+    char s[64];
+    unsigned char *b = rlReadTexturePixels(rlGetTextureIdDefault(), w, h, format);
+    if (b == NULL) snprintf(s, sizeof s, " t-");
+    else snprintf(s, sizeof s, " t%u,%d", bytes_fnv(b, (size_t)GetPixelDataSize(w, h, format)), GetPixelDataSize(w, h, format));
+    note(s);
+    RL_FREE(b);
+}
 static void dump(int w, int h, int screen)''')
 if 'static void noops(void)' not in C_PREFIX:
     raise ProbeFailure('rlgl: tools/texture_probe.py C_PREFIX changed; update the rlgl probe hooks')
@@ -607,6 +656,9 @@ def c_op(op):
                         'framebuffer': '{ char s[32]; snprintf(s, sizeof s, " a%u", rlGetActiveFramebuffer()); note(s); }',
                         'version': '{ char s[32]; snprintf(s, sizeof s, " v%d", rlGetVersion()); note(s); }', 'misc': 'misc();',
                         'formats': 'formats();', 'batch': 'batch();'}[a[0]],
+        'copy': lambda: f'copy_fb({a[0]}, {a[1]}, {a[2]}, {a[3]}, {a[4]});',
+        'screen_px': lambda: f'screen_px({a[0]}, {a[1]});',
+        'tex_px': lambda: f'tex_px({a[0]}, {a[1]}, {a[2]});',
     }
     return '    ' + calls[name]()
 
@@ -1121,6 +1173,53 @@ def St.shapes.call(r: St & Maybe<J.Texture>, +slot: U32, +back: U32, rec: J.Rect
 def St.shapes.set(s: St, +slot: U32, +back: U32, rec: J.Rectangle) -> St:
   St.shapes.call(St.take(s, slot), slot, back, rec)
 
+def bytes.fnv(xs: +List<U32>, +h: U32) -> U32:
+  match xs:
+    case Nil{}: h
+    case Con{+x, rest}: bytes.fnv(rest, ((h .^. x) * 16777619 : U32))
+
+def bytes.padded(+xs: +List<U32>, +size: U32) -> +List<U32>:
+  List.append(&2, U32, xs, List.replicate(U32, U32.to_nat((size - U32.min(U32.from_nat(List.length(&2, U32, xs)), size) : U32)), 170))
+
+def copy.size(+w: U32, +h: U32) -> U32:
+  Bool.pick(U32, (w >= 1 : U32) && (h >= 1 : U32) && (w < 2147483648 : U32) && (h < 2147483648 : U32), (w * h * 4 : U32), 0)
+
+# A refused readback leaves the frame undefined (the row is null) and adds nothing.
+def copy.shown(+size: U32, m: Maybe<+List<U32>>) -> String:
+  match m:
+    case None{}: ""
+    case Some{+bytes}: " c" ++ U32.show(bytes.fnv(bytes.padded(bytes, size), 2166136261)) ++ "," ++ U32.show(size)
+
+def copy.text(+size: U32, r: J.Frame & Maybe<+List<U32>>) -> J.Frame & String:
+  (frame, m) = r
+  (frame, copy.shown(size, m))
+
+def St.copy(s: St, +x: U32, +y: U32, +w: U32, +h: U32, +format: U32) -> St:
+  St{frame, t0, t1, t2, t3, r0, r1, log} = s
+  St.rest.log(t0, t1, t2, t3, r0, r1, log, copy.text(copy.size(w, h), J.Rlgl.copy_framebuffer(frame, x, y, w, h, format)))
+
+def screen.shown(m: Maybe<+List<U32>>) -> String:
+  match m:
+    case None{}: ""
+    case Some{+bytes}: " k" ++ U32.show(bytes.fnv(bytes, 2166136261))
+
+def screen.text(r: J.Frame & Maybe<+List<U32>>) -> J.Frame & String:
+  (frame, m) = r
+  (frame, screen.shown(m))
+
+def St.screen(s: St, +w: U32, +h: U32) -> St:
+  St{frame, t0, t1, t2, t3, r0, r1, log} = s
+  St.rest.log(t0, t1, t2, t3, r0, r1, log, screen.text(J.Rlgl.read_screen_pixels(frame, w, h)))
+
+def texread.shown(m: Maybe<+List<U32>>) -> String:
+  match m:
+    case None{}: " t-"
+    case Some{+bytes}: " t" ++ U32.show(bytes.fnv(bytes, 2166136261)) ++ "," ++ U32.show(U32.from_nat(List.length(&2, U32, bytes)))
+
+def St.texread(s: St, +w: U32, +h: U32, +format: U32) -> St:
+  St{frame, t0, t1, t2, t3, r0, r1, log} = s
+  St{frame, t0, t1, t2, t3, r0, r1, log ++ texread.shown(J.Rlgl.read_texture_pixels(w, h, format))}
+
 # Slot-level operations (kinds 260..).
 def rstep.slot(kind: U32, +w: +List<U32>, s: St) -> St:
   match kind:
@@ -1128,6 +1227,9 @@ def rstep.slot(kind: U32, +w: +List<U32>, s: St) -> St:
     case 261: St.texture.unset(s, wu(0n, w))
     case 262: St.shapes.set(s, wu(0n, w), wu(5n, w), wrect(1n, w))
     case 263: St.shapes.info(s)
+    case 265: St.copy(s, wu(0n, w), wu(1n, w), wu(2n, w), wu(3n, w), wu(4n, w))
+    case 266: St.screen(s, wu(0n, w), wu(1n, w))
+    case 267: St.texread(s, wu(0n, w), wu(1n, w), wu(2n, w))
     case _: St.query(s, wu(0n, w))
 
 def rstep.frame(shape: Bool, +kind: U32, +w: +List<U32>, frame: J.Frame) -> J.Frame:
@@ -1210,7 +1312,7 @@ SHAPE_KINDS = {'bezier': 200, 'dashed': 201, 'ring_lines': 202, 'poly_ex': 203, 
 CALL_KINDS = {'rl_begin': 220, 'rl_end': 221, 'v2i': 222, 'v2f': 223, 'v3f': 224, 'tc': 225, 'normal': 226, 'c4ub': 227, 'c3f': 228, 'c4f': 229,
               'matrix_mode': 230, 'ortho': 231, 'frustum': 232, 'viewport': 233, 'toggle': 234, 'cull_face': 235, 'scissor': 236,
               'line_width': 237, 'point_size': 238, 'clear_color': 239, 'clear_buffers': 240, 'noops': 241}
-OTHER_KINDS = {'set_texture': 260, 'set_texture_null': 261, 'shapes_tex': 262, 'shapes_info': 263, 'get': 264}
+OTHER_KINDS = {'set_texture': 260, 'set_texture_null': 261, 'shapes_tex': 262, 'shapes_info': 263, 'get': 264, 'copy': 265, 'screen_px': 266, 'tex_px': 267}
 INT_CALLS = {'rl_begin', 'c4ub', 'matrix_mode', 'cull_face', 'clear_color'}
 W = fp.word
 
@@ -1237,7 +1339,7 @@ def op_words(op):
             return kind, [a[0]] + [W(x) for x in a[1]] + [a[2]]
         if name == 'get':
             return kind, [GETTERS.index(a[0])]
-        return kind, list(a)
+        return kind, [v & 0xFFFFFFFF for v in a]
     return tp.op_words(op)
 
 
