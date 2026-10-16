@@ -2224,3 +2224,161 @@ def Gui.tab_bar(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, 
   +screen = J.Core.get_screen_width(core)
   +offset = (((clamped + 2 : U32) * 148 : U32) - screen : U32)
   Gui.tabs.done(gui, J.Rectangle{x, y, w, h}, Gui.tabs.run(items, gui, core, x, y, h, Bool.pick(U32, Gui.int.less(offset, 0), 0, offset), screen, 0, GuiTabs{frame, clamped, 4294967295}))
+
+# -----------------------------------------------------------------------------
+# GuiValueBoxFloat (not in edit mode)
+
+# GuiValueBoxFloat(bounds, text, textValue, &value, editMode): the box as
+# GuiValueBox draws it with the text buffer `text_value` in it (the value is
+# not formatted: raygui shows the buffer the caller keeps), focused under the
+# pointer; the frame, the value, unchanged outside edit mode, and whether the
+# box was pressed. Edit mode (keyboard entry) marks the frame undefined.
+def Gui.value_box_float(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, text_value: String, +value: F32, edit: Bool) -> J.Frame & (F32 & Bool):
+  match edit:
+    case True{}: (J.Frame.refuse(frame), (value, False{}))
+    case False{}:
+      +over = Gui.active(gui) && Bool.not(Gui.exclusive(gui)) && J.Collision.point_rec(J.Input.get_mouse_position(core), bounds)
+      +state = Bool.pick(U32, over, 1, Gui.get_state(gui))
+      f1 = Gui.draw_rectangle(frame, bounds, Gui.get_style(gui, 10, 12), Gui.color(gui, 10, (state * 3 : U32)), Gui.value.fill(state, gui))
+      f2 = Gui.draw_text(gui, f1, text_value, Gui.text_bounds(gui, 10, bounds), 1, Gui.color(gui, 10, (2 + state * 3 : U32)))
+      (Gui.value.label(gui, f2, text, bounds, state), (value, over && Gui.pressed(core)))
+
+# -----------------------------------------------------------------------------
+# GuiTextInputBox
+
+# What GuiTextInputBox keeps between frames: the text, the secret view (0
+# off, 1 on, 2 for a NULL pointer: no secret view), raygui's static
+# textEditMode and the text box globals.
+type Gui.Input is Data:
+  GuiInput{text: String, secret: U32, edit: Bool, editing: Gui.Editing}
+
+def Gui.input.result(+i: U32, +result: U32, r: J.Frame & Bool) -> Gui.Buttons:
+  (frame, +clicked) = r
+  GuiButtons{frame, Bool.pick(U32, clicked, (i + 1 : U32), result)}
+
+# The buttons in a row along the bottom (as GuiMessageBox's), centered.
+def Gui.input.buttons(items: +List<Gui.Item>, +gui: Gui, +core: J.Core, +x: F32, +y: F32, +w: F32, +i: U32, row: Gui.Buttons) -> Gui.Buttons:
+  match items:
+    case Nil{}: row
+    case Con{+item, rest}:
+      GuiButtons{frame, +result} = row
+      Gui.input.buttons(rest, gui, core, ((x + w : F32) + 12.0 : F32), y, w, (i + 1 : U32),
+        Gui.input.result(i, result, Gui.button(gui, core, frame, J.Rectangle{x, y, w, 24.0}, TextCore.string(Gui.item.bytes(item)))))
+
+def Gui.input.ended(+core: J.Core, +text: String, +secret: U32, +edit: Bool, +editing: Gui.Editing, row: Gui.Buttons) -> J.Frame & (J.Core & (Gui.Input & U32)):
+  GuiButtons{frame, +result} = row
+  (frame, (core, (GuiInput{text, secret, edit && (result >= 2147483648 : U32), editing}, result)))
+
+# After the text box (and the secret view's toggle): the buttons, and
+# textEditMode cleared by any result.
+def Gui.input.finished(+gui: Gui, +core: J.Core, frame: J.Frame, +x: F32, +y: F32, +w: F32, +h: F32, +items: +List<Gui.Item>, +count: U32, +closed: Bool, +text: String, +secret: U32, +edit: Bool, +editing: Gui.Editing) -> J.Frame & (J.Core & (Gui.Input & U32)):
+  +bw = ((w - U32.to_f32((12 * (count + 1) : U32)) : F32) / U32.to_f32(count) : F32)
+  Gui.input.ended(core, text, secret, edit, editing,
+    Gui.input.buttons(items, Gui.set_style(gui, 2, 14, 1), core, (x + 12.0 : F32), (((y + h : F32) - 24.0 : F32) - 12.0 : F32), bw, 0, GuiButtons{frame, Bool.pick(U32, closed, 0, 4294967295)}))
+
+def Gui.input.viewed(+gui: Gui, +core: J.Core, +text: String, +edit: Bool, +editing: Gui.Editing, +x: F32, +y: F32, +w: F32, +h: F32, +items: +List<Gui.Item>, +count: U32, +closed: Bool, r: J.Frame & Bool) -> J.Frame & (J.Core & (Gui.Input & U32)):
+  (frame, +on) = r
+  Gui.input.finished(gui, core, frame, x, y, w, h, items, count, closed, text, Bool.pick(U32, on, 1, 0), edit, editing)
+
+# The secret view's GuiToggle (#44# when on, #45# when off) beside the box,
+# 26 pixels square; none without a secret pointer.
+def Gui.input.toggled(secret: U32, +gui: Gui, +core: J.Core, +text: String, +edit: Bool, +editing: Gui.Editing, +x: F32, +y: F32, +w: F32, +h: F32, +bx: F32, +by: F32, +bw: F32, +items: +List<Gui.Item>, +count: U32, +closed: Bool, frame: J.Frame) -> J.Frame & (J.Core & (Gui.Input & U32)):
+  match secret:
+    case 2: Gui.input.finished(gui, core, frame, x, y, w, h, items, count, closed, text, 2, edit, editing)
+    case _:
+      +on = U32.is_eq(secret, 1)
+      Gui.input.viewed(gui, core, text, edit, editing, x, y, w, h, items, count, closed,
+        Gui.toggle(gui, core, frame, J.Rectangle{((bx + bw : F32) - 26.0 : F32), by, 26.0, 26.0}, Bool.pick(String, on, "#44#", "#45#"), on))
+
+def Gui.input.boxed.state(+gui: Gui, +core: J.Core, +text: String, +edit: Bool, +secret: U32, +x: F32, +y: F32, +w: F32, +h: F32, +bx: F32, +by: F32, +bw: F32, +items: +List<Gui.Item>, +count: U32, +closed: Bool,
+    frame: J.Frame, state: Gui.Editing & Bool) -> J.Frame & (J.Core & (Gui.Input & U32)):
+  (+editing, +switched) = state
+  +now = Bool.pick(Bool, switched, Bool.not(edit), edit)
+  Gui.input.toggled(secret, gui, core, text, now, editing, x, y, w, h, bx, by, bw, items, count, closed, frame)
+
+def Gui.input.boxed.text(+gui: Gui, +core: J.Core, +shown: Bool, +text: String, +edit: Bool, +secret: U32, +x: F32, +y: F32, +w: F32, +h: F32, +bx: F32, +by: F32, +bw: F32, +items: +List<Gui.Item>, +count: U32, +closed: Bool,
+    frame: J.Frame, boxed: String & (Gui.Editing & Bool)) -> J.Frame & (J.Core & (Gui.Input & U32)):
+  (+typed, state) = boxed
+  Gui.input.boxed.state(gui, core, Bool.pick(String, shown, typed, text), edit, secret, x, y, w, h, bx, by, bw, items, count, closed, frame, state)
+
+def Gui.input.boxed.rest(+gui: Gui, +shown: Bool, +text: String, +edit: Bool, +secret: U32, +x: F32, +y: F32, +w: F32, +h: F32, +bx: F32, +by: F32, +bw: F32, +items: +List<Gui.Item>, +count: U32, +closed: Bool,
+    frame: J.Frame, rest: J.Core & (String & (Gui.Editing & Bool))) -> J.Frame & (J.Core & (Gui.Input & U32)):
+  (+core, boxed) = rest
+  Gui.input.boxed.text(gui, core, shown, text, edit, secret, x, y, w, h, bx, by, bw, items, count, closed, frame, boxed)
+
+# The text box's answer: the Core, the text (kept when the stars were shown),
+# the globals, and textEditMode switched by raygui's result.
+def Gui.input.boxed(+gui: Gui, +shown: Bool, +text: String, +edit: Bool, +secret: U32, +x: F32, +y: F32, +w: F32, +h: F32, +bx: F32, +by: F32, +bw: F32, +items: +List<Gui.Item>, +count: U32, +closed: Bool,
+    r: J.Frame & (J.Core & (String & (Gui.Editing & Bool)))) -> J.Frame & (J.Core & (Gui.Input & U32)):
+  (frame, rest) = r
+  Gui.input.boxed.rest(gui, shown, text, edit, secret, x, y, w, h, bx, by, bw, items, count, closed, frame, rest)
+
+def Gui.int.f(+v: U32) -> F32:
+  Bool.pick(F32, (v >= 2147483648 : U32), F32.neg(U32.to_f32((0 - v : U32))), U32.to_f32(v))
+
+# a/b for a C int a and b above 0, truncated toward zero.
+def Gui.int.over(+a: U32, +b: U32) -> U32:
+  Bool.pick(U32, (a >= 2147483648 : U32), (0 - ((0 - a : U32) / b) : U32), (a / b : U32))
+
+# The message centered over the box: GuiGetTextWidth + 2 wide (an int), at
+# y + 24 + height/4 - TEXT_SIZE/2.
+def Gui.input.label(width: Maybe<F32>, +gui: Gui, frame: J.Frame, +m: String, +x: F32, +y: F32, +w: F32, +height: U32) -> J.Frame:
+  match width:
+    case None{}: J.Frame.refuse(frame)
+    case Some{+tw}:
+      +size = (F32.to_u32(tw) + 2 : U32)
+      +ts = Gui.style.f32(gui, 0, 16)
+      Gui.label(Gui.set_style(gui, 1, 14, 1), frame,
+        J.Rectangle{((x + (w / 2.0 : F32) : F32) - U32.to_f32((size / 2 : U32)) : F32), (((y + 24.0 : F32) + Gui.int.f(Gui.int.over(height, 4)) : F32) - (ts / 2.0 : F32) : F32), U32.to_f32(size), ts}, m)
+
+# The frame with the message drawn, and whether there was one.
+def Gui.input.message(+gui: Gui, frame: J.Frame, message: Maybe<String>, +x: F32, +y: F32, +w: F32, +height: U32) -> J.Frame & Bool:
+  match message:
+    case None{}: (frame, False{})
+    case Some{+m}: (Gui.input.label(Gui.get_text_width(gui, m), gui, frame, m, x, y, w, height), True{})
+
+def Gui.input.labeled(+gui: Gui, +core: J.Core, +x: F32, +y: F32, +w: F32, +h: F32, +height: U32, +items: +List<Gui.Item>, +count: U32, +size: U32,
+    +text: String, +secret: U32, +edit: Bool, +editing: Gui.Editing, +closed: Bool, r: J.Frame & Bool) -> J.Frame & (J.Core & (Gui.Input & U32)):
+  (f1, +messaged) = r
+  +plain = U32.is_eq(secret, 2)
+  +shown = plain || U32.is_eq(secret, 1) || edit
+  +bx = (x + 12.0 : F32)
+  +bw = (w - 24.0 : F32)
+  +by = Bool.pick(F32, messaged, (((y + 24.0 : F32) - 13.0 : F32) + Gui.int.f((Gui.int.over(height, 2) + Gui.int.over(height, 4) : U32)) : F32), ((y + 24.0 : F32) + 12.0 : F32))
+  Gui.input.boxed(gui, shown, text, edit, secret, x, y, w, h, bx, by, bw, items, count, closed,
+    Gui.text_box(Gui.set_style(gui, 9, 14, 0), core, f1, J.Rectangle{bx, by, Bool.pick(F32, plain, bw, ((bw - 4.0 : F32) - 26.0 : F32)), 26.0},
+      Bool.pick(String, shown, text, "****************"), size, edit, editing))
+
+# The window, the message, then the text box (TEXTBOX's text left aligned):
+# the whole width less 24 without a secret view, 30 less with one, the stars
+# "****************" shown in it unless the view is on or the box is being
+# edited.
+def Gui.input.windowed(+gui: Gui, +core: J.Core, message: Maybe<String>, +x: F32, +y: F32, +w: F32, +h: F32, +height: U32, +items: +List<Gui.Item>, +count: U32, +size: U32,
+    +text: String, +secret: U32, +edit: Bool, +editing: Gui.Editing, r: J.Frame & Bool) -> J.Frame & (J.Core & (Gui.Input & U32)):
+  (frame, +closed) = r
+  Gui.input.labeled(gui, core, x, y, w, h, height, items, count, size, text, secret, edit, editing, closed, Gui.input.message(gui, frame, message, x, y, w, height))
+
+def Gui.input.run(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, title: Maybe<String>, message: Maybe<String>, +items: +List<Gui.Item>, +count: U32, +size: U32, input: Gui.Input) -> J.Frame & (J.Core & (Gui.Input & U32)):
+  J.Rectangle{+x, +y, +w, +h} = bounds
+  GuiInput{+text, +secret, +edit, +editing} = input
+  +height = ((((Gui.int.of(h) - 24 : U32) - Gui.get_style(gui, 15, 12) : U32) - 24 : U32) - 24 : U32)
+  Gui.input.windowed(gui, core, message, x, y, w, h, height, items, count, size, text, secret, edit, editing, Gui.window_box(gui, core, frame, J.Rectangle{x, y, w, h}, title))
+
+def Gui.input.of(fine: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, title: Maybe<String>, message: Maybe<String>, +items: +List<Gui.Item>, +count: U32, +size: U32, input: Gui.Input) -> J.Frame & (J.Core & (Gui.Input & U32)):
+  match fine:
+    case False{}: (J.Frame.refuse(frame), (core, (input, 4294967295)))
+    case True{}: Gui.input.run(gui, core, frame, bounds, title, message, items, count, size, input)
+
+# GuiTextInputBox(bounds, title, message, buttons, text, textMaxSize,
+# secretViewActive): a GuiWindowBox, the message centered below its bar, a
+# GuiTextBox (with a toggle that shows or hides the text as stars when the
+# input has a secret view), and the ';'-separated buttons along the bottom;
+# the box enters and leaves edit mode as raygui's static textEditMode does,
+# which any result clears. The frame, the Core, the input as it is now and
+# the result: 0 for the close button, a button's number from 1, or -1
+# (4294967295). The text box's own refusals apply; a buttons text of 1024
+# bytes or more or 128 items or more marks the frame undefined.
+def Gui.text_input_box(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, title: Maybe<String>, message: Maybe<String>, +buttons: String, +size: U32, input: Gui.Input) -> J.Frame & (J.Core & (Gui.Input & U32)):
+  +items = Gui.split(TextCore.bytes(buttons), 59, 0, Nil{})
+  +count = Gui.drop.count(items, 0)
+  Gui.input.of((count < 128 : U32) && (TextCore.len(TextCore.bytes(buttons)) < 1024 : U32), gui, core, frame, bounds, title, message, items, count, size, input)

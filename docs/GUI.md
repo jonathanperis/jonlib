@@ -57,6 +57,8 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiComboBox` | `Gui.combo_box(gui, core, frame, bounds, text, active)` | `Frame & U32` (the active item, moved on by a press over the box or its button) |
 | `GuiTabBar` | `Gui.tab_bar(gui, core, frame, bounds, items, active)` | `Frame & (U32 & U32)` (the active tab, and the tab whose close button was clicked or that a middle press is over, or -1, as int bits) |
 | `GuiMessageBox` | `Gui.message_box(gui, core, frame, bounds, title, message, buttons)` | `Frame & U32` (0 for the close button, a button's number from 1, or -1 as 4294967295) |
+| `GuiValueBoxFloat` | `Gui.value_box_float(gui, core, frame, bounds, text, text_value, value, edit)` | `Frame & (F32 & Bool)` (the value, unchanged outside edit mode, and whether the box was pressed; `text_value` is the buffer raygui shows) |
+| `GuiTextInputBox` | `Gui.text_input_box(gui, core, frame, bounds, title, message, buttons, size, input)` | `Frame & (Core & (Gui.Input & U32))` (`GuiInput{text, secret, edit, editing}`: the text, the secret view (0 off, 1 on, 2 for NULL), raygui's static edit mode and the text box globals, which a program passes from one input box to the next; the result: 0 closed, a button's number, or -1) |
 | `GuiListView` | `Gui.list_view(gui, core, frame, bounds, text, scroll, active)` | `Frame & (Gui & (U32 & U32))` (`GuiListViewEx` over the items of `text`, `None` for NULL; the scroll index and active item as words) |
 
 Two additions have no raygui counterpart. They run a row of controls in order
@@ -183,8 +185,7 @@ example waiting on each raygui function it calls that is not delivered.
 
 ## Gaps
 
-- Not delivered yet: `GuiTextBoxMulti`, `GuiValueBoxFloat`,
-  `GuiColor*`, `GuiTextInputBox`, the style file loaders, `GuiSetFont` and `GuiGetFont`'s
+- Not delivered yet: `GuiTextBoxMulti`, `GuiColor*`, the style file loaders, `GuiSetFont` and `GuiGetFont`'s
   Font (its base size is `Gui.font_base_size`),
   `GuiDrawIcon`/`GuiIconText` as functions, `GuiLoadIcons` and tooltips.
 - An icon id above 255 reads past raygui's table and marks the frame
@@ -220,8 +221,8 @@ example waiting on each raygui function it calls that is not delivered.
   press, a position that is not an int). No ported example's content
   overflows its scroll panel: the bars and scrolling are compared with
   raygui by reading only.
-- `GuiValueBox` and `GuiSpinner` in edit mode (keyboard entry) mark the frame
-  undefined. A spinner step below `INT_MIN` or above `INT_MAX` overflows in C
+- `GuiValueBox`, `GuiValueBoxFloat` and `GuiSpinner` in edit mode (keyboard
+  entry) mark the frame undefined. A spinner step below `INT_MIN` or above `INT_MAX` overflows in C
   and marks the frame undefined.
 - An ellipsis narrower than 3 pixels makes raygui's dot loop endless; Jongui
   marks the frame undefined.
@@ -286,4 +287,9 @@ three disabled, the list view with a NULL text. `gui_message_tabs` covers
 `GuiTabBar` with more tabs than the window holds (a tab clicked, the last one
 clicked so that the bar moves left, a tab's close button and a middle press)
 and `GuiMessageBox` (its buttons and its close button, a two-line message, an
-icon in the title, and a disabled box with a NULL title).
+icon in the title, and a disabled box with a NULL title). `gui_value_input`
+covers `GuiValueBoxFloat` (hovered, pressed, disabled) and two
+`GuiTextInputBox`es sharing raygui's static edit mode: the secret view
+switched on and off, a box entered and left by a button, the other box
+entered (which shows the first one's text, its stars gone, while edit mode is
+on), and the close button.

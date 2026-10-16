@@ -2792,6 +2792,12 @@ def Laws.gui_message_button_number(frame):
 def Laws.gui_message_unclicked_keeps_result(frame):
   {==}
 
+def Laws.gui_int_over_positive():
+  {==}
+
+def Laws.gui_int_over_negative():
+  {==}
+
 def Laws.gui_grid_lines_counted():
   {==}
 
