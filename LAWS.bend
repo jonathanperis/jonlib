@@ -3080,15 +3080,20 @@ law frame_blend_mode_unchanged:
   for mode: U32
   {J.Frame.begin_blend_mode(frame, mode) == frame : J.Frame}
 
-law texture_set_wrap_unchanged:
+# SetTextureWrap(CLAMP) passes GL_CLAMP_TO_EDGE, which rlsw rejects: the
+# texture keeps its wraps.
+law texture_set_wrap_clamp_unchanged:
   for texture: J.Texture
-  for wrap: U32
-  {J.Texture.set_wrap(texture, wrap) == texture : J.Texture}
+  {J.Texture.set_wrap(texture, 1) == texture : J.Texture}
 
-# TEXTURE_FILTER_POINT selects nearest sampling whatever the previous filter.
+# TEXTURE_FILTER_POINT selects nearest sampling both ways whatever the
+# previous filters, and keeps the wraps.
 law texture_filter_point:
-  for linear: Bool
-  {J.Texture.filter(0, linear) == False{} : Bool}
+  for mag: Bool
+  for min: Bool
+  for s_clamp: Bool
+  for t_clamp: Bool
+  {J.Texture.filter(0, FrameCore.Filtering{mag, min, s_clamp, t_clamp}) == FrameCore.Filtering{False{}, False{}, s_clamp, t_clamp} : FrameCore.Filtering}
 
 # rlsw's id pools reuse the most recently freed id first.
 law texture_pool_reuses_freed:
@@ -3124,7 +3129,7 @@ law font_unload_default:
   for width: U32
   for height: U32
   for format: U32
-  for linear: Bool
+  for linear: FrameCore.Filtering
   for alpha: Bool
   for texels: Maybe<Array<U32>>
   for atlas: J.Surface
@@ -3153,7 +3158,7 @@ law font_texture_size_is_the_textures:
   for width: U32
   for height: U32
   for format: U32
-  for linear: Bool
+  for linear: FrameCore.Filtering
   for alpha: Bool
   for texels: Maybe<Array<U32>>
   for atlas: J.Surface
@@ -3380,7 +3385,7 @@ law rlgl_framebuffer_depth_alone_is_incomplete:
   {J.Rlgl.Framebuffer.complete(J.RlglFramebuffer{1, 0, 0, 0, 0, 3, 1024, 1024, 19}) == False{} : Bool}
 
 law rlgl_render_texture_depth_has_no_color_texture:
-  {J.Rlgl.render_texture_depth(J.RlglFramebuffer{1, 0, 0, 0, 0, 3, 1024, 1024, 19}, 1024, 1024, 3) == Some{J.RenderTexture{1, J.Texture{0, 1024, 1024, 0, False{}, False{}, None{}}, 3}} : Maybe<J.RenderTexture>}
+  {J.Rlgl.render_texture_depth(J.RlglFramebuffer{1, 0, 0, 0, 0, 3, 1024, 1024, 19}, 1024, 1024, 3) == Some{J.RenderTexture{1, J.Texture{0, 1024, 1024, 0, FrameCore.Filtering.nearest(), False{}, None{}}, 3}} : Maybe<J.RenderTexture>}
 
 law rlgl_render_texture_depth_refuses_a_color_attachment:
   {J.Rlgl.render_texture_depth(J.RlglFramebuffer{1, 2, 64, 48, 7, 3, 64, 48, 19}, 64, 48, 3) == None{} : Maybe<J.RenderTexture>}
@@ -3416,19 +3421,19 @@ law render_target_leaves_its_depth_buffer:
 # nothing.
 law rlgl_float_texture_has_no_storage:
   for canvas: FrameCore.Canvas
-  {J.Rlgl.texture.with(2, 5, 800, 450, 12, canvas) == (J.Frame{canvas, Nil{}}, Some{J.Texture{5, 800, 450, 12, False{}, False{}, None{}}}) : J.Frame & Maybe<J.Texture>}
+  {J.Rlgl.texture.with(2, 5, 800, 450, 12, canvas) == (J.Frame{canvas, Nil{}}, Some{J.Texture{5, 800, 450, 12, FrameCore.Filtering.nearest(), False{}, None{}}}) : J.Frame & Maybe<J.Texture>}
 
 law rlgl_framebuffer_float_color_is_incomplete:
   {J.Rlgl.Framebuffer.complete(J.Rlgl.framebuffer.attached(J.RlglFramebuffer{1, 0, 0, 0, 0, 0, 0, 0, 0}, 2, 800, 450, 12, 0, 100)) == False{} : Bool}
 
 law blind_target_bound_directly_is_marked:
   for id: U32
-  {FrameCore.RenderTarget.direct(FrameCore.RenderTarget{id, 0, 0, False{}, True{}}) == True{} : Bool}
+  {FrameCore.RenderTarget.direct(FrameCore.RenderTarget{id, 0, 0, FrameCore.Filtering.nearest(), True{}}) == True{} : Bool}
 
 law blind_texture_mode_is_not_bound_directly:
   for id: U32
   for depth: U32
-  {FrameCore.RenderTarget.direct(FrameCore.RenderTarget{id, 0, depth, False{}, False{}}) == False{} : Bool}
+  {FrameCore.RenderTarget.direct(FrameCore.RenderTarget{id, 0, depth, FrameCore.Filtering.nearest(), False{}}) == False{} : Bool}
 
 law blind_target_bound_directly_hands_nothing_back:
   for meta: FrameCore.RenderTarget
@@ -4002,6 +4007,21 @@ law macro_mouse_left_button_is_its_enumerator:
 
 law macro_shader_loc_map_diffuse_is_albedo:
   {J.Rlgl.RL_SHADER_LOC_MAP_DIFFUSE() == J.rlShaderLocationIndex.RL_SHADER_LOC_MAP_ALBEDO() : U32}
+
+# rlTextureParameters as swTexParameteri takes it: GL_LINEAR on the
+# minification filter alone, GL_CLAMP on T alone, GL_CLAMP_TO_EDGE rejected;
+# SetTextureWrap(REPEAT) clears both clamps.
+law texture_params_min_linear:
+  {J.Rlgl.texture.param(10241, 9729, FrameCore.Filtering.nearest()) == FrameCore.Filtering{False{}, True{}, False{}, False{}} : FrameCore.Filtering}
+
+law texture_params_gl_clamp:
+  {J.Rlgl.texture.param(10243, 10496, FrameCore.Filtering.nearest()) == FrameCore.Filtering{False{}, False{}, False{}, True{}} : FrameCore.Filtering}
+
+law texture_params_clamp_to_edge_rejected:
+  {J.Rlgl.texture.param(10242, 33071, FrameCore.Filtering.nearest()) == FrameCore.Filtering.nearest() : FrameCore.Filtering}
+
+law texture_wrap_repeat_clears_clamps:
+  {J.Texture.wrap.repeated(True{}, FrameCore.Filtering{True{}, False{}, True{}, True{}}) == FrameCore.Filtering{True{}, False{}, False{}, False{}} : FrameCore.Filtering}
 
 law gui_pick_hover_keeps_drag:
   for gui: JG.Gui

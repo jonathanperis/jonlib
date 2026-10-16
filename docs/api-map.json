@@ -4251,7 +4251,7 @@
   "SetTextureWrap": {
     "jonlib": "Texture.set_wrap",
     "status": "profile-covered",
-    "scope": "No effect on the software renderer: raylib passes GL_CLAMP_TO_EDGE and the mirror modes, which rlsw's swTexParameteri rejects, so textures keep REPEAT (checked with negative and repeating coordinates).",
+    "scope": "REPEAT sets GL_REPEAT on both axes; CLAMP and the mirror modes pass GL_CLAMP_TO_EDGE and mirror values, which rlsw's swTexParameteri rejects, so the texture keeps its wraps (checked with negative and repeating coordinates, and after rlTextureParameters' GL_CLAMP).",
     "gaps": [
       "The OpenGL 3.3 wrap modes are a separate (GPU) contract",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"

@@ -10,6 +10,7 @@
 import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M
+import ../src/frame.bend as FrameCore
 
 type State is Type:
   State{texture: Maybe<J.Texture>}
@@ -23,7 +24,7 @@ def drawn(r: J.Frame & J.Texture) -> J.Frame & Maybe<J.Texture>:
 
 # DrawTexture(texture, screenWidth/2 - texture.width/2, screenHeight/2 -
 # texture.height/2, WHITE) in C int arithmetic.
-def draw.at(frame: J.Frame, +id: U32, +w: U32, +h: U32, +format: U32, +linear: Bool, +alpha: Bool, texels: Maybe<Array<U32>>) -> J.Frame & Maybe<J.Texture>:
+def draw.at(frame: J.Frame, +id: U32, +w: U32, +h: U32, +format: U32, +linear: FrameCore.Filtering, +alpha: Bool, texels: Maybe<Array<U32>>) -> J.Frame & Maybe<J.Texture>:
   drawn(J.Draw.texture(frame, J.Texture{id, w, h, format, linear, alpha, texels}, (400.0 - U32.to_f32((w / 2 : U32)) : F32), (225.0 - U32.to_f32((h / 2 : U32)) : F32), J.Color.WHITE()))
 
 def draw.loaded(frame: J.Frame, texture: J.Texture) -> J.Frame & Maybe<J.Texture>:

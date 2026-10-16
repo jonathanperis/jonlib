@@ -152,6 +152,7 @@ Remaining shapes (`rshapes.c`):
 | `rlReadScreenPixels` | `Rlgl.read_screen_pixels(frame, width, height) -> Frame & Maybe<+List<U32>>`: a zeroed `width * height * 4` buffer, `rlCopyFramebuffer`'s RGBA read of the whole size at its start (cut to the screen, rows packed), then rows swapped end for end with every alpha 255: on the memory platform, the screen bottom-up with red and blue swapped |
 | `rlReadTexturePixels` | `Rlgl.read_texture_pixels(width, height, format) -> Maybe<+List<U32>>`: `glGetTexImage` does nothing in rlsw, so formats 1..7 give `rlGetPixelDataSize` zero bytes and other formats `NULL` (`None`) |
 | `rlLoadExtensions`, `rlGetProcAddress` | `Rlgl.load_extensions(frame)`, `Rlgl.get_proc_address(name) -> U32`: OpenGL 3.3/ES2 extension loading does nothing here and the address is NULL (0) |
+| `rlTextureParameters` | `Rlgl.texture_parameters(texture, param, value) -> Texture`: on the texture value (Jonlib's textures are values, not ids); swTexParameteri's filters (NEAREST, LINEAR) and wraps (REPEAT, GL_CLAMP), any other value rejected; the mirror clamp, anisotropy and mipmap bias skipped under OpenGL 1.1 ([TEXTURES.md](TEXTURES.md)) |
 | `rlGenTextureMipmaps` | `Rlgl.gen_texture_mipmaps(frame, id, width, height, format, mipmaps) -> Frame & U32`: GPU mipmaps are OpenGL 3.3/ES2's; the count given is the count left |
 | no-ops (buffers, shader objects, compute) | `Rlgl.update_vertex_buffer(_elements)`, `unload_vertex_array`, `unload_vertex_buffer`, `set_vertex_attribute`, `set_vertex_attribute_divisor`, `set_vertex_attribute_default`, `draw_vertex_array_instanced`, `draw_vertex_array_elements_instanced`, `unload_shader`, `unload_shader_program`, `compute_shader_dispatch`, `unload_shader_buffer`, `update_shader_buffer`, `bind_shader_buffer`, `read_shader_buffer`, `copy_shader_buffer`, `bind_image_texture` (buffer contents are never read: the functions take sizes only) |
 | no-ops | `Rlgl.check_errors`, `set_blend_mode`, `set_blend_factors(_separate)`, `set_framebuffer_width/height`, `draw_render_batch_active`, `active_texture_slot`, `enable/disable_texture_cubemap`, `cubemap_parameters`, `enable/disable_shader`, `set_shader`, `set_uniform`, `set_uniform_matrix`, `set_uniform_matrices`, `set_uniform_sampler`, `enable/disable_vertex_array`, `_vertex_buffer`, `_vertex_buffer_element`, `_vertex_attribute`, `blit_framebuffer`, `active_draw_buffers`, `load_draw_cube`, `load_draw_quad` |
@@ -310,7 +311,7 @@ shows the lights alone, or a G-buffer texture as rlsw draws it.
 
 ## Gaps
 
-- `rlTextureParameters`, `rlEnableStatePointer`/`rlDisableStatePointer`,
+- `rlEnableStatePointer`/`rlDisableStatePointer`,
   `rlDrawVertexArray`/`rlDrawVertexArrayElements` (rlsw's client arrays) and
   `rlBindFramebuffer` are not exposed. The vertex array, buffer, shader
   object, compute and storage buffer functions are, as what the software path

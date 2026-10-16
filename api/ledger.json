@@ -49065,7 +49065,7 @@
       "status": "partial",
       "jonlib": "Texture.set_wrap",
       "mapping_state": "implemented",
-      "scope": "No effect on the software renderer: raylib passes GL_CLAMP_TO_EDGE and the mirror modes, which rlsw's swTexParameteri rejects, so textures keep REPEAT (checked with negative and repeating coordinates).",
+      "scope": "REPEAT sets GL_REPEAT on both axes; CLAMP and the mirror modes pass GL_CLAMP_TO_EDGE and mirror values, which rlsw's swTexParameteri rejects, so the texture keeps its wraps (checked with negative and repeating coordinates, and after rlTextureParameters' GL_CLAMP).",
       "gaps": [
         "The OpenGL 3.3 wrap modes are a separate (GPU) contract",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -94684,23 +94684,32 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.texture_parameters",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "swTexParameteri on the texture: RL_TEXTURE_MAG_FILTER and RL_TEXTURE_MIN_FILTER with GL_NEAREST or GL_LINEAR, RL_TEXTURE_WRAP_S and RL_TEXTURE_WRAP_T with GL_REPEAT or GL_CLAMP, other values rejected; OpenGL 1.1 skips the mirror clamp, anisotropy and mipmap bias. rlsw samples with the minification filter where a span's or quad's texture derivatives give L2 above 1, and clamps as sw_texture_sample does (nearest saturated, bilinear clamped from above).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A texture value instead of an id (language adaptation); id 0 changes nothing",
+        "Clamped sampling past the texture (u = 1 on the last row, bilinear coordinates below -1) is undefined in rlsw and marks the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/RLGL.md",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "jonlib.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -94713,7 +94722,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlTextureParameters semantics from the linked source, add a reference fixture, then implement Rlgl.texture_parameters.",
+      "next_step": "Close documented gaps and unverified gates for rlTextureParameters.",
       "priority": 713
     },
     {
