@@ -3221,6 +3221,21 @@ law rlgl_draw_render_batch_unchanged:
   for batch: J.Rlgl.RenderBatch
   {J.Rlgl.draw_render_batch(frame, batch) == (frame, batch) : J.Frame & J.Rlgl.RenderBatch}
 
+# rlsw's 8-bit pixel writers (rlCopyFramebuffer): luminance (77 r + 150 g +
+# 29 b) >> 8, R5G6B5 of red (bytes reversed onto the list: high, low); and
+# rlReadTexturePixels' zeroed bytes for formats 1..7, NULL otherwise.
+law rlgl_copy_luminance:
+  {J.Rlgl.copy.put(1, 10, 20, 30, 255, Nil{}) == [18] : +List<U32>}
+
+law rlgl_copy_r5g6b5_red:
+  {J.Rlgl.copy.put(3, 255, 0, 0, 255, Nil{}) == [248, 0] : +List<U32>}
+
+law rlgl_read_texture_pixels_zeroed:
+  {J.Rlgl.read_texture_pixels(2, 1, 7) == Some{[0, 0, 0, 0, 0, 0, 0, 0]} : Maybe<+List<U32>>}
+
+law rlgl_read_texture_pixels_null:
+  {J.Rlgl.read_texture_pixels(2, 2, 8) == None{} : Maybe<+List<U32>>}
+
 law rlgl_proc_address_null:
   {J.Rlgl.get_proc_address("glClear") == 0 : U32}
 

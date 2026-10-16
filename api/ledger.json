@@ -99208,23 +99208,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.read_texture_pixels",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "glGetTexImage is a no-op in rlsw: zeroed rlGetPixelDataSize bytes for formats 1..7, NULL otherwise.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99237,7 +99241,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlReadTexturePixels semantics from the linked source, add a reference fixture, then implement Rlgl.read_texture_pixels.",
+      "next_step": "Close documented gaps and unverified gates for rlReadTexturePixels.",
       "priority": 728
     },
     {
@@ -99263,23 +99267,28 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.read_screen_pixels",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "A zeroed width*height*4 buffer, the RGBA read at its start, rows swapped end for end and alpha 255.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Sizes whose buffer does not fit an int are None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99292,7 +99301,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlReadScreenPixels semantics from the linked source, add a reference fixture, then implement Rlgl.read_screen_pixels.",
+      "next_step": "Close documented gaps and unverified gates for rlReadScreenPixels.",
       "priority": 728
     },
     {
@@ -99564,23 +99573,28 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.copy_framebuffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "swReadPixels for raylib formats 1..7 as rlsw clamps, orders and converts the region (BGR/BGRA output, luminance, packed 16-bit), the bytes written; nothing for other formats or an empty region.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A read past the color buffer is None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99593,7 +99607,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlCopyFramebuffer semantics from the linked source, add a reference fixture, then implement Rlgl.copy_framebuffer.",
+      "next_step": "Close documented gaps and unverified gates for rlCopyFramebuffer.",
       "priority": 728
     },
     {
