@@ -1,0 +1,433 @@
+{
+ "schema": 1,
+ "source": "reasings.h as shipped in raylib 6.0 examples/shapes/reasings.h",
+ "functions": {
+  "EaseLinearNone": {
+   "status": "partial",
+   "joneasings": "Ease.linear_none",
+   "scope": "EaseLinearNone(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseLinearIn": {
+   "status": "partial",
+   "joneasings": "Ease.linear_in",
+   "scope": "EaseLinearIn(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseLinearOut": {
+   "status": "partial",
+   "joneasings": "Ease.linear_out",
+   "scope": "EaseLinearOut(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseLinearInOut": {
+   "status": "partial",
+   "joneasings": "Ease.linear_in_out",
+   "scope": "EaseLinearInOut(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseSineIn": {
+   "status": "partial",
+   "joneasings": "Ease.sine_in_for / Ease.sine_in",
+   "scope": "EaseSineIn(t, b, c, d) in reasings' F32 order, uncontracted; Maybe<F32>: None where the libm profile does not verify a sinf/cosf argument or powf(2, x) exponent it reaches. Ease.sine_in is the form under M.AppleLibm{}.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseSineOut": {
+   "status": "partial",
+   "joneasings": "Ease.sine_out_for / Ease.sine_out",
+   "scope": "EaseSineOut(t, b, c, d) in reasings' F32 order, uncontracted; Maybe<F32>: None where the libm profile does not verify a sinf/cosf argument or powf(2, x) exponent it reaches. Ease.sine_out is the form under M.AppleLibm{}.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseSineInOut": {
+   "status": "partial",
+   "joneasings": "Ease.sine_in_out_for / Ease.sine_in_out",
+   "scope": "EaseSineInOut(t, b, c, d) in reasings' F32 order, uncontracted; Maybe<F32>: None where the libm profile does not verify a sinf/cosf argument or powf(2, x) exponent it reaches. Ease.sine_in_out is the form under M.AppleLibm{}.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseCircIn": {
+   "status": "partial",
+   "joneasings": "Ease.circ_in",
+   "scope": "EaseCircIn(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseCircOut": {
+   "status": "partial",
+   "joneasings": "Ease.circ_out",
+   "scope": "EaseCircOut(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseCircInOut": {
+   "status": "partial",
+   "joneasings": "Ease.circ_in_out",
+   "scope": "EaseCircInOut(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseCubicIn": {
+   "status": "partial",
+   "joneasings": "Ease.cubic_in",
+   "scope": "EaseCubicIn(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseCubicOut": {
+   "status": "partial",
+   "joneasings": "Ease.cubic_out",
+   "scope": "EaseCubicOut(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseCubicInOut": {
+   "status": "partial",
+   "joneasings": "Ease.cubic_in_out",
+   "scope": "EaseCubicInOut(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseQuadIn": {
+   "status": "partial",
+   "joneasings": "Ease.quad_in",
+   "scope": "EaseQuadIn(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseQuadOut": {
+   "status": "partial",
+   "joneasings": "Ease.quad_out",
+   "scope": "EaseQuadOut(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseQuadInOut": {
+   "status": "partial",
+   "joneasings": "Ease.quad_in_out",
+   "scope": "EaseQuadInOut(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseExpoIn": {
+   "status": "partial",
+   "joneasings": "Ease.expo_in_for / Ease.expo_in",
+   "scope": "EaseExpoIn(t, b, c, d) in reasings' F32 order, uncontracted; Maybe<F32>: None where the libm profile does not verify a sinf/cosf argument or powf(2, x) exponent it reaches. Ease.expo_in is the form under M.AppleLibm{}.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseExpoOut": {
+   "status": "partial",
+   "joneasings": "Ease.expo_out_for / Ease.expo_out",
+   "scope": "EaseExpoOut(t, b, c, d) in reasings' F32 order, uncontracted; Maybe<F32>: None where the libm profile does not verify a sinf/cosf argument or powf(2, x) exponent it reaches. Ease.expo_out is the form under M.AppleLibm{}.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseExpoInOut": {
+   "status": "partial",
+   "joneasings": "Ease.expo_in_out_for / Ease.expo_in_out",
+   "scope": "EaseExpoInOut(t, b, c, d) in reasings' F32 order, uncontracted; Maybe<F32>: None where the libm profile does not verify a sinf/cosf argument or powf(2, x) exponent it reaches. Ease.expo_in_out is the form under M.AppleLibm{}.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseBackIn": {
+   "status": "partial",
+   "joneasings": "Ease.back_in",
+   "scope": "EaseBackIn(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseBackOut": {
+   "status": "partial",
+   "joneasings": "Ease.back_out",
+   "scope": "EaseBackOut(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseBackInOut": {
+   "status": "partial",
+   "joneasings": "Ease.back_in_out",
+   "scope": "EaseBackInOut(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseBounceOut": {
+   "status": "partial",
+   "joneasings": "Ease.bounce_out",
+   "scope": "EaseBounceOut(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseBounceIn": {
+   "status": "partial",
+   "joneasings": "Ease.bounce_in",
+   "scope": "EaseBounceIn(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseBounceInOut": {
+   "status": "partial",
+   "joneasings": "Ease.bounce_in_out",
+   "scope": "EaseBounceInOut(t, b, c, d) in reasings' F32 order, uncontracted.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseElasticIn": {
+   "status": "partial",
+   "joneasings": "Ease.elastic_in_for / Ease.elastic_in",
+   "scope": "EaseElasticIn(t, b, c, d) in reasings' F32 order, uncontracted; Maybe<F32>: None where the libm profile does not verify a sinf/cosf argument or powf(2, x) exponent it reaches. Ease.elastic_in is the form under M.AppleLibm{}.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseElasticOut": {
+   "status": "partial",
+   "joneasings": "Ease.elastic_out_for / Ease.elastic_out",
+   "scope": "EaseElasticOut(t, b, c, d) in reasings' F32 order, uncontracted; Maybe<F32>: None where the libm profile does not verify a sinf/cosf argument or powf(2, x) exponent it reaches. Ease.elastic_out is the form under M.AppleLibm{}.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  },
+  "EaseElasticInOut": {
+   "status": "partial",
+   "joneasings": "Ease.elastic_in_out_for / Ease.elastic_in_out",
+   "scope": "EaseElasticInOut(t, b, c, d) in reasings' F32 order, uncontracted; Maybe<F32>: None where the libm profile does not verify a sinf/cosf argument or powf(2, x) exponent it reaches. Ease.elastic_in_out is the form under M.AppleLibm{}.",
+   "evidence": [
+    "tools/easings_probe.py",
+    "docs/EASINGS.md",
+    "joneasings.bend"
+   ],
+   "gaps": [
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "A fused (contracted) build, such as Apple arm64 by default, is not modelled"
+   ]
+  }
+ },
+ "macros": {
+  "REASINGS_H": {
+   "status": "partial",
+   "joneasings": "import ./joneasings.bend",
+   "scope": "The include guard: a Bend import loads the module once.",
+   "evidence": [
+    "docs/EASINGS.md"
+   ]
+  },
+  "REASINGS_STATIC_INLINE": {
+   "status": "partial",
+   "joneasings": "top-level def",
+   "scope": "Inline linkage: every top-level Bend definition is visible to importers.",
+   "evidence": [
+    "docs/EASINGS.md"
+   ]
+  },
+  "EASEDEF": {
+   "status": "partial",
+   "joneasings": "top-level def",
+   "scope": "static inline or extern linkage: every top-level Bend definition is visible to importers.",
+   "evidence": [
+    "docs/EASINGS.md"
+   ]
+  },
+  "PI": {
+   "status": "partial",
+   "joneasings": "M.Math.PI",
+   "scope": "reasings' fallback PI (3.14159265358979323846f) is Jonmath's F32 PI, the same float.",
+   "evidence": [
+    "docs/EASINGS.md",
+    "jonmath.bend"
+   ]
+  }
+ }
+}

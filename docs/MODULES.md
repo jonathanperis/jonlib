@@ -7,6 +7,7 @@ Port names follow **`ray<suffix>` → `jon<suffix>`**. The implemented entry poi
 | raylib | `jonlib.bend` | Geometry, collision, images, codecs, random streams and IO. |
 | raymath | `jonmath.bend` | Scalar/vector/matrix/quaternion operations and shared mathematical types. |
 | raygui | `jongui.bend` | Immediate-mode controls over Jonlib's frame and input ([GUI.md](GUI.md)). |
+| reasings (raylib's examples) | `joneasings.bend` | Robert Penner's easing functions over Jonmath ([EASINGS.md](EASINGS.md)). |
 
 Implemented modules
 and coverage are recorded in [PROGRESS.md](PROGRESS.md). Upstream headers,
@@ -22,6 +23,7 @@ import Base
 import ./jonlib.bend as J
 import ./jonmath.bend as M
 import ./jongui.bend as G    # only for raygui controls
+import ./joneasings.bend as E    # only for reasings' easings
 ```
 
 Math-only programs import Jonmath directly. See [examples/math.bend](../examples/math.bend).

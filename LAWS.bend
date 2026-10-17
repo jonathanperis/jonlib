@@ -3,6 +3,7 @@ import ./src/checked_angle.bend as CA
 import ./src/modern_angle.bend as MA
 import ./jonlib.bend as J
 import ./jonmath.bend as M
+import ./joneasings.bend as E
 import ./src/binary64_narrow.bend as N
 import ./src/binary64_fma.bend as F
 import ./src/binary64_add_sub.bend as A
@@ -4082,6 +4083,30 @@ law config_filepath_capacity:
 # Importing Jonmath brings raymath's implementation.
 law config_jonmath_implementation:
   {M.Config.JONMATH_IMPLEMENTATION() == True{} : Bool}
+
+# Joneasings: the plain forms are the AppleLibm profile's; EaseExpoInOut's
+# early returns need no libm.
+law ease_sine_in_plain_is_apple:
+  for t: F32
+  for b: F32
+  for c: F32
+  for d: F32
+  {E.Ease.sine_in(t, b, c, d) == E.Ease.sine_in_for(M.AppleLibm{}, t, b, c, d) : Maybe<F32>}
+
+law ease_elastic_in_out_plain_is_apple:
+  for t: F32
+  for b: F32
+  for c: F32
+  for d: F32
+  {E.Ease.elastic_in_out(t, b, c, d) == E.Ease.elastic_in_out_for(M.AppleLibm{}, t, b, c, d) : Maybe<F32>}
+
+law ease_expo_in_out_start:
+  for libm: M.Libm
+  for t: F32
+  for b: F32
+  for c: F32
+  for d: F32
+  {E.Ease.expo_in_out.at(0, libm, t, b, c, d) == Some{b} : Maybe<F32>}
 
 law gui_pick_hover_keeps_drag:
   for gui: JG.Gui

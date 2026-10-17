@@ -1477,7 +1477,7 @@ def compare(expected, actual):
 
 
 def source_gate():
-    sources = [ROOT / 'jonlib.bend', ROOT / 'jonmath.bend', *sorted((ROOT / 'src').glob('**/*.bend'))]
+    sources = [*sorted(ROOT.glob('jon*.bend')), *sorted((ROOT / 'src').glob('**/*.bend'))]
     for path in sources:
         text = path.read_text()
         if re.search(r'@unsafe|^def\s+[\w.]+\?', text, re.M):

@@ -95,6 +95,7 @@ refuse every frame, because the native example is undefined behavior in C.
   music streams over WAV, QOA and MP3 files, and a clock that makes those
   callbacks from the program's time.
 - **Jongui** ([GUI.md](docs/GUI.md)): raygui's controls.
+- **Joneasings** ([EASINGS.md](docs/EASINGS.md)): reasings.h's easing functions.
 - **Execution**: native CPU, JavaScript and (with the declared compiler overlay)
   forced Metal; see [VERIFICATION.md](docs/VERIFICATION.md).
 
