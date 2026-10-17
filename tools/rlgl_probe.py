@@ -446,6 +446,26 @@ def scenes():
            ('screen_px', 24, 16), ('screen_px', 10, 5), ('screen_px', 30, 20), ('screen_px', 1, 1),
            ('tex_px', 4, 4, 7), ('tex_px', 3, 5, 1), ('tex_px', 2, 2, 3), ('tex_px', 5, 3, 4), ('tex_px', 4, 4, 8), ('tex_px', 4, 4, 11)])
     # rlCopyFramebuffer reading past rlsw's color buffer (the region's top row runs past the last pixel): undefined.
+    # rlEnableStatePointer / rlDisableStatePointer / rlDrawVertexArray(Elements): rlsw's client arrays (GL 1.1): positions,
+    # colors and texture coordinates bound, a NULL color pointer that keeps the bound colors, colors unbound (the current
+    # color stays), elements from an offset, a texture bound, and draws rlsw skips (no positions, inside rlBegin). Reads
+    # past an array or the index buffer are contracts.
+    VA, TA, CA, NA = 0x8074, 0x8078, 0x8076, 0x8075
+    pos = [2.0, 2.0, 0.0, 2.0, 12.0, 0.0, 14.0, 12.0, 0.0, 16.0, 2.0, 0.0, 16.0, 14.0, 0.0, 30.0, 6.0, 0.0, 3.0, 15.0, 0.0, 3.0, 22.0, 0.0, 12.0, 22.0, 0.0]
+    col = [255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 0, 128, 0, 255, 255, 200, 255, 0, 255, 255, 40, 40, 40, 255, 200, 200, 200, 255, 90, 160, 30, 255]
+    tcs = [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.25, 0.0, 0.5, 2.0, 1.75, 1.5, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
+    add('rl-client-arrays', 32, 24, [('begin',), ('clear', C(50, 60, 70)),
+                                     ('client', [('bind', VA, 'f', pos), ('bind', CA, 'b', col), ('draw', 0, 3), ('bind', CA, 'b', None), ('draw', 3, 3),
+                                                 ('unbind', CA), ('elements', 1, 3, [7, 6, 8, 0]), ('bind', NA, 'f', pos), ('draw', 6, 0), ('draw', 6, -2)]),
+                                     ('end',)])
+    add('rl-client-textured', 32, 24, [('begin',), ('clear', C(50, 60, 70)), ('load', 0, tex), ('set_texture', 0, NONE), ('c4ub', 255, 255, 255, 255),
+                                       ('client', [('bind', VA, 'f', pos), ('bind', TA, 'f', tcs), ('draw', 0, 6), ('unbind', TA), ('elements', 0, 3, [6, 7, 8])]),
+                                       ('set_texture_null', 0), ('end',)])
+    add('rl-client-skipped', 32, 24, [('begin',), ('clear', C(50, 60, 70)), ('client', [('bind', CA, 'b', col), ('draw', 0, 3), ('elements', 0, 3, [0, 1, 2])]),
+                                      ('rl_begin', 4), ('client', [('bind', VA, 'f', pos), ('draw', 0, 3)]), ('v2f', 20.0, 20.0), ('v2f', 22.0, 23.0),
+                                      ('v2f', 30.0, 20.0), ('rl_end',), ('client', [('bind', VA, 'f', pos), ('unbind', VA), ('draw', 0, 3)]), ('end',)])
+    add('rl-client-past', 32, 24, [('begin',), ('client', [('bind', VA, 'f', pos), ('draw', 6, 6)]), ('end',)], contract=True)
+    add('rl-client-index-past', 32, 24, [('begin',), ('client', [('bind', VA, 'f', pos), ('elements', 2, 3, [0, 1, 2])]), ('end',)], contract=True)
     # rlResizeFramebuffer: the buffers come back zeroed (color 0, depth 0.0) at the new size, then drawn into; a smaller
     # buffer (the viewport stays 24x16 and rows are bottom-up, so its rows are the screen's lowest) and back. A draw past a
     # smaller buffer (rlsw writes into its earlier, larger allocation) and a size of 0 are contracts.
@@ -661,7 +681,7 @@ def c_op(op):
         'cull_face': lambda: f'rlSetCullFace({a[0]});', 'scissor': lambda: f'rlScissor({", ".join(fp.ci(x) for x in a)});',
         'line_width': lambda: f'rlSetLineWidth({cf(a[0])});', 'point_size': lambda: f'rlSetPointSize({cf(a[0])});',
         'clear_color': lambda: f'rlClearColor({a[0]}, {a[1]}, {a[2]}, {a[3]});', 'clear_buffers': lambda: 'rlClearScreenBuffers();',
-        'noops': lambda: 'noops();', 'resize': lambda: f'rlResizeFramebuffer({a[0]}, {a[1]});',
+        'noops': lambda: 'noops();', 'resize': lambda: f'rlResizeFramebuffer({a[0]}, {a[1]});', 'client': lambda: client_c(a[0]),
         'get': lambda: {'line_width': 'note_f("w", rlGetLineWidth());', 'point_size': 'note_f("p", rlGetPointSize());',
                         'modelview': 'note_m("m", rlGetMatrixModelview());', 'projection': 'note_m("j", rlGetMatrixProjection());',
                         'framebuffer': '{ char s[32]; snprintf(s, sizeof s, " a%u", rlGetActiveFramebuffer()); note(s); }',
@@ -951,6 +971,33 @@ def call.noops(frame: J.Frame) -> J.Frame:
   call.noops.second(f22)
 
 # rlgl calls (kinds 220..259).
+# A client-array step's words: bind (0) type null n values..., unbind (1) type, draw (2) offset count, elements (3) offset
+# count n indices....
+def client.size(+kind: U32, +w: +List<U32>) -> Nat:
+  U32.to_nat(Bool.pick(U32, U32.is_eq(kind, 0), (4 + wu(3n, w) : U32), Bool.pick(U32, U32.is_eq(kind, 1), 2, Bool.pick(U32, U32.is_eq(kind, 2), 3, (4 + wu(3n, w) : U32)))))
+
+def client.bind(null: Bool, +kind: U32, +values: +List<U32>, arrays: J.Rlgl.Arrays) -> J.Rlgl.Arrays:
+  match null:
+    case True{}: J.Rlgl.enable_state_pointer(arrays, kind, None{})
+    case False{}: J.Rlgl.enable_state_pointer(arrays, kind, Some{values})
+
+def client.apply(st: J.Frame & J.Rlgl.Arrays, kind: U32, +w: +List<U32>) -> J.Frame & J.Rlgl.Arrays:
+  (frame, +arrays) = st
+  match kind:
+    case 0: (frame, client.bind(wb(2n, w), wu(1n, w), List.take(&2, U32, word.drop(4n, w), U32.to_nat(wu(3n, w))), arrays))
+    case 1: (frame, J.Rlgl.disable_state_pointer(arrays, wu(1n, w)))
+    case 2: (J.Rlgl.draw_vertex_array(frame, arrays, wu(1n, w), wu(2n, w)), arrays)
+    case _: (J.Rlgl.draw_vertex_array_elements(frame, arrays, wu(1n, w), wu(2n, w), List.take(&2, U32, word.drop(4n, w), U32.to_nat(wu(3n, w)))), arrays)
+
+def client.frame(st: J.Frame & J.Rlgl.Arrays) -> J.Frame:
+  (frame, _) = st
+  frame
+
+def client.run(n: Nat, +w: +List<U32>, st: J.Frame & J.Rlgl.Arrays) -> J.Frame:
+  match n:
+    case 0n: client.frame(st)
+    case 1n+p: client.run(p, word.drop(client.size(wu(0n, w), w), w), client.apply(st, wu(0n, w), w))
+
 def call.apply(kind: U32, +w: +List<U32>, frame: J.Frame) -> J.Frame:
   match kind:
     case 220: J.Rlgl.begin(frame, wu(0n, w))
@@ -975,6 +1022,7 @@ def call.apply(kind: U32, +w: +List<U32>, frame: J.Frame) -> J.Frame:
     case 239: J.Rlgl.clear_color(frame, wu(0n, w), wu(1n, w), wu(2n, w), wu(3n, w))
     case 240: J.Rlgl.clear_screen_buffers(frame)
     case 242: J.Rlgl.resize_framebuffer(frame, wu(0n, w), wu(1n, w))
+    case 243: client.run(U32.to_nat(wu(0n, w)), word.drop(1n, w), (frame, J.Rlgl.arrays()))
     case _: call.noops(frame)
 
 def bits.f(+x: F32) -> String:
@@ -1323,10 +1371,50 @@ SHAPE_KINDS = {'bezier': 200, 'dashed': 201, 'ring_lines': 202, 'poly_ex': 203, 
                'rounded': 208, 'rounded_lines': 209, 'rounded_lines_ex': 210, 'spline': 211, 'segment': 212}
 CALL_KINDS = {'rl_begin': 220, 'rl_end': 221, 'v2i': 222, 'v2f': 223, 'v3f': 224, 'tc': 225, 'normal': 226, 'c4ub': 227, 'c3f': 228, 'c4f': 229,
               'matrix_mode': 230, 'ortho': 231, 'frustum': 232, 'viewport': 233, 'toggle': 234, 'cull_face': 235, 'scissor': 236,
-              'line_width': 237, 'point_size': 238, 'clear_color': 239, 'clear_buffers': 240, 'noops': 241, 'resize': 242}
+              'line_width': 237, 'point_size': 238, 'clear_color': 239, 'clear_buffers': 240, 'noops': 241, 'resize': 242, 'client': 243}
 OTHER_KINDS = {'set_texture': 260, 'set_texture_null': 261, 'shapes_tex': 262, 'shapes_info': 263, 'get': 264, 'copy': 265, 'screen_px': 266, 'tex_px': 267}
 INT_CALLS = {'rl_begin', 'c4ub', 'matrix_mode', 'cull_face', 'clear_color', 'resize'}
 W = fp.word
+
+
+def client_words(steps):
+    out = [len(steps)]
+    for step in steps:
+        if step[0] == 'bind':
+            values = step[3] or []
+            words = [W(v) for v in values] if step[2] == 'f' else [int(v) for v in values]
+            out += [0, step[1], int(step[3] is None), len(words)] + words
+        elif step[0] == 'unbind':
+            out += [1, step[1]]
+        elif step[0] == 'draw':
+            out += [2, step[1] & 0xFFFFFFFF, step[2] & 0xFFFFFFFF]
+        else:
+            out += [3, step[1] & 0xFFFFFFFF, step[2] & 0xFFFFFFFF, len(step[3])] + list(step[3])
+    return out
+
+
+def client_c(steps):
+    """The steps in one block: the arrays declared first, so they live until the block's last draw."""
+    decls, out, k = [], [], 0
+    for step in steps:
+        if step[0] == 'bind':
+            if step[3] is None:
+                out.append(f'rlEnableStatePointer({step[1]}, NULL);')
+            else:
+                kind = 'float' if step[2] == 'f' else 'unsigned char'
+                values = ', '.join(cf(v) if step[2] == 'f' else str(v) for v in step[3])
+                decls.append(f'{kind} a{k}[] = {{ {values} }};')
+                out.append(f'rlEnableStatePointer({step[1]}, a{k});')
+                k += 1
+        elif step[0] == 'unbind':
+            out.append(f'rlDisableStatePointer({step[1]});')
+        elif step[0] == 'draw':
+            out.append(f'rlDrawVertexArray({step[1]}, {step[2]});')
+        else:
+            decls.append(f'unsigned short a{k}[] = {{ {", ".join(map(str, step[3]))} }};')
+            out.append(f'rlDrawVertexArrayElements({step[1]}, {step[2]}, a{k});')
+            k += 1
+    return ' '.join(['{'] + decls + out + ['}'])
 
 
 def op_words(op):
@@ -1344,6 +1432,8 @@ def op_words(op):
             return kind, list(a)
         if name == 'toggle':
             return kind, [TOGGLES[a[0]], int(a[1])]
+        if name == 'client':
+            return kind, client_words(a[0])
         return kind, [W(x) for x in a]
     if name in OTHER_KINDS:
         kind = OTHER_KINDS[name]

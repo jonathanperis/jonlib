@@ -11422,6 +11422,168 @@ def Frame.refuse(frame: Frame) -> Frame:
   Frame{canvas, _} = frame
   Frame{FrameCore.Canvas.refuse(canvas), Nil{}}
 
+# The client arrays rlEnableStatePointer binds (rlsw's RLSW.array), as a
+# value the program keeps (OpenGL's client state is implicit): positions
+# (three floats a vertex), texture coordinates (two floats) and colors (four
+# bytes a vertex), as word lists (the floats' F32 bits), each bound or not.
+type Rlgl.Arrays is Data:
+  RlglArrays{positions: +List<U32>, has_positions: Bool, texcoords: +List<U32>, has_texcoords: Bool, colors: +List<U32>, has_colors: Bool}
+
+# No array bound.
+def Rlgl.arrays() -> Rlgl.Arrays:
+  RlglArrays{Nil{}, False{}, Nil{}, False{}, Nil{}, False{}}
+
+def Rlgl.arrays.bind(+kind: U32, +bound: Bool, +xs: +List<U32>, arrays: Rlgl.Arrays) -> Rlgl.Arrays:
+  RlglArrays{+p, +hp, +t, +ht, +c, +hc} = arrays
+  +vk = U32.is_eq(kind, 32884)
+  +tk = U32.is_eq(kind, 32888)
+  +ck = U32.is_eq(kind, 32886) && bound
+  RlglArrays{Bool.pick(+List<U32>, vk, xs, p), Bool.pick(Bool, vk, bound, hp), Bool.pick(+List<U32>, tk, xs, t), Bool.pick(Bool, tk, bound, ht),
+    Bool.pick(+List<U32>, ck, xs, c), ck || hc}
+
+# rlEnableStatePointer(vertexAttribType, buffer) under OpenGL 1.1, on the
+# arrays: GL_VERTEX_ARRAY (0x8074) and GL_TEXTURE_COORD_ARRAY (0x8078) bind
+# the buffer (None, NULL, unbinds), GL_COLOR_ARRAY (0x8076) binds a buffer
+# (NULL keeps the one bound); rlsw's normal pointer and any other type change
+# nothing. glEnableClientState itself is a no-op in rlsw.
+def Rlgl.enable_state_pointer(arrays: Rlgl.Arrays, +kind: U32, buffer: Maybe<+List<U32>>) -> Rlgl.Arrays:
+  match buffer:
+    case None{}: Rlgl.arrays.bind(kind, False{}, Nil{}, arrays)
+    case Some{+xs}: Rlgl.arrays.bind(kind, True{}, xs, arrays)
+
+# rlDisableStatePointer(vertexAttribType): glDisableClientState, which
+# unbinds the type's array in rlsw.
+def Rlgl.disable_state_pointer(arrays: Rlgl.Arrays, +kind: U32) -> Rlgl.Arrays:
+  RlglArrays{+p, +hp, +t, +ht, +c, +hc} = arrays
+  +vk = U32.is_eq(kind, 32884)
+  +tk = U32.is_eq(kind, 32888)
+  +ck = U32.is_eq(kind, 32886)
+  RlglArrays{Bool.pick(+List<U32>, vk, Nil{}, p), hp && Bool.not(vk), Bool.pick(+List<U32>, tk, Nil{}, t), ht && Bool.not(tk),
+    Bool.pick(+List<U32>, ck, Nil{}, c), hc && Bool.not(ck)}
+
+def Rlgl.arrays.count(xs: +List<U32>, +n: U32) -> U32:
+  match xs:
+    case Nil{}: n
+    case Con{_, rest}: Rlgl.arrays.count(rest, (n + 1 : U32))
+
+def Rlgl.word.head(xs: +List<U32>) -> U32:
+  match xs:
+    case Nil{}: 0
+    case Con{+x, _}: x
+
+def Rlgl.word.at(+xs: +List<U32>, +i: U32) -> U32:
+  Rlgl.word.head(List.drop(&2, U32, xs, U32.to_nat(i)))
+
+def Rlgl.f32.bits(+bits: U32) -> F32:
+  U32{b} = bits
+  F32{b}
+
+def Rlgl.word.f32(+xs: +List<U32>, +i: U32) -> F32:
+  Rlgl.f32.bits(Rlgl.word.at(xs, i))
+
+def Rlgl.arrays.texcoord(bound: Bool, frame: Frame, +u: F32, +v: F32) -> Frame:
+  match bound:
+    case False{}: frame
+    case True{}: Rlgl.tex_coord2f(frame, u, v)
+
+def Rlgl.arrays.color(bound: Bool, frame: Frame, +r: U32, +g: U32, +b: U32, +a: U32) -> Frame:
+  match bound:
+    case False{}: frame
+    case True{}: Rlgl.color4ub(frame, r, g, b, a)
+
+# One vertex of swDrawArrays/swDrawElements: its texture coordinate and color
+# when those arrays are bound (else the current ones stay), then its
+# position; whether every read is inside its array.
+def Rlgl.arrays.vertex(+i: U32, +arrays: Rlgl.Arrays, frame: Frame) -> Frame & Bool:
+  RlglArrays{+p, _, +t, +ht, +c, +hc} = arrays
+  +fits = (i < 1073741823 : U32) && (((3 * i : U32) + 3 : U32) <= Rlgl.arrays.count(p, 0) : U32)
+    && (Bool.not(ht) || (((2 * i : U32) + 2 : U32) <= Rlgl.arrays.count(t, 0) : U32))
+    && (Bool.not(hc) || (((4 * i : U32) + 4 : U32) <= Rlgl.arrays.count(c, 0) : U32))
+  f1 = Rlgl.arrays.texcoord(ht, frame, Rlgl.word.f32(t, (2 * i : U32)), Rlgl.word.f32(t, (2 * i + 1 : U32)))
+  f2 = Rlgl.arrays.color(hc, f1, Rlgl.word.at(c, (4 * i : U32)), Rlgl.word.at(c, (4 * i + 1 : U32)), Rlgl.word.at(c, (4 * i + 2 : U32)), Rlgl.word.at(c, (4 * i + 3 : U32)))
+  (Rlgl.vertex3f(f2, Rlgl.word.f32(p, (3 * i : U32)), Rlgl.word.f32(p, (3 * i + 1 : U32)), Rlgl.word.f32(p, (3 * i + 2 : U32))), fits)
+
+def Rlgl.arrays.and(+fine: Bool, r: Frame & Bool) -> Frame & Bool:
+  (frame, +ok) = r
+  (frame, fine && ok)
+
+def Rlgl.arrays.vertices(indices: +List<U32>, +arrays: Rlgl.Arrays, r: Frame & Bool) -> Frame & Bool:
+  match indices:
+    case Nil{}: r
+    case Con{+i, +rest}:
+      (frame, +fine) = r
+      Rlgl.arrays.vertices(rest, arrays, Rlgl.arrays.and(fine, Rlgl.arrays.vertex(i, arrays, frame)))
+
+def Rlgl.arrays.closed(fine: Bool, frame: Frame) -> Frame:
+  match fine:
+    case True{}: frame
+    case False{}: Frame.refuse(frame)
+
+def Rlgl.arrays.ended(r: Frame & Bool) -> Frame:
+  (frame, +fine) = r
+  Rlgl.arrays.closed(fine, Rlgl.end(frame))
+
+def Rlgl.arrays.positioned(arrays: Rlgl.Arrays) -> Bool:
+  RlglArrays{_, hp, _, _, _, _} = arrays
+  hp
+
+def Rlgl.arrays.opened(r: FrameCore.Canvas & Bool) -> Frame & Bool:
+  (canvas, +active) = r
+  (Frame{canvas, Nil{}}, active)
+
+def Rlgl.arrays.open(frame: Frame) -> Frame & Bool:
+  Frame{canvas, _} = frame
+  Rlgl.arrays.opened(FrameCore.Canvas.active(canvas))
+
+def Rlgl.arrays.draw.go(go: Bool, frame: Frame, +arrays: Rlgl.Arrays, +indices: +List<U32>) -> Frame:
+  match go:
+    case False{}: frame
+    case True{}: Rlgl.arrays.ended(Rlgl.arrays.vertices(indices, arrays, (Rlgl.begin(frame, 4), True{})))
+
+def Rlgl.arrays.draw.checked(+arrays: Rlgl.Arrays, +indices: +List<U32>, r: Frame & Bool) -> Frame:
+  (frame, +active) = r
+  Rlgl.arrays.draw.go(Rlgl.arrays.positioned(arrays) && Bool.not(active), frame, arrays, indices)
+
+# swDrawArrays/swDrawElements as rlsw runs them: nothing without a position
+# array or inside rlBegin (and on a target without a color buffer, as any
+# swBegin); otherwise one GL_TRIANGLES primitive of the listed vertices.
+def Rlgl.arrays.draw(frame: Frame, +arrays: Rlgl.Arrays, +indices: +List<U32>) -> Frame:
+  Rlgl.arrays.draw.checked(arrays, indices, Rlgl.arrays.open(frame))
+
+def Rlgl.arrays.range(n: Nat, +i: U32) -> +List<U32>:
+  match n:
+    case 0n: Nil{}
+    case 1n+p: Con{i, Rlgl.arrays.range(p, (i + 1 : U32))}
+
+def Rlgl.arrays.counted(fine: Bool, frame: Frame, +arrays: Rlgl.Arrays, +offset: U32, +count: U32) -> Frame:
+  match fine:
+    case False{}: Frame.refuse(frame)
+    case True{}: Rlgl.arrays.draw(frame, arrays, Rlgl.arrays.range(U32.to_nat(Bool.pick(U32, (count >= 2147483648 : U32), 0, count)), offset))
+
+# rlDrawVertexArray(offset, count): glDrawArrays(GL_TRIANGLES, offset,
+# count) over the arrays, the ints as words: vertices offset to
+# offset + count - 1 (none for a count of 0 or less). A read past an array,
+# a negative offset with vertices and an int overflow are undefined.
+def Rlgl.draw_vertex_array(frame: Frame, +arrays: Rlgl.Arrays, +offset: U32, +count: U32) -> Frame:
+  +none = (count >= 2147483648 : U32) || U32.is_eq(count, 0)
+  Rlgl.arrays.counted(none || ((offset < 2147483648 : U32) && ((offset + count : U32) < 2147483648 : U32)), frame, arrays, offset, count)
+
+def Rlgl.arrays.elements(fine: Bool, frame: Frame, +arrays: Rlgl.Arrays, +indices: +List<U32>) -> Frame:
+  match fine:
+    case False{}: Frame.refuse(frame)
+    case True{}: Rlgl.arrays.draw(frame, arrays, indices)
+
+# rlDrawVertexArrayElements(offset, count, buffer): glDrawElements of
+# count unsigned shorts from buffer + offset (offset only when above 0),
+# each a vertex of the arrays: nothing for a negative count. Reading past
+# the index buffer or an array is undefined.
+def Rlgl.draw_vertex_array_elements(frame: Frame, +arrays: Rlgl.Arrays, +offset: U32, +count: U32, +buffer: +List<U32>) -> Frame:
+  +start = Bool.pick(U32, (offset >= 2147483648 : U32), 0, offset)
+  +negative = (count >= 2147483648 : U32)
+  +n = Bool.pick(U32, negative, 0, count)
+  +fits = negative || ((((start + n : U32) <= Rlgl.arrays.count(buffer, 0) : U32)) && ((start + n : U32) >= start : U32))
+  Rlgl.arrays.elements(fits, frame, arrays, Bool.pick(+List<U32>, negative, Nil{}, List.take(&2, U32, List.drop(&2, U32, buffer, U32.to_nat(start)), U32.to_nat(n))))
+
 def Rlgl.resize.canvas(frame: Frame, +width: U32, +height: U32) -> Frame:
   Frame{canvas, _} = frame
   Frame{FrameCore.Canvas.resize(canvas, width, height), Nil{}}

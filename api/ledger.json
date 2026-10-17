@@ -94274,23 +94274,29 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.enable_state_pointer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Under OpenGL 1.1 on the arrays value: GL_VERTEX_ARRAY and GL_TEXTURE_COORD_ARRAY bind the buffer (NULL unbinds), GL_COLOR_ARRAY binds a buffer (NULL keeps the bound one), rlsw's normal pointer and other types change nothing; the buffer as words.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The client arrays are a value the program keeps instead of implicit OpenGL state (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -94303,7 +94309,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlEnableStatePointer semantics from the linked source, add a reference fixture, then implement Rlgl.enable_state_pointer.",
+      "next_step": "Close documented gaps and unverified gates for rlEnableStatePointer.",
       "priority": 713
     },
     {
@@ -94329,23 +94335,29 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.disable_state_pointer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "glDisableClientState, which unbinds the type's array in rlsw.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The client arrays are a value the program keeps instead of implicit OpenGL state (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -94358,7 +94370,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlDisableStatePointer semantics from the linked source, add a reference fixture, then implement Rlgl.disable_state_pointer.",
+      "next_step": "Close documented gaps and unverified gates for rlDisableStatePointer.",
       "priority": 713
     },
     {
@@ -98963,23 +98975,30 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.draw_vertex_array",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "swDrawArrays(GL_TRIANGLES, offset, count) over the arrays: each vertex its texture coordinate and color where bound (the current ones stay otherwise) and its position; nothing without positions, inside rlBegin or for a count of 0 or less.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The client arrays are a value the program keeps instead of implicit OpenGL state (language adaptation)",
+        "Reads past an array and int overflows are undefined and refused",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -98992,7 +99011,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlDrawVertexArray semantics from the linked source, add a reference fixture, then implement Rlgl.draw_vertex_array.",
+      "next_step": "Close documented gaps and unverified gates for rlDrawVertexArray.",
       "priority": 728
     },
     {
@@ -99018,23 +99037,30 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.draw_vertex_array_elements",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "swDrawElements of count unsigned shorts from buffer + offset (offset only above 0), each a vertex of the arrays; nothing without positions, inside rlBegin or for a negative count.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The client arrays are a value the program keeps instead of implicit OpenGL state (language adaptation)",
+        "Reads past the index buffer or an array are undefined and refused",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99047,7 +99073,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlDrawVertexArrayElements semantics from the linked source, add a reference fixture, then implement Rlgl.draw_vertex_array_elements.",
+      "next_step": "Close documented gaps and unverified gates for rlDrawVertexArrayElements.",
       "priority": 728
     },
     {
