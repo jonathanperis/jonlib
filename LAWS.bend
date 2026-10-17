@@ -8,6 +8,7 @@ import ./jonlights.bend as Lt
 import ./jonlgl.bend as Lgl
 import ./joncamera.bend as Cam
 import ./jongestures.bend as Gest
+import ./src/mod.bend as Mods
 import ./src/binary64_narrow.bend as N
 import ./src/binary64_fma.bend as F
 import ./src/binary64_add_sub.bend as A
@@ -4143,6 +4144,27 @@ law joncamera_forward_is_jonlib:
 law jongestures_detected_is_jonlib:
   for core: J.Core
   {Gest.Gestures.get_detected(core) == J.Gestures.get_detected(core) : U32}
+
+# jar_mod: "M.K." is four channels and "8CHN" eight; at 48000 Hz, speed 6
+# and 125 beats a minute a row is 5760 + 2 samples; a short keeps its sign;
+# the vibrato's half sine peaks at 16.
+law mod_signature_mk:
+  {Mods.signature.channels(77, 46, 75, 46) == 4 : U32}
+
+law mod_signature_8chn:
+  {Mods.signature.channels(56, 67, 72, 78) == 8 : U32}
+
+law mod_start_aim:
+  {Mods.tempo.aim(6, 125) == 5760 : U32}
+
+law mod_short_negative:
+  {Mods.s16(65535) == 4294967295 : U32}
+
+law mod_sine_peak:
+  {Mods.sine(16) == 255 : U32}
+
+law mod_sine_after_peak:
+  {Mods.sine(17) == 253 : U32}
 
 law gui_pick_hover_keeps_drag:
   for gui: JG.Gui

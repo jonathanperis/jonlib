@@ -2943,6 +2943,24 @@ def Laws.joncamera_forward_is_jonlib(arithmetic, camera):
 def Laws.jongestures_detected_is_jonlib(core):
   {==}
 
+def Laws.mod_signature_mk():
+  {==}
+
+def Laws.mod_signature_8chn():
+  {==}
+
+def Laws.mod_start_aim():
+  {==}
+
+def Laws.mod_short_negative():
+  {==}
+
+def Laws.mod_sine_peak():
+  {==}
+
+def Laws.mod_sine_after_peak():
+  {==}
+
 def Laws.gui_pick_hover_keeps_drag(gui, bounds):
   {==}
 
