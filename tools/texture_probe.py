@@ -299,6 +299,21 @@ def scenes(libm):
                                           ('update_rec', 0, (0.0, 0.0, 0.0, 3.0), image(1, 1, fmt, 92)),
                                           ('draw_ex', 0, 1.0, 1.0, 0.0, 2.0, white), ('info', 0), ('end',)])
 
+    # rlUpdateTexture: the texture's format copied as it is; a format without OpenGL 1.1 formats, a rectangle past the
+    # texture, at a negative offset or of size 0 change nothing. Data of another format (rlsw converts it) and data shorter
+    # than the rectangle (raylib reads past it) are contracts.
+    for fmt in (1, 2, 3, 4, 5, 6, 7):
+        add(f'rl-update-{fmt}', 24, 16, [('begin',), ('clear', black), ('load', 0, image(6, 5, fmt, 160 + fmt)),
+                                         ('rl_update', 0, 1, 2, 3, 2, fmt, image(3, 2, fmt, 170 + fmt)),
+                                         ('rl_update', 0, 4, 0, 2, 5, fmt, image(2, 5, fmt, 180 + fmt)),
+                                         ('rl_update', 0, 5, 4, 3, 3, fmt, image(3, 3, fmt, 190 + fmt)),
+                                         ('rl_update', 0, -1, 0, 2, 2, fmt, image(2, 2, fmt, 191)),
+                                         ('rl_update', 0, 0, 0, 0, 3, fmt, image(1, 1, fmt, 192)),
+                                         ('rl_update', 0, 0, 0, 2, 2, 8, image(2, 2, 8, 193)),
+                                         ('draw_ex', 0, 1.0, 1.0, 0.0, 2.0, white), ('info', 0), ('end',)])
+    add('rl-update-other-format', 16, 12, [('load', 0, image(4, 4, 7, 194)), ('rl_update', 0, 0, 0, 2, 2, 4, image(2, 2, 4, 195))], contract=True)
+    add('rl-update-short', 16, 12, [('load', 0, image(4, 4, 7, 196)), ('rl_update', 0, 0, 0, 3, 3, 7, image(2, 2, 7, 197))], contract=True)
+
     # Pool ids: loads, unloads and reuse; mipmaps.
     add('texture-ids', 8, 6, [('load', 0, image(2, 2, 7, 1)), ('info', 0), ('load', 1, image(3, 1, 1, 2)), ('info', 1), ('unload', 0),
                               ('load', 2, image(1, 1, 4, 3)), ('info', 2), ('load', 0, image(2, 3, 6, 4)), ('info', 0), ('unload', 1), ('unload', 2),
@@ -503,6 +518,7 @@ def c_op(op):
         'unload': lambda: f'UnloadTexture(t[{a[0]}]); t[{a[0]}] = (Texture2D){{ 0 }};',
         'wrap': lambda: f'SetTextureWrap(t[{a[0]}], {a[1]});', 'mipmaps': lambda: f'GenTextureMipmaps(&t[{a[0]}]);',
         'params': lambda: f'rlTextureParameters(t[{a[0]}].id, {a[1]}, {a[2]});',
+        'rl_update': lambda: f'rlUpdateTexture(t[{a[0]}].id, {a[1]}, {a[2]}, {a[3]}, {a[4]}, {a[5]}, {c_bytes(a[6])});',
         'update': lambda: f'UpdateTexture(t[{a[0]}], {c_bytes(a[1])});',
         'update_rec': lambda: f'UpdateTextureRec(t[{a[0]}], {crec(a[1])}, {c_bytes(a[2])});',
         'info': lambda: f'info(t[{a[0]}]);', 'image': lambda: f'image_info(t[{a[0]}]);',
@@ -838,6 +854,16 @@ def result.texture(frame: J.Frame, r: Result<&1, &1, J.Texture & J.Surface.Error
     case Done{t}: (frame, t)
     case Fail{pair}: result.failed(frame, pair)
 
+# rlUpdateTexture's Fail is an undefined update (data of another format, data short of the rectangle): the frame refused.
+def result.refused.pair(frame: J.Frame, pair: J.Texture & J.Surface.Error) -> J.Frame & J.Texture:
+  (t, _) = pair
+  (J.Frame.refuse(frame), t)
+
+def result.refusing(frame: J.Frame, r: Result<&1, &1, J.Texture & J.Surface.Error, J.Texture>) -> J.Frame & J.Texture:
+  match r:
+    case Done{t}: (frame, t)
+    case Fail{pair}: result.refused.pair(frame, pair)
+
 def update.with(frame: J.Frame, t: J.Texture, image: Maybe<J.Surface>) -> J.Frame & J.Texture:
   match image:
     case None{}: (frame, t)
@@ -869,6 +895,10 @@ def St.finish(+screen: Bool, s: St) -> String:
 
 NEW_BEND = '''type Img is Data:
   Img{width: U32, height: U32, format: U32, bpp: U32, seed: U32, mask: U32, period: U32, zero: Bool}
+
+def Img.bytes(+i: Img) -> +List<U32>:
+  Img{width, height, _, bpp, seed, mask, period, zero} = i
+  pattern(U32.to_nat((width * height * bpp : U32)), 0, seed, mask, period, zero)
 
 def Img.surface(+i: Img) -> Maybe<J.Surface>:
   Img{width, height, format, bpp, seed, mask, period, zero} = i
@@ -934,6 +964,7 @@ def texop(kind: U32, +w: +List<U32>, frame: J.Frame, tex: J.Texture) -> J.Frame 
     case 106: (frame, J.Texture.set_filter(tex, wu(0n, w)))
     case 107: (frame, J.Texture.set_wrap(tex, wu(0n, w)))
     case 111: (frame, J.Rlgl.texture_parameters(tex, wu(0n, w), wu(1n, w)))
+    case 112: result.refusing(frame, J.Rlgl.update_texture(tex, wu(0n, w), wu(1n, w), wu(2n, w), wu(3n, w), wu(4n, w), Img.bytes(wimg(5n, w))))
     case 108: (frame, J.Texture.gen_mipmaps(tex))
     case 109: update.with(frame, tex, Img.surface(wimg(0n, w)))
     case _: update_rec.with(frame, tex, wrect(0n, w), Img.surface(wimg(4n, w)))
@@ -1031,7 +1062,7 @@ FRAME_KINDS = {'begin': 0, 'end': 1, 'clear': 2, 'rect': 3, 'rect_rec': 4, 'rect
 SLOT_KINDS = {'load': 40, 'load_many': 41, 'unload': 42, 'info': 43, 'image': 44, 'load_rt': 45, 'unload_rt': 46, 'begin_rt': 47, 'end_rt': 48,
               'rt_info': 49, 'image_rt': 50}
 TEX_KINDS = {'draw': 100, 'draw_v': 101, 'draw_ex': 102, 'draw_rec': 103, 'draw_pro': 104, 'npatch': 105, 'filter': 106, 'wrap': 107,
-             'mipmaps': 108, 'update': 109, 'update_rec': 110, 'params': 111}
+             'mipmaps': 108, 'update': 109, 'update_rec': 110, 'params': 111, 'rl_update': 112}
 COLOR_LAST = {'clear', 'rect', 'rect_rec', 'rect_lines', 'circle_v', 'line', 'line_v', 'tri', 'pixel', 'pixel_v'}
 
 
@@ -1063,6 +1094,7 @@ def op_words(op):
         'draw_pro': lambda: wrec(b[0]) + wrec(b[1]) + [fp.word(b[2][0]), fp.word(b[2][1]), fp.word(b[3]), b[4]],
         'npatch': lambda: wrec(b[0][0]) + [fp.word(x) for x in b[0][1:]] + wrec(b[1]) + [fp.word(b[2][0]), fp.word(b[2][1]), fp.word(b[3]), b[4]],
         'filter': lambda: [b[0]], 'wrap': lambda: [b[0]], 'mipmaps': lambda: [], 'params': lambda: [b[0], b[1]],
+        'rl_update': lambda: [v & 0xFFFFFFFF for v in b[:5]] + bimg(b[5]),
         'update': lambda: bimg(b[0]), 'update_rec': lambda: wrec(b[0]) + bimg(b[1]),
     }[base]()
     return 99, [slot, int(rt), TEX_KINDS[base]] + words

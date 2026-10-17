@@ -2871,6 +2871,15 @@ def Laws.texture_params_clamp_to_edge_rejected():
 def Laws.texture_wrap_repeat_clears_clamps():
   {==}
 
+def Laws.rlgl_gl_init_is_init_window(width, height):
+  {==}
+
+def Laws.rlgl_resize_framebuffer_zero_refused(frame):
+  {==}
+
+def Laws.rlgl_update_texture_float_has_no_format():
+  {==}
+
 def Laws.gui_pick_hover_keeps_drag(gui, bounds):
   {==}
 

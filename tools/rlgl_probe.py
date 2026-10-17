@@ -446,6 +446,17 @@ def scenes():
            ('screen_px', 24, 16), ('screen_px', 10, 5), ('screen_px', 30, 20), ('screen_px', 1, 1),
            ('tex_px', 4, 4, 7), ('tex_px', 3, 5, 1), ('tex_px', 2, 2, 3), ('tex_px', 5, 3, 4), ('tex_px', 4, 4, 8), ('tex_px', 4, 4, 11)])
     # rlCopyFramebuffer reading past rlsw's color buffer (the region's top row runs past the last pixel): undefined.
+    # rlResizeFramebuffer: the buffers come back zeroed (color 0, depth 0.0) at the new size, then drawn into; a smaller
+    # buffer (the viewport stays 24x16 and rows are bottom-up, so its rows are the screen's lowest) and back. A draw past a
+    # smaller buffer (rlsw writes into its earlier, larger allocation) and a size of 0 are contracts.
+    add('rl-resize', 24, 16, [('begin',), ('clear', C(10, 20, 30)), ('rect', 2.0, 1.0, 9.0, 6.0, RED), ('resize', 24, 16),
+                              ('rect', 12.0, 8.0, 10.0, 7.0, C(40, 200, 90, 128)), ('end',)])
+    add('rl-resize-back', 24, 16, [('begin',), ('clear', C(10, 20, 30)), ('resize', 12, 8), ('rect', 2.0, 10.0, 5.0, 3.0, RED),
+                                   ('resize', 24, 16), ('rect', 10.0, 6.0, 5.0, 5.0, C(40, 200, 90, 255)), ('end',)])
+    add('rl-resize-depth', 24, 16, [('begin',), ('clear', C(10, 20, 30)), ('toggle', 'depth', True), ('resize', 24, 16),
+                                    ('rect', 2.0, 2.0, 8.0, 6.0, RED), ('toggle', 'depth', False), ('rect', 12.0, 2.0, 8.0, 6.0, RED), ('end',)])
+    add('rl-resize-past', 24, 16, [('begin',), ('resize', 12, 8), ('rect', 8.0, 4.0, 10.0, 8.0, RED), ('resize', 24, 16), ('end',)], contract=True)
+    add('rl-resize-zero', 24, 16, [('begin',), ('resize', 0, 8), ('resize', 24, 16), ('end',)], contract=True)
     add('rl-readback-past', 24, 16, [('begin',), ('clear', C(10, 20, 30)), ('end',), ('copy', 5, 0, 24, 16, 7)], contract=True)
 
     # Contracts.
@@ -650,7 +661,7 @@ def c_op(op):
         'cull_face': lambda: f'rlSetCullFace({a[0]});', 'scissor': lambda: f'rlScissor({", ".join(fp.ci(x) for x in a)});',
         'line_width': lambda: f'rlSetLineWidth({cf(a[0])});', 'point_size': lambda: f'rlSetPointSize({cf(a[0])});',
         'clear_color': lambda: f'rlClearColor({a[0]}, {a[1]}, {a[2]}, {a[3]});', 'clear_buffers': lambda: 'rlClearScreenBuffers();',
-        'noops': lambda: 'noops();',
+        'noops': lambda: 'noops();', 'resize': lambda: f'rlResizeFramebuffer({a[0]}, {a[1]});',
         'get': lambda: {'line_width': 'note_f("w", rlGetLineWidth());', 'point_size': 'note_f("p", rlGetPointSize());',
                         'modelview': 'note_m("m", rlGetMatrixModelview());', 'projection': 'note_m("j", rlGetMatrixProjection());',
                         'framebuffer': '{ char s[32]; snprintf(s, sizeof s, " a%u", rlGetActiveFramebuffer()); note(s); }',
@@ -963,6 +974,7 @@ def call.apply(kind: U32, +w: +List<U32>, frame: J.Frame) -> J.Frame:
     case 238: J.Rlgl.set_point_size(frame, wf(0n, w))
     case 239: J.Rlgl.clear_color(frame, wu(0n, w), wu(1n, w), wu(2n, w), wu(3n, w))
     case 240: J.Rlgl.clear_screen_buffers(frame)
+    case 242: J.Rlgl.resize_framebuffer(frame, wu(0n, w), wu(1n, w))
     case _: call.noops(frame)
 
 def bits.f(+x: F32) -> String:
@@ -1311,9 +1323,9 @@ SHAPE_KINDS = {'bezier': 200, 'dashed': 201, 'ring_lines': 202, 'poly_ex': 203, 
                'rounded': 208, 'rounded_lines': 209, 'rounded_lines_ex': 210, 'spline': 211, 'segment': 212}
 CALL_KINDS = {'rl_begin': 220, 'rl_end': 221, 'v2i': 222, 'v2f': 223, 'v3f': 224, 'tc': 225, 'normal': 226, 'c4ub': 227, 'c3f': 228, 'c4f': 229,
               'matrix_mode': 230, 'ortho': 231, 'frustum': 232, 'viewport': 233, 'toggle': 234, 'cull_face': 235, 'scissor': 236,
-              'line_width': 237, 'point_size': 238, 'clear_color': 239, 'clear_buffers': 240, 'noops': 241}
+              'line_width': 237, 'point_size': 238, 'clear_color': 239, 'clear_buffers': 240, 'noops': 241, 'resize': 242}
 OTHER_KINDS = {'set_texture': 260, 'set_texture_null': 261, 'shapes_tex': 262, 'shapes_info': 263, 'get': 264, 'copy': 265, 'screen_px': 266, 'tex_px': 267}
-INT_CALLS = {'rl_begin', 'c4ub', 'matrix_mode', 'cull_face', 'clear_color'}
+INT_CALLS = {'rl_begin', 'c4ub', 'matrix_mode', 'cull_face', 'clear_color', 'resize'}
 W = fp.word
 
 
