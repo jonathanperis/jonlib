@@ -2538,6 +2538,248 @@
     "api_id": "raylib:function:DrawLineDashed",
     "milestone": "shapes"
   },
+  "DrawTriangle": {
+    "jonlib": "Draw.triangle",
+    "status": "profile-covered",
+    "scope": "The textured quad (v1, v2, v3, v3): clockwise and degenerate triangles are culled; scanline rasterization in 16-pixel blocks, or the box path for axis-aligned degenerate quads.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawTriangle",
+    "milestone": "shapes"
+  },
+  "DrawTriangleLines": {
+    "jonlib": "Draw.triangle_lines",
+    "status": "profile-covered",
+    "scope": "Three RL_LINES (v1, v2), (v2, v3), (v3, v1).",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawTriangleLines",
+    "milestone": "shapes"
+  },
+  "DrawTriangleFan": {
+    "jonlib": "Draw.triangle_fan",
+    "status": "profile-covered",
+    "scope": "With at least three points, textured quads (p0, pi, pi+1, pi+1), the color set once.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawTriangleFan",
+    "milestone": "shapes"
+  },
+  "DrawTriangleStrip": {
+    "jonlib": "Draw.triangle_strip",
+    "status": "profile-covered",
+    "scope": "Untextured triangles (i, i-2, i-1) / (i, i-1, i-2); only the first carries the color's alpha flag.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawTriangleStrip",
+    "milestone": "shapes"
+  },
+  "DrawRectangle": {
+    "jonlib": "Draw.rectangle",
+    "status": "profile-covered",
+    "scope": "C int position and size drawn as DrawRectangleV.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawRectangle",
+    "milestone": "shapes"
+  },
+  "DrawRectangleV": {
+    "jonlib": "Draw.rectangle_v",
+    "status": "profile-covered",
+    "scope": "DrawRectanglePro with origin (0, 0) and rotation 0: a textured quad, box-rasterized when axis aligned; negative sizes are culled.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawRectangleV",
+    "milestone": "shapes"
+  },
+  "DrawRectangleRec": {
+    "jonlib": "Draw.rectangle_rec",
+    "status": "profile-covered",
+    "scope": "DrawRectanglePro with origin (0, 0) and rotation 0.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawRectangleRec",
+    "milestone": "shapes"
+  },
+  "DrawRectanglePro": {
+    "jonlib": "Draw.rectangle_pro_for / Draw.rectangle_pro",
+    "status": "profile-covered",
+    "scope": "Rotation 0.0f skips sinf/cosf; others rotate the corners in rshapes.c's F32 order; textured quad, box or triangle fan after clipping.",
+    "gaps": [
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawRectanglePro",
+    "milestone": "shapes"
+  },
+  "DrawRectangleGradientV": {
+    "jonlib": "Draw.rectangle_gradient_v",
+    "status": "profile-covered",
+    "scope": "C int rectangle; DrawRectangleGradientEx(top, bottom, bottom, top).",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawRectangleGradientV",
+    "milestone": "shapes"
+  },
+  "DrawRectangleGradientH": {
+    "jonlib": "Draw.rectangle_gradient_h",
+    "status": "profile-covered",
+    "scope": "C int rectangle; DrawRectangleGradientEx(left, left, right, right).",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawRectangleGradientH",
+    "milestone": "shapes"
+  },
+  "DrawRectangleGradientEx": {
+    "jonlib": "Draw.rectangle_gradient_ex",
+    "status": "profile-covered",
+    "scope": "Per-corner colors; the box rasterizer interpolates from the screen bottom-left, bottom-right and top-left corners only (the top-right color has no effect).",
+    "gaps": [
+      "Extrapolated corner colors leaving (-1, 256) after scaling are undefined in C and mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawRectangleGradientEx",
+    "milestone": "shapes"
+  },
+  "DrawRectangleLines": {
+    "jonlib": "Draw.rectangle_lines",
+    "status": "profile-covered",
+    "scope": "C int rectangle; four RL_LINES at 0.5 px offsets (rlGetMatrixTransform is the identity under OpenGL 1.1).",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawRectangleLines",
+    "milestone": "shapes"
+  },
+  "DrawRectangleLinesEx": {
+    "jonlib": "Draw.rectangle_lines_ex",
+    "status": "profile-covered",
+    "scope": "Thickness clamped to half the smaller side when larger than a side, then four DrawRectangleRec bands.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawRectangleLinesEx",
+    "milestone": "shapes"
+  },
+  "DrawRectangleRounded": {
+    "jonlib": "Draw.rectangle_rounded_for / Draw.rectangle_rounded",
+    "status": "profile-covered",
+    "scope": "Corner arcs and the middle in rshapes.c quad/triangle order with the shapes texture coordinates; roundness <= 0 draws DrawRectangleRec; segments below 4 are estimated.",
+    "gaps": [
+      "Segment estimation (acosf of rshapes.c) only for M.Glibc239Libm; under other profiles, or above 4096 segments, the frame is marked undefined",
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawRectangleRounded",
+    "milestone": "shapes"
+  },
+  "DrawRectangleRoundedLines": {
+    "jonlib": "Draw.rectangle_rounded_lines_for / Draw.rectangle_rounded_lines",
+    "status": "profile-covered",
+    "scope": "DrawRectangleRoundedLinesEx with thickness 1.",
+    "gaps": [
+      "Segment estimation (acosf of rshapes.c) only for M.Glibc239Libm; under other profiles, or above 4096 segments, the frame is marked undefined",
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawRectangleRoundedLines",
+    "milestone": "shapes"
+  },
+  "DrawRectangleRoundedLinesEx": {
+    "jonlib": "Draw.rectangle_rounded_lines_ex_for / Draw.rectangle_rounded_lines_ex",
+    "status": "profile-covered",
+    "scope": "Thick outlines (thickness > 1) as quads with triangle corner arcs, otherwise RL_LINES, as rshapes.c; roundness <= 0 draws DrawRectangleLinesEx.",
+    "gaps": [
+      "Segment estimation (acosf of rshapes.c) only for M.Glibc239Libm; under other profiles, or above 4096 segments, the frame is marked undefined",
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawRectangleRoundedLinesEx",
+    "milestone": "shapes"
+  },
+  "DrawPoly": {
+    "jonlib": "Draw.poly_for / Draw.poly",
+    "status": "profile-covered",
+    "scope": "Sides below 3 become 3; textured quads (center, p(a), p(a + step), p(a)) with F32-accumulated angles.",
+    "gaps": [
+      "More than 4096 sides mark the frame undefined",
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawPoly",
+    "milestone": "shapes"
+  },
+  "DrawPolyLines": {
+    "jonlib": "Draw.poly_lines_for / Draw.poly_lines",
+    "status": "profile-covered",
+    "scope": "Sides below 3 become 3; RL_LINES (p(a), p(a + step)) per side.",
+    "gaps": [
+      "More than 4096 sides mark the frame undefined",
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawPolyLines",
+    "milestone": "shapes"
+  },
+  "DrawPolyLinesEx": {
+    "jonlib": "Draw.poly_lines_ex_for / Draw.poly_lines_ex",
+    "status": "profile-covered",
+    "scope": "Quads between the radius and radius - lineThick/cosf(DEG2RAD*(360/sides*DEG2RAD)/2) per side; the Apple host cosf is correctly rounded on every such argument for 3..4096 sides (checked by the probe).",
+    "gaps": [
+      "More than 4096 sides mark the frame undefined",
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawPolyLinesEx",
+    "milestone": "shapes"
+  },
   "DrawCircle": {
     "jonlib": "Draw.circle_for / Draw.circle",
     "status": "profile-covered",
@@ -2711,248 +2953,6 @@
     "api_id": "raylib:function:DrawRingLines",
     "milestone": "shapes"
   },
-  "DrawRectangle": {
-    "jonlib": "Draw.rectangle",
-    "status": "profile-covered",
-    "scope": "C int position and size drawn as DrawRectangleV.",
-    "gaps": [
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawRectangle",
-    "milestone": "shapes"
-  },
-  "DrawRectangleV": {
-    "jonlib": "Draw.rectangle_v",
-    "status": "profile-covered",
-    "scope": "DrawRectanglePro with origin (0, 0) and rotation 0: a textured quad, box-rasterized when axis aligned; negative sizes are culled.",
-    "gaps": [
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawRectangleV",
-    "milestone": "shapes"
-  },
-  "DrawRectangleRec": {
-    "jonlib": "Draw.rectangle_rec",
-    "status": "profile-covered",
-    "scope": "DrawRectanglePro with origin (0, 0) and rotation 0.",
-    "gaps": [
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawRectangleRec",
-    "milestone": "shapes"
-  },
-  "DrawRectanglePro": {
-    "jonlib": "Draw.rectangle_pro_for / Draw.rectangle_pro",
-    "status": "profile-covered",
-    "scope": "Rotation 0.0f skips sinf/cosf; others rotate the corners in rshapes.c's F32 order; textured quad, box or triangle fan after clipping.",
-    "gaps": [
-      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawRectanglePro",
-    "milestone": "shapes"
-  },
-  "DrawRectangleGradientV": {
-    "jonlib": "Draw.rectangle_gradient_v",
-    "status": "profile-covered",
-    "scope": "C int rectangle; DrawRectangleGradientEx(top, bottom, bottom, top).",
-    "gaps": [
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawRectangleGradientV",
-    "milestone": "shapes"
-  },
-  "DrawRectangleGradientH": {
-    "jonlib": "Draw.rectangle_gradient_h",
-    "status": "profile-covered",
-    "scope": "C int rectangle; DrawRectangleGradientEx(left, left, right, right).",
-    "gaps": [
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawRectangleGradientH",
-    "milestone": "shapes"
-  },
-  "DrawRectangleGradientEx": {
-    "jonlib": "Draw.rectangle_gradient_ex",
-    "status": "profile-covered",
-    "scope": "Per-corner colors; the box rasterizer interpolates from the screen bottom-left, bottom-right and top-left corners only (the top-right color has no effect).",
-    "gaps": [
-      "Extrapolated corner colors leaving (-1, 256) after scaling are undefined in C and mark the frame undefined",
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawRectangleGradientEx",
-    "milestone": "shapes"
-  },
-  "DrawRectangleLines": {
-    "jonlib": "Draw.rectangle_lines",
-    "status": "profile-covered",
-    "scope": "C int rectangle; four RL_LINES at 0.5 px offsets (rlGetMatrixTransform is the identity under OpenGL 1.1).",
-    "gaps": [
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawRectangleLines",
-    "milestone": "shapes"
-  },
-  "DrawRectangleLinesEx": {
-    "jonlib": "Draw.rectangle_lines_ex",
-    "status": "profile-covered",
-    "scope": "Thickness clamped to half the smaller side when larger than a side, then four DrawRectangleRec bands.",
-    "gaps": [
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawRectangleLinesEx",
-    "milestone": "shapes"
-  },
-  "DrawRectangleRounded": {
-    "jonlib": "Draw.rectangle_rounded_for / Draw.rectangle_rounded",
-    "status": "profile-covered",
-    "scope": "Corner arcs and the middle in rshapes.c quad/triangle order with the shapes texture coordinates; roundness <= 0 draws DrawRectangleRec; segments below 4 are estimated.",
-    "gaps": [
-      "Segment estimation (acosf of rshapes.c) only for M.Glibc239Libm; under other profiles, or above 4096 segments, the frame is marked undefined",
-      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawRectangleRounded",
-    "milestone": "shapes"
-  },
-  "DrawRectangleRoundedLines": {
-    "jonlib": "Draw.rectangle_rounded_lines_for / Draw.rectangle_rounded_lines",
-    "status": "profile-covered",
-    "scope": "DrawRectangleRoundedLinesEx with thickness 1.",
-    "gaps": [
-      "Segment estimation (acosf of rshapes.c) only for M.Glibc239Libm; under other profiles, or above 4096 segments, the frame is marked undefined",
-      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawRectangleRoundedLines",
-    "milestone": "shapes"
-  },
-  "DrawRectangleRoundedLinesEx": {
-    "jonlib": "Draw.rectangle_rounded_lines_ex_for / Draw.rectangle_rounded_lines_ex",
-    "status": "profile-covered",
-    "scope": "Thick outlines (thickness > 1) as quads with triangle corner arcs, otherwise RL_LINES, as rshapes.c; roundness <= 0 draws DrawRectangleLinesEx.",
-    "gaps": [
-      "Segment estimation (acosf of rshapes.c) only for M.Glibc239Libm; under other profiles, or above 4096 segments, the frame is marked undefined",
-      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawRectangleRoundedLinesEx",
-    "milestone": "shapes"
-  },
-  "DrawTriangle": {
-    "jonlib": "Draw.triangle",
-    "status": "profile-covered",
-    "scope": "The textured quad (v1, v2, v3, v3): clockwise and degenerate triangles are culled; scanline rasterization in 16-pixel blocks, or the box path for axis-aligned degenerate quads.",
-    "gaps": [
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawTriangle",
-    "milestone": "shapes"
-  },
-  "DrawTriangleLines": {
-    "jonlib": "Draw.triangle_lines",
-    "status": "profile-covered",
-    "scope": "Three RL_LINES (v1, v2), (v2, v3), (v3, v1).",
-    "gaps": [
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawTriangleLines",
-    "milestone": "shapes"
-  },
-  "DrawTriangleFan": {
-    "jonlib": "Draw.triangle_fan",
-    "status": "profile-covered",
-    "scope": "With at least three points, textured quads (p0, pi, pi+1, pi+1), the color set once.",
-    "gaps": [
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawTriangleFan",
-    "milestone": "shapes"
-  },
-  "DrawTriangleStrip": {
-    "jonlib": "Draw.triangle_strip",
-    "status": "profile-covered",
-    "scope": "Untextured triangles (i, i-2, i-1) / (i, i-1, i-2); only the first carries the color's alpha flag.",
-    "gaps": [
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawTriangleStrip",
-    "milestone": "shapes"
-  },
-  "DrawPoly": {
-    "jonlib": "Draw.poly_for / Draw.poly",
-    "status": "profile-covered",
-    "scope": "Sides below 3 become 3; textured quads (center, p(a), p(a + step), p(a)) with F32-accumulated angles.",
-    "gaps": [
-      "More than 4096 sides mark the frame undefined",
-      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawPoly",
-    "milestone": "shapes"
-  },
-  "DrawPolyLines": {
-    "jonlib": "Draw.poly_lines_for / Draw.poly_lines",
-    "status": "profile-covered",
-    "scope": "Sides below 3 become 3; RL_LINES (p(a), p(a + step)) per side.",
-    "gaps": [
-      "More than 4096 sides mark the frame undefined",
-      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawPolyLines",
-    "milestone": "shapes"
-  },
-  "DrawPolyLinesEx": {
-    "jonlib": "Draw.poly_lines_ex_for / Draw.poly_lines_ex",
-    "status": "profile-covered",
-    "scope": "Quads between the radius and radius - lineThick/cosf(DEG2RAD*(360/sides*DEG2RAD)/2) per side; the Apple host cosf is correctly rounded on every such argument for 3..4096 sides (checked by the probe).",
-    "gaps": [
-      "More than 4096 sides mark the frame undefined",
-      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
-      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
-    ],
-    "api_id": "raylib:function:DrawPolyLinesEx",
-    "milestone": "shapes"
-  },
   "DrawSplineLinear": {
     "jonlib": "Draw.spline_linear",
     "status": "profile-covered",
@@ -3113,7 +3113,7 @@
     "api_id": "raylib:function:GetSplinePointCatmullRom",
     "milestone": "shapes"
   },
-  "GetSplinePointBezierQuad": {
+  "GetSplinePointBezierQuadratic": {
     "jonlib": "Spline.bezier_quad_for / Spline.bezier_quad",
     "status": "profile-covered",
     "scope": "Reference quadratic Bezier weights and original product order with explicit fused/uncontracted profiles and exact endpoints/XY fields; t in 0..1.",
@@ -3121,7 +3121,7 @@
       "Exceptional/subnormal, extrapolation and other contraction profiles",
       "Full integration/target/performance coverage"
     ],
-    "api_id": "raylib:function:GetSplinePointBezierQuad",
+    "api_id": "raylib:function:GetSplinePointBezierQuadratic",
     "milestone": "shapes"
   },
   "GetSplinePointBezierCubic": {
@@ -3953,44 +3953,56 @@
     "api_id": "raylib:function:ImageDrawLineEx",
     "milestone": "images"
   },
-  "ImageDrawCircle": {
-    "jonlib": "Surface.draw_circle",
+  "ImageDrawTriangle": {
+    "jonlib": "Surface.draw_triangle",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; reference midpoint filled-circle coverage with U32 radius, clipped to the image. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices with raylib's (int) truncation of bounds and edge steps; defined reference signed-edge arithmetic. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
-    "api_id": "raylib:function:ImageDrawCircle",
+    "api_id": "raylib:function:ImageDrawTriangle",
     "milestone": "images"
   },
-  "ImageDrawCircleV": {
-    "jonlib": "Surface.draw_circle_v",
+  "ImageDrawTriangleGradient": {
+    "jonlib": "Surface.draw_triangle_ex",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded center truncated to integers; radius 0..32767. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices with (int)-truncated bounds/edge steps; defined signed arithmetic and nonzero reference weight sum; reference byte-quantized barycentric color interpolation. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full format/numeric domain and target/performance evidence"
+      "Degenerate/undefined reference gradients",
+      "Other formats and full target/performance gates",
+      "Wider coordinate domains"
     ],
-    "api_id": "raylib:function:ImageDrawCircleV",
+    "api_id": "raylib:function:ImageDrawTriangleGradient",
     "milestone": "images"
   },
-  "ImageDrawCircleLines": {
-    "jonlib": "Surface.draw_circle_lines",
+  "ImageDrawTriangleLines": {
+    "jonlib": "Surface.draw_triangle_lines",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; integral bounded center; radius 0..32767; reference midpoint outline. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite vertices truncated before line rasterization. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full format/numeric domain and target/performance evidence"
+      "Full input/format domain and all applicable platform/performance gates remain open."
     ],
-    "api_id": "raylib:function:ImageDrawCircleLines",
+    "api_id": "raylib:function:ImageDrawTriangleLines",
     "milestone": "images"
   },
-  "ImageDrawCircleLinesV": {
-    "jonlib": "Surface.draw_circle_lines_v",
+  "ImageDrawTriangleFan": {
+    "jonlib": "Surface.draw_triangle_fan",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite center truncated before midpoint outline; radius 0..32767. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; List<Vector2> with finite bounded vertices (each triangle as ImageDrawTriangle); reference fan order; fewer than three points is a no-op. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full format/numeric domain and target/performance evidence"
+      "Full formats/domains and target/performance evidence"
     ],
-    "api_id": "raylib:function:ImageDrawCircleLinesV",
+    "api_id": "raylib:function:ImageDrawTriangleFan",
+    "milestone": "images"
+  },
+  "ImageDrawTriangleStrip": {
+    "jonlib": "Surface.draw_triangle_strip",
+    "status": "profile-covered",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices (each triangle as ImageDrawTriangle); alternating reference winding; fewer than three points is a no-op. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "gaps": [
+      "Full formats/domains and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageDrawTriangleStrip",
     "milestone": "images"
   },
   "ImageDrawRectangle": {
@@ -4033,70 +4045,45 @@
     "api_id": "raylib:function:ImageDrawRectangleLines",
     "milestone": "images"
   },
-  "ImageDrawTriangle": {
-    "jonlib": "Surface.draw_triangle",
+  "ImageDrawCircle": {
+    "jonlib": "Surface.draw_circle",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices with raylib's (int) truncation of bounds and edge steps; defined reference signed-edge arithmetic. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; reference midpoint filled-circle coverage with U32 radius, clipped to the image. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
-    "api_id": "raylib:function:ImageDrawTriangle",
+    "api_id": "raylib:function:ImageDrawCircle",
     "milestone": "images"
   },
-  "ImageDrawTriangleEx": {
-    "jonlib": "Surface.draw_triangle_ex",
+  "ImageDrawCircleV": {
+    "jonlib": "Surface.draw_circle_v",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices with (int)-truncated bounds/edge steps; defined signed arithmetic and nonzero reference weight sum; reference byte-quantized barycentric color interpolation. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded center truncated to integers; radius 0..32767. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Degenerate/undefined reference gradients",
-      "Other formats and full target/performance gates",
-      "Wider coordinate domains"
+      "Full format/numeric domain and target/performance evidence"
     ],
-    "api_id": "raylib:function:ImageDrawTriangleEx",
+    "api_id": "raylib:function:ImageDrawCircleV",
     "milestone": "images"
   },
-  "ImageDrawTriangleLines": {
-    "jonlib": "Surface.draw_triangle_lines",
+  "ImageDrawCircleLines": {
+    "jonlib": "Surface.draw_circle_lines",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite vertices truncated before line rasterization. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; integral bounded center; radius 0..32767; reference midpoint outline. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Full format/numeric domain and target/performance evidence"
     ],
-    "api_id": "raylib:function:ImageDrawTriangleLines",
+    "api_id": "raylib:function:ImageDrawCircleLines",
     "milestone": "images"
   },
-  "ImageDrawTriangleFan": {
-    "jonlib": "Surface.draw_triangle_fan",
+  "ImageDrawCircleLinesV": {
+    "jonlib": "Surface.draw_circle_lines_v",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; List<Vector2> with finite bounded vertices (each triangle as ImageDrawTriangle); reference fan order; fewer than three points is a no-op. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite center truncated before midpoint outline; radius 0..32767. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full formats/domains and target/performance evidence"
+      "Full format/numeric domain and target/performance evidence"
     ],
-    "api_id": "raylib:function:ImageDrawTriangleFan",
+    "api_id": "raylib:function:ImageDrawCircleLinesV",
     "milestone": "images"
-  },
-  "ImageDrawTriangleStrip": {
-    "jonlib": "Surface.draw_triangle_strip",
-    "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices (each triangle as ImageDrawTriangle); alternating reference winding; fewer than three points is a no-op. Every format 1..13 is compared with raylib on the surface-format profile.",
-    "gaps": [
-      "Full formats/domains and target/performance evidence"
-    ],
-    "api_id": "raylib:function:ImageDrawTriangleStrip",
-    "milestone": "images"
-  },
-  "ImageDraw": {
-    "jonlib": "Surface.draw_image / Surface.draw_image_region / Surface.draw_image_rect",
-    "status": "profile-covered",
-    "scope": "Formats 1..13; bounded finite source/destination rectangles, including fractional fields; source clipping precedes truncated-size scaling decisions; scaled sources are extracted and resized in their own format; destination clipping precedes pixel truncation. Pixels use GetPixelColor (integer packed expansion, R32 replicated), ColorAlphaBlend unless the source has no alpha and tint.a is 255, and SetPixelColor (no-op for R32/R32G32B32); unblended equal formats copy stored samples. An R32G32B32 source needs finite [0,1] samples (OutOfDomain). Both owners preserved; one mip level.",
-    "gaps": [
-      "empty or undefined source rectangles",
-      "Pixel formats 10+",
-      "mipmaps",
-      "full platform/integration/performance validation"
-    ],
-    "api_id": "raylib:function:ImageDraw",
-    "milestone": "resampling"
   },
   "ImageDrawText": {
     "jonlib": "Font.image_draw_text / Font.image_draw_text_spaced",

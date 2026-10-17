@@ -63,21 +63,20 @@ inline Vec operator + (const Vec& lhs, const float& rhs) { return lhs; }
 
     def test_pinned_inventory_migration_and_dependency_order(self):
         policy = copy.deepcopy(self.policy)
-        policy['priority_overrides'] = {'raylib:function:ImageDraw':0, 'raylib:function:ImageResize':1}
+        policy['priority_overrides'] = {'raylib:function:ImageDrawImagePro':0, 'raylib:function:ImageResize':1}
         outputs, report = plan.generated(self.reference, policy, self.progress)
         counts = {header: sum(row['header'] == header and row['kind'] == 'function'
                               for row in self.reference['entries']) for header in self.reference['scope']}
-        self.assertEqual(counts, {'raylib.h':600, 'raymath.h':146, 'rlgl.h':163,
+        self.assertEqual(counts, {'raylib.h':619, 'raymath.h':146, 'rlgl.h':163,
                                   'rcamera.h':12, 'rgestures.h':10, 'config.h':0})
-        self.assertEqual(report['next_work'][0]['id'], 'raylib:function:ImageDraw')
+        self.assertEqual(report['next_work'][0]['id'], 'raylib:function:ImageDrawImagePro')
         self.assertEqual(report['next_work'][1]['id'], 'raylib:function:ImageResize')
         legacy = json.loads(outputs['docs/api-map.json'])
         baseline = {'GenImageColor','ImageClearBackground','ImageDrawPixel','ImageDrawRectangle','ImageDrawCircle',
                     'ImageFlipHorizontal','ImageFlipVertical','LoadImageColors','GetImageColor','ImageCopy','GetColor',
                     'ColorToInt','ColorAlphaBlend','ImageDrawLine','ImageDrawLineV','ImageDrawTriangle','ImageDrawTriangleLines',
-                    'ImageDraw','ImageFromImage','ImageCrop','ImageResizeNN','ImageResize'}
+                    'ImageFromImage','ImageCrop','ImageResizeNN','ImageResize'}
         self.assertLessEqual(baseline, set(legacy))
-        self.assertIn('Surface.draw_image_rect', legacy['ImageDraw']['jonlib'])
         self.assertEqual(legacy['ImageResize']['jonlib'], 'Surface.resize')
         mapped = {row['id']:row for row in json.loads(outputs['api/ledger.json'])['entries']}
         self.assertEqual(mapped['raymath:function:Vector2Add']['jonlib'], 'jonmath.Vector2.add')
@@ -96,14 +95,14 @@ inline Vec operator + (const Vec& lhs, const float& rhs) { return lhs; }
                                 'LoadSoundFromWave':'audio-device', 'ToggleFullscreen':'window'}.items():
             self.assertEqual(rows[name]['milestone'], milestone)
         previous = json.loads(outputs['api/ledger.json'])
-        next(row for row in previous['entries'] if row['id'] == 'raylib:function:ImageDraw')['evidence'] = []
+        next(row for row in previous['entries'] if row['id'] == 'raylib:function:ImageResize')['evidence'] = []
         with patch('sys.argv', ['api_plan.py','report','--since','baseline','--json']), patch.object(plan.subprocess, 'check_output', return_value=json.dumps(previous)), patch('sys.stdout', new_callable=io.StringIO) as output:
             plan.main()
         changed = json.loads(output.getvalue())['changed']
-        self.assertEqual(changed, [dict(id='raylib:function:ImageDraw', before='partial', after='partial', changes=['evidence'])])
+        self.assertEqual(changed, [dict(id='raylib:function:ImageResize', before='partial', after='partial', changes=['evidence'])])
 
     def test_invalid_plan_and_unproved_completion_fail(self):
-        key = 'raylib:function:ImageDraw'
+        key = 'raylib:function:ImageResize'
         def update_progress(progress, **changes):
             progress['entries'][key].update(changes)
         cases = [
@@ -153,7 +152,7 @@ inline Vec operator + (const Vec& lhs, const float& rhs) { return lhs; }
 
     def test_progress_records_state_contracts_not_run_history(self):
         self.assertEqual(plan.lint_progress(self.progress), [])
-        key = 'raylib:function:ImageDraw'
+        key = 'raylib:function:ImageResize'
         cases = {
             'long scope': dict(scope='x' * (plan.MAX_SCOPE + 1)),
             'too many gaps': dict(gaps=['gap'] * (plan.MAX_GAPS + 1)),

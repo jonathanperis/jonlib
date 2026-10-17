@@ -1,21 +1,21 @@
 {
   "schema": 1,
-  "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "reference_revision": "02566453880e06bec97f5b8160fa6fe1e98397ca",
   "declaration_inventory": {
-    "total": 1884,
+    "total": 1906,
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 0,
-    "partial": 1884
+    "not-started": 26,
+    "partial": 1880
   },
   "core_functions": {
-    "total": 600,
+    "total": 619,
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 0,
-    "partial": 600
+    "not-started": 20,
+    "partial": 599
   },
   "math_functions": {
     "total": 146,
@@ -26,43 +26,43 @@
     "partial": 146
   },
   "function_declarations": {
-    "total": 931,
+    "total": 950,
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 0,
-    "partial": 931
+    "not-started": 20,
+    "partial": 930
   },
-  "unique_c_function_names": 923,
+  "unique_c_function_names": 942,
   "kinds": {
     "alias": 8,
     "callback": 6,
-    "configuration": 115,
+    "configuration": 116,
     "constant": 19,
     "enum": 39,
     "enumerator": 449,
-    "function": 931,
-    "macro": 179,
+    "function": 950,
+    "macro": 180,
     "opaque": 2,
-    "operator": 60,
-    "switch": 25,
+    "operator": 63,
+    "switch": 23,
     "type": 51
   },
   "headers": {
     "raylib.h": {
-      "total": 1037,
+      "total": 1055,
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 0,
-      "partial": 1037
+      "not-started": 20,
+      "partial": 1035
     },
     "raymath.h": {
-      "total": 254,
+      "total": 257,
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 0,
+      "not-started": 3,
       "partial": 254
     },
     "rlgl.h": {
@@ -70,8 +70,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 0,
-      "partial": 403
+      "not-started": 1,
+      "partial": 402
     },
     "rcamera.h": {
       "total": 35,
@@ -86,15 +86,15 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 0,
-      "partial": 39
+      "not-started": 1,
+      "partial": 38
     },
     "config.h": {
-      "total": 116,
+      "total": 117,
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 0,
+      "not-started": 1,
       "partial": 116
     }
   },
@@ -132,11 +132,11 @@
       "depends_on": [
         "numerics"
       ],
-      "total": 221,
+      "total": 224,
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 0,
+      "not-started": 3,
       "partial": 221
     },
     {
@@ -160,11 +160,11 @@
       "depends_on": [
         "memory"
       ],
-      "total": 49,
+      "total": 52,
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 0,
+      "not-started": 3,
       "partial": 49
     },
     {
@@ -205,11 +205,11 @@
         "pixels",
         "memory"
       ],
-      "total": 54,
+      "total": 60,
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 0,
+      "not-started": 6,
       "partial": 54
     },
     {
@@ -220,12 +220,12 @@
         "images",
         "numerics"
       ],
-      "total": 7,
+      "total": 10,
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 0,
-      "partial": 7
+      "not-started": 4,
+      "partial": 6
     },
     {
       "id": "image-codecs",
@@ -328,11 +328,11 @@
         "jonmath",
         "pixels"
       ],
-      "total": 62,
+      "total": 68,
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 0,
+      "not-started": 6,
       "partial": 62
     },
     {
@@ -344,11 +344,11 @@
         "pixels",
         "image-codecs"
       ],
-      "total": 27,
+      "total": 28,
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 0,
+      "not-started": 1,
       "partial": 27
     },
     {
@@ -547,8 +547,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 0,
-      "partial": 207
+      "not-started": 3,
+      "partial": 204
     },
     {
       "id": "platforms",
@@ -570,8 +570,8 @@
     }
   ],
   "phase1_exit": {
-    "total": 315,
-    "implemented": 315,
+    "total": 327,
+    "implemented": 314,
     "behavior_ownership_verified": 0,
     "only_allowed_gaps": 3,
     "meeting": 0
