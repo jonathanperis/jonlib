@@ -97218,23 +97218,29 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.gl_init",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The frame InitWindow makes: rlglInit's software context, cleared to (0, 0, 0, 1) with depth 1, with the default font and shapes rectangle rcore adds after it; None outside 1..4096.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "rlglInit alone (without InitWindow's default font and shapes rectangle) is not separate",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -97247,7 +97253,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlglInit semantics from the linked source, add a reference fixture, then implement Rlgl.gl_init.",
+      "next_step": "Close documented gaps and unverified gates for rlglInit.",
       "priority": 713
     },
     {
@@ -97273,23 +97279,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.gl_close",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Consumes the frame (its buffers and texture pool).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Consuming the value releases it (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -97302,7 +97312,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlglClose semantics from the linked source, add a reference fixture, then implement Rlgl.gl_close.",
+      "next_step": "Close documented gaps and unverified gates for rlglClose.",
       "priority": 713
     },
     {
@@ -99365,23 +99375,31 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.update_texture",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "On the texture value with the ints as words and the data as bytes: a format without OpenGL 1.1 formats and a rectangle swTexSubImage2D rejects (a size of 0 or less, a negative offset, past the texture) change nothing; data of the texture's format is copied as it is, the alpha mode kept.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A texture value instead of an id (language adaptation)",
+        "Data of another format than the texture's (rlsw converts it per pixel) is refused",
+        "Data shorter than the rectangle (raylib reads past it) fails",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99394,7 +99412,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlUpdateTexture semantics from the linked source, add a reference fixture, then implement Rlgl.update_texture.",
+      "next_step": "Close documented gaps and unverified gates for rlUpdateTexture.",
       "priority": 728
     },
     {
@@ -100082,23 +100100,31 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.resize_framebuffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "swResize: the default framebuffer's color and depth buffers at the new size and zeroed (color 0, depth 0.0), the viewport, scissor and matrices kept; in texture mode the stashed screen's.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Draws past a shrunk buffer write into rlsw's earlier allocation (invisible or into other rows) and are refused",
+        "Sizes outside 1..4096 are refused",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "src/frame.bend",
+        "jonlib.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -100111,7 +100137,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlResizeFramebuffer semantics from the linked source, add a reference fixture, then implement Rlgl.resize_framebuffer.",
+      "next_step": "Close documented gaps and unverified gates for rlResizeFramebuffer.",
       "priority": 728
     },
     {

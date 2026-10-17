@@ -2176,6 +2176,28 @@ def Canvas.clear_color(+color: U32, canvas: Canvas) -> Canvas:
 def Canvas.clear(+color: U32, canvas: Canvas) -> Canvas:
   Canvas.clear.buffers(Canvas.clear_color(color, canvas))
 
+def Extra.zeroed(extra: Extra, +count: U32) -> Extra:
+  Extra{_, shapes, held} = extra
+  Extra{Array.new(U32, depth(count), 0), shapes, held}
+
+def Raster.zeroed(raster: Raster, +count: U32) -> Raster:
+  Raster{_, atlas, sampler, ok, extra} = raster
+  Raster{Array.new(U32, depth(count), 0), atlas, sampler, ok, Extra.zeroed(extra, count)}
+
+def Canvas.resize.target(target: Target, +width: U32, +height: U32, +cw: U32, +ch: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas:
+  match target:
+    case Screen{stash}: Canvas{width, height, matrix, state, Raster.zeroed(raster, (width * height : U32)), rig, Screen{stash}, gl}
+    case Offscreen{_, _, _, _, stash, meta}:
+      Canvas{cw, ch, matrix, state, raster, rig, Offscreen{width, height, Array.new(U32, depth((width * height : U32)), 0), Array.new(U32, depth((width * height : U32)), 0), stash, meta}, gl}
+
+# swResize(width, height): the default framebuffer's color and depth buffers
+# reallocated at the new size and zeroed (color 0, depth 0.0); the viewport,
+# scissor and matrices are kept. In texture mode it is the stashed screen
+# that is resized.
+def Canvas.resize(canvas: Canvas, +width: U32, +height: U32) -> Canvas:
+  Canvas{+cw, +ch, matrix, state, raster, rig, target, gl} = canvas
+  Canvas.resize.target(target, width, height, cw, ch, matrix, state, raster, rig, gl)
+
 # rlglInit: swInit, then glClear with the clear color (0, 0, 0, 1) and depth 1.
 def Canvas.new.with(+width: U32, +height: U32, shapes: Shapes) -> Canvas:
   Canvas.clear(255, Canvas.build(width, height, Immediate.initial(),

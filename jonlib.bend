@@ -9048,7 +9048,6 @@ def Core.get_time(+core: Core) -> M.Float64:
 def Core.wait_time(+core: Core, +seconds: M.Float64) -> Maybe<Core>:
   Core.wrap(CoreState.Core.wait_time(Core.state(core), Core.words(seconds)))
 
-
 # IsFileDropped: no platform Jonlib runs on delivers dropped files (the memory
 # platform has no events, Base has no drop event), so dropFileCount stays 0.
 def Core.is_file_dropped(+core: Core) -> Bool:
@@ -11406,6 +11405,94 @@ def Rlgl.get_gl_texture_formats(+format: U32) -> Rlgl.GlFormats:
     case 7: Rlgl.GlFormats{6408, 6408, 5121}
     case _: Rlgl.GlFormats{0, 0, 0}
 
+# rlglInit(width, height): the frame InitWindow makes, rlglInit's software
+# context cleared, with the default font and shapes rectangle rcore adds
+# after it; None outside 1..4096.
+def Rlgl.gl_init(+width: U32, +height: U32) -> Maybe<Frame>:
+  Frame.init_window(width, height)
+
+# rlglClose: consumes the frame.
+def Rlgl.gl_close(frame: Frame) -> Unit:
+  Unit{}
+
+# Jonlib-specific (no raylib counterpart): marks the frame undefined, as a
+# refused draw does, for a program whose own computation leaves what Jonlib
+# reproduces (for example a libm function without an M.Libm profile).
+def Frame.refuse(frame: Frame) -> Frame:
+  Frame{canvas, _} = frame
+  Frame{FrameCore.Canvas.refuse(canvas), Nil{}}
+
+def Rlgl.resize.canvas(frame: Frame, +width: U32, +height: U32) -> Frame:
+  Frame{canvas, _} = frame
+  Frame{FrameCore.Canvas.resize(canvas, width, height), Nil{}}
+
+def Rlgl.resize.checked(fine: Bool, frame: Frame, +width: U32, +height: U32) -> Frame:
+  match fine:
+    case False{}: Frame.refuse(frame)
+    case True{}: Rlgl.resize.canvas(frame, width, height)
+
+# rlResizeFramebuffer(width, height): swResize, the default framebuffer's
+# color and depth buffers at the new size and zeroed (color 0, depth 0.0),
+# the viewport, scissor and matrices kept. A gap: rlsw keeps its larger
+# earlier allocation, and a draw past a smaller buffer (its rows are the
+# screen's lowest, rows being bottom-up) writes there, invisibly or into
+# other rows; Jonlib refuses it, as it refuses any draw past the buffer.
+# Sizes outside 1..4096 mark the frame undefined (rlsw's allocation can
+# fail, and a size of 0 or less leaves its buffers inconsistent).
+def Rlgl.resize_framebuffer(frame: Frame, +width: U32, +height: U32) -> Frame:
+  Rlgl.resize.checked((width >= 1 : U32) && (width <= 4096 : U32) && (height >= 1 : U32) && (height <= 4096 : U32), frame, width, height)
+
+def Rlgl.update.surface(found: Maybe<Surface>, texture: Texture, +x: U32, +y: U32, +w: U32, +h: U32) -> Result<&1, &1, Texture & Surface.Error, Texture>:
+  match found:
+    case None{}: Fail{(texture, OutOfDomain{})}
+    case Some{surface}: Texture.update_rec(texture, Rectangle{FontCore.int.f32(x), FontCore.int.f32(y), FontCore.int.f32(w), FontCore.int.f32(h)}, surface)
+
+def Rlgl.update.format(same: Bool, texture: Texture, +x: U32, +y: U32, +w: U32, +h: U32, +format: U32, +data: +List<U32>) -> Result<&1, &1, Texture & Surface.Error, Texture>:
+  match same:
+    case False{}: Fail{(texture, InvalidRequest{})}
+    case True{}:
+      +needed = (w * h * (Pixel.bits_per_pixel(format) / 8) : U32)
+      Rlgl.update.surface(Bool.pick(Maybe<Surface>, (List.length(&2, U32, data) >= U32.to_nat(needed) : Nat), Surface.from_bytes(w, h, format, List.take(&2, U32, data, U32.to_nat(needed))), None{}),
+        texture, x, y, w, h)
+
+def Rlgl.update.same(texture: Texture, +x: U32, +y: U32, +w: U32, +h: U32, +format: U32, +data: +List<U32>) -> Result<&1, &1, Texture & Surface.Error, Texture>:
+  Texture{+id, +width, +height, +texture_format, linear, +alpha, texels} = texture
+  Rlgl.update.format(U32.is_eq(format, texture_format), Texture{id, width, height, texture_format, linear, alpha, texels}, x, y, w, h, format, data)
+
+def Rlgl.update.applies(applies: Bool, texture: Texture, +x: U32, +y: U32, +w: U32, +h: U32, +format: U32, +data: +List<U32>) -> Result<&1, &1, Texture & Surface.Error, Texture>:
+  match applies:
+    case False{}: Done{texture}
+    case True{}: Rlgl.update.same(texture, x, y, w, h, format, data)
+
+def Rlgl.update.size(texture: Texture) -> Texture & (U32 & U32):
+  Texture{+id, +width, +height, +format, linear, +alpha, texels} = texture
+  (Texture{id, width, height, format, linear, alpha, texels}, (width, height))
+
+def Rlgl.GlFormats.internal(formats: Rlgl.GlFormats) -> U32:
+  Rlgl.GlFormats{internal, _, _} = formats
+  internal
+
+def Rlgl.update.bounds(size: U32 & U32, texture: Texture, +x: U32, +y: U32, +w: U32, +h: U32, +format: U32, +data: +List<U32>) -> Result<&1, &1, Texture & Surface.Error, Texture>:
+  (+width, +height) = size
+  +positive = (w >= 1 : U32) && (w < 2147483648 : U32) && (h >= 1 : U32) && (h < 2147483648 : U32) && (x < 2147483648 : U32) && (y < 2147483648 : U32)
+  +inside = positive && (x <= width : U32) && (w <= (width - x : U32) : U32) && (y <= height : U32) && (h <= (height - y : U32) : U32)
+  Rlgl.update.applies(inside && U32.is_ne(Rlgl.GlFormats.internal(Rlgl.get_gl_texture_formats(format)), 0), texture, x, y, w, h, format, data)
+
+def Rlgl.update.sized(r: Texture & (U32 & U32), +x: U32, +y: U32, +w: U32, +h: U32, +format: U32, +data: +List<U32>) -> Result<&1, &1, Texture & Surface.Error, Texture>:
+  (texture, size) = r
+  Rlgl.update.bounds(size, texture, x, y, w, h, format, data)
+
+# rlUpdateTexture(id, offsetX, offsetY, width, height, format, data) on a
+# texture value (Jonlib's textures are values, not ids), the ints as words
+# and the data as bytes: a format without OpenGL 1.1 formats (above 7) and a
+# rectangle swTexSubImage2D rejects (a size of 0 or less, past the texture)
+# change nothing; data of the texture's format is copied as it is (the
+# alpha mode stays). Fail for data shorter than the rectangle (raylib reads
+# past it) and, a gap, for data of another format (rlsw converts it per
+# pixel).
+def Rlgl.update_texture(texture: Texture, +x: U32, +y: U32, +w: U32, +h: U32, +format: U32, +data: +List<U32>) -> Result<&1, &1, Texture & Surface.Error, Texture>:
+  Rlgl.update.sized(Rlgl.update.size(texture), x, y, w, h, format, data)
+
 # rlGenTextureMipmaps: GPU mipmap generation is OpenGL 3.3/ES2's; the
 # software renderer leaves the texture and `*mipmaps` as they are.
 def Rlgl.gen_texture_mipmaps(frame: Frame, +id: U32, +width: U32, +height: U32, +format: U32, +mipmaps: U32) -> Frame & U32:
@@ -13594,7 +13681,6 @@ def Mesh.triangles(indices: Maybe<&2, +List<U32>>, +vc: U32, +tc: U32) -> Maybe<
     case None{}: Bool.pick(Maybe<&2, +List<U32>>, ((tc * 3 : U32) <= vc : U32), Some{MeshCore.sequence((tc * 3 : U32))}, None{})
     case Some{+xs}: Bool.pick(Maybe<&2, +List<U32>>, Mesh.below(xs, vc), Some{xs}, None{})
 
-
 def Mesh.zero() -> M.Vector3:
   M.Vector3{0.0, 0.0, 0.0}
 
@@ -14272,13 +14358,6 @@ def Frame.active.with(result: FrameCore.Canvas & U32) -> Frame & Bool:
 def Frame.active(frame: Frame) -> Frame & Bool:
   Frame{canvas, _} = frame
   Frame.active.with(FrameCore.Canvas.mode(canvas))
-
-# Jonlib-specific (no raylib counterpart): marks the frame undefined, as a
-# refused draw does, for a program whose own computation leaves what Jonlib
-# reproduces (for example a libm function without an M.Libm profile).
-def Frame.refuse(frame: Frame) -> Frame:
-  Frame{canvas, _} = frame
-  Frame{FrameCore.Canvas.refuse(canvas), Nil{}}
 
 def Mesh.colors.bytes(colors: Maybe<&2, +List<U32>>) -> Bool:
   match colors:

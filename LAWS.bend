@@ -4023,6 +4023,20 @@ law texture_params_clamp_to_edge_rejected:
 law texture_wrap_repeat_clears_clamps:
   {J.Texture.wrap.repeated(True{}, FrameCore.Filtering{True{}, False{}, True{}, True{}}) == FrameCore.Filtering{True{}, False{}, False{}, False{}} : FrameCore.Filtering}
 
+# rlglInit is the frame InitWindow makes; rlResizeFramebuffer refuses a size
+# of 0; rlUpdateTexture finds no OpenGL 1.1 format for format 8 (R32).
+law rlgl_gl_init_is_init_window:
+  for width: U32
+  for height: U32
+  {J.Rlgl.gl_init(width, height) == J.Frame.init_window(width, height) : Maybe<J.Frame>}
+
+law rlgl_resize_framebuffer_zero_refused:
+  for frame: J.Frame
+  {J.Rlgl.resize_framebuffer(frame, 0, 8) == J.Frame.refuse(frame) : J.Frame}
+
+law rlgl_update_texture_float_has_no_format:
+  {J.Rlgl.GlFormats.internal(J.Rlgl.get_gl_texture_formats(8)) == 0 : U32}
+
 law gui_pick_hover_keeps_drag:
   for gui: JG.Gui
   for bounds: J.Rectangle

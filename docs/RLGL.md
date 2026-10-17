@@ -152,6 +152,9 @@ Remaining shapes (`rshapes.c`):
 | `rlReadScreenPixels` | `Rlgl.read_screen_pixels(frame, width, height) -> Frame & Maybe<+List<U32>>`: a zeroed `width * height * 4` buffer, `rlCopyFramebuffer`'s RGBA read of the whole size at its start (cut to the screen, rows packed), then rows swapped end for end with every alpha 255: on the memory platform, the screen bottom-up with red and blue swapped |
 | `rlReadTexturePixels` | `Rlgl.read_texture_pixels(width, height, format) -> Maybe<+List<U32>>`: `glGetTexImage` does nothing in rlsw, so formats 1..7 give `rlGetPixelDataSize` zero bytes and other formats `NULL` (`None`) |
 | `rlLoadExtensions`, `rlGetProcAddress` | `Rlgl.load_extensions(frame)`, `Rlgl.get_proc_address(name) -> U32`: OpenGL 3.3/ES2 extension loading does nothing here and the address is NULL (0) |
+| `rlglInit` / `rlglClose` | `Rlgl.gl_init(width, height) -> Maybe<Frame>`: the frame InitWindow makes (rlglInit's software context, cleared, with the default font and shapes rectangle rcore adds after it), None outside 1..4096; `Rlgl.gl_close(frame) -> Unit` consumes it |
+| `rlResizeFramebuffer` | `Rlgl.resize_framebuffer(frame, width, height) -> Frame`: swResize, the default framebuffer's color and depth buffers at the new size and zeroed, the viewport, scissor and matrices kept (in texture mode, the stashed screen's); sizes outside 1..4096 refused |
+| `rlUpdateTexture` | `Rlgl.update_texture(texture, x, y, w, h, format, data) -> Result<Texture & Surface.Error, Texture>`: on the texture value, the ints as words and the data as bytes; a format without OpenGL 1.1 formats or a rectangle swTexSubImage2D rejects changes nothing; data of the texture's format is copied as it is |
 | `rlTextureParameters` | `Rlgl.texture_parameters(texture, param, value) -> Texture`: on the texture value (Jonlib's textures are values, not ids); swTexParameteri's filters (NEAREST, LINEAR) and wraps (REPEAT, GL_CLAMP), any other value rejected; the mirror clamp, anisotropy and mipmap bias skipped under OpenGL 1.1 ([TEXTURES.md](TEXTURES.md)) |
 | `rlGenTextureMipmaps` | `Rlgl.gen_texture_mipmaps(frame, id, width, height, format, mipmaps) -> Frame & U32`: GPU mipmaps are OpenGL 3.3/ES2's; the count given is the count left |
 | no-ops (buffers, shader objects, compute) | `Rlgl.update_vertex_buffer(_elements)`, `unload_vertex_array`, `unload_vertex_buffer`, `set_vertex_attribute`, `set_vertex_attribute_divisor`, `set_vertex_attribute_default`, `draw_vertex_array_instanced`, `draw_vertex_array_elements_instanced`, `unload_shader`, `unload_shader_program`, `compute_shader_dispatch`, `unload_shader_buffer`, `update_shader_buffer`, `bind_shader_buffer`, `read_shader_buffer`, `copy_shader_buffer`, `bind_image_texture` (buffer contents are never read: the functions take sizes only) |
@@ -311,6 +314,13 @@ shows the lights alone, or a G-buffer texture as rlsw draws it.
 
 ## Gaps
 
+- `rlResizeFramebuffer`: rlsw keeps its larger earlier allocation when the
+  buffer shrinks, and a draw past the smaller buffer (its rows are the
+  screen's lowest, rows being bottom-up) writes there, invisibly or into
+  other rows; Jonlib refuses it, as any draw past the buffer.
+  `rlUpdateTexture` with data of another format than the texture's (rlsw
+  converts it per pixel) is refused, and `rlglInit` alone (without the
+  default font InitWindow adds) is not separate.
 - `rlEnableStatePointer`/`rlDisableStatePointer`,
   `rlDrawVertexArray`/`rlDrawVertexArrayElements` (rlsw's client arrays) and
   `rlBindFramebuffer` are not exposed. The vertex array, buffer, shader
