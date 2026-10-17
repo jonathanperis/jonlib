@@ -3464,13 +3464,30 @@ law rlgl_load_texture_cubemap_is_zero:
   {J.Rlgl.load_texture_cubemap(frame, data, size, format, mipmaps) == (frame, 0) : J.Frame & U32}
 
 law rlgl_cull_distance_near_is_the_default:
-  {J.Rlgl.get_cull_distance_near() == M.Float64{1068079513, 2576980378} : M.Float64}
+  {J.Rlgl.cull.default_near() == M.Float64{1068079513, 2576980378} : M.Float64}
 
 law rlgl_cull_distance_near_as_float:
   {N.checked(1068079513, 2576980378) == Some{1028443341} : Maybe<U32>}
 
 law rlgl_cull_distance_far_is_the_default:
-  {J.Rlgl.get_cull_distance_far() == M.Float64{1085227008, 0} : M.Float64}
+  {J.Rlgl.cull.default_far() == M.Float64{1085227008, 0} : M.Float64}
+
+# A new frame's clip planes are rlgl's defaults; rlGetCullDistanceNear/Far
+# read the planes rlSetClipPlanes stored; a far equal to the near divides by
+# zero, which BeginMode3D's projections refuse.
+law rlgl_clip_planes_initial_default:
+  {FrameCore.Planes.initial() == FrameCore.Planes{1068079513, 2576980378, 1085227008, 0} : FrameCore.Planes}
+
+law rlgl_clip_planes_read_near:
+  for canvas: FrameCore.Canvas
+  {J.Rlgl.planes.read(False{}, (canvas, FrameCore.Planes{1, 2, 3, 4})) == (J.Frame{canvas, Nil{}}, M.Float64{1, 2}) : J.Frame & M.Float64}
+
+law rlgl_clip_planes_read_far:
+  for canvas: FrameCore.Canvas
+  {J.Rlgl.planes.read(True{}, (canvas, FrameCore.Planes{1, 2, 3, 4})) == (J.Frame{canvas, Nil{}}, M.Float64{3, 4}) : J.Frame & M.Float64}
+
+law rlgl_clip_planes_zero_depth_refused:
+  {J.Frame.f64.over(F.Words{1073741824, 0}, F.Words{0, 0}) == None{} : Maybe<U32>}
 
 law rlgl_cull_distance_far_as_float:
   {N.checked(1085227008, 0) == Some{1165623296} : Maybe<U32>}

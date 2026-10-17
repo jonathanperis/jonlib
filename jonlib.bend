@@ -11962,15 +11962,38 @@ def Rlgl.cubemap_parameters(frame: Frame, +id: U32, +param: U32, +value: U32) ->
 def Rlgl.load_texture_cubemap(frame: Frame, +data: +List<U32>, +size: U32, +format: U32, +mipmaps: U32) -> Frame & U32:
   (frame, 0)
 
-# rlGetCullDistanceNear / rlGetCullDistanceFar: the clip planes BeginMode3D
-# and the camera projections take, as binary64 values. rlSetClipPlanes is not
-# exposed, so they are rlgl's defaults, RL_CULL_DISTANCE_NEAR (0.05) and
-# RL_CULL_DISTANCE_FAR (4000.0).
-def Rlgl.get_cull_distance_near() -> M.Float64:
+# rlgl's default clip planes, RL_CULL_DISTANCE_NEAR (0.05) and
+# RL_CULL_DISTANCE_FAR (4000.0), as binary64 values.
+def Rlgl.cull.default_near() -> M.Float64:
   M.Float64{1068079513, 2576980378}
 
-def Rlgl.get_cull_distance_far() -> M.Float64:
+def Rlgl.cull.default_far() -> M.Float64:
   M.Float64{1085227008, 0}
+
+def Rlgl.planes.read(+far: Bool, r: FrameCore.Canvas & FrameCore.Planes) -> Frame & M.Float64:
+  (canvas, planes) = r
+  FrameCore.Planes{+nh, +nl, +fh, +fl} = planes
+  (Frame{canvas, Nil{}}, Bool.pick(M.Float64, far, M.Float64{fh, fl}, M.Float64{nh, nl}))
+
+# rlGetCullDistanceNear / rlGetCullDistanceFar: the clip planes BeginMode3D
+# takes, as binary64 values: rlgl's defaults until rlSetClipPlanes.
+def Rlgl.get_cull_distance_near(frame: Frame) -> Frame & M.Float64:
+  Frame{canvas, _} = frame
+  Rlgl.planes.read(False{}, FrameCore.Canvas.planes(canvas))
+
+def Rlgl.get_cull_distance_far(frame: Frame) -> Frame & M.Float64:
+  Frame{canvas, _} = frame
+  Rlgl.planes.read(True{}, FrameCore.Canvas.planes(canvas))
+
+# rlSetClipPlanes(nearPlane, farPlane): the doubles BeginMode3D's swFrustum
+# and swOrtho then take. BeginMode3D refuses planes its projection cannot
+# take: a far equal to the near (a zero divisor), and depth cells or
+# intermediates that overflow or leave the normal binary64 range.
+def Rlgl.set_clip_planes(frame: Frame, near: M.Float64, far: M.Float64) -> Frame:
+  Frame{canvas, _} = frame
+  M.Float64{+nh, +nl} = near
+  M.Float64{+fh, +fl} = far
+  Frame{FrameCore.Canvas.set_planes(canvas, FrameCore.Planes{nh, nl, fh, fl}), Nil{}}
 
 def Rlgl.enable_shader(frame: Frame, +id: U32) -> Frame:
   frame
@@ -14226,22 +14249,90 @@ def Frame.mode_3d.enter(projection: FrameCore.Command, +view: FrameCore.Matrix4)
   Shapes.Plan.only(True{}, [FrameCore.Mode{1}, FrameCore.Push{}, FrameCore.Identity{}, projection, FrameCore.Mode{0}, FrameCore.Identity{},
     FrameCore.Multiply{view}, FrameCore.Enable{1, True{}}])
 
+def Frame.finite(+x: F32) -> Bool:
+  (F32.abs(x) < FrameCore.float(2139095040) : F32)
+
 def Frame.finite.nonzero(+x: F32) -> Bool:
   (F32.abs(x) < FrameCore.float(2139095040) : F32) && F32.is_ne(x, 0.0)
 
-# swOrtho(-right, right, -top, top, 0.05, 4000.0) with top = fovy/2.0 and
-# right = top*aspect in binary64 (both exact): (float)(right - left) is the
-# F32 product fovy*aspect, (float)(top - bottom) is fovy, (left + right) is
-# +0 so m12/m13 are -0.0f/rl (the sign of fovy), and the depth cells are
-# constants. fovy, the span and both scales must be finite and nonzero (a
-# zero span divides 0 by 0, whose NaN sign is platform-defined).
-def Frame.mode_3d.ortho(+fovy: F32, +width: U32, +height: U32) -> Maybe<FrameCore.Matrix4>:
+def Frame.mode_3d.ortho.cells(+fovy: F32, +width: U32, +height: U32, cells: U32 & U32) -> Maybe<FrameCore.Matrix4>:
+  (+fn, +m14) = cells
   +span = (fovy * (U32.to_f32(width) / U32.to_f32(height) : F32) : F32)
   +sx = (2.0 / span : F32)
   +sy = (2.0 / fovy : F32)
+  +m10 = (F32.neg(2.0) / FrameCore.float(fn) : F32)
   +offset = Bool.pick(F32, (fovy > 0.0 : F32), F32.neg(0.0), 0.0)
-  Bool.pick(Maybe<FrameCore.Matrix4>, Frame.finite.nonzero(fovy) && Frame.finite.nonzero(span) && Frame.finite.nonzero(sx) && Frame.finite.nonzero(sy),
-    Some{FrameCore.Matrix4{sx, 0.0, 0.0, 0.0, 0.0, sy, 0.0, 0.0, 0.0, 0.0, FrameCore.float(3120763610), 0.0, offset, offset, FrameCore.float(3212837074), 1.0}}, None{})
+  Bool.pick(Maybe<FrameCore.Matrix4>, Frame.finite.nonzero(fovy) && Frame.finite.nonzero(span) && Frame.finite.nonzero(sx) && Frame.finite.nonzero(sy) && Frame.finite(m10) && Frame.finite(FrameCore.float(m14)),
+    Some{FrameCore.Matrix4{sx, 0.0, 0.0, 0.0, 0.0, sy, 0.0, 0.0, 0.0, 0.0, m10, 0.0, offset, offset, FrameCore.float(m14), 1.0}}, None{})
+
+# swOrtho(-right, right, -top, top, near, far) with top = fovy/2.0 and
+# right = top*aspect in binary64 (both exact): (float)(right - left) is the
+# F32 product fovy*aspect, (float)(top - bottom) is fovy, (left + right) is
+# +0 so m12/m13 are -0.0f/rl (the sign of fovy); the depth cells are
+# -2.0f/(float)(far - near) and -(float)(far + near)/(far - near) (`depth`,
+# None where the binary64 steps leave their domain). fovy, the span and
+# both scales must be finite and nonzero and the depth cells finite (a zero
+# span divides 0 by 0, and an infinite cell meets a zero in the matrix
+# product: NaNs whose sign is platform-defined).
+def Frame.mode_3d.ortho.with(+fovy: F32, +width: U32, +height: U32, depth: Maybe<(U32 & U32)>) -> Maybe<FrameCore.Matrix4>:
+  match depth:
+    case None{}: None{}
+    case Some{cells}: Frame.mode_3d.ortho.cells(fovy, width, height, cells)
+
+# C's (float) of a double: the F32 bits, None where the conversion is undefined.
+def Frame.f64.narrow(+value: Binary64Words.Words) -> Maybe<U32>:
+  Binary64Words.Words{+high, +low} = value
+  Binary64Narrow.checked(high, low)
+
+def Frame.f64.narrow.of(value: Maybe<Binary64Words.Words>) -> Maybe<U32>:
+  match value:
+    case None{}: None{}
+    case Some{+v}: Frame.f64.narrow(v)
+
+def Frame.f64.divide(+left: Binary64Words.Words, +right: Binary64Words.Words) -> Maybe<Binary64Words.Words>:
+  Binary64Words.Words{+ah, +al} = left
+  Binary64Words.Words{+bh, +bl} = right
+  Binary64Scaled.divide(ah, al, bh, bl)
+
+# (float)(numerator/denominator) of two doubles.
+def Frame.f64.over(+numerator: Binary64Words.Words, +denominator: Binary64Words.Words) -> Maybe<U32>:
+  Frame.f64.narrow.of(Frame.f64.divide(numerator, denominator))
+
+def Frame.f64.words(value: M.Float64) -> Binary64Words.Words:
+  M.Float64{high, low} = value
+  Binary64Words.Words{high, low}
+
+# A float's bits promoted to double.
+def Frame.f64.promote(+bits: U32) -> Binary64Words.Words:
+  Frame.f64.words(M.Float64.from_f32(FrameCore.float(bits)))
+
+def Frame.f64.negated(+value: Binary64Words.Words) -> Binary64Words.Words:
+  Binary64Words.Words{+high, +low} = value
+  Binary64Words.Words{(high .^. 2147483648 : U32), low}
+
+def Frame.f64.subtract(+left: Binary64Words.Words, +right: Binary64Words.Words) -> Maybe<Binary64Words.Words>:
+  Binary64Words.Words{+ah, +al} = left
+  Binary64Words.Words{+bh, +bl} = right
+  Binary64Scaled.subtract(ah, al, bh, bl)
+
+def Frame.f64.add(+left: Binary64Words.Words, +right: Binary64Words.Words) -> Maybe<Binary64Words.Words>:
+  Binary64Words.Words{+ah, +al} = left
+  Binary64Words.Words{+bh, +bl} = right
+  Binary64Scaled.add(ah, al, bh, bl)
+
+# The ortho depth cells' parts: (float)(far - near) and the narrowed
+# -(float)(far + near)/(far - near).
+def Frame.mode_3d.ortho.depth(+far: Binary64Words.Words, +near: Binary64Words.Words) -> Maybe<(U32 & U32)>:
+  do Maybe<&1, (U32 & U32)>:
+    +fn : Binary64Words.Words <- Frame.f64.subtract(far, near)
+    fnf : U32 <- Frame.f64.narrow(fn)
+    sum : U32 <- Frame.f64.narrow.of(Frame.f64.add(far, near))
+    m14 : U32 <- Frame.f64.over(Frame.f64.negated(Frame.f64.promote(sum)), fn)
+    return (fnf, m14)
+
+def Frame.mode_3d.ortho(+fovy: F32, +width: U32, +height: U32, +planes: FrameCore.Planes) -> Maybe<FrameCore.Matrix4>:
+  FrameCore.Planes{+nh, +nl, +fh, +fl} = planes
+  Frame.mode_3d.ortho.with(fovy, width, height, Frame.mode_3d.ortho.depth(Binary64Words.Words{fh, fl}, Binary64Words.Words{nh, nl}))
 
 def Frame.mode_3d.orthographic(matrix: Maybe<FrameCore.Matrix4>, +view: FrameCore.Matrix4) -> Shapes.Plan:
   match matrix:
@@ -14253,24 +14344,6 @@ def Frame.f64.multiply(+left: Binary64Words.Words, +right: Binary64Words.Words) 
   Binary64Words.Words{+ah, +al} = left
   Binary64Words.Words{+bh, +bl} = right
   Binary64Scaled.multiply(ah, al, bh, bl)
-
-def Frame.f64.narrowed(quotient: Maybe<Binary64Words.Words>) -> Maybe<U32>:
-  match quotient:
-    case None{}: None{}
-    case Some{Binary64Words.Words{+high, +low}}: Binary64Narrow.checked(high, low)
-
-def Frame.f64.tenth_over(span: Maybe<Binary64Words.Words>) -> Maybe<U32>:
-  match span:
-    case None{}: None{}
-    case Some{Binary64Words.Words{+high, +low}}: Frame.f64.narrowed(Binary64Scaled.divide(1069128089, 2684354560, high, low))
-
-# (float)((double)0.1f/(2*half)); None for a zero or nonfinite span.
-def Frame.f64.scale(+half: Binary64Words.Words) -> Maybe<U32>:
-  Frame.f64.tenth_over(Frame.f64.multiply(half, Binary64Words.Words{1073741824, 0}))
-
-def Frame.f64.words(value: M.Float64) -> Binary64Words.Words:
-  M.Float64{high, low} = value
-  Binary64Words.Words{high, low}
 
 def Frame.f64.float64(value: Binary64Words.Words) -> M.Float64:
   Binary64Words.Words{high, low} = value
@@ -14286,48 +14359,63 @@ def Frame.f64.negative(+value: Binary64Words.Words) -> Bool:
   (high >= 2147483648 : U32)
 
 type Frame.Frustum is Data:
-  Frame.Frustum{sx: U32, sy: U32, right: Binary64Words.Words, top: Binary64Words.Words}
+  Frame.Frustum{sx: U32, sy: U32, right: Binary64Words.Words, top: Binary64Words.Words, m10: U32, m14: U32}
 
-def Frame.mode_3d.frustum(+sx: F32, +sy: F32, +right: Binary64Words.Words, +top: Binary64Words.Words) -> Maybe<FrameCore.Matrix4>:
+def Frame.mode_3d.frustum(+sx: F32, +sy: F32, +right: Binary64Words.Words, +top: Binary64Words.Words, +m10: F32, +m14: F32) -> Maybe<FrameCore.Matrix4>:
   +m8 = Bool.pick(F32, Frame.f64.negative(right), F32.neg(0.0), 0.0)
   +m9 = Bool.pick(F32, Frame.f64.negative(top), F32.neg(0.0), 0.0)
-  Bool.pick(Maybe<FrameCore.Matrix4>, Frame.finite.nonzero(sx) && Frame.finite.nonzero(sy),
-    Some{FrameCore.Matrix4{sx, 0.0, 0.0, 0.0, 0.0, sy, 0.0, 0.0, m8, m9, FrameCore.float(3212837074), F32.neg(1.0), 0.0, 0.0, FrameCore.float(3184315765), 0.0}}, None{})
+  Bool.pick(Maybe<FrameCore.Matrix4>, Frame.finite.nonzero(sx) && Frame.finite.nonzero(sy) && Frame.finite(m10) && Frame.finite(m14),
+    Some{FrameCore.Matrix4{sx, 0.0, 0.0, 0.0, 0.0, sy, 0.0, 0.0, m8, m9, m10, F32.neg(1.0), 0.0, 0.0, m14, 0.0}}, None{})
 
 def Frame.mode_3d.frustum.parts(parts: Maybe<Frame.Frustum>) -> Maybe<FrameCore.Matrix4>:
   match parts:
     case None{}: None{}
-    case Some{Frame.Frustum{sx, sy, right, top}}: Frame.mode_3d.frustum(FrameCore.float(sx), FrameCore.float(sy), right, top)
+    case Some{Frame.Frustum{sx, sy, right, top, m10, m14}}: Frame.mode_3d.frustum(FrameCore.float(sx), FrameCore.float(sy), right, top, FrameCore.float(m10), FrameCore.float(m14))
 
-# swFrustum(-right, right, -top, top, 0.05, 4000.0) with
-# top = 0.05*tan(((double)fovy*0.5)*DEG2RAD) and right = top*aspect in
+# swFrustum(-right, right, -top, top, near, far) with
+# top = near*tan(((double)fovy*0.5)*DEG2RAD) and right = top*aspect in
 # binary64 (aspect the F32 width/height): rl and tb are exactly 2*right and
-# 2*top; m0 and m5 are (float)(znear*2.0) = 0.1f divided by them in binary64
-# and narrowed; m8 and m9 are +0.0/rl and +0.0/tb (the sign of the span); m10,
-# m11 and m14 are constants. None where M.Libm.tan is None (every AppleLibm
-# camera), where a binary64 product leaves the scaled helper's domain, and
-# where a scale is zero or not finite (fovy 0 among them).
-def Frame.mode_3d.perspective(libm: M.Libm, +fovy: F32, +width: U32, +height: U32) -> Maybe<FrameCore.Matrix4>:
+# 2*top; m0 and m5 are (float)(near*2.0) divided by them in binary64 and
+# narrowed; m8 and m9 are +0.0/rl and +0.0/tb (the sign of the span); m10 is
+# -(float)(far + near)/(far - near) and m14 -(far*near*2.0)/(far - near),
+# narrowed. None where M.Libm.tan is None (every AppleLibm camera), where a
+# binary64 step leaves the scaled helpers' domain or a conversion to float
+# is undefined, where a scale is zero or not finite (fovy 0 among them), and
+# where a depth cell is not finite.
+def Frame.mode_3d.perspective.with(libm: M.Libm, +fovy: F32, +width: U32, +height: U32, +near: Binary64Words.Words, +far: Binary64Words.Words) -> Maybe<FrameCore.Matrix4>:
   +aspect = (U32.to_f32(width) / U32.to_f32(height) : F32)
   Frame.mode_3d.frustum.parts(do Maybe<&1, Frame.Frustum>:
     half : Binary64Words.Words <- Frame.f64.multiply(Frame.f64.words(M.Float64.from_f32(fovy)), Binary64Words.Words{1071644672, 0})
     argument : Binary64Words.Words <- Frame.f64.multiply(half, Binary64Words.Words{1066524486, 2684354560})
     tangent : Binary64Words.Words <- Frame.f64.tangent(M.Libm.tan(libm, Frame.f64.float64(argument)))
-    +top : Binary64Words.Words <- Frame.f64.multiply(Binary64Words.Words{1068079513, 2576980378}, tangent)
+    +top : Binary64Words.Words <- Frame.f64.multiply(near, tangent)
     +right : Binary64Words.Words <- Frame.f64.multiply(top, Frame.f64.words(M.Float64.from_f32(aspect)))
-    sx : U32 <- Frame.f64.scale(right)
-    sy : U32 <- Frame.f64.scale(top)
-    return Frame.Frustum{sx, sy, right, top})
+    +near2 : U32 <- Frame.f64.narrow.of(Frame.f64.multiply(near, Binary64Words.Words{1073741824, 0}))
+    rl : Binary64Words.Words <- Frame.f64.multiply(right, Binary64Words.Words{1073741824, 0})
+    tb : Binary64Words.Words <- Frame.f64.multiply(top, Binary64Words.Words{1073741824, 0})
+    sx : U32 <- Frame.f64.over(Frame.f64.promote(near2), rl)
+    sy : U32 <- Frame.f64.over(Frame.f64.promote(near2), tb)
+    +fn : Binary64Words.Words <- Frame.f64.subtract(far, near)
+    sum : U32 <- Frame.f64.narrow.of(Frame.f64.add(far, near))
+    m10 : U32 <- Frame.f64.over(Frame.f64.negated(Frame.f64.promote(sum)), fn)
+    product : Binary64Words.Words <- Frame.f64.multiply(far, near)
+    twice : Binary64Words.Words <- Frame.f64.multiply(product, Binary64Words.Words{1073741824, 0})
+    m14 : U32 <- Frame.f64.over(Frame.f64.negated(twice), fn)
+    return Frame.Frustum{sx, sy, right, top, m10, m14})
+
+def Frame.mode_3d.perspective(libm: M.Libm, +fovy: F32, +width: U32, +height: U32, +planes: FrameCore.Planes) -> Maybe<FrameCore.Matrix4>:
+  FrameCore.Planes{+nh, +nl, +fh, +fl} = planes
+  Frame.mode_3d.perspective.with(libm, fovy, width, height, Binary64Words.Words{nh, nl}, Binary64Words.Words{fh, fl})
 
 def Frame.mode_3d.perspective_plan(matrix: Maybe<FrameCore.Matrix4>, +view: FrameCore.Matrix4) -> Shapes.Plan:
   match matrix:
     case None{}: Shapes.Plan.refused()
     case Some{m}: Frame.mode_3d.enter(FrameCore.PostMultiply{m}, view)
 
-def Frame.mode_3d.projection(libm: M.Libm, projection: U32, +fovy: F32, +width: U32, +height: U32, +view: FrameCore.Matrix4) -> Shapes.Plan:
+def Frame.mode_3d.projection(libm: M.Libm, projection: U32, +fovy: F32, +width: U32, +height: U32, +view: FrameCore.Matrix4, +planes: FrameCore.Planes) -> Shapes.Plan:
   match projection:
-    case 0: Frame.mode_3d.perspective_plan(Frame.mode_3d.perspective(libm, fovy, width, height), view)
-    case 1: Frame.mode_3d.orthographic(Frame.mode_3d.ortho(fovy, width, height), view)
+    case 0: Frame.mode_3d.perspective_plan(Frame.mode_3d.perspective(libm, fovy, width, height, planes), view)
+    case 1: Frame.mode_3d.orthographic(Frame.mode_3d.ortho(fovy, width, height, planes), view)
     case _: Shapes.Plan.only(True{}, [FrameCore.Mode{1}, FrameCore.Push{}, FrameCore.Identity{}, FrameCore.Mode{0}, FrameCore.Identity{},
       FrameCore.Multiply{view}, FrameCore.Enable{1, True{}}])
 
@@ -14339,14 +14427,18 @@ def Camera3D.fovy_of(+camera: Camera3D) -> F32:
   Camera3D{_, _, _, fovy, _} = camera
   fovy
 
-def Frame.mode_3d.sized(libm: M.Libm, +camera: Camera3D, canvas: FrameCore.Canvas, size: U32 & U32) -> Frame:
-  (+width, +height) = size
+def Frame.mode_3d.sized(libm: M.Libm, +camera: Camera3D, +width: U32, +height: U32, result: FrameCore.Canvas & FrameCore.Planes) -> Frame:
+  (canvas, +planes) = result
   Frame.draw(Frame{canvas, Nil{}}, Frame.mode_3d.projection(libm, Camera3D.projection_of(camera), Camera3D.fovy_of(camera), width, height,
-    Frame.matrix(Camera.view_matrix_for(M.Uncontracted{}, camera))))
+    Frame.matrix(Camera.view_matrix_for(M.Uncontracted{}, camera)), planes))
+
+def Frame.mode_3d.fbo.sized(libm: M.Libm, +camera: Camera3D, canvas: FrameCore.Canvas, size: U32 & U32) -> Frame:
+  (+width, +height) = size
+  Frame.mode_3d.sized(libm, camera, width, height, FrameCore.Canvas.planes(canvas))
 
 def Frame.mode_3d.fbo(libm: M.Libm, +camera: Camera3D, result: FrameCore.Canvas & (U32 & U32)) -> Frame:
   (canvas, size) = result
-  Frame.mode_3d.sized(libm, camera, canvas, size)
+  Frame.mode_3d.fbo.sized(libm, camera, canvas, size)
 
 # BeginMode3D(camera): the projection stack is pushed and reset; a
 # perspective camera multiplies it by swFrustum with the profile's binary64
@@ -16616,7 +16708,7 @@ def Vr.angled(angle: Maybe<F32>, +libm: M.Libm, +shift: F32, +aspect: F32, +ds: 
   match angle:
     case None{}: None{}
     case Some{+negated}:
-      Vr.config(M.Matrix.perspective_for(libm, M.Float64.from_f32((2.0 * F32.neg(negated) : F32)), M.Float64.from_f32(aspect), Rlgl.get_cull_distance_near(), Rlgl.get_cull_distance_far()),
+      Vr.config(M.Matrix.perspective_for(libm, M.Float64.from_f32((2.0 * F32.neg(negated) : F32)), M.Float64.from_f32(aspect), Rlgl.cull.default_near(), Rlgl.cull.default_far()),
         shift, aspect, ds, ipd)
 
 def Vr.loaded(valid: Bool, +libm: M.Libm, +shift: F32, +aspect: F32, +ds: F32, +ipd: F32, +height: F32, +eye: F32) -> Maybe<&2, VrStereoConfig>:

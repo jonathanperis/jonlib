@@ -93015,23 +93015,32 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.set_clip_planes",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Stores the near and far doubles in the frame; BeginMode3D takes them into swFrustum (top = near*tan(fovy/2), (float)(near*2.0)/rl, -(float)(far + near)/(far - near), -(far*near*2.0)/(far - near)) and swOrtho (-2.0f/(float)(far - near), -(float)(far + near)/(far - near)), each binary64 step rounded once (checked with perspective and orthographic cameras, a near plane cutting a cube and reversed planes).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The planes are a frame's state: a new frame has the defaults, where rlgl keeps them in statics across CloseWindow and InitWindow",
+        "GetWorldToScreen*, GetScreenToWorldRay* and the VR configuration take no frame and keep the defaults",
+        "A far equal to the near, binary64 steps outside the normal range and infinite depth cells (NaNs of platform-defined sign in the matrix product) are refused",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/RLGL.md",
+        "src/frame.bend",
+        "jonlib.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -93044,7 +93053,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlSetClipPlanes semantics from the linked source, add a reference fixture, then implement Rlgl.set_clip_planes.",
+      "next_step": "Close documented gaps and unverified gates for rlSetClipPlanes.",
       "priority": 713
     },
     {
@@ -93073,9 +93082,10 @@
       "status": "partial",
       "jonlib": "Rlgl.get_cull_distance_near",
       "mapping_state": "implemented",
-      "scope": "rlgl's default near clip plane, RL_CULL_DISTANCE_NEAR (0.05), as a binary64 value: the one BeginMode3D and the camera projections take.",
+      "scope": "The frame's near clip plane as a binary64 value: rlgl's default, RL_CULL_DISTANCE_NEAR (0.05), until rlSetClipPlanes; the one BeginMode3D takes.",
       "gaps": [
-        "rlSetClipPlanes is not exposed: the distance is always the default",
+        "Reads the frame instead of rlgl state (language adaptation)",
+        "The planes are a frame's state: a new frame has the defaults, where rlgl keeps them in statics across CloseWindow and InitWindow",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -93088,9 +93098,11 @@
         "performance": "unverified"
       },
       "evidence": [
-        "LAWS.bend",
+        "tools/models_probe.py",
         "docs/RLGL.md",
-        "jonlib.bend"
+        "src/frame.bend",
+        "jonlib.bend",
+        "LAWS.bend"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -93133,9 +93145,10 @@
       "status": "partial",
       "jonlib": "Rlgl.get_cull_distance_far",
       "mapping_state": "implemented",
-      "scope": "rlgl's default far clip plane, RL_CULL_DISTANCE_FAR (4000.0), as a binary64 value: the one BeginMode3D and the camera projections take.",
+      "scope": "The frame's far clip plane as a binary64 value: rlgl's default, RL_CULL_DISTANCE_FAR (4000.0), until rlSetClipPlanes; the one BeginMode3D takes.",
       "gaps": [
-        "rlSetClipPlanes is not exposed: the distance is always the default",
+        "Reads the frame instead of rlgl state (language adaptation)",
+        "The planes are a frame's state: a new frame has the defaults, where rlgl keeps them in statics across CloseWindow and InitWindow",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -93148,9 +93161,11 @@
         "performance": "unverified"
       },
       "evidence": [
-        "LAWS.bend",
+        "tools/models_probe.py",
         "docs/RLGL.md",
-        "jonlib.bend"
+        "src/frame.bend",
+        "jonlib.bend",
+        "LAWS.bend"
       ],
       "gate_evidence": {},
       "target_results": {},

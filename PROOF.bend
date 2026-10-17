@@ -2436,6 +2436,18 @@ def Laws.rlgl_cull_distance_far_is_the_default():
 def Laws.rlgl_cull_distance_far_as_float():
   {==}
 
+def Laws.rlgl_clip_planes_initial_default():
+  {==}
+
+def Laws.rlgl_clip_planes_read_near(canvas):
+  {==}
+
+def Laws.rlgl_clip_planes_read_far(canvas):
+  {==}
+
+def Laws.rlgl_clip_planes_zero_depth_refused():
+  {==}
+
 def Laws.color_hsv_term_six():
   {==}
 
