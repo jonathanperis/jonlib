@@ -1,0 +1,84 @@
+{
+ "schema": 1,
+ "source": "rlights.h as shipped in raylib 6.0 examples/shaders/rlights.h (and examples/models/rlights.h)",
+ "functions": {
+  "CreateLight": {
+   "status": "partial",
+   "jonlights": "Light.create",
+   "scope": "Below MAX_LIGHTS an enabled light with the shader locations of lights[count] (sent with UpdateLightValues) and the count + 1; at MAX_LIGHTS a zero light and the count kept.",
+   "gaps": [
+    "lightsCount is a Lights value the program threads (language adaptation)",
+    "Shader locations are -1 on the software renderer: a shader with uniforms is not verified",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ],
+   "evidence": [
+    "tools/lights_probe.py",
+    "docs/LIGHTS.md",
+    "jonlights.bend"
+   ]
+  },
+  "UpdateLightValues": {
+   "status": "partial",
+   "jonlights": "Light.update_values",
+   "scope": "SetShaderValue of the enabled state and type (ints), position and target (vec3) and color (vec4 of c/255); the software renderer ignores them.",
+   "gaps": [
+    "raylib reads the bool enabled through an int pointer; Jonlights sends 0 or 1",
+    "Uniform effects are not verified: the software renderer has no shaders",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ],
+   "evidence": [
+    "tools/lights_probe.py",
+    "docs/LIGHTS.md",
+    "jonlights.bend"
+   ]
+  }
+ },
+ "other": {
+  "Light": {
+   "status": "partial",
+   "jonlights": "Light",
+   "scope": "Every field; type is kind (a Bend keyword) and the color a Color word.",
+   "evidence": [
+    "tools/lights_probe.py",
+    "docs/LIGHTS.md",
+    "jonlights.bend"
+   ]
+  },
+  "LightType": {
+   "status": "partial",
+   "jonlights": "LightType.LIGHT_DIRECTIONAL / LightType.LIGHT_POINT",
+   "scope": "0 and 1.",
+   "evidence": [
+    "tools/lights_probe.py",
+    "docs/LIGHTS.md",
+    "jonlights.bend"
+   ]
+  },
+  "MAX_LIGHTS": {
+   "status": "partial",
+   "jonlights": "Light.MAX_LIGHTS",
+   "scope": "4.",
+   "evidence": [
+    "tools/lights_probe.py",
+    "docs/LIGHTS.md",
+    "jonlights.bend"
+   ]
+  },
+  "RLIGHTS_H": {
+   "status": "partial",
+   "jonlights": "import ./jonlights.bend",
+   "scope": "The include guard: a Bend import loads the module once.",
+   "evidence": [
+    "docs/LIGHTS.md"
+   ]
+  },
+  "RLIGHTS_IMPLEMENTATION": {
+   "status": "partial",
+   "jonlights": "import ./jonlights.bend",
+   "scope": "The implementation switch: importing the module brings its definitions.",
+   "evidence": [
+    "docs/LIGHTS.md"
+   ]
+  }
+ }
+}

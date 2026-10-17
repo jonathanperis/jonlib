@@ -96,6 +96,7 @@ refuse every frame, because the native example is undefined behavior in C.
   callbacks from the program's time.
 - **Jongui** ([GUI.md](docs/GUI.md)): raygui's controls.
 - **Joneasings** ([EASINGS.md](docs/EASINGS.md)): reasings.h's easing functions.
+- **Jonlights** ([LIGHTS.md](docs/LIGHTS.md)): rlights.h's lights.
 - **Execution**: native CPU, JavaScript and (with the declared compiler overlay)
   forced Metal; see [VERIFICATION.md](docs/VERIFICATION.md).
 
