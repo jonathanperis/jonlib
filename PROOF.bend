@@ -2916,6 +2916,15 @@ def Laws.config_filepath_capacity():
 def Laws.config_jonmath_implementation():
   {==}
 
+def Laws.ease_sine_in_plain_is_apple(t, b, c, d):
+  {==}
+
+def Laws.ease_elastic_in_out_plain_is_apple(t, b, c, d):
+  {==}
+
+def Laws.ease_expo_in_out_start(libm, t, b, c, d):
+  {==}
+
 def Laws.gui_pick_hover_keeps_drag(gui, bounds):
   {==}
 

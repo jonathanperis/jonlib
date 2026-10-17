@@ -99,7 +99,7 @@ def kind(path):
         return 'none'
     if path in EXAMPLE_FILES or re.fullmatch(r'examples/[a-z0-9_]+\.bend', path):
         return 'example'
-    if path in ('jonlib.bend', 'jonmath.bend', 'jongui.bend') or re.fullmatch(r'src/(lgpl/)?[a-z0-9_]+\.bend', path):
+    if re.fullmatch(r'jon[a-z]+\.bend', path) or re.fullmatch(r'src/(lgpl/)?[a-z0-9_]+\.bend', path):
         return 'library'
     if path in ('LAWS.bend', 'PROOF.bend') or re.fullmatch(r'api/[a-z0-9_]+\.json', path) or path.startswith('tools/reference/'):
         return 'named'
