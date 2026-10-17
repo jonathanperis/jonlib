@@ -276,13 +276,24 @@ examples keep the ids in a `RenderTexture2D` they fill by hand.
   would draw into its attachments with the screen's viewport: use
   `BeginTextureMode`). A texture without storage draws like a depth one: its
   rectangle in the tint alone.
-- **Cubemaps and clip planes.** `rlLoadTextureCubemap` has no body under
+- **Cubemaps.** `rlLoadTextureCubemap` has no body under
   OpenGL 1.1: `Rlgl.load_texture_cubemap(frame, data, size, format, mipmaps)`
   answers id 0 (as `LoadTextureCubemap` keeps), so a skybox's cube is drawn
   with its material's diffuse map alone (`models_skybox_rendering`).
-  `Rlgl.get_cull_distance_near()` and `Rlgl.get_cull_distance_far()` are
-  rlgl's defaults (0.05 and 4000.0) as binary64 values; `rlSetClipPlanes` is
-  not exposed.
+- **Clip planes.** `Rlgl.set_clip_planes(frame, near, far)` stores
+  rlSetClipPlanes's doubles in the frame, and
+  `Rlgl.get_cull_distance_near(frame)` / `Rlgl.get_cull_distance_far(frame)`
+  read them (a new frame has rlgl's defaults, 0.05 and 4000.0: rlgl keeps them
+  in statics across `CloseWindow`/`InitWindow`). `BeginMode3D` takes them
+  into swFrustum (`top = near*tan(fovy/2)`, `m0 = (float)(near*2.0)/rl`,
+  `m10 = -(float)(far + near)/(far - near)`, `m14 = -(far*near*2.0)/(far -
+  near)`) and swOrtho (`m10 = -2.0f/(float)(far - near)`, `m14 = -(float)(far
+  + near)/(far - near)`), each double step rounded once by Jonlib's binary64
+  helpers. A far equal to the near (a zero divisor), steps that leave the
+  normal binary64 range and infinite depth cells (which meet zeros in the
+  matrix product: NaNs of platform-defined sign) are refused.
+  `GetWorldToScreen*`, `GetScreenToWorldRay*` and the VR configuration take
+  no frame and keep the defaults.
 - **Unloading.** `rlUnloadFramebuffer` deletes the depth attachment with the
   framebuffer: pass its `Texture`, or None when it was unloaded before.
 - **A depth attachment as a texture.** rlsw binds it but turns texturing

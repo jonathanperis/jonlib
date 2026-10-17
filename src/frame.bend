@@ -1443,8 +1443,17 @@ def bound.alpha(bound: U32) -> Bool:
 type Pool is Data:
   Pool{next: U32, capacity: U32, free: +List<U32>}
 
+# rlgl's clip planes, rlCullDistanceNear and rlCullDistanceFar (binary64
+# words), which BeginMode3D's projection takes.
+type Planes is Data:
+  Planes{near_high: U32, near_low: U32, far_high: U32, far_low: U32}
+
+# RL_CULL_DISTANCE_NEAR (0.05) and RL_CULL_DISTANCE_FAR (4000.0).
+def Planes.initial() -> Planes:
+  Planes{1068079513, 2576980378, 1085227008, 0}
+
 type Rig is Data:
-  Rig{projection: Matrix4, modelview: +List<Matrix4>, depth: U32, scissor: Scissor, textures: Pool, framebuffers: Pool}
+  Rig{projection: Matrix4, modelview: +List<Matrix4>, depth: U32, scissor: Scissor, textures: Pool, framebuffers: Pool, planes: Planes}
 
 # A render texture's ids and color texture state while it is the target.
 type RenderTarget is Data:
@@ -1544,9 +1553,17 @@ def Pool.room(pool: Pool) -> U32:
   Pool{next, capacity, free} = pool
   (Pool.count(free, 0) + (capacity - next) : U32)
 
+def Rig.planes(rig: Rig) -> Planes:
+  Rig{_, _, _, _, _, _, planes} = rig
+  planes
+
+def Rig.with_planes(rig: Rig, +planes: Planes) -> Rig:
+  Rig{projection, modelview, depth, scissor, textures, framebuffers, _} = rig
+  Rig{projection, modelview, depth, scissor, textures, framebuffers, planes}
+
 def Rig.initial(+width: U32, +height: U32) -> Rig:
   Rig{Matrix4.projection(width, height), [Matrix4.identity()], 1, Scissor.set(False{}, 0.0, 0.0, U32.to_f32(width), U32.to_f32(height), U32.to_f32(width), U32.to_f32(height)),
-    Pool{2, 128, Nil{}}, Pool{1, 8, Nil{}}}
+    Pool{2, 128, Nil{}}, Pool{1, 8, Nil{}}, Planes.initial()}
 
 def Rig.top(modelview: +List<Matrix4>) -> Matrix4:
   match modelview:
@@ -1555,23 +1572,23 @@ def Rig.top(modelview: +List<Matrix4>) -> Matrix4:
 
 # The MVP swBegin computes: mul(modelview top, projection top).
 def Rig.mvp(+rig: Rig) -> Matrix4:
-  Rig{projection, modelview, _, _, _, _} = rig
+  Rig{projection, modelview, _, _, _, _, _} = rig
   Matrix4.mul(Rig.top(modelview), projection)
 
 def Rig.modelview(+rig: Rig) -> Matrix4:
-  Rig{_, modelview, _, _, _, _} = rig
+  Rig{_, modelview, _, _, _, _, _} = rig
   Rig.top(modelview)
 
 def Rig.projection(+rig: Rig) -> Matrix4:
-  Rig{projection, _, _, _, _, _} = rig
+  Rig{projection, _, _, _, _, _, _} = rig
   projection
 
 def Rig.scissor(+rig: Rig) -> Scissor:
-  Rig{_, _, _, scissor, _, _} = rig
+  Rig{_, _, _, scissor, _, _, _} = rig
   scissor
 
 def Rig.depth(+rig: Rig) -> U32:
-  Rig{_, _, depth, _, _, _} = rig
+  Rig{_, _, depth, _, _, _, _} = rig
   depth
 
 def Rig.top.set(modelview: +List<Matrix4>, +matrix: Matrix4) -> +List<Matrix4>:
@@ -1601,26 +1618,26 @@ def Rig.top.pop(modelview: +List<Matrix4>) -> +List<Matrix4>:
 
 # swLoadIdentity on the modelview.
 def Rig.identity(rig: Rig) -> Rig:
-  Rig{projection, modelview, depth, scissor, textures, framebuffers} = rig
-  Rig{projection, Rig.top.set(modelview, Matrix4.identity()), depth, scissor, textures, framebuffers}
+  Rig{projection, modelview, depth, scissor, textures, framebuffers, planes} = rig
+  Rig{projection, Rig.top.set(modelview, Matrix4.identity()), depth, scissor, textures, framebuffers, planes}
 
 # swMultMatrixf (and the translate, rotate and scale matrices): M = mul(T, M).
 def Rig.multiply(+matrix: Matrix4, rig: Rig) -> Rig:
-  Rig{projection, modelview, depth, scissor, textures, framebuffers} = rig
-  Rig{projection, Rig.top.mul(modelview, matrix), depth, scissor, textures, framebuffers}
+  Rig{projection, modelview, depth, scissor, textures, framebuffers, planes} = rig
+  Rig{projection, Rig.top.mul(modelview, matrix), depth, scissor, textures, framebuffers, planes}
 
 # swOrtho and swFrustum: M = mul(M, T).
 def Rig.post(+matrix: Matrix4, rig: Rig) -> Rig:
-  Rig{projection, modelview, depth, scissor, textures, framebuffers} = rig
-  Rig{projection, Rig.top.post(modelview, matrix), depth, scissor, textures, framebuffers}
+  Rig{projection, modelview, depth, scissor, textures, framebuffers, planes} = rig
+  Rig{projection, Rig.top.post(modelview, matrix), depth, scissor, textures, framebuffers, planes}
 
 def Rig.pushed(rig: Rig) -> Rig:
-  Rig{projection, modelview, depth, scissor, textures, framebuffers} = rig
-  Rig{projection, Rig.top.push(modelview), (depth + 1 : U32), scissor, textures, framebuffers}
+  Rig{projection, modelview, depth, scissor, textures, framebuffers, planes} = rig
+  Rig{projection, Rig.top.push(modelview), (depth + 1 : U32), scissor, textures, framebuffers, planes}
 
 def Rig.popped(rig: Rig) -> Rig:
-  Rig{projection, modelview, depth, scissor, textures, framebuffers} = rig
-  Rig{projection, Rig.top.pop(modelview), (depth - 1 : U32), scissor, textures, framebuffers}
+  Rig{projection, modelview, depth, scissor, textures, framebuffers, planes} = rig
+  Rig{projection, Rig.top.pop(modelview), (depth - 1 : U32), scissor, textures, framebuffers, planes}
 
 # swPushMatrix: a full stack (8) is an error that changes nothing.
 def Rig.push(+rig: Rig) -> Rig:
@@ -1642,15 +1659,15 @@ def Rig.apply(command: Command, +rig: Rig) -> Rig & Bool:
     case _: (rig, True{})
 
 def Rig.with_projection(+matrix: Matrix4, rig: Rig) -> Rig:
-  Rig{_, modelview, depth, scissor, textures, framebuffers} = rig
-  Rig{matrix, modelview, depth, scissor, textures, framebuffers}
+  Rig{_, modelview, depth, scissor, textures, framebuffers, planes} = rig
+  Rig{matrix, modelview, depth, scissor, textures, framebuffers, planes}
 
 # The viewport and projection of a width x height color buffer (rlViewport,
 # then rlOrtho on an identity projection) with an identity modelview, as
 # BeginTextureMode and EndTextureMode's SetupViewport leave them.
 def Rig.view(+width: U32, +height: U32, rig: Rig) -> Rig:
-  Rig{_, modelview, depth, scissor, textures, framebuffers} = rig
-  Rig{Matrix4.projection(width, height), Rig.top.set(modelview, Matrix4.identity()), depth, scissor, textures, framebuffers}
+  Rig{_, modelview, depth, scissor, textures, framebuffers, planes} = rig
+  Rig{Matrix4.projection(width, height), Rig.top.set(modelview, Matrix4.identity()), depth, scissor, textures, framebuffers, planes}
 
 # rlScissor(x, y, w, h): negative sizes are rejected by swScissor, which keeps
 # the previous rectangle; clip bounds use the current viewport size.
@@ -1660,33 +1677,33 @@ def Scissor.rect(valid: Bool, +x: F32, +y: F32, +w: F32, +h: F32, +vw: F32, +vh:
     case True{}: Scissor.set(Scissor.enabled(scissor), x, y, w, h, vw, vh)
 
 def Rig.scissor.rect(+x: F32, +y: F32, +w: F32, +h: F32, +vw: F32, +vh: F32, rig: Rig) -> Rig:
-  Rig{projection, modelview, depth, scissor, textures, framebuffers} = rig
-  Rig{projection, modelview, depth, Scissor.rect((w >= 0.0 : F32) && (h >= 0.0 : F32), x, y, w, h, vw, vh, scissor), textures, framebuffers}
+  Rig{projection, modelview, depth, scissor, textures, framebuffers, planes} = rig
+  Rig{projection, modelview, depth, Scissor.rect((w >= 0.0 : F32) && (h >= 0.0 : F32), x, y, w, h, vw, vh, scissor), textures, framebuffers, planes}
 
 def Rig.scissor.enable(on: Bool, rig: Rig) -> Rig:
-  Rig{projection, modelview, depth, scissor, textures, framebuffers} = rig
-  Rig{projection, modelview, depth, Scissor.enable(on, scissor), textures, framebuffers}
+  Rig{projection, modelview, depth, scissor, textures, framebuffers, planes} = rig
+  Rig{projection, modelview, depth, Scissor.enable(on, scissor), textures, framebuffers, planes}
 
 # BeginScissorMode: rlEnableScissorTest, then rlScissor(x, fbo height -
 # (y + h), w, h).
 def Rig.scissor.begin(+x: F32, +y: F32, +w: F32, +h: F32, +height: U32, +vw: F32, +vh: F32, rig: Rig) -> Rig:
   Rig.scissor.rect(x, (U32.to_f32(height) - (y + h : F32) : F32), w, h, vw, vh, Rig.scissor.enable(True{}, rig))
 
-def Rig.take.texture.with(projection: Matrix4, modelview: +List<Matrix4>, depth: U32, scissor: Scissor, framebuffers: Pool, taken: Pool & U32) -> Rig & U32:
+def Rig.take.texture.with(projection: Matrix4, modelview: +List<Matrix4>, depth: U32, scissor: Scissor, framebuffers: Pool, planes: Planes, taken: Pool & U32) -> Rig & U32:
   (textures, id) = taken
-  (Rig{projection, modelview, depth, scissor, textures, framebuffers}, id)
+  (Rig{projection, modelview, depth, scissor, textures, framebuffers, planes}, id)
 
 def Rig.take.texture(rig: Rig) -> Rig & U32:
-  Rig{projection, modelview, depth, scissor, textures, framebuffers} = rig
-  Rig.take.texture.with(projection, modelview, depth, scissor, framebuffers, Pool.take(textures))
+  Rig{projection, modelview, depth, scissor, textures, framebuffers, planes} = rig
+  Rig.take.texture.with(projection, modelview, depth, scissor, framebuffers, planes, Pool.take(textures))
 
-def Rig.take.framebuffer.with(projection: Matrix4, modelview: +List<Matrix4>, depth: U32, scissor: Scissor, textures: Pool, taken: Pool & U32) -> Rig & U32:
+def Rig.take.framebuffer.with(projection: Matrix4, modelview: +List<Matrix4>, depth: U32, scissor: Scissor, textures: Pool, planes: Planes, taken: Pool & U32) -> Rig & U32:
   (framebuffers, id) = taken
-  (Rig{projection, modelview, depth, scissor, textures, framebuffers}, id)
+  (Rig{projection, modelview, depth, scissor, textures, framebuffers, planes}, id)
 
 def Rig.take.framebuffer(rig: Rig) -> Rig & U32:
-  Rig{projection, modelview, depth, scissor, textures, framebuffers} = rig
-  Rig.take.framebuffer.with(projection, modelview, depth, scissor, textures, Pool.take(framebuffers))
+  Rig{projection, modelview, depth, scissor, textures, framebuffers, planes} = rig
+  Rig.take.framebuffer.with(projection, modelview, depth, scissor, textures, planes, Pool.take(framebuffers))
 
 def Rig.take(framebuffer: Bool, rig: Rig) -> Rig & U32:
   match framebuffer:
@@ -1694,12 +1711,12 @@ def Rig.take(framebuffer: Bool, rig: Rig) -> Rig & U32:
     case True{}: Rig.take.framebuffer(rig)
 
 def Rig.give(+framebuffer: Bool, +id: U32, rig: Rig) -> Rig:
-  Rig{projection, modelview, depth, scissor, +textures, +framebuffers} = rig
+  Rig{projection, modelview, depth, scissor, +textures, +framebuffers, planes} = rig
   Rig{projection, modelview, depth, scissor, Bool.pick(Pool, framebuffer, textures, Pool.give(id, textures)),
-    Bool.pick(Pool, framebuffer, Pool.give(id, framebuffers), framebuffers)}
+    Bool.pick(Pool, framebuffer, Pool.give(id, framebuffers), framebuffers), planes}
 
 def Rig.room(+rig: Rig) -> U32:
-  Rig{_, _, _, _, textures, _} = rig
+  Rig{_, _, _, _, textures, _, _} = rig
   Pool.room(textures)
 
 # -----------------------------------------------------------------------------
@@ -2524,6 +2541,15 @@ def Canvas.forget(+id: U32, canvas: Canvas) -> Canvas:
 def Canvas.end_target(canvas: Canvas) -> Canvas & Maybe<Detached>:
   Canvas{width, height, _, state, raster, rig, target, gl} = canvas
   Canvas.target.end(target, width, height, state, raster, rig, gl)
+
+# rlgl's clip planes (rlCullDistanceNear/Far), and rlSetClipPlanes's.
+def Canvas.planes(canvas: Canvas) -> Canvas & Planes:
+  Canvas{width, height, matrix, state, raster, +rig, target, gl} = canvas
+  (Canvas{width, height, matrix, state, raster, rig, target, gl}, Rig.planes(rig))
+
+def Canvas.set_planes(canvas: Canvas, +planes: Planes) -> Canvas:
+  Canvas{width, height, matrix, state, raster, rig, target, gl} = canvas
+  Canvas{width, height, matrix, state, raster, Rig.with_planes(rig, planes), target, gl}
 
 def Canvas.rigged(width: U32, height: U32, matrix: Matrix4, state: Immediate, raster: Raster, target: Target, gl: GlBox, result: Rig & U32) -> Canvas & U32:
   (rig, id) = result

@@ -108,8 +108,8 @@ The algorithms keep the reference order and edge behavior:
   `aspect = (double)width/(double)height`; that quotient and `top*aspect` are
   rounded in binary64 by Jonlib's checked binary64 helpers
   ([BINARY64.md](BINARY64.md)) before the F32 casts. The cull distances are
-  rlgl's defaults, `0.05` and `4000.0` (raylib's `rlSetClipPlanes` state is not
-  modelled).
+  rlgl's defaults, `0.05` and `4000.0`: these functions take no frame, so
+  `Rlgl.set_clip_planes` (which `BeginMode3D` follows) does not reach them.
 - `CAMERA_PERSPECTIVE` (0) is `MatrixPerspective(fovy*DEG2RAD, aspect, 0.05,
   4000.0)` with the F32 product `fovy*DEG2RAD` and the profile's binary64 `tan`
   (`M.Libm.tan`, [PERSPECTIVE.md](PERSPECTIVE.md)); a perspective ray starts at
@@ -199,7 +199,8 @@ are never refused.
 
 ## Not ported here
 
-- `rlSetClipPlanes` cull distances other than rlgl's defaults.
+- `rlSetClipPlanes` cull distances other than rlgl's defaults in the
+  screen-space queries (they take no frame; `BeginMode3D` follows them).
 - A verified kernel for macOS arm64 `sinf`/`cosf` (nonzero `M.AppleLibm{}`
   rotations).
 

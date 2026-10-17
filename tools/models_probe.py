@@ -37,6 +37,7 @@ import hashlib
 import json
 import math
 import random
+import struct
 
 from conformance import gradient_reference
 import frame_probe as fp
@@ -60,7 +61,7 @@ HALF = rp.HALF
 KINDS = {'mode3d': 300, 'end3d': 301, 'line3d': 302, 'point3d': 303, 'circle3d': 304, 'tri3d': 305, 'strip3d': 306, 'cube': 307,
          'cube_v': 308, 'cube_wires': 309, 'cube_wires_v': 310, 'sphere': 311, 'sphere_ex': 312, 'sphere_wires': 313, 'cylinder': 314,
          'cylinder_ex': 315, 'cylinder_wires': 316, 'cylinder_wires_ex': 317, 'capsule': 318, 'capsule_wires': 319, 'plane': 320,
-         'ray': 321, 'grid': 322, 'bbox': 323}
+         'ray': 321, 'grid': 322, 'bbox': 323, 'clip': 324}
 
 
 # -----------------------------------------------------------------------------
@@ -74,27 +75,72 @@ def finite_nonzero(x):
     return math.isfinite(x) and x != 0.0
 
 
-def ortho_ok(fovy, width, height):
-    span = f32(fovy * f32(width / height))
-    return finite_nonzero(fovy) and finite_nonzero(span) and finite_nonzero(f32(2.0 / span)) and finite_nonzero(f32(2.0 / fovy))
-
-
-TENTH = f32(0.1)
-NEAR = 0.05
+DEFAULT_PLANES = (0.05, 4000.0)
 DEG2RAD64 = float(DEG2RAD)
 
 
-def perspective_ok(libm, fovy, width, height):
-    """Frame.mode_3d.perspective: the profile's binary64 tan and finite, nonzero F32 scales
-    (float)(0.1f/(2*right)) and (float)(0.1f/(2*top)). The host tan stands in for the profile's
-    here; it only decides finiteness, which no corpus camera puts near a boundary."""
+class Outside(Exception):
+    """A binary64 step Jonlib's scaled helpers refuse (src/binary64_scaled.bend)."""
+
+
+def f64(x):
+    """A normal or zero binary64 operand or result; subnormals, infinities and NaNs leave the domain."""
+    if x != 0.0 and not (math.isfinite(x) and abs(x) >= 2.0 ** -1022):
+        raise Outside
+    return x
+
+
+def over(numerator, denominator):
+    if f64(denominator) == 0.0:
+        raise Outside
+    return f64(f64(numerator) / denominator)
+
+
+def narrow(x):
+    """C's (float) of a finite double: overflow gives a signed infinity."""
+    return fp.f32(x) if abs(x) <= 3.4028235677973366e38 else math.copysign(math.inf, x)
+
+
+def promoted(x):
+    """A float promoted to double as a scaled operand (an infinity leaves the domain)."""
+    return f64(x)
+
+
+def ortho_ok(fovy, width, height, planes=DEFAULT_PLANES):
+    span = f32(fovy * f32(width / height))
+    if not (finite_nonzero(fovy) and finite_nonzero(span) and finite_nonzero(f32(2.0 / span)) and finite_nonzero(f32(2.0 / fovy))):
+        return False
+    near, far = planes
+    try:
+        fn = f64(f64(far) - f64(near))
+        m10 = f32(-2.0 / narrow(fn)) if narrow(fn) != 0.0 else math.inf
+        m14 = narrow(over(-promoted(narrow(f64(far + near))), fn))
+    except Outside:
+        return False
+    return math.isfinite(m10) and math.isfinite(m14)
+
+
+def perspective_ok(libm, fovy, width, height, planes=DEFAULT_PLANES):
+    """Frame.mode_3d.perspective: the profile's binary64 tan, swFrustum's binary64 steps inside the
+    scaled helpers' domain, finite, nonzero F32 scales (float)(near*2)/(2*right) and /(2*top), and
+    finite depth cells. The host tan stands in for the profile's here; it only decides finiteness,
+    which no corpus camera puts near a boundary."""
     if libm == 'AppleLibm' or not math.isfinite(fovy):
         return False
-    top = NEAR * math.tan((fovy * 0.5) * DEG2RAD64)
-    right = top * f32(f32(width) / f32(height))
-    if top == 0.0 or right == 0.0:
+    near, far = planes
+    try:
+        tangent = f64(math.tan(f64(f64(fovy * 0.5) * DEG2RAD64)))
+        top = f64(f64(near) * tangent)
+        right = f64(top * f32(f32(width) / f32(height)))
+        near2 = narrow(f64(near * 2.0))
+        sx = narrow(over(promoted(near2), f64(right * 2.0)))
+        sy = narrow(over(promoted(near2), f64(top * 2.0)))
+        fn = f64(f64(far) - near)
+        m10 = narrow(over(-promoted(narrow(f64(far + near))), fn))
+        m14 = narrow(over(-f64(f64(far * near) * 2.0), fn))
+    except Outside:
         return False
-    return finite_nonzero(f32(TENTH / (2.0 * right))) and finite_nonzero(f32(TENTH / (2.0 * top)))
+    return finite_nonzero(sx) and finite_nonzero(sy) and math.isfinite(m10) and math.isfinite(m14)
 
 
 def all_ok(libm, args):
@@ -106,11 +152,11 @@ def count_ok(value, limit):
     return n is not None and n <= limit
 
 
-def op_refused(op, libm, size):
+def op_refused(op, libm, size, planes=DEFAULT_PLANES):
     name, a = op[0], op[1:]
     if name == 'mode3d':
         projection, fovy = a[10], a[9]
-        return (projection == 0 and not perspective_ok(libm, fovy, *size)) or (projection == 1 and not ortho_ok(fovy, *size))
+        return (projection == 0 and not perspective_ok(libm, fovy, *size, planes)) or (projection == 1 and not ortho_ok(fovy, *size, planes))
     if name == 'circle3d':
         return not all_ok(libm, [f32(a[7] * DEG2RAD)] + [f32(DEG2RAD * float(d)) for d in range(0, 370, 10)])
     if name in ('sphere', 'sphere_ex'):
@@ -165,8 +211,13 @@ def refused(scene, libm):
     plain = dict(scene, ops=[op for op in scene['ops'] if op[0] not in KINDS])
     if rp.refused(plain, libm):
         return True
-    size = (scene['width'], scene['height'])
-    return any(op_refused(op, libm, size) for op in scene['ops'] if op[0] in KINDS)
+    size, planes = (scene['width'], scene['height']), DEFAULT_PLANES
+    for op in scene['ops']:
+        if op[0] == 'clip':
+            planes = op[1:]
+        elif op[0] in KINDS and op_refused(op, libm, size, planes):
+            return True
+    return False
 
 
 # -----------------------------------------------------------------------------
@@ -330,6 +381,25 @@ def scenes():
                 ops.append((kind,) + p + (color,))
         ops += [('end3d',), ('end',)]
         add(f'm3-persp-random-{index}', w, h, ops)
+
+    # rlSetClipPlanes: BeginMode3D's swFrustum and swOrtho take the planes set before it.
+    add('m3-clip-perspective', 40, 30, [('begin',), ('clear', C(245, 245, 245)), ('clip', 0.5, 50.0), classic, ('get', 'projection'),
+                                        ('cube',) + v3(0.0, 0.0, 0.0) + (2.0, 2.0, 2.0, RED), ('grid', 10.0, 1.0), ('end3d',), ('end',)])
+    add('m3-clip-perspective-far', 32, 24, [('begin',), ('clear', BLACK), ('clip', 0.1, 14.0), classic, ('get', 'projection'),
+                                            ('cube',) + v3(0.0, 0.0, 0.0) + (2.0, 2.0, 2.0, RED), ('cube',) + v3(4.0, 0.0, 4.0) + (2.0, 2.0, 2.0, GREEN),
+                                            ('cube',) + v3(-3.0, 0.0, -3.0) + (2.0, 2.0, 2.0, BLUE), ('end3d',), ('end',)])
+    add('m3-clip-ortho', 40, 30, [('begin',), ('clear', C(30, 30, 40)), ('clip', 1.0, 20.0), front, ('get', 'projection'),
+                                  ('cube',) + v3(-1.5, 0.5, 0.0) + (2.0, 2.0, 2.0, RED), ('cube',) + v3(1.0, 0.0, 1.0) + (2.0, 1.0, 2.0, GREEN),
+                                  ('end3d',), ('end',)])
+    # The near plane cuts the front cube at z = 9.6 - 10 = -0.4 in front of the camera's target.
+    add('m3-clip-ortho-near', 40, 30, [('begin',), ('clear', BLACK), ('clip', 9.6, 10.5), front, ('get', 'projection'),
+                                       ('cube',) + v3(0.0, 0.0, 0.0) + (3.0, 3.0, 3.0, RED), ('cube_wires',) + v3(2.0, 1.0, -0.25) + (1.0, 1.0, 1.0, WHITE),
+                                       ('end3d',), ('end',)])
+    add('m3-clip-reversed', 32, 24, [('begin',), ('clear', BLACK), ('clip', 20.0, 1.0), front, ('get', 'projection'),
+                                     ('cube',) + v3(0.0, 0.0, 0.0) + (2.0, 2.0, 2.0, RED), ('end3d',), ('end',)])
+    add('m3-clip-equal', 16, 12, [('clip', 2.0, 2.0), front])
+    add('m3-clip-equal-perspective', 16, 12, [('clip', 2.0, 2.0), classic])
+    add('m3-clip-huge', 16, 12, [('clip', 0.05, 1e300), classic])
     return out
 
 
@@ -370,6 +440,7 @@ def c_op(op):
         'ray': lambda: f'DrawRay((Ray){{ {cv3(*a[0:3])}, {cv3(*a[3:6])} }}, {cc(a[6])});',
         'grid': lambda: f'DrawGrid({ci(a[0])}, {cf(a[1])});',
         'bbox': lambda: f'DrawBoundingBox((BoundingBox){{ {cv3(*a[0:3])}, {cv3(*a[3:6])} }}, {cc(a[6])});',
+        'clip': lambda: f'rlSetClipPlanes({a[0]!r}, {a[1]!r});',
     }
     return '    ' + calls[name]()
 
@@ -377,7 +448,11 @@ def c_op(op):
 def c_scene(scene):
     lines = ['    { Texture2D t[4] = { 0 }; RenderTexture2D r[2] = { 0 }; (void)t; (void)r;', f'    InitWindow({scene["width"]}, {scene["height"]}, "");']
     lines += [c_op(op) for op in scene['ops']]
-    lines += [f'    dump({scene["width"]}, {scene["height"]}, {int(scene["screen"])});', '    CloseWindow(); }']
+    lines += [f'    dump({scene["width"]}, {scene["height"]}, {int(scene["screen"])});', '    CloseWindow();']
+    # rlgl keeps the planes in statics across windows; a Jonlib frame starts with the defaults.
+    if any(op[0] == 'clip' for op in scene['ops']):
+        lines.append('    rlSetClipPlanes(RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);')
+    lines.append('    }')
     return '\n'.join(lines)
 
 
@@ -423,6 +498,7 @@ def m3.draw(kind: U32, +w: +List<U32>, frame: J.Frame) -> J.Frame:
     case 320: J.Draw.plane(frame, wv3(0n, w), wv(3n, w), wu(5n, w))
     case 321: J.Draw.ray(frame, J.Ray{wv3(0n, w), wv3(3n, w)}, wu(6n, w))
     case 322: J.Draw.grid(frame, wf(0n, w), wf(1n, w))
+    case 324: J.Rlgl.set_clip_planes(frame, M.Float64{wu(0n, w), wu(1n, w)}, M.Float64{wu(2n, w), wu(3n, w)})
     case _: J.Draw.bounding_box(frame, J.BoundingBox{wv3(0n, w), wv3(3n, w)}, wu(6n, w))
 
 def mstep.select(mine: Bool, +kind: U32, +w: +List<U32>, s: St) -> St:
@@ -459,7 +535,14 @@ def op_words(op):
         return kind, []
     if name == 'grid':
         return kind, [W(x) for x in a]
+    if name == 'clip':
+        return kind, [word for x in a for word in double_words(x)]
     return kind, [W(x) for x in a[:-1]] + [a[-1]]
+
+
+def double_words(x):
+    bits = struct.unpack('<Q', struct.pack('<d', x))[0]
+    return [bits >> 32, bits & 0xFFFFFFFF]
 
 
 def b_op(op):
