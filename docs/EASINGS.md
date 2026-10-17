@@ -44,6 +44,9 @@ raylib's examples build it on Linux).
 - **Inline definitions.** `REASINGS_STATIC_INLINE` and `EASEDEF` select C
   linkage; every Bend definition is visible to importers.
 
+The ported examples `shapes_easings_ball`, `shapes_easings_box`,
+`shapes_easings_rectangles` and `shapes_easings_testbed` import Joneasings.
+
 Coverage is tracked in `api/joneasings.json`: the 28 functions and the
 header's four macros (`REASINGS_H`, `REASINGS_STATIC_INLINE` and `EASEDEF` are
 C glue; `PI` is Jonmath's `M.Math.PI()`, the same float).

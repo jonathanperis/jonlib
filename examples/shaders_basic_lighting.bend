@@ -1,8 +1,8 @@
 # raylib [shaders] example - basic lighting, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_basic_lighting.c and the
-# CreateLight/UpdateLightValues of examples/shaders/rlights.h (zlib/libpng,
-# Copyright (c) 2019-2025 Chris Camacho (@chriscamacho) and Ramon Santamaria
-# (@raysan5)); see LICENSES/raylib.txt.
+# Adapted from raylib 6.0 examples/shaders/shaders_basic_lighting.c
+# (zlib/libpng, Copyright (c) 2019-2025 Chris Camacho (@chriscamacho) and
+# Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt. CreateLight and
+# UpdateLightValues are Jonlights' (docs/LIGHTS.md).
 #
 # An orbital camera around a plane and a cube drawn with the lighting shader,
 # and four point lights (Y/R/G/B toggle them: a solid sphere when on, a
@@ -16,22 +16,31 @@
 import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M
+import ../jonlights.bend as L
 
-type Lights is Data:
-  Lights{yellow: Bool, red: Bool, green: Bool, blue: Bool}
-
+# lights[MAX_LIGHTS], in creation order.
 type State is Data:
-  State{camera: +Maybe<J.Camera3D>, lights: Lights, shader: J.Shader}
+  State{camera: +Maybe<J.Camera3D>, lights: +List<L.Light>, shader: J.Shader}
 
 def start() -> J.Camera3D:
   J.Camera3D{M.Vector3{2.0, 4.0, 6.0}, M.Vector3{0.0, 0.5, 0.0}, M.Vector3{0.0, 1.0, 0.0}, 45.0, J.CameraProjection.CAMERA_PERSPECTIVE()}
 
-def pressed(+core: J.Core, +code: U32, +on: Bool) -> Bool:
-  Bool.pick(Bool, J.Input.is_key_pressed(core, code), Bool.not(on), on)
+# lights[i].enabled = !lights[i].enabled when its key is pressed.
+def light.toggled(+flip: Bool, +one: L.Light) -> L.Light:
+  L.Light{+kind, +enabled, +position, +target, +color, +attenuation, +el, +tl, +pl, +gl, +cl, +al} = one
+  L.Light{kind, Bool.pick(Bool, flip, Bool.not(enabled), enabled), position, target, color, attenuation, el, tl, pl, gl, cl, al}
 
-def toggled(+core: J.Core, lights: Lights) -> Lights:
-  Lights{+y, +r, +g, +b} = lights
-  Lights{pressed(core, 89, y), pressed(core, 82, r), pressed(core, 71, g), pressed(core, 66, b)}
+# KEY_Y, KEY_R, KEY_G and KEY_B, one per light.
+def toggled(+core: J.Core, +keys: +List<U32>, +lights: +List<L.Light>) -> +List<L.Light>:
+  match keys lights:
+    case Con{+k, +ks} Con{+l, +ls}: Con{light.toggled(J.Input.is_key_pressed(core, k), l), toggled(core, ks, ls)}
+    case _ _: Nil{}
+
+# for (i < MAX_LIGHTS) UpdateLightValues(shader, lights[i]).
+def updated(+lights: +List<L.Light>, +shader: J.Shader) -> J.Shader:
+  match lights:
+    case Nil{}: shader
+    case Con{+l, +ls}: updated(ls, L.Light.update_values(shader, l))
 
 def camera.updated(updated: Maybe<J.Camera3D>) -> +Maybe<J.Camera3D>:
   match updated:
@@ -56,29 +65,32 @@ def view(+shader: J.Shader, camera: +Maybe<J.Camera3D>) -> J.Shader:
 
 # UpdateCamera(CAMERA_ORBITAL), the view uniform, the toggles and UpdateLightValues (no-ops here).
 def update(+libm: M.Libm, +core: J.Core, +state: State) -> J.Core & State:
-  State{+camera, lights, +shader} = state
+  State{+camera, +lights, +shader} = state
   +moved = camera.update(libm, core, camera)
-  (core, State{moved, toggled(core, lights), view(shader, moved)})
+  +switched = toggled(core, [89, 82, 71, 66], lights)
+  (core, State{moved, switched, updated(switched, view(shader, moved))})
 
 # DrawSphereEx(position, 0.2, 8, 8, color) when on, else DrawSphereWires with ColorAlpha(color, 0.3).
-def light(+libm: M.Libm, on: Bool, position: M.Vector3, +color: U32, frame: J.Frame) -> J.Frame:
+def light.drawn(+libm: M.Libm, on: Bool, position: M.Vector3, +color: U32, frame: J.Frame) -> J.Frame:
   match on:
     case True{}: J.Draw.sphere_ex_for(libm, frame, position, 0.2, 8.0, 8.0, color)
     case False{}: J.Draw.sphere_wires_for(libm, frame, position, 0.2, 8.0, 8.0, J.Color.with_alpha(color, 0.3))
 
-def lights(+libm: M.Libm, lights: Lights, frame: J.Frame) -> J.Frame:
-  Lights{y, r, g, b} = lights
-  f1 = light(libm, y, M.Vector3{F32.neg(2.0), 1.0, F32.neg(2.0)}, J.Color.YELLOW(), frame)
-  f2 = light(libm, r, M.Vector3{2.0, 1.0, 2.0}, J.Color.RED(), f1)
-  f3 = light(libm, g, M.Vector3{F32.neg(2.0), 1.0, 2.0}, J.Color.GREEN(), f2)
-  light(libm, b, M.Vector3{2.0, 1.0, F32.neg(2.0)}, J.Color.BLUE(), f3)
+def light(+libm: M.Libm, +one: L.Light, frame: J.Frame) -> J.Frame:
+  L.Light{_, +enabled, +position, _, +color, _, _, _, _, _, _, _} = one
+  light.drawn(libm, enabled, position, color, frame)
 
-def scene.at(+libm: M.Libm, +camera: J.Camera3D, +shader: J.Shader, +on: Lights, frame: J.Frame) -> J.Frame:
+def lights(+libm: M.Libm, +all: +List<L.Light>, frame: J.Frame) -> J.Frame:
+  match all:
+    case Nil{}: frame
+    case Con{+l, +ls}: lights(libm, ls, light(libm, l, frame))
+
+def scene.at(+libm: M.Libm, +camera: J.Camera3D, +shader: J.Shader, +on: +List<L.Light>, frame: J.Frame) -> J.Frame:
   f1 = J.Frame.begin_shader_mode(J.Frame.begin_mode_3d_for(libm, frame, camera), shader)
   f2 = J.Frame.end_shader_mode(J.Draw.cube(J.Draw.plane(f1, M.Vector3.zero(), M.Vector2{10.0, 10.0}, J.Color.WHITE()), M.Vector3.zero(), 2.0, 4.0, 2.0, J.Color.WHITE()))
   J.Frame.end_mode_3d(J.Draw.grid(lights(libm, on, f2), 10.0, 1.0))
 
-def scene(+libm: M.Libm, camera: +Maybe<J.Camera3D>, +shader: J.Shader, +on: Lights, frame: J.Frame) -> J.Frame:
+def scene(+libm: M.Libm, camera: +Maybe<J.Camera3D>, +shader: J.Shader, +on: +List<L.Light>, frame: J.Frame) -> J.Frame:
   match camera:
     case None{}: J.Frame.refuse(frame)
     case Some{+c}: scene.at(libm, c, shader, on, frame)
@@ -101,12 +113,46 @@ def draw(+libm: M.Libm, +core: J.Core, +state: State, frame: J.Frame) -> J.Core 
 def program(+libm: M.Libm) -> J.Program<State>:
   J.Program{core => state => update(libm, core, state), core => state => frame => draw(libm, core, state, frame)}
 
+def snoc(+xs: +List<L.Light>, +x: L.Light) -> +List<L.Light>:
+  match xs:
+    case Nil{}: [x]
+    case Con{+h, +rest}: Con{h, snoc(rest, x)}
+
+def created.add(+list: +List<L.Light>, +shader: J.Shader, made: L.Lights & L.Light) -> (L.Lights & +List<L.Light>) & J.Shader:
+  (count, +light) = made
+  ((count, snoc(list, light)), shader)
+
+def created.made(+list: +List<L.Light>, made: (L.Lights & L.Light) & J.Shader) -> (L.Lights & +List<L.Light>) & J.Shader:
+  (inner, +shader) = made
+  created.add(list, shader, inner)
+
+def created.inner(+shader: J.Shader, +position: M.Vector3, +color: U32, inner: L.Lights & +List<L.Light>) -> (L.Lights & +List<L.Light>) & J.Shader:
+  (count, +list) = inner
+  created.made(list, L.Light.create(count, L.LightType.LIGHT_POINT(), position, M.Vector3.zero(), color, shader))
+
+# lights[i] = CreateLight(LIGHT_POINT, position, Vector3Zero(), color, shader).
+def created(st: (L.Lights & +List<L.Light>) & J.Shader, +position: M.Vector3, +color: U32) -> (L.Lights & +List<L.Light>) & J.Shader:
+  (inner, +shader) = st
+  created.inner(shader, position, color, inner)
+
+def started.with(+core: J.Core, frame: J.Frame, +shader: J.Shader, inner: L.Lights & +List<L.Light>) -> J.Core & (J.Frame & State):
+  (_, +lights) = inner
+  (J.Core.set_target_fps(core, 60), (frame, State{Some{start()}, lights, shader}))
+
+def started(+core: J.Core, frame: J.Frame, made: (L.Lights & +List<L.Light>) & J.Shader) -> J.Core & (J.Frame & State):
+  (inner, +shader) = made
+  started.with(core, frame, shader, inner)
+
 # LoadShader of the lighting shader (id 0 here, as on the software renderer),
-# the ambient uniform and four lights, all on; SetTargetFPS(60).
+# the ambient uniform and four point lights (CreateLight enables them);
+# SetTargetFPS(60).
 def setup(+core: J.Core, frame: J.Frame) -> J.Core & (J.Frame & State):
   +shader = J.Shader.load(Some{"resources/shaders/glsl330/lighting.vs"}, Some{"resources/shaders/glsl330/lighting.fs"})
   +ambient = J.Shader.set_value(shader, J.Shader.get_location(shader, "ambient"), [F32.bits(0.1), F32.bits(0.1), F32.bits(0.1), F32.bits(1.0)], 3)
-  (J.Core.set_target_fps(core, 60), (frame, State{Some{start()}, Lights{True{}, True{}, True{}, True{}}, ambient}))
+  s1 = created(((L.Lights.new(), []), ambient), M.Vector3{F32.neg(2.0), 1.0, F32.neg(2.0)}, J.Color.YELLOW())
+  s2 = created(s1, M.Vector3{2.0, 1.0, 2.0}, J.Color.RED())
+  s3 = created(s2, M.Vector3{F32.neg(2.0), 1.0, 2.0}, J.Color.GREEN())
+  started(core, frame, created(s3, M.Vector3{2.0, 1.0, F32.neg(2.0)}, J.Color.BLUE()))
 
 def run(args: List<String>) -> IO(Unit):
   J.Desktop.run(~State, ~program(M.Glibc239Libm{}), ~M.Glibc239Libm{}, "raylib [shaders] example - basic lighting", 800, 450, J.Desktop.frames_arg(args),

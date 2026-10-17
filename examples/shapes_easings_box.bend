@@ -1,9 +1,8 @@
 # raylib [shapes] example - easings box, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_easings_box.c and the
-# EaseElasticOut/EaseBounceOut/EaseQuadOut/EaseCircOut/EaseSineOut of
-# examples/shapes/reasings.h (zlib/libpng, Copyright (c) 2014-2025 Ramon
-# Santamaria (@raysan5); reasings.h after Robert Penner's easing equations,
-# BSD); see LICENSES/raylib.txt.
+# Adapted from raylib 6.0 examples/shapes/shapes_easings_box.c (zlib/libpng,
+# Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see
+# LICENSES/raylib.txt. EaseElasticOut, EaseBounceOut, EaseQuadOut, EaseCircOut
+# and EaseSineOut are Joneasings' (docs/EASINGS.md).
 #
 # A box dropped to the center (elastic out), flattened into a bar (bounce
 # out), turned (quad out), grown over the screen (circ out) and faded (sine
@@ -14,56 +13,11 @@
 import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M
+import ../joneasings.bend as E
 
 # rec (its x stays GetScreenWidth()/2), rotation, alpha, state and framesCounter; ok: no refusal so far.
 type State is Data:
   State{y: F32, width: F32, height: F32, rotation: F32, alpha: F32, phase: U32, frames: U32, ok: Bool}
-
-def elastic_out.at(+b: F32, +c: F32, power: Maybe<F32>, sine: Maybe<F32>) -> Maybe<F32>:
-  match power sine:
-    case Some{+p} Some{+s}: Some{(c * p * s + c + b : F32)}
-    case _ _: None{}
-
-# p = d*0.3f, a = c, s = p/4: a*powf(2, -10*t)*sinf((t*d - s)*(2*PI)/p) + c + b, t being t/d.
-def elastic_out.moving(+libm: M.Libm, +t: F32, +b: F32, +c: F32, +d: F32) -> Maybe<F32>:
-  +p = (d * 0.3 : F32)
-  +s = (p / 4.0 : F32)
-  elastic_out.at(b, c, M.Libm.pow2(libm, (F32.neg(10.0) * t : F32)), M.Libm.sin(libm, ((t * d - s) * (2.0 * M.Math.PI()) / p : F32)))
-
-# EaseElasticOut(t, b, c, d): b at t == 0, b + c where t/d == 1.
-def elastic_out(+libm: M.Libm, +t: F32, +b: F32, +c: F32, +d: F32) -> Maybe<F32>:
-  Bool.pick(Maybe<F32>, F32.is_eq(t, 0.0), Some{b}, Bool.pick(Maybe<F32>, F32.is_eq((t / d : F32), 1.0), Some{(b + c : F32)}, elastic_out.moving(libm, (t / d : F32), b, c, d)))
-
-# The later arcs: postFix = t -= offset; c*(7.5625f*postFix*t + rise) + b.
-def bounce.arc(+t: F32, +b: F32, +c: F32, +offset: F32, +rise: F32) -> F32:
-  (c * (7.5625 * (t - offset) * (t - offset) + rise) + b : F32)
-
-# EaseBounceOut(t, b, c, d). The example's third bound is the double 2.5/2.75; a float is below it exactly when it is
-# below the float 2.5f/2.75f (the nearest float, which is above the double).
-def bounce_out(+t: F32, +b: F32, +c: F32, +d: F32) -> F32:
-  +u = (t / d : F32)
-  Bool.pick(F32, (u < (1.0 / 2.75) : F32), (c * (7.5625 * u * u) + b : F32),
-    Bool.pick(F32, (u < (2.0 / 2.75) : F32), bounce.arc(u, b, c, (1.5 / 2.75 : F32), 0.75),
-      Bool.pick(F32, (u < (2.5 / 2.75) : F32), bounce.arc(u, b, c, (2.25 / 2.75 : F32), 0.9375), bounce.arc(u, b, c, (2.625 / 2.75 : F32), 0.984375))))
-
-# EaseQuadOut(t, b, c, d): t /= d; -c*t*(t - 2) + b.
-def quad_out(+t: F32, +b: F32, +c: F32, +d: F32) -> F32:
-  +u = (t / d : F32)
-  (F32.neg(c) * u * (u - 2.0) + b : F32)
-
-# EaseCircOut(t, b, c, d): t = t/d - 1; c*sqrtf(1 - t*t) + b.
-def circ_out(+t: F32, +b: F32, +c: F32, +d: F32) -> F32:
-  +u = (t / d - 1.0 : F32)
-  (c * F32.sqrt((1.0 - u * u : F32)) + b : F32)
-
-def sine_out.at(+b: F32, +c: F32, sine: Maybe<F32>) -> Maybe<F32>:
-  match sine:
-    case None{}: None{}
-    case Some{+s}: Some{(c * s + b : F32)}
-
-# EaseSineOut(t, b, c, d): c*sinf(t/d*(PI/2)) + b.
-def sine_out(+libm: M.Libm, +t: F32, +b: F32, +c: F32, +d: F32) -> Maybe<F32>:
-  sine_out.at(b, c, M.Libm.sin(libm, (t / d * (M.Math.PI() / 2.0) : F32)))
 
 def next(+done: Bool, +phase: U32) -> U32:
   Bool.pick(U32, done, (phase + 1 : U32), phase)
@@ -89,11 +43,11 @@ def faded(+state: State, +n: U32, value: Maybe<F32>) -> State:
 def stepped(+libm: M.Libm, +state: State, +n: U32, phase: U32) -> State:
   State{+y, +width, +height, +rotation, +alpha, _, _, +ok} = state
   match phase:
-    case 0: dropped(state, n, elastic_out(libm, U32.to_f32(n), F32.neg(100.0), (450.0 / 2.0 + 100.0 : F32), 120.0))
-    case 1: State{y, bounce_out(U32.to_f32(n), 100.0, 800.0, 120.0), bounce_out(U32.to_f32(n), 100.0, F32.neg(90.0), 120.0), rotation, alpha, next((n >= 120 : U32), 1), count((n >= 120 : U32), n), ok}
-    case 2: State{y, width, height, quad_out(U32.to_f32(n), 0.0, 270.0, 240.0), alpha, next((n >= 240 : U32), 2), count((n >= 240 : U32), n), ok}
-    case 3: State{y, width, circ_out(U32.to_f32(n), 10.0, 800.0, 120.0), rotation, alpha, next((n >= 120 : U32), 3), count((n >= 120 : U32), n), ok}
-    case 4: faded(state, n, sine_out(libm, U32.to_f32(n), 1.0, F32.neg(1.0), 160.0))
+    case 0: dropped(state, n, E.Ease.elastic_out_for(libm, U32.to_f32(n), F32.neg(100.0), (450.0 / 2.0 + 100.0 : F32), 120.0))
+    case 1: State{y, E.Ease.bounce_out(U32.to_f32(n), 100.0, 800.0, 120.0), E.Ease.bounce_out(U32.to_f32(n), 100.0, F32.neg(90.0), 120.0), rotation, alpha, next((n >= 120 : U32), 1), count((n >= 120 : U32), n), ok}
+    case 2: State{y, width, height, E.Ease.quad_out(U32.to_f32(n), 0.0, 270.0, 240.0), alpha, next((n >= 240 : U32), 2), count((n >= 240 : U32), n), ok}
+    case 3: State{y, width, E.Ease.circ_out(U32.to_f32(n), 10.0, 800.0, 120.0), rotation, alpha, next((n >= 120 : U32), 3), count((n >= 120 : U32), n), ok}
+    case 4: faded(state, n, E.Ease.sine_out_for(libm, U32.to_f32(n), 1.0, F32.neg(1.0), 160.0))
     case _: state
 
 # SPACE: the box, its rotation and alpha, the state and the counter as at the start.
