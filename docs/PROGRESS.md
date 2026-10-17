@@ -58,7 +58,7 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 | 27 | 5 | `camera` — Camera controls and projection | 22 | 22 | 0 | jonmath, input, frame |
 | 28 | 5 | `vr` — VR stereo configuration and rendering | 4 | 4 | 0 | camera, shaders |
 | 29 | 6 | `rlgl-advanced` — rlgl buffers, compute and low-level interop | 52 | 52 | 0 | rlgl-core, shaders, textures |
-| 30 | 7 | `configuration` — Build switches, limits and source-package compatibility | 207 | 29 | 0 | types |
+| 30 | 7 | `configuration` — Build switches, limits and source-package compatibility | 207 | 150 | 0 | types |
 | 31 | 7 | `platforms` — Complete platform/backend validation | 0 | 0 | 0 | window, input, frame, audio-stream, rlgl-advanced |
 
 ## Next work queue

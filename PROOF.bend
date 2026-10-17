@@ -2901,6 +2901,18 @@ def Laws.rlgl_arrays_disable_vertex():
 def Laws.rlgl_arrays_range_from_offset():
   {==}
 
+def Laws.config_graphics_api_software():
+  {==}
+
+def Laws.config_graphics_api_11():
+  {==}
+
+def Laws.config_graphics_api_not_33():
+  {==}
+
+def Laws.config_filepath_capacity():
+  {==}
+
 def Laws.gui_pick_hover_keeps_drag(gui, bounds):
   {==}
 
