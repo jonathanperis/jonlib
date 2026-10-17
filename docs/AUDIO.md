@@ -1705,6 +1705,19 @@ file's bytes, read where jar_mod reads them.
   on x86 and Apple arm64 (the hosts Jonlib is verified on) and unsigned on
   Linux arm64, where raylib's MOD music sounds differently.
 
+**Musics.** `Music.load` and `Music.load_from_memory` (".mod", ".MOD") load
+a module as raylib's `LoadMusicStream` does: data of 1 byte to 32 MiB,
+`jar_mod_load`, a 16-bit stereo stream of the device's rate (jar_mod plays
+at 48000 Hz whatever it is, as in raylib), `jar_mod_max_samples` frames and
+looping on; a file jar_mod does not load is `InvalidWaveHeader`, one it
+meets undefined behaviour in `InvalidWaveData`, and a song whose count never
+ends in raylib `UnsupportedWaveFormat`. `Music.update` fills each half with
+`jar_mod_fillbuffer`, `Music.stop` goes back to the song's start
+(`jar_mod_seek_start`), `Music.seek` does nothing for a module, and the time
+played is the stream's, as for the other formats. `Music.why` is 1 once the
+player has read past its file. `tools/mod_music_probe.py` (gate
+`mod-music`) compares them with raylib's raudio.c.
+
 `tools/mod_probe.py` (gate `mod`) compares the loads, lengths and whole
 songs (hashes of every 4096-sample chunk) with jar_mod.h on seeded modules
 of four to eight channels and of 15 samples, every effect above, looping
@@ -2137,8 +2150,8 @@ what `Wave.decode` refuses, a QOA file that does not hold every frame its
 header counts (qoaplay decodes a frame at a time and would play what is
 there), an MP3 file dr_mp3 does not open or whose first frame it decodes by
 leaving one of its arrays, a module as "XM modules" says, an Ogg Vorbis
-stream as below, and every other format. FLAC and MOD music are not ported
-yet. Left as they are: `Music.update` for a
+stream as below, a MOD module as "MOD modules" says, and every other format.
+FLAC music is not ported (raylib's default build leaves FLAC out). Left as they are: `Music.update` for a
 music without frames (raylib reads it for ever when it loops);
 `Music.seek` for a module (raylib does not seek in one), a position whose
 frame is not an unsigned int, a stream without a tracked buffer (raylib

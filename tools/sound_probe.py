@@ -1215,11 +1215,13 @@ static void state(int first)
         Music m = musics[s];
         int live = (slot_id[s] > 0) && !gone[slot_id[s] - 1];
         if (m.ctxData == NULL) { printf(" U-"); continue; }
-        if ((m.ctxType != MUSIC_AUDIO_WAV) && (m.ctxType != MUSIC_AUDIO_QOA) && (m.ctxType != MUSIC_AUDIO_MP3) && (m.ctxType != MUSIC_MODULE_XM) && (m.ctxType != MUSIC_AUDIO_OGG)) exit(10);
+        if ((m.ctxType != MUSIC_AUDIO_WAV) && (m.ctxType != MUSIC_AUDIO_QOA) && (m.ctxType != MUSIC_AUDIO_MP3) && (m.ctxType != MUSIC_MODULE_XM) && (m.ctxType != MUSIC_MODULE_MOD)
+            && (m.ctxType != MUSIC_AUDIO_OGG)) exit(10);
         printf(" U%d,%u,%d,%u,%u,", (int)IsMusicValid(m), m.frameCount, (int)m.looping,
                (m.ctxType == MUSIC_AUDIO_WAV)? (unsigned)((drwav *)m.ctxData)->readCursorInPCMFrames :
                (m.ctxType == MUSIC_AUDIO_MP3)? (unsigned)((drmp3 *)m.ctxData)->currentPCMFrame :
                (m.ctxType == MUSIC_MODULE_XM)? (unsigned)((jar_xm_context_t *)m.ctxData)->generated_samples :
+               (m.ctxType == MUSIC_MODULE_MOD)? (unsigned)((jar_mod_context_t *)m.ctxData)->samplenb :
                (m.ctxType == MUSIC_AUDIO_OGG)? (unsigned)stb_vorbis_get_sample_offset((stb_vorbis *)m.ctxData) : ((qoaplay_desc *)m.ctxData)->sample_position, timed(GetMusicTimeLength(m)));
         // a module's time is its player's count of samples: raylib reads neither the buffer nor the device for it
         if ((m.stream.buffer == NULL) || (AUDIO.System.isReady && live) || (m.ctxType == MUSIC_MODULE_XM)) printf("%u", timed(GetMusicTimePlayed(m)));
@@ -1450,6 +1452,7 @@ import ../../src/mixer.bend as Mixer
 import ../../src/resampler.bend as Resampler
 import ../../src/mp3_stream.bend as Mp3S
 import ../../src/xm_mixer.bend as XmX
+import ../../src/mod.bend as ModS
 import ../../src/vorbis_packet.bend as VorbisK
 import ../../src/vorbis_frame.bend as VorbisF
 
@@ -1598,6 +1601,7 @@ def music.at(context: J.Music.Context) -> String:
     case J.MusicQoa{_, at}: U32.show(at)
     case J.MusicMp3{player}: U32.show(Mp3S.Player.current(player))
     case J.MusicXm{player}: U32.show(XmX.generated.of(player))
+    case J.MusicMod{player}: U32.show(ModS.Player.samples(player))
     case J.MusicOgg{_, frames, _, _}: ogg.offset(VorbisF.Frames.state(frames))
 
 # A time's bits; a NaN (the length of a music without a rate) as one NaN, whatever sign the machine gives it.

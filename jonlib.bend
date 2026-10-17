@@ -75,6 +75,7 @@ import ./src/vorbis_length.bend as VorbisL
 import ./src/xm_module.bend as XmM
 import ./src/xm_player.bend as XmPl
 import ./src/xm_mixer.bend as XmX
+import ./src/mod.bend as ModP
 import ./src/input.bend as InputCore
 import ./src/gestures.bend as GestureCore
 import ./src/automation.bend as AutomationCore
@@ -7748,6 +7749,7 @@ type Music.Context is Data:
   MusicQoa{samples: +List<U32>, at: U32}
   MusicMp3{player: Mp3S.Player}
   MusicXm{player: XmPl.Player}
+  MusicMod{player: ModP.Player}
   MusicOgg{plan: VorbisK.Plan, frames: VorbisF.Frames, start: VorbisF.Frames, why: U32}
 
 type Music is Data:
@@ -7926,6 +7928,35 @@ def Music.decode.ogg(started: VorbisF.Started, +audio: AudioDevice) -> AudioDevi
     case VorbisF.Ready{+plan, +frames, +rate, +first}:
       Music.ogg.ready(Bool.not(VorbisF.Frames.refused(frames)) && U32.is_ne(first, 0), VorbisF.Frames.refused(frames), audio, plan, frames, rate, first)
 
+# A MOD music as raylib leaves it: a 16-bit stereo stream of the device's
+# rate (jar_mod plays at 48000 Hz whatever it is), the samples
+# jar_mod_max_samples counts, looping on, and the player back at the song's
+# start (jar_mod_seek_start).
+def Music.loaded.mod(loaded: AudioDevice & AudioStream, +frames: U32, +module: ModP.Mod) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  (+audio, +stream) = loaded
+  (audio, Done{Music{stream, frames, True{}, 7, MusicMod{ModP.Player.new(module)}}})
+
+def Music.decode.mod.counted(counted: ModP.Counted, +module: ModP.Mod, +rate: U32, +audio: AudioDevice) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  match counted:
+    case ModP.Counted{+frames, 0}: Music.loaded.mod(AudioStream.load(audio, rate, 16, 2), frames, module)
+    case ModP.Counted{_, 2}: (audio, Fail{UnsupportedWaveFormat{}})
+    case ModP.Counted{_, _}: (audio, Fail{InvalidWaveData{}})
+
+# jar_mod_load (data of 1 byte to 32 MiB), then the song's length
+# (jar_mod_max_samples): a file jar_mod does not load is InvalidWaveHeader,
+# one where it meets what C leaves undefined InvalidWaveData, and a song
+# whose count never ends in raylib (or passes 2^20 rows) UnsupportedWaveFormat.
+def Music.decode.mod.loaded(loaded: ModP.Loaded, +rate: U32, +audio: AudioDevice) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  match loaded:
+    case ModP.Loaded{+module}: Music.decode.mod.counted(ModP.Player.max_samples(module), module, rate, audio)
+    case ModP.Failed{0}: (audio, Fail{InvalidWaveHeader{}})
+    case ModP.Failed{_}: (audio, Fail{InvalidWaveData{}})
+
+def Music.decode.mod(sized: Bool, +bytes: +List<U32>, +rate: U32, +audio: AudioDevice) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+  match sized:
+    case False{}: (audio, Fail{InvalidWaveHeader{}})
+    case True{}: Music.decode.mod.loaded(ModP.load(bytes), rate, audio)
+
 def Music.decode.selected(kind: U32, +memory: Bool, +libm: M.Libm, +audio: AudioDevice, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
   match kind:
     case 1: Music.decode.wav(Wav.bits(bytes), audio, bytes)
@@ -7933,12 +7964,13 @@ def Music.decode.selected(kind: U32, +memory: Bool, +libm: M.Libm, +audio: Audio
     case 4: Music.decode.mp3(Music.decode.mp3.opened(memory, bytes), audio)
     case 5: Music.decode.qoa(Qoa.decode(bytes), audio, Music.qoa.declared(bytes))
     case 6: Music.decode.xm(XmM.load(bytes), libm, Music.device.rate(AudioDevice.is_ready(audio)), audio)
+    case 7: Music.decode.mod(U32.is_ne(ModP.count.bytes(bytes), 0) && (ModP.count.bytes(bytes) < 33554432 : U32), bytes, Music.device.rate(AudioDevice.is_ready(audio)), audio)
     case _: (audio, Fail{UnsupportedWaveFormat{}})
 
 def Music.decode.kind(+file_type: String) -> U32:
   Bool.pick(U32, String.eq(file_type, ".wav") || String.eq(file_type, ".WAV"), 1, Bool.pick(U32, String.eq(file_type, ".qoa") || String.eq(file_type, ".QOA"), 5,
     Bool.pick(U32, String.eq(file_type, ".mp3") || String.eq(file_type, ".MP3"), 4, Bool.pick(U32, String.eq(file_type, ".xm") || String.eq(file_type, ".XM"), 6,
-      Bool.pick(U32, String.eq(file_type, ".ogg") || String.eq(file_type, ".OGG"), 2, 0)))))
+      Bool.pick(U32, String.eq(file_type, ".ogg") || String.eq(file_type, ".OGG"), 2, Bool.pick(U32, String.eq(file_type, ".mod") || String.eq(file_type, ".MOD"), 7, 0))))))
 
 # LoadMusicStreamFromMemory. ".wav" (".WAV") data: every file Wave.decode
 # reads whose samples are 16, 24 or 32 bits wide, with a stream of the file's
@@ -8000,6 +8032,7 @@ def Music.context.loaded(context: Music.Context) -> Bool:
     case MusicQoa{_, _}: True{}
     case MusicMp3{_}: True{}
     case MusicXm{_}: True{}
+    case MusicMod{_}: True{}
     case MusicOgg{_, _, _, _}: True{}
 
 # 0 for a music that plays as raylib plays it. An XM music whose player has
@@ -8015,6 +8048,7 @@ def Music.context.loaded(context: Music.Context) -> Bool:
 def Music.context.why(context: Music.Context) -> U32:
   match context:
     case MusicXm{player}: XmPl.Player.why(player)
+    case MusicMod{player}: ModP.Player.why(player)
     case MusicOgg{_, _, _, why}: why
     case _: 0
 
@@ -8065,6 +8099,7 @@ def Music.context.rewound(context: Music.Context) -> Music.Context:
     case MusicQoa{samples, _}: MusicQoa{samples, 0}
     case MusicMp3{player}: MusicMp3{Mp3S.rewind(player)}
     case MusicXm{player}: MusicXm{XmPl.reset(player)}
+    case MusicMod{player}: MusicMod{ModP.Player.new(ModP.Player.module(player))}
     case MusicOgg{plan, _, +start, why}: MusicOgg{plan, start, start, why}
 
 # StopMusicStream: the stream stops and the decoder goes back to its first
@@ -8215,6 +8250,12 @@ def Music.read.ogg.at(silent: Bool, +plan: VorbisK.Plan, +frames: VorbisF.Frames
     case False{}: Music.read.ogg(Music.ogg.read(U32.to_nat((need + 2 : U32)), plan, start, channels, MusicOggRead{frames, need, Nil{}, False{}, 0, U32.is_eq(need, 0)}), plan, start,
       (need * channels : U32))
 
+# jar_mod_fillbuffer for the frames to stream: two shorts a frame (silence
+# from a player that has stopped).
+def Music.read.mod(filled: ModP.Filled) -> Music.Read:
+  ModP.Filled{+player, +words} = filled
+  MusicRead{words, MusicMod{player}}
+
 # qoaplay_decode reads the same way: at the end of the file it goes back to
 # the first frame (qoaplay_rewind) for the next sample. An MP3 music reads
 # its stream (Music.mp3.read), and an XM music has its player generate the
@@ -8226,6 +8267,7 @@ def Music.read(context: Music.Context, +channels: U32, +total: U32, +need: U32) 
     case MusicQoa{+samples, +at}: Music.read.qoa(Music.wav.read(U32.to_nat(((need / U32.max(total, 1)) + 3 : U32)), False{}, samples, channels, total, U32.min(at, total), need, Nil{}), samples)
     case MusicMp3{+player}: Music.read.mp3(Music.mp3.read(U32.to_nat((need + 2 : U32)), MusicMp3Read{player, need, Nil{}, False{}, U32.is_eq(need, 0)}), (need * channels : U32))
     case MusicXm{+player}: Music.read.xm(XmX.generate(player, need), need)
+    case MusicMod{+player}: Music.read.mod(ModP.Player.fill(player, need))
     case MusicOgg{+plan, +frames, +start, +why}: Music.read.ogg.at(U32.is_ne(why, 0), plan, frames, start, why, channels, need)
 
 def Music.fed(read: Music.Read, +audio: AudioDevice, +stream: AudioStream, +frames: U32, +looping: Bool, +kind: U32, +count: U32) -> AudioDevice & Music:
@@ -8310,6 +8352,7 @@ def Music.context.sought(context: Music.Context, +position: U32, +total: U32) ->
     case MusicQoa{samples, _}: MusicQoa{samples, Music.qoa.sought(position, total)}
     case MusicMp3{+player}: Music.mp3.sought(Mp3S.seek(player, position))
     case MusicXm{player}: MusicXm{player}
+    case MusicMod{player}: MusicMod{player}
     case MusicOgg{plan, frames, start, _}: MusicOgg{plan, frames, start, 6}
 
 # Whether SeekMusicStream does anything for the decoder: raylib returns at
@@ -8317,6 +8360,7 @@ def Music.context.sought(context: Music.Context, +position: U32, +total: U32) ->
 def Music.context.seeks(context: Music.Context) -> Bool:
   match context:
     case MusicXm{_}: False{}
+    case MusicMod{_}: False{}
     case _: True{}
 
 # What SeekMusicStream writes to the stream's framesProcessed: the frame

@@ -4166,6 +4166,13 @@ law mod_sine_peak:
 law mod_sine_after_peak:
   {Mods.sine(17) == 253 : U32}
 
+# ".mod" and ".MOD" are raylib's MOD music (MUSIC_MODULE_MOD, 7).
+law music_mod_kind:
+  {J.Music.decode.kind(".mod") == 7 : U32}
+
+law music_mod_kind_upper:
+  {J.Music.decode.kind(".MOD") == 7 : U32}
+
 law gui_pick_hover_keeps_drag:
   for gui: JG.Gui
   for bounds: J.Rectangle

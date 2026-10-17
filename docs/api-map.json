@@ -6372,13 +6372,13 @@
   "LoadMusicStream": {
     "jonlib": "Music.load",
     "status": "profile-covered",
-    "scope": "A WAV, QOA or MP3 file's music: a stream of the file's rate and channels (16-bit samples for 16- and 24-bit WAV files, floats for 32-bit ones, for QOA and for MP3), the frame count (an MP3's is drmp3_get_pcm_frame_count) and looping on. An XM module's (Music.load_for under a libm profile): a float stream of the device's rate and two channels and jar_xm_get_remaining_samples' frames. The stream has no buffer on an unready device and the music is still loaded; fields, stream and decoder position compared with raylib.",
+    "scope": "A WAV, QOA or MP3 file's music: a stream of the file's rate and channels (16-bit samples for 16- and 24-bit WAV, floats for 32-bit WAV, QOA and MP3), the frame count (MP3: drmp3_get_pcm_frame_count) and looping on. An XM (Music.load_for, a libm profile) or MOD module's: a stream of the device's rate and two channels (floats; 16 bits for MOD, played at 48000 Hz) and the song's frames. No buffer on an unready device, the music still loaded; compared with raylib.",
     "gaps": [
-      "WAV, QOA, MP3, XM and Ogg Vorbis files only: FLAC and MOD music are not ported",
+      "FLAC music is not ported (raylib's default build leaves FLAC out: SUPPORT_FILEFORMAT_FLAC is 0)",
       "Fail for WAV sample sizes other than 16, 24 and 32 bits (raylib streams what its shared buffer holds) and for what Wave.decode refuses",
       "Fail for a QOA file that does not hold every frame its header counts (qoaplay decodes a frame at a time)",
       "A typed error instead of a zero Music for a file that is not loaded",
-      "Fail for a module whose loading or first time through its song is undefined in C, does not end, is past 16 MiB or needs a sine or power of two the libm profile lacks (AppleLibm, Music.load, has none)",
+      "Fail for an XM or MOD module whose load or length count is undefined in C or never ends, an XM one past 16 MiB or needing a sine or power of two its libm profile lacks",
       "An XM music's random waveform starts as a process's first module's does (jar_xm shares one state between modules)"
     ],
     "api_id": "raylib:function:LoadMusicStream",
@@ -6387,9 +6387,9 @@
   "LoadMusicStreamFromMemory": {
     "jonlib": "Music.load_from_memory",
     "status": "profile-covered",
-    "scope": "As Music.load, from the file's bytes and the \".wav\", \".qoa\", \".mp3\" or \".xm\" token, in lower or upper case as raylib takes them (Music.load_from_memory_for under a libm profile).",
+    "scope": "As Music.load, from the file's bytes and the \".wav\", \".qoa\", \".mp3\", \".xm\" or \".mod\" token, in lower or upper case as raylib takes them (Music.load_from_memory_for under a libm profile).",
     "gaps": [
-      "WAV, QOA, MP3, XM and Ogg Vorbis files only: FLAC and MOD music are not ported",
+      "FLAC music is not ported (raylib's default build leaves FLAC out: SUPPORT_FILEFORMAT_FLAC is 0)",
       "Fail for sample sizes other than 16, 24 and 32 bits and for what Wave.decode refuses",
       "Fail for a module as Music.load fails for it"
     ],
@@ -6440,13 +6440,14 @@
   "UpdateMusicStream": {
     "jonlib": "Music.update",
     "status": "profile-covered",
-    "scope": "Each processed half of a playing music's stream takes the decoder's next frames, the first half then the second: a whole half while the music loops (the file again from its first frame; an MP3's or Ogg Vorbis's stream from its start whenever a read comes short; an XM player just goes on) or has as many left, else what is left; with none left and both halves processed the music stops, its decoder at the first frame; halves, counts and decoder position compared with raylib.",
+    "scope": "Each processed half of a playing music's stream takes the decoder's next frames, the first half then the second: a whole half while the music loops (the file again from its first frame; an MP3's or Ogg Vorbis's stream from its start whenever a read comes short; an XM or MOD player just goes on) or has as many left, else what is left; with none left and both halves processed the music stops, its decoder at the first frame; halves, counts and decoder position compared with raylib.",
     "gaps": [
       "The decoder's state is in the Music value, which the function gives back: no shared ctxData pointer",
-      "WAV, QOA, MP3, XM and Ogg Vorbis files only: FLAC and MOD music are not ported",
+      "FLAC music is not ported (raylib's default build leaves FLAC out: SUPPORT_FILEFORMAT_FLAC is 0)",
       "Nothing for a music without frames (raylib reads it for ever when it loops)",
       "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
-      "An XM player that meets what C leaves undefined, a NaN sample or 2^32 samples gives silence from there (Music.why says so)"
+      "An XM player that meets what C leaves undefined, a NaN sample or 2^32 samples gives silence from there (Music.why says so)",
+      "A MOD player that reads past its file (a looping sample at its end) gives silence from there (Music.why is 1)"
     ],
     "api_id": "raylib:function:UpdateMusicStream",
     "milestone": "audio-stream"
@@ -6454,7 +6455,7 @@
   "StopMusicStream": {
     "jonlib": "Music.stop",
     "status": "profile-covered",
-    "scope": "The stream stops and the decoder goes back to its first frame, playing or not; an XM music's player is reset (jar_xm_reset), an Ogg Vorbis music's decoder goes back to its first frame (stb_vorbis_seek_start).",
+    "scope": "The stream stops and the decoder goes back to its first frame, playing or not; an XM music's player is reset (jar_xm_reset), a MOD music's goes back to the song's start (jar_mod_seek_start), an Ogg Vorbis music's decoder goes back to its first frame (stb_vorbis_seek_start).",
     "gaps": [
       "The decoder's state is in the Music value, which the function gives back: no shared ctxData pointer",
       "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
@@ -6487,7 +6488,7 @@
   "SeekMusicStream": {
     "jonlib": "Music.seek",
     "status": "profile-covered",
-    "scope": "The decoder goes to frame (unsigned int)(position*sampleRate), at most the file's last; the stream's framesProcessed is that frame, not clamped, and both halves are processed. A QOA music goes to the start of the QOA frame (5120 samples) the position is in, which is also its framesProcessed. An MP3 music seeks as drmp3_seek_to_pcm_frame does without a seek table: by dr_mp3's count of frames, which has the LAME delay in it, reading up to the frame. Nothing for an XM music, as in raylib. Compared with raylib.",
+    "scope": "The decoder goes to frame (unsigned int)(position*sampleRate), at most the file's last; the stream's framesProcessed is that frame, not clamped, and both halves are processed. A QOA music goes to the start of the QOA frame (5120 samples) the position is in, which is also its framesProcessed. An MP3 music seeks as drmp3_seek_to_pcm_frame does without a seek table: by dr_mp3's count of frames, which has the LAME delay in it, reading up to the frame. Nothing for an XM or MOD music, as in raylib. Compared with raylib.",
     "gaps": [
       "The decoder's state is in the Music value, which the function gives back: no shared ctxData pointer",
       "Nothing for a position whose frame is not an unsigned int, a stream without a tracked buffer (raylib writes through the pointer) and an unready device",
