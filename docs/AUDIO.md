@@ -1648,6 +1648,69 @@ AppleLibm profile every frame is a contract.
 
 Still to come: the music stream (`LoadMusicStream` for `.xm`).
 
+## MOD modules
+
+`src/mod.bend` is an adaptation of jar_mod (pinned raylib's
+`src/external/jar_mod.h`), which raylib's `LoadMusicStream` calls for `.mod`
+files, at the settings raylib leaves it with: 48000 Hz whatever the device's
+rate, stereo, 16 bits, the filter and a stereo separation of 1.
+`load(bytes)` is `Loaded{module}` or `Failed{why}`: 0 where `jar_mod_load`
+returns 0 (a file that ends at or before its patterns, or before a sample's
+data), 1 where C is undefined (a file shorter than the 1084 bytes jar_mod
+copies, a pattern table entry past its 128 patterns). The module is the
+file's bytes, read where jar_mod reads them.
+
+- **Channels.** The signature at 1080 (`M.K.`, `M!K!`, `FLT4`, `FLT8`,
+  `4CHN`, `6CHN`, `8CHN`, `10CH` to `32CH`); without one, a 15-sample
+  module: four channels, the table at 470 and the patterns at 600, the
+  last 16 samples empty.
+- **Patterns** up to the table's largest entry (all 128 entries, whatever
+  the song's length), 256 bytes a channel each; **samples** after them, the
+  lengths, repeat points and repeat lengths as big-endian words doubled in
+  16 bits (a count of 32768 words or more wraps), a repeat past the
+  length cut to `length - reppnt` in 16 bits, and a sample of length 0 with
+  no data.
+- **The player** (`Player.sample`, `Player.fill`): `jar_mod_fillbuffer`'s
+  row tick (`worknote` for each channel, then the row's end: the next row,
+  the jump, or the next table position, wrapping and counting a loop past
+  the song's length), effect tick (`workeffect`) and mix: each channel's
+  position steps by `(73<<10)/finalperiod` (nothing for a period of 0 and
+  for a negative one, which C turns into a huge unsigned long), wraps into
+  the repeat or ends, and the signed byte there times the volume goes left
+  (channels 0 and 3 of each four) or right (1 and 2); then the filter
+  (`(l + last)>>1`), the separation (`l += r>>1`, then `r += l>>1`) and the
+  clip. C's types are kept: periods and positions wrap as unsigned shorts,
+  volumes as unsigned chars, the arpeggio and vibrato periods as shorts.
+  The effects jar_mod plays: arpeggio, portamento up, down and to a note,
+  vibrato, the two slides with a volume slide, the sample offset (as
+  jar_mod computes it, with the effect's own nibble), the volume slide,
+  position jump, set volume, pattern break, the fine portamentos and volume
+  slides, pattern loop, note cut, pattern delay, speed and tempo; the
+  others do nothing, as in jar_mod.
+- **Undefined reads stop the player** (`why` 1, silence from there): a
+  note past the file (a pattern break past the last pattern), a table
+  position past the pattern table (a jump into a song longer than 128
+  positions), a sample byte past the file (jar_mod wraps a looping sample's
+  position to `reppnt + samppos % (reppnt + replen)`, up to `reppnt` bytes
+  past its end, which past the last sample is past the file).
+- **The length** (`Player.max_samples`, `jar_mod_max_samples`): the samples
+  until the row that wraps the song past its length, counted by rows (each
+  `patternticksaim + 2` samples after the last) rather than played, so a
+  sample read past the file there is refused when the music plays it, not
+  at load. A song whose timing state (the clock and the channels' pattern
+  loops) comes back without wrapping never ends in raylib, whose count
+  loops for ever: Jonlib finds it (Brent's cycle search) and answers `why`
+  2, as it does past 2^20 rows.
+- **Signed samples.** jar_mod reads the samples through a `char*`, signed
+  on x86 and Apple arm64 (the hosts Jonlib is verified on) and unsigned on
+  Linux arm64, where raylib's MOD music sounds differently.
+
+`tools/mod_probe.py` (gate `mod`) compares the loads, lengths and whole
+songs (hashes of every 4096-sample chunk) with jar_mod.h on seeded modules
+of four to eight channels and of 15 samples, every effect above, looping
+and one-shot samples and every finetune, and checks the refusals on
+modules C leaves undefined or never finishes counting.
+
 ## WaveFormat
 
 `Wave.format_for` follows the miniaudio v0.11.24 code raylib's `WaveFormat`

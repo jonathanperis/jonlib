@@ -457,6 +457,17 @@ unmodified file in their reference programs only, and
 is linked into the Bend candidate. jar_xm is under the WTFPL, version 2, retained
 with its notice in [LICENSES/jar_xm.txt](LICENSES/jar_xm.txt).
 
+## jar_mod
+
+`src/mod.bend` is an altered Bend adaptation of jar_mod.h v0.01 (Jean-Francois
+DEL NERO's HxCMOD, adapted by Joshua Adam Reisenauer), as pinned raylib
+vendors it in `src/external/jar_mod.h`: its period table (`jar_mod_init`),
+`jar_mod_load`, `getnote`, `worknote`, `workeffect`, `jar_mod_fillbuffer`
+and `jar_mod_max_samples`. `tools/mod_probe.py` includes the unmodified file
+in its reference program only; no jar_mod code is linked into the Bend
+candidate. jar_mod is under the WTFPL, version 2, retained with its notice in
+[LICENSES/jar_mod.txt](LICENSES/jar_mod.txt).
+
 ## QOA
 
 `src/qoa.bend` is an altered Bend adaptation of `qoa_decode` and `qoa_encode`
