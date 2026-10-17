@@ -76,7 +76,7 @@ def classify(entry):
             return 'fonts'
         if name in ('IsImageValid', 'GetImageAlphaBorder', 'GetImageColor', 'LoadImagePalette'):
             return 'images'
-        if name in ('ImageResize', 'ImageResizeNN', 'ImageResizeCanvas', 'ImageFromImage', 'ImageCrop', 'ImageDraw', 'ImageMipmaps'):
+        if name in ('ImageResize', 'ImageResizeNN', 'ImageResizeCanvas', 'ImageFromImage', 'ImageCrop', 'ImageDrawImage', 'ImageDrawImageEx', 'ImageDrawImageRec', 'ImageDrawImagePro', 'ImageMipmaps'):
             return 'resampling'
         if name == 'Fade' or name.startswith(('Color', 'GetColor', 'GetPixel', 'SetPixel', 'ImageFormat', 'LoadImageColors', 'UnloadImageColors')):
             return 'pixels'

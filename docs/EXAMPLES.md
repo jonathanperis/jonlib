@@ -7,12 +7,18 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 212 ported, 0 ready, 0 waiting.
+Totals: 223 examples; 212 ported, 7 ready, 4 waiting.
 
 ## APIs that unblock the most examples
 
 | API | Examples waiting on it |
 |---|---|
+| `DrawCircleLinesEx` | 4 |
+| `DrawTriangleLinesEx` | 2 |
+| `DrawCircleSectorLinesEx` | 1 |
+| `DrawEllipseLinesEx` | 1 |
+| `DrawRingLinesEx` | 1 |
+| `ImageDrawImagePro` | 1 |
 
 ## Examples
 
@@ -107,11 +113,16 @@ Totals: 212 examples; 212 ported, 0 ready, 0 waiting.
 | `shapes_penrose_tile` | shapes | ported |  |
 | `shapes_hilbert_curve` | shapes | ported |  |
 | `shapes_easings_testbed` | shapes | ported |  |
+| `shapes_drag_puzzle` | shapes | waiting | `DrawCircleLinesEx`, `DrawTriangleLinesEx` |
+| `shapes_ellipse_collision` | shapes | ready |  |
+| `shapes_outlines_testbed` | shapes | waiting | `DrawCircleLinesEx`, `DrawCircleSectorLinesEx`, `DrawEllipseLinesEx`, `DrawRingLinesEx`, `DrawTriangleLinesEx` |
+| `shapes_outlines_thickness` | shapes | waiting | `DrawCircleLinesEx` |
+| `shapes_polygon_lines` | shapes | waiting | `DrawCircleLinesEx` |
 | `textures_clipboard_image` | textures | ported |  |
 | `textures_magnifying_glass` | textures | ported |  |
 | `textures_logo_raylib` | textures | ported |  |
 | `textures_srcrec_dstrec` | textures | ported |  |
-| `textures_image_drawing` | textures | ported |  |
+| `textures_image_drawing` | textures | ported | `ImageDrawImagePro` |
 | `textures_image_generation` | textures | ported |  |
 | `textures_image_loading` | textures | ported |  |
 | `textures_image_processing` | textures | ported |  |
@@ -139,6 +150,7 @@ Totals: 212 examples; 212 ported, 0 ready, 0 waiting.
 | `textures_sprite_stacking` | textures | ported |  |
 | `textures_cellular_automata` | textures | ported |  |
 | `textures_framebuffer_rendering` | textures | ported |  |
+| `textures_portal_window` | textures | ready |  |
 | `text_sprite_fonts` | text | ported |  |
 | `text_font_spritefont` | text | ported |  |
 | `text_font_filters` | text | ported |  |
@@ -155,6 +167,7 @@ Totals: 212 examples; 212 ported, 0 ready, 0 waiting.
 | `text_inline_styling` | text | ported |  |
 | `text_words_alignment` | text | ported |  |
 | `text_strings_management` | text | ported |  |
+| `text_animations` | text | ready |  |
 | `models_loading_iqm` | models | ported |  |
 | `models_billboard_rendering` | models | ported |  |
 | `models_box_collisions` | models | ported |  |
@@ -185,6 +198,8 @@ Totals: 212 examples; 212 ported, 0 ready, 0 waiting.
 | `models_animation_blend_custom` | models | ported |  |
 | `models_animation_blending` | models | ported |  |
 | `models_animation_timing` | models | ported |  |
+| `models_mesh_uv_painting` | models | ready |  |
+| `models_procedural_decals` | models | ready |  |
 | `shaders_ascii_rendering` | shaders | ported |  |
 | `shaders_basic_lighting` | shaders | ported |  |
 | `shaders_model_shader` | shaders | ported |  |
@@ -220,6 +235,7 @@ Totals: 212 examples; 212 ported, 0 ready, 0 waiting.
 | `shaders_game_of_life` | shaders | ported |  |
 | `shaders_rlgl_compute` | shaders | ported |  |
 | `shaders_cel_shading` | shaders | ported |  |
+| `shaders_lights_bloom` | shaders | ready |  |
 | `audio_module_playing` | audio | ported |  |
 | `audio_music_stream` | audio | ported |  |
 | `audio_raw_stream` | audio | ported |  |
@@ -230,3 +246,4 @@ Totals: 212 examples; 212 ported, 0 ready, 0 waiting.
 | `audio_sound_positioning` | audio | ported |  |
 | `audio_spectrum_visualizer` | audio | ported |  |
 | `audio_stream_callback` | audio | ported |  |
+| `audio_amp_envelope` | audio | ready |  |
