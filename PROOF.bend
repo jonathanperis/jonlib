@@ -2913,6 +2913,9 @@ def Laws.config_graphics_api_not_33():
 def Laws.config_filepath_capacity():
   {==}
 
+def Laws.config_jonmath_implementation():
+  {==}
+
 def Laws.gui_pick_hover_keeps_drag(gui, bounds):
   {==}
 

@@ -7,8 +7,8 @@ Each row inherits its milestone verification recipe and the six completion gates
 
 | Stable ID / source | Kind | Reference contract | Bend mapping | Status | Step |
 |---|---|---|---|---|---|
-| [`config:configuration:CONFIG_H`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/config.h#L31) | configuration | `#define CONFIG_H` | `Config.CONFIG_H` (proposed) | not-started | `configuration` |
-| [`config:switch:EXTERNAL_CONFIG_FLAGS`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/config.h#L33) | switch | `#if !defined(EXTERNAL_CONFIG_FLAGS)` | `Config.EXTERNAL_CONFIG_FLAGS` (proposed) | not-started | `configuration` |
+| [`config:configuration:CONFIG_H`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/config.h#L31) | configuration | `#define CONFIG_H` | `import ./jonlib.bend` (implemented) | partial | `configuration` |
+| [`config:switch:EXTERNAL_CONFIG_FLAGS`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/config.h#L33) | switch | `#if !defined(EXTERNAL_CONFIG_FLAGS)` | `Config.* constants` (implemented) | partial | `configuration` |
 | [`config:configuration:SUPPORT_MODULE_RSHAPES`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/config.h#L40) | configuration | `#define SUPPORT_MODULE_RSHAPES 1` | `Config.SUPPORT_MODULE_RSHAPES` (implemented) | partial | `configuration` |
 | [`config:configuration:SUPPORT_MODULE_RTEXTURES`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/config.h#L43) | configuration | `#define SUPPORT_MODULE_RTEXTURES 1` | `Config.SUPPORT_MODULE_RTEXTURES` (implemented) | partial | `configuration` |
 | [`config:configuration:SUPPORT_MODULE_RTEXT`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/config.h#L46) | configuration | `#define SUPPORT_MODULE_RTEXT 1` | `Config.SUPPORT_MODULE_RTEXT` (implemented) | partial | `configuration` |

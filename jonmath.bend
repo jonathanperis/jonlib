@@ -126,6 +126,14 @@ def Contraction.fused(contraction: Contraction) -> Bool:
     case Fused{}: True{}
 
 # -----------------------------------------------------------------------------
+# Configuration
+
+# raymath's RAYMATH_IMPLEMENTATION: importing Jonmath brings its definitions,
+# so the implementation is always present (there is no declaration-only form).
+def Config.JONMATH_IMPLEMENTATION() -> Bool:
+  True{}
+
+# -----------------------------------------------------------------------------
 # Scalars (Clamp, Lerp, Normalize, Remap, Wrap, FloatEquals)
 
 # raymath/raylib PI, DEG2RAD, RAD2DEG and EPSILON: F32 literals and F32 quotients.

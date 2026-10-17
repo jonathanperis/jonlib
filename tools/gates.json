@@ -77,7 +77,7 @@
   },
   {
    "id": "macros",
-   "title": "raylib.h, rlgl.h, rcamera.h and rgestures.h value macros as Jonlib constants against the compiled headers",
+   "title": "raylib.h, rlgl.h, rcamera.h, rgestures.h and config.h value macros as Jonlib constants against the compiled headers",
    "run": [
     "{python}",
     "tools/macros_probe.py",

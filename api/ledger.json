@@ -27,23 +27,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.JONLIB_H",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "import ./jonlib.bend",
+      "mapping_state": "implemented",
+      "scope": "The include guard: a Bend import loads the module once, whatever imports it.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "An include guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -54,7 +58,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RAYLIB_H semantics from the linked source, add a reference fixture, then implement Config.JONLIB_H.",
+      "next_step": "Close documented gaps and unverified gates for RAYLIB_H.",
       "priority": 829
     },
     {
@@ -315,23 +319,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.__declspec",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "top-level def",
+      "mapping_state": "implemented",
+      "scope": "Symbol export decoration (dllexport/dllimport, inline, visibility): every top-level Bend definition is visible to importers.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Shared-library linkage has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -344,7 +352,7 @@
         "rcamera:macro:__declspec"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive __declspec semantics from the linked source, add a reference fixture, then implement Config.__declspec.",
+      "next_step": "Close documented gaps and unverified gates for __declspec.",
       "priority": 829
     },
     {
@@ -378,23 +386,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.BUILD_LIBTYPE_SHARED",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "top-level def",
+      "mapping_state": "implemented",
+      "scope": "Symbol export decoration (dllexport/dllimport, inline, visibility): every top-level Bend definition is visible to importers.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Shared-library linkage has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -409,7 +421,7 @@
         "rcamera:switch:BUILD_LIBTYPE_SHARED"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive BUILD_LIBTYPE_SHARED semantics from the linked source, add a reference fixture, then implement Config.BUILD_LIBTYPE_SHARED.",
+      "next_step": "Close documented gaps and unverified gates for BUILD_LIBTYPE_SHARED.",
       "priority": 829
     },
     {
@@ -470,23 +482,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RLAPI",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "top-level def",
+      "mapping_state": "implemented",
+      "scope": "Symbol export decoration (dllexport/dllimport, inline, visibility): every top-level Bend definition is visible to importers.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Shared-library linkage has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -500,7 +516,7 @@
         "rcamera:macro:RLAPI"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RLAPI semantics from the linked source, add a reference fixture, then implement Config.RLAPI.",
+      "next_step": "Close documented gaps and unverified gates for RLAPI.",
       "priority": 829
     },
     {
@@ -527,23 +543,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.USE_LIBTYPE_SHARED",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "top-level def",
+      "mapping_state": "implemented",
+      "scope": "Symbol export decoration (dllexport/dllimport, inline, visibility): every top-level Bend definition is visible to importers.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Shared-library linkage has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -558,7 +578,7 @@
         "rcamera:switch:USE_LIBTYPE_SHARED"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive USE_LIBTYPE_SHARED semantics from the linked source, add a reference fixture, then implement Config.USE_LIBTYPE_SHARED.",
+      "next_step": "Close documented gaps and unverified gates for USE_LIBTYPE_SHARED.",
       "priority": 829
     },
     {
@@ -767,23 +787,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_MALLOC",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Bend's runtime allocation",
+      "mapping_state": "implemented",
+      "scope": "The allocator hook: Jonlib values are allocated and released by the Bend runtime through affine ownership.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Allocation cannot be redirected (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -796,7 +820,7 @@
         "rlgl:macro:RL_MALLOC"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_MALLOC semantics from the linked source, add a reference fixture, then implement Config.RL_MALLOC.",
+      "next_step": "Close documented gaps and unverified gates for RL_MALLOC.",
       "priority": 829
     },
     {
@@ -824,23 +848,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_CALLOC",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Bend's runtime allocation",
+      "mapping_state": "implemented",
+      "scope": "The allocator hook: Jonlib values are allocated and released by the Bend runtime through affine ownership.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Allocation cannot be redirected (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -853,7 +881,7 @@
         "rlgl:macro:RL_CALLOC"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_CALLOC semantics from the linked source, add a reference fixture, then implement Config.RL_CALLOC.",
+      "next_step": "Close documented gaps and unverified gates for RL_CALLOC.",
       "priority": 829
     },
     {
@@ -881,23 +909,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_REALLOC",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Bend's runtime allocation",
+      "mapping_state": "implemented",
+      "scope": "The allocator hook: Jonlib values are allocated and released by the Bend runtime through affine ownership.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Allocation cannot be redirected (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -910,7 +942,7 @@
         "rlgl:macro:RL_REALLOC"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_REALLOC semantics from the linked source, add a reference fixture, then implement Config.RL_REALLOC.",
+      "next_step": "Close documented gaps and unverified gates for RL_REALLOC.",
       "priority": 829
     },
     {
@@ -938,23 +970,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_FREE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Bend's runtime allocation",
+      "mapping_state": "implemented",
+      "scope": "The allocator hook: Jonlib values are allocated and released by the Bend runtime through affine ownership.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Allocation cannot be redirected (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -967,7 +1003,7 @@
         "rlgl:macro:RL_FREE"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_FREE semantics from the linked source, add a reference fixture, then implement Config.RL_FREE.",
+      "next_step": "Close documented gaps and unverified gates for RL_FREE.",
       "priority": 829
     },
     {
@@ -1005,23 +1041,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.CLITERAL",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Record literals (Color{r, g, b, a})",
+      "mapping_state": "implemented",
+      "scope": "C++'s compound-literal adapter: a Bend record literal constructs a value directly.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A compound-literal adapter has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1032,7 +1072,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive CLITERAL semantics from the linked source, add a reference fixture, then implement Config.CLITERAL.",
+      "next_step": "Close documented gaps and unverified gates for CLITERAL.",
       "priority": 829
     },
     {
@@ -1059,23 +1099,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_COLOR_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Color",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: Color is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1086,7 +1130,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_COLOR_TYPE semantics from the linked source, add a reference fixture, then implement Config.RL_COLOR_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_COLOR_TYPE.",
       "priority": 829
     },
     {
@@ -1113,23 +1157,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_RECTANGLE_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Rectangle",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: Rectangle is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1140,7 +1188,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_RECTANGLE_TYPE semantics from the linked source, add a reference fixture, then implement Config.RL_RECTANGLE_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_RECTANGLE_TYPE.",
       "priority": 829
     },
     {
@@ -1167,23 +1215,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_VECTOR2_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector2",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: M.Vector2 is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1196,7 +1248,7 @@
         "raymath:macro:RL_VECTOR2_TYPE"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_VECTOR2_TYPE semantics from the linked source, add a reference fixture, then implement Config.RL_VECTOR2_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_VECTOR2_TYPE.",
       "priority": 829
     },
     {
@@ -1223,23 +1275,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_VECTOR3_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector3",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: M.Vector3 is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1252,7 +1308,7 @@
         "raymath:macro:RL_VECTOR3_TYPE"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_VECTOR3_TYPE semantics from the linked source, add a reference fixture, then implement Config.RL_VECTOR3_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_VECTOR3_TYPE.",
       "priority": 829
     },
     {
@@ -1279,23 +1335,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_VECTOR4_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector4",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: M.Vector4 is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1308,7 +1368,7 @@
         "raymath:macro:RL_VECTOR4_TYPE"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_VECTOR4_TYPE semantics from the linked source, add a reference fixture, then implement Config.RL_VECTOR4_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_VECTOR4_TYPE.",
       "priority": 829
     },
     {
@@ -1335,23 +1395,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_QUATERNION_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector4 (Quaternion)",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: M.Vector4 (Quaternion) is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1364,7 +1428,7 @@
         "raymath:macro:RL_QUATERNION_TYPE"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_QUATERNION_TYPE semantics from the linked source, add a reference fixture, then implement Config.RL_QUATERNION_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_QUATERNION_TYPE.",
       "priority": 829
     },
     {
@@ -1391,23 +1455,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_MATRIX_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Matrix",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: M.Matrix is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1421,7 +1489,7 @@
         "rlgl:macro:RL_MATRIX_TYPE"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_MATRIX_TYPE semantics from the linked source, add a reference fixture, then implement Config.RL_MATRIX_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_MATRIX_TYPE.",
       "priority": 829
     },
     {
@@ -3137,23 +3205,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_BOOL_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Bool",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: Bool is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -3164,7 +3236,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_BOOL_TYPE semantics from the linked source, add a reference fixture, then implement Config.RL_BOOL_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_BOOL_TYPE.",
       "priority": 829
     },
     {
@@ -30559,23 +30631,29 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.GetMouseRay",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.screen_to_world_ray_for / Camera.screen_to_world_ray",
+      "mapping_state": "implemented",
+      "scope": "The compatibility alias of GetScreenToWorldRay: the function it names, with its contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "An alias macro is the function it names (language adaptation)",
+        "CAMERA_PERSPECTIVE is None under AppleLibm (the profile-free forms; docs/PERSPECTIVE.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30586,7 +30664,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive GetMouseRay semantics from the linked source, add a reference fixture, then implement Config.GetMouseRay.",
+      "next_step": "Close documented gaps and unverified gates for GetMouseRay.",
       "priority": 829
     },
     {
@@ -62939,23 +63017,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "jonmath.Config.JONMATH_H",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "import ./jonmath.bend",
+      "mapping_state": "implemented",
+      "scope": "The include guard: a Bend import loads the module once, whatever imports it.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "An include guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -62966,7 +63048,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RAYMATH_H semantics from the linked source, add a reference fixture, then implement jonmath.Config.JONMATH_H.",
+      "next_step": "Close documented gaps and unverified gates for RAYMATH_H.",
       "priority": 829
     },
     {
@@ -62998,23 +63080,29 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "jonmath.Config.JONMATH_IMPLEMENTATION",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The single-header implementation switch: importing jonmath.bend brings its definitions, so Config.JONMATH_IMPLEMENTATION() is True; there is no declaration-only mode.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A single-header implementation switch has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md",
+        "jonmath.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63025,7 +63113,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RAYMATH_IMPLEMENTATION semantics from the linked source, add a reference fixture, then implement jonmath.Config.JONMATH_IMPLEMENTATION.",
+      "next_step": "Close documented gaps and unverified gates for RAYMATH_IMPLEMENTATION.",
       "priority": 829
     },
     {
@@ -63058,23 +63146,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "jonmath.Config.JONMATH_STATIC_INLINE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "top-level def",
+      "mapping_state": "implemented",
+      "scope": "Symbol export decoration (dllexport/dllimport, inline, visibility): every top-level Bend definition is visible to importers.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Shared-library linkage has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63085,7 +63177,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RAYMATH_STATIC_INLINE semantics from the linked source, add a reference fixture, then implement jonmath.Config.JONMATH_STATIC_INLINE.",
+      "next_step": "Close documented gaps and unverified gates for RAYMATH_STATIC_INLINE.",
       "priority": 829
     },
     {
@@ -63120,23 +63212,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "jonmath.Config.BUILD_LIBTYPE_SHARED",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "top-level def",
+      "mapping_state": "implemented",
+      "scope": "Symbol export decoration (dllexport/dllimport, inline, visibility): every top-level Bend definition is visible to importers.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Shared-library linkage has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63151,7 +63247,7 @@
         "rcamera:switch:BUILD_LIBTYPE_SHARED"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive BUILD_LIBTYPE_SHARED semantics from the linked source, add a reference fixture, then implement jonmath.Config.BUILD_LIBTYPE_SHARED.",
+      "next_step": "Close documented gaps and unverified gates for BUILD_LIBTYPE_SHARED.",
       "priority": 829
     },
     {
@@ -63245,23 +63341,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "jonmath.Config.RMAPI",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "top-level def",
+      "mapping_state": "implemented",
+      "scope": "Symbol export decoration (dllexport/dllimport, inline, visibility): every top-level Bend definition is visible to importers.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Shared-library linkage has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63272,7 +63372,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RMAPI semantics from the linked source, add a reference fixture, then implement jonmath.Config.RMAPI.",
+      "next_step": "Close documented gaps and unverified gates for RMAPI.",
       "priority": 829
     },
     {
@@ -63299,23 +63399,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "jonmath.Config.USE_LIBTYPE_SHARED",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "top-level def",
+      "mapping_state": "implemented",
+      "scope": "Symbol export decoration (dllexport/dllimport, inline, visibility): every top-level Bend definition is visible to importers.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Shared-library linkage has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63330,7 +63434,7 @@
         "rcamera:switch:USE_LIBTYPE_SHARED"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive USE_LIBTYPE_SHARED semantics from the linked source, add a reference fixture, then implement jonmath.Config.USE_LIBTYPE_SHARED.",
+      "next_step": "Close documented gaps and unverified gates for USE_LIBTYPE_SHARED.",
       "priority": 829
     },
     {
@@ -63837,23 +63941,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "jonmath.Config.RL_VECTOR2_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector2",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: M.Vector2 is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63866,7 +63974,7 @@
         "raylib:macro:RL_VECTOR2_TYPE"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_VECTOR2_TYPE semantics from the linked source, add a reference fixture, then implement jonmath.Config.RL_VECTOR2_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_VECTOR2_TYPE.",
       "priority": 829
     },
     {
@@ -63958,23 +64066,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "jonmath.Config.RL_VECTOR3_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector3",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: M.Vector3 is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63987,7 +64099,7 @@
         "raylib:macro:RL_VECTOR3_TYPE"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_VECTOR3_TYPE semantics from the linked source, add a reference fixture, then implement jonmath.Config.RL_VECTOR3_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_VECTOR3_TYPE.",
       "priority": 829
     },
     {
@@ -64079,23 +64191,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "jonmath.Config.RL_VECTOR4_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector4",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: M.Vector4 is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64108,7 +64224,7 @@
         "raylib:macro:RL_VECTOR4_TYPE"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_VECTOR4_TYPE semantics from the linked source, add a reference fixture, then implement jonmath.Config.RL_VECTOR4_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_VECTOR4_TYPE.",
       "priority": 829
     },
     {
@@ -64195,23 +64311,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "jonmath.Config.RL_QUATERNION_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector4 (Quaternion)",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: M.Vector4 (Quaternion) is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64224,7 +64344,7 @@
         "raylib:macro:RL_QUATERNION_TYPE"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_QUATERNION_TYPE semantics from the linked source, add a reference fixture, then implement jonmath.Config.RL_QUATERNION_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_QUATERNION_TYPE.",
       "priority": 829
     },
     {
@@ -64318,23 +64438,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "jonmath.Config.RL_MATRIX_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Matrix",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: M.Matrix is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64348,7 +64472,7 @@
         "rlgl:macro:RL_MATRIX_TYPE"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_MATRIX_TYPE semantics from the linked source, add a reference fixture, then implement jonmath.Config.RL_MATRIX_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_MATRIX_TYPE.",
       "priority": 829
     },
     {
@@ -64437,23 +64561,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "jonmath.Config.RL_FLOAT3_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "+List<F32> (float3)",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: +List<F32> (float3) is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64464,7 +64592,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_FLOAT3_TYPE semantics from the linked source, add a reference fixture, then implement jonmath.Config.RL_FLOAT3_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_FLOAT3_TYPE.",
       "priority": 829
     },
     {
@@ -64553,23 +64681,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "jonmath.Config.RL_FLOAT16_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "+List<F32> (float16)",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: +List<F32> (float16) is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64580,7 +64712,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_FLOAT16_TYPE semantics from the linked source, add a reference fixture, then implement jonmath.Config.RL_FLOAT16_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_FLOAT16_TYPE.",
       "priority": 829
     },
     {
@@ -64605,23 +64737,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "jonmath.Config.JONMATH_USE_SIMD_INTRINSICS",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "jonmath.bend (scalar)",
+      "mapping_state": "implemented",
+      "scope": "Off by default: raymath's scalar code, which Jonmath ports operation by operation in the same order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The SIMD path (raymath's SSE MatrixMultiply, whose rounding may differ) is not ported",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/MATH.md",
+        "jonmath.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64632,7 +64768,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RAYMATH_USE_SIMD_INTRINSICS semantics from the linked source, add a reference fixture, then implement jonmath.Config.JONMATH_USE_SIMD_INTRINSICS.",
+      "next_step": "Close documented gaps and unverified gates for RAYMATH_USE_SIMD_INTRINSICS.",
       "priority": 829
     },
     {
@@ -64661,23 +64797,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "jonmath.Config.JONMATH_SSE_ENABLED",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "jonmath.bend (scalar)",
+      "mapping_state": "implemented",
+      "scope": "Defined only with RAYMATH_USE_SIMD_INTRINSICS on an SSE target; Jonmath follows the scalar build, where it is undefined.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The SIMD path (raymath's SSE MatrixMultiply, whose rounding may differ) is not ported",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/MATH.md",
+        "jonmath.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64688,7 +64828,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RAYMATH_SSE_ENABLED semantics from the linked source, add a reference fixture, then implement jonmath.Config.JONMATH_SSE_ENABLED.",
+      "next_step": "Close documented gaps and unverified gates for RAYMATH_SSE_ENABLED.",
       "priority": 829
     },
     {
@@ -73543,23 +73683,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "jonmath.Config.JONMATH_DISABLE_CPP_OPERATORS",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector2.add / M.Vector2.scale (named functions)",
+      "mapping_state": "implemented",
+      "scope": "Disables raymath's C++ operator overloads; Bend has no operator overloading, so the named functions are the only form.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ operator overloads have no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/MATH.md",
+        "jonmath.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -73570,7 +73714,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RAYMATH_DISABLE_CPP_OPERATORS semantics from the linked source, add a reference fixture, then implement jonmath.Config.JONMATH_DISABLE_CPP_OPERATORS.",
+      "next_step": "Close documented gaps and unverified gates for RAYMATH_DISABLE_CPP_OPERATORS.",
       "priority": 829
     },
     {
@@ -78267,23 +78411,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RLGL_H",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "import ./jonlib.bend",
+      "mapping_state": "implemented",
+      "scope": "The include guard: a Bend import loads the module once, whatever imports it.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "An include guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -78294,7 +78442,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RLGL_H semantics from the linked source, add a reference fixture, then implement Config.RLGL_H.",
+      "next_step": "Close documented gaps and unverified gates for RLGL_H.",
       "priority": 829
     },
     {
@@ -78385,23 +78533,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.BUILD_LIBTYPE_SHARED",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "top-level def",
+      "mapping_state": "implemented",
+      "scope": "Symbol export decoration (dllexport/dllimport, inline, visibility): every top-level Bend definition is visible to importers.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Shared-library linkage has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -78416,7 +78568,7 @@
         "rcamera:switch:BUILD_LIBTYPE_SHARED"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive BUILD_LIBTYPE_SHARED semantics from the linked source, add a reference fixture, then implement Config.BUILD_LIBTYPE_SHARED.",
+      "next_step": "Close documented gaps and unverified gates for BUILD_LIBTYPE_SHARED.",
       "priority": 829
     },
     {
@@ -78474,23 +78626,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RLAPI",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "top-level def",
+      "mapping_state": "implemented",
+      "scope": "Symbol export decoration (dllexport/dllimport, inline, visibility): every top-level Bend definition is visible to importers.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Shared-library linkage has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -78504,7 +78660,7 @@
         "rcamera:macro:RLAPI"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RLAPI semantics from the linked source, add a reference fixture, then implement Config.RLAPI.",
+      "next_step": "Close documented gaps and unverified gates for RLAPI.",
       "priority": 829
     },
     {
@@ -78530,23 +78686,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.USE_LIBTYPE_SHARED",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "top-level def",
+      "mapping_state": "implemented",
+      "scope": "Symbol export decoration (dllexport/dllimport, inline, visibility): every top-level Bend definition is visible to importers.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Shared-library linkage has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -78561,7 +78721,7 @@
         "rcamera:switch:USE_LIBTYPE_SHARED"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive USE_LIBTYPE_SHARED semantics from the linked source, add a reference fixture, then implement Config.USE_LIBTYPE_SHARED.",
+      "next_step": "Close documented gaps and unverified gates for USE_LIBTYPE_SHARED.",
       "priority": 829
     },
     {
@@ -78589,23 +78749,28 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.TRACELOG",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Log.trace",
+      "mapping_state": "implemented",
+      "scope": "rlgl's TRACELOG (raylib's TraceLog in raylib's build, a no-op standalone): Log.trace with TraceLog's contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No variadic formatting: the text is preformatted",
+        "A function-like macro is a function (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/LOGGING.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -78616,7 +78781,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive TRACELOG semantics from the linked source, add a reference fixture, then implement Config.TRACELOG.",
+      "next_step": "Close documented gaps and unverified gates for TRACELOG.",
       "priority": 829
     },
     {
@@ -78644,23 +78809,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
-      "jonlib": "Rlgl.RL_MALLOC",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Bend's runtime allocation",
+      "mapping_state": "implemented",
+      "scope": "The allocator hook: Jonlib values are allocated and released by the Bend runtime through affine ownership.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Allocation cannot be redirected (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -78675,7 +78844,7 @@
         "raylib:macro:RL_MALLOC"
       ],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_MALLOC semantics from the linked source, add a reference fixture, then implement Rlgl.RL_MALLOC.",
+      "next_step": "Close documented gaps and unverified gates for RL_MALLOC.",
       "priority": 713
     },
     {
@@ -78703,23 +78872,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
-      "jonlib": "Rlgl.RL_CALLOC",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Bend's runtime allocation",
+      "mapping_state": "implemented",
+      "scope": "The allocator hook: Jonlib values are allocated and released by the Bend runtime through affine ownership.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Allocation cannot be redirected (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -78734,7 +78907,7 @@
         "raylib:macro:RL_CALLOC"
       ],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_CALLOC semantics from the linked source, add a reference fixture, then implement Rlgl.RL_CALLOC.",
+      "next_step": "Close documented gaps and unverified gates for RL_CALLOC.",
       "priority": 713
     },
     {
@@ -78762,23 +78935,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
-      "jonlib": "Rlgl.RL_REALLOC",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Bend's runtime allocation",
+      "mapping_state": "implemented",
+      "scope": "The allocator hook: Jonlib values are allocated and released by the Bend runtime through affine ownership.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Allocation cannot be redirected (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -78793,7 +78970,7 @@
         "raylib:macro:RL_REALLOC"
       ],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_REALLOC semantics from the linked source, add a reference fixture, then implement Rlgl.RL_REALLOC.",
+      "next_step": "Close documented gaps and unverified gates for RL_REALLOC.",
       "priority": 713
     },
     {
@@ -78821,23 +78998,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
-      "jonlib": "Rlgl.RL_FREE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Bend's runtime allocation",
+      "mapping_state": "implemented",
+      "scope": "The allocator hook: Jonlib values are allocated and released by the Bend runtime through affine ownership.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Allocation cannot be redirected (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -78852,7 +79033,7 @@
         "raylib:macro:RL_FREE"
       ],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive RL_FREE semantics from the linked source, add a reference fixture, then implement Rlgl.RL_FREE.",
+      "next_step": "Close documented gaps and unverified gates for RL_FREE.",
       "priority": 713
     },
     {
@@ -84392,23 +84573,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_BOOL_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Bool",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: Bool is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -84421,7 +84606,7 @@
         "rgestures:switch:RL_BOOL_TYPE"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_BOOL_TYPE semantics from the linked source, add a reference fixture, then implement Config.RL_BOOL_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_BOOL_TYPE.",
       "priority": 829
     },
     {
@@ -84693,23 +84878,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_MATRIX_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Matrix",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: M.Matrix is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -84723,7 +84912,7 @@
         "raymath:macro:RL_MATRIX_TYPE"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_MATRIX_TYPE semantics from the linked source, add a reference fixture, then implement Config.RL_MATRIX_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_MATRIX_TYPE.",
       "priority": 829
     },
     {
@@ -102252,23 +102441,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RLGL_IMPLEMENTATION",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "import ./jonlib.bend",
+      "mapping_state": "implemented",
+      "scope": "The single-header implementation switch: importing the module brings its definitions; there is no separate declaration-only mode.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A single-header implementation switch has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102279,7 +102472,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RLGL_IMPLEMENTATION semantics from the linked source, add a reference fixture, then implement Config.RLGL_IMPLEMENTATION.",
+      "next_step": "Close documented gaps and unverified gates for RLGL_IMPLEMENTATION.",
       "priority": 829
     },
     {
@@ -102306,23 +102499,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RCAMERA_H",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "import ./jonlib.bend",
+      "mapping_state": "implemented",
+      "scope": "The include guard: a Bend import loads the module once, whatever imports it.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "An include guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102333,7 +102530,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RCAMERA_H semantics from the linked source, add a reference fixture, then implement Config.RCAMERA_H.",
+      "next_step": "Close documented gaps and unverified gates for RCAMERA_H.",
       "priority": 829
     },
     {
@@ -102359,23 +102556,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.BUILD_LIBTYPE_SHARED",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "top-level def",
+      "mapping_state": "implemented",
+      "scope": "Symbol export decoration (dllexport/dllimport, inline, visibility): every top-level Bend definition is visible to importers.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Shared-library linkage has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102390,7 +102591,7 @@
         "rlgl:switch:BUILD_LIBTYPE_SHARED"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive BUILD_LIBTYPE_SHARED semantics from the linked source, add a reference fixture, then implement Config.BUILD_LIBTYPE_SHARED.",
+      "next_step": "Close documented gaps and unverified gates for BUILD_LIBTYPE_SHARED.",
       "priority": 829
     },
     {
@@ -102420,23 +102621,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.__declspec",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "top-level def",
+      "mapping_state": "implemented",
+      "scope": "Symbol export decoration (dllexport/dllimport, inline, visibility): every top-level Bend definition is visible to importers.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Shared-library linkage has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102449,7 +102654,7 @@
         "raylib:macro:__declspec"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive __declspec semantics from the linked source, add a reference fixture, then implement Config.__declspec.",
+      "next_step": "Close documented gaps and unverified gates for __declspec.",
       "priority": 829
     },
     {
@@ -102499,23 +102704,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RLAPI",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "top-level def",
+      "mapping_state": "implemented",
+      "scope": "Symbol export decoration (dllexport/dllimport, inline, visibility): every top-level Bend definition is visible to importers.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Shared-library linkage has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102529,7 +102738,7 @@
         "rlgl:macro:RLAPI"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RLAPI semantics from the linked source, add a reference fixture, then implement Config.RLAPI.",
+      "next_step": "Close documented gaps and unverified gates for RLAPI.",
       "priority": 829
     },
     {
@@ -102556,23 +102765,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.USE_LIBTYPE_SHARED",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "top-level def",
+      "mapping_state": "implemented",
+      "scope": "Symbol export decoration (dllexport/dllimport, inline, visibility): every top-level Bend definition is visible to importers.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Shared-library linkage has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102587,7 +102800,7 @@
         "rlgl:switch:USE_LIBTYPE_SHARED"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive USE_LIBTYPE_SHARED semantics from the linked source, add a reference fixture, then implement Config.USE_LIBTYPE_SHARED.",
+      "next_step": "Close documented gaps and unverified gates for USE_LIBTYPE_SHARED.",
       "priority": 829
     },
     {
@@ -102619,23 +102832,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RCAMERA_STANDALONE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "import ./jonlib.bend",
+      "mapping_state": "implemented",
+      "scope": "The standalone switch: Jonlib's module always uses the shared Jonmath and Jonlib types, as raylib's own build of the header does.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A standalone build with private type copies is not separate (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102646,7 +102863,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RCAMERA_STANDALONE semantics from the linked source, add a reference fixture, then implement Config.RCAMERA_STANDALONE.",
+      "next_step": "Close documented gaps and unverified gates for RCAMERA_STANDALONE.",
       "priority": 829
     },
     {
@@ -104428,23 +104645,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RCAMERA_IMPLEMENTATION",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "import ./jonlib.bend",
+      "mapping_state": "implemented",
+      "scope": "The single-header implementation switch: importing the module brings its definitions; there is no separate declaration-only mode.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A single-header implementation switch has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -104455,7 +104676,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RCAMERA_IMPLEMENTATION semantics from the linked source, add a reference fixture, then implement Config.RCAMERA_IMPLEMENTATION.",
+      "next_step": "Close documented gaps and unverified gates for RCAMERA_IMPLEMENTATION.",
       "priority": 829
     },
     {
@@ -104482,23 +104703,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RGESTURES_H",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "import ./jonlib.bend",
+      "mapping_state": "implemented",
+      "scope": "The include guard: a Bend import loads the module once, whatever imports it.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "An include guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -104509,7 +104734,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RGESTURES_H semantics from the linked source, add a reference fixture, then implement Config.RGESTURES_H.",
+      "next_step": "Close documented gaps and unverified gates for RGESTURES_H.",
       "priority": 829
     },
     {
@@ -104656,23 +104881,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_BOOL_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Bool",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: Bool is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -104685,7 +104914,7 @@
         "rlgl:switch:RL_BOOL_TYPE"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_BOOL_TYPE semantics from the linked source, add a reference fixture, then implement Config.RL_BOOL_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_BOOL_TYPE.",
       "priority": 829
     },
     {
@@ -104890,23 +105119,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_VECTOR2_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector2",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: M.Vector2 is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A type-definition guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -104917,7 +105150,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_VECTOR2_TYPE semantics from the linked source, add a reference fixture, then implement Config.RL_VECTOR2_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_VECTOR2_TYPE.",
       "priority": 829
     },
     {
@@ -105013,23 +105246,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RGESTURES_STANDALONE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "import ./jonlib.bend",
+      "mapping_state": "implemented",
+      "scope": "The standalone switch: Jonlib's module always uses the shared Jonmath and Jonlib types, as raylib's own build of the header does.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A standalone build with private type copies is not separate (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -105040,7 +105277,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RGESTURES_STANDALONE semantics from the linked source, add a reference fixture, then implement Config.RGESTURES_STANDALONE.",
+      "next_step": "Close documented gaps and unverified gates for RGESTURES_STANDALONE.",
       "priority": 829
     },
     {
@@ -106785,23 +107022,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RGESTURES_IMPLEMENTATION",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "import ./jonlib.bend",
+      "mapping_state": "implemented",
+      "scope": "The single-header implementation switch: importing the module brings its definitions; there is no separate declaration-only mode.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A single-header implementation switch has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -106812,7 +107053,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RGESTURES_IMPLEMENTATION semantics from the linked source, add a reference fixture, then implement Config.RGESTURES_IMPLEMENTATION.",
+      "next_step": "Close documented gaps and unverified gates for RGESTURES_IMPLEMENTATION.",
       "priority": 829
     },
     {
@@ -106839,23 +107080,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.CONFIG_H",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "import ./jonlib.bend",
+      "mapping_state": "implemented",
+      "scope": "The include guard: a Bend import loads the module once, whatever imports it.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "An include guard has no Bend counterpart (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -106866,7 +107111,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive CONFIG_H semantics from the linked source, add a reference fixture, then implement Config.CONFIG_H.",
+      "next_step": "Close documented gaps and unverified gates for CONFIG_H.",
       "priority": 829
     },
     {
@@ -106891,23 +107136,27 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.EXTERNAL_CONFIG_FLAGS",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Config.* constants",
+      "mapping_state": "implemented",
+      "scope": "The switch that skips config.h's defaults for flags given to the build: Jonlib's Config constants are raylib's defaults, and Jonlib is not built from them.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Build flags do not configure Jonlib (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -106918,7 +107167,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive EXTERNAL_CONFIG_FLAGS semantics from the linked source, add a reference fixture, then implement Config.EXTERNAL_CONFIG_FLAGS.",
+      "next_step": "Close documented gaps and unverified gates for EXTERNAL_CONFIG_FLAGS.",
       "priority": 829
     },
     {
