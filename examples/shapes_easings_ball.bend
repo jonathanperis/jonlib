@@ -1,9 +1,8 @@
 # raylib [shapes] example - easings ball, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_easings_ball.c and the
-# EaseElasticOut/EaseElasticIn/EaseCubicOut of examples/shapes/reasings.h
-# (zlib/libpng, Copyright (c) 2014-2025 Ramon Santamaria (@raysan5);
-# reasings.h after Robert Penner's easing equations, BSD); see
-# LICENSES/raylib.txt.
+# Adapted from raylib 6.0 examples/shapes/shapes_easings_ball.c (zlib/libpng,
+# Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see
+# LICENSES/raylib.txt. EaseElasticOut, EaseElasticIn and EaseCubicOut are
+# Joneasings' (docs/EASINGS.md).
 #
 # A ball eased across the screen (elastic out, 120 frames), grown (elastic
 # in, 200 frames) and faded over a green background (cubic out, 200
@@ -14,45 +13,11 @@
 import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M
+import ../joneasings.bend as E
 
 # ballPositionX, ballRadius (both C ints), ballAlpha, state and framesCounter; ok: no refusal so far.
 type State is Data:
   State{x: F32, radius: F32, alpha: F32, phase: U32, frames: U32, ok: Bool}
-
-def elastic_out.at(+b: F32, +c: F32, power: Maybe<F32>, sine: Maybe<F32>) -> Maybe<F32>:
-  match power sine:
-    case Some{+p} Some{+s}: Some{(c * p * s + c + b : F32)}
-    case _ _: None{}
-
-# p = d*0.3f, a = c, s = p/4: a*powf(2, -10*t)*sinf((t*d - s)*(2*PI)/p) + c + b, t being t/d.
-def elastic_out.moving(+libm: M.Libm, +t: F32, +b: F32, +c: F32, +d: F32) -> Maybe<F32>:
-  +p = (d * 0.3 : F32)
-  +s = (p / 4.0 : F32)
-  elastic_out.at(b, c, M.Libm.pow2(libm, (F32.neg(10.0) * t : F32)), M.Libm.sin(libm, ((t * d - s) * (2.0 * M.Math.PI()) / p : F32)))
-
-# EaseElasticOut(t, b, c, d): b at t == 0, b + c where t/d == 1.
-def elastic_out(+libm: M.Libm, +t: F32, +b: F32, +c: F32, +d: F32) -> Maybe<F32>:
-  Bool.pick(Maybe<F32>, F32.is_eq(t, 0.0), Some{b}, Bool.pick(Maybe<F32>, F32.is_eq((t / d : F32), 1.0), Some{(b + c : F32)}, elastic_out.moving(libm, (t / d : F32), b, c, d)))
-
-def elastic_in.at(+b: F32, +c: F32, power: Maybe<F32>, sine: Maybe<F32>) -> Maybe<F32>:
-  match power sine:
-    case Some{+p} Some{+s}: Some{(F32.neg((c * p * s : F32)) + b : F32)}
-    case _ _: None{}
-
-# postFix = a*powf(2, 10*(t -= 1)): -(postFix*sinf((t*d - s)*(2*PI)/p)) + b, t being t/d - 1.
-def elastic_in.moving(+libm: M.Libm, +t: F32, +b: F32, +c: F32, +d: F32) -> Maybe<F32>:
-  +p = (d * 0.3 : F32)
-  +s = (p / 4.0 : F32)
-  elastic_in.at(b, c, M.Libm.pow2(libm, (10.0 * t : F32)), M.Libm.sin(libm, ((t * d - s) * (2.0 * M.Math.PI()) / p : F32)))
-
-# EaseElasticIn(t, b, c, d): b at t == 0, b + c where t/d == 1.
-def elastic_in(+libm: M.Libm, +t: F32, +b: F32, +c: F32, +d: F32) -> Maybe<F32>:
-  Bool.pick(Maybe<F32>, F32.is_eq(t, 0.0), Some{b}, Bool.pick(Maybe<F32>, F32.is_eq((t / d : F32), 1.0), Some{(b + c : F32)}, elastic_in.moving(libm, (t / d - 1.0 : F32), b, c, d)))
-
-# EaseCubicOut(t, b, c, d): t = t/d - 1; c*(t*t*t + 1) + b.
-def cubic_out(+t: F32, +b: F32, +c: F32, +d: F32) -> F32:
-  +u = (t / d - 1.0 : F32)
-  (c * (u * u * u + 1.0) + b : F32)
 
 # state 0: ballPositionX = (int)EaseElasticOut(framesCounter, -100, screenWidth/2.0f + 100, 120), then state 1 at 120 frames.
 def moved(+radius: F32, +alpha: F32, +n: U32, +ok: Bool, +x: F32, value: Maybe<F32>) -> State:
@@ -69,9 +34,9 @@ def grown(+x: F32, +alpha: F32, +n: U32, +ok: Bool, +radius: F32, value: Maybe<F
 # state 2: ballAlpha = EaseCubicOut(framesCounter, 0, 1, 200), then state 3; state 3: ENTER plays again.
 def stepped(phase: U32, +libm: M.Libm, +core: J.Core, +x: F32, +radius: F32, +alpha: F32, +n: U32, +frames: U32, +ok: Bool) -> State:
   match phase:
-    case 0: moved(radius, alpha, n, ok, x, elastic_out(libm, U32.to_f32(n), F32.neg(100.0), (800.0 / 2.0 + 100.0 : F32), 120.0))
-    case 1: grown(x, alpha, n, ok, radius, elastic_in(libm, U32.to_f32(n), 20.0, 500.0, 200.0))
-    case 2: State{x, radius, cubic_out(U32.to_f32(n), 0.0, 1.0, 200.0), Bool.pick(U32, (n >= 200 : U32), 3, 2), Bool.pick(U32, (n >= 200 : U32), 0, n), ok}
+    case 0: moved(radius, alpha, n, ok, x, E.Ease.elastic_out_for(libm, U32.to_f32(n), F32.neg(100.0), (800.0 / 2.0 + 100.0 : F32), 120.0))
+    case 1: grown(x, alpha, n, ok, radius, E.Ease.elastic_in_for(libm, U32.to_f32(n), 20.0, 500.0, 200.0))
+    case 2: State{x, radius, E.Ease.cubic_out(U32.to_f32(n), 0.0, 1.0, 200.0), Bool.pick(U32, (n >= 200 : U32), 3, 2), Bool.pick(U32, (n >= 200 : U32), 0, n), ok}
     case _: Bool.pick(State, J.Input.is_key_pressed(core, J.KeyboardKey.KEY_ENTER()), State{F32.neg(100.0), 20.0, 0.0, 0, frames, ok}, State{x, radius, alpha, 3, frames, ok})
 
 # if (IsKeyPressed(KEY_R)) framesCounter = 0.

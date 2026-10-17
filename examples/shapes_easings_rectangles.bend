@@ -1,8 +1,8 @@
 # raylib [shapes] example - easings rectangles, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_easings_rectangles.c and the
-# EaseCircOut/EaseLinearIn of examples/shapes/reasings.h (zlib/libpng,
-# Copyright (c) 2014-2025 Ramon Santamaria (@raysan5); reasings.h after Robert
-# Penner's easing equations, BSD); see LICENSES/raylib.txt.
+# Adapted from raylib 6.0 examples/shapes/shapes_easings_rectangles.c
+# (zlib/libpng, Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see
+# LICENSES/raylib.txt. EaseCircOut and EaseLinearIn are Joneasings'
+# (docs/EASINGS.md).
 #
 # A 16x9 grid of rectangles shrinks and turns over 240 frames; SPACE plays it
 # again. DrawRectanglePro's sinf/cosf follow the libm profile (AppleLibm
@@ -11,19 +11,11 @@
 import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M
+import ../joneasings.bend as E
 
 # Every rectangle shares width, height and rotation; state 0 plays, 1 waits.
 type State is Data:
   State{frames: U32, width: F32, height: F32, rotation: F32, state: U32}
-
-# EaseCircOut(t, b, c, d): t = t/d - 1; c*sqrtf(1 - t*t) + b.
-def ease.circ_out(+t: F32, +b: F32, +c: F32, +d: F32) -> F32:
-  +u = (t / d - 1.0 : F32)
-  (c * F32.sqrt((1.0 - u * u : F32)) + b : F32)
-
-# EaseLinearIn(t, b, c, d): c*t/d + b.
-def ease.linear_in(+t: F32, +b: F32, +c: F32, +d: F32) -> F32:
-  (c * t / d + b : F32)
 
 def clamp0(+v: F32) -> F32:
   Bool.pick(F32, (v < 0.0 : F32), 0.0, v)
@@ -31,10 +23,10 @@ def clamp0(+v: F32) -> F32:
 def update.play(+frames: U32) -> State:
   +f = (frames + 1 : U32)
   +t = U32.to_f32(f)
-  +h = clamp0(ease.circ_out(t, 50.0, F32.neg(50.0), 240.0))
-  +w = clamp0(ease.circ_out(t, 50.0, F32.neg(50.0), 240.0))
+  +h = clamp0(E.Ease.circ_out(t, 50.0, F32.neg(50.0), 240.0))
+  +w = clamp0(E.Ease.circ_out(t, 50.0, F32.neg(50.0), 240.0))
   +done = F32.is_eq(h, 0.0) && F32.is_eq(w, 0.0)
-  State{f, w, h, ease.linear_in(t, 0.0, 360.0, 240.0), Bool.pick(U32, done, 1, 0)}
+  State{f, w, h, E.Ease.linear_in(t, 0.0, 360.0, 240.0), Bool.pick(U32, done, 1, 0)}
 
 def update.at(state: U32, +core: J.Core, +s: State) -> State:
   match state:

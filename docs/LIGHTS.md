@@ -37,6 +37,9 @@ import ./jonlights.bend as L
   `int*` (four bytes from a one-byte field); Jonlights sends 0 or 1.
 - **C glue.** `RLIGHTS_H` and `RLIGHTS_IMPLEMENTATION` are the module import.
 
+The ported `shaders_basic_lighting` creates and updates its four lights
+with Jonlights.
+
 Coverage is tracked in `api/jonlights.json`. `tools/lights_probe.py` (gate
 `lights`) links rlights.h with the gates' raylib build, creates six lights
 (four created, two past `MAX_LIGHTS`) on the default shader and compares

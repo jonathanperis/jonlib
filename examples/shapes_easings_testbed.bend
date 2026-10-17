@@ -1,9 +1,8 @@
 # raylib [shapes] example - easings testbed, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_easings_testbed.c and the
-# easing functions of examples/shapes/reasings.h (zlib/libpng, Copyright (c)
-# 2019-2025 Juan Miguel López (@flashback-fx) and Ramon Santamaria (@raysan5);
-# reasings.h Copyright (c) 2015-2024 Ramon Santamaria (@raysan5), after
-# Robert Penner's easing equations, BSD); see LICENSES/raylib.txt.
+# Adapted from raylib 6.0 examples/shapes/shapes_easings_testbed.c
+# (zlib/libpng, Copyright (c) 2019-2025 Juan Miguel López (@flashback-fx) and
+# Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt. The 28 easings are
+# Joneasings' (docs/EASINGS.md).
 #
 # A ball moved by an easing chosen for each axis (LEFT/RIGHT and UP/DOWN
 # through the 28 easings and "None"), over a duration changed with Q/W and
@@ -15,6 +14,7 @@
 import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M
+import ../joneasings.bend as E
 
 # t, d, paused, boundedT, easingX, easingY and ballPosition; ok: no refusal so far.
 type State is Data:
@@ -53,159 +53,37 @@ def name(kind: U32) -> String:
     case 27: "EaseElasticInOut"
     case _: "None"
 
-# c*value + b for an optional value.
-def scaled(+b: F32, +c: F32, value: Maybe<F32>) -> Maybe<F32>:
-  match value:
-    case None{}: None{}
-    case Some{+v}: Some{(c * v + b : F32)}
-
-# EaseSineIn: -c*cosf(t/d*(PI/2)) + c + b.
-def sine_in.at(+b: F32, +c: F32, cosine: Maybe<F32>) -> Maybe<F32>:
-  match cosine:
-    case None{}: None{}
-    case Some{+v}: Some{(F32.neg(c) * v + c + b : F32)}
-
-# EaseSineInOut: -c/2*(cosf(PI*t/d) - 1) + b.
-def sine_in_out.at(+b: F32, +c: F32, cosine: Maybe<F32>) -> Maybe<F32>:
-  match cosine:
-    case None{}: None{}
-    case Some{+v}: Some{(F32.neg(c) / 2.0 * (v - 1.0) + b : F32)}
-
-# EaseCircInOut: by t/(d/2) below 1 or not.
-def circ_in_out(+u: F32, +b: F32, +c: F32) -> F32:
-  Bool.pick(F32, (u < 1.0 : F32), (F32.neg(c) / 2.0 * (F32.sqrt((1.0 - u * u : F32)) - 1.0) + b : F32), (c / 2.0 * (F32.sqrt((1.0 - (u - 2.0) * (u - 2.0) : F32)) + 1.0) + b : F32))
-
-# EaseCubicInOut.
-def cubic_in_out(+u: F32, +b: F32, +c: F32) -> F32:
-  Bool.pick(F32, (u < 1.0 : F32), (c / 2.0 * u * u * u + b : F32), (c / 2.0 * ((u - 2.0) * (u - 2.0) * (u - 2.0) + 2.0) + b : F32))
-
-# EaseQuadInOut.
-def quad_in_out(+u: F32, +b: F32, +c: F32) -> F32:
-  Bool.pick(F32, (u < 1.0 : F32), ((c / 2.0) * (u * u) + b : F32), (F32.neg(c) / 2.0 * (((u - 1.0) * (u - 3.0)) - 1.0) + b : F32))
-
-# EaseExpoOut away from t == d: c*(-powf(2, -10*t/d) + 1) + b.
-def expo_out.at(+b: F32, +c: F32, power: Maybe<F32>) -> Maybe<F32>:
-  match power:
-    case None{}: None{}
-    case Some{+p}: Some{(c * (F32.neg(p) + 1.0) + b : F32)}
-
-# EaseExpoInOut's second half: c/2*(-powf(2, -10*(t - 1)) + 2) + b.
-def expo_in_out.late(+b: F32, +c: F32, power: Maybe<F32>) -> Maybe<F32>:
-  match power:
-    case None{}: None{}
-    case Some{+p}: Some{(c / 2.0 * (F32.neg(p) + 2.0) + b : F32)}
-
-def expo_in_out.half(early: Bool, +libm: M.Libm, +u: F32, +b: F32, +c: F32) -> Maybe<F32>:
-  match early:
-    case True{}: scaled(b, (c / 2.0 : F32), M.Libm.pow2(libm, (10.0 * (u - 1.0) : F32)))
-    case False{}: expo_in_out.late(b, c, M.Libm.pow2(libm, (F32.neg(10.0) * (u - 1.0) : F32)))
-
-# EaseExpoInOut: b at t == 0, b + c at t == d, else by t/(d/2) below 1 or not.
-def expo_in_out(edge: U32, +libm: M.Libm, +t: F32, +b: F32, +c: F32, +d: F32) -> Maybe<F32>:
-  match edge:
-    case 0: Some{b}
-    case 1: Some{(b + c : F32)}
-    case _: expo_in_out.half(((t / (d / 2.0)) < 1.0 : F32), libm, (t / (d / 2.0) : F32), b, c)
-
-# EaseBackIn: postFix = t /= d; c*postFix*t*((s + 1)*t - s) + b, s = 1.70158f.
-def back_in(+u: F32, +b: F32, +c: F32) -> F32:
-  (c * u * u * ((1.70158 + 1.0) * u - 1.70158) + b : F32)
-
-# EaseBackOut: t = t/d - 1; c*(t*t*((s + 1)*t + s) + 1) + b.
-def back_out(+u: F32, +b: F32, +c: F32) -> F32:
-  (c * (u * u * ((1.70158 + 1.0) * u + 1.70158) + 1.0) + b : F32)
-
-# EaseBackInOut: s *= 1.525f on either side of t/(d/2) = 1.
-def back_in_out(+u: F32, +b: F32, +c: F32) -> F32:
-  +s = (1.70158 * 1.525 : F32)
-  Bool.pick(F32, (u < 1.0 : F32), (c / 2.0 * (u * u * ((s + 1.0) * u - s)) + b : F32), (c / 2.0 * ((u - 2.0) * (u - 2.0) * ((s + 1.0) * (u - 2.0) + s) + 2.0) + b : F32))
-
-# EaseBounceOut's later arcs: postFix = t -= offset; c*(7.5625f*postFix*t + rise) + b.
-def bounce.arc(+t: F32, +b: F32, +c: F32, +offset: F32, +rise: F32) -> F32:
-  (c * (7.5625 * (t - offset) * (t - offset) + rise) + b : F32)
-
-# EaseBounceOut(t, b, c, d). The example's third bound is the double 2.5/2.75; a float is below it exactly when it is
-# below the float 2.5f/2.75f (the nearest float, which is above the double).
-def bounce_out(+t: F32, +b: F32, +c: F32, +d: F32) -> F32:
-  +u = (t / d : F32)
-  Bool.pick(F32, (u < (1.0 / 2.75) : F32), (c * (7.5625 * u * u) + b : F32),
-    Bool.pick(F32, (u < (2.0 / 2.75) : F32), bounce.arc(u, b, c, (1.5 / 2.75 : F32), 0.75),
-      Bool.pick(F32, (u < (2.5 / 2.75) : F32), bounce.arc(u, b, c, (2.25 / 2.75 : F32), 0.9375), bounce.arc(u, b, c, (2.625 / 2.75 : F32), 0.984375))))
-
-# EaseBounceIn: c - EaseBounceOut(d - t, 0, c, d) + b.
-def bounce_in(+t: F32, +b: F32, +c: F32, +d: F32) -> F32:
-  (c - bounce_out((d - t : F32), 0.0, c, d) + b : F32)
-
-# EaseBounceInOut: the first half through EaseBounceIn(t*2), the second through EaseBounceOut(t*2 - d).
-def bounce_in_out(+t: F32, +b: F32, +c: F32, +d: F32) -> F32:
-  Bool.pick(F32, (t < (d / 2.0) : F32), (bounce_in((t * 2.0 : F32), 0.0, c, d) * 0.5 + b : F32), (bounce_out((t * 2.0 - d : F32), 0.0, c, d) * 0.5 + c * 0.5 + b : F32))
-
-# postFix*sin for the elastic easings, postFix being a*powf(2, exponent); kind 0: -(wave) + b (in), 1: wave + c + b (out),
-# 2: -0.5f*wave + b (in out, first half), 3: wave*0.5f + c + b (second half).
-def elastic.value(kind: U32, +b: F32, +c: F32, +wave: F32) -> F32:
-  match kind:
-    case 0: (F32.neg(wave) + b : F32)
-    case 1: (wave + c + b : F32)
-    case 2: (F32.neg(0.5) * wave + b : F32)
-    case _: (wave * 0.5 + c + b : F32)
-
-def elastic.at(+kind: U32, +b: F32, +c: F32, power: Maybe<F32>, sine: Maybe<F32>) -> Maybe<F32>:
-  match power sine:
-    case Some{+p} Some{+s}: Some{elastic.value(kind, b, c, (c * p * s : F32))}
-    case _ _: None{}
-
-# The wave sinf((t*d - s)*(2*PI)/p) with s = p/4 under the power's exponent.
-def elastic(+kind: U32, +libm: M.Libm, +exponent: F32, +t: F32, +b: F32, +c: F32, +d: F32, +p: F32) -> Maybe<F32>:
-  elastic.at(kind, b, c, M.Libm.pow2(libm, exponent), M.Libm.sin(libm, ((t * d - p / 4.0) * (2.0 * M.Math.PI()) / p : F32)))
-
-# EaseElasticIn: b at t == 0, b + c where t/d == 1; p = d*0.3f.
-def elastic_in(+libm: M.Libm, +t: F32, +b: F32, +c: F32, +d: F32) -> Maybe<F32>:
-  Bool.pick(Maybe<F32>, F32.is_eq(t, 0.0), Some{b}, Bool.pick(Maybe<F32>, F32.is_eq((t / d : F32), 1.0), Some{(b + c : F32)},
-    elastic(0, libm, (10.0 * (t / d - 1.0) : F32), (t / d - 1.0 : F32), b, c, d, (d * 0.3 : F32))))
-
-# EaseElasticOut.
-def elastic_out(+libm: M.Libm, +t: F32, +b: F32, +c: F32, +d: F32) -> Maybe<F32>:
-  Bool.pick(Maybe<F32>, F32.is_eq(t, 0.0), Some{b}, Bool.pick(Maybe<F32>, F32.is_eq((t / d : F32), 1.0), Some{(b + c : F32)},
-    elastic(1, libm, (F32.neg(10.0) * (t / d) : F32), (t / d : F32), b, c, d, (d * 0.3 : F32))))
-
-# EaseElasticInOut: b at t == 0, b + c where t/(d/2) == 2; p = d*(0.3f*1.5f); by t/(d/2) below 1 or not.
-def elastic_in_out(+libm: M.Libm, +t: F32, +b: F32, +c: F32, +d: F32) -> Maybe<F32>:
-  +u = (t / (d / 2.0) : F32)
-  +p = (d * (0.3 * 1.5) : F32)
-  Bool.pick(Maybe<F32>, F32.is_eq(t, 0.0), Some{b}, Bool.pick(Maybe<F32>, F32.is_eq(u, 2.0), Some{(b + c : F32)},
-    Bool.pick(Maybe<F32>, (u < 1.0 : F32), elastic(2, libm, (10.0 * (u - 1.0) : F32), (u - 1.0 : F32), b, c, d, p), elastic(3, libm, (F32.neg(10.0) * (u - 1.0) : F32), (u - 1.0 : F32), b, c, d, p))))
-
 # easings[kind].func(t, b, c, d).
 def ease(kind: U32, +libm: M.Libm, +t: F32, +b: F32, +c: F32, +d: F32) -> Maybe<F32>:
   match kind:
-    case 0: Some{(c * t / d + b : F32)}
-    case 1: Some{(c * t / d + b : F32)}
-    case 2: Some{(c * t / d + b : F32)}
-    case 3: Some{(c * t / d + b : F32)}
-    case 4: sine_in.at(b, c, M.Libm.cos(libm, (t / d * (M.Math.PI() / 2.0) : F32)))
-    case 5: scaled(b, c, M.Libm.sin(libm, (t / d * (M.Math.PI() / 2.0) : F32)))
-    case 6: sine_in_out.at(b, c, M.Libm.cos(libm, (M.Math.PI() * t / d : F32)))
-    case 7: Some{(F32.neg(c) * (F32.sqrt((1.0 - (t / d) * (t / d) : F32)) - 1.0) + b : F32)}
-    case 8: Some{(c * F32.sqrt((1.0 - (t / d - 1.0) * (t / d - 1.0) : F32)) + b : F32)}
-    case 9: Some{circ_in_out((t / (d / 2.0) : F32), b, c)}
-    case 10: Some{(c * (t / d) * (t / d) * (t / d) + b : F32)}
-    case 11: Some{(c * ((t / d - 1.0) * (t / d - 1.0) * (t / d - 1.0) + 1.0) + b : F32)}
-    case 12: Some{cubic_in_out((t / (d / 2.0) : F32), b, c)}
-    case 13: Some{(c * (t / d) * (t / d) + b : F32)}
-    case 14: Some{(F32.neg(c) * (t / d) * ((t / d) - 2.0) + b : F32)}
-    case 15: Some{quad_in_out((t / (d / 2.0) : F32), b, c)}
-    case 16: Bool.pick(Maybe<F32>, F32.is_eq(t, 0.0), Some{b}, scaled(b, c, M.Libm.pow2(libm, (10.0 * (t / d - 1.0) : F32))))
-    case 17: Bool.pick(Maybe<F32>, F32.is_eq(t, d), Some{(b + c : F32)}, expo_out.at(b, c, M.Libm.pow2(libm, (F32.neg(10.0) * t / d : F32))))
-    case 18: expo_in_out(Bool.pick(U32, F32.is_eq(t, 0.0), 0, Bool.pick(U32, F32.is_eq(t, d), 1, 2)), libm, t, b, c, d)
-    case 19: Some{back_in((t / d : F32), b, c)}
-    case 20: Some{back_out((t / d - 1.0 : F32), b, c)}
-    case 21: Some{back_in_out((t / (d / 2.0) : F32), b, c)}
-    case 22: Some{bounce_out(t, b, c, d)}
-    case 23: Some{bounce_in(t, b, c, d)}
-    case 24: Some{bounce_in_out(t, b, c, d)}
-    case 25: elastic_in(libm, t, b, c, d)
-    case 26: elastic_out(libm, t, b, c, d)
-    case 27: elastic_in_out(libm, t, b, c, d)
+    case 0: Some{E.Ease.linear_none(t, b, c, d)}
+    case 1: Some{E.Ease.linear_in(t, b, c, d)}
+    case 2: Some{E.Ease.linear_out(t, b, c, d)}
+    case 3: Some{E.Ease.linear_in_out(t, b, c, d)}
+    case 4: E.Ease.sine_in_for(libm, t, b, c, d)
+    case 5: E.Ease.sine_out_for(libm, t, b, c, d)
+    case 6: E.Ease.sine_in_out_for(libm, t, b, c, d)
+    case 7: Some{E.Ease.circ_in(t, b, c, d)}
+    case 8: Some{E.Ease.circ_out(t, b, c, d)}
+    case 9: Some{E.Ease.circ_in_out(t, b, c, d)}
+    case 10: Some{E.Ease.cubic_in(t, b, c, d)}
+    case 11: Some{E.Ease.cubic_out(t, b, c, d)}
+    case 12: Some{E.Ease.cubic_in_out(t, b, c, d)}
+    case 13: Some{E.Ease.quad_in(t, b, c, d)}
+    case 14: Some{E.Ease.quad_out(t, b, c, d)}
+    case 15: Some{E.Ease.quad_in_out(t, b, c, d)}
+    case 16: E.Ease.expo_in_for(libm, t, b, c, d)
+    case 17: E.Ease.expo_out_for(libm, t, b, c, d)
+    case 18: E.Ease.expo_in_out_for(libm, t, b, c, d)
+    case 19: Some{E.Ease.back_in(t, b, c, d)}
+    case 20: Some{E.Ease.back_out(t, b, c, d)}
+    case 21: Some{E.Ease.back_in_out(t, b, c, d)}
+    case 22: Some{E.Ease.bounce_out(t, b, c, d)}
+    case 23: Some{E.Ease.bounce_in(t, b, c, d)}
+    case 24: Some{E.Ease.bounce_in_out(t, b, c, d)}
+    case 25: E.Ease.elastic_in_for(libm, t, b, c, d)
+    case 26: E.Ease.elastic_out_for(libm, t, b, c, d)
+    case 27: E.Ease.elastic_in_out_for(libm, t, b, c, d)
     case _: Some{b}
 
 # easing++ past EASING_NONE (28) wraps to 0; easing-- below 0 wraps to EASING_NONE.
