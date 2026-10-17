@@ -1,6 +1,6 @@
 # RGBA8 kernel convolution
 
-Jonlib adapts raylib 6.0 `ImageKernelConvolution` for RGBA8 `Surface` owners.
+Jonlib adapts raylib 6.2 `ImageKernelConvolution` for RGBA8 `Surface` owners.
 
 ```bend
 Surface.kernel_convolution(surface, kernel: +List<F32>) -> Result<&1, &1, Surface & Surface.Error, Surface>
@@ -15,35 +15,26 @@ Surface.kernel_convolution(surface, kernel: +List<F32>) -> Result<&1, &1, Surfac
   `InvalidKernel` before output storage is allocated.
 - The empty kernel produces transparent black, matching the native zero-width
   kernel loop.
-- Final alpha values must satisfy -1 < F32 `alphaSum*255` < 256, so truncation
-  fits the native unsigned byte. Any other result returns the entire unchanged
-  source with `InvalidKernel`, even after several output pixels were computed.
-  Native out-of-range casts are undefined behavior and are not treated as
-  compatibility evidence.
-
-Source storage and output are separately owned during calculation, so rejection
-needs no source clone.
 
 ## Native indexing and arithmetic
 
 - The anchor is `floor(kernelWidth/2)` on each axis; even kernels extend farther
   toward negative coordinates.
-- The reference checks the **flattened unsigned source index**, not each axis. A
-  neighbor crossing a row edge therefore reads the adjacent row when its flat
-  index is still inside the image. Out-of-image flat indices contribute zero.
+- A neighbour outside the image is clamped to the nearest edge, row and column
+  separately: edge pixels repeat (raylib 6.2; 6.0 checked a flattened unsigned
+  index, wrapped across rows and read zero outside the image).
 - Each RGBA byte is divided by 255 in F32 and multiplied by its coefficient.
   Products accumulate in row-major kernel order, starting from positive zero.
-- RGB sums clamp to 0..1, then are multiplied by 255 and truncated. Alpha is not
-  clamped.
+- Every channel sum, alpha included, clamps to 0..1, then is multiplied by 255
+  and truncated, so every result of a supported kernel is defined.
 
 ## How it is verified
 
 `tools/convolution_probe.py` (gate `convolution`) compares complete dimensions
 and pixels with native `ImageKernelConvolution` on CPU-1, CPU-2, JavaScript and,
 with `--gpu`, forced GPU. Cases cover odd/even/empty/identity/box/signed kernels,
-flat row-edge wrapping, the 225-coefficient boundary, all channel bytes, large
-images and defined alpha truncation. Invalid controls must return complete source
-owners, including rejection after an earlier pixel was computed.
+clamped edges, the 225-coefficient boundary, all channel bytes, large images and
+alpha sums outside 0..1. Invalid controls must return complete source owners.
 
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only convolution
@@ -51,14 +42,10 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 
 ## The raylib example
 
-`examples/textures_image_kernel.bend` ports `textures_image_kernel.c`, but the
-native example is itself undefined: its normalized sharpen kernel
-(`0 -1 0 / -1 5 -1 / 0 -1 0`) sums to 2 where the row above or below is
-outside the image, and its Sobel kernel to -2 on the first pixel, so
-`(unsigned char)(alpha*255.0f)` converts 510.0f and -510.0f. Jonlib returns
-`InvalidKernel` for both images and the port refuses every frame; the
-examples probe lists the example under `UNDEFINED_NATIVE` and compares no
-frame of it.
+`examples/textures_image_kernel.bend` ports `textures_image_kernel.c`. Under
+raylib 6.0 the native example was undefined (its sharpen and Sobel kernels
+pushed alpha to 510.0f and -510.0f before the byte cast); 6.2 clamps alpha, so
+the example is defined and compared.
 
 ## Known gaps
 

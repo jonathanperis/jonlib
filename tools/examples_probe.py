@@ -1792,10 +1792,6 @@ def bullet_hell_refusal(item, libm):
 # every frame of the port is a contract (refused from the first one) on every profile and no frame of the
 # native example is evidence.
 UNDEFINED_NATIVE = {
-    # ImageKernelConvolution converts alphaSum*255.0f with an (unsigned char) cast. The sharpen kernel sums to
-    # 2 on the image's first and last rows (510.0f) and the Sobel kernel to -2 on its first pixel (-510.0f):
-    # out-of-range conversions (C11 6.3.1.4). docs/CONVOLUTION.md.
-    'textures_image_kernel': 'ImageKernelConvolution casts out-of-range alpha sums to unsigned char',
     # Its CodepointRemoveDuplicates shifts the list with codepointsNoDups[k] = codepointsNoDups[k + 1] up to
     # k = count - 1 at the first repeated codepoint: one int read past the codepointCount ints allocated. The
     # text repeats U+3000 and its line break, so the read happens before the first frame. docs/TEXT.md.

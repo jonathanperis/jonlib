@@ -28,8 +28,10 @@ BUILD = ROOT / '.build'
 ENV = dict(os.environ, BEND_NO_TELEMETRY='1')
 CPU_LANES = ('cpu-1', 'cpu-2', 'javascript')
 COMPILE_TIMEOUT = 1800
+# INCLUDE_EVERYTHING=ON: raylib 6.2's CMake reads "#define SUPPORT_X 0" in config.h
+# as OFF; 6.0's read every define as ON, and the probes compare against that build.
 DEFAULT_RAYLIB_OPTIONS = ('PLATFORM=Memory', 'CMAKE_BUILD_TYPE=Release', 'BUILD_EXAMPLES=OFF',
-                          'CUSTOMIZE_BUILD=ON', 'SUPPORT_MODULE_RAUDIO=OFF',
+                          'CUSTOMIZE_BUILD=ON', 'INCLUDE_EVERYTHING=ON', 'SUPPORT_MODULE_RAUDIO=OFF',
                           'SUPPORT_RPRAND_GENERATOR=ON', 'USE_EXTERNAL_GLFW=OFF')
 
 
@@ -175,6 +177,7 @@ def native_library(args, options=()):
     with open(build.parent / f'{build.name}.lock', 'w') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)  # concurrent probes share one cached build per option set
         if not (library.is_file() and stamp.is_file() and json.loads(stamp.read_text()) == list(options)):
+            (build / 'CMakeCache.txt').unlink(missing_ok=True)  # cached options outlive a changed option set
             run(['cmake', '-S', args.raylib_source, '-B', build, *('-D' + o for o in options)])
             run(['cmake', '--build', build, '--parallel', '4'])
             stamp.write_text(json.dumps(list(options)) + '\n')

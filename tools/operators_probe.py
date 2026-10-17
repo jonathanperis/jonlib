@@ -37,6 +37,8 @@ def operators():
         add('+', name, name, name, f'({{a}} + {{b}} : M.{name})')
         add('-', name, name, name, f'({{a}} - {{b}} : M.{name})')
         add('*', name, 'float', name, f'M.{name}.scale({{a}}, {{b}})')
+        # raylib 6.2: float * vector (no compound form)
+        rows.append((f'operator*(const float&,const {name}&)', '*', 'float', name, name, f'M.{name}.scale({{b}}, {{a}})'))
         add('*', name, name, name, f'({{a}} * {{b}} : M.{name})')
         if name != 'Vector4':
             add('*', name, 'Matrix', name, f'M.{name}.transform({{a}}, {{b}})')

@@ -86,7 +86,7 @@ def update.back(previous: Maybe<String>, +core: J.Core, +gui: G.Gui, +listings: 
 def update.at(go: Bool, +core: J.Core, +valid: Bool, +gui: G.Gui, +listings: +List<Listing>, +directory: String, +files: +List<String>, +scroll: U32, +active: U32, +focused: U32) -> J.Core & State:
   match go:
     case False{}: (core, State{valid, gui, listings, directory, files, False{}, scroll, active, focused})
-    case True{}: update.back(J.Files.previous_directory(directory), core, gui, listings, scroll, active, focused)
+    case True{}: update.back(J.Files.previous_directory_given(directory, False{}), core, gui, listings, scroll, active, focused)
 
 # if (btnBackPressed): TextCopy(directory, GetPrevDirectoryPath(directory))
 # and files = LoadDirectoryFiles(directory).

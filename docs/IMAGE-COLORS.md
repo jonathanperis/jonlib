@@ -35,8 +35,7 @@ These match actual `LoadImageColors` / `GetImageColor`:
 
 These deliberately differ from `ImageFormat`'s normalized reciprocal
 arithmetic and from the low-level `GetPixelColor` (`Pixel.get_color`, see
-[PIXELS.md](PIXELS.md)), whose RGB5A1 blue reads the low five bits including
-the alpha bit. The R32 rule here does not implement `GetPixelColor`'s distinct
+[PIXELS.md](PIXELS.md)). The R32 rule here does not implement `GetPixelColor`'s distinct
 R32 behavior. The operations keep separate mappings rather than sharing one
 misleading universal color decoder.
 

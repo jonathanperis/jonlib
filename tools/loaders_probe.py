@@ -60,7 +60,7 @@ def native(probe):
              '  for(unsigned i=0;i<sizeof files/sizeof files[0];i++)if(!strcmp(files[i].name,name)){',
              '    unsigned char *d=malloc(files[i].size);memcpy(d,files[i].data,files[i].size);*size=files[i].size;return d;}',
              '  return NULL;}',
-             'static bool save_data(const char *name,void *data,int size){printf("[\\"save\\", \\"%s\\"]\\n",name);codes(data,size);return true;}',
+             'static bool save_data(const char *name,const void *data,int size){printf("[\\"save\\", \\"%s\\"]\\n",name);codes(data,size);return true;}',
              f'static char *load_text(const char *name){{printf("[\\"load-text\\", \\"%s\\"]\\n",name);'
              f'if(!strcmp(name,"v/text.txt")||!strcmp(name,"{REAL}")){{char *t=malloc({len(TEXT) + 1});strcpy(t,{c_text(TEXT)});return t;}}return NULL;}}',
              'static bool save_text(const char *name,const char *text){printf("[\\"save-text\\", \\"%s\\"]\\n",name);codes((const unsigned char*)text,strlen(text));return true;}',

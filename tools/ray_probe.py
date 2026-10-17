@@ -4,8 +4,9 @@
 Every result's hit flag and F32 distance, point and normal bits must equal
 the linked raylib's under the host contraction profile (conformance.contraction)
 and the host libm's signed-zero fmin/fmax ties (conformance.gradient_reference).
-NaN results (sphere misses take sqrtf of a negative) compare as one NaN class,
-since their sign and payload are not portable. Box inputs where a slab
+Sphere misses and hits behind the origin are the zero collision (raylib 6.2).
+NaN results compare as one NaN class, since their sign and payload are not
+portable. Box inputs where a slab
 distance is NaN or a pre-cast normal component is outside the int range are
 None in Jonlib: raylib's arm64 build and C disagree on NaN slabs and the int
 cast is undefined. A C oracle that repeats the slab and normal arithmetic

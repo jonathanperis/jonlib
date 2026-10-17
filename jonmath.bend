@@ -1278,11 +1278,13 @@ def Matrix.decomposition.maximum(previous: F32, vector: Vector3) -> F32:
   Vector3{x, y, z} = vector
   F32.max(F32.max(F32.max(previous, F32.abs(x)), F32.abs(y)), F32.abs(z))
 
+# The rotation matrix with the three columns (raylib 6.2: m0, m1, m2 are the
+# first column's x, y, z).
 def Matrix.decomposition.rows(first: Vector3, second: Vector3, third: Vector3) -> Matrix:
   Vector3{a, b, c} = first
   Vector3{d, e, f} = second
   Vector3{g, h, i} = third
-  Matrix{a, b, c, 0.0, d, e, f, 0.0, g, h, i, 0.0, 0.0, 0.0, 0.0, 1.0}
+  Matrix{a, d, g, 0.0, b, e, h, 0.0, c, f, i, 0.0, 0.0, 0.0, 0.0, 1.0}
 
 def Matrix.decomposition.finish(translation: Vector3, +x: Vector3, +y: Vector3, +z: Vector3, +scale: Vector3, stabilizer: F32) -> Matrix.Decomposition:
   +reflected = (Vector3.dot_product(x, Vector3.cross_product(y, z)) < 0.0 : F32)
@@ -1294,9 +1296,9 @@ def Matrix.decomposition.finish(translation: Vector3, +x: Vector3, +y: Vector3, 
 
 def Matrix.decompose(matrix: Matrix) -> Matrix.Decomposition:
   Matrix{m0, m4, m8, tx, m1, m5, m9, ty, m2, m6, m10, tz, _, _, _, _} = matrix
-  +first = {Vector3{m0, m4, m8} : Vector3}
-  +second = {Vector3{m1, m5, m9} : Vector3}
-  +third = {Vector3{m2, m6, m10} : Vector3}
+  +first = {Vector3{m0, m1, m2} : Vector3}
+  +second = {Vector3{m4, m5, m6} : Vector3}
+  +third = {Vector3{m8, m9, m10} : Vector3}
   +stabilizer = Matrix.decomposition.maximum(Matrix.decomposition.maximum(Matrix.decomposition.maximum(0.000000001, first), second), third)
   +inverse = (1.0 / stabilizer : F32)
   +x0 = Vector3.scale(first, inverse)
@@ -1313,13 +1315,22 @@ def Matrix.decompose(matrix: Matrix) -> Matrix.Decomposition:
   z = Vector3.normalized((sz > 0.000000001 : F32), z2, sz)
   Matrix.decomposition.finish(Vector3{tx, ty, tz}, x, y, z, Vector3{sx, sy, sz}, stabilizer)
 
-def Quaternion.vectors.result(cross: Vector3, +dot: F32) -> Vector4:
+# The half-way quaternion (cross, |from||to| + dot); for opposite vectors
+# (raylib 6.2: lengths > 0 and w <= lengths*EPSILON) a 180-degree turn about
+# an axis perpendicular to `from`; normalized.
+def Quaternion.vectors.result(+from: Vector3, cross: Vector3, +dot: F32) -> Vector4:
+  Vector3{+fx, +fy, +fz} = from
   Vector3{+x, +y, +z} = cross
-  w = (F32.sqrt((x * x + y * y + z * z + dot * dot : F32)) + dot : F32)
-  Quaternion.normalize(Vector4{x, y, z, w})
+  +lengths = F32.sqrt((x * x + y * y + z * z + dot * dot : F32))
+  +w = (lengths + dot : F32)
+  +opposite = (lengths > 0.0 : F32) && (w <= (lengths * 0.000001 : F32) : F32)
+  +wide = (F32.abs(fx) > F32.abs(fz) : F32)
+  Quaternion.normalize(Bool.pick(Vector4, opposite,
+    Bool.pick(Vector4, wide, Vector4{F32.neg(fy), fx, 0.0, 0.0}, Vector4{0.0, F32.neg(fz), fy, 0.0}),
+    Vector4{x, y, z, w}))
 
 def Quaternion.from_vector3_to_vector3(+first: Vector3, +second: Vector3) -> Vector4:
-  Quaternion.vectors.result(Vector3.cross_product(first, second), Vector3.dot_product(first, second))
+  Quaternion.vectors.result(first, Vector3.cross_product(first, second), Vector3.dot_product(first, second))
 
 def Quaternion.axis.values(axis: Vector3, values: F32 & F32) -> Vector4:
   Vector3{x, y, z} = axis

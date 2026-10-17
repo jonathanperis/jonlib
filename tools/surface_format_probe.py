@@ -91,7 +91,7 @@ OPS = {
     'line': (f'ImageDrawLine(&im,0,0,4,3,{c_color(DRAW)});', 'total', f'J.Surface.draw_line(s, 0.0, 0.0, 4.0, 3.0, {word(DRAW)})'),
     'triangle': (f'ImageDrawTriangle(&im,(Vector2){{0,0}},(Vector2){{1,3}},(Vector2){{4,1}},{c_color(DRAW)});', 'total',
                  f'J.Surface.draw_triangle(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{1.0, 3.0}}, M.Vector2{{4.0, 1.0}}, {word(DRAW)})'),
-    'triangle-ex': ('ImageDrawTriangleEx(&im,(Vector2){0,0},(Vector2){1,3},(Vector2){4,1},(Color){255,0,0,255},(Color){0,255,0,128},(Color){0,0,255,0});',
+    'triangle-ex': ('ImageDrawTriangleGradient(&im,(Vector2){0,0},(Vector2){1,3},(Vector2){4,1},(Color){255,0,0,255},(Color){0,255,0,128},(Color){0,0,255,0});',
                     'total', f'J.Surface.draw_triangle_ex(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{1.0, 3.0}}, M.Vector2{{4.0, 1.0}}, '
                     f'{word((255, 0, 0, 255))}, {word((0, 255, 0, 128))}, {word((0, 0, 255, 0))})'),
     'from-channel': ('{Image r=ImageFromChannel(im,1);UnloadImage(im);im=r;}', 'image', 'second(J.Surface.from_channel(s, 1.0))'),
@@ -101,7 +101,7 @@ OPS = {
                     f'J.Surface.draw_rectangle_v(s, M.Vector2{{1.0, 1.0}}, M.Vector2{{3.0, 2.0}}, {word(DRAW)})'),
     'rectangle-rec': (f'ImageDrawRectangleRec(&im,(Rectangle){{0.5f,1,3.5f,2}},{c_color(DRAW)});', 'total',
                       f'J.Surface.draw_rectangle_rec(s, J.Rectangle{{0.5, 1.0, 3.5, 2.0}}, {word(DRAW)})'),
-    'rectangle-lines': (f'ImageDrawRectangleLines(&im,(Rectangle){{0,0,5,3}},1,{c_color(DRAW)});', 'total',
+    'rectangle-lines': (f'ImageDrawRectangleLinesEx(&im,(Rectangle){{0,0,5,3}},1,{c_color(DRAW)});', 'total',
                         f'J.Surface.draw_rectangle_lines(s, J.Rectangle{{0.0, 0.0, 5.0, 3.0}}, 1, {word(DRAW)})'),
     'circle-v': (f'ImageDrawCircleV(&im,(Vector2){{2,2}},2,{c_color(DRAW)});', 'total', f'J.Surface.draw_circle_v(s, M.Vector2{{2.0, 2.0}}, 2, {word(DRAW)})'),
     'circle-lines': (f'ImageDrawCircleLines(&im,2,2,2,{c_color(DRAW)});', 'total', f'J.Surface.draw_circle_lines(s, 2.0, 2.0, 2, {word(DRAW)})'),
@@ -123,7 +123,7 @@ OPS = {
     'alpha-clear-dark': (f'ImageAlphaClear(&im,{c_color(DARK)},0.6f);', 'image', f'J.Surface.alpha_clear(s, {word(DARK)}, 0.6)'),
     'rotate': ('ImageRotate(&im,30);', 'image', f'J.Surface.rotate_degrees_for(M.{LIBM}{{}}, s, 30.0)'),
     'rotate-obtuse': ('ImageRotate(&im,-135);', 'image', f'J.Surface.rotate_degrees_for(M.{LIBM}{{}}, s, F32.neg(135.0))'),
-    **{f'draw-{name}': (f'{{Image m=ImageCopy(im);ImageFlipVertical(&m);{fmt_c}ImageDraw(&im,m,{src_rec},{dst_rec},{c_color(tint)});UnloadImage(m);}}',
+    **{f'draw-{name}': (f'{{Image m=ImageCopy(im);ImageFlipVertical(&m);{fmt_c}ImageDrawImagePro(&im,m,{src_rec},{dst_rec},(Vector2){{0,0}},0.0f,{c_color(tint)});UnloadImage(m);}}',
                         'image', f'drawn({kind}, {target}, J.Surface.copy(s))')
        for kind, (name, target, src_rec, dst_rec, tint) in enumerate(DRAWS)
        for fmt_c in [f'ImageFormat(&m,{target});' if target else '']},

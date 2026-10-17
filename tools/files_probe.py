@@ -62,8 +62,8 @@ def extension_of(path):
 
 
 def extension_defined(path):
-    ext = extension_of(path)
-    return ext is None or len(ext) < 16
+    """raylib 6.2 copies at most 15 bytes of the extension: every path is defined."""
+    return True
 
 
 def actions(work):
@@ -107,14 +107,7 @@ def defined(kind, arg):
         return len(arg) <= 4096
     if kind == 'has-extension':
         return extension_defined(arg[0])
-    if kind == 'find':
-        # raylib would strstr() through the NULL text of an empty file.
-        return not arg[0].endswith('empty.bin')
-    if kind == 'replace':
-        # An empty file (LoadFileText's NULL) or an empty search (TextReplaceAlloc's
-        # NULL) would reach fprintf("%s", NULL).
-        _, fixture, search, _ = arg
-        return fixture is None or (len(fixture) > 0 and search != '')
+    # raylib 6.2 checks LoadFileText's and TextReplaceAlloc's NULL: an empty file and an empty search are defined.
     return True
 
 
@@ -252,7 +245,7 @@ def render(acts, work):
             elif kind == 'directory':
                 line = f'maybe_text(J.Files.directory({bend_string(arg)}))'
             elif kind == 'previous':
-                line = f'maybe_text(J.Files.previous_directory({bend_string(arg)}))'
+                line = f'IO.bind(Maybe<String>, Unit, J.Files.previous_directory({bend_string(arg)}), maybe_text)'
             elif kind == 'has-extension':
                 line = f'maybe_flag(J.Files.has_extension({bend_string(arg[0])}, {bend_string(arg[1])}))'
             elif kind == 'valid-name':

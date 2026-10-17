@@ -2967,6 +2967,36 @@ def Laws.music_mod_kind():
 def Laws.music_mod_kind_upper():
   {==}
 
+def Laws.files_absolute():
+  {==}
+
+def Laws.files_relative():
+  {==}
+
+def Laws.files_hidden():
+  {==}
+
+def Laws.files_parent_not_hidden():
+  {==}
+
+def Laws.files_previous_trailing():
+  {==}
+
+def Laws.pixel_size_empty():
+  {==}
+
+def Laws.pixel_rgb5a1_blue():
+  {==}
+
+def Laws.convolution_edge_low():
+  {==}
+
+def Laws.convolution_edge_high():
+  {==}
+
+def Laws.ray_sphere_miss_zero():
+  {==}
+
 def Laws.gui_pick_hover_keeps_drag(gui, bounds):
   {==}
 

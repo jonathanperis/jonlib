@@ -61,7 +61,7 @@ def main():
               'int main(void){for(unsigned i=0;i<sizeof(samples)/sizeof(samples[0]);i++){',
               'const float *v=samples[i];Vector2 a={v[0],v[1]},b={v[2],v[3]},c={v[4],v[5]},d={v[6],v[7]};',
               'emit(GetSplinePointLinear(a,b,v[8]));emit(GetSplinePointBasis(a,b,c,d,v[8]));',
-              'emit(GetSplinePointCatmullRom(a,b,c,d,v[8]));emit(GetSplinePointBezierQuad(a,b,c,v[8]));}',
+              'emit(GetSplinePointCatmullRom(a,b,c,d,v[8]));emit(GetSplinePointBezierQuadratic(a,b,c,v[8]));}',
               'volatile float input=0x1.940af8p-2f; float t=input;',
               'Vector2 cubic=GetSplinePointBezierCubic((Vector2){0,0},(Vector2){0,0},(Vector2){0,0},(Vector2){1,0},t);',
               'printf("%u %u\\n",bits(cubic.x),bits((float)((double)t*(double)t*(double)t)));}']

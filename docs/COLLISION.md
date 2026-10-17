@@ -64,7 +64,7 @@ profile (below), and the convenience form uses `M.Uncontracted{}`:
 
 | Operation | Result and edge behavior |
 |---|---|
-| `Collision.ray_sphere(ray, center, radius)` | `RayCollision`; `hit` when the discriminant is not negative. From inside the sphere the distance is `v + sqrt(d)` and the normal points outwards. Misses keep raylib's NaN distance, point and normal. |
+| `Collision.ray_sphere(ray, center, radius)` | `RayCollision`; `hit` when the discriminant is not negative. From inside the sphere the distance is `v + sqrt(d)` and the normal points outwards. A miss, or a hit behind the origin (negative distance), is the zero collision (raylib 6.2; 6.0 kept NaN fields). |
 | `Collision.ray_triangle(ray, p1, p2, p3)` | Moller-Trumbore with raylib's `1e-6` epsilon; parallel rays, points outside the triangle and hits not ahead of the origin are the all-zero miss. |
 | `Collision.ray_quad(ray, p1, p2, p3, p4)` | Triangle `(p1, p2, p4)`, then `(p2, p3, p4)` when the first misses. |
 | `Collision.ray_box(ray, box)` | `Maybe<RayCollision>`. Slab intersection; a ray starting strictly inside is traced backwards and its distance and normal negated. The normal is the hit point scaled to the unit box by `2.01` and truncated like the C `int` cast. |

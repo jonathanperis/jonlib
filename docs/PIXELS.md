@@ -1,6 +1,6 @@
 # Pixel sizing, raw access and dithering
 
-Jonlib adapts raylib 6.0 `GetPixelDataSize`, `GetPixelColor`, `SetPixelColor`
+Jonlib adapts raylib 6.2 `GetPixelDataSize`, `GetPixelColor`, `SetPixelColor`
 and `ImageDither`.
 
 ```bend
@@ -18,9 +18,9 @@ Surface.export(image) -> (width, height) & (format, bytes)
 Codes are the native `PixelFormat` values listed in the
 [API catalog](api/raylib.md).
 
-Exact bit rates and truncation are retained. When **both** dimensions are below
-four, native formats 14..15 return eight bytes and 16..23 return sixteen bytes,
-even with a zero dimension. Format 24 (ASTC 8×8) is excluded from that minimum
+Exact bit rates and truncation are retained. A zero dimension returns zero
+(raylib 6.2 returns before any other rule). When **both** dimensions are below
+four, native formats 14..15 return eight bytes and 16..23 return sixteen bytes. Format 24 (ASTC 8×8) is excluded from that minimum
 and keeps its two-bits-per-pixel calculation. A narrow image whose other axis is
 at least four keeps the ordinary calculation. Unknown format codes return zero.
 This is reference behavior, not a general block-allocation rule, and computing a

@@ -49,10 +49,9 @@ representation. Packed source channels multiply by the reference reciprocal of
 truncation and strict RGB5A1 alpha threshold. Conversion does not first reduce
 the source to RGBA8, which could discard precision before the next quantization.
 
-This path is intentionally separate from `GetPixelColor`. In particular, RGB5A1
-blue is extracted from bits 1..5 during `ImageFormat`, whereas the pinned raw
-pixel getter uses the low five bits including alpha. `Surface.format` follows the
-former. Same-format conversions preserve bytes directly instead of
+This path is intentionally separate from `GetPixelColor`, though both extract
+RGB5A1 blue from bits 1..5 (raylib 6.2 fixed the raw getter, which read the low
+five bits including alpha). Same-format conversions preserve bytes directly instead of
 applying an unnecessary normalization round trip.
 
 [RGB float](FLOAT-RGB.md) (format 9) images preserve non-NaN format-9 words

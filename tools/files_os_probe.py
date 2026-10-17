@@ -153,6 +153,13 @@ def script(tree):
         add('is_file', f'{t}/{name}')
     for name in ('', 'sub', 'a.png', 'noread', 'missing', 'link', 'sub/emptydir'):
         add('dir_exists', f'{t}/{name}' if name else t)
+    # raylib 6.2: IsPathDirectory is !IsPathFile; IsPathAbsolute and IsFileHidden read the text alone
+    for name in ('', 'sub', 'a.png', 'missing', 'link', 'dangling', 'noread'):
+        add('is_dir', f'{t}/{name}' if name else t)
+    for path in ('/', '/tmp/x', 'rel/x', '', './x', '~/x', '//net'):
+        add('absolute', path)
+    for path in ('.hidden', 'dir/.hidden', 'dir/visible', '.', '..', 'a/.', 'a/..', '...', '.a.b', 'a.b/c', '', '/', 'dir\\.x', 'x/'):
+        add('hidden', path)
     for name in ('a.png', 'sub/c.png', 'sub', 'missing', 'link', 'unreadable.txt', 'noread'):
         add('mod_time', f'{t}/{name}')
     for path in (t, f'{t}/sub', f'{t}/a.png', f'{t}/missing', f'{t}/noread', f'{t}/long', f'{t}-odd'):
@@ -263,6 +270,9 @@ def c_op(op, args, tree):
         'move': lambda: f'printf("%u\\n", (unsigned)FileMove({s[0]}, {s[1]}));',
         'text': lambda: f'text({s[0]});',
         'change': lambda: f'printf("%d\\n", (int)ChangeDirectory({s[0]}));',
+        'is_dir': lambda: f'printf("%d\\n", (int)IsPathDirectory({s[0]}));',
+        'absolute': lambda: f'printf("%d\\n", (int)IsPathAbsolute({s[0]}));',
+        'hidden': lambda: f'printf("%d\\n", (int)IsFileHidden({s[0]}));',
         'cwd': lambda: '{ const char *d = GetWorkingDirectory(); printf("%s\\n", d ? d : "(null)"); }',
         'app': lambda: '{ const char *d = GetApplicationDirectory(); size_t n = strlen(d); printf("%d\\n", (int)(n > 0 && d[n - 1] == \'/\' && DirectoryExists(d))); }',
         'url': lambda: f'OpenURL({s[0]}); text({s[1]});',
@@ -283,6 +293,9 @@ def chars(codes: List<U32>) -> String:
 
 def flag(+value: Bool) -> String:
   Bool.pick(String, value, "1", "0")
+
+def int.text(+value: U32) -> String:
+  Bool.pick(String, (value >= 2147483648 : U32), "-" ++ U32.show((0 - value : U32)), U32.show(value))
 
 def paths(xs: +List<String>) -> String:
   match xs:
@@ -352,13 +365,17 @@ def bend_op(op, args):
         'make': lambda: ('U32', f'J.Files.make_directory({s[0]})', 'U32.show(r)'),
         'copy': lambda: ('Maybe<U32>', f'J.Files.copy({s[0]}, {s[1]})', 'counted(r)'),
         'move': lambda: ('Maybe<U32>', f'J.Files.move({s[0]}, {s[1]})', 'counted(r)'),
-        'change': lambda: ('Bool', f'J.Files.change_directory({s[0]})', 'flag(r)'),
+        'change': lambda: ('U32', f'J.Files.change_directory({s[0]})', 'int.text(r)'),
+        'is_dir': lambda: ('Bool', f'J.Files.is_path_directory({s[0]})', 'flag(r)'),
         'cwd': lambda: ('Maybe<String>', 'J.Files.working_directory()', 'directory(r)'),
     }
     if op in ('count_ex', 'load_ex'):
         kind, call, show = (('Maybe<U32>', 'J.Files.directory_file_count_ex', 'counted(r)') if op == 'count_ex'
                             else ('Maybe<J.FilePathList>', 'J.Files.load_directory_files_ex', 'listing(r)'))
         return f'Unit <- IO.bind({kind}, Unit, {call}({s[0]}, {bend_maybe(args[1])}, {b(args[2])}), r => said({show}))'
+    if op in ('absolute', 'hidden'):
+        call = 'J.Files.is_path_absolute' if op == 'absolute' else 'J.Files.is_file_hidden'
+        return f'Unit <- said(flag({call}({s[0]})))'
     if op == 'text':
         return f'Unit <- IO.bind(String, Unit, text({s[0]}), said)'
     if op == 'app':

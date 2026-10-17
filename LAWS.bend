@@ -18,6 +18,7 @@ import ./src/resize_numeric.bend as Resize
 import ./src/bmp.bend as Bmp
 import ./src/jpeg.bend as Jpg
 import ./src/tga.bend as Tga
+import ./src/convolution.bend as Conv
 import ./src/qoi.bend as Qoi
 import ./src/png.bend as Png
 import ./src/pic.bend as Pic
@@ -4172,6 +4173,39 @@ law music_mod_kind:
 
 law music_mod_kind_upper:
   {J.Music.decode.kind(".MOD") == 7 : U32}
+
+# raylib 6.2's path checks: an absolute path starts with '/'; a hidden name
+# starts with '.' but is not "." or ".."; GetPrevDirectoryPath passes a
+# trailing separator.
+law files_absolute:
+  {J.Files.is_path_absolute("/usr") == True{} : Bool}
+
+law files_relative:
+  {J.Files.is_path_absolute("usr/bin") == False{} : Bool}
+
+law files_hidden:
+  {J.Files.is_file_hidden("dir/.config") == True{} : Bool}
+
+law files_parent_not_hidden:
+  {J.Files.is_file_hidden("dir/..") == False{} : Bool}
+
+law files_previous_trailing:
+  {J.Files.previous_directory_given("/usr/bin/", False{}) == Some{"/usr"} : Maybe<String>}
+
+law pixel_size_empty:
+  {J.Pixel.data_size(0, 2, 14) == Some{0} : Maybe<&2, U32>}
+
+law pixel_rgb5a1_blue:
+  {J.Pixel.packed_color(5, 62) == 65280 : U32}
+
+law convolution_edge_low:
+  {Conv.neighbour(0, 1, 5) == 0 : U32}
+
+law convolution_edge_high:
+  {Conv.neighbour(6, 1, 5) == 4 : U32}
+
+law ray_sphere_miss_zero:
+  {J.Collision.ray.sphere.hit(M.Uncontracted{}, J.Ray{M.Vector3{0.0, 0.0, 0.0}, M.Vector3{0.0, 0.0, 1.0}}, M.Vector3{0.0, 0.0, 5.0}, False{}, False{}, 4.0) == J.RayCollision{False{}, 0.0, M.Vector3{0.0, 0.0, 0.0}, M.Vector3{0.0, 0.0, 0.0}} : J.RayCollision}
 
 law gui_pick_hover_keeps_drag:
   for gui: JG.Gui

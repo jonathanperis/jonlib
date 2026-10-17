@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Compare native SHA words, including raylib's SHA-256 padding quirk."""
+"""Compare native SHA words: standard SHA-1 and SHA-256 (raylib 6.2 fixed the
+SHA-256 padding that 6.0 sized with dataSize + 4)."""
 import hashlib
 import json
 import struct
@@ -50,10 +51,9 @@ def reference_program(cases, work):
 
 
 def check_reference(cases, expected):
-    """Independently confirm the native oracle: standard SHA-1, and SHA-256 equal to
-    the standard digest except for the pinned dataSize+4 padding rule (56..59 mod 64)."""
-    quirks, profile_lengths = [], []
-    for i, (case, row) in enumerate(zip(cases, expected)):
+    """Independently confirm the native oracle: standard SHA-1 and SHA-256 for every
+    length, including 56..59 mod 64, where raylib 6.0's padding differed."""
+    for case, row in zip(cases, expected):
         if not case['valid']:
             if row is not None:
                 raise ProbeFailure('Invalid-input reference control differs')
@@ -62,18 +62,10 @@ def check_reference(cases, expected):
         one, two = list(struct.unpack('>5I', hashlib.sha1(data).digest())), list(struct.unpack('>8I', hashlib.sha256(data).digest()))
         if len(row) != 13 or row[:5] != one:
             raise ProbeFailure('Native SHA-1 or digest length differs')
-        quirk = 56 <= len(data) % 64 <= 59
-        if (row[5:] != two) != quirk:
-            raise ProbeFailure('Native SHA-256 padding profile differs')
-        if quirk:
-            quirks.append(i)
-            if 'profile_length' in case:
-                profile_lengths.append(case['profile_length'])
-        if case.get('profile_length') == 56 and struct.pack('>8I', *row[5:]).hex() != '2c5f29559d2cfd998fa1172d913d53fb411003f9c38cf28edd78973119a264ee':
-            raise ProbeFailure('Retained native SHA-256 counterexample differs')
-    if profile_lengths != [56, 57, 58, 59, 120, 121, 122, 123]:
-        raise ProbeFailure('Native padding counterexample coverage differs')
-    return quirks
+        if row[5:] != two:
+            raise ProbeFailure('Native SHA-256 differs from the standard digest')
+        if case.get('profile_length') == 56 and struct.pack('>8I', *row[5:]).hex() != hashlib.sha256(data).hexdigest():
+            raise ProbeFailure('Native SHA-256 at the old padding edge differs')
 
 
 def main():
@@ -83,7 +75,7 @@ def main():
     expected = [json.loads(line) for line in text.splitlines()]
     if len(expected) != len(cases):
         raise ProbeFailure('Incomplete native SHA output')
-    quirks = check_reference(cases, expected)
+    check_reference(cases, expected)
     indexed = list(enumerate(cases))
 
     def render(selected, gpu):
@@ -99,7 +91,7 @@ def main():
 
     probe.compare(expected, probe.candidates(render, indexed, batch=64))
     probe.finish(native_cases=sum(c['valid'] for c in cases), invalid_controls=sum(not c['valid'] for c in cases),
-                 padding_differences=len(quirks), reference_sha256=hashlib.sha256(text.encode()).hexdigest())
+                 padding_edge_lengths=8, reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__ == '__main__':

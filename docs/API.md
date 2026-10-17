@@ -348,7 +348,7 @@ returns the original owner.
 | `Surface.draw_rectangle(surface, x, y, width, height, color)` / `_v` / `_rec` | `ImageDrawRectangle` for the integer profile; `_v` truncates, `_rec` clips bounded fields before conversion. |
 | `Surface.draw_rectangle_lines(surface, rectangle, thickness, color)` | Four reference edge strips; thickness 0..32767. |
 | `Surface.draw_circle(surface, cx, cy, radius, color)` / `_v` / `draw_circle_lines` / `_lines_v` | Midpoint coverage and outlines, radius U32; vector centers truncate. |
-| `Surface.draw_line(surface, x0, y0, x1, y1, color)` / `_v` / `_ex` | Fixed-point stepping excluding the final endpoint; `_v` adds a half then truncates; `_ex` draws dominant-axis strips, thickness 0..32767. |
+| `Surface.draw_line(surface, x0, y0, x1, y1, color)` / `_v` / `_ex` | Fixed-point stepping including the final endpoint, short axis rounded; `_v` adds a half then truncates; `_ex` draws dominant-axis strips, thickness 0..32767. |
 | `Surface.draw_triangle(surface, v1, v2, v3, color)` / `draw_triangle_lines` / `draw_triangle_fan` / `draw_triangle_strip` | Truncated bounds and edge steps, both windings, inclusive edges; fans/strips with fewer than three points draw nothing. |
 | `Surface.draw_triangle_ex(surface, v1, v2, v3, c1, c2, c3)` | Byte-quantized barycentric colors, each stored as `ImageDrawPixel` encodes it. |
 
@@ -406,17 +406,19 @@ nonzero RGB with zero alpha, exactly as in the reference image operation.
 
 ### Degenerate rectangles and tiny circles
 
-Raylib 6.0's accepted zero-width rectangles can still write their initial pixel;
+Raylib's accepted zero-width rectangles can still write their initial pixel;
 zero-height rectangles can write their first row. Position/clipping conditions
 also affect this behavior. Jonlib deliberately matches these observable CPU
-image semantics, including their effect on radius-zero and circle scanlines.
+image semantics, including their effect on radius-zero and circle scanlines (6.2 widens each
+filled-circle scanline by one pixel, `x*2 + 1`).
 These rules are covered by reference fixtures and are not generic mathematical
 rectangle/circle definitions.
 
 ### Lines and triangles
 
-`draw_line` omits its final endpoint, as raylib 6.0 does. Reversing a segment can
-therefore change which end pixel is written. Negative short-axis increments use
+`draw_line` writes both endpoints and starts the short-axis accumulator at one
+half (rounding), as raylib 6.2 does; 6.0 omitted the final endpoint and
+truncated. Negative short-axis increments use
 arithmetic right-shift behavior, rather than truncating the interpolated position.
 The vector-line API's add-half/truncate rule also differs from ordinary rounding
 for negative values.

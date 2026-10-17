@@ -99,7 +99,7 @@ def reference_program(cases,controls,work):
             for op in case['operations']:
                 if op['op']=='tint':lines.append(f'ImageColorTint(&image,GetColor({op["color"]}u));')
                 elif op['op']=='invert':lines.append('ImageColorInvert(&image);')
-                elif op['op']=='contrast':lines.append(f'ImageColorContrast(&image,{float(op["amount"])}f);')
+                elif op['op']=='contrast':lines.append(f'ImageColorContrast(&image,(int)({float(op["amount"])}f));')
                 elif op['op']=='brightness' and 'bits' in op:lines.append(f'{{unsigned b={op["bits"]}u;float f;memcpy(&f,&b,4);ImageColorBrightness(&image,(int)f);}}')
                 elif op['op']=='brightness' and op['amount']!=int(op['amount']):lines.append(f'ImageColorBrightness(&image,(int){float(op["amount"])}f);')
                 elif op['op']=='brightness':lines.append(f'ImageColorBrightness(&image,{op["amount"]});')

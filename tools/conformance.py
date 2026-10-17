@@ -109,7 +109,7 @@ COLOR_NUMERIC_APIS = {'from_normalized':('ColorFromNormalized','q','color'), 'fr
 FLOAT64_APIS = {'from_f32':('promote_f32','s','binary64'), 'internal.f32':('narrow_f64','d','float')}
 SPLINE_APIS = {
     'linear':('GetSplinePointLinear','vvs','vector'), 'basis':('GetSplinePointBasis','vvvvs','vector'),
-    'catmull_rom':('GetSplinePointCatmullRom','vvvvs','vector'), 'bezier_quad':('GetSplinePointBezierQuad','vvvs','vector'),
+    'catmull_rom':('GetSplinePointCatmullRom','vvvvs','vector'), 'bezier_quad':('GetSplinePointBezierQuadratic','vvvs','vector'),
 }
 MATRIX_APIS = {
     'identity':('MatrixIdentity','','matrix'), 'transpose':('MatrixTranspose','m','matrix'),
@@ -818,8 +818,8 @@ def c_source(cases):
                 else:
                     rect = op.get('source_rect', dict(x=0, y=0, width=sw, height=sh))
                     target = op['dest_rect'] if kind == 'blit_rect' else dict(x=op['x'], y=op['y'], width=rect['width'], height=rect['height'])
-                    lines += [f'ImageDraw(&image, source, (Rectangle){{{rect["x"]}, {rect["y"]}, {rect["width"]}, {rect["height"]}}}, '
-                              f'(Rectangle){{{target["x"]}, {target["y"]}, {target["width"]}, {target["height"]}}}, GetColor({rgba(op["tint"])}u));']
+                    lines += [f'ImageDrawImagePro(&image, source, (Rectangle){{{rect["x"]}, {rect["y"]}, {rect["width"]}, {rect["height"]}}}, '
+                              f'(Rectangle){{{target["x"]}, {target["y"]}, {target["width"]}, {target["height"]}}}, (Vector2){{0, 0}}, 0.0f, GetColor({rgba(op["tint"])}u));']
                 if op.get('observe_source'):
                     lines += ['UnloadImage(image);', 'image = source;']
                 else:
@@ -952,7 +952,7 @@ def c_source(cases):
                 lines += [f'ImageDrawRectangleV(&image, (Vector2){{{op["x"]}, {op["y"]}}}, (Vector2){{{op["width"]}, {op["height"]}}}, {color});']
             elif kind in ('rectangle_rec', 'rectangle_lines'):
                 rect = f'(Rectangle){{{op["x"]}, {op["y"]}, {op["width"]}, {op["height"]}}}'
-                function = 'ImageDrawRectangleRec' if kind == 'rectangle_rec' else 'ImageDrawRectangleLines'
+                function = 'ImageDrawRectangleRec' if kind == 'rectangle_rec' else 'ImageDrawRectangleLinesEx'
                 thick = f'{op["thickness"]}, ' if kind == 'rectangle_lines' else ''
                 lines += [f'{function}(&image, {rect}, {thick}{color});']
             elif kind in ('circle', 'circle_v', 'circle_lines', 'circle_lines_v'):
@@ -977,7 +977,7 @@ def c_source(cases):
             elif kind in ('line_v', 'line_ex', 'triangle', 'triangle_lines', 'triangle_ex'):
                 count = 2 if kind in ('line_v', 'line_ex') else 3
                 vectors = ', '.join(f'(Vector2){{{op["x"+str(i)]}, {op["y"+str(i)]}}}' for i in range(count))
-                function = {'line_v':'ImageDrawLineV', 'line_ex':'ImageDrawLineEx', 'triangle':'ImageDrawTriangle', 'triangle_lines':'ImageDrawTriangleLines', 'triangle_ex':'ImageDrawTriangleEx'}[kind]
+                function = {'line_v':'ImageDrawLineV', 'line_ex':'ImageDrawLineEx', 'triangle':'ImageDrawTriangle', 'triangle_lines':'ImageDrawTriangleLines', 'triangle_ex':'ImageDrawTriangleGradient'}[kind]
                 thick = f'{op["thickness"]}, ' if kind == 'line_ex' else ''
                 colors = f'{color}, GetColor({rgba(op["color2"])}u), GetColor({rgba(op["color3"])}u)' if kind == 'triangle_ex' else color
                 lines += [f'{function}(&image, {vectors}, {thick}{colors});']
@@ -1637,9 +1637,10 @@ def main():
     report['scalar_profile'] = 'jonmath-f32-uncontracted-v1'
     cmake = BUILD / 'raylib'
     print('Building pinned raylib reference...', flush=True)
+    (cmake / 'CMakeCache.txt').unlink(missing_ok=True)
     run(['cmake', '-S', args.raylib_source, '-B', cmake, '-DPLATFORM=Memory',
          '-DCMAKE_BUILD_TYPE=Release', '-DBUILD_EXAMPLES=OFF', '-DCUSTOMIZE_BUILD=ON',
-         '-DSUPPORT_MODULE_RAUDIO=OFF', '-DSUPPORT_RPRAND_GENERATOR=ON', '-DUSE_EXTERNAL_GLFW=OFF'], env=environment.child())
+         '-DINCLUDE_EVERYTHING=ON', '-DSUPPORT_MODULE_RAUDIO=OFF', '-DSUPPORT_RPRAND_GENERATOR=ON', '-DUSE_EXTERNAL_GLFW=OFF'], env=environment.child())
     run(['cmake', '--build', cmake, '--parallel', '4'], env=environment.child())
     (BUILD / 'reference.c').write_text(c_source(cases))
     run(['clang', '-std=c11', '-O2', '-fno-builtin-atan2f', '-I' + str(args.raylib_source / 'src'),

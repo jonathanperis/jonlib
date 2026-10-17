@@ -472,7 +472,7 @@ def control_source(raylib_source):
     rcore = (raylib_source / 'src/rcore.c').read_text()
     pieces = [between(rcamera, 'Vector3 GetCameraForward(Camera *camera)\n{', '#if !defined(RCAMERA_STANDALONE)\n// Update camera position'),
               between(rcamera, 'void UpdateCameraPro(', '#endif // RCAMERA_IMPLEMENTATION'),
-              between(rcore, 'Ray GetScreenToWorldRayEx(', '// Get the screen space position from a 3d world space position'),
+              between(rcore, 'Ray GetScreenToWorldRayEx(', '// Get screen space position from a 3d world space position'),
               between(rcore, 'Vector2 GetWorldToScreenEx(', '//----------------------------------------------------------------------------------')]
     return (f'#define RL_CULL_DISTANCE_NEAR {near}\n#define RL_CULL_DISTANCE_FAR {far}\n'
             'static double rlGetCullDistanceNear(void) { return RL_CULL_DISTANCE_NEAR; }\n'

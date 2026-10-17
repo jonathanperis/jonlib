@@ -181,7 +181,7 @@ inline Vec operator + (const Vec& lhs, const float& rhs) { return lhs; }
         with tempfile.TemporaryDirectory(dir=BUILD, prefix='api-plan-') as directory:
             root = Path(directory)
             file = root / 'generated.json'
-            report = dict(declaration_inventory={'total':1}, core_functions={'partial':0, 'complete':0}, phase1_exit={'meeting':0, 'total':0})
+            report = dict(declaration_inventory={'total':1}, core_functions={'total':0, 'partial':0, 'complete':0}, phase1_exit={'meeting':0, 'total':0})
             with patch.object(plan, 'ROOT', root), patch.object(plan, 'generated', return_value=({'generated.json':'expected'}, report)), patch('sys.argv', ['api_plan.py','check']), patch('sys.stdout', new_callable=io.StringIO):
                 for content in (None, 'stale'):
                     if content is not None:

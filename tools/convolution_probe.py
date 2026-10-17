@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare native RGBA8 kernel convolution within defined alpha-cast domains."""
+"""Compare native RGBA8 kernel convolution (raylib 6.2: clamped edges and channels)."""
 import hashlib
 import json
 import random
@@ -28,8 +28,10 @@ def fixtures():
     for kernel in ([0,-1,0,-1,5,-1,0,-1,0],[16.0],[-16.0]):
         cases.append(dict(width=7,height=5,bytes=transparent,kernel=kernel,reject=False))
     source=[213,97,51,0,255,1,17,255,23,45,67,127]*2
+    for kernel in ([2.0],[-1.0],[1.004]):  # alpha leaves 0..1: raylib 6.2 clamps it
+        cases.append(dict(width=3,height=2,bytes=source,kernel=kernel,reject=False))
     controls=[dict(width=3,height=2,bytes=source,kernel=kernel,reject=True)
-              for kernel in ([1,0],[0]*226,[17.0],[2**-17],['nan'],['infinity'],[2.0],[-1.0],[1.004])]
+              for kernel in ([1,0],[0]*226,[17.0],[2**-17],['nan'],['infinity'])]
     return cases,controls
 
 

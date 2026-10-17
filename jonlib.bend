@@ -346,14 +346,18 @@ def Collision.ray.at(ray: Ray, +t: F32) -> M.Vector3:
   Ray{position, direction} = ray
   M.Vector3.add(position, M.Vector3.scale(direction, t))
 
-def Collision.ray.sphere.hit(+arithmetic: M.Contraction, ray: Ray, center: M.Vector3, +hit: Bool, +inside: Bool, +distance: F32) -> RayCollision:
-  +point = Collision.ray.at(ray, distance)
-  +normal = Collision.ray.normalize(arithmetic, M.Vector3.subtract(point, center))
-  RayCollision{hit, distance, point, Bool.pick(M.Vector3, inside, M.Vector3.negate(normal), normal)}
+def Collision.ray.sphere.hit(+arithmetic: M.Contraction, ray: Ray, center: M.Vector3, hit: Bool, +inside: Bool, +distance: F32) -> RayCollision:
+  match hit:
+    case False{}: RayCollision{False{}, 0.0, M.Vector3{0.0, 0.0, 0.0}, M.Vector3{0.0, 0.0, 0.0}}
+    case True{}:
+      +point = Collision.ray.at(ray, distance)
+      +normal = Collision.ray.normalize(arithmetic, M.Vector3.subtract(point, center))
+      RayCollision{True{}, distance, point, Bool.pick(M.Vector3, inside, M.Vector3.negate(normal), normal)}
 
 # GetRayCollisionSphere: d = r*r - (dist*dist - v*v) (fused: fma(r, r, -fma(dist,
 # dist, -(v*v)))); the distance is v + sqrt(d) from inside, v - sqrt(d) otherwise.
-# Misses keep raylib's NaN distance, point and normal.
+# raylib 6.2: a miss (d < 0) or a hit behind the origin (distance < 0) is the
+# zero collision.
 def Collision.ray_sphere_for(+arithmetic: M.Contraction, +ray: Ray, +center: M.Vector3, +radius: F32) -> RayCollision:
   Ray{+position, +direction} = ray
   +offset = M.Vector3.subtract(center, position)
@@ -362,8 +366,8 @@ def Collision.ray_sphere_for(+arithmetic: M.Contraction, +ray: Ray, +center: M.V
   +d = Bool.pick(F32, M.Contraction.fused(arithmetic), Fused.multiply_add(radius, radius, F32.neg(Fused.multiply_add(distance, distance, F32.neg((along * along : F32))))),
     (radius * radius - (distance * distance - along * along) : F32))
   +inside = (distance < radius : F32)
-  Collision.ray.sphere.hit(arithmetic, ray, center, (d >= 0.0 : F32), inside,
-    Bool.pick(F32, inside, (along + F32.sqrt(d) : F32), (along - F32.sqrt(d) : F32)))
+  +hit_distance = Bool.pick(F32, inside, (along + F32.sqrt(d) : F32), (along - F32.sqrt(d) : F32))
+  Collision.ray.sphere.hit(arithmetic, ray, center, ((d >= 0.0) && (hit_distance >= 0.0) : F32), inside, hit_distance)
 
 def Collision.ray_sphere(ray: Ray, center: M.Vector3, radius: F32) -> RayCollision:
   Collision.ray_sphere_for(M.Uncontracted{}, ray, center, radius)
@@ -1805,8 +1809,10 @@ def Pixel.size.checked(valid: Bool, +width: U32, +height: U32, +format: U32) -> 
     case True{}:
       size = (width * height * Pixel.bits_per_pixel(format) / 8 : U32)
       +small = ((width < 4) && (height < 4) : U32)
-      Some{Bool.pick(U32, small && ((format >= 14) && (format < 16) : U32), 8,
-        Bool.pick(U32, small && ((format >= 16) && (format < 24) : U32), 16, size))}
+      # raylib 6.2: no size at all for an empty side, before the block minimums.
+      Some{Bool.pick(U32, (U32.is_eq(width, 0) || U32.is_eq(height, 0)), 0,
+        Bool.pick(U32, small && ((format >= 14) && (format < 16) : U32), 8,
+        Bool.pick(U32, small && ((format >= 16) && (format < 24) : U32), 16, size)))}
 
 def Pixel.data_size(+width: U32, +height: U32, +format: U32) -> Maybe<&2, U32>:
   Pixel.size.checked(((width <= 4096) && (height <= 4096) && (format <= 2147483647) : U32), width, height, format)
@@ -1816,8 +1822,7 @@ def Pixel.packed_color(format: U32, +word: U32) -> U32:
     case 3:
       Color.rgba(((word >> 11n) * 255 / 31 : U32), (((word >> 5n) .&. 63) * 255 / 63 : U32), ((word .&. 31) * 255 / 31 : U32), 255)
     case 5:
-      # GetPixelColor uses the low five bits directly for blue, including alpha.
-      Color.rgba(((word >> 11n) * 255 / 31 : U32), (((word >> 6n) .&. 31) * 255 / 31 : U32), ((word .&. 31) * 255 / 31 : U32), ((word .&. 1) * 255 : U32))
+      Color.rgba(((word >> 11n) * 255 / 31 : U32), (((word >> 6n) .&. 31) * 255 / 31 : U32), (((word >> 1n) .&. 31) * 255 / 31 : U32), ((word .&. 1) * 255 : U32))
     case _:
       Color.rgba(((word >> 12n) * 17 : U32), (((word >> 8n) .&. 15) * 17 : U32), (((word >> 4n) .&. 15) * 17 : U32), ((word .&. 15) * 17 : U32))
 
@@ -2084,8 +2089,10 @@ def Rgba.color.transform(surface: Rgba, transform: Color.Transform) -> Rgba:
   Rgba{+w, +h, pixels} = surface
   Rgba{w, h, Rgba.color.loop(U32.to_nat((w * h : U32)), 0, transform, pixels)}
 
+# ImageColorContrast takes an int (raylib 6.2): truncate toward zero, clamp
+# to -100..100, then factor = ((float)(100.0f + contrast)/100.0f)^2.
 def Color.Transform.contrast(amount: F32) -> Color.Transform:
-  +contrast = ((100.0 + F32.clamp(amount, (0.0 - 100.0 : F32), 100.0)) / 100.0 : F32)
+  +contrast = ((100.0 + F32.clamp(Signed.trunc(amount), (0.0 - 100.0 : F32), 100.0)) / 100.0 : F32)
   ImageContrast{(contrast * contrast : F32)}
 
 # ImageColorBrightness takes int: truncate toward zero, then clamp like raylib.
@@ -2179,10 +2186,10 @@ def Rgba.draw_rectangle_lines(surface: Rgba, rect: Rectangle, +thickness: U32, +
 def Rgba.circle.plot(outline: Bool, +cx: F32, +cy: F32, +x: F32, +y: F32, +color: U32, surface: Rgba) -> Rgba:
   match outline:
     case False{}:
-      s0 = Rgba.draw_rectangle(surface, (cx - x : F32), (cy + y : F32), (x * 2.0 : F32), 1.0, color)
-      s1 = Rgba.draw_rectangle(s0, (cx - x : F32), (cy - y : F32), (x * 2.0 : F32), 1.0, color)
-      s2 = Rgba.draw_rectangle(s1, (cx - y : F32), (cy + x : F32), (y * 2.0 : F32), 1.0, color)
-      Rgba.draw_rectangle(s2, (cx - y : F32), (cy - x : F32), (y * 2.0 : F32), 1.0, color)
+      s0 = Rgba.draw_rectangle(surface, (cx - x : F32), (cy + y : F32), (x * 2.0 + 1.0 : F32), 1.0, color)
+      s1 = Rgba.draw_rectangle(s0, (cx - x : F32), (cy - y : F32), (x * 2.0 + 1.0 : F32), 1.0, color)
+      s2 = Rgba.draw_rectangle(s1, (cx - y : F32), (cy + x : F32), (y * 2.0 + 1.0 : F32), 1.0, color)
+      Rgba.draw_rectangle(s2, (cx - y : F32), (cy - x : F32), (y * 2.0 + 1.0 : F32), 1.0, color)
     case True{}:
       s0 = Rgba.draw_pixel(surface, (cx + x : F32), (cy + y : F32), color)
       s1 = Rgba.draw_pixel(s0, (cx - x : F32), (cy + y : F32), color)
@@ -2235,7 +2242,8 @@ def Rgba.line.loop(n: Nat, +vertical: Bool, +x: F32, +y: F32, +direction: F32, +
       Rgba.line.loop(k, vertical, x, y, direction, (major + direction : F32),
         (minor + step : U32), step, color, Rgba.draw_pixel(surface, px, py, color))
 
-# The 16.16 short-axis accumulator and excluded final endpoint match ImageDrawLine.
+# The 16.16 short-axis accumulator, starting at one half (rounding), and the
+# included final endpoint match raylib 6.2 ImageDrawLine.
 def Rgba.draw_line(surface: Rgba, +x0: F32, +y0: F32, x1: F32, y1: F32, color: U32) -> Rgba:
   +dx = (x1 - x0 : F32)
   +dy = (y1 - y0 : F32)
@@ -2244,9 +2252,10 @@ def Rgba.draw_line(surface: Rgba, +x0: F32, +y0: F32, x1: F32, y1: F32, color: U
   +short = Bool.pick(F32, vertical, dx, dy)
   +count = F32.to_u32(F32.abs(long))
   +magnitude = ((F32.to_u32(F32.abs(short)) << 16n) / U32.max(1, count) : U32)
+  +pixels = (count + 1 : U32)
   step = Bool.pick(U32, (short < 0.0 : F32), (0 - magnitude : U32), magnitude)
-  Rgba.line.loop(U32.to_nat(count), vertical, x0, y0,
-    Bool.pick(F32, (long < 0.0 : F32), (0.0 - 1.0 : F32), 1.0), 0.0, 0, step, color, surface)
+  Rgba.line.loop(U32.to_nat(pixels), vertical, x0, y0,
+    Bool.pick(F32, (long < 0.0 : F32), (0.0 - 1.0 : F32), 1.0), 0.0, 32768, step, color, surface)
 
 def Rgba.draw_line_v(surface: Rgba, start: M.Vector2, end: M.Vector2, color: U32) -> Rgba:
   M.Vector2{x0, y0} = start
@@ -2271,8 +2280,11 @@ def Rgba.draw_line_ex(surface: Rgba, start: M.Vector2, end: M.Vector2, +thicknes
   +bx = Signed.trunc((x1 + 0.5 : F32))
   +by = Signed.trunc((y1 + 0.5 : F32))
   +horizontal = (F32.abs((by - ay : F32)) < F32.abs((bx - ax : F32)) : F32)
-  lower = Rgba.thick_line.loop(U32.to_nat((thickness / 2 + 1 : U32)), horizontal, ax, ay, bx, by, 0.0, 1.0, color, surface)
-  Rgba.thick_line.loop(U32.to_nat(((U32.max(1, thickness) - 1) / 2 : U32)), horizontal, ax, ay, bx, by, (0.0 - 1.0 : F32), (0.0 - 1.0 : F32), color, lower)
+  # A zero-length segment takes neither of ImageDrawLineEx's branches: nothing
+  # is drawn (ImageDrawLine itself draws the start pixel since raylib 6.2).
+  +point = F32.is_eq(ax, bx) && F32.is_eq(ay, by)
+  lower = Rgba.thick_line.loop(U32.to_nat(Bool.pick(U32, point, 0, (thickness / 2 + 1 : U32))), horizontal, ax, ay, bx, by, 0.0, 1.0, color, surface)
+  Rgba.thick_line.loop(U32.to_nat(Bool.pick(U32, point, 0, ((U32.max(1, thickness) - 1) / 2 : U32))), horizontal, ax, ay, bx, by, (0.0 - 1.0 : F32), (0.0 - 1.0 : F32), color, lower)
 
 type Raster.Edge is Data:
   Edge{value: U32, dx: U32, dy: U32}
@@ -3441,9 +3453,10 @@ def Surface.color_tint(surface: Surface, color: U32) -> Result<&1, &1, Surface &
 def Surface.color_invert(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Surface.recolor.run(surface, Recolored{ImageInvert{}})
 
-# ImageColorContrast takes a float; non-finite amounts are rejected.
+# ImageColorContrast takes an int (raylib 6.2): amounts must convert to int
+# (truncation toward zero).
 def Surface.color_contrast(surface: Surface, +amount: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
-  Surface.recolor.checked(Surface.amount.finite(amount), surface, Recolored{Color.Transform.contrast(amount)})
+  Surface.recolor.checked(Surface.amount.finite(amount) && (F32.abs(amount) < 2147483648.0 : F32), surface, Recolored{Color.Transform.contrast(amount)})
 
 # ImageColorBrightness takes int: amounts must convert to int (truncation).
 def Surface.color_brightness(surface: Surface, +amount: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
@@ -5357,17 +5370,31 @@ def Files.directory(+path: String) -> Maybe<String>:
   Bool.pick(Maybe<String>, Nat.is_lt(0n, length) && Nat.is_le(length, 4093n),
     Some{Files.directory.found(path, Files.after_slash(path, 0n, 0n))}, None{})
 
-def Files.previous.cut(+path: String, +after: Nat) -> String:
-  +slash = Nat.sub(after, 1n)
-  +root = Nat.is_eq(slash, 0n) || (Nat.is_eq(slash, 2n) && U32.is_eq(Files.code(path, 1n), 58))
-  Bool.pick(String, Nat.is_eq(after, 0n), "", String.take(path, Bool.pick(Nat, root, after, slash)))
+# The separators' positions, the last first.
+def Files.separators(path: String, +at: Nat, +acc: +List<Nat>) -> +List<Nat>:
+  match path:
+    case SNil{}: acc
+    case SCon{+character, rest}: Files.separators(rest, 1n+at, Bool.pick(+List<Nat>, Files.slash(character), Con{at, acc}, acc))
 
-# GetPrevDirectoryPath: paths of up to 3 bytes unchanged; otherwise the path up
-# to its last separator, keeping a root "/" or "C:\\". Paths up to 4096 bytes.
-def Files.previous_directory(+path: String) -> Maybe<String>:
+# raylib 6.2's walk from the last separator: a root ("/" at 0, "C:\\" at 2)
+# ends it with the root kept; a trailing separator is passed; another ends it
+# with the path up to it, once the path's own file name is passed when the
+# path is a file.
+def Files.previous.walk(seps: +List<Nat>, +path: String, +last: Nat, +file: Bool) -> String:
+  match seps:
+    case Nil{}: ""
+    case Con{+i, +rest}:
+      Bool.pick(String, Nat.is_eq(i, 0n) || (Nat.is_eq(i, 2n) && U32.is_eq(Files.code(path, 1n), 58)), String.take(path, 1n+i),
+        Bool.pick(String, Nat.is_eq(i, last), Files.previous.walk(rest, path, last, file),
+          Bool.pick(String, file, Files.previous.walk(rest, path, last, False{}), String.take(path, i))))
+
+# GetPrevDirectoryPath (raylib 6.2) for a path whose IsPathFile is `file`:
+# "" where no separator ends the walk. Paths up to 4096 bytes. See
+# Files.previous_directory for the one that asks the file system.
+def Files.previous_directory_given(+path: String, +file: Bool) -> Maybe<String>:
   +length = String.length(path)
   Bool.pick(Maybe<String>, Nat.is_le(length, 4096n),
-    Some{Bool.pick(String, Nat.is_le(length, 3n), path, Files.previous.cut(path, Files.after_slash(path, 0n, 0n)))}, None{})
+    Some{Files.previous.walk(Files.separators(path, 0n, Nil{}), path, Nat.sub(length, 1n), file)}, None{})
 
 def Files.lower(+character: Char) -> Char:
   +code = Char.to_u32(character)
@@ -5378,11 +5405,10 @@ def Files.lowered(text: String, reversed: String) -> String:
     case SNil{}: String.reverse(reversed)
     case SCon{character, rest}: Files.lowered(rest, SCon{Files.lower(character), reversed})
 
-# The ';'-separated extension list: at most 31 entries, the last keeping any
-# further separators.
+# The ';'-separated extension list (raylib 6.2): its first 32 entries; every
+# separator ends an entry.
 def Files.extensions.limited(+pieces: List<&2, String>) -> List<&2, String>:
-  Bool.pick(List<&2, String>, Nat.is_le(List.length(&2, String, pieces), 31n), pieces,
-    List.append(&2, String, List.take(&2, String, pieces, 30n), [String.join(List.drop(&2, String, pieces, 30n), ";")]))
+  List.take(&2, String, pieces, 32n)
 
 def Files.extensions(text: String) -> List<&2, String>:
   Files.extensions.limited(String.split(text, ';'))
@@ -5398,12 +5424,11 @@ def Files.has_extension.found(found: Maybe<String>, +extensions: String) -> Mayb
   match found:
     case None{}: Some{False{}}
     case Some{+extension}:
-      Bool.pick(Maybe<Bool>, Nat.is_lt(String.length(extension), 16n),
-        Some{Files.extension.matches(Files.lowered(extension, ""), Files.extensions(Files.lowered(extensions, "")))}, None{})
+      Some{Files.extension.matches(Files.lowered(String.take(extension, 15n), ""), Files.extensions(Files.lowered(extensions, "")))}
 
-# IsFileExtension: ASCII-case-insensitive match of GetFileExtension against a
-# ';'-separated list (entries without a leading '.' compare without it). File
-# extensions of 16+ bytes overflow raylib's buffer: None.
+# IsFileExtension (raylib 6.2): ASCII-case-insensitive match of
+# GetFileExtension's first 15 bytes against a ';'-separated list of up to 32
+# entries (entries without a leading '.' compare without it). Always Some.
 def Files.has_extension(path: String, extensions: String) -> Maybe<Bool>:
   Files.has_extension.found(Files.extension(path), extensions)
 
@@ -5538,8 +5563,8 @@ def Files.find.loaded(+search: String, result: Result<&1, &1, Surface.IOError, S
     case Done{+text}: IO.pure(Maybe<U32>, Bool.pick(Maybe<U32>, String.is_empty(text), None{}, Files.found(Files.until_nul(text, False{}, ""), search)))
 
 # FileTextFindIndex: the byte index of the first occurrence of search in the
-# file's text (up to a NUL), None when absent or the file is missing; an empty
-# file, which raylib would scan through a NULL text, is None.
+# file's text (up to a NUL), None (raylib's -1) when absent, the file is
+# missing or empty (raylib 6.2 checks LoadFileText's NULL).
 def Files.text_find_index(path: String, +search: String) -> IO(Maybe<U32>):
   IO.bind(Result<&1, &1, Surface.IOError, String>, Maybe<U32>, Files.load_text(path), Files.find.loaded(search))
 
@@ -5634,6 +5659,10 @@ def Files.stat.seconds(r: Result<&1, &1, U32 & String, U32 & Nat & Nat>) -> Nat:
 # mode 0 raylib starts from).
 def Files.is_path_file(path: String) -> IO(Bool):
   IO.bind(Result<&1, &1, U32 & String, U32 & Nat & Nat>, Bool, Path.stat(path), r => IO.pure(Bool, U32.is_eq(Files.stat.kind(r), 1)))
+
+# GetPrevDirectoryPath: IsPathFile of the path, then the walk.
+def Files.previous_directory(+path: String) -> IO(Maybe<String>):
+  IO.bind(Bool, Maybe<String>, Files.is_path_file(path), file => IO.pure(Maybe<String>, Files.previous_directory_given(path, file)))
 
 # GetFileModTime: st_mtime in seconds, 0 where stat fails. A modification
 # before 1970 (raylib's long is negative then) is 0 here too.
@@ -5734,8 +5763,36 @@ def Files.make_directory(+path: String) -> IO(U32):
     IO.bind(Bool, U32, Files.directory_exists(path), exists => Files.make.existing(exists, path)))
 
 # ChangeDirectory: chdir(2) succeeds.
-def Files.change_directory(path: String) -> IO(Bool):
-  IO.bind(Result<&1, &1, U32 & String, Unit>, Bool, Dir.change(path), r => IO.pure(Bool, U32.is_eq(Files.done(r), 0)))
+# ChangeDirectory (raylib 6.2: chdir's result): 0, or -1 where chdir fails.
+def Files.change_directory(path: String) -> IO(U32):
+  IO.bind(Result<&1, &1, U32 & String, Unit>, U32, Dir.change(path), r => IO.pure(U32, Files.done(r)))
+
+# IsPathDirectory: not IsPathFile, so a path that stat cannot reach (a
+# missing one) is a directory too, as raylib 6.2 has it.
+def Files.is_path_directory(path: String) -> IO(Bool):
+  IO.bind(Bool, Bool, Files.is_path_file(path), file => IO.pure(Bool, Bool.not(file)))
+
+# IsPathAbsolute (POSIX): the path starts with '/'.
+def Files.is_path_absolute(path: String) -> Bool:
+  match path:
+    case SNil{}: False{}
+    case SCon{+character, _}: U32.is_eq(Char.to_u32(character), 47)
+
+# One past the last '/' (strrchr), or 0 when there is none.
+def Files.after_forward_slash(path: String, +position: Nat, after: Nat) -> Nat:
+  match path:
+    case SNil{}: after
+    case SCon{+character, rest}: Files.after_forward_slash(rest, 1n+position, Bool.pick(Nat, U32.is_eq(Char.to_u32(character), 47), 1n+position, after))
+
+def Files.hidden.name(name: String) -> Bool:
+  match name:
+    case SNil{}: False{}
+    case SCon{+first, +rest}: U32.is_eq(Char.to_u32(first), 46) && Bool.not(String.eq(rest, "")) && Bool.not(String.eq(rest, "."))
+
+# IsFileHidden (POSIX): the name after the last '/' starts with '.' and is
+# neither "." nor "..". (Windows reads FILE_ATTRIBUTE_HIDDEN instead.)
+def Files.is_file_hidden(+path: String) -> Bool:
+  Files.hidden.name(String.drop(path, Files.after_forward_slash(path, 0n, 0n)))
 
 # The bytes of a string's UTF-8 encoding.
 def Files.utf8.length(text: String, +n: U32) -> U32:
@@ -5748,9 +5805,9 @@ def Files.utf8.length(text: String, +n: U32) -> U32:
 def Files.working.of(r: Result<&1, &1, U32 & String, String>) -> Maybe<String>:
   match r:
     case Fail{_}: None{}
-    case Done{+path}: Bool.pick(Maybe<String>, (Files.utf8.length(path, 0) < 4095 : U32), Some{path}, None{})
+    case Done{+path}: Bool.pick(Maybe<String>, (Files.utf8.length(path, 0) < 4096 : U32), Some{path}, None{})
 
-# GetWorkingDirectory: getcwd(3) into raylib's buffer of 4095 bytes: None
+# GetWorkingDirectory: getcwd(3) into raylib's buffer of 4096 bytes: None
 # where it fails or the path does not fit.
 def Files.working_directory() -> IO(Maybe<String>):
   IO.bind(Result<&1, &1, U32 & String, String>, Maybe<String>, Dir.current(), r => IO.pure(Maybe<String>, Files.working.of(r)))
@@ -5809,10 +5866,8 @@ def Files.scan.file(filter: Files.Filter, +path: String) -> Maybe<Bool>:
   Files.scan.file.given(given, text, path)
 
 # An entry of a directory read: its path base/name and what its length
-# makes of it: 0 skipped from 4096 bytes on; at 4095 bytes snprintf cuts the
-# path to its first 4094 bytes, which raylib then looks at and lists (2
-# with the cut path, 1 refused where the cut would split a character); 2
-# looked at.
+# makes of it: 0 skipped from 4096 bytes on (raylib 6.2's snprintf into its
+# 4096-byte buffer); 2 looked at.
 type Files.Entry is Data:
   Files.Entry{path: String, class: U32}
 
@@ -5821,13 +5876,10 @@ def Files.ascii(text: String) -> Bool:
     case SNil{}: True{}
     case SCon{+character, rest}: (Char.to_u32(character) < 128 : U32) && Files.ascii(rest)
 
-def Files.entry.cut(+path: String) -> Files.Entry:
-  Bool.pick(Files.Entry, Files.ascii(path), Files.Entry{String.take(path, 4094n), 2}, Files.Entry{path, 1})
-
 def Files.entry(+base: String, +name: String) -> Files.Entry:
   +path = base ++ "/" ++ name
   +length = Files.utf8.length(path, 0)
-  Bool.pick(Files.Entry, (length >= 4096 : U32), Files.Entry{path, 0}, Bool.pick(Files.Entry, U32.is_eq(length, 4095), Files.entry.cut(path), Files.Entry{path, 2}))
+  Bool.pick(Files.Entry, (length >= 4096 : U32), Files.Entry{path, 0}, Files.Entry{path, 2})
 
 def Files.entries(+base: String, names: List<String>, acc: +List<Files.Entry>) -> +List<Files.Entry>:
   match names:
@@ -5915,9 +5967,8 @@ def Files.filter.given(filter: Maybe<String>) -> Maybe<String>:
 # NULL (an empty filter is too): every regular file; otherwise a file is
 # listed for the "*.*" or "FILES*" tag or an extension of its ';'-separated
 # list (IsFileExtension), and anything else for "*.*" or "DIRS*". No
-# directory gives no paths. A path of 4096 bytes or more is skipped and one
-# of 4095 is cut to 4094, as raylib's snprintf leaves it. None where
-# IsFileExtension's buffer overflows or the cut would split a character.
+# directory gives no paths. A path of 4096 bytes or more is skipped, as
+# raylib's snprintf leaves it. None where IsFileExtension's buffer overflows.
 def Files.load_directory_files_ex(+path: String, filter: Maybe<String>, +subdirs: Bool) -> IO(Maybe<FilePathList>):
   IO.bind(Maybe<+List<String>>, Maybe<FilePathList>, Files.scanned(path, Files.filter.given(filter), subdirs), found => IO.pure(Maybe<FilePathList>, Files.listing(found)))
 
@@ -5943,7 +5994,7 @@ def Files.directory_file_count(+path: String) -> IO(Maybe<U32>):
 def Files.copy.saved(r: Result<&1, &1, Surface.IOError, Unit>) -> U32:
   match r:
     case Fail{_}: 0
-    case Done{_}: 1
+    case Done{_}: 0
 
 def Files.copy.write(+made: U32, data: Result<&1, &1, Surface.IOError, +List<U32>>, +target: String) -> IO(U32):
   match data:
@@ -5965,29 +6016,41 @@ def Files.copy.at(directory: Maybe<String>, data: Result<&1, &1, Surface.IOError
         IO.bind(U32, Maybe<U32>, Files.copy.made(exists, dir), made =>
           IO.bind(U32, Maybe<U32>, Files.copy.write(made, data, target), r => IO.pure(Maybe<U32>, Some{r}))))
 
-# FileCopy: the source's bytes (LoadFileData), the target's directory
-# (GetDirectoryPath) made where DirectoryExists does not see it, then the
-# bytes saved when there are any: 1 when SaveFileData succeeds, 0 when it
-# fails or nothing was read, MakeDirectory's -1 when the directory could not
-# be made. None where GetDirectoryPath overflows its buffer.
+# FileCopy (raylib 6.2): the source's bytes (LoadFileData), the target's
+# directory (GetDirectoryPath) made where DirectoryExists does not see it,
+# then the bytes saved when there are any. 0 once the directory is there,
+# whether SaveFileData succeeds or not (and when nothing was read);
+# MakeDirectory's -1 when the directory could not be made. None where
+# GetDirectoryPath overflows its buffer.
 def Files.copy(+source: String, +target: String) -> IO(Maybe<U32>):
   IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Maybe<U32>, Files.load_data(source), data => Files.copy.at(Files.directory(target), data, target))
 
-def Files.move.copied(copied: Maybe<U32>, +source: String) -> IO(Maybe<U32>):
+# The copy checked: the target there with the source's length (GetFileLength
+# of each), then FileRemove of the source; otherwise FileCopy's 0 stays.
+def Files.move.checked(same: Bool, +source: String) -> IO(Maybe<U32>):
+  match same:
+    case True{}: IO.bind(U32, Maybe<U32>, Files.remove(source), r => IO.pure(Maybe<U32>, Some{r}))
+    case False{}: IO.pure(Maybe<U32>, Some{0})
+
+def Files.move.verify(+source: String, +target: String) -> IO(Maybe<U32>):
+  IO.bind(Bool, Maybe<U32>, Files.exists(target), there =>
+    IO.bind(U32, Maybe<U32>, Files.length(source), a =>
+      IO.bind(U32, Maybe<U32>, Files.length(target), b => Files.move.checked(there && U32.is_eq(a, b), source))))
+
+def Files.move.copied(copied: Maybe<U32>, +source: String, +target: String) -> IO(Maybe<U32>):
   match copied:
     case None{}: IO.pure(Maybe<U32>, None{})
     case Some{+result}:
-      Bool.pick(IO(Maybe<U32>), U32.is_eq(result, 0), IO.bind(U32, Maybe<U32>, Files.remove(source), r => IO.pure(Maybe<U32>, Some{r})), IO.pure(Maybe<U32>, Some{4294967295}))
+      Bool.pick(IO(Maybe<U32>), U32.is_eq(result, 0), Files.move.verify(source, target), IO.pure(Maybe<U32>, Some{result}))
 
 def Files.move.existing(exists: Bool, +source: String, +target: String) -> IO(Maybe<U32>):
   match exists:
     case False{}: IO.pure(Maybe<U32>, Some{4294967295})
-    case True{}: IO.bind(Maybe<U32>, Maybe<U32>, Files.copy(source, target), copied => Files.move.copied(copied, source))
+    case True{}: IO.bind(Maybe<U32>, Maybe<U32>, Files.copy(source, target), copied => Files.move.copied(copied, source, target))
 
-# FileMove: -1 for a source FileExists does not see; otherwise FileCopy,
-# and FileRemove of the source when FileCopy gave 0 (it gives 1 for a
-# successful copy, which raylib takes as a failure: the source stays and the
-# result is -1).
+# FileMove (raylib 6.2): -1 for a source FileExists does not see; otherwise
+# FileCopy's result, and when it is 0 and the target is there with the
+# source's length, FileRemove of the source.
 def Files.move(+source: String, +target: String) -> IO(Maybe<U32>):
   IO.bind(Bool, Maybe<U32>, Files.exists(source), exists => Files.move.existing(exists, source, target))
 
@@ -8559,8 +8622,8 @@ def Text.replace_alloc(text: String, search: String, replacement: String) -> May
 
 def Files.replace.saved(saved: Result<&1, &1, Surface.IOError, Unit>) -> IO(Maybe<U32>):
   match saved:
-    case Fail{_}: IO.pure(Maybe<U32>, Some{0})
-    case Done{_}: IO.pure(Maybe<U32>, Some{1})
+    case Fail{_}: IO.pure(Maybe<U32>, Some{4294967295})
+    case Done{_}: IO.pure(Maybe<U32>, Some{0})
 
 def Files.replace.valid(valid: Bool, path: String, bytes: +List<U32>) -> IO(Maybe<U32>):
   match valid:
@@ -8578,26 +8641,26 @@ def Files.replace.result(path: String, replaced: Maybe<String>) -> IO(Maybe<U32>
 
 def Files.replace.text(empty: Bool, path: String, text: String, search: String, replacement: String) -> IO(Maybe<U32>):
   match empty:
-    case True{}: IO.pure(Maybe<U32>, None{})
+    case True{}: IO.pure(Maybe<U32>, Some{4294967295})
     case False{}: Files.replace.result(path, Text.replace_alloc(Files.until_nul(text, False{}, ""), search, replacement))
 
-def Files.replace.loaded(path: String, search: String, replacement: String, result: Result<&1, &1, Surface.IOError, String>) -> IO(Maybe<U32>):
+def Files.replace.loaded(path: String, +search: String, replacement: String, result: Result<&1, &1, Surface.IOError, String>) -> IO(Maybe<U32>):
   match result:
-    case Fail{_}: IO.pure(Maybe<U32>, None{})
-    case Done{+text}: Files.replace.text(String.is_empty(text), path, text, search, replacement)
+    case Fail{_}: IO.pure(Maybe<U32>, Some{4294967295})
+    case Done{+text}: Files.replace.text(String.is_empty(text) || String.is_empty(search), path, text, search, replacement)
 
 def Files.replace.existing(+path: String, search: String, replacement: String, exists: Bool) -> IO(Maybe<U32>):
   match exists:
-    case False{}: IO.pure(Maybe<U32>, Some{0})
+    case False{}: IO.pure(Maybe<U32>, Some{4294967295})
     case True{}: IO.bind(Result<&1, &1, Surface.IOError, String>, Maybe<U32>, Files.load_text(path), Files.replace.loaded(path, search, replacement))
 
-# FileTextReplace(fileName, search, replacement): 0 when the file does not
-# exist; otherwise LoadFileText, TextReplaceAlloc and SaveFileText of the
-# result (its text up to the first NUL, so the file is rewritten even without
-# a match), answering SaveFileText's 1 or 0. None where raylib would pass a
-# NULL text to fprintf: an empty or unreadable file (LoadFileText's NULL), an
-# empty search (TextReplaceAlloc's NULL); also for characters above 255 in
-# the result and int overflows of TextReplaceAlloc.
+# FileTextReplace(fileName, search, replacement) (raylib 6.2): -1 when the
+# file does not exist, is empty or unreadable (LoadFileText's NULL) or the
+# search is empty (TextReplaceAlloc's NULL); otherwise LoadFileText,
+# TextReplaceAlloc and SaveFileText of the result (its text up to the first
+# NUL, so the file is rewritten even without a match), answering 0 when it
+# is saved and -1 when not. None for characters above 255 in the result and
+# int overflows of TextReplaceAlloc.
 def Files.text_replace(+path: String, search: String, replacement: String) -> IO(Maybe<U32>):
   IO.bind(Bool, Maybe<U32>, Files.exists(path), Files.replace.existing(path, search, replacement))
 

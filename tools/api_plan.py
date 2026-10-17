@@ -480,7 +480,7 @@ def main():
         print(dump(report))
     else:
         exit_measure = report['phase1_exit']
-        print(f'API plan {args.command}: {report["declaration_inventory"]["total"]} entries; {report["core_functions"]["partial"]}/600 core functions partial; {report["core_functions"]["complete"]} complete; '
+        print(f'API plan {args.command}: {report["declaration_inventory"]["total"]} entries; {report["core_functions"]["partial"]}/{report["core_functions"]["total"]} core functions partial; {report["core_functions"]["complete"]} complete; '
               f'Phase 1 exit {exit_measure["meeting"]}/{exit_measure["total"]}')
         if args.command == 'report':
             for row in report['next_work'][:5]:

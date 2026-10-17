@@ -1,5 +1,5 @@
 # raylib [textures] example - image kernel, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_image_kernel.c
+# Adapted from raylib 6.2 examples/textures/textures_image_kernel.c
 # (zlib/libpng, Copyright (c) 2015-2025 Karim Salem (@kimo-s)); see
 # LICENSES/raylib.txt.
 #
@@ -9,13 +9,9 @@
 # unless that is zero (the Sobel kernel). LoadImage of a .png is the PNG
 # loader (Surface.load_png).
 #
-# The native example is undefined behavior in C: ImageKernelConvolution
-# converts each alpha sum times 255 with an (unsigned char) cast, and the
-# sharpen kernel sums to 2 on the image's first and last rows (510.0f), the
-# Sobel kernel to -2 on its first pixel. Surface.kernel_convolution refuses
-# such kernels (InvalidKernel, docs/CONVOLUTION.md), so this port leaves
-# those images without a texture and refuses every frame; nothing of it is
-# compared with the native example. See docs/DRIVER.md.
+# raylib 6.2 clamps each alpha sum before the (unsigned char) cast, so the
+# sharpen and Sobel images (alpha sums 2 and -2 at the edges, undefined under
+# 6.0) are defined; see docs/CONVOLUTION.md.
 import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M
