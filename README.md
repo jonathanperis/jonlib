@@ -97,6 +97,9 @@ refuse every frame, because the native example is undefined behavior in C.
 - **Jongui** ([GUI.md](docs/GUI.md)): raygui's controls.
 - **Joneasings** ([EASINGS.md](docs/EASINGS.md)): reasings.h's easing functions.
 - **Jonlights** ([LIGHTS.md](docs/LIGHTS.md)): rlights.h's lights.
+- **Jonlgl, Joncamera, Jongestures** ([MODULES.md](docs/MODULES.md)): rlgl.h's,
+  rcamera.h's and rgestures.h's APIs as their own modules, generated over
+  Jonlib's port.
 - **Execution**: native CPU, JavaScript and (with the declared compiler overlay)
   forced Metal; see [VERIFICATION.md](docs/VERIFICATION.md).
 

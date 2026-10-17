@@ -5,6 +5,9 @@ import ./jonlib.bend as J
 import ./jonmath.bend as M
 import ./joneasings.bend as E
 import ./jonlights.bend as Lt
+import ./jonlgl.bend as Lgl
+import ./joncamera.bend as Cam
+import ./jongestures.bend as Gest
 import ./src/binary64_narrow.bend as N
 import ./src/binary64_fma.bend as F
 import ./src/binary64_add_sub.bend as A
@@ -4121,6 +4124,25 @@ law lights_create_full_is_zero:
 
 law lights_uniform_name:
   {Lt.Light.uniform(2, "color") == "lights[2].color" : String}
+
+# The generated header modules call Jonlib's definitions.
+law jonlgl_version_is_jonlib:
+  {Lgl.Rlgl.get_version() == J.Rlgl.get_version() : U32}
+
+law jonlgl_clip_planes_is_jonlib:
+  for frame: J.Frame
+  for near: M.Float64
+  for far: M.Float64
+  {Lgl.Rlgl.set_clip_planes(frame, near, far) == J.Rlgl.set_clip_planes(frame, near, far) : J.Frame}
+
+law joncamera_forward_is_jonlib:
+  for arithmetic: M.Contraction
+  for camera: J.Camera3D
+  {Cam.Camera.forward_for(arithmetic, camera) == J.Camera.forward_for(arithmetic, camera) : M.Vector3}
+
+law jongestures_detected_is_jonlib:
+  for core: J.Core
+  {Gest.Gestures.get_detected(core) == J.Gestures.get_detected(core) : U32}
 
 law gui_pick_hover_keeps_drag:
   for gui: JG.Gui
