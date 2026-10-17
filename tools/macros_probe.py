@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the value macros of raylib.h, raymath.h, rlgl.h, rcamera.h and rgestures.h as Jonlib constants.
+"""Check the value macros of raylib.h, raymath.h, rlgl.h, rcamera.h, rgestures.h and config.h as Jonlib constants.
 
 A macro whose value is an integer, a float (`f` suffix), a double or a string
 literal, or the name of an enumerator (MOUSE_LEFT_BUTTON is MOUSE_BUTTON_LEFT),
@@ -13,7 +13,13 @@ macros, raylib's and raymath's PI, DEG2RAD, RAD2DEG and EPSILON) are not
 generated, nor are guards, function-like macros and macros naming functions or
 types. Each header compiles standalone in Jonlib's configuration (rlgl.h with
 GRAPHICS_API_OPENGL_SOFTWARE, rcamera.h and rgestures.h with their *_STANDALONE
-switch) and prints its values; the gate compares every generated constant on
+switch) and prints its values. config.h's options are raylib's default build
+configuration as its modules see it: config.h, then rlgl.h (software renderer)
+and miniaudio.h (AUDIO_DEVICE_FORMAT names a miniaudio enumerator), then, for
+an option config.h documents commented out, the module's own `#ifndef NAME`
+default (all such sites in raylib's sources must agree), so a documented
+value the module does not use (MAX_TOUCH_POINTS 10 against rcore.c's 8) is
+not the constant. The gate compares every generated constant on
 CPU-1, CPU-2 and JavaScript, and fails when the catalog and the generated
 section disagree. `--write` regenerates the section from api/reference.json and
 the native values.
@@ -41,7 +47,17 @@ HEADERS = {
     'rlgl.h': (['#define GRAPHICS_API_OPENGL_SOFTWARE', '#include "rlgl.h"'], False),
     'rcamera.h': (['#include <stdbool.h>', '#define RCAMERA_STANDALONE', '#include "rcamera.h"'], False),
     'rgestures.h': (['#define RGESTURES_STANDALONE', '#include "rgestures.h"'], False),
+    'config.h': (['#include "config.h"', '#define GRAPHICS_API_OPENGL_SOFTWARE', '#include "rlgl.h"', '#include "external/miniaudio.h"'], False),
 }
+# Catalog kinds of value rows per header (config.h's options are 'configuration' rows).
+ROW_KINDS = {'config.h': 'configuration'}
+# Enumerators outside the catalog that option values name.
+FOREIGN_ENUMERATORS = {'ma_format_f32'}
+# Switches whose definedness is the value: rlgl.h's graphics API selection, a Bool
+# (True where Jonlib's configuration, GRAPHICS_API_OPENGL_SOFTWARE, defines it).
+DEFINED = ('rlgl.h', 'GRAPHICS_API_')
+# Where a commented-out config.h option's default lives.
+MODULE_SOURCES = ('*.c', '*.h', 'platforms/*.c')
 # Mapped elsewhere: Jonmath's M.Math constants (tools/constants_probe.py).
 ELSEWHERE = {('raylib.h', name) for name in ('PI', 'DEG2RAD', 'RAD2DEG')} | {('raymath.h', name) for name in ('PI', 'EPSILON', 'DEG2RAD', 'RAD2DEG')}
 INT = re.compile(r'^(0[xX][0-9A-Fa-f]+|\d+)$')
@@ -49,6 +65,30 @@ FLOAT = re.compile(r'^\d+\.\d*([eE][+-]?\d+)?[fF]$')
 DOUBLE = re.compile(r'^\d+\.\d*([eE][+-]?\d+)?$')
 STRING = re.compile(r'^"[^"\\]*"$')
 NAME = re.compile(r'^[A-Z][A-Z0-9_]*$')
+
+
+def module_default(source, name):
+    """The value of every unconditional `#ifndef NAME` / `#define NAME value` default in raylib's sources
+    except config.h (None without one); the sites must agree."""
+    found = set()
+    for pattern in MODULE_SOURCES:
+        for path in sorted(source.glob(pattern)):
+            if path.name == 'config.h':
+                continue
+            lines = path.read_text(errors='replace').splitlines()
+            for index in range(1, len(lines)):
+                match = re.match(r'\s*#\s*define\s+' + re.escape(name) + r'\s+(.*?)\s*(//.*)?$', lines[index])
+                guard = lines[index - 1].strip()
+                if match and guard in (f'#ifndef {name}', f'#if !defined({name})'):
+                    found.add(match.group(1))
+    if len(found) > 1:
+        raise ProbeFailure(f'macros: raylib defines {name} as {sorted(found)} in different modules')
+    return found.pop() if found else None
+
+
+def commented(row):
+    """A config.h option documented commented out (its module keeps the default)."""
+    return 'documented override (commented out)' in ((row.get('variants') or [{}])[0].get('conditions') or [])
 
 
 def catalog():
@@ -65,7 +105,7 @@ def kind_of(value, enumerators):
         return 'double'
     if STRING.match(value):
         return 'string'
-    if NAME.match(value) and value in enumerators:
+    if value in FOREIGN_ENUMERATORS or (NAME.match(value) and value in enumerators):
         return 'int'
     return None
 
@@ -82,12 +122,27 @@ def bend_name(row, plan=None):
 
 def macros(rows=None):
     """[(header, name, kind, bend name)] in catalog order."""
+    return candidates(rows)[0]
+
+
+def shared_options(rows=None):
+    """config.h options a header's constant already names (rlgl.h's RL_DEFAULT_BATCH_BUFFERS is
+    Config.RL_DEFAULT_BATCH_BUFFERS too): checked to have that constant's value, not generated."""
+    return candidates(rows)[1]
+
+
+def candidates(rows=None):
     rows = catalog() if rows is None else rows
     plan = milestones()
-    enumerators = {row['name'] for row in rows if row['kind'] == 'enumerator'}
+    enumerators = {row['name'] for row in rows if row['kind'] == 'enumerator'} | FOREIGN_ENUMERATORS
     out, seen = [], set()
     for row in rows:
-        if row['kind'] != 'macro' or row['header'] not in HEADERS or (row['header'], row['name']) in ELSEWHERE:
+        if (row['header'], row['name'][:len(DEFINED[1])]) == DEFINED and row['kind'] in ('macro', 'switch'):
+            if (row['header'], row['name']) not in seen:
+                seen.add((row['header'], row['name']))
+                out.append((row['header'], row['name'], 'defined', bend_name(row, plan)))
+            continue
+        if row['header'] not in HEADERS or row['kind'] != ROW_KINDS.get(row['header'], 'macro') or (row['header'], row['name']) in ELSEWHERE:
             continue
         variant = (row.get('variants') or [{}])[0]
         if variant.get('parameters') is not None:
@@ -97,10 +152,16 @@ def macros(rows=None):
             seen.add((row['header'], row['name']))
             out.append((row['header'], row['name'], kind, bend_name(row, plan)))
     out = sorted(out, key=lambda key: list(HEADERS).index(key[0]))
+    earlier = {key[3]: key for key in out if key[0] != 'config.h'}
+    shared = [key for key in out if key[0] == 'config.h' and key[3] in earlier]
+    out = [key for key in out if key not in shared]
     names = [key[3] for key in out]
     if len(set(names)) != len(names):
         raise ProbeFailure(f'macros: two macros share a Jonlib name: {sorted(n for n in names if names.count(n) > 1)}')
-    return out
+    for key in shared:
+        if earlier[key[3]][2] != key[2]:
+            raise ProbeFailure(f'macros: config.h {key[1]} and {earlier[key[3]][0]} differ in kind')
+    return out, [(key, earlier[key[3]]) for key in shared]
 
 
 def prefix(header):
@@ -112,7 +173,21 @@ C_PRINT = {
     'float': '{{float f=({name});unsigned u;memcpy(&u,&f,4);printf("%u\\n",u);}}',
     'double': '{{double d=({name});unsigned long long u;memcpy(&u,&d,8);printf("%u %u\\n",(unsigned)(u>>32),(unsigned)u);}}',
     'string': 'printf("%s\\n",{name});',
+    'defined': '\n#ifdef {name}\nputs("1");\n#else\nputs("0");\n#endif\n',
 }
+
+
+def defaults(source, chosen, rows=None):
+    """`#ifndef` lines giving config.h's commented-out options their module defaults."""
+    rows = catalog() if rows is None else rows
+    wanted = {row['name'] for row in rows if row['header'] == 'config.h' and commented(row)}
+    lines = []
+    for _, name, _, _ in chosen:
+        if name in wanted:
+            value = module_default(source, name)
+            if value is not None:
+                lines += [f'#ifndef {name}', f'#define {name} {value}', '#endif']
+    return lines
 
 
 def native_values(probe, selected):
@@ -122,7 +197,8 @@ def native_values(probe, selected):
         chosen = [key for key in selected if key[0] == header]
         if not chosen:
             continue
-        lines = prefix_lines + ['#include <stdio.h>', '#include <string.h>', 'int main(void){']
+        extra = defaults(probe.args.raylib_source / 'src', chosen) if header == 'config.h' else []
+        lines = prefix_lines + extra + ['#include <stdio.h>', '#include <string.h>', 'int main(void){']
         lines += [C_PRINT[kind].format(name=name) for _, name, kind, _ in chosen]
         text = probe.native('\n'.join(lines + ['return 0;}']) + '\n', 'reference-' + prefix(header), link_raylib=linked)
         found = text.split('\n')[:-1]
@@ -140,6 +216,8 @@ def bend_value(kind, text):
         return 'U32', text
     if kind == 'float':
         return 'F32', f'Macros.f32({text})'
+    if kind == 'defined':
+        return 'Bool', 'True{}' if text == '1' else 'False{}'
     if kind == 'double':
         high, low = text.split()
         return 'M.Float64', f'M.Float64{{{high}, {low}}}'
@@ -185,12 +263,13 @@ def check_generated(generated):
         raise ProbeFailure('macros: the generated jonlib.bend section is stale; rerun tools/macros_probe.py --write')
 
 
-SHOW = {'int': 'U32.show(J.{c}())', 'float': 'U32.show(F32.bits(J.{c}()))', 'double': 'show64(J.{c}())', 'string': 'J.{c}()'}
+SHOW = {'defined': 'bool.digit(J.{c}())', 'int': 'U32.show(J.{c}())', 'float': 'U32.show(F32.bits(J.{c}()))', 'double': 'show64(J.{c}())', 'string': 'J.{c}()'}
 
 
 def render(selected, gpu):
     body = ('import Base\nimport ../../jonlib.bend as J\nimport ../../jonmath.bend as M\n'
             'def show64(value: M.Float64) -> String:\n  M.Float64{high, low} = value\n  U32.show(high) ++ " " ++ U32.show(low)\n'
+            'def bool.digit(b: Bool) -> String:\n  match b:\n    case True{}: "1"\n    case False{}: "0"\n'
             'def main() -> IO(Unit):\n  do IO<Unit>:\n')
     for _, _, kind, bend, _ in selected:
         body += f'    IO.print({SHOW[kind].format(c=bend)})\n'
@@ -209,8 +288,11 @@ def main():
         parser.add_argument('--write', action='store_true', help='Regenerate the jonlib.bend macro section')
     args = probekit.arguments(__doc__, configure)
     probe = probekit.Probe('macros', args)
-    selected = macros()
-    values = native_values(probe, selected)
+    selected, shared = candidates()
+    values = native_values(probe, selected + [option for option, _ in shared])
+    for option, constant in shared:
+        if values[option[:2]] != values[constant[:2]]:
+            raise ProbeFailure(f'macros: config.h {option[1]} = {values[option[:2]]} but {constant[0]} gives {constant[3]} {values[constant[:2]]}')
     generated = [(header, name, kind, bend, values[(header, name)]) for header, name, kind, bend in selected]
     if args.write:
         write(generated)
@@ -219,7 +301,7 @@ def main():
     lanes = {lane: rows for lane, rows in lanes.items() if lane != 'gpu'}
     probe.compare([value for _, _, _, _, value in generated], lanes, describe=lambda i: '.'.join(generated[i][:2]))
     probe.finish(macros=len(generated), kinds={kind: sum(k == kind for _, _, k, _, _ in generated) for kind in C_PRINT},
-                 headers={header: sum(h == header for h, _, _, _, _ in generated) for header in HEADERS})
+                 headers={header: sum(h == header for h, _, _, _, _ in generated) for header in HEADERS}, shared_options=len(shared))
 
 
 if __name__ == '__main__':

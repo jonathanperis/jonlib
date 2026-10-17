@@ -139,7 +139,25 @@ section before the enumerations by `tools/macros_probe.py --write` and checked
 against each header compiled in Jonlib's configuration (rlgl.h with
 `GRAPHICS_API_OPENGL_SOFTWARE`, rcamera.h and rgestures.h standalone; gate
 `macros`). The color macros and raylib's and raymath's math macros are
-Jonlib's `Color.*` and Jonmath's `M.Math.*`.
+Jonlib's `Color.*` and Jonmath's `M.Math.*`. rlgl.h's graphics API switches
+are Bools, True where Jonlib's configuration defines them:
+`Config.GRAPHICS_API_OPENGL_SOFTWARE()` and `Config.GRAPHICS_API_OPENGL_11()`
+(rlsw's OpenGL 1.1 path, the renderer Jonlib ports), False for the others.
+
+config.h's options are `Config.*` constants with the value raylib's default
+build gives them, checked by the same gate: config.h's own value, or for an
+option it documents commented out, the default of the module that uses it
+(`Config.MAX_FILEPATH_CAPACITY()` is rcore.c's 8192;
+`Config.RL_DEFAULT_BATCH_BUFFER_ELEMENTS()` is rlgl.h's 8192 for the software
+renderer, where config.h's comment says 4096; `Config.MAX_TOUCH_POINTS()` is
+rcore.c's and rgestures.h's 8, where it says 10). `Config.AUDIO_DEVICE_FORMAT()`
+is miniaudio's `ma_format_f32` (5). Jonlib is not built from config.h: the
+constants describe raylib's default build, and redefining one changes nothing.
+Where Jonlib's features differ from that build, the module documents say so:
+it decodes TGA, JPEG, PSD, HDR, PIC, PNM, KTX, ASTC, PKM and PVR images and BDF
+fonts, which the defaults leave out; it has no MOD music, which they include;
+and it keeps its audio module where the gates' reference library is built
+without raudio. `TRACELOG(level, ...)` is `Log.trace`.
 
 ## Shared types
 

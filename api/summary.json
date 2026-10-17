@@ -6,8 +6,8 @@
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 182,
-    "partial": 1702
+    "not-started": 61,
+    "partial": 1823
   },
   "core_functions": {
     "total": 600,
@@ -70,8 +70,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 19,
-      "partial": 384
+      "not-started": 12,
+      "partial": 391
     },
     "rcamera.h": {
       "total": 35,
@@ -94,8 +94,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 116,
-      "partial": 0
+      "not-started": 2,
+      "partial": 114
     }
   },
   "milestones": [
@@ -547,8 +547,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 178,
-      "partial": 29
+      "not-started": 57,
+      "partial": 150
     },
     {
       "id": "platforms",

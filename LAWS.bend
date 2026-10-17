@@ -4065,6 +4065,20 @@ law rlgl_arrays_disable_vertex:
 law rlgl_arrays_range_from_offset:
   {J.Rlgl.arrays.range(3n, 4) == [4, 5, 6] : +List<U32>}
 
+# config.h's options as raylib's default build sees them: rlgl compiles its
+# OpenGL 1.1 software path; MAX_FILEPATH_CAPACITY is rcore.c's default.
+law config_graphics_api_software:
+  {J.Config.GRAPHICS_API_OPENGL_SOFTWARE() == True{} : Bool}
+
+law config_graphics_api_11:
+  {J.Config.GRAPHICS_API_OPENGL_11() == True{} : Bool}
+
+law config_graphics_api_not_33:
+  {J.Config.GRAPHICS_API_OPENGL_33() == False{} : Bool}
+
+law config_filepath_capacity:
+  {J.Config.MAX_FILEPATH_CAPACITY() == 8192 : U32}
+
 law gui_pick_hover_keeps_drag:
   for gui: JG.Gui
   for bounds: J.Rectangle
