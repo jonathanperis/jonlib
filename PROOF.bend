@@ -2880,6 +2880,15 @@ def Laws.rlgl_resize_framebuffer_zero_refused(frame):
 def Laws.rlgl_update_texture_float_has_no_format():
   {==}
 
+def Laws.rlgl_arrays_null_color_keeps():
+  {==}
+
+def Laws.rlgl_arrays_disable_vertex():
+  {==}
+
+def Laws.rlgl_arrays_range_from_offset():
+  {==}
+
 def Laws.gui_pick_hover_keeps_drag(gui, bounds):
   {==}
 

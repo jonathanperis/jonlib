@@ -152,6 +152,8 @@ Remaining shapes (`rshapes.c`):
 | `rlReadScreenPixels` | `Rlgl.read_screen_pixels(frame, width, height) -> Frame & Maybe<+List<U32>>`: a zeroed `width * height * 4` buffer, `rlCopyFramebuffer`'s RGBA read of the whole size at its start (cut to the screen, rows packed), then rows swapped end for end with every alpha 255: on the memory platform, the screen bottom-up with red and blue swapped |
 | `rlReadTexturePixels` | `Rlgl.read_texture_pixels(width, height, format) -> Maybe<+List<U32>>`: `glGetTexImage` does nothing in rlsw, so formats 1..7 give `rlGetPixelDataSize` zero bytes and other formats `NULL` (`None`) |
 | `rlLoadExtensions`, `rlGetProcAddress` | `Rlgl.load_extensions(frame)`, `Rlgl.get_proc_address(name) -> U32`: OpenGL 3.3/ES2 extension loading does nothing here and the address is NULL (0) |
+| `rlEnableStatePointer` / `rlDisableStatePointer` | `Rlgl.enable_state_pointer(arrays, type, buffer) -> Rlgl.Arrays`, `Rlgl.disable_state_pointer(arrays, type)`: rlsw's client arrays as a value (`Rlgl.arrays()` binds none): GL_VERTEX_ARRAY and GL_TEXTURE_COORD_ARRAY bind the buffer (None unbinds), GL_COLOR_ARRAY binds one (None keeps the bound one), the normal pointer is a no-op; the buffer is words (F32 bits for floats, bytes for colors) |
+| `rlDrawVertexArray` / `rlDrawVertexArrayElements` | `Rlgl.draw_vertex_array(frame, arrays, offset, count)`, `Rlgl.draw_vertex_array_elements(frame, arrays, offset, count, indices)`: swDrawArrays and swDrawElements as GL_TRIANGLES over the arrays (texture coordinates and colors only where bound, the current ones staying otherwise); nothing without positions or inside rlBegin; reads past an array or the index buffer are undefined |
 | `rlglInit` / `rlglClose` | `Rlgl.gl_init(width, height) -> Maybe<Frame>`: the frame InitWindow makes (rlglInit's software context, cleared, with the default font and shapes rectangle rcore adds after it), None outside 1..4096; `Rlgl.gl_close(frame) -> Unit` consumes it |
 | `rlResizeFramebuffer` | `Rlgl.resize_framebuffer(frame, width, height) -> Frame`: swResize, the default framebuffer's color and depth buffers at the new size and zeroed, the viewport, scissor and matrices kept (in texture mode, the stashed screen's); sizes outside 1..4096 refused |
 | `rlUpdateTexture` | `Rlgl.update_texture(texture, x, y, w, h, format, data) -> Result<Texture & Surface.Error, Texture>`: on the texture value, the ints as words and the data as bytes; a format without OpenGL 1.1 formats or a rectangle swTexSubImage2D rejects changes nothing; data of the texture's format is copied as it is |
@@ -321,9 +323,8 @@ shows the lights alone, or a G-buffer texture as rlsw draws it.
   `rlUpdateTexture` with data of another format than the texture's (rlsw
   converts it per pixel) is refused, and `rlglInit` alone (without the
   default font InitWindow adds) is not separate.
-- `rlEnableStatePointer`/`rlDisableStatePointer`,
-  `rlDrawVertexArray`/`rlDrawVertexArrayElements` (rlsw's client arrays) and
-  `rlBindFramebuffer` are not exposed. The vertex array, buffer, shader
+- The client arrays are a value the program passes (OpenGL keeps them as
+  implicit state), and `rlBindFramebuffer` is not exposed. The vertex array, buffer, shader
   object, compute and storage buffer functions are, as what the software path
   leaves of them: ids 0, locations -1, nothing else. Their trace-log warnings
   are not reproduced.

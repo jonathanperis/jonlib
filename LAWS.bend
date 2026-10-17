@@ -4037,6 +4037,17 @@ law rlgl_resize_framebuffer_zero_refused:
 law rlgl_update_texture_float_has_no_format:
   {J.Rlgl.GlFormats.internal(J.Rlgl.get_gl_texture_formats(8)) == 0 : U32}
 
+# rlsw's client arrays: a NULL color pointer keeps the bound colors;
+# glDisableClientState unbinds; glDrawArrays reads vertices offset onwards.
+law rlgl_arrays_null_color_keeps:
+  {J.Rlgl.enable_state_pointer(J.RlglArrays{[], False{}, [], False{}, [5], True{}}, 32886, None{}) == J.RlglArrays{[], False{}, [], False{}, [5], True{}} : J.Rlgl.Arrays}
+
+law rlgl_arrays_disable_vertex:
+  {J.Rlgl.disable_state_pointer(J.RlglArrays{[1], True{}, [], False{}, [], False{}}, 32884) == J.Rlgl.arrays() : J.Rlgl.Arrays}
+
+law rlgl_arrays_range_from_offset:
+  {J.Rlgl.arrays.range(3n, 4) == [4, 5, 6] : +List<U32>}
+
 law gui_pick_hover_keeps_drag:
   for gui: JG.Gui
   for bounds: J.Rectangle
