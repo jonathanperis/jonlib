@@ -155,8 +155,7 @@ is miniaudio's `ma_format_f32` (5). Jonlib is not built from config.h: the
 constants describe raylib's default build, and redefining one changes nothing.
 Where Jonlib's features differ from that build, the module documents say so:
 it decodes TGA, JPEG, PSD, HDR, PIC, PNM, KTX, ASTC, PKM and PVR images and BDF
-fonts, which the defaults leave out; it has no MOD music, which they include;
-and it keeps its audio module where the gates' reference library is built
+fonts, which the defaults leave out; and it keeps its audio module where the gates' reference library is built
 without raudio.
 
 The headers' C glue has no Bend counterpart and is recorded in the ledger as

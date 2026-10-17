@@ -2961,6 +2961,12 @@ def Laws.mod_sine_peak():
 def Laws.mod_sine_after_peak():
   {==}
 
+def Laws.music_mod_kind():
+  {==}
+
+def Laws.music_mod_kind_upper():
+  {==}
+
 def Laws.gui_pick_hover_keeps_drag(gui, bounds):
   {==}
 

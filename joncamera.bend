@@ -40,6 +40,7 @@ import ./src/vorbis_length.bend as VorbisL
 import ./src/xm_module.bend as XmM
 import ./src/xm_player.bend as XmPl
 import ./src/xm_mixer.bend as XmX
+import ./src/mod.bend as ModP
 import ./src/input.bend as InputCore
 import ./src/gestures.bend as GestureCore
 import ./src/automation.bend as AutomationCore
