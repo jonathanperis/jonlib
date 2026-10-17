@@ -4079,6 +4079,10 @@ law config_graphics_api_not_33:
 law config_filepath_capacity:
   {J.Config.MAX_FILEPATH_CAPACITY() == 8192 : U32}
 
+# Importing Jonmath brings raymath's implementation.
+law config_jonmath_implementation:
+  {M.Config.JONMATH_IMPLEMENTATION() == True{} : Bool}
+
 law gui_pick_hover_keeps_drag:
   for gui: JG.Gui
   for bounds: J.Rectangle

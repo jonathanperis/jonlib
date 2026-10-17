@@ -157,7 +157,25 @@ Where Jonlib's features differ from that build, the module documents say so:
 it decodes TGA, JPEG, PSD, HDR, PIC, PNM, KTX, ASTC, PKM and PVR images and BDF
 fonts, which the defaults leave out; it has no MOD music, which they include;
 and it keeps its audio module where the gates' reference library is built
-without raudio. `TRACELOG(level, ...)` is `Log.trace`.
+without raudio.
+
+The headers' C glue has no Bend counterpart and is recorded in the ledger as
+language adaptations: include guards (`RAYLIB_H`, `RLGL_H`, `CONFIG_H`, ...)
+are a module import, which Bend loads once; export decorations and
+shared-library switches (`RLAPI`, `RMAPI`, `__declspec`,
+`BUILD_LIBTYPE_SHARED`, `USE_LIBTYPE_SHARED`, `RAYMATH_STATIC_INLINE`) are
+top-level definitions, all visible to importers; the allocator hooks
+(`RL_MALLOC`, `RL_CALLOC`, `RL_REALLOC`, `RL_FREE`) are the Bend runtime's
+allocation under affine ownership; the type guards (`RL_COLOR_TYPE`,
+`RL_VECTOR2_TYPE`, `RL_BOOL_TYPE`, ...) name the one shared type (`Color`,
+`M.Vector2`, `Bool`) every module imports; the single-header implementation
+and standalone switches (`RLGL_IMPLEMENTATION`, `RCAMERA_STANDALONE`, ...)
+are the import itself (Jonmath's `M.Config.JONMATH_IMPLEMENTATION()` is True);
+`CLITERAL(Color){...}` is a record literal; and
+`GetMouseRay` is the function it aliases. Jonmath ports raymath's scalar
+build: `RAYMATH_USE_SIMD_INTRINSICS` (off by default) and its SSE
+`MatrixMultiply` are not ported, and its C++ operators are the named
+functions. `TRACELOG(level, ...)` is `Log.trace`.
 
 ## Shared types
 
