@@ -4,6 +4,7 @@ import ./src/modern_angle.bend as MA
 import ./jonlib.bend as J
 import ./jonmath.bend as M
 import ./joneasings.bend as E
+import ./jonlights.bend as Lt
 import ./src/binary64_narrow.bend as N
 import ./src/binary64_fma.bend as F
 import ./src/binary64_add_sub.bend as A
@@ -4107,6 +4108,19 @@ law ease_expo_in_out_start:
   for c: F32
   for d: F32
   {E.Ease.expo_in_out.at(0, libm, t, b, c, d) == Some{b} : Maybe<F32>}
+
+# Jonlights: at MAX_LIGHTS, CreateLight gives a zero light and keeps the count;
+# the uniform names are rlights' lights[i].field.
+law lights_create_full_is_zero:
+  for kind: U32
+  for position: M.Vector3
+  for target: M.Vector3
+  for color: U32
+  for shader: J.Shader
+  {Lt.Light.create(Lt.Lights{4}, kind, position, target, color, shader) == ((Lt.Lights{4}, Lt.Light.zero()), shader) : (Lt.Lights & Lt.Light) & J.Shader}
+
+law lights_uniform_name:
+  {Lt.Light.uniform(2, "color") == "lights[2].color" : String}
 
 law gui_pick_hover_keeps_drag:
   for gui: JG.Gui

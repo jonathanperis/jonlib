@@ -2925,6 +2925,12 @@ def Laws.ease_elastic_in_out_plain_is_apple(t, b, c, d):
 def Laws.ease_expo_in_out_start(libm, t, b, c, d):
   {==}
 
+def Laws.lights_create_full_is_zero(kind, position, target, color, shader):
+  {==}
+
+def Laws.lights_uniform_name():
+  {==}
+
 def Laws.gui_pick_hover_keeps_drag(gui, bounds):
   {==}
 
