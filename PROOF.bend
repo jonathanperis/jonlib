@@ -2931,6 +2931,18 @@ def Laws.lights_create_full_is_zero(kind, position, target, color, shader):
 def Laws.lights_uniform_name():
   {==}
 
+def Laws.jonlgl_version_is_jonlib():
+  {==}
+
+def Laws.jonlgl_clip_planes_is_jonlib(frame, near, far):
+  {==}
+
+def Laws.joncamera_forward_is_jonlib(arithmetic, camera):
+  {==}
+
+def Laws.jongestures_detected_is_jonlib(core):
+  {==}
+
 def Laws.gui_pick_hover_keeps_drag(gui, bounds):
   {==}
 
