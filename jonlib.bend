@@ -1742,7 +1742,7 @@ type Surface.Draw is Type:
   DrawRectangle{x: F32, y: F32, width: F32, height: F32}
   DrawRectangleV{position: M.Vector2, size: M.Vector2}
   DrawRectangleRec{rect: Rectangle}
-  DrawRectangleLines{rect: Rectangle, thickness: U32}
+  DrawRectangleLinesEx{rect: Rectangle, thickness: U32}
   DrawCircle{cx: F32, cy: F32, radius: U32}
   DrawCircleV{center: M.Vector2, radius: U32}
   DrawCircleLines{cx: F32, cy: F32, radius: U32}
@@ -1754,6 +1754,7 @@ type Surface.Draw is Type:
   DrawTriangleLines{v1: M.Vector2, v2: M.Vector2, v3: M.Vector2}
   DrawTriangleFan{points: +List<M.Vector2>}
   DrawTriangleStrip{points: +List<M.Vector2>}
+  DrawLineStrip{points: +List<M.Vector2>}
   ClearBackground{}
 
 # Two-image RGBA8 operations; both owners come back, destination first.
@@ -2175,7 +2176,7 @@ def Rgba.draw_rectangle_rec(surface: Rgba, rect: Rectangle, color: U32) -> Rgba:
   Rectangle{x, y, width, height} = rect
   Rgba.draw_rectangle(surface, x, y, width, height, color)
 
-def Rgba.draw_rectangle_lines(surface: Rgba, rect: Rectangle, +thickness: U32, +color: U32) -> Rgba:
+def Rgba.draw_rectangle_lines_ex(surface: Rgba, rect: Rectangle, +thickness: U32, +color: U32) -> Rgba:
   Rectangle{+x, +y, +width, +height} = rect
   +t = U32.to_f32(thickness)
   s0 = Rgba.draw_rectangle(surface, Signed.trunc(x), Signed.trunc(y), Signed.trunc(width), t, color)
@@ -2370,7 +2371,7 @@ def Rgba.draw_triangle(surface: Rgba, v1: M.Vector2, v2: M.Vector2, v3: M.Vector
     Raster.edge(x0, y0, cx, cy, ((ay - cy) * sign : F32), ((cx - ax) * sign : F32)),
     Raster.edge(x0, y0, ax, ay, ((by - ay) * sign : F32), ((ax - bx) * sign : F32)), FlatPaint{color})
 
-def Rgba.draw_triangle_ex(surface: Rgba, v1: M.Vector2, v2: M.Vector2, v3: M.Vector2, c1: U32, c2: U32, c3: U32) -> Rgba:
+def Rgba.draw_triangle_gradient(surface: Rgba, v1: M.Vector2, v2: M.Vector2, v3: M.Vector2, c1: U32, c2: U32, c3: U32) -> Rgba:
   Rgba{+w, +h, pixels} = surface
   M.Vector2{+ax, +ay} = v1
   M.Vector2{+bx, +by} = v2
@@ -2432,6 +2433,236 @@ def Rgba.draw_triangle_strip(surface: Rgba, points: +List<M.Vector2>, color: U32
   match points:
     case Nil{}: surface
     case Con{older, rest}: Rgba.strip.start(rest, older, color, surface)
+
+# ImageDrawLineStrip (raylib 6.2): ImageDrawLineV between consecutive points;
+# fewer than two points draw nothing.
+def Rgba.line_strip.loop(points: +List<M.Vector2>, +previous: M.Vector2, +color: U32, surface: Rgba) -> Rgba:
+  match points:
+    case Nil{}: surface
+    case Con{+next, rest}: Rgba.line_strip.loop(rest, next, color, Rgba.draw_line_v(surface, previous, next, color))
+
+def Rgba.draw_line_strip(surface: Rgba, points: +List<M.Vector2>, color: U32) -> Rgba:
+  match points:
+    case Nil{}: surface
+    case Con{first, rest}: Rgba.line_strip.loop(rest, first, color, surface)
+
+# raylib 6.2's per-pixel image kernels (ImageDrawRectanglePro,
+# ImageDrawRectangleGradientEx, ImageDrawCircleGradient, ImageDrawImageEx;
+# zlib, LICENSES/raylib.txt) visit the integer pixel bounds [x0, x1) x [y0, y1):
+# (int)floorf/(int)ceilf of their extent, clipped to the image.
+type Raster.Bounds is Data:
+  PixelBounds{x0: F32, y0: F32, x1: F32, y1: F32}
+
+def Raster.bounds.empty() -> Raster.Bounds:
+  PixelBounds{0.0, 0.0, 0.0, 0.0}
+
+def Raster.bounds.clipped(+minx: F32, +miny: F32, +maxx: F32, +maxy: F32, +width: U32, +height: U32) -> Raster.Bounds:
+  PixelBounds{F32.max(0.0, F32.floor(minx)), F32.max(0.0, F32.floor(miny)),
+    F32.min(U32.to_f32(width), F32.ceil(maxx)), F32.min(U32.to_f32(height), F32.ceil(maxy))}
+
+# A corner rotated about the origin, then moved: (cx*cos - cy*sin) + ox and
+# (cx*sin + cy*cos) + oy, as the C loops compute rx and ry.
+def Raster.corner.x(+cx: F32, +cy: F32, +cosine: F32, +sine: F32, +ox: F32) -> F32:
+  ((cx * cosine - cy * sine : F32) + ox : F32)
+
+def Raster.corner.y(+cx: F32, +cy: F32, +cosine: F32, +sine: F32, +oy: F32) -> F32:
+  ((cx * sine + cy * cosine : F32) + oy : F32)
+
+# `if (r < m) m = r;` and `if (r > m) m = r;`
+def Raster.low(+r: F32, +m: F32) -> F32:
+  Bool.pick(F32, (r < m : F32), r, m)
+
+def Raster.high(+r: F32, +m: F32) -> F32:
+  Bool.pick(F32, (r > m : F32), r, m)
+
+# The bounding box of the corners (x1, y1), (x2, y1), (x2, y2), (x1, y2) after
+# the rotation, from minX = minY = 65536 and maxX = maxY = -65536.
+def Raster.bounds.turned(+x1: F32, +y1: F32, +x2: F32, +y2: F32, +cosine: F32, +sine: F32, +ox: F32, +oy: F32, +width: U32, +height: U32) -> Raster.Bounds:
+  +ax = Raster.corner.x(x1, y1, cosine, sine, ox)
+  +bx = Raster.corner.x(x2, y1, cosine, sine, ox)
+  +cx = Raster.corner.x(x2, y2, cosine, sine, ox)
+  +dx = Raster.corner.x(x1, y2, cosine, sine, ox)
+  +ay = Raster.corner.y(x1, y1, cosine, sine, oy)
+  +by = Raster.corner.y(x2, y1, cosine, sine, oy)
+  +cy = Raster.corner.y(x2, y2, cosine, sine, oy)
+  +dy = Raster.corner.y(x1, y2, cosine, sine, oy)
+  Raster.bounds.clipped(Raster.low(dx, Raster.low(cx, Raster.low(bx, Raster.low(ax, 65536.0)))),
+    Raster.low(dy, Raster.low(cy, Raster.low(by, Raster.low(ay, 65536.0)))),
+    Raster.high(dx, Raster.high(cx, Raster.high(bx, Raster.high(ax, F32.neg(65536.0))))),
+    Raster.high(dy, Raster.high(cy, Raster.high(by, Raster.high(ay, F32.neg(65536.0))))), width, height)
+
+# A pixel center moved to the rotation origin and turned back:
+# px = x + 0.5f - ox, py = y + 0.5f - oy; (px*cos + py*sin, -px*sin + py*cos).
+type Raster.Turn is Data:
+  PixelTurn{cosine: F32, sine: F32, ox: F32, oy: F32}
+
+def Raster.turn.local_x(+turn: Raster.Turn, +x: F32, +y: F32) -> F32:
+  PixelTurn{+c, +s, +ox, +oy} = turn
+  ((((x + 0.5 : F32) - ox : F32) * c : F32) + (((y + 0.5 : F32) - oy : F32) * s : F32) : F32)
+
+def Raster.turn.local_y(+turn: Raster.Turn, +x: F32, +y: F32) -> F32:
+  PixelTurn{+c, +s, +ox, +oy} = turn
+  ((F32.neg(((x + 0.5 : F32) - ox : F32)) * s : F32) + (((y + 0.5 : F32) - oy : F32) * c : F32) : F32)
+
+# ImageDrawRectanglePro's local rectangle: -origin.x <= x < width - origin.x,
+# -origin.y <= y < height - origin.y.
+type Raster.Span is Data:
+  PixelSpan{left: F32, right: F32, top: F32, bottom: F32}
+
+def Raster.span.inside(+span: Raster.Span, +lx: F32, +ly: F32) -> Bool:
+  PixelSpan{+left, +right, +top, +bottom} = span
+  ((lx >= left) && (lx < right) && (ly >= top) && (ly < bottom) : F32)
+
+# `if (t < 0.0f) t = 0.0f; if (t > 1.0f) t = 1.0f;`
+def Raster.unit(+t: F32) -> F32:
+  +low = Bool.pick(F32, (t < 0.0 : F32), 0.0, t)
+  Bool.pick(F32, (low > 1.0 : F32), 1.0, low)
+
+# (unsigned char)(c1*w1 + c2*w2 + c3*w3 + c4*w4), summed left to right.
+def Raster.mix4(+a: U32, +b: U32, +c: U32, +d: U32, +w1: F32, +w2: F32, +w3: F32, +w4: F32) -> U32:
+  F32.to_u32((((U32.to_f32(a) * w1 : F32) + (U32.to_f32(b) * w2 : F32) : F32) + (U32.to_f32(c) * w3 : F32) + (U32.to_f32(d) * w4 : F32) : F32))
+
+def Raster.gradient4(+tx: F32, +ty: F32, +c1: U32, +c2: U32, +c3: U32, +c4: U32) -> U32:
+  +w1 = ((1.0 - tx : F32) * (1.0 - ty : F32) : F32)
+  +w2 = ((1.0 - tx : F32) * ty : F32)
+  +w3 = (tx * ty : F32)
+  +w4 = (tx * (1.0 - ty : F32) : F32)
+  Color.rgba(Raster.mix4(Color.red(c1), Color.red(c2), Color.red(c3), Color.red(c4), w1, w2, w3, w4),
+    Raster.mix4(Color.green(c1), Color.green(c2), Color.green(c3), Color.green(c4), w1, w2, w3, w4),
+    Raster.mix4(Color.blue(c1), Color.blue(c2), Color.blue(c3), Color.blue(c4), w1, w2, w3, w4),
+    Raster.mix4(Color.alpha(c1), Color.alpha(c2), Color.alpha(c3), Color.alpha(c4), w1, w2, w3, w4))
+
+# (unsigned char)(inner + (outer - inner)*t): the int difference times t, then
+# added to the inner channel.
+def Raster.lerp(+inner: U32, +outer: U32, +t: F32) -> U32:
+  F32.to_u32((U32.to_f32(inner) + ((U32.to_f32(outer) - U32.to_f32(inner) : F32) * t : F32) : F32))
+
+def Raster.lerp_color(+inner: U32, +outer: U32, +t: F32) -> U32:
+  Color.rgba(Raster.lerp(Color.red(inner), Color.red(outer), t), Raster.lerp(Color.green(inner), Color.green(outer), t),
+    Raster.lerp(Color.blue(inner), Color.blue(outer), t), Raster.lerp(Color.alpha(inner), Color.alpha(outer), t))
+
+# The color one of these kernels gives pixel (x, y), or None where it skips it.
+type Raster.Shader is Data:
+  RectanglePro{turn: Raster.Turn, span: Raster.Span, color: U32}
+  GradientRectangle{x: F32, y: F32, width: F32, height: F32, c1: U32, c2: U32, c3: U32, c4: U32}
+  GradientCircle{cx: F32, cy: F32, radius: F32, squared: F32, inner: U32, outer: U32}
+
+def Raster.shader.at(+shader: Raster.Shader, +x: F32, +y: F32) -> Maybe<&2, U32>:
+  match shader:
+    case RectanglePro{+turn, +span, +color}:
+      Bool.pick(Maybe<&2, U32>, Raster.span.inside(span, Raster.turn.local_x(turn, x, y), Raster.turn.local_y(turn, x, y)), Some{color}, None{})
+    case GradientRectangle{+rx, +ry, +rw, +rh, +c1, +c2, +c3, +c4}:
+      # ty = (y - rec.y)/rec.height and tx = (x - rec.x)/rec.width, clamped to 0..1.
+      Some{Raster.gradient4(Raster.unit(((x - rx : F32) / rw : F32)), Raster.unit(((y - ry : F32) / rh : F32)), c1, c2, c3, c4)}
+    case GradientCircle{+cx, +cy, +radius, +squared, +inner, +outer}:
+      # dx = (x + 0.5f) - center.x; pixels with dx*dx + dy*dy > radius*radius are
+      # skipped; t = sqrtf(distSq)/radius.
+      +dx = ((x + 0.5 : F32) - cx : F32)
+      +dy = ((y + 0.5 : F32) - cy : F32)
+      +distance = ((dx * dx : F32) + (dy * dy : F32) : F32)
+      Bool.pick(Maybe<&2, U32>, (distance > squared : F32), None{}, Some{Raster.lerp_color(inner, outer, (F32.sqrt(distance) / radius : F32))})
+
+# The pixel written with ImageDrawPixel, or 1 in a coverage mask.
+def Rgba.shader.write(found: Maybe<&2, U32>, +mark: Bool, +at: U32, pixels: Array<U32>) -> Array<U32>:
+  match found:
+    case None{}: pixels
+    case Some{+color}: Array.set(U32, pixels, at, Bool.pick(U32, mark, 1, color))
+
+def Rgba.shader.row(n: Nat, +x: F32, +y: F32, +at: U32, +shader: Raster.Shader, +mark: Bool, pixels: Array<U32>) -> Array<U32>:
+  match n:
+    case 0n: pixels
+    case 1n+k:
+      Rgba.shader.row(k, (x + 1.0 : F32), y, (at + 1 : U32), shader, mark,
+        Rgba.shader.write(Raster.shader.at(shader, x, y), mark, at, pixels))
+
+def Rgba.shader.rows(n: Nat, +cols: Nat, +x: F32, +y: F32, +at: U32, +stride: U32, +shader: Raster.Shader, +mark: Bool, pixels: Array<U32>) -> Array<U32>:
+  match n:
+    case 0n: pixels
+    case 1n+k:
+      Rgba.shader.rows(k, cols, x, (y + 1.0 : F32), (at + stride : U32), stride, shader, mark,
+        Rgba.shader.row(cols, x, y, at, shader, mark, pixels))
+
+def Rgba.shader.visible(visible: Bool, +w: U32, +x0: F32, +y0: F32, x1: F32, y1: F32, +shader: Raster.Shader, +mark: Bool, pixels: Array<U32>) -> Array<U32>:
+  match visible:
+    case False{}: pixels
+    case True{}:
+      Rgba.shader.rows(U32.to_nat(F32.to_u32((y1 - y0 : F32))), U32.to_nat(F32.to_u32((x1 - x0 : F32))), x0, y0,
+        (F32.to_u32(y0) * w + F32.to_u32(x0) : U32), w, shader, mark, pixels)
+
+# `if ((x0 >= x1) || (y0 >= y1)) return;`, then every pixel of the bounds.
+def Rgba.shader.run(surface: Rgba, bounds: Raster.Bounds, +shader: Raster.Shader, +mark: Bool) -> Rgba:
+  Rgba{+w, h, pixels} = surface
+  PixelBounds{+x0, +y0, +x1, +y1} = bounds
+  Rgba{w, h, Rgba.shader.visible(((x0 < x1) && (y0 < y1) : F32), w, x0, y0, x1, y1, shader, mark, pixels)}
+
+# ImageDrawImageEx's inverse mapping: the destination pixel center relative to
+# the position, turned back and divided by the scale; None outside the source,
+# else the source index (int)sy*width + (int)sx.
+type Raster.Sampler is Data:
+  PixelSampler{px: F32, py: F32, cosine: F32, sine: F32, scale: F32, width: U32, height: U32}
+
+def Raster.sampler.index(inside: Bool, +sx: F32, +sy: F32, +width: U32) -> Maybe<&2, U32>:
+  match inside:
+    case False{}: None{}
+    case True{}: Some{(F32.to_u32(sy) * width + F32.to_u32(sx) : U32)}
+
+def Raster.sampler.at(+sampler: Raster.Sampler, +x: F32, +y: F32) -> Maybe<&2, U32>:
+  PixelSampler{+px, +py, +c, +s, +scale, +sw, +sh} = sampler
+  +dx = ((x + 0.5 : F32) - px : F32)
+  +dy = ((y + 0.5 : F32) - py : F32)
+  +sx = (((dx * c : F32) + (dy * s : F32) : F32) / scale : F32)
+  +sy = (((F32.neg(dx) * s : F32) + (dy * c : F32) : F32) / scale : F32)
+  Raster.sampler.index(((sx >= 0.0) && (sy >= 0.0) && (sx < U32.to_f32(sw)) && (sy < U32.to_f32(sh)) : F32), sx, sy, sw)
+
+# The destination colors being blended, the coverage mask and the source
+# colors (GetImageColor of both images).
+type Raster.Blend is Type:
+  PixelBlend{shades: Array<U32>, marks: Array<U32>, colors: Array<U32>}
+
+# ColorAlphaBlend(GetImageColor(dst), source, tint), stored by ImageDrawPixel.
+def Rgba.ex.store(+at: U32, +tint: U32, marks: Array<U32>, colors: Array<U32>, +source: U32, read: Array<U32> & U32) -> Raster.Blend:
+  (shades, +destination) = read
+  PixelBlend{Array.set(U32, shades, at, Color.alpha_blend(destination, source, tint)), Array.set(U32, marks, at, 1), colors}
+
+# Fully transparent source pixels are skipped.
+def Rgba.ex.opaque(visible: Bool, +at: U32, +tint: U32, shades: Array<U32>, marks: Array<U32>, colors: Array<U32>, +source: U32) -> Raster.Blend:
+  match visible:
+    case False{}: PixelBlend{shades, marks, colors}
+    case True{}: Rgba.ex.store(at, tint, marks, colors, source, Array.get(U32, shades, at))
+
+def Rgba.ex.sampled(+at: U32, +tint: U32, shades: Array<U32>, marks: Array<U32>, read: Array<U32> & U32) -> Raster.Blend:
+  (colors, +source) = read
+  Rgba.ex.opaque(Bool.not(U32.is_eq(Color.alpha(source), 0)), at, tint, shades, marks, colors, source)
+
+def Rgba.ex.at(found: Maybe<&2, U32>, +at: U32, +tint: U32, blend: Raster.Blend) -> Raster.Blend:
+  match found:
+    case None{}: blend
+    case Some{+index}:
+      PixelBlend{shades, marks, colors} = blend
+      Rgba.ex.sampled(at, tint, shades, marks, Array.get(U32, colors, index))
+
+def Rgba.ex.row(n: Nat, +x: F32, +y: F32, +at: U32, +sampler: Raster.Sampler, +tint: U32, blend: Raster.Blend) -> Raster.Blend:
+  match n:
+    case 0n: blend
+    case 1n+k:
+      Rgba.ex.row(k, (x + 1.0 : F32), y, (at + 1 : U32), sampler, tint, Rgba.ex.at(Raster.sampler.at(sampler, x, y), at, tint, blend))
+
+def Rgba.ex.rows(n: Nat, +cols: Nat, +x: F32, +y: F32, +at: U32, +stride: U32, +sampler: Raster.Sampler, +tint: U32, blend: Raster.Blend) -> Raster.Blend:
+  match n:
+    case 0n: blend
+    case 1n+k:
+      Rgba.ex.rows(k, cols, x, (y + 1.0 : F32), (at + stride : U32), stride, sampler, tint, Rgba.ex.row(cols, x, y, at, sampler, tint, blend))
+
+def Rgba.ex.visible(visible: Bool, +w: U32, +x0: F32, +y0: F32, x1: F32, y1: F32, +sampler: Raster.Sampler, +tint: U32, blend: Raster.Blend) -> Raster.Blend:
+  match visible:
+    case False{}: blend
+    case True{}:
+      Rgba.ex.rows(U32.to_nat(F32.to_u32((y1 - y0 : F32))), U32.to_nat(F32.to_u32((x1 - x0 : F32))), x0, y0,
+        (F32.to_u32(y0) * w + F32.to_u32(x0) : U32), w, sampler, tint, blend)
+
+def Rgba.ex.run(+w: U32, bounds: Raster.Bounds, +sampler: Raster.Sampler, +tint: U32, blend: Raster.Blend) -> Raster.Blend:
+  PixelBounds{+x0, +y0, +x1, +y1} = bounds
+  Rgba.ex.visible(((x0 < x1) && (y0 < y1) : F32), w, x0, y0, x1, y1, sampler, tint, blend)
 
 type Raster.Mapping is Data:
   Region{stride: U32, columns: U32, x: U32, y: U32}
@@ -3326,11 +3557,21 @@ def Surface.extract.checked(valid: Bool, +sw: U32, sh: U32, format: U32, pixels:
       +h = F32.to_u32(height)
       Surface.extract.finish(sw, sh, format, w, h, Surface.pixels.sample(pixels, (w * h : U32), Region{sw, w, F32.to_u32(x), F32.to_u32(y)}))
 
-# ImageFromImage profile: positive integral in-bounds rectangle; source retained.
+def Surface.extract.fits(range: Bool, +w: U32, +h: U32, +x: F32, +y: F32, +rw: F32, +rh: F32) -> Bool:
+  match range:
+    case False{}: False{}
+    case True{}: ((F32.to_u32(x) + F32.to_u32(rw) <= w) && (F32.to_u32(y) + F32.to_u32(rh) <= h) : U32)
+
+# ImageFromImage (raylib 6.2 validates the rectangle): rec.x, rec.y >= 0,
+# rec.width, rec.height > 0 and (int)rec.x + (int)rec.width <= width (and the
+# same for y), fractional fields truncated; otherwise raylib returns the empty
+# image (None). A width or height in (0, 1) passes raylib's check and gives a
+# 0-sized image, which no Surface represents: None. Source retained.
 def Surface.extract(surface: Surface, +rect: Rectangle) -> Surface & Maybe<Surface>:
   Surface{+w, +h, format, pixels} = surface
-  Rectangle{x, y, rw, rh} = rect
-  Surface.extract.checked(Rectangle.integral(rect) && Rectangle.inside(rect, w, h), w, h, format, pixels, x, y, rw, rh)
+  Rectangle{+x, +y, +rw, +rh} = rect
+  Surface.extract.checked(Surface.extract.fits(((x >= 0.0) && (y >= 0.0) && (rw >= 1.0) && (rh >= 1.0)
+    && (x <= 4096.0) && (y <= 4096.0) && (rw <= 4096.0) && (rh <= 4096.0) : F32), w, h, x, y, rw, rh), w, h, format, pixels, x, y, rw, rh)
 
 def Surface.crop.result(result: Surface & Maybe<Surface>) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match result:
@@ -3541,7 +3782,7 @@ def Surface.draw.apply(draw: Surface.Draw, +word: U32, image: Rgba) -> Rgba:
     case DrawRectangle{x, y, width, height}: Rgba.draw_rectangle(image, x, y, width, height, word)
     case DrawRectangleV{position, size}: Rgba.draw_rectangle_v(image, position, size, word)
     case DrawRectangleRec{rect}: Rgba.draw_rectangle_rec(image, rect, word)
-    case DrawRectangleLines{rect, thickness}: Rgba.draw_rectangle_lines(image, rect, thickness, word)
+    case DrawRectangleLinesEx{rect, thickness}: Rgba.draw_rectangle_lines_ex(image, rect, thickness, word)
     case DrawCircle{cx, cy, radius}: Rgba.draw_circle(image, cx, cy, radius, word)
     case DrawCircleV{center, radius}: Rgba.draw_circle_v(image, center, radius, word)
     case DrawCircleLines{cx, cy, radius}: Rgba.draw_circle_lines(image, cx, cy, radius, word)
@@ -3553,6 +3794,7 @@ def Surface.draw.apply(draw: Surface.Draw, +word: U32, image: Rgba) -> Rgba:
     case DrawTriangleLines{v1, v2, v3}: Rgba.draw_triangle_lines(image, v1, v2, v3, word)
     case DrawTriangleFan{points}: Rgba.draw_triangle_fan(image, points, word)
     case DrawTriangleStrip{points}: Rgba.draw_triangle_strip(image, points, word)
+    case DrawLineStrip{points}: Rgba.draw_line_strip(image, points, word)
     case ClearBackground{}: Rgba.clear(image, word)
 
 def Surface.mark.write(marked: Bool, index: U32, value: Surface.Quad, values: Array<Surface.Quad>) -> Array<Surface.Quad>:
@@ -3609,8 +3851,14 @@ def Surface.draw_rectangle_v(surface: Surface, position: M.Vector2, size: M.Vect
 def Surface.draw_rectangle_rec(surface: Surface, rect: Rectangle, color: U32) -> Surface:
   Surface.paint.run(surface, DrawRectangleRec{rect}, color)
 
-def Surface.draw_rectangle_lines(surface: Surface, rect: Rectangle, thickness: U32, color: U32) -> Surface:
-  Surface.paint.run(surface, DrawRectangleLines{rect, thickness}, color)
+# ImageDrawRectangleLinesEx (raylib 6.0's ImageDrawRectangleLines).
+def Surface.draw_rectangle_lines_ex(surface: Surface, rect: Rectangle, thickness: U32, color: U32) -> Surface:
+  Surface.paint.run(surface, DrawRectangleLinesEx{rect, thickness}, color)
+
+# ImageDrawRectangleLines(dst, int posX, int posY, int width, int height) since
+# raylib 6.2: ImageDrawRectangleLinesEx of that rectangle with thickness 1.
+def Surface.draw_rectangle_lines(surface: Surface, x: F32, y: F32, width: F32, height: F32, color: U32) -> Surface:
+  Surface.paint.run(surface, DrawRectangleLinesEx{Rectangle{x, y, width, height}, 1}, color)
 
 def Surface.draw_circle(surface: Surface, cx: F32, cy: F32, radius: U32, color: U32) -> Surface:
   Surface.paint.run(surface, DrawCircle{cx, cy, radius}, color)
@@ -3645,7 +3893,7 @@ def Surface.draw_triangle_fan(surface: Surface, points: +List<M.Vector2>, color:
 def Surface.draw_triangle_strip(surface: Surface, points: +List<M.Vector2>, color: U32) -> Surface:
   Surface.paint.run(surface, DrawTriangleStrip{points}, color)
 
-# DrawTriangleEx computes one Color per covered pixel, then ImageDrawPixel stores
+# ImageDrawTriangleGradient (raylib 6.0: ImageDrawTriangleEx) computes one Color per covered pixel, then ImageDrawPixel stores
 # it. Other formats shade a canonical copy and encode the covered colors.
 def Surface.shade.word(marked: Bool, +format: U32, index: U32, color: U32, values: Array<U32>) -> Array<U32>:
   match marked:
@@ -3682,18 +3930,126 @@ def Surface.shade.merged(+width: U32, +height: U32, +format: U32, pixels: Surfac
   Rgba{_, _, mask} = marks
   Surface{width, height, format, Surface.shade.loop(U32.to_nat((width * height : U32)), 0, format, ((colors, mask), pixels))}
 
-def Surface.triangle_ex.selected(kind: U32, pixels: Surface.Pixels, +width: U32, +height: U32, +format: U32, +v1: M.Vector2, +v2: M.Vector2, +v3: M.Vector2, c1: U32, c2: U32, c3: U32) -> Surface:
+def Surface.triangle_gradient.selected(kind: U32, pixels: Surface.Pixels, +width: U32, +height: U32, +format: U32, +v1: M.Vector2, +v2: M.Vector2, +v3: M.Vector2, c1: U32, c2: U32, c3: U32) -> Surface:
   match kind pixels:
-    case 7 Words{values}: Surface.rgba.wrap(Rgba.draw_triangle_ex(Rgba{width, height, values}, v1, v2, v3, c1, c2, c3))
+    case 7 Words{values}: Surface.rgba.wrap(Rgba.draw_triangle_gradient(Rgba{width, height, values}, v1, v2, v3, c1, c2, c3))
     case _ _:
       +depth = Storage.depth((width * height : U32))
       Surface.shade.merged(width, height, format, pixels,
-        Rgba.draw_triangle_ex(Rgba{width, height, Array.new(U32, depth, 0)}, v1, v2, v3, c1, c2, c3),
+        Rgba.draw_triangle_gradient(Rgba{width, height, Array.new(U32, depth, 0)}, v1, v2, v3, c1, c2, c3),
         Rgba.draw_triangle(Rgba{width, height, Array.new(U32, depth, 0)}, v1, v2, v3, 1))
 
-def Surface.draw_triangle_ex(surface: Surface, v1: M.Vector2, v2: M.Vector2, v3: M.Vector2, c1: U32, c2: U32, c3: U32) -> Surface:
+def Surface.draw_triangle_gradient(surface: Surface, v1: M.Vector2, v2: M.Vector2, v3: M.Vector2, c1: U32, c2: U32, c3: U32) -> Surface:
   Surface{width, height, +format, pixels} = surface
-  Surface.triangle_ex.selected(format, pixels, width, height, format, v1, v2, v3, c1, c2, c3)
+  Surface.triangle_gradient.selected(format, pixels, width, height, format, v1, v2, v3, c1, c2, c3)
+
+# ImageDrawLineStrip (raylib 6.2).
+def Surface.draw_line_strip(surface: Surface, points: +List<M.Vector2>, color: U32) -> Surface:
+  Surface.paint.run(surface, DrawLineStrip{points}, color)
+
+# raylib 6.2's per-pixel kernels store each visited pixel's color with
+# ImageDrawPixel: R8G8B8A8 owners in place, other formats through a canonical
+# color image and a coverage mask (as ImageDrawTriangleGradient).
+def Surface.shader.selected(kind: U32, pixels: Surface.Pixels, +width: U32, +height: U32, +format: U32, +bounds: Raster.Bounds, +shader: Raster.Shader) -> Surface:
+  match kind pixels:
+    case 7 Words{values}: Surface.rgba.wrap(Rgba.shader.run(Rgba{width, height, values}, bounds, shader, False{}))
+    case _ _:
+      +depth = Storage.depth((width * height : U32))
+      Surface.shade.merged(width, height, format, pixels,
+        Rgba.shader.run(Rgba{width, height, Array.new(U32, depth, 0)}, bounds, shader, False{}),
+        Rgba.shader.run(Rgba{width, height, Array.new(U32, depth, 0)}, bounds, shader, True{}))
+
+def Surface.shader.run(surface: Surface, +drawn: Bool, +bounds: Raster.Bounds, +shader: Raster.Shader) -> Surface:
+  Surface{width, height, +format, pixels} = surface
+  Surface.shader.selected(format, pixels, width, height, format, Bool.pick(Raster.Bounds, drawn, bounds, Raster.bounds.empty()), shader)
+
+def Surface.dimensions.of(surface: Surface) -> Surface & (U32 & U32):
+  Surface{+width, +height, format, pixels} = surface
+  (Surface{width, height, format, pixels}, (width, height))
+
+def Surface.rectangle_pro.bounded(surface: Surface, +x1: F32, +y1: F32, +x2: F32, +y2: F32, +cosine: F32, +sine: F32, +ox: F32, +oy: F32, +drawn: Bool, +color: U32, size: U32 & U32) -> Surface:
+  (+width, +height) = size
+  Surface.shader.run(surface, drawn, Raster.bounds.turned(x1, y1, x2, y2, cosine, sine, ox, oy, width, height),
+    RectanglePro{PixelTurn{cosine, sine, ox, oy}, PixelSpan{x1, x2, y1, y2}, color})
+
+def Surface.rectangle_pro.sized(+x1: F32, +y1: F32, +x2: F32, +y2: F32, +cosine: F32, +sine: F32, +ox: F32, +oy: F32, +drawn: Bool, +color: U32, sized: Surface & (U32 & U32)) -> Surface:
+  (surface, size) = sized
+  Surface.rectangle_pro.bounded(surface, x1, y1, x2, y2, cosine, sine, ox, oy, drawn, color, size)
+
+def Surface.rectangle_pro.checked(valid: Bool, surface: Surface, +x: F32, +y: F32, +width: F32, +height: F32, +gx: F32, +gy: F32, +color: U32, trig: F32 & F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match valid:
+    case False{}: Fail{(surface, InvalidRequest{})}
+    case True{}:
+      (+cosine, +sine) = trig
+      Done{Surface.rectangle_pro.sized(F32.neg(gx), F32.neg(gy), (width - gx : F32), (height - gy : F32), cosine, sine,
+        (x + gx : F32), (y + gy : F32), ((width > 0.0) && (height > 0.0) : F32), color, Surface.dimensions.of(surface))}
+
+def Surface.drawing.bounded(+v: F32) -> Bool:
+  (F32.abs(v) <= 32767.0 : F32)
+
+# ImageDrawRectanglePro (raylib 6.2): the bounding box of the rectangle turned
+# by rotation degrees about rec + origin, every pixel whose center turned back
+# lies in [-origin, size - origin). Nothing for a width or height <= 0.
+# Bounded finite fields (|v| <= 32767) and a rotation whose DEG2RAD multiple
+# the profile verifies (InvalidRequest otherwise).
+def Surface.draw_rectangle_pro_for(+libm: M.Libm, surface: Surface, rect: Rectangle, origin: M.Vector2, +rotation: F32, +color: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Rectangle{+x, +y, +width, +height} = rect
+  M.Vector2{+gx, +gy} = origin
+  +arg = (rotation * Shapes.deg2rad() : F32)
+  Surface.rectangle_pro.checked(Shapes.trig.ok(M.Libm.gnu(libm), arg) && Surface.drawing.bounded(x) && Surface.drawing.bounded(y)
+    && Surface.drawing.bounded(width) && Surface.drawing.bounded(height) && Surface.drawing.bounded(gx) && Surface.drawing.bounded(gy),
+    surface, x, y, width, height, gx, gy, color, Trig.sincos_for(M.Libm.gnu(libm), arg))
+
+def Surface.draw_rectangle_pro(surface: Surface, rect: Rectangle, origin: M.Vector2, +rotation: F32, +color: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface.draw_rectangle_pro_for(M.AppleLibm{}, surface, rect, origin, rotation, color)
+
+def Surface.gradient_rectangle.bounded(surface: Surface, +x: F32, +y: F32, +width: F32, +height: F32, +c1: U32, +c2: U32, +c3: U32, +c4: U32, size: U32 & U32) -> Surface:
+  (+w, +h) = size
+  Surface.shader.run(surface, ((width > 0.0) && (height > 0.0) : F32),
+    Raster.bounds.clipped(x, y, (x + width : F32), (y + height : F32), w, h), GradientRectangle{x, y, width, height, c1, c2, c3, c4})
+
+def Surface.gradient_rectangle.sized(+x: F32, +y: F32, +width: F32, +height: F32, +c1: U32, +c2: U32, +c3: U32, +c4: U32, sized: Surface & (U32 & U32)) -> Surface:
+  (surface, size) = sized
+  Surface.gradient_rectangle.bounded(surface, x, y, width, height, c1, c2, c3, c4, size)
+
+def Surface.gradient_rectangle.checked(valid: Bool, surface: Surface, +x: F32, +y: F32, +width: F32, +height: F32, +c1: U32, +c2: U32, +c3: U32, +c4: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match valid:
+    case False{}: Fail{(surface, InvalidRequest{})}
+    case True{}: Done{Surface.gradient_rectangle.sized(x, y, width, height, c1, c2, c3, c4, Surface.dimensions.of(surface))}
+
+# ImageDrawRectangleGradientEx (raylib 6.2): pixels (int)floorf(rec.x) ..
+# (int)ceilf(rec.x + rec.width) (clipped), the bilinear weights of the clamped
+# tx = (x - rec.x)/width and ty = (y - rec.y)/height on col1 (top-left), col2
+# (bottom-left), col3 (bottom-right), col4 (top-right), each channel truncated.
+# Nothing for a width or height <= 0; bounded finite fields (InvalidRequest).
+def Surface.draw_rectangle_gradient_ex(surface: Surface, rect: Rectangle, +c1: U32, +c2: U32, +c3: U32, +c4: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Rectangle{+x, +y, +width, +height} = rect
+  Surface.gradient_rectangle.checked(Surface.drawing.bounded(x) && Surface.drawing.bounded(y) && Surface.drawing.bounded(width) && Surface.drawing.bounded(height),
+    surface, x, y, width, height, c1, c2, c3, c4)
+
+def Surface.gradient_circle.bounded(surface: Surface, +cx: F32, +cy: F32, +radius: F32, +inner: U32, +outer: U32, size: U32 & U32) -> Surface:
+  (+w, +h) = size
+  Surface.shader.run(surface, (radius > 0.0 : F32),
+    Raster.bounds.clipped((cx - radius : F32), (cy - radius : F32), (cx + radius : F32), (cy + radius : F32), w, h),
+    GradientCircle{cx, cy, radius, (radius * radius : F32), inner, outer})
+
+def Surface.gradient_circle.sized(+cx: F32, +cy: F32, +radius: F32, +inner: U32, +outer: U32, sized: Surface & (U32 & U32)) -> Surface:
+  (surface, size) = sized
+  Surface.gradient_circle.bounded(surface, cx, cy, radius, inner, outer, size)
+
+def Surface.gradient_circle.checked(valid: Bool, surface: Surface, +cx: F32, +cy: F32, +radius: F32, +inner: U32, +outer: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match valid:
+    case False{}: Fail{(surface, InvalidRequest{})}
+    case True{}: Done{Surface.gradient_circle.sized(cx, cy, radius, inner, outer, Surface.dimensions.of(surface))}
+
+# ImageDrawCircleGradient (raylib 6.2): pixels (int)floorf(center - radius) ..
+# (int)ceilf(center + radius) (clipped) whose center lies within the radius,
+# colored inner + (outer - inner)*sqrtf(distSq)/radius per channel. Nothing for
+# a radius <= 0; bounded finite center and radius (InvalidRequest).
+def Surface.draw_circle_gradient(surface: Surface, center: M.Vector2, +radius: F32, +inner: U32, +outer: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  M.Vector2{+cx, +cy} = center
+  Surface.gradient_circle.checked(Surface.drawing.bounded(cx) && Surface.drawing.bounded(cy) && Surface.drawing.bounded(radius),
+    surface, cx, cy, radius, inner, outer)
 
 # ImageDraw on every format. Each drawn pixel is GetPixelColor of both images,
 # ColorAlphaBlend unless the source has no alpha and tint.a is 255, then
@@ -3823,13 +4179,15 @@ def Surface.region.checked(valid: Bool, destination: Surface, source: Surface, r
     case False{}: Fail{((destination, source), InvalidRectangle{})}
     case True{}: Surface.blit.region(destination, source, rect, x, y, tint)
 
-# Unscaled ImageDraw of an integral, in-bounds source rectangle at integral (x, y).
+# Unscaled ImageDrawImagePro (6.0: ImageDraw) of an integral, in-bounds source
+# rectangle at integral (x, y): the strict profile of ImageDrawImageRec.
 def Surface.draw_image_region(destination: Surface, source: Surface, +rect: Rectangle, +x: F32, +y: F32, tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
   Surface{+w, +h, format, pixels} = source
   Surface.region.checked(Rectangle.integral(rect) && Rectangle.inside(rect, w, h)
     && F32.is_eq(F32.floor(x), x) && F32.is_eq(F32.floor(y), y), destination, Surface{w, h, format, pixels}, rect, x, y, tint)
 
-# ImageDraw of the full source at (x, y).
+# ImageDrawImage(dst, src, int posX, int posY, tint) (raylib 6.2; 6.0's
+# ImageDraw of the full source at (x, y)).
 def Surface.draw_image(destination: Surface, source: Surface, +x: F32, +y: F32, tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
   Surface{+w, +h, format, pixels} = source
   Surface.blit.region(destination, Surface{w, h, format, pixels}, Rectangle{0.0, 0.0, U32.to_f32(w), U32.to_f32(h)}, x, y, tint)
@@ -3870,8 +4228,9 @@ def Surface.image_rect.checked(valid: Bool, destination: Surface, source: Surfac
       Surface.image_rect.route((F32.is_ne(F32.floor(rw), F32.floor(width)) || F32.is_ne(F32.floor(rh), F32.floor(height))), destination, source, rect, x, y,
         F32.to_u32(width), F32.to_u32(height), tint)
 
-# Scaled ImageDraw: the clipped source rectangle is extracted and resized in
-# its own format (ImageFromImage + ImageResize) when its integral size differs.
+# ImageDrawImagePro without origin and rotation (6.0: ImageDraw): the clipped
+# source rectangle is extracted and resized in its own format (ImageFromImage +
+# ImageResize) when its integral size differs.
 def Surface.draw_image_rect(destination: Surface, source: Surface, +rect: Rectangle, +target: Rectangle, tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
   Surface{+sw, +sh, format, pixels} = source
   Rectangle{+x, +y, width, height} = rect
@@ -3883,6 +4242,78 @@ def Surface.draw_image_rect(destination: Surface, source: Surface, +rect: Rectan
   Surface.image_rect.checked(Rectangle.bounded(rect) && Rectangle.bounded(target)
     && ((cw >= 1.0) && (ch >= 1.0) && (tw >= 1.0) && (th >= 1.0) && (F32.floor(tw) <= 4096.0) && (F32.floor(th) <= 4096.0) : F32),
     destination, Surface{sw, sh, format, pixels}, Rectangle{sx, sy, cw, ch}, target, tint)
+
+# ImageDrawImageRec (raylib 6.2): ImageDrawImagePro into {position, srcRec's
+# width and height}, so the source part is never scaled.
+def Surface.draw_image_rec(destination: Surface, source: Surface, rect: Rectangle, position: M.Vector2, tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  Rectangle{+x, +y, +width, +height} = rect
+  M.Vector2{+px, +py} = position
+  Surface.draw_image_rect(destination, source, Rectangle{x, y, width, height}, Rectangle{px, py, width, height}, tint)
+
+# ImageDrawImagePro (raylib 6.2, the former ImageDraw): origin and rotation
+# are not implemented upstream ("TODO: REVIEW") and are ignored, as raylib
+# ignores them; the rest is draw_image_rect.
+def Surface.draw_image_pro(destination: Surface, source: Surface, rect: Rectangle, target: Rectangle, origin: M.Vector2, rotation: F32, tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  Surface.draw_image_rect(destination, source, rect, target, tint)
+
+# GetImageColor of a stored word (formats 1..8 and 11).
+def Surface.image_color(+format: U32, +word: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(format, 7), word, Formats.image_color(format, word))
+
+def Surface.image_colors.put(+at: U32, +format: U32, read: Array<U32> & U32) -> Array<U32>:
+  (values, +word) = read
+  Array.set(U32, values, at, Surface.image_color(format, word))
+
+def Surface.image_colors.loop(n: Nat, +at: U32, +format: U32, values: Array<U32>) -> Array<U32>:
+  match n:
+    case 0n: values
+    case 1n+k: Surface.image_colors.loop(k, (at + 1 : U32), format, Surface.image_colors.put(at, format, Array.get(U32, values, at)))
+
+def Surface.image_ex.finish(+width: U32, +height: U32, +format: U32, pixels: Surface.Pixels, source: Surface, blend: Raster.Blend) -> Surface & Surface:
+  PixelBlend{shades, marks, _} = blend
+  (Surface.shade.merged(width, height, format, pixels, Rgba{width, height, shades}, Rgba{width, height, marks}), source)
+
+# The blend runs on GetImageColor copies of both images; the destination's
+# visited pixels are then stored with ImageDrawPixel and the source returned.
+def Surface.image_ex.source(+dw: U32, +dh: U32, +df: U32, +sw: U32, +sh: U32, +sf: U32, +bounds: Raster.Bounds, +sampler: Raster.Sampler, +tint: U32, destination: Array<U32> & Array<U32>, source: Array<U32> & Array<U32>) -> Surface & Surface:
+  (dst, shades) = destination
+  (src, colors) = source
+  Surface.image_ex.finish(dw, dh, df, Words{dst}, Surface{sw, sh, sf, Words{src}},
+    Rgba.ex.run(dw, bounds, sampler, tint, PixelBlend{Surface.image_colors.loop(U32.to_nat((dw * dh : U32)), 0, df, shades),
+      Array.new(U32, Storage.depth((dw * dh : U32)), 0), Surface.image_colors.loop(U32.to_nat((sw * sh : U32)), 0, sf, colors)}))
+
+def Surface.image_ex.formats(destination: Surface, source: Surface, +px: F32, +py: F32, +cosine: F32, +sine: F32, +scale: F32, +tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match destination source:
+    case Surface{+dw, +dh, +df, Words{dst}} Surface{+sw, +sh, +sf, Words{src}}:
+      Done{Surface.image_ex.source(dw, dh, df, sw, sh, sf,
+        Raster.bounds.turned(0.0, 0.0, (U32.to_f32(sw) * scale : F32), (U32.to_f32(sh) * scale : F32), cosine, sine, px, py, dw, dh),
+        PixelSampler{px, py, cosine, sine, scale, sw, sh}, tint, Array.clone(U32, dst), Array.clone(U32, src))}
+    case kept other: Fail{((kept, other), UnsupportedFormat{})}
+
+def Surface.image_ex.checked(valid: Bool, destination: Surface, source: Surface, +px: F32, +py: F32, +scale: F32, +tint: U32, trig: F32 & F32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match valid:
+    case False{}: Fail{((destination, source), InvalidRequest{})}
+    case True{}:
+      (+cosine, +sine) = trig
+      Surface.image_ex.formats(destination, source, px, py, cosine, sine, scale, tint)
+
+# ImageDrawImageEx (raylib 6.2, a new kernel; zlib, LICENSES/raylib.txt): the
+# source scaled and turned by rotation degrees about its top-left corner at
+# the position. Every destination pixel of the turned box whose center maps
+# (turned back, divided by the scale) inside the source samples its nearest
+# pixel (int)sx, (int)sy; alpha-zero samples are skipped, others stored as
+# ColorAlphaBlend(GetImageColor(dst), GetImageColor(src), tint). Word formats
+# (1..8, 11) for both images (UnsupportedFormat otherwise); bounded finite
+# position and nonzero scale (|v| <= 32767) and a rotation whose DEG2RAD
+# multiple the profile verifies (InvalidRequest otherwise).
+def Surface.draw_image_ex_for(+libm: M.Libm, destination: Surface, source: Surface, position: M.Vector2, +rotation: F32, +scale: F32, +tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  M.Vector2{+px, +py} = position
+  +arg = (rotation * Shapes.deg2rad() : F32)
+  Surface.image_ex.checked(Shapes.trig.ok(M.Libm.gnu(libm), arg) && Surface.drawing.bounded(px) && Surface.drawing.bounded(py)
+    && Surface.drawing.bounded(scale) && Bool.not(F32.is_eq(scale, 0.0)), destination, source, px, py, scale, tint, Trig.sincos_for(M.Libm.gnu(libm), arg))
+
+def Surface.draw_image_ex(destination: Surface, source: Surface, position: M.Vector2, +rotation: F32, +scale: F32, +tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  Surface.draw_image_ex_for(M.AppleLibm{}, destination, source, position, rotation, scale, tint)
 
 # ImageAlphaMask: the mask is a GRAYSCALE copy of `source` (ImageFormat). A
 # GRAYSCALE destination becomes GRAY_ALPHA; others become R8G8B8A8 (ImageFormat)
@@ -6233,17 +6664,26 @@ def Wave.ogg.unready(status: VorbisS.Status) -> Result<&1, &1, Wave.Error, Wave>
     case VorbisS.Refused{+why}: Wave.ogg.limited((why >= 3 : U32))
     case _: Wave.ogg.limited(False{})
 
-def Wave.ogg.whole(whole: Bool, +frames: U32, +rate: U32, +channels: U32, +samples: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
+# The `count` frames read, then zeros up to `frames` (raylib 6.2's
+# RL_CALLOC'd buffer); zeros past 2^24 samples are past this port's limits.
+def Wave.ogg.filled(over: Bool, +frames: U32, +rate: U32, +channels: U32, +count: U32, +samples: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
+  match over:
+    case True{}: Fail{UnsupportedWaveFormat{}}
+    case False{}: Done{Wave{frames, rate, 16, channels, List.append(&2, U32, samples, Memory.zeros(U32.to_nat(((frames - count) * channels : U32)), Nil{}))}}
+
+def Wave.ogg.whole(whole: Bool, +frames: U32, +rate: U32, +channels: U32, +count: U32, +samples: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
   match whole:
     case False{}: Fail{InvalidWaveData{}}
-    case True{}: Done{Wave{frames, rate, 16, channels, samples}}
+    case True{}: Wave.ogg.filled((count < frames : U32) && (frames > (16777216 / U32.max(channels, 1)) : U32), frames, rate, channels, count, samples)
 
-# raylib's buffer is malloc'd for frameCount*channels shorts and read into
-# once: a stream that gives fewer samples than its length says (or a sample
-# this port refuses) leaves shorts that were never written.
+# raylib 6.2's buffer is RL_CALLOC'd for frameCount*channels shorts and read
+# into once: the shorts a stream does not give (fewer samples than its
+# length says) are zeros. A sample this port refuses gives no wave, nor does
+# a frameCount*channels past 32 bits: the unsigned product wraps, and the
+# buffer is smaller than the wave it is given for.
 def Wave.ogg.read(read: VorbisF.Read, +frames: U32, +rate: U32, +channels: U32) -> Result<&1, &1, Wave.Error, Wave>:
   VorbisF.Read{+state, +count, +samples, _} = read
-  Wave.ogg.whole(Bool.not(VorbisF.Frames.refused(state)) && U32.is_eq(count, frames), frames, rate, channels, samples)
+  Wave.ogg.whole(Bool.not(VorbisF.Frames.refused(state)) && (frames <= (4294967295 / U32.max(channels, 1)) : U32), frames, rate, channels, count, samples)
 
 # frameCount*channels, an unsigned product, as the int the read takes: one
 # below 0 reads nothing.
@@ -6271,7 +6711,7 @@ def Wave.decode.ogg(+libm: M.Libm, +bytes: +List<U32>) -> Result<&1, &1, Wave.Er
 
 def Wave.decode.selected(kind: U32, +libm: M.Libm, +bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
   match kind:
-    case 1: Wave.decoded(Wav.decode(bytes))
+    case 1: Wave.decoded(Wav.load(bytes))
     case 2: Wave.decoded.qoa(Qoa.decode(bytes))
     case 3: Wave.decode.mp3(bytes)
     case 4: Wave.decode.ogg(libm, bytes)
@@ -6282,23 +6722,27 @@ def Wave.decode.selected(kind: U32, +libm: M.Libm, +bytes: +List<U32>) -> Result
 # IMA ADPCM) and ".qoa"/".QOA" data (qoa.h) as 16-bit samples, and
 # ".mp3"/".MP3" data (dr_mp3, src/mp3_stream.bend) as 32-bit float samples:
 # every frame of the stream, its channels and sample rate those of its
-# first MP3 frame. Other tokens are UnsupportedWaveFormat; data dr_wav would
-# leave partly unread, convert from NaN, decode with signed overflow,
-# byte-swap through its failing assertion or walk forever, QOA data qoa.h
-# would read past or decode beyond its buffer for, MP3 data dr_mp3 does not
-# open or reads no frame of (raylib has no wave then) and MP3 data with a
-# frame dr_mp3 decodes by leaving one of its arrays are InvalidWaveData. MP3
-# frames of every layer are decoded: Layers I, II and III.
+# first MP3 frame. Other tokens are UnsupportedWaveFormat. WAV frames dr_wav
+# does not read are zeros (raylib 6.2's buffer is RL_CALLOC'd), and
+# UnsupportedWaveFormat past 2^24 samples; data dr_wav would convert from
+# NaN, decode with signed overflow, byte-swap through its failing assertion
+# or walk forever, MP3 data dr_mp3 does not open or reads no frame of
+# (raylib has no wave then) and MP3 data with a frame dr_mp3 decodes by
+# leaving one of its arrays are InvalidWaveData. QOA data is decoded until a
+# frame fails, a frame is shorter than 5120 samples or the declared samples
+# are reached (the wave's frames are those decoded). MP3 frames of every
+# layer are decoded: Layers I, II and III.
 #
 # ".ogg"/".OGG" data (stb_vorbis, src/vorbis_frame.bend) is 16-bit samples:
 # as many frames as the stream's length says (the last page's position; none
-# for a length that is not known), its channels and sample rate. The
-# transform's tables are the C library's sines and cosines: `libm` is the
-# profile they are taken under, and a stream whose tables it does not give
-# is UnsupportedWaveFormat, as is one past the port's limits. Data
-# stb_vorbis does not open, a stream that gives fewer samples than its
-# length says (raylib's wave then ends in shorts that were never written)
-# and what the decoder refuses (docs/AUDIO.md) are InvalidWaveData.
+# for a length that is not known), its channels and sample rate; frames the
+# stream does not give are zeros (UnsupportedWaveFormat past 2^24 samples).
+# The transform's tables are the C library's sines and cosines: `libm` is
+# the profile they are taken under, and a stream whose tables it does not
+# give is UnsupportedWaveFormat, as is one past the port's limits. Data
+# stb_vorbis does not open, a length whose frameCount*channels passes 32
+# bits (raylib's buffer is then smaller than its wave) and what the decoder
+# refuses (docs/AUDIO.md) are InvalidWaveData.
 def Wave.decode_for(+libm: M.Libm, +file_type: String, +bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
   Wave.decode.selected(Bool.pick(U32, String.eq(file_type, ".wav") || String.eq(file_type, ".WAV"), 1,
     Bool.pick(U32, String.eq(file_type, ".qoa") || String.eq(file_type, ".QOA"), 2, Bool.pick(U32, String.eq(file_type, ".mp3") || String.eq(file_type, ".MP3"), 3,
@@ -8025,7 +8469,7 @@ def Music.decode.selected(kind: U32, +memory: Bool, +libm: M.Libm, +audio: Audio
     case 1: Music.decode.wav(Wav.bits(bytes), audio, bytes)
     case 2: Music.decode.ogg(VorbisF.memory.open(libm, bytes), audio)
     case 4: Music.decode.mp3(Music.decode.mp3.opened(memory, bytes), audio)
-    case 5: Music.decode.qoa(Qoa.decode(bytes), audio, Music.qoa.declared(bytes))
+    case 5: Music.decode.qoa(Qoa.decode.played(bytes), audio, Music.qoa.declared(bytes))
     case 6: Music.decode.xm(XmM.load(bytes), libm, Music.device.rate(AudioDevice.is_ready(audio)), audio)
     case 7: Music.decode.mod(U32.is_ne(ModP.count.bytes(bytes), 0) && (ModP.count.bytes(bytes) < 33554432 : U32), bytes, Music.device.rate(AudioDevice.is_ready(audio)), audio)
     case _: (audio, Fail{UnsupportedWaveFormat{}})
@@ -8593,14 +9037,12 @@ def Text.format(format: String, args: +List<Text.Arg>) -> Maybe<String>:
   TextCore.format(TextCore.bytes(format), Text.args(args))
 
 # TextSubtext: length bytes from position, clamped to the text and 1023
-# bytes; "" from positions at or past the end. Negative lengths and reads
-# before the text are None.
+# bytes; "" for a negative position, a length below 1 or a position at or
+# past the end.
 def Text.subtext(text: String, +position: U32, +length: U32) -> Maybe<String>:
   TextCore.subtext(TextCore.bytes(text), position, length)
 
-# TextRemoveSpaces: the text without ' ' (at most 1023 bytes read). raylib
-# reads past the NUL of texts of up to 1021 bytes with two or more spaces:
-# None.
+# TextRemoveSpaces: the text without ' ' (at most 1023 bytes read).
 def Text.remove_spaces(text: String) -> Maybe<String>:
   TextCore.remove_spaces(TextCore.bytes(text))
 
@@ -8665,8 +9107,8 @@ def Files.text_replace(+path: String, search: String, replacement: String) -> IO
   IO.bind(Bool, Maybe<U32>, Files.exists(path), Files.replace.existing(path, search, replacement))
 
 # TextReplaceBetween: the bytes between the first begin and the next end
-# replaced (both delimiters kept); "" when either is missing, None when the
-# result needs 1024 or more bytes (raylib overflows or leaves it unterminated).
+# replaced (both delimiters kept); "" when either is missing or the result
+# needs 1023 or more bytes.
 def Text.replace_between(text: String, begin: String, end: String, replacement: String) -> Maybe<String>:
   TextCore.replace_between(TextCore.span(TextCore.bytes(text), TextCore.bytes(begin), TextCore.bytes(end)), TextCore.bytes(replacement), True{})
 
@@ -8675,27 +9117,26 @@ def Text.replace_between(text: String, begin: String, end: String, replacement: 
 def Text.replace_between_alloc(text: String, begin: String, end: String, replacement: String) -> Maybe<String>:
   TextCore.replace_between(TextCore.span(TextCore.bytes(text), TextCore.bytes(begin), TextCore.bytes(end)), TextCore.bytes(replacement), False{})
 
-# TextInsert: "" when text and insert need 1023 or more bytes. raylib copies
-# the text after the insertion from the wrong index, so only appending
-# (position == length), position length + 1 (the text unchanged) and, inside
-# the text, an insert of at most one byte (replacing the byte at position) are
-# defined; other positions are None.
+# TextInsert: insert placed before the byte at position (a position past
+# the end appends); "" for a negative position or when text and insert
+# need 1023 or more bytes.
 def Text.insert(text: String, insert: String, +position: U32) -> Maybe<String>:
   TextCore.insert(TextCore.bytes(text), TextCore.bytes(insert), position, True{})
 
-# TextInsertAlloc: the same positions without the size limit.
+# TextInsertAlloc: the same without the size limit; None (NULL) for a
+# negative position.
 def Text.insert_alloc(text: String, insert: String, +position: U32) -> Maybe<String>:
   TextCore.insert(TextCore.bytes(text), TextCore.bytes(insert), position, False{})
 
-# TextJoin: each text that fits the 1024-byte buffer, with the delimiter after
-# each copied text but the last item. A delimiter ending past byte 1022
-# overflows or leaves the buffer unterminated: None.
+# TextJoin: each text that fits the 1024-byte buffer with a delimiter
+# (total + length + delimiter < 1024, the last item too), with the
+# delimiter after each copied text but the last item.
 def Text.join(texts: +List<String>, delimiter: String) -> Maybe<String>:
   TextCore.join(texts, TextCore.bytes(delimiter))
 
-# TextSplit: the substrings between delimiter bytes; at most 128, the 128th
-# being "" (raylib stops at the 127th delimiter). A text whose first 1024
-# bytes leave the last substring unterminated is None.
+# TextSplit: the substrings between delimiter bytes among the first 1023
+# bytes; at most 128, the 128th being "" (raylib stops at the 127th
+# delimiter).
 def Text.split(text: String, +delimiter: Char) -> Maybe<+List<String>>:
   TextCore.split(TextCore.bytes(text), Char.to_u32(delimiter))
 
@@ -8711,20 +9152,19 @@ def Text.to_upper(text: String) -> String:
 def Text.to_lower(text: String) -> String:
   TextCore.string(TextCore.map.lower(TextCore.take(TextCore.bytes(text), 1023)))
 
-# TextToPascal: the first byte upper-cased; each '_' and the byte after it
-# become that byte upper-cased (a-z) or kept (0-9), otherwise a NUL that ends
-# the result. Empty texts and a final '_' read past the NUL: None.
+# TextToPascal: the first byte upper-cased; a run of '_' and the byte after
+# it become that byte, upper-cased (a-z) or copied; a final run is dropped.
+# "" for an empty text; at most 1023 bytes.
 def Text.to_pascal(text: String) -> Maybe<String>:
   TextCore.cased(TextCore.bytes(text), True{})
 
-# TextToSnake: '_' before each upper-case letter but the first, letters
-# lower-cased, at most 1023 bytes; a letter at byte 1022 leaves the buffer
-# unterminated: None.
+# TextToSnake: ' ' as '_' and '_' before an upper-case letter that starts a
+# word (never doubled, never at output byte 1022), letters lower-cased, at
+# most 1023 bytes.
 def Text.to_snake(text: String) -> Maybe<String>:
   TextCore.snake(TextCore.bytes(text))
 
-# TextToCamel: as TextToPascal with the first byte lower-cased and only a-z
-# after '_' (anything else ends the result).
+# TextToCamel: as TextToPascal with the first byte lower-cased.
 def Text.to_camel(text: String) -> Maybe<String>:
   TextCore.cased(TextCore.bytes(text), False{})
 
@@ -8942,9 +9382,10 @@ def Core.frame_time.of(time: Maybe<F32>) -> F32:
 def Core.get_frame_time(+core: Core) -> F32:
   Core.frame_time.of(CoreState.Core.frame_time(Core.state(core)))
 
-# GetFPS at time now: 1/average of the frame times sampled every 0.5/30 s
-# (30-entry history, reset while the frame counter is 0); 0 while the frame
-# time is 0. None when the rounded value is not an int (no sample yet: 1/0).
+# GetFPS at time now (raylib 6.2): samples/(average*30) rounded, from the
+# frame times sampled every 0.5/30 s (30-entry history and up to 30 samples
+# counted, reset while the frame counter is 0); 0 while the frame time is 0 or
+# before the first sample. None when the rounded value is not an int.
 def Core.get_fps(+core: Core, +now: M.Float64) -> Maybe<(Core & U32)>:
   Core.wrap.maybe_pair(CoreState.Core.get_fps(Core.state(core), Core.words(now)))
 
@@ -9214,9 +9655,10 @@ def AutomationEventList.parsed(list: Maybe<AutomationCore.AutoList>) -> Maybe<Au
 # LoadAutomationEventList's reading of a text file's bytes: fgets lines of up
 # to 255 bytes, "c %i" ignored (the count becomes the number of events), each
 # "e %d %d %d %d %d %d ..." line one event (unconverted fields stay 0); a last
-# line without a newline is not read. None where the C reader is undefined
-# (an int out of range, a description over 63 bytes, more than 16384 events)
-# or for "0x" without a hex digit in a "c" line.
+# line without a newline is not read. Since raylib 6.2 the description is read
+# into its 64-byte buffer up to 63 bytes, and "e" lines after the 16384th
+# event are skipped unread. None where the C reader is undefined (an int out
+# of range in a scanned line) or for "0x" without a hex digit in a "c" line.
 def AutomationEventList.parse(+bytes: +List<U32>) -> Maybe<AutomationEventList>:
   AutomationEventList.parsed(AutomationCore.parse(bytes))
 
@@ -9412,6 +9854,9 @@ def Input.get_touch_point_id(+core: Core, +index: U32) -> Maybe<U32>:
 def Input.get_touch_point_count(+core: Core) -> U32:
   InputCore.Touch.count(Input.touch(core))
 
+# The gamepad queries (raylib 6.2 checks gamepad >= 0): an index outside 0..3
+# answers false, the axis rest value, axis count 0 or a NULL name (None); only
+# a negative button or axis of a ready gamepad is None (undefined).
 def Input.is_gamepad_available(+core: Core, +gamepad: U32) -> Maybe<Bool>:
   InputCore.gamepad.available(Core.input(core), gamepad)
 
@@ -9833,10 +10278,10 @@ def Frame.screenshot.named(quoted: Bool, frame: Frame, +path: String) -> IO(Fram
 # top-down R8G8B8A8, alpha 255) is exported with ExportImage's suffix rules to
 # fileName in the working directory. Answers whether the file exists
 # afterwards (raylib's FileExists log check); None, with nothing written, when
-# a draw was refused or a render texture is the target. raylib builds the path
-# from CORE.Storage.basePath (the working directory at InitWindow) with
-# TextFormat, which truncates paths of 1024 bytes or more; Jonlib writes the
-# relative name. The memory platform's own screenshot is the same image
+# a draw was refused or a render texture is the target. raylib joins a
+# relative name to CORE.Storage.basePath (the working directory at InitWindow)
+# with TextFormat, which truncates paths of 1024 bytes or more, and since 6.2
+# writes an absolute name as given; Jonlib writes the name as given. The memory platform's own screenshot is the same image
 # bottom-up with red and blue swapped (see docs/TEXTURES.md).
 def Frame.take_screenshot(frame: Frame, +file_name: String) -> IO(Frame & Maybe<Bool>):
   Frame.screenshot.named(Frame.screenshot.quote(file_name), frame, file_name)
@@ -10717,6 +11162,26 @@ def RenderTexture.load.checked(valid: Bool, +width: U32, +height: U32, flagged: 
 def RenderTexture.load(frame: Frame, +width: U32, +height: U32) -> Frame & Maybe<RenderTexture>:
   Frame{canvas, _} = frame
   RenderTexture.load.checked(((width >= 1) && (width <= 4096) && (height >= 1) && (height <= 4096) : U32), width, height, FrameCore.Canvas.offscreen(canvas))
+
+# 0: R8G8B8A8, 1: compressed (rejected by raylib), 2: other color formats.
+def RenderTexture.format_kind(+format: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(format, 7), 0, Bool.pick(U32, (format >= 14 : U32), 1, 2))
+
+def RenderTexture.load_ex.selected(kind: U32, frame: Frame, +width: U32, +height: U32) -> Frame & Maybe<RenderTexture>:
+  match kind:
+    case 0: RenderTexture.load(frame, width, height)
+    case 1: (frame, None{})
+    case _:
+      Frame{canvas, _} = frame
+      (Frame{FrameCore.Canvas.refuse(canvas), Nil{}}, None{})
+
+# LoadRenderTextureEx(width, height, format) (raylib 6.2; LoadRenderTexture
+# passes R8G8B8A8): format 7 is LoadRenderTexture; a compressed format (14 and
+# above) is rejected before any id is taken (raylib's zero target: None, frame
+# unchanged). Other color formats are refused (frame undefined): rlsw
+# framebuffers of other formats are outside the profile.
+def RenderTexture.load_ex(frame: Frame, +width: U32, +height: U32, +format: U32) -> Frame & Maybe<RenderTexture>:
+  RenderTexture.load_ex.selected(RenderTexture.format_kind(format), frame, width, height)
 
 def RenderTexture.release(offscreen: Bool, +fbo: U32, +color: U32, +depth: U32, canvas: FrameCore.Canvas) -> FrameCore.Canvas:
   match offscreen:
@@ -12956,6 +13421,13 @@ def Font.image_draw_text_ex_spaced(+line_spacing: U32, destination: Surface, fon
 def Font.image_draw_text_ex(destination: Surface, font: Font, text: String, position: M.Vector2, +size: F32, +spacing: F32, +tint: U32) -> Result<&1, &1, (Surface & Font) & Surface.Error, Surface & Font>:
   Font.image_draw_text_ex_spaced(2, destination, font, text, position, size, spacing, tint)
 
+# ImageDrawTextPro(dst, font, text, position, origin, rotation, fontSize,
+# spacing, tint), new in raylib 6.2, has an empty body in rtextures.c ("TODO:
+# NEW: Implement ImageDrawTextPro()"): the destination and the font are
+# handed back unchanged, whatever the arguments.
+def Font.image_draw_text_pro(destination: Surface, font: Font, text: String, position: M.Vector2, origin: M.Vector2, +rotation: F32, +size: F32, +spacing: F32, +tint: U32) -> Surface & Font:
+  (destination, font)
+
 def Font.image_draw_text.drop(result: Result<&1, &1, (Surface & Font) & Surface.Error, Surface & Font>) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match result:
     case Done{Tuple{destination, _}}: Done{destination}
@@ -13109,8 +13581,9 @@ def Font.data.loaded(+l: FontData.Loaded) -> Font.Data:
 # entries (refused when shorter). type 0 FONT_DEFAULT, 1 FONT_BITMAP, 2
 # FONT_SDF (padding 4, on-edge 128, scale 64). One GlyphInfo per requested
 # codepoint the font maps: offsets from the bitmap box (offsetY plus the
-# scaled ascent), advanceX the scaled advance, GRAYSCALE images; the space and
-# U+3000 get an empty advanceX x fontSize image.
+# scaled ascent), advanceX the scaled advance, GRAYSCALE images; raylib 6.2's
+# space codepoints (U+0020, U+00A0, U+1680, U+2000..U+200A, U+202F, U+205F,
+# U+3000) get an empty advanceX x fontSize image.
 def Font.load_data(+bytes: +List<U32>, +size: U32, +codepoints: +List<U32>, +count: U32, +kind: U32) -> Font.Data:
   Font.data.loaded(FontData.load(bytes, size, codepoints, count, kind))
 
@@ -13288,18 +13761,14 @@ def Font.memory.ttf(frame: Frame, +size: U32, +l: FontData.Loaded) -> Frame & Ma
   FontData.Loaded{status, glyphs} = l
   Font.memory.ttf.status(status, frame, size, glyphs)
 
-def Font.memory.bdf.zero() -> FontData.Glyph:
-  FontData.Glyph{0, 0, 0, 0, 0, 0, False{}, Nil{}}
-
-def Font.memory.bdf.status(status: U32, frame: Frame, +count: U32, +size: U32) -> Frame & Maybe<Font>:
+def Font.memory.bdf.status(status: U32, frame: Frame, +count: U32, +size: U32, +glyphs: +List<FontData.Glyph>) -> Frame & Maybe<Font>:
   match status:
-    case 0: (frame, Some{Font.default()})
-    case 1: Font.memory.glyphed(frame, size, List.replicate(FontData.Glyph, U32.to_nat(count), Font.memory.bdf.zero()), count)
+    case 1: Font.memory.glyphed(frame, size, glyphs, count)
     case _: (frame, None{})
 
 def Font.memory.bdf(frame: Frame, +count: U32, +r: FontData.Bdf) -> Frame & Maybe<Font>:
-  FontData.Bdf{status, size} = r
-  Font.memory.bdf.status(status, frame, count, size)
+  FontData.Bdf{status, size, glyphs} = r
+  Font.memory.bdf.status(status, frame, count, size, glyphs)
 
 def Font.memory.bdf.valid(valid: Bool, frame: Frame, +bytes: +List<U32>, +size: U32, +required: +List<U32>, +count: U32) -> Frame & Maybe<Font>:
   match valid:
@@ -13317,9 +13786,9 @@ def Font.memory.kind(kind: U32, frame: Frame, +bytes: +List<U32>, +size: U32, +c
 
 # LoadFontFromMemory(fileType, fileData, dataSize, fontSize, codepoints,
 # codepointCount): ".ttf"/".otf" (any case) through LoadFontData, ".bdf"
-# through LoadFontDataBDF (whose result raylib 6.0 only keeps for fonts
-# without characters, see docs/FONTS.md), then GenImageFontAtlas (padding 4,
-# rows) loaded as the GRAY_ALPHA texture; other types and fonts
+# through LoadFontDataBDF (one glyph per requested codepoint, those the font
+# lacks zeroed; see docs/FONTS.md), then GenImageFontAtlas (padding 4, rows)
+# loaded as the GRAY_ALPHA texture; other types and fonts
 # stb_truetype does not initialize give the default font. None for the
 # refusals of LoadFontData and GenImageFontAtlas, glyph rectangles outside the
 # atlas (ImageFromImage would read past it) and when the 127 texture ids are
@@ -14712,17 +15181,17 @@ def Draw.cylinder_wires_ex_for(+libm: M.Libm, frame: Frame, +start: M.Vector3, +
 def Draw.cylinder_wires_ex(frame: Frame, +start: M.Vector3, +end: M.Vector3, +start_radius: F32, +end_radius: F32, +sides: F32, +color: U32) -> Frame:
   Draw.cylinder_wires_ex_for(M.AppleLibm{}, frame, start, end, start_radius, end_radius, sides, color)
 
-def Draw.capsule_for(+libm: M.Libm, frame: Frame, +start: M.Vector3, +end: M.Vector3, +radius: F32, +slices: F32, +rings: F32, +color: U32) -> Frame:
-  Frame.draw(frame, Shapes3D.capsule(M.Libm.gnu(libm), False{}, start, end, radius, slices, rings, color))
+def Draw.capsule_for(+libm: M.Libm, frame: Frame, +start: M.Vector3, +end: M.Vector3, +radius: F32, +rings: F32, +slices: F32, +color: U32) -> Frame:
+  Frame.draw(frame, Shapes3D.capsule(M.Libm.gnu(libm), False{}, start, end, radius, rings, slices, color))
 
-def Draw.capsule(frame: Frame, +start: M.Vector3, +end: M.Vector3, +radius: F32, +slices: F32, +rings: F32, +color: U32) -> Frame:
-  Draw.capsule_for(M.AppleLibm{}, frame, start, end, radius, slices, rings, color)
+def Draw.capsule(frame: Frame, +start: M.Vector3, +end: M.Vector3, +radius: F32, +rings: F32, +slices: F32, +color: U32) -> Frame:
+  Draw.capsule_for(M.AppleLibm{}, frame, start, end, radius, rings, slices, color)
 
-def Draw.capsule_wires_for(+libm: M.Libm, frame: Frame, +start: M.Vector3, +end: M.Vector3, +radius: F32, +slices: F32, +rings: F32, +color: U32) -> Frame:
-  Frame.draw(frame, Shapes3D.capsule(M.Libm.gnu(libm), True{}, start, end, radius, slices, rings, color))
+def Draw.capsule_wires_for(+libm: M.Libm, frame: Frame, +start: M.Vector3, +end: M.Vector3, +radius: F32, +rings: F32, +slices: F32, +color: U32) -> Frame:
+  Frame.draw(frame, Shapes3D.capsule(M.Libm.gnu(libm), True{}, start, end, radius, rings, slices, color))
 
-def Draw.capsule_wires(frame: Frame, +start: M.Vector3, +end: M.Vector3, +radius: F32, +slices: F32, +rings: F32, +color: U32) -> Frame:
-  Draw.capsule_wires_for(M.AppleLibm{}, frame, start, end, radius, slices, rings, color)
+def Draw.capsule_wires(frame: Frame, +start: M.Vector3, +end: M.Vector3, +radius: F32, +rings: F32, +slices: F32, +color: U32) -> Frame:
+  Draw.capsule_wires_for(M.AppleLibm{}, frame, start, end, radius, rings, slices, color)
 
 def Draw.plane(frame: Frame, center: M.Vector3, size: M.Vector2, +color: U32) -> Frame:
   Frame.draw(frame, Shapes3D.plane(center, size, color))
@@ -15476,11 +15945,18 @@ def Model.iqm.meshes(parts: +List<Iqm.Part>) -> +List<Mesh>:
     case Nil{}: Nil{}
     case Con{+part, rest}: Con{Model.iqm.mesh(part), Model.iqm.meshes(rest)}
 
-# LoadTexture(TextFormat("%s/%s", basePath, material)) for each mesh.
+# raylib 6.2: a material with an empty name asks for no texture.
+def Model.iqm.request(material: +List<U32>) -> Maybe<&2, +List<U32>>:
+  match material:
+    case Nil{}: None{}
+    case Con{+c, +rest}: Some{Con{c, rest}}
+
+# LoadTexture(TextFormat("%s/%s", basePath, material)) for each mesh whose
+# material has a name (TextLength(material) > 0).
 def Model.iqm.requests(parts: +List<Iqm.Part>) -> +List<Maybe<&2, +List<U32>>>:
   match parts:
     case Nil{}: Nil{}
-    case Con{Iqm.Part{+material, _, _, _, _, _, _, _}, rest}: Con{Some{material}, Model.iqm.requests(rest)}
+    case Con{Iqm.Part{+material, _, _, _, _, _, _, _}, rest}: Con{Model.iqm.request(material), Model.iqm.requests(rest)}
 
 # model.meshMaterial[i] = i.
 def Model.iqm.mesh_material(parts: +List<Iqm.Part>, +index: U32) -> +List<U32>:
@@ -15488,11 +15964,13 @@ def Model.iqm.mesh_material(parts: +List<Iqm.Part>, +index: U32) -> +List<U32>:
     case Nil{}: Nil{}
     case Con{_, rest}: Con{index, Model.iqm.mesh_material(rest, (index + 1 : U32))}
 
-# materials[i] = LoadMaterialDefault() with the texture loaded as its albedo: all zeros when the file does not open.
+# materials[i] = LoadMaterialDefault() with the texture loaded as its albedo:
+# all zeros when the file does not open, the default texture kept when none
+# was asked for.
 def Model.iqm.materials(gots: +List<TexGot>) -> Maybe<+List<Material>>:
   match gots:
     case Nil{}: Some{Nil{}}
-    case Con{TexGot{_, +info}, rest}: Model.obj.materials.add(Material.set_texture(Material.load_default(), 0, info), Model.iqm.materials(rest))
+    case Con{+got, rest}: Model.obj.materials.add(Material.set_texture(Material.load_default(), 0, TexGot.info.or(got, TextureInfo{0, 1, 1, 1, 7})), Model.iqm.materials(rest))
 
 def Model.iqm.textured.with(failure: Maybe<Surface.IOError>, frame: Frame, +got: +List<TexGot>, loaded: List<Texture>, +parts: +List<Iqm.Part>) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
   match failure:
@@ -16929,13 +17407,13 @@ def Config.JONLIB_VERSION_MAJOR() -> U32:
   6
 # RAYLIB_VERSION_MINOR
 def Config.JONLIB_VERSION_MINOR() -> U32:
-  0
+  2
 # RAYLIB_VERSION_PATCH
 def Config.JONLIB_VERSION_PATCH() -> U32:
   0
 # RAYLIB_VERSION
 def Config.JONLIB_VERSION() -> String:
-  "6.0"
+  "6.2"
 # MOUSE_LEFT_BUTTON
 def Config.MOUSE_LEFT_BUTTON() -> U32:
   0
@@ -17451,6 +17929,9 @@ def Config.SUPPORT_FILEFORMAT_GIF() -> U32:
 # SUPPORT_FILEFORMAT_QOI
 def Config.SUPPORT_FILEFORMAT_QOI() -> U32:
   1
+# SUPPORT_FILEFORMAT_PEP
+def Config.SUPPORT_FILEFORMAT_PEP() -> U32:
+  0
 # SUPPORT_FILEFORMAT_PSD
 def Config.SUPPORT_FILEFORMAT_PSD() -> U32:
   0
@@ -17516,7 +17997,7 @@ def Config.SUPPORT_MESH_GENERATION() -> U32:
   1
 # SUPPORT_GPU_SKINNING
 def Config.SUPPORT_GPU_SKINNING() -> U32:
-  0
+  1
 # SUPPORT_FILEFORMAT_WAV
 def Config.SUPPORT_FILEFORMAT_WAV() -> U32:
   1

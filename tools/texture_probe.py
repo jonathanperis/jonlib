@@ -365,6 +365,11 @@ def scenes(libm):
     add('pool-textures', 8, 6, [('load_many', 0, 125, image(1, 1, 7, 1)), ('info', 0), ('load', 1, image(2, 1, 1, 2)), ('info', 1),
                                 ('load', 2, image(1, 1, 7, 3)), ('info', 2), ('unload', 1), ('load', 3, image(1, 2, 4, 4)), ('info', 3),
                                 ('begin',), ('clear', C(4, 5, 6)), ('draw', 3, 1.0, 1.0, white), ('end',)])
+    # LoadRenderTextureEx (raylib 6.2): R8G8B8A8 as LoadRenderTexture; a compressed format takes no id.
+    add('rt-load-ex', 16, 12, [('load_rt_ex', 0, 4, 3, 7), ('rt_info', 0), ('load_rt_ex', 1, 4, 4, 14), ('rt_info', 1),
+                               ('load_rt_ex', 1, 5, 2, 21), ('rt_info', 1), ('load_rt', 1, 2, 2), ('rt_info', 1), ('load', 0, image(1, 1, 7, 7)),
+                               ('info', 0), ('begin',), ('clear', C(9, 8, 7)), ('begin_rt', 0), ('clear', C(200, 10, 20)), ('end_rt', 0),
+                               ('draw', 0, 1.0, 1.0, white), ('end',)])
     add('pool-framebuffers', 8, 6, [('load_rt', 0, 2, 2)] * 7 + [('rt_info', 0), ('load_rt', 1, 2, 2), ('rt_info', 1), ('load', 0, image(1, 1, 7, 9)),
                                                                   ('info', 0), ('begin',), ('clear', C(6, 5, 4)), ('end',)])
 
@@ -522,7 +527,8 @@ def c_op(op):
         'update': lambda: f'UpdateTexture(t[{a[0]}], {c_bytes(a[1])});',
         'update_rec': lambda: f'UpdateTextureRec(t[{a[0]}], {crec(a[1])}, {c_bytes(a[2])});',
         'info': lambda: f'info(t[{a[0]}]);', 'image': lambda: f'image_info(t[{a[0]}]);',
-        'load_rt': lambda: f'r[{a[0]}] = LoadRenderTexture({a[1]}, {a[2]});', 'unload_rt': lambda: f'UnloadRenderTexture(r[{a[0]}]); r[{a[0]}] = (RenderTexture2D){{ 0 }};',
+        'load_rt': lambda: f'r[{a[0]}] = LoadRenderTexture({a[1]}, {a[2]});',
+        'load_rt_ex': lambda: f'r[{a[0]}] = LoadRenderTextureEx({a[1]}, {a[2]}, {a[3]});', 'unload_rt': lambda: f'UnloadRenderTexture(r[{a[0]}]); r[{a[0]}] = (RenderTexture2D){{ 0 }};',
         'begin_rt': lambda: f'BeginTextureMode(r[{a[0]}]);', 'end_rt': lambda: 'EndTextureMode();',
         'rt_info': lambda: f'rt_info(r[{a[0]}]);', 'image_rt': lambda: f'image_info(r[{a[0]}].texture);',
     }
@@ -726,6 +732,10 @@ def St.rt.loaded(slot: U32, r: J.Frame & Maybe<J.RenderTexture>, t0: Maybe<J.Tex
 def St.load_rt(s: St, +slot: U32, +width: U32, +height: U32) -> St:
   St{frame, t0, t1, t2, t3, r0, r1, log} = s
   St.rt.loaded(slot, J.RenderTexture.load(frame, width, height), t0, t1, t2, t3, r0, r1, log)
+
+def St.load_rt_ex(s: St, +slot: U32, +width: U32, +height: U32, +format: U32) -> St:
+  St{frame, t0, t1, t2, t3, r0, r1, log} = s
+  St.rt.loaded(slot, J.RenderTexture.load_ex(frame, width, height, format), t0, t1, t2, t3, r0, r1, log)
 
 def rt.unload(frame: J.Frame, rt: Maybe<J.RenderTexture>) -> J.Frame:
   match rt:
@@ -1023,6 +1033,7 @@ def step.slot(kind: U32, +w: +List<U32>, s: St) -> St:
     case 48: St.end_rt(s, wu(0n, w))
     case 49: St.rt_log(s, wu(0n, w), 0)
     case 50: St.rt_log(s, wu(0n, w), 1)
+    case 51: St.load_rt_ex(s, wu(0n, w), wu(1n, w), wu(2n, w), wu(3n, w))
     case _: step.tex(wb(1n, w), wu(0n, w), wu(2n, w), word.drop(3n, w), s)
 
 def step.select(frame_op: Bool, +kind: U32, +w: +List<U32>, s: St) -> St:
@@ -1060,7 +1071,7 @@ FRAME_KINDS = {'begin': 0, 'end': 1, 'clear': 2, 'rect': 3, 'rect_rec': 4, 'rect
                'pixel': 10, 'pixel_v': 11, 'mode2d': 12, 'end2d': 13, 'push': 14, 'pop': 15, 'identity': 16, 'translate': 17, 'scale': 18,
                'rotate': 19, 'mult': 20, 'scissor': 21, 'end_scissor': 22, 'blend': 23, 'end_blend': 24}
 SLOT_KINDS = {'load': 40, 'load_many': 41, 'unload': 42, 'info': 43, 'image': 44, 'load_rt': 45, 'unload_rt': 46, 'begin_rt': 47, 'end_rt': 48,
-              'rt_info': 49, 'image_rt': 50}
+              'rt_info': 49, 'image_rt': 50, 'load_rt_ex': 51}
 TEX_KINDS = {'draw': 100, 'draw_v': 101, 'draw_ex': 102, 'draw_rec': 103, 'draw_pro': 104, 'npatch': 105, 'filter': 106, 'wrap': 107,
              'mipmaps': 108, 'update': 109, 'update_rec': 110, 'params': 111, 'rl_update': 112}
 COLOR_LAST = {'clear', 'rect', 'rect_rec', 'rect_lines', 'circle_v', 'line', 'line_v', 'tri', 'pixel', 'pixel_v'}

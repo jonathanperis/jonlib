@@ -11,13 +11,15 @@ qoa_encode rejects (an empty file): no frames, sample rate 0 or above
 
 The native encodings and edits of them are then loaded (LoadWave of ".qoa"
 and ".QOA" names): truncated frames and slices, a later frame with another
-channel count or sample rate, a frame size past the data, a frame claiming
-more samples than its slices hold, a declared total above the encoded
-samples, bad magic, zero total/channels/rate and short files. Frame count,
-sample rate, sample size, channels and every sample must match, or both sides
-fail. Jonlib contracts (not native comparisons): files whose frames decode
-past the declared total (qoa.h writes past its buffer) or with more than 8
-channels (past its LMS state) are InvalidWaveData. CPU/JS.
+channel count or sample rate, a frame size past the data or below the frame
+header, a frame claiming more samples than its slices hold or more than 256
+slices, a short first frame (raylib 6.2's qoa_decode stops after it), a
+declared total above and below the encoded samples (qoa_decode's buffer is
+rounded up to whole frames: the wave has the frames decoded) and past 2^24,
+a rounded buffer past 0x7fffffff samples, nine channels (refused by raylib
+6.2's qoa_decode_header), bad magic, zero total/channels/rate and short
+files. Frame count, sample rate, sample size, channels and every sample must
+match, or both sides fail. CPU/JS.
 """
 import hashlib
 import json
@@ -155,9 +157,16 @@ def loads(encoded):
     add('fifteen-bytes', mono[:15])
     add('empty', b'')
     add('eight-ch-rate-one', edit_frame(eight, 8, rate=1))
-    add('total-below', header(mono, total=996), 'data')
-    add('total-below-stereo', header(stereo, total=5121), 'data')
-    add('nine-channels', edit_frame(eight, 8, channels=9), 'data')
+    # Defined in raylib 6.2: qoa_decode's buffer is rounded up to whole frames, and nine channels are refused.
+    add('total-below', header(mono, total=996))
+    add('total-below-stereo', header(stereo, total=5121))
+    add('nine-channels', edit_frame(eight, 8, channels=9))
+    # raylib 6.2's qoa_decode_frame and qoa_decode checks.
+    add('frame-size-below-header', edit_frame(mono, 8, size=8 + 16 - 1))
+    add('stereo-257-slices', edit_frame(stereo, 8, count=5121, size=frame_at(stereo, 8)[3] + 16))
+    add('stereo-short-first', edit_frame(stereo, 8, count=5100))
+    add('total-past-2^24', header(mono, total=2 ** 24 + 1))
+    add('buffer-past-int', header(mono, total=0xFFFFFFFF))
     return out
 
 

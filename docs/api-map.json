@@ -1062,7 +1062,7 @@
   "GetFPS": {
     "jonlib": "Core.get_fps",
     "status": "profile-covered",
-    "scope": "GetFPS at time now: 30 samples of frameTime/30 taken at most every 0.5f/30 s, reset while the frame counter is 0, 0 while the frame time is 0, (int)roundf(1/average); Maybe<(Core & U32)>, None before the first sample (1/0).",
+    "scope": "GetFPS at time now (raylib 6.2): 30 samples of frameTime/30 taken at most every 0.5f/30 s and their count (captureFramesCounted, up to 30), reset while the frame counter is 0; 0 while the frame time is 0 or before the first sample, else (int)roundf(counted/(average*30)) in float; Maybe<(Core & U32)>, None where that int conversion is undefined.",
     "gaps": [
       "Time values must stay in the binary64 helpers' domain",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -1155,7 +1155,7 @@
     "scope": "A name with ' is rejected; otherwise LoadImageFromScreen's desktop-contract image (top-down RGBA, alpha 255) is exported with ExportImage's suffix rules to the name in the working directory; answers FileExists afterwards, None for a refused frame.",
     "gaps": [
       "The memory platform writes the same pixels bottom-up with red and blue swapped (normalized by the probe; docs/TEXTURES.md)",
-      "raylib's basePath join and TextFormat truncation at 1024 bytes are not modeled (the name is written relative)",
+      "raylib's basePath join of a relative name and TextFormat truncation at 1024 bytes are not modeled (the name is written as given, as raylib 6.2 writes an absolute one; not compared)",
       "F12/ACTION_TAKE_SCREENSHOT captures in EndDrawing are counted, not written",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
@@ -1814,7 +1814,7 @@
   "LoadAutomationEventList": {
     "jonlib": "AutomationEventList.new / AutomationEventList.parse / AutomationEventList.load",
     "status": "profile-covered",
-    "scope": "NULL: an empty list of capacity 16384. Files: fgets lines of up to 255 bytes, c %i ignored (count = e lines), e %d fields with unconverted ones 0, a last line without newline skipped; unreadable files give the empty list. None where the C reader is undefined.",
+    "scope": "NULL: an empty list of capacity 16384. Files (raylib 6.2): fgets lines of up to 255 bytes, c %i ignored (count = e lines), e %d fields with unconverted ones 0 and the description read up to 63 bytes, e lines past the 16384th event skipped unread, a last line without newline skipped; unreadable files give the empty list. None where the C reader is undefined (an int out of range in a scanned line, c 0x without a hex digit).",
     "gaps": [
       "The binary .rae reader is commented out in the pinned source",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -1996,7 +1996,7 @@
   "IsGamepadAvailable": {
     "jonlib": "Input.is_gamepad_available",
     "status": "profile-covered",
-    "scope": "The ready bit of gamepads 0..3, false from 4; None for a negative gamepad.",
+    "scope": "The ready bit of gamepads 0..3, false for any other index (raylib 6.2 checks gamepad >= 0); always Some.",
     "gaps": [
       "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -2007,7 +2007,7 @@
   "GetGamepadName": {
     "jonlib": "Input.get_gamepad_name",
     "status": "profile-covered",
-    "scope": "The empty name of gamepads 0..3; None outside (raylib reads outside its array).",
+    "scope": "The empty name of gamepads 0..3; None (NULL, raylib 6.2 bounds-checks the index) outside.",
     "gaps": [
       "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -2018,7 +2018,7 @@
   "IsGamepadButtonPressed": {
     "jonlib": "Input.is_gamepad_button_pressed",
     "status": "profile-covered",
-    "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
+    "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); false for any other gamepad, negative included (raylib 6.2); None for a negative button of a ready gamepad. The memory platform never updates the previous button states.",
     "gaps": [
       "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -2029,7 +2029,7 @@
   "IsGamepadButtonDown": {
     "jonlib": "Input.is_gamepad_button_down",
     "status": "profile-covered",
-    "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
+    "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); false for any other gamepad, negative included (raylib 6.2); None for a negative button of a ready gamepad. The memory platform never updates the previous button states.",
     "gaps": [
       "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -2040,7 +2040,7 @@
   "IsGamepadButtonReleased": {
     "jonlib": "Input.is_gamepad_button_released",
     "status": "profile-covered",
-    "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
+    "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); false for any other gamepad, negative included (raylib 6.2); None for a negative button of a ready gamepad. The memory platform never updates the previous button states.",
     "gaps": [
       "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -2051,7 +2051,7 @@
   "IsGamepadButtonUp": {
     "jonlib": "Input.is_gamepad_button_up",
     "status": "profile-covered",
-    "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
+    "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); false for any other gamepad, negative included (raylib 6.2); None for a negative button of a ready gamepad. The memory platform never updates the previous button states.",
     "gaps": [
       "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -2073,7 +2073,7 @@
   "GetGamepadAxisCount": {
     "jonlib": "Input.get_gamepad_axis_count",
     "status": "profile-covered",
-    "scope": "The axis count of gamepads 0..3 (0 on the memory platform); None outside.",
+    "scope": "The axis count of gamepads 0..3 (0 on the memory platform); 0 for any other index (raylib 6.2 bounds-checks it); always Some.",
     "gaps": [
       "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -2084,7 +2084,7 @@
   "GetGamepadAxisMovement": {
     "jonlib": "Input.get_gamepad_axis_movement",
     "status": "profile-covered",
-    "scope": "Rest value -1 for the trigger axes 4 and 5, else 0; a ready gamepad's axis replaces it when its (signed for triggers, absolute) movement is larger. None for a negative gamepad, or a negative axis of a ready gamepad.",
+    "scope": "Rest value -1 for the trigger axes 4 and 5, else 0; a ready gamepad's axis replaces it when its (signed for triggers, absolute) movement is larger. A gamepad outside 0..3, negative included (raylib 6.2), answers the rest value; None for a negative axis of a ready gamepad.",
     "gaps": [
       "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -3622,8 +3622,9 @@
   "ImageFromImage": {
     "jonlib": "Surface.extract",
     "status": "profile-covered",
-    "scope": "Every Surface format; positive integral in-bounds regions; original owner retained and extracted storage independent with exact samples. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format; raylib 6.2's validation (x, y >= 0, width, height > 0, (int)x + (int)width <= image width and likewise for y) with fractional fields truncated, otherwise None (raylib's empty image); original owner retained and extracted storage independent with exact samples. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
+      "A width or height in (0, 1) passes raylib's check and yields a 0-sized image; Jonlib answers None (no 0-sized Surface)",
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
     "api_id": "raylib:function:ImageFromImage",
@@ -4060,6 +4061,16 @@
     "api_id": "raylib:function:ImageDrawLineEx",
     "milestone": "images"
   },
+  "ImageDrawLineStrip": {
+    "jonlib": "Surface.draw_line_strip",
+    "status": "profile-covered",
+    "scope": "raylib 6.2: ImageDrawLineV between consecutive points of a List<Vector2>; fewer than two points draw nothing. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "gaps": [
+      "Full format/numeric domain and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageDrawLineStrip",
+    "milestone": "images"
+  },
   "ImageDrawTriangle": {
     "jonlib": "Surface.draw_triangle",
     "status": "profile-covered",
@@ -4071,7 +4082,7 @@
     "milestone": "images"
   },
   "ImageDrawTriangleGradient": {
-    "jonlib": "Surface.draw_triangle_ex",
+    "jonlib": "Surface.draw_triangle_gradient",
     "status": "profile-covered",
     "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices with (int)-truncated bounds/edge steps; defined signed arithmetic and nonzero reference weight sum; reference byte-quantized barycentric color interpolation. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
@@ -4142,14 +4153,47 @@
     "api_id": "raylib:function:ImageDrawRectangleRec",
     "milestone": "images"
   },
+  "ImageDrawRectanglePro": {
+    "jonlib": "Surface.draw_rectangle_pro_for / Surface.draw_rectangle_pro",
+    "status": "profile-covered",
+    "scope": "raylib 6.2: the integer bounding box of the rectangle turned by rotation degrees about rec + origin (corners from 65536/-65536, (int)floorf/ceilf, clipped), every pixel whose center turned back lies in [-origin, size - origin), stored with ImageDrawPixel's per-format encoding; nothing for a width or height <= 0. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "gaps": [
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument; other rotations are InvalidRequest",
+      "Fields beyond 32767 in magnitude or not finite are InvalidRequest",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:ImageDrawRectanglePro",
+    "milestone": "images"
+  },
   "ImageDrawRectangleLines": {
     "jonlib": "Surface.draw_rectangle_lines",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite rectangle; thickness 0..32767; reference four-edge truncation and degenerate behavior. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "scope": "raylib 6.2's ImageDrawRectangleLines(dst, int posX, int posY, int width, int height): ImageDrawRectangleLinesEx of that rectangle with thickness 1, each covered pixel stored with ImageDrawPixel's per-format encoding; integral coordinates in -32767..32767. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "gaps": [
+      "Full format/numeric domain and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageDrawRectangleLines",
+    "milestone": "images"
+  },
+  "ImageDrawRectangleLinesEx": {
+    "jonlib": "Surface.draw_rectangle_lines_ex",
+    "status": "profile-covered",
+    "scope": "raylib 6.0's ImageDrawRectangleLines renamed by 6.2: every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite rectangle; thickness 0..32767; reference four-edge truncation and degenerate behavior. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Negative thickness, full formats/domains and target/performance evidence"
     ],
-    "api_id": "raylib:function:ImageDrawRectangleLines",
+    "api_id": "raylib:function:ImageDrawRectangleLinesEx",
+    "milestone": "images"
+  },
+  "ImageDrawRectangleGradientEx": {
+    "jonlib": "Surface.draw_rectangle_gradient_ex",
+    "status": "profile-covered",
+    "scope": "raylib 6.2: pixels (int)floorf(rec.x) .. (int)ceilf(rec.x + rec.width) (and y) clipped to the image, bilinear F32 weights of tx = (x - rec.x)/width and ty = (y - rec.y)/height clamped to 0..1 on col1..col4 (counter-clockwise from the top-left), each channel sum truncated, stored with ImageDrawPixel's per-format encoding; nothing for a width or height <= 0. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "gaps": [
+      "Fields beyond 32767 in magnitude or not finite are InvalidRequest",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:ImageDrawRectangleGradientEx",
     "milestone": "images"
   },
   "ImageDrawCircle": {
@@ -4192,6 +4236,63 @@
     "api_id": "raylib:function:ImageDrawCircleLinesV",
     "milestone": "images"
   },
+  "ImageDrawCircleGradient": {
+    "jonlib": "Surface.draw_circle_gradient",
+    "status": "profile-covered",
+    "scope": "raylib 6.2: pixels (int)floorf(center - radius) .. (int)ceilf(center + radius) clipped, those whose center (x + 0.5) lies within radius*radius, colored inner + (outer - inner)*sqrtf(distSq)/radius per channel (truncated) and stored with ImageDrawPixel's per-format encoding; nothing for a radius <= 0. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "gaps": [
+      "Center or radius beyond 32767 in magnitude or not finite are InvalidRequest",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:ImageDrawCircleGradient",
+    "milestone": "images"
+  },
+  "ImageDrawImage": {
+    "jonlib": "Surface.draw_image",
+    "status": "profile-covered",
+    "scope": "raylib 6.2 (6.0's ImageDraw of the full source): ImageDrawImagePro of the whole source at the integer position, integer ColorAlphaBlend through GetPixelColor/SetPixelColor into any format; both owners returned. Formats 1..13 are compared on the surface-format profile.",
+    "gaps": [
+      "Mipmaps, empty/undefined rectangles and full platform/performance validation",
+      "A wide float source outside 0..1 is OutOfDomain"
+    ],
+    "api_id": "raylib:function:ImageDrawImage",
+    "milestone": "resampling"
+  },
+  "ImageDrawImageEx": {
+    "jonlib": "Surface.draw_image_ex_for / Surface.draw_image_ex",
+    "status": "profile-covered",
+    "scope": "raylib 6.2 (new kernel): the source scaled and turned about its top-left corner at the position; every destination pixel of the turned bounding box whose center maps (turned back, divided by the scale) inside the source samples the nearest pixel, skips alpha zero and stores ColorAlphaBlend(GetImageColor(dst), GetImageColor(src), tint) with ImageDrawPixel. Word formats 1..8 and 11 are compared on the surface-format profile.",
+    "gaps": [
+      "R32G32B32(A32) and R16G16B16(A16) images are UnsupportedFormat",
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument; other rotations are InvalidRequest",
+      "A zero, non-finite or larger than 32767 scale and positions beyond 32767 are InvalidRequest",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:ImageDrawImageEx",
+    "milestone": "resampling"
+  },
+  "ImageDrawImageRec": {
+    "jonlib": "Surface.draw_image_rec",
+    "status": "profile-covered",
+    "scope": "raylib 6.2: ImageDrawImagePro of srcRec into {position, srcRec's width and height} (never scaled), with source and destination clipping as draw_image_rect. Formats 1..13 are compared on the surface-format profile.",
+    "gaps": [
+      "Mipmaps, empty/undefined rectangles and full platform/performance validation",
+      "Bounded finite rectangles and positions (|v| <= 32767)"
+    ],
+    "api_id": "raylib:function:ImageDrawImageRec",
+    "milestone": "resampling"
+  },
+  "ImageDrawImagePro": {
+    "jonlib": "Surface.draw_image_pro / Surface.draw_image_rect",
+    "status": "profile-covered",
+    "scope": "raylib 6.2 (6.0's ImageDraw): origin and rotation are not implemented upstream and are ignored; source clipping, truncated-size scaling decision, ImageFromImage + ImageResize in the source format, destination clipping, GetPixelColor/ColorAlphaBlend/SetPixelColor and memcpy rows for unblended equal formats; both owners retained. Formats 1..13 are compared on the surface-format profile.",
+    "gaps": [
+      "Mipmaps, empty or undefined source rectangles and full platform/performance validation",
+      "Bounded finite rectangles (|v| <= 32767)"
+    ],
+    "api_id": "raylib:function:ImageDrawImagePro",
+    "milestone": "resampling"
+  },
   "ImageDrawText": {
     "jonlib": "Font.image_draw_text / Font.image_draw_text_spaced",
     "status": "profile-covered",
@@ -4207,7 +4308,7 @@
   "ImageDrawTextEx": {
     "jonlib": "Font.image_draw_text_ex / Font.image_draw_text_ex_spaced",
     "status": "profile-covered",
-    "scope": "ImageDraw of the ImageTextEx image at the position with WHITE into any destination format (ColorAlphaBlend, SetPixelColor); an empty text leaves it unchanged; Fail (OutOfDomain) hands back the destination and font.",
+    "scope": "ImageDrawImagePro (6.0: ImageDraw) of the ImageTextEx image at the position with WHITE into any destination format (ColorAlphaBlend, SetPixelColor); an empty text leaves it unchanged; Fail (OutOfDomain) hands back the destination and font.",
     "gaps": [
       "Undefined native behavior: undefined conversions, negative sizes and resizes to 0 fail",
       "Positions beyond 32767 and images above 4096 fail",
@@ -4215,6 +4316,17 @@
     ],
     "api_id": "raylib:function:ImageDrawTextEx",
     "milestone": "fonts"
+  },
+  "ImageDrawTextPro": {
+    "jonlib": "Font.image_draw_text_pro",
+    "status": "profile-covered",
+    "scope": "raylib 6.2's ImageDrawTextPro is an empty function (TODO: NEW: Implement ImageDrawTextPro()): the destination and font come back unchanged.",
+    "gaps": [
+      "No reference comparison: the probes do not call it",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:ImageDrawTextPro",
+    "milestone": "images"
   },
   "LoadTexture": {
     "jonlib": "Texture.load",
@@ -4258,6 +4370,18 @@
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:LoadRenderTexture",
+    "milestone": "textures"
+  },
+  "LoadRenderTextureEx": {
+    "jonlib": "RenderTexture.load_ex",
+    "status": "profile-covered",
+    "scope": "raylib 6.2: format 7 (R8G8B8A8, what LoadRenderTexture passes) is RenderTexture.load; a compressed format (14 and above) is rejected before any id is taken (raylib's zero target: None, frame unchanged).",
+    "gaps": [
+      "Other color formats are refused (frame undefined): rlsw framebuffers of other formats are outside the profile",
+      "As LoadRenderTexture: other sizes, fewer than two free texture ids and calls during texture mode are refused",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadRenderTextureEx",
     "milestone": "textures"
   },
   "IsTextureValid": {
@@ -4647,9 +4771,10 @@
   "LoadFontFromMemory": {
     "jonlib": "Font.load_from_memory",
     "status": "profile-covered",
-    "scope": ".ttf/.otf (any case) through LoadFontData and .bdf through LoadFontDataBDF, then GenImageFontAtlas (padding 4, rows) as the GRAY_ALPHA texture; glyph images are cut from the atlas; other types and fonts stb_truetype does not initialize give the default font.",
+    "scope": ".ttf/.otf (any case) through LoadFontData and .bdf through raylib 6.2's LoadFontDataBDF (one glyph per requested codepoint: hex bitmap rows, BBX and fontAscent offsets, DWIDTH advance), then GenImageFontAtlas (padding 4, rows) as the GRAY_ALPHA texture; glyph images are cut from the atlas; other types and fonts stb_truetype does not initialize give the default font.",
     "gaps": [
-      "Undefined native behavior refused: LoadFontData/GenImageFontAtlas cases, rectangles outside the atlas, fonts without a found glyph, BDF NULL-derived writes and reads past the data",
+      "Undefined native behavior refused: LoadFontData/GenImageFontAtlas cases, rectangles outside the atlas, fonts without a found glyph",
+      "BDF refusals: reads past the data, sscanf and offset int overflows, a requested glyph whose BBX is negative or beyond 4096",
       "None when the 127 texture ids are in use",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
@@ -4669,7 +4794,7 @@
   "LoadFontData": {
     "jonlib": "Font.load_data",
     "status": "profile-covered",
-    "scope": "stb_truetype 1.26 as raylib uses it (InitFont at offset 0, cmap formats 0/4/6/12/13, glyf simple and composite outlines, ScaleForPixelHeight, VMetrics, HMetrics, the version-2 rasterizer with its edge sort) for FONT_DEFAULT and FONT_BITMAP, and stbtt_GetCodepointSDF (padding 4, on-edge 128, scale 64) for FONT_SDF; per found codepoint the GlyphInfo fields and GRAYSCALE image byte for byte, the space and U+3000 as empty advanceX x fontSize images. Uncontracted F32 in the C order; Font.Data distinguishes raylib's NULL.",
+    "scope": "stb_truetype 1.26 as raylib uses it (InitFont at offset 0, cmap formats 0/4/6/12/13, glyf simple and composite outlines, ScaleForPixelHeight, VMetrics, HMetrics, the version-2 rasterizer with its edge sort) for FONT_DEFAULT and FONT_BITMAP, and stbtt_GetCodepointSDF (padding 4, on-edge 128, scale 64) for FONT_SDF; per found codepoint the GlyphInfo fields and GRAYSCALE image byte for byte, raylib 6.2's space codepoints (U+0020, U+00A0, U+1680, U+2000..U+200A, U+202F, U+205F, U+3000) as empty advanceX x fontSize images. Uncontracted F32 in the C order; Font.Data distinguishes raylib's NULL.",
     "gaps": [
       "Undefined native behavior refused: reads outside the font data, int overflow, invalid float-to-int conversions, uninitialized bitmaps, a codepoint list shorter than the count",
       "Refused: CFF outlines, composites nested deeper than 6, SDF glyphs needing stbtt__solve_cubic (double pow/acos/cos), bitmaps beyond 4096, over 65536 codepoints",
@@ -4715,7 +4840,7 @@
     "status": "profile-covered",
     "scope": "The exact file text: banner, DEFLATE (CompressData) of LoadImageFromTexture's data (all zero bytes on rlsw), rectangles, GlyphInfo values and the LoadFont_<Name> function named by TextToPascal of the file name; export_as_code writes it with SaveFileText.",
     "gaps": [
-      "None when TextToPascal is undefined, a rectangle is not integral or the text would overflow raylib's buffer",
+      "None when a rectangle is not integral or the text would overflow raylib's buffer",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:ExportFontAsCode",
@@ -5011,9 +5136,8 @@
   "TextSubtext": {
     "jonlib": "Text.subtext",
     "status": "profile-covered",
-    "scope": "length bytes from position clamped to the text and to 1023 bytes; \"\" from positions at or past the end.",
+    "scope": "raylib 6.2: length bytes from position, clamped to the text and to 1023 bytes; \"\" for a negative position, a length below 1 or a position at or past the end.",
     "gaps": [
-      "Undefined native behavior: negative lengths, reads before the text and overflowing textLength - position are None",
       "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
     ],
     "api_id": "raylib:function:TextSubtext",
@@ -5022,9 +5146,8 @@
   "TextRemoveSpaces": {
     "jonlib": "Text.remove_spaces",
     "status": "profile-covered",
-    "scope": "The non-space bytes among the first 1023, including raylib reading the loop condition at the output index.",
+    "scope": "raylib 6.2: the bytes other than ' ' among the first 1023.",
     "gaps": [
-      "Undefined native behavior: texts of up to 1021 bytes with two or more spaces read past the NUL: None",
       "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
     ],
     "api_id": "raylib:function:TextRemoveSpaces",
@@ -5065,9 +5188,8 @@
   "TextReplaceBetween": {
     "jonlib": "Text.replace_between",
     "status": "profile-covered",
-    "scope": "The text through begin, the replacement and the text from end; \"\" when a marker is missing.",
+    "scope": "The text through begin, the replacement and the text from end; \"\" when a marker is missing or (raylib 6.2) the result needs 1023 or more bytes.",
     "gaps": [
-      "Undefined native behavior: results of 1024+ bytes overflow or are unterminated: None",
       "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
     ],
     "api_id": "raylib:function:TextReplaceBetween",
@@ -5086,9 +5208,8 @@
   "TextInsert": {
     "jonlib": "Text.insert",
     "status": "profile-covered",
-    "scope": "raylib copies the tail from the wrong index: appending (position == length), position length + 1 (text unchanged) and one-byte overwrites inside the text are reproduced; \"\" for 1023+ bytes.",
+    "scope": "raylib 6.2: insert placed before the byte at position (past the end appends); \"\" for a negative position or when text and insert need 1023 or more bytes.",
     "gaps": [
-      "Undefined native behavior: other positions read past the text or write before the buffer: None",
       "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
     ],
     "api_id": "raylib:function:TextInsert",
@@ -5097,9 +5218,8 @@
   "TextInsertAlloc": {
     "jonlib": "Text.insert_alloc",
     "status": "profile-covered",
-    "scope": "The TextInsert positions without the size limit (append, length + 1, one-byte overwrite).",
+    "scope": "raylib 6.2: TextInsert without the size limit; None (NULL) for a negative position.",
     "gaps": [
-      "Undefined native behavior: other positions read past the text or write before the buffer: None",
       "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
     ],
     "api_id": "raylib:function:TextInsertAlloc",
@@ -5108,9 +5228,8 @@
   "TextJoin": {
     "jonlib": "Text.join",
     "status": "profile-covered",
-    "scope": "Each text that fits the 1024-byte buffer (others skipped with their delimiter), with the delimiter after each copied text but the last item.",
+    "scope": "raylib 6.2: each text that fits the 1024-byte buffer with its delimiter (total + length + delimiter < 1024), the delimiter after each copied text but the last item.",
     "gaps": [
-      "Undefined native behavior: a delimiter ending past byte 1022 overflows or leaves the buffer unterminated: None",
       "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
     ],
     "api_id": "raylib:function:TextJoin",
@@ -5119,9 +5238,8 @@
   "TextSplit": {
     "jonlib": "Text.split",
     "status": "profile-covered",
-    "scope": "Substrings between delimiter bytes; at the 127th delimiter raylib stops and the 128th substring is empty; NUL never splits.",
+    "scope": "raylib 6.2: substrings between delimiter bytes among the first 1023; at the 127th delimiter raylib stops and the 128th substring is empty; NUL never splits.",
     "gaps": [
-      "Undefined native behavior: an unterminated last substring within the 1024-byte buffer is None",
       "Static pointer array becomes a returned list (language adaptation)"
     ],
     "api_id": "raylib:function:TextSplit",
@@ -5169,9 +5287,8 @@
   "TextToPascal": {
     "jonlib": "Text.to_pascal",
     "status": "profile-covered",
-    "scope": "First byte upper-cased; _x becomes X (a-z), x (0-9) or a NUL ending the result; at most 1023 bytes.",
+    "scope": "raylib 6.2: first byte upper-cased; a run of '_' and the byte after it become that byte, upper-cased (a-z) or copied; a final run is dropped; \"\" for an empty text; at most 1023 bytes.",
     "gaps": [
-      "Undefined native behavior: empty texts and a final underscore read past the NUL: None",
       "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
     ],
     "api_id": "raylib:function:TextToPascal",
@@ -5180,9 +5297,8 @@
   "TextToSnake": {
     "jonlib": "Text.to_snake",
     "status": "profile-covered",
-    "scope": "Underscore before each upper-case letter after output byte 0, letters lower-cased, at most 1023 bytes.",
+    "scope": "raylib 6.2: ' ' as '_', '_' before an upper-case letter starting a word (never doubled, never at output byte 1022), letters lower-cased, at most 1023 bytes.",
     "gaps": [
-      "Undefined native behavior: a letter at output byte 1022 leaves the buffer unterminated: None",
       "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
     ],
     "api_id": "raylib:function:TextToSnake",
@@ -5191,9 +5307,8 @@
   "TextToCamel": {
     "jonlib": "Text.to_camel",
     "status": "profile-covered",
-    "scope": "First byte lower-cased; _x becomes X for a-z, otherwise a NUL ending the result; at most 1023 bytes.",
+    "scope": "raylib 6.2: TextToPascal with the first byte lower-cased.",
     "gaps": [
-      "Undefined native behavior: empty texts and a final underscore read past the NUL: None",
       "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
     ],
     "api_id": "raylib:function:TextToCamel",
@@ -5345,7 +5460,7 @@
   "DrawSphereEx": {
     "jonlib": "Draw.sphere_ex_for / Draw.sphere_ex",
     "status": "profile-covered",
-    "scope": "Incremental y and z rotations by cosf/sinf of DEG2RAD*(180/(rings + 1)) and DEG2RAD*(360/slices), scaled by the radius.",
+    "scope": "raylib 6.2: rings bands of incremental y and z rotations by cosf/sinf of DEG2RAD*(180/rings) and DEG2RAD*(360/slices), scaled by the radius; nothing below one ring or slice.",
     "gaps": [
       "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); other sinf/cosf arguments mark the frame undefined",
       "Rings, slices and sides above 4096 mark the frame undefined",
@@ -5359,10 +5474,10 @@
   "DrawSphereWires": {
     "jonlib": "Draw.sphere_wires_for / Draw.sphere_wires",
     "status": "profile-covered",
-    "scope": "RL_LINES between ring points at DEG2RAD*(270 + 180/(rings + 1)*i) and slice angles DEG2RAD*(360*j/slices), scaled by the radius, as rmodels.c; the ring angles reach 450 degrees, so only the glibc profiles (glibc's own sinf/cosf, docs/SINCOSF.md) draw them.",
+    "scope": "raylib 6.2: DrawSphereEx's rotated vertices joined per face by the longitude, latitude and diagonal RL_LINES 0-1, 0-2 and 0-3 (ring angle DEG2RAD*(180/rings), slice angle DEG2RAD*(360/slices)), scaled by the radius.",
     "gaps": [
-      "Libm: AppleLibm verifies one turn only, so every wire sphere is refused there; glibc every normal or zero argument",
-      "Rings above 4094 and slices above 4096 mark the frame undefined",
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); other sinf/cosf arguments mark the frame undefined",
+      "Rings, slices and sides above 4096 mark the frame undefined",
       "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured"
@@ -5429,7 +5544,7 @@
   "DrawCapsule": {
     "jonlib": "Draw.capsule_for / Draw.capsule",
     "status": "profile-covered",
-    "scope": "Two hemispheres and the middle (none for start == end) on the normalized basis, angles ((2*PI)/slices)*j and (PI*0.5/rings)*i.",
+    "scope": "raylib 6.2 (start, end, radius, rings, slices): two hemispheres and the middle (none for start == end) on the normalized basis, angles ((2*PI)/slices)*j and (PI*0.5/rings)*i; slices below 3 become 3, rings below 1 become 1.",
     "gaps": [
       "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); other sinf/cosf arguments mark the frame undefined",
       "Rings, slices and sides above 4096 mark the frame undefined",
@@ -5443,7 +5558,7 @@
   "DrawCapsuleWires": {
     "jonlib": "Draw.capsule_wires_for / Draw.capsule_wires",
     "status": "profile-covered",
-    "scope": "The DrawCapsule points joined by lines.",
+    "scope": "raylib 6.2 (start, end, radius, rings, slices): the DrawCapsule points joined by lines; slices below 3 become 3, rings below 1 become 1.",
     "gaps": [
       "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); other sinf/cosf arguments mark the frame undefined",
       "Rings, slices and sides above 4096 mark the frame undefined",

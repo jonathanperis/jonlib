@@ -125,6 +125,7 @@ Traced in the pinned sources and checked by the probe:
 | `DrawTexture` / `V` / `Ex` / `Rec` / `Pro` | `Draw.texture`, `Draw.texture_v`, `Draw.texture_ex_for`/`texture_ex`, `Draw.texture_rec`, `Draw.texture_pro_for`/`texture_pro` -> `Frame & Texture` |
 | `DrawTextureNPatch` | `Draw.texture_npatch_for(libm, frame, texture, NPatchInfo{source, left, top, right, bottom, layout}, dest, origin, rotation, tint)`, `Draw.texture_npatch` |
 | `LoadRenderTexture` / `UnloadRenderTexture` / `IsRenderTextureValid` | `RenderTexture.load(frame, width, height) -> Frame & Maybe<RenderTexture>`, `RenderTexture.unload(frame, target)`, `RenderTexture.is_valid` |
+| `LoadRenderTextureEx` (raylib 6.2) | `RenderTexture.load_ex(frame, width, height, format)`: format 7 (R8G8B8A8, what `LoadRenderTexture` passes) is `RenderTexture.load`; a compressed format (14 and above) is `None` with the frame unchanged, as raylib rejects it before taking an id; other color formats are refused (frame undefined) |
 | `BeginTextureMode` / `EndTextureMode` | `Frame.begin_texture_mode(frame, target) -> Frame`, `Frame.end_texture_mode(frame) -> Frame & Maybe<RenderTexture>` |
 | `GetWorldToScreen2D` / `GetScreenToWorld2D` / `GetCameraMatrix2D` | `Camera.*_2d_for` ([CAMERA.md](CAMERA.md)) |
 
@@ -169,10 +170,11 @@ others use `M.AppleLibm{}`.
   follows `LoadImageFromScreen`'s desktop contract (top-down R8G8B8A8, alpha
   255, [FRAME.md](FRAME.md#readback)); the memory platform writes the same
   pixels bottom-up with red and blue swapped (`rlReadScreenPixels` over rlsw's
-  BGRA buffer), which the probe normalizes. raylib joins the name to
+  BGRA buffer), which the probe normalizes. raylib joins a relative name to
   `CORE.Storage.basePath` (the working directory at InitWindow) through
-  `TextFormat`, which truncates paths of 1024 bytes or more; Jonlib writes the
-  relative name. `None` (nothing written) when a draw was refused or a render
+  `TextFormat`, which truncates paths of 1024 bytes or more, and since 6.2
+  writes an absolute name (`IsPathAbsolute`) as given; Jonlib writes the name
+  as given (absolute names are not compared by the probe). `None` (nothing written) when a draw was refused or a render
   texture is the target. The F12/`ACTION_TAKE_SCREENSHOT` captures of
   `EndDrawing` are still only counted (`Core.screenshot_count`).
 
@@ -203,7 +205,7 @@ As in slice 1, a draw Jonlib does not reproduce marks the frame undefined
 
 `None` without refusal: `Texture.load_from_image` when the 127 texture ids are
 in use (raylib returns id 0, the frame is unchanged), `RenderTexture.load` when
-the 7 framebuffer ids are in use, `Frame.framebuffer` and
+the 7 framebuffer ids are in use, `RenderTexture.load_ex` of a compressed format, `Frame.framebuffer` and
 `Frame.load_image_from_screen` while a render texture is the target,
 `Frame.end_texture_mode` without one, `Texture.load_image` of a float texture.
 `Texture.update`/`update_rec` fail (`InvalidRequest`, the texture handed back)

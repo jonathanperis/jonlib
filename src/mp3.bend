@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of dr_mp3 v0.7.4 (David Reid; public domain or MIT
-# No Attribution), which raylib 6.0 vendors in src/external/dr_mp3.h and
+# No Attribution), which raylib 6.2 vendors in src/external/dr_mp3.h and
 # whose decoder is minimp3 (lieff; CC0): the frame header, the search for a
 # frame, Layer III's side information and bit reservoir, the stream's tags
 # (ID3v1, APE, ID3v2, Xing/Info with LAME's delay and padding) and the frame
@@ -433,9 +433,14 @@ def decode(+dec: Dec, +window: +List<U32>, +bytes: U32) -> Frame:
 # ever read past them. Here such a stream has a `cap` of 4294967295 and its
 # "buffer" holds those bytes from the start; `end` is then that a decode
 # found nothing more (dr_mp3 sets no flag and finds nothing again each time).
+#
+# `delay` and `padding` are LAME's; `known` is 0 when the stream has no
+# Xing/Info count, otherwise one more than the high word of the 64-bit
+# totalPCMFrameCount, the count times the first frame's samples (raylib 6.2's
+# dr_mp3 multiplies in 64 bits), whose low word is `total`.
 type Stream is Data:
   Stream{data: +List<U32>, size: U32, length: U32, start: U32, at: +List<U32>, have: U32, pos: U32, cursor: U32, cap: U32, end: Bool, dec: Dec,
-    delay: U32, padding: U32, known: Bool, total: U32, channels: U32, rate: U32}
+    delay: U32, padding: U32, known: U32, total: U32, channels: U32, rate: U32}
 
 # drmp3__on_read_clamped of `want` bytes: no more than dr_mp3 thinks are left,
 # and no more than the file has. The bytes read.
@@ -474,9 +479,9 @@ def stream.refill(memory: Bool, +stream: Stream, +bytes: U32) -> Stream:
 # memory stream every byte from there to `length`.
 def stream.began(memory: Bool, +data: +List<U32>, +size: U32, +length: U32, +start: U32) -> Stream:
   match memory:
-    case False{}: Stream{data, size, length, start, List.drop(&2, U32, data, U32.to_nat(U32.min(start, size))), 0, start, start, 0, False{}, Dec.zero(), 0, 0, False{}, 0, 0, 0}
+    case False{}: Stream{data, size, length, start, List.drop(&2, U32, data, U32.to_nat(U32.min(start, size))), 0, start, start, 0, False{}, Dec.zero(), 0, 0, 0, 0, 0, 0}
     case True{}:
-      Stream{data, size, length, start, List.drop(&2, U32, data, U32.to_nat(U32.min(start, size))), (length - U32.min(start, length) : U32), start, start, 4294967295, False{}, Dec.zero(), 0, 0, False{}, 0, 0,
+      Stream{data, size, length, start, List.drop(&2, U32, data, U32.to_nat(U32.min(start, size))), (length - U32.min(start, length) : U32), start, start, 4294967295, False{}, Dec.zero(), 0, 0, 0, 0, 0,
         0}
 
 # The next frame in the buffer.
@@ -565,6 +570,16 @@ def info.fields(+flags: U32) -> U32:
   ((((8 + Bool.pick(U32, U32.is_ne((flags .&. 1 : U32), 0), 4, 0)) + Bool.pick(U32, U32.is_ne((flags .&. 2 : U32), 0), 4, 0)) + Bool.pick(U32, U32.is_ne((flags .&. 4 : U32), 0), 100, 0))
     + Bool.pick(U32, U32.is_ne((flags .&. 8 : U32), 0), 4, 0) : U32)
 
+# Whether the frame's `bytes` hold `need` more from `at` (the frame's bytes
+# less the place, as a size_t: a place past them wraps to a large count).
+def info.room(+bytes: U32, +at: U32, +need: U32) -> Bool:
+  ((bytes - at) >= need : U32)
+
+# Whether a field the flags have (`bit`) fits from `at`: one they do not
+# have always does.
+def info.field(+flags: U32, +bit: U32, +bytes: U32, +at: U32, +need: U32) -> Bool:
+  U32.is_eq((flags .&. bit : U32), 0) || info.room(bytes, at, need)
+
 # What the first frame says of the stream when it is an Xing or Info frame:
 # whether it is one, the frames it counts (4294967295: it does not say) and
 # LAME's delay and padding (0 without them).
@@ -575,13 +590,26 @@ type Info is Data:
 # byte's place in the frame and `bytes` the frame's bytes (with those skipped
 # before it, which dr_mp3 counts in). LAME's delay is twelve bits and 529
 # more; its padding the next twelve less 529, not below 0.
+#
+# raylib 6.2's dr_mp3 checks that each part fits in the frame: 8 bytes of
+# name and flags, then the frames, bytes, table and scale fields the flags
+# have, then 36 bytes of LAME tag where its first byte is not 0. A part that
+# does not fit ends the reading: the frame is not a tag (it is played), with
+# the frame count already read kept and no delay or padding.
 def info.read(+tag: +List<U32>, +offset: U32, +bytes: U32) -> Info:
-  +named = U32.is_eq(word(tag), 1483304551) || U32.is_eq(word(tag), 1231971951)
   +flags = nth(tag, 7)
   +p = info.fields(flags)
-  +lame = named && U32.is_ne(nth(tag, p), 0) && ((((offset + p) + 21) + 14) < bytes : U32)
+  +q1 = (offset + 8 : U32)
+  +q2 = (q1 + Bool.pick(U32, U32.is_ne((flags .&. 1 : U32), 0), 4, 0) : U32)
+  +q3 = (q2 + Bool.pick(U32, U32.is_ne((flags .&. 2 : U32), 0), 4, 0) : U32)
+  +q4 = (q3 + Bool.pick(U32, U32.is_ne((flags .&. 4 : U32), 0), 100, 0) : U32)
+  +named = info.room(bytes, offset, 8) && (U32.is_eq(word(tag), 1483304551) || U32.is_eq(word(tag), 1231971951))
+  +counted = named && U32.is_ne((flags .&. 1 : U32), 0) && info.room(bytes, q1, 4)
+  +fields = named && info.field(flags, 1, bytes, q1, 4) && info.field(flags, 2, bytes, q2, 4) && info.field(flags, 4, bytes, q3, 100) && info.field(flags, 8, bytes, q4, 4)
+  +marked = U32.is_ne(nth(tag, p), 0)
+  +lame = fields && marked && info.room(bytes, (offset + p : U32), 36)
   +raw = (((nth(tag, (p + 22 : U32)) .&. 15) << 8n) .|. nth(tag, (p + 23 : U32)) : U32)
-  Info{named, Bool.pick(U32, named && U32.is_ne((flags .&. 1 : U32), 0), word(List.drop(&2, U32, tag, 8n)), 4294967295),
+  Info{fields && (Bool.not(marked) || lame), Bool.pick(U32, counted, word(List.drop(&2, U32, tag, 8n)), 4294967295),
     Bool.pick(U32, lame, (((nth(tag, (p + 21 : U32)) << 4n) .|. (nth(tag, (p + 22 : U32)) >> 4n)) + 529 : U32), 0),
     Bool.pick(U32, lame && (raw > 529 : U32), (raw - 529 : U32), 0)}
 
@@ -599,13 +627,20 @@ def info.first(+region: +List<U32>, +bytes: U32) -> Info:
 type Opened is Data:
   Opened{stream: Stream, first: Bool}
 
+# The high word of `frames` times `samples` (at most 1152), by 16-bit halves.
+def product.high(+frames: U32, +samples: U32) -> U32:
+  ((((frames >> 16n) * samples) + (((frames .&. 65535) * samples) >> 16n)) >> 16n : U32)
+
 # The stream once its first frame is decoded. An Xing/Info frame is not
-# played: the stream starts after it, and the decoder's header is cleared.
+# played: the stream starts after it, and the decoder's header is cleared. A
+# frame count (read from a tag or from a frame that turned out not to be one)
+# makes the total known, as 64 bits.
 def open.first(info: Info, stream: Stream, +samples: U32, +header: U32, +bytes: U32) -> Stream:
   Info{+tagged, +frames, +delay, +padding} = info
   Stream{data, size, length, +start, at, have, pos, +cursor, cap, end, Dec{+last, +free, +reserv}, _, _, _, _, _, _} = stream
   Stream{data, size, length, Bool.pick(U32, tagged, (start + bytes : U32), start), at, have, pos, Bool.pick(U32, tagged, (start + bytes : U32), cursor), cap, end,
-    Dec{Bool.pick(U32, tagged, (last .&. 16777215 : U32), last), free, reserv}, delay, padding, U32.is_ne(frames, 4294967295), (frames * samples : U32),
+    Dec{Bool.pick(U32, tagged, (last .&. 16777215 : U32), last), free, reserv}, delay, padding,
+    Bool.pick(U32, U32.is_ne(frames, 4294967295), (product.high(frames, samples) + 1 : U32), 0), (frames * samples : U32),
     Bool.pick(U32, hdr.mono(header), 1, 2), hdr.hz(header)}
 
 def open.tagged(info: Info, +stream: Stream, +samples: U32, +header: U32, +bytes: U32) -> Maybe<Opened>:
@@ -691,17 +726,29 @@ def scan.samples(counted: U32 & U32) -> U32:
   samples
 
 # The frames an Xing/Info frame counts, less LAME's delay and padding when
-# they are no more than what is left.
-def total.tagged(+total: U32, +delay: U32, +padding: U32) -> U32:
-  +delayed = Bool.pick(U32, (total >= delay : U32), (total - delay : U32), total)
-  Bool.pick(U32, (delayed >= padding : U32), (delayed - padding : U32), delayed)
+# they are no more than what is left, in 64 bits: a `wide` total (2^32 or
+# more) is above both, and only its low word is kept.
+def total.tagged(+total: U32, +delay: U32, +padding: U32, +wide: Bool) -> U32:
+  +delayed = Bool.pick(U32, wide || (total >= delay : U32), (total - delay : U32), total)
+  Bool.pick(U32, wide || (delayed >= padding : U32), (delayed - padding : U32), delayed)
 
-def total.counted(known: Bool, +stream: Stream, +total: U32, +delay: U32, +padding: U32) -> U32:
+def total.counted(known: Bool, +stream: Stream, +total: U32, +delay: U32, +padding: U32, +wide: Bool) -> U32:
   match known:
-    case True{}: total.tagged(total, delay, padding)
+    case True{}: total.tagged(total, delay, padding, wide)
     case False{}: scan.samples(scan(stream))
 
 # drmp3_get_pcm_frame_count, as an unsigned int (raylib's music.frameCount).
 def total(+stream: Stream) -> U32:
   Stream{_, _, _, _, _, _, _, _, _, _, _, +delay, +padding, +known, +total, _, _} = stream
-  total.counted(known, stream, total, delay, padding)
+  total.counted(U32.is_ne(known, 0), stream, total, delay, padding, (known > 1 : U32))
+
+# A read stops at the padding when the 64-bit total is above it, at the
+# total less the padding (`known` and `total` as the Stream has them). A
+# total of 2^32 or more puts that edge past what a 32-bit frame position
+# reaches, unless its high word is 1 and its low word below the padding: the
+# edge is then that low word less the padding, wrapped.
+def limit.known(+known: U32, +total: U32, +padding: U32) -> Bool:
+  (U32.is_eq(known, 1) && (total > padding : U32)) || (U32.is_eq(known, 2) && (total < padding : U32))
+
+def limit.edge(+known: U32, +total: U32, +padding: U32) -> U32:
+  (total - U32.min(padding, Bool.pick(U32, U32.is_eq(known, 1), total, padding)) : U32)

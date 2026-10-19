@@ -1844,7 +1844,7 @@
   },
   {
    "id": "gui-icons",
-   "title": "raygui's icon set (src/gui_icons.bend, 256 icons of 16x16 bits) against the guiIcons table of every raygui.h in the pinned raylib checkout",
+   "title": "raygui's icon set (src/gui_icons.bend, 512 icons of 16x16 bits) against the guiIcons table of every raygui.h in the pinned raylib checkout",
    "run": [
     "{python}",
     "tools/gui_icons.py",

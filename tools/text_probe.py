@@ -83,7 +83,7 @@ static void row(unsigned op, int *in, unsigned ni, char **t, const unsigned char
   case 11: str(TextReplaceBetween(t[0], t[1], t[2], t[3])); break;
   case 12: { char *r = TextReplaceBetweenAlloc(t[0], t[1], t[2], t[3]); if (r) { str(r); free(r); } else printf("none"); break; }
   case 13: str(TextInsert(t[0], t[1], in[0])); break;
-  case 14: { char *r = TextInsertAlloc(t[0], t[1], in[0]); str(r); free(r); break; }
+  case 14: { char *r = TextInsertAlloc(t[0], t[1], in[0]); if (r) { str(r); free(r); } else printf("none"); break; }
   case 15: str(TextJoin(t + 1, (int)nt - 1, t[0])); break;
   case 16: { int n = 0; char **parts = TextSplit(t[0], (char)in[0], &n); printf("%d", n); for (int i = 0; i < n; i++) { putchar(' '); str(parts[i]); } break; }
   case 17: { char *base = 0, *b = buffer(raw[0], tn[0], in[0], &base); int p = in[0]; TextAppend(b, t[1], &p); hex(b, tn[0]); printf(" %d", p); free(base); break; }
@@ -341,60 +341,6 @@ def s32(value):
 # -----------------------------------------------------------------------------
 # Defined-input contracts (the cases Jonlib answers None for)
 
-def join_defined(items, delimiter):
-    size, total = len(cstr(delimiter)), 0
-    for index, item in enumerate(items):
-        length = len(cstr(item))
-        if total + length < 1024:
-            total += length
-            if size > 0 and index < len(items) - 1:
-                total += size
-                if total > 1023:
-                    return False
-    return True
-
-
-def split_defined(text, delimiter):
-    text, counter = cstr(text), 1
-    for i in range(1024):
-        if i == len(text):
-            return True
-        if text[i] == delimiter:
-            counter += 1
-            if counter == 128:
-                return i + 1 < 1024
-    return False
-
-
-def cased_defined(text):
-    text = cstr(text)
-    if not text:
-        return False
-    i = j = 1
-    while i < 1023:
-        if j > len(text):
-            return False
-        if j == len(text):
-            return True
-        if text[j] == ord('_'):
-            j += 1
-        i += 1
-        j += 1
-    return True
-
-
-def snake_defined(text):
-    text, i, j = cstr(text), 0, 0
-    while i < 1023 and j < len(text):
-        if 65 <= text[j] <= 90 and i >= 1:
-            i += 1
-            if i >= 1023:
-                return False
-        i += 1
-        j += 1
-    return True
-
-
 def integer_defined(text):
     text, value = cstr(text), 0
     k = 1 if text[:1] in (b'+', b'-') else 0
@@ -404,24 +350,6 @@ def integer_defined(text):
             return False
         k += 1
     return True
-
-
-def subtext_defined(text, position, length):
-    total = len(cstr(text))
-    if position >= total:
-        return True
-    if length < 0:
-        return False
-    if position < 0:
-        return length == 0 and total - position <= INT_MAX
-    return True
-
-
-def insert_defined(limited, text, insert, position):
-    total, size = len(cstr(text)), len(cstr(insert))
-    if limited and total + size >= 1023:
-        return True
-    return not (position < 0 or position >= total + 2 or (size >= 2 and position < total))
 
 
 def previous_defined(text, position):
@@ -434,16 +362,6 @@ def previous_defined(text, position):
     while k >= 0 and text[k] & 0xC0 == 0x80:
         k -= 1
     return k >= 0
-
-
-def replace_between_defined(text, begin, end, replacement):
-    text, begin, end = cstr(text), cstr(begin), cstr(end)
-    first = text.find(begin)
-    if first < 0:
-        return True
-    after = text[first + len(begin):]
-    last = after.find(end)
-    return last < 0 or first + len(begin) + len(cstr(replacement)) + len(after) - last <= 1023
 
 
 FLAGS = {ord('-'): 1, ord('+'): 2, ord(' '): 4, ord('#'): 8, ord('0'): 16}
@@ -497,6 +415,9 @@ def format_types(fmt, args):
 
 
 def defined(case):
+    """raylib 6.2 defines TextSubtext, TextRemoveSpaces, TextReplaceBetween,
+    TextInsert(Alloc), TextJoin, TextSplit and the case conversions for every
+    text (TextInsertAlloc's NULL for a negative position is a "none" row)."""
     op, i, t = case.op, [s32(v) for v in case.ints], case.texts
     if op == 'TextCopy':
         return len(cstr(t[1])) + 1 <= len(t[0])
@@ -504,22 +425,6 @@ def defined(case):
         return i[0] >= 0 and i[0] + len(cstr(t[1])) + 1 <= len(t[0])
     if op == 'TextFormat':
         return case.call is not None
-    if op == 'TextSubtext':
-        return subtext_defined(t[0], i[0], i[1])
-    if op == 'TextRemoveSpaces':
-        return not (len(cstr(t[0])) <= 1021 and cstr(t[0]).count(b' ') >= 2)
-    if op == 'TextReplaceBetween':
-        return replace_between_defined(*t)
-    if op in ('TextInsert', 'TextInsertAlloc'):
-        return insert_defined(op == 'TextInsert', t[0], t[1], i[0])
-    if op == 'TextJoin':
-        return join_defined(t[1:], t[0])
-    if op == 'TextSplit':
-        return split_defined(t[0], i[0] & 0xFF)
-    if op in ('TextToPascal', 'TextToCamel'):
-        return cased_defined(t[0])
-    if op == 'TextToSnake':
-        return snake_defined(t[0])
     if op == 'TextToInteger':
         return integer_defined(t[0])
     if op == 'GetCodepointPrevious':
@@ -692,6 +597,24 @@ def corpus():
                  b'MixedCase_snake_Words', b'HTTPServer', b'getHTTPResponseCode', b'a1B2c3D4', b'already_lower']:
         for op in ('TextToPascal', 'TextToCamel', 'TextToSnake'):
             add(op, strings=[text])
+    # raylib 6.2's case conversions: runs of '_' and copied bytes after them
+    # (Pascal/Camel), ' ' as '_', word boundaries and the output index 1022
+    # (Snake).
+    for text in [b'hello world', b'  a  b ', b'HTTPRequest', b'Hello World', b'a_B', b'aB', b'a B', b'a _B', b'ABc', b'aBC',
+                 b'A B', b' A', b'__', b'a___', b'__x', b'a__1', b'a_-b', b'a_ b', b'x__y__z', b'a_\xe9b', b'_9_\xff',
+                 b'Get_HTTP_Code', b'a\xc3\x89B', b'\tTab Here', b'a  B', b'a_ _b']:
+        for op in ('TextToPascal', 'TextToCamel', 'TextToSnake'):
+            add(op, strings=[text])
+    for at in (1019, 1020, 1021, 1022, 1023):
+        add('TextToSnake', strings=[b'a' * at + b'Bc'])
+        add('TextToSnake', strings=[b'A' * at + b'Bc'])
+        add('TextToSnake', strings=[b'a' * at + b' x'])
+        add('TextToSnake', strings=[b'a' * at + b'_Bc'])
+        add('TextToPascal', strings=[upper[:at] + b'___x'])
+        add('TextToCamel', strings=[upper[:at] + b'__9'])
+    for text in [b' ' * 1500 + b'Abc', b'a  ' * 600, b'aB' * 700, b'_' * 1500 + b'x', b'a' + b'_' * 2000, b'a_' * 800]:
+        for op in ('TextToPascal', 'TextToCamel', 'TextToSnake'):
+            add(op, strings=[text])
     for count in (0, 1, 2, 3, 1019, 1020, 1021, 1022, 1023):
         add('TextRemoveSpaces', strings=[b' ' * min(count, 2) + letters(rng, max(count - 2, 0), b'abc')])
         add('TextRemoveSpaces', strings=[b'a b' + b'c' * count])
@@ -738,6 +661,14 @@ def corpus():
     for size in (1015, 1016, 1017, 1018, 1019):
         add('TextReplaceBetween', strings=[b'(' + b'k' * size + b')', b'(', b')', b'1234567'])
         add('TextReplaceBetweenAlloc', strings=[b'(' + b'k' * size + b')', b'(', b')', b'1234567'])
+    # raylib 6.2's TextReplaceBetween limit: results of 1021..1024 bytes, from
+    # short and from long texts.
+    for total in (1021, 1022, 1023, 1024):
+        add('TextReplaceBetween', strings=[b'<m>' + b'z' * (total - 502), b'<', b'>', b'r' * 500])
+        add('TextReplaceBetweenAlloc', strings=[b'<m>' + b'z' * (total - 502), b'<', b'>', b'r' * 500])
+        add('TextReplaceBetween', strings=[b'<' + b'm' * 40 + b'>' + b'z' * (total - 2), b'<', b'>', b''])
+    for text in [b'<' + b'm' * 1100 + b'>z', b'a' * 1030 + b'<m>', b'<m>' + b'b' * 1030]:
+        add('TextReplaceBetween', strings=[text, b'<', b'>', b'R'])
     # Replacement.
     replaces = [(b'hello world', b'o', b'0'), (b'aaaa', b'aa', b'b'), (b'aaa', b'aa', b'x'), (b'abcabc', b'abc', b''),
                 (b'abc', b'', b'x'), (b'', b'a', b'b'), (b'abc', b'abcd', b'x'), (b'a.b.c', b'.', b'::'), (b'xyz', b'xyz', b'XYZ'),
@@ -762,6 +693,18 @@ def corpus():
         add('TextInsert', ints=[-1], strings=[text, b'++'])
         add('TextInsertAlloc', ints=[size], strings=[text, b'++'])
     add('TextInsertAlloc', ints=[2000], strings=[b'w' * 2000, b'tail'])
+    # raylib 6.2's TextInsert: positions clamped to the length, negative
+    # positions ("" and NULL) and the 1023-byte limit around inner positions.
+    for size in (1019, 1020, 1021, 1022):
+        text = (b'lmn' * 400)[:size]
+        for insert in (b'+', b'++', b'+++'):
+            for position in (-1, 0, 7, size, size + 1, 5000):
+                add('TextInsert', ints=[position], strings=[text, insert])
+    for position in (-INT_MAX - 1, -1, 3, INT_MAX):
+        add('TextInsert', ints=[position], strings=[b'hello', b'XY'])
+        add('TextInsertAlloc', ints=[position], strings=[b'hello', b'XY'])
+    add('TextInsertAlloc', ints=[1000], strings=[b'w' * 2000, b'mid'])
+    add('TextInsertAlloc', ints=[-1], strings=[b'w' * 2000, b'mid'])
     # Subtext.
     for text in (b'', b'hello', b'hello world', b'x' * 1500):
         n = len(text)
@@ -774,6 +717,11 @@ def corpus():
              ([b'p' * 1023], b'-'), ([b'p' * 1024, b'r'], b'-'), ([b'p' * 1022, b'q'], b'-'), ([b'p' * 1022, b'q'], b'--'),
              ([b'p' * 1021, b'q', b'r'], b'-'), ([b'p' * 1020, b'q'], b'abc'), ([b'p' * 1021, b'q'], b'abc'),
              ([b'p' * 1000, b'q' * 30, b'rr'], b'+'), ([b'w'] * 200, b','), ([b'w' * 5] * 200, b'')]
+    # raylib 6.2 counts the delimiter in every fit test, the last item's too.
+    joins += [([b'p' * 1022], b'-'), ([b'p' * 1022], b'--'), ([b'p' * 1023], b''), ([b'p' * 1024], b''),
+              ([b'p' * 1020, b'q', b'r'], b'-'), ([b'p' * 1019, b'q', b'r'], b'-'), ([b'p' * 1021, b'q'], b''),
+              ([b'a' * 500, b'b' * 500, b'c' * 17], b'xy'), ([b'a' * 500, b'b' * 500, b'c' * 18], b'xy'),
+              ([b''] * 600, b'--'), ([b'q'] * 400, b', ')]
     for items, delimiter in joins:
         add('TextJoin', strings=[delimiter] + items)
     # Splitting.
@@ -785,6 +733,9 @@ def corpus():
     splits += [(b',' * 126 + b'z' * 895 + b',' + b'tail', ','), (b',' * 126 + b'z' * 896 + b',' + b'tail', ','),
                (b',' * 126 + b'z' * 897 + b',' + b'tail', ','), (b'a,' * 300, ','), (b'z' * 1023 + b',', ','),
                (b'z' * 1022 + b',', ','), (b'z' * 1023 + b',' + b'y', ',')]
+    # raylib 6.2 copies at most 1023 bytes; byte 1023 stays the last NUL.
+    splits += [(b'z' * 1022 + b',y', ','), (b'z' * 1021 + b',' + b'tail', ','), ((b'abc' * 400)[:1022], ','),
+               ((b'abc' * 400)[:1023] + b',x', ','), (b'a,' * 511 + b'b', ','), (b',' * 126 + b'z' * 895 + b',', ',')]
     for text, delimiter in splits:
         add('TextSplit', ints=[ord(delimiter)], strings=[text])
     # Buffers.

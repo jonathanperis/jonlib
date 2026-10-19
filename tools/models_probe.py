@@ -29,9 +29,10 @@ Contracts (Jonlib must answer null): CAMERA_PERSPECTIVE under AppleLibm or
 with a zero or nonfinite frustum scale, orthographic cameras with a zero or
 nonfinite fovy or span, popping the last projection (nested modes ended twice),
 sinf/cosf arguments outside the
-profile's verified set (DrawSphereWires always under AppleLibm: its ring
-angles reach 450 degrees; the glibc profiles verify every finite argument)
-and loop counts beyond 4096. CPU-1, CPU-2 and JavaScript lanes.
+profile's verified set (the glibc profiles verify every finite argument) and
+loop counts beyond 4096. raylib 6.2's spheres (DrawSphereEx and the rewritten
+DrawSphereWires, ring angle 180/rings) and capsules ((rings, slices), rings
+clamped to 1) are compared. CPU-1, CPU-2 and JavaScript lanes.
 """
 import hashlib
 import json
@@ -159,23 +160,15 @@ def op_refused(op, libm, size, planes=DEFAULT_PLANES):
         return (projection == 0 and not perspective_ok(libm, fovy, *size, planes)) or (projection == 1 and not ortho_ok(fovy, *size, planes))
     if name == 'circle3d':
         return not all_ok(libm, [f32(a[7] * DEG2RAD)] + [f32(DEG2RAD * float(d)) for d in range(0, 370, 10)])
-    if name in ('sphere', 'sphere_ex'):
+    if name in ('sphere', 'sphere_ex', 'sphere_wires'):
+        # raylib 6.2: ring angle DEG2RAD*(180/rings), rings bands, wires on the same vertices.
         rings, slices = (16.0, 16.0) if name == 'sphere' else (a[4], a[5])
-        if not (count_ok(rings, 4095) and count_ok(slices, 4096)):
+        if not (count_ok(rings, 4096) and count_ok(slices, 4096)):
             return True
         r, s = c_int(rings), c_int(slices)
-        if r < 0 or s < 1:
+        if r < 1 or s < 1:
             return False
-        return not all_ok(libm, [f32(DEG2RAD * f32(180.0 / f32(r + 1))), f32(DEG2RAD * f32(360.0 / s))])
-    if name == 'sphere_wires':
-        if not (count_ok(a[4], 4094) and count_ok(a[5], 4096)):
-            return True
-        r, s = c_int(a[4]), c_int(a[5])
-        if r < -1 or s < 1:
-            return False
-        k = f32(180.0 / f32(r + 1)) if r + 1 else math.inf
-        rings = [f32(DEG2RAD * f32(270.0 + f32(k * i))) if not (math.isinf(k) and i == 0) else math.nan for i in range(r + 3)]
-        return not all_ok(libm, rings + [f32(DEG2RAD * f32(f32(360.0 * j) / s)) for j in range(s + 1)])
+        return not all_ok(libm, [f32(DEG2RAD * f32(180.0 / r)), f32(DEG2RAD * f32(360.0 / s))])
     if name in ('cylinder', 'cylinder_wires'):
         if not count_ok(a[6], 4096):
             return True
@@ -191,14 +184,13 @@ def op_refused(op, libm, size, planes=DEFAULT_PLANES):
         step = f32(TWO_PI / n)
         return not all_ok(libm, [f32(step * i) for i in range(n + 1)])
     if name in ('capsule', 'capsule_wires'):
+        # raylib 6.2: (rings, slices); slices below 3 become 3, rings below 1 become 1.
         if not (count_ok(a[7], 4096) and count_ok(a[8], 4096)):
             return True
-        n, r = max(c_int(a[7]), 3), c_int(a[8])
-        sphere = all(f32(a[3 + i] - a[i]) == 0.0 for i in range(3))
+        r, n = max(c_int(a[7]), 1), max(c_int(a[8]), 3)
         slices = [f32(f32(TWO_PI / n) * j) for j in range(n + 1)]
-        rings = [f32(f32(f32(PI * 0.5) / r) * i) for i in range(r + 1)] if r >= 1 else []
-        used = r >= 1 or not sphere
-        return not ((not used or all_ok(libm, slices)) and all_ok(libm, rings))
+        rings = [f32(f32(f32(PI * 0.5) / r) * i) for i in range(r + 1)]
+        return not (all_ok(libm, slices) and all_ok(libm, rings))
     if name == 'grid':
         n = c_int(a[0])
         return n is None or abs(int(n / 2)) > 2048
@@ -275,9 +267,21 @@ def scenes():
                                     ('cylinder_wires_ex',) + v3(0.0, 2.0, 1.0) + v3(3.0, 3.0, -1.0) + (f32(0.5), f32(0.5), 6.0, WHITE),
                                     ('cylinder_ex',) + v3(0.0, 0.0, 0.0) + v3(0.0, 0.0, 0.0) + (f32(1.0), f32(1.0), 8.0, BLUE), ('end3d',), ('end',)])
     add('m3-capsules', 40, 30, [('begin',), ('clear', C(5, 20, 5)), angled,
-                                ('capsule',) + v3(-1.5, 0.0, 0.0) + v3(-1.5, 2.0, 0.0) + (f32(0.6), 8.0, 4.0, RED),
-                                ('capsule_wires',) + v3(1.0, 0.5, -1.0) + v3(2.5, 1.0, 0.5) + (f32(0.5), 6.0, 3.0, WHITE),
-                                ('capsule',) + v3(1.5, 0.0, 2.0) + v3(1.5, 0.0, 2.0) + (f32(0.5), 5.0, 2.0, HALF[2]), ('end3d',), ('end',)])
+                                ('capsule',) + v3(-1.5, 0.0, 0.0) + v3(-1.5, 2.0, 0.0) + (f32(0.6), 4.0, 8.0, RED),
+                                ('capsule_wires',) + v3(1.0, 0.5, -1.0) + v3(2.5, 1.0, 0.5) + (f32(0.5), 3.0, 6.0, WHITE),
+                                ('capsule',) + v3(1.5, 0.0, 2.0) + v3(1.5, 0.0, 2.0) + (f32(0.5), 2.0, 5.0, HALF[2]), ('end3d',), ('end',)])
+    # raylib 6.2 clamps capsule rings to 1 (6.0 drew no caps for rings 0) and takes rings before slices.
+    add('m3-capsule-rings-clamped', 40, 30, [('begin',), ('clear', BLACK), angled,
+                                             ('capsule',) + v3(-1.5, 0.0, 0.0) + v3(-1.0, 2.0, 0.0) + (f32(0.6), 0.0, 6.0, GREEN),
+                                             ('capsule_wires',) + v3(1.0, 0.0, -1.0) + v3(2.0, 1.5, 0.5) + (f32(0.5), -3.0, 2.0, WHITE),
+                                             ('capsule',) + v3(0.0, 1.0, 2.0) + v3(0.0, 1.0, 2.0) + (f32(0.75), 0.0, 4.0, HALF[1]), ('end3d',), ('end',)])
+    # raylib 6.2 spheres: one ring is a double cone; the wires share DrawSphereEx's vertices.
+    add('m3-sphere-rings', 40, 30, [('begin',), ('clear', C(10, 10, 30)), angled,
+                                    ('sphere_ex',) + v3(-1.5, 0.5, 0.0) + (f32(1.0), 1.0, 6.0, RED),
+                                    ('sphere_ex',) + v3(1.5, 0.5, 0.0) + (f32(1.0), 2.0, 5.0, HALF[0]),
+                                    ('sphere_wires',) + v3(-1.5, 0.5, 0.0) + (f32(1.1), 1.0, 6.0, WHITE),
+                                    ('sphere_wires',) + v3(1.5, 0.5, 0.0) + (f32(1.1), 2.0, 5.0, GREEN),
+                                    ('sphere_ex',) + v3(0.0, 0.0, 2.0) + (f32(0.5), 0.0, 6.0, BLUE), ('end3d',), ('end',)])
     add('m3-identity-projection', 32, 24, [('begin',), ('clear', BLACK), camera((0.0, 0.0, 0.5), (0.0, 0.0, 0.0), projection=2), ('get', 'projection'),
                                            ('cube',) + v3(0.0, 0.0, 0.0) + (0.5, 0.5, 0.5, RED), ('line3d',) + v3(-0.9, -0.9, 0.0) + v3(0.9, 0.8, 0.0) + (WHITE,),
                                            ('end3d',), ('end',)])

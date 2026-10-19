@@ -30,7 +30,7 @@ Format 9 is described in detail in [RGB float images](FLOAT-RGB.md); R32 in
   wide formats map each channel, formats without alpha read 255. Samples
   outside `[0,1]` return `OutOfDomain` (or `None`) with the owner.
 - **Drawing** stores `channel/255` as F32 or half floats (`ImageDrawPixel`);
-  `SetPixelColor` does not write formats 8..13, so `ImageDraw` only changes
+  `SetPixelColor` does not write formats 8..13, so `ImageDrawImagePro` only changes
   them through an unblended same-format copy, and `resize_canvas` fills them
   with zero.
 - **`alpha_clear`** compares the float alpha of R32G32B32A32 and R16G16B16A16

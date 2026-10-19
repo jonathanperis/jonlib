@@ -3,8 +3,9 @@
 
 The reference is dr_mp3 itself (pinned raylib's src/external/dr_mp3.h, as
 raylib compiles it): `drmp3_init_file`, then the stream's channels, sample
-rate, LAME delay and padding, the offset its frames start at, the frame count
-an Xing/Info frame gives (or none), whether its first frame stays to be
+rate, LAME delay and padding, the offset its frames start at, the 64-bit
+total an Xing/Info frame count gives (low and high words, or none: raylib
+6.2's dr_mp3 multiplies in 64 bits), whether its first frame stays to be
 played, `drmp3_get_pcm_frame_count` (raylib's music.frameCount) and
 `drmp3_get_mp3_and_pcm_frame_count` (every frame decoded without its samples).
 
@@ -16,8 +17,13 @@ before and inside the stream, ID3v2 tags (with and without a footer), an
 ID3v1 tag and APE tags at the end, another sample rate in one header, every
 header rewritten (free format, with a CRC, mono, MPEG-2, MPEG-2.5, Layers I
 and II, the reserved layer, bit rate and sample rate), files too short to
-open, and 48 seeded edits (bytes changed, removed and inserted). Every value
-must be equal, or both sides must refuse the file. CPU/JS.
+open, 48 seeded edits (bytes changed, removed and inserted), the first
+thirteen frames cut to 32 to 64 kbit/s (an Info frame whose table, scale or
+LAME tag does not fit: raylib 6.2's dr_mp3 then plays it), an Xing frame
+count of 3728271 (a total of 2^32 + 896 frames, whose 32-bit low word would
+end the reads at once) and one of 11184811 (3 * 2^32 + 384, a count below
+the delay in 32 bits). Every value must be equal, or both sides must refuse
+the file. CPU/JS.
 """
 import hashlib
 import json
@@ -43,7 +49,7 @@ int main(void)
         drmp3_uint64 frames = 0, samples = 0;
         if (!drmp3_init_file(&mp3, files[a], NULL)) { printf("closed\n"); continue; }
         printf("open %u %u %u %u %llu ", mp3.channels, mp3.sampleRate, mp3.delayInPCMFrames, mp3.paddingInPCMFrames, (unsigned long long)mp3.streamStartOffset);
-        if (mp3.totalPCMFrameCount == DRMP3_UINT64_MAX) printf("-"); else printf("%llu", (unsigned long long)mp3.totalPCMFrameCount);
+        if (mp3.totalPCMFrameCount == DRMP3_UINT64_MAX) printf("-"); else printf("%u:%u", (unsigned)(mp3.totalPCMFrameCount & 0xFFFFFFFFu), (unsigned)(mp3.totalPCMFrameCount >> 32));
         printf(" %d %u", (int)(mp3.pcmFramesRemainingInMP3Frame > 0), (unsigned)drmp3_get_pcm_frame_count(&mp3));
         drmp3_get_mp3_and_pcm_frame_count(&mp3, &frames, &samples);
         printf(" %llu %llu\n", (unsigned long long)frames, (unsigned long long)samples);
@@ -66,7 +72,7 @@ def counted(counts: U32 & U32) -> String:
 
 def shown(+stream: Mp3.Stream, first: Bool) -> String:
   Mp3.Stream{_, _, _, +start, _, _, _, _, _, _, _, +delay, +padding, +known, +total, +channels, +rate} = stream
-  "open " ++ U32.show(channels) ++ " " ++ U32.show(rate) ++ " " ++ U32.show(delay) ++ " " ++ U32.show(padding) ++ " " ++ U32.show(start) ++ " " ++ Bool.pick(String, known, U32.show(total), "-") ++ " " ++ flag(first) ++ " " ++ U32.show(Mp3.total(stream)) ++ " " ++ counted(Mp3.scan(stream))
+  "open " ++ U32.show(channels) ++ " " ++ U32.show(rate) ++ " " ++ U32.show(delay) ++ " " ++ U32.show(padding) ++ " " ++ U32.show(start) ++ " " ++ Bool.pick(String, U32.is_ne(known, 0), U32.show(total) ++ ":" ++ U32.show((known - 1 : U32)), "-") ++ " " ++ flag(first) ++ " " ++ U32.show(Mp3.total(stream)) ++ " " ++ counted(Mp3.scan(stream))
 
 def line(opened: Maybe<Mp3.Opened>) -> String:
   match opened:
@@ -154,6 +160,20 @@ def cases(source):
     other = bytearray(plain)
     other[own[3] + 2] ^= 0x0C
     files['othersr'] = bytes(other)
+    # The Info frame and twelve frames cut to a lower bit rate (index 1..5: 32, 40, 48, 56 and 64 kbit/s, no
+    # padding): from 104 bytes the frames, bytes, table and scale fields and the LAME tag stop fitting in
+    # the Info frame one after another (raylib 6.2's dr_mp3 checks each; the frames decode as garbage).
+    for index in range(1, 6):
+        size = 144 * (32, 40, 48, 56, 64)[index - 1] * 1000 // 44100
+        cut = bytearray()
+        for at in offsets[:13]:
+            frame = bytearray(source[at:at + size])
+            frame[2] = (frame[2] & 0x0D) | (index << 4)
+            cut += frame
+        files[f'info{(32, 40, 48, 56, 64)[index - 1]}k'] = bytes(cut)
+    # Xing/Info frame counts whose total passes 32 bits (dr_mp3 multiplies in 64 bits).
+    files['xinghuge'] = first[:44] + (3728271).to_bytes(4, 'big') + first[48:]
+    files['xingwrap'] = first[:44] + (11184811).to_bytes(4, 'big') + first[48:]
     rng = random.Random(0x6D7033)
     for index in range(48):
         data = bytearray(first if index % 2 else plain)
@@ -197,7 +217,7 @@ def main():
     if len(expected) != len(items):
         raise ProbeFailure(f'mp3: the reference printed {len(expected)} rows for {len(items)} files')
     rows = dict(zip(files, expected))
-    if rows['whole'] != 'open 2 44100 1105 577 417 4127616 0 4125934 3583 4127616' or rows['noinfo'] != 'open 2 44100 0 0 0 - 1 13824 12 13824':
+    if rows['whole'] != 'open 2 44100 1105 577 417 4127616:0 0 4125934 3583 4127616' or rows['noinfo'] != 'open 2 44100 0 0 0 - 1 13824 12 13824':
         raise ProbeFailure(f'mp3: the reference did not read country.mp3 as expected: {rows["whole"]} / {rows["noinfo"]}')
     closed = sum(row == 'closed' for row in expected)
     if closed < 6 or len(expected) - closed < 40:

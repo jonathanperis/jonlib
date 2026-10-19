@@ -72,7 +72,7 @@ def animations_read_inside(data):
 
 
 # Loads the reference defines and Jonlib leaves out of its profile.
-PROFILE = {'model': {'over-2-mib', 'empty-material', 'material-from-root', 'no-vertices', 'no-triangles'}, 'anims': {'over-2-mib'}}
+PROFILE = {'model': {'over-2-mib', 'material-from-root', 'no-vertices', 'no-triangles'}, 'anims': {'over-2-mib'}}
 
 
 class IqmCasesTests(unittest.TestCase):
@@ -86,7 +86,7 @@ class IqmCasesTests(unittest.TestCase):
         self.assertEqual([item['path'] for item in self.items[:2]], ['/raylib/examples/models/resources/models/iqm/guy.iqm', '/raylib/examples/models/resources/models/iqm/guyanim.iqm'])
         self.assertIn(Path('/work/skin.png'), self.files)
         self.assertEqual(set(self.data), set(ids) - {'guy', 'guyanim', 'missing'})
-        self.assertEqual((len(ids), sum(item['model'] + item['anims'] for item in self.items), sum((not item['model']) + (not item['anims']) for item in self.items)), (46, 62, 30))
+        self.assertEqual((len(ids), sum(item['model'] + item['anims'] for item in self.items), sum((not item['model']) + (not item['anims']) for item in self.items)), (46, 63, 29))
 
     def test_a_built_file_has_the_header_the_loaders_read(self):
         data = self.data['animated-model']
@@ -121,11 +121,20 @@ class IqmCasesTests(unittest.TestCase):
 
     def test_the_profile_cases_are_what_they_say(self):
         self.assertGreater(len(self.data['over-2-mib']), 2 * 1024 * 1024)
-        for name in ('empty-material', 'material-from-root', 'no-vertices', 'no-triangles'):
+        for name in ('material-from-root', 'no-vertices', 'no-triangles'):
             self.assertTrue(model_reads_inside(self.data[name]), name)
         h = header(self.data['no-vertices'])
         self.assertEqual(struct.unpack_from('<6I', self.data['no-vertices'], h['ofs_meshes'])[3], 0)
         self.assertEqual(struct.unpack_from('<6I', self.data['no-triangles'], header(self.data['no-triangles'])['ofs_meshes'])[5], 0)
+
+    def test_the_empty_material_is_compared(self):
+        # raylib 6.2 loads no texture for an empty material name (TextLength(material) > 0).
+        item = next(item for item in self.items if item['id'] == 'empty-material')
+        self.assertTrue(item['model'] and item['anims'])
+        data = self.data['empty-material']
+        h = header(data)
+        material = struct.unpack_from('<6I', data, h['ofs_meshes'])[1]
+        self.assertEqual(data[h['ofs_text'] + material], 0)
 
     def test_the_animated_poses_cover_the_parent_orders(self):
         parents = [pose[0] for pose in iqm_probe.POSES]

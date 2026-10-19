@@ -118,7 +118,8 @@ subdirectories, renames, removals, directories made, copies and moves
 fake `explorer` that logs its arguments, and `ChangeDirectory` and
 `GetWorkingDirectory` last. `GetApplicationDirectory` is checked for its
 trailing `/` and for being a directory, the programs being different on each
-side. An extension that overflows `IsFileExtension` is a `None` contract.
+side. A 17-byte extension, which raylib 6.0's `IsFileExtension` overflowed, is compared:
+6.2 reads its first 15 bytes.
 
 
 `tools/files_probe.py` (gate `files`) runs the pure functions over a corpus of

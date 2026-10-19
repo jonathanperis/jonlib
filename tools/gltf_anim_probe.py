@@ -9,21 +9,28 @@ count and, for each keyframe, an FNV-1a hash of the pose's words (ten a bone:
 translation, rotation, scale).
 
 The files: the models the examples animate (greenman.glb and robot.glb, read
-in place from the pinned raylib checkout) and a model without a skin, and
-generated ones: two bones under an armature node with LINEAR rotation,
-translation and scale channels (the rotation keys a quarter turn apart, so
-QuaternionSlerp takes its acosf and sinf), STEP channels, a single key, an
-animation without channels, a channel for a node outside the skeleton, a
-time past the last key (the reference then reads key 0 with t = 1), names
-longer than 31 bytes, bones listed before their parents.
+in place from the pinned raylib checkout: inverse bind matrices, and joints
+under nodes that are not joints) and a model without a skin, and generated
+ones: two bones under an armature node with LINEAR rotation, translation and
+scale channels (the rotation keys a quarter turn apart, so QuaternionSlerp
+takes its acosf and sinf), STEP channels, a single key, an animation without
+channels, a channel for a node outside the skeleton, a time past the last
+key (raylib 6.2 then reads the last pair, t = 1), keys that start after time
+0 (the first pair, t = 0), a STEP and a LINEAR channel on one bone (each
+keeps its sampler's interpolation), names longer than 31 bytes, bones listed
+before their parents, a first joint without a parent node, a joint under a
+node that is not a joint (its parent bone is the joint above that node, its
+pose is under that node's transform), and inverse bind matrices for every
+joint (the bind pose is their inverse) and for fewer than the joints (the
+world matrices then).
 
 The reference is the raylib built with -ffp-contract=off. QuaternionSlerp's
 acosf and sinf are the host's: the rows are compared under M.Glibc239Libm
 (glibc before 2.41); under another profile the files whose rotations need
 them are contracts (Jonlib must answer null). Contracts on every profile, the
-reference not run: a CUBICSPLINE sampler, a first joint without a parent node
-(cgltf reads through a null pointer), an output accessor shorter than its
-keys, integer key times. CPU-1, CPU-2 and JavaScript lanes.
+reference not run: a CUBICSPLINE sampler, an output accessor shorter than
+its keys, integer key times, inverse bind matrices of another component
+type. CPU-1, CPU-2 and JavaScript lanes.
 """
 import json
 import struct
@@ -174,16 +181,20 @@ def run(+path: String) -> IO(String):
 QUARTER = [raw('0.7071067690849304'), raw('0.7071067690849304')]
 
 
-def armature(animations, joints=(1, 2), nodes=None, **extra):
-    """A quad skinned to two bones under an armature node; `animations` builds the animations from the Builder."""
+def armature(animations, joints=(1, 2), nodes=None, inverse=None, **extra):
+    """A quad skinned to two bones under an armature node; `animations` builds the animations from the Builder, `inverse`
+    the skin's inverseBindMatrices accessor."""
     b = Builder()
+    skin = dict(joints=list(joints))
+    if inverse:
+        skin['inverseBindMatrices'] = inverse(b)
     weights = b.accessor(b.view(struct.pack('<16f', *([1.0, 0.0, 0.0, 0.0] * 4))), 5126, 'VEC4', 4)
     bones = b.accessor(b.view(struct.pack('<16B', *([0, 0, 0, 0] * 4))), 5121, 'VEC4', 4)
     prim = quad(b, JOINTS_0=bones, WEIGHTS_0=weights)
     tree = nodes or [dict(name='armature', children=[1], translation=[0, raw('0.5'), 0], scale=[2, 2, 2]),
                      dict(name='bone_a', children=[2], translation=[raw('0.25'), 0, 0], rotation=[0, 0, QUARTER[0], QUARTER[1]]),
                      dict(name='bone_b', translation=[0, 1, 0], scale=[1, raw('0.5'), 1]), dict(name='body', mesh=0, skin=0)]
-    return glb(b.document(nodes=tree, meshes=[dict(primitives=[prim])], skins=[dict(joints=list(joints))], animations=animations(b), **extra), b.data)
+    return glb(b.document(nodes=tree, meshes=[dict(primitives=[prim])], skins=[skin], animations=animations(b), **extra), b.data)
 
 
 def times(b, values, component=5126):
@@ -234,6 +245,28 @@ def gentle(b):
     return [dict(name='nod', samplers=[rotation], channels=[channel(0, 1, 'rotation')])]
 
 
+def mixed(b):
+    """raylib 6.2 takes each channel's own interpolation: a STEP translation and a LINEAR scale on one bone; their keys start
+    after time 0 (the first pair, t = 0) and end before the animation does (the last pair, t = 1: STEP reads the key
+    before the last)."""
+    translation = dict(input=times(b, [0.2, 0.4, 0.6]), output=keys(b, [1, 2, 3, 4, 5, 6, 7, 8, 9], 'VEC3'), interpolation='STEP')
+    scale = dict(input=times(b, [0.25, 0.5, 0.75]), output=keys(b, [1, 1, 1, 2, 0.5, 1.5, 0.5, 2, 1], 'VEC3'))
+    hold = dict(input=times(b, [0.0, 1.0]), output=keys(b, [0, 0, 0, 0.5, 0.25, 0], 'VEC3'))
+    return [dict(name='mixed', samplers=[translation, scale, hold], channels=[channel(0, 2, 'translation'), channel(1, 2, 'scale'), channel(2, 1, 'translation')])]
+
+
+# Column-major inverse bind matrices: bone_a's scales and moves, bone_b's turns a quarter about Z and moves.
+INVERSE_BIND = [2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0.5, 0, 1, -2, 0.25, 1, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0.5, 0, 0, 1]
+
+
+def inverse_bind(count, component=5126):
+    def build(b):
+        if component == 5126:
+            return b.accessor(b.view(struct.pack(f'<{16 * count}f', *INVERSE_BIND[:16 * count])), 5126, 'MAT4', count)
+        return b.accessor(b.view(bytes(16 * count)), component, 'MAT4', count, normalized=True)
+    return build
+
+
 def cubic(b):
     rotation = dict(input=times(b, [0.0, 1.0]), output=keys(b, [0.0] * 24, 'VEC4'), interpolation='CUBICSPLINE')
     return [dict(samplers=[rotation], channels=[channel(0, 1, 'rotation')])]
@@ -274,8 +307,16 @@ def cases(work, raylib, libm):
     add('cubic-spline', armature(cubic), contract=True)
     add('short-output', armature(short), contract=True)
     add('integer-times', armature(integer_times), contract=True)
+    add('mixed-interpolation', armature(mixed))
     rootless = [dict(name='bone_a', children=[1]), dict(name='bone_b'), dict(name='spare'), dict(mesh=0, skin=0)]
-    add('root-joint-without-parent', armature(stepped, joints=(0, 1), nodes=rootless), contract=True)
+    add('root-joint-without-parent', armature(stepped, joints=(0, 1), nodes=rootless))
+    between = [dict(name='armature', children=[1], translation=[0, raw('0.5'), 0]), dict(name='bone_a', children=[4], translation=[raw('0.25'), 0, 0], rotation=[0, 0, QUARTER[0], QUARTER[1]]),
+               dict(name='bone_b', translation=[0, 1, 0]), dict(name='body', mesh=0, skin=0),
+               dict(name='spacer', children=[2], translation=[1, 0, raw('0.5')], rotation=[0, QUARTER[0], 0, QUARTER[1]], scale=[1, 2, raw('0.5')])]
+    add('between-joints', armature(mixed, nodes=between))
+    add('inverse-bind', armature(stepped, inverse=inverse_bind(2)))
+    add('inverse-bind-short', armature(stepped, inverse=inverse_bind(1)))
+    add('inverse-bind-integers', armature(stepped, inverse=inverse_bind(2, component=5121)), contract=True)
     return out, files
 
 

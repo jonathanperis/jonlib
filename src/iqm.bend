@@ -1,5 +1,5 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 rmodels.c LoadIQM and
+# Altered Bend adaptation of raylib 6.2 rmodels.c LoadIQM and
 # LoadModelAnimationsIQM (zlib, LICENSES/raylib.txt) for Inter-Quake Model
 # files, version 2: the header and the arrays it points at, copied as the
 # loaders copy them. A mesh has its vertices, normals and texcoords (zeros
@@ -19,17 +19,17 @@
 # result to the allocator): an array, a name's 32 bytes or a mesh's range of
 # vertices or triangles outside what the file holds; a material, bone or
 # animation name without its NUL in 32 bytes; a mesh without vertices or
-# triangles; an empty material name (the texture's path would be a
-# directory) or one that starts with a slash; frame data that ends early; a
-# pose whose parent is not a pose. The profile ends at files of 2 MiB,
-# 65535 frames or channels and 262144 poses in an animation's keyframes. See
-# docs/MODELS.md.
+# triangles; a material name that starts with a slash; frame data that ends
+# early; a pose whose parent is not a pose. An empty material name loads no
+# texture (raylib 6.2 asks for one only when TextLength(material) > 0). The
+# profile ends at files of 2 MiB, 65535 frames or channels and 262144 poses
+# in an animation's keyframes. See docs/MODELS.md.
 import Base
 import ./../jonmath.bend as M
 import ./gltf_anim.bend as GA
 
-# A mesh: its material's name (the texture LoadIQM asks for), vertexCount,
-# triangleCount, the attributes and the indices.
+# A mesh: its material's name (the texture LoadIQM asks for, none when
+# empty), vertexCount, triangleCount, the attributes and the indices.
 type Part is Data:
   Part{material: +List<U32>, vertex_count: U32, triangle_count: U32, vertices: +List<F32>, normals: +List<F32>, texcoords: +List<F32>, colors: Maybe<&2, +List<U32>>, indices: +List<U32>}
 
@@ -286,9 +286,10 @@ def printable(values: +List<U32>) -> Bool:
     case Nil{}: True{}
     case Con{+c, rest}: (c >= 32 : U32) && (c <= 126 : U32) && printable(rest)
 
-# A material's name as the texture's file name: not empty, not from the root, printable.
+# A material's name as the texture's file name: not from the root,
+# printable; or empty (raylib 6.2 then loads no texture).
 def texture.named(+name: +List<U32>) -> Bool:
-  U32.is_ne(first(name), 0) && U32.is_ne(first(name), 47) && printable(name)
+  U32.is_ne(first(name), 47) && printable(name)
 
 def mesh.made(ok: Bool, +material: Named, +start: U32, +count: U32, +from: U32, +triangles: U32, +all: +List<U32>, +found: Arrays, +rest: Meshed) -> Meshed:
   match ok:

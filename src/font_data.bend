@@ -1,5 +1,5 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 rtext.c (Copyright (c) 2013-2026 Ramon
+# Altered Bend adaptation of raylib 6.2 rtext.c (Copyright (c) 2013-2026 Ramon
 # Santamaria; zlib, LICENSES/raylib.txt): LoadFontData (FONT_DEFAULT,
 # FONT_BITMAP, FONT_SDF), GenImageFontAtlas (the default row packing and the
 # skyline packing of stb_rect_pack.h v1.01, Sean Barrett, public domain / MIT,
@@ -67,6 +67,14 @@ def threshold(+px: +List<U32>, +acc: +List<U32>) -> +List<U32>:
     case Nil{}: List.reverse(&2, U32, acc)
     case Con{+p, rest}: threshold(rest, Con{Bool.pick(U32, (p < 80 : U32), 0, 255), acc})
 
+# The codepoints raylib 6.2's LoadFontData gives an empty advanceX x fontSize
+# image: the ASCII space, no-break space, Ogham space mark, U+2000..U+200A,
+# narrow no-break space, medium mathematical space and ideographic space
+# (raylib 6.0 had only 0x20 and 0x3000).
+def blank.codepoint(+cp: U32) -> Bool:
+  U32.is_eq(cp, 32) || U32.is_eq(cp, 160) || U32.is_eq(cp, 5760) || ((cp >= 8192 : U32) && (cp <= 8202 : U32)) || U32.is_eq(cp, 8239) ||
+    U32.is_eq(cp, 8287) || U32.is_eq(cp, 12288)
+
 def glyph.made(+b: TT.Blob, +info: TT.Info, +s: F32, +size: U32, +ascent: U32, +kind: U32, +cp: U32, +idx: U32, +bm: TT.Bitmap) -> Made:
   TT.Bitmap{status, w, h, xoff, yoff, px} = bm
   +written = U32.is_eq(status, 1) || U32.is_eq(status, 2)
@@ -79,7 +87,7 @@ def glyph.made(+b: TT.Blob, +info: TT.Info, +s: F32, +size: U32, +ascent: U32, +
   +fasc = (TT.i2f(ascent) * s : F32)
   +asc = TT.f2i(Bool.pick(F32, TT.f2i.valid(fasc), fasc, 0.0))
   +oy = Bool.pick(U32, written, yoff, 0)
-  +space = U32.is_eq(cp, 32) || U32.is_eq(cp, 12288)
+  +space = blank.codepoint(cp)
   +sized = Bool.not(neg(advx)) && Bool.not(U32.is_eq(advx, 0))
   +area = (advx * size : U32)
   +has_space = sized && mul.ok(advx, size) && Bool.not(neg(area))
@@ -885,17 +893,9 @@ def atlas(gnu: Bool, +glyphs: +List<Glyph>, +count: U32, +size: U32, +pad: U32, 
   Bool.pick(Atlas, valid, atlas.sized(method, gnu, gs, n, size, pad, total.width(gs, pad, Sum{True{}, 0})), Atlas{2, 0, 0, Nil{}, Nil{}})
 
 # -----------------------------------------------------------------------------
-# LoadFontDataBDF as raylib 6.0 runs it. STARTCHAR clears the glyphs pointer
-# (the same variable as the array), so a font with characters returns NULL
-# (LoadFontFromMemory then gives the default font) and a BITMAP whose
-# ENCODING is a requested codepoint other than the first writes through a
-# pointer derived from NULL (refused). Only SIZE (the font size) and whether
-# a character started survive; lines come from GetLine (up to 255 bytes, no
-# terminator check: a read past the data is refused).
-
-# status 0 NULL, 1 the zeroed glyph array, 2 refused; size is *outFontSize.
-type Bdf is Data:
-  Bdf{status: U32, size: U32}
+# GetLine, strstr and sscanf's whitespace and %i, shared by the BDF and BMFont
+# readers. Lines come from GetLine (up to 255 bytes, no terminator check: a
+# read past the data is refused).
 
 def is.space(+c: U32) -> Bool:
   U32.is_eq(c, 32) || ((c >= 9 : U32) && (c <= 13 : U32))
@@ -929,171 +929,21 @@ def contains(n: Nat, +b: TT.Blob, +p: U32, +len: U32, +pat: +List<U32>) -> Bool:
 def has(+b: TT.Blob, +p: U32, +len: U32, +pat: +List<U32>) -> Bool:
   contains(U32.to_nat((len + 1 : U32)), b, p, len, pat)
 
-# sscanf's %i after a literal prefix: 0 no conversion, 1 a value, 2 refused
-# (an int overflow, or "0x" without a hex digit).
-type Scanned is Data:
-  Scanned{status: U32, value: U32}
-
 def digit(+c: U32, +base: U32) -> U32:
   +d = Bool.pick(U32, (c >= 48 : U32) && (c <= 57 : U32), (c - 48 : U32), Bool.pick(U32, (c >= 97 : U32) && (c <= 102 : U32), (c - 87 : U32),
     Bool.pick(U32, (c >= 65 : U32) && (c <= 70 : U32), (c - 55 : U32), 99)))
   Bool.pick(U32, (d < base : U32), d, 99)
-
-# Digits in `base` from k: the magnitude, refused past 2^31.
-def digits(n: Nat, +b: TT.Blob, +p: U32, +len: U32, +k: U32, +base: U32, +v: U32, +big: Bool) -> Scanned:
-  match n:
-    case 0n: Scanned{Bool.pick(U32, big, 2, 1), v}
-    case 1n+r:
-      +d = digit(TT.u8(b, (p + k : U32)), base)
-      +more = (k < len : U32) && (d < 99 : U32)
-      +nv = (v * base + d : U32)
-      +over = big || (v > (2147483648 / base : U32) : U32) || (nv > 2147483648 : U32)
-      Bool.pick(Scanned, more, digits(r, b, p, len, (k + 1 : U32), base, Bool.pick(U32, over, 0, nv), over), Scanned{Bool.pick(U32, big, 2, 1), v})
 
 def skip.space(n: Nat, +b: TT.Blob, +p: U32, +len: U32, +k: U32) -> U32:
   match n:
     case 0n: k
     case 1n+r: Bool.pick(U32, (k < len : U32) && is.space(TT.u8(b, (p + k : U32))), skip.space(r, b, p, len, (k + 1 : U32)), k)
 
-def scan.signed(+negative: Bool, +s: Scanned) -> Scanned:
-  Scanned{status, v} = s
-  +limit = Bool.pick(U32, negative, 2147483648, 2147483647)
-  Bool.pick(Scanned, U32.is_eq(status, 1), Bool.pick(Scanned, (v > limit : U32), Scanned{2, 0}, Scanned{1, Bool.pick(U32, negative, (0 - v : U32), v)}), s)
-
-def scan.int(+b: TT.Blob, +p: U32, +len: U32, +k0: U32) -> Scanned:
-  +k = skip.space(U32.to_nat(len), b, p, len, k0)
-  +c = TT.u8(b, (p + k : U32))
-  +signed = (k < len : U32) && (U32.is_eq(c, 43) || U32.is_eq(c, 45))
-  +j = Bool.pick(U32, signed, (k + 1 : U32), k)
-  +d0 = TT.u8(b, (p + j : U32))
-  +d1 = TT.u8(b, (p + j + 1 : U32))
-  +zero = (j < len : U32) && U32.is_eq(d0, 48)
-  +hex = zero && ((j + 1 : U32) < len : U32) && (U32.is_eq(d1, 120) || U32.is_eq(d1, 88))
-  +hex_ok = ((j + 2 : U32) < len : U32) && (digit(TT.u8(b, (p + j + 2 : U32)), 16) < 99 : U32)
-  +any = (j < len : U32) && (digit(d0, 10) < 99 : U32)
-  +n = U32.to_nat((len + 1 : U32))
-  Bool.pick(Scanned, hex, Bool.pick(Scanned, hex_ok, scan.signed(signed && U32.is_eq(c, 45), digits(n, b, p, len, (j + 2 : U32), 16, 0, False{})), Scanned{2, 0}),
-    Bool.pick(Scanned, any, scan.signed(signed && U32.is_eq(c, 45), digits(n, b, p, len, j, Bool.pick(U32, zero, 8, 10), 0, False{})), Scanned{0, 0}))
-
-# sscanf(buffer, "<prefix> %i", &v)
-def scan(+b: TT.Blob, +p: U32, +len: U32, +prefix: +List<U32>) -> Scanned:
-  +plen = count(prefix, 0)
-  Bool.pick(Scanned, starts(b, p, len, prefix, 0), scan.int(b, p, len, plen), Scanned{0, 0})
-
-def str.COMMENT() -> +List<U32>:
-  [67, 79, 77, 77, 69, 78, 84]
-
-def str.ENDCHAR() -> +List<U32>:
-  [69, 78, 68, 67, 72, 65, 82]
-
-def str.ENCODING() -> +List<U32>:
-  [69, 78, 67, 79, 68, 73, 78, 71]
-
-def str.BITMAP() -> +List<U32>:
-  [66, 73, 84, 77, 65, 80]
-
-def str.ENDFONT() -> +List<U32>:
-  [69, 78, 68, 70, 79, 78, 84]
-
-def str.BBX() -> +List<U32>:
-  [66, 66, 88]
-
-def str.DWIDTH() -> +List<U32>:
-  [68, 87, 73, 68, 84, 72]
-
-def str.FONTBOUNDINGBOX() -> +List<U32>:
-  [70, 79, 78, 84, 66, 79, 85, 78, 68, 73, 78, 71, 66, 79, 88]
-
-def str.FONT_ASCENT() -> +List<U32>:
-  [70, 79, 78, 84, 95, 65, 83, 67, 69, 78, 84]
-
-def str.SIZE() -> +List<U32>:
-  [83, 73, 90, 69]
-
-def str.STARTCHAR() -> +List<U32>:
-  [83, 84, 65, 82, 84, 67, 72, 65, 82]
-
-def str.STARTFONT() -> +List<U32>:
-  [83, 84, 65, 82, 84, 70, 79, 78, 84]
-
 # The index of the first requested codepoint equal to v (or the count).
 def first.index(+cps: +List<U32>, +v: U32, +i: U32) -> U32:
   match cps:
     case Nil{}: i
     case Con{+c, rest}: Bool.pick(U32, U32.is_eq(c, v), i, first.index(rest, v, (i + 1 : U32)))
-
-# The parser state: phase 0 reading, 1 done (loop ended), 2 refused.
-type BdfState is Data:
-  BdfState{phase: U32, total: U32, started: Bool, chr: Bool, bitmap: Bool, any: Bool, encoding: U32, size: U32}
-
-def Scanned.status(+s: Scanned) -> U32:
-  Scanned{status, _} = s
-  status
-
-def Scanned.value(+s: Scanned) -> U32:
-  Scanned{_, value} = s
-  value
-
-def bdf.line(+b: TT.Blob, +cps: +List<U32>, +s: BdfState, +p: U32, +len: U32, +nread: U32) -> BdfState:
-  BdfState{_, total, started, chr, bitmap, any, encoding, size} = s
-  +next = (total + nread + 1 : U32)
-  +comment = has(b, p, len, str.COMMENT())
-  +endchar = has(b, p, len, str.ENDCHAR())
-  +enc = has(b, p, len, str.ENCODING())
-  +encoded = scan(b, p, len, str.ENCODING())
-  +bm = has(b, p, len, str.BITMAP())
-  +index = first.index(cps, encoding, 0)
-  +endfont = has(b, p, len, str.ENDFONT())
-  +sized = has(b, p, len, str.SIZE())
-  +size_value = scan(b, p, len, str.SIZE())
-  +startchar = has(b, p, len, str.STARTCHAR())
-  +startfont = has(b, p, len, str.STARTFONT())
-  +in_char = Bool.not(comment) && chr
-  +in_font = Bool.not(comment) && Bool.not(chr) && started
-  +outside = Bool.not(comment) && Bool.not(chr) && Bool.not(started)
-  +c_end = in_char && endchar
-  +c_body = in_char && Bool.not(endchar) && Bool.not(bitmap)
-  +c_enc = c_body && enc
-  +c_bitmap = c_body && Bool.not(enc) && Bool.not(has(b, p, len, str.BBX())) && Bool.not(has(b, p, len, str.DWIDTH())) && bm
-  +f_end = in_font && endfont
-  +f_size = in_font && Bool.not(endfont) && sized
-  +f_char = in_font && Bool.not(endfont) && Bool.not(sized) && Bool.not(has(b, p, len, str.FONTBOUNDINGBOX())) &&
-    Bool.not(has(b, p, len, str.FONT_ASCENT())) && startchar
-  +o_start = outside && startfont
-  +enc_scan = Bool.pick(U32, c_enc, Scanned.status(encoded), 0)
-  +size_scan = Bool.pick(U32, f_size, Scanned.status(size_value), 0)
-  +crash = c_bitmap && (index > 0 : U32) && (index < count(cps, 0) : U32)
-  +refused = U32.is_eq(enc_scan, 2) || U32.is_eq(size_scan, 2) || crash
-  BdfState{Bool.pick(U32, refused, 2, Bool.pick(U32, f_end, 1, 0)), next, started || o_start, Bool.pick(Bool, c_end, False{}, chr || f_char),
-    Bool.pick(Bool, f_char, False{}, bitmap || c_bitmap), any || f_char,
-    Bool.pick(U32, f_char, 4294967295, Bool.pick(U32, U32.is_eq(enc_scan, 1), Scanned.value(encoded), encoding)),
-    Bool.pick(U32, U32.is_eq(size_scan, 1), Scanned.value(size_value), size)}
-
-def bdf.read(+b: TT.Blob, +cps: +List<U32>, +s: BdfState, +line: TT.Got) -> BdfState:
-  BdfState{_, total, started, chr, bitmap, any, encoding, size} = s
-  TT.Got{ok, n} = line
-  Bool.pick(BdfState, ok, bdf.line(b, cps, s, total, line.text(U32.to_nat(n), b, total, 0), n), BdfState{2, total, started, chr, bitmap, any, encoding, size})
-
-def bdf.step(+b: TT.Blob, +cps: +List<U32>, +s: BdfState) -> BdfState:
-  BdfState{_, total, started, chr, bitmap, any, encoding, size} = s
-  Bool.pick(BdfState, slt(TT.Blob.size(b), total), BdfState{1, total, started, chr, bitmap, any, encoding, size},
-    bdf.read(b, cps, s, line.count(255n, b, total, 0)))
-
-def bdf.go(f: Nat, +b: TT.Blob, +cps: +List<U32>, s: BdfState) -> BdfState:
-  match f s:
-    case 1n+k BdfState{0, +total, +started, +chr, +bitmap, +any, +encoding, +size}:
-      bdf.go(k, b, cps, bdf.step(b, cps, BdfState{0, total, started, chr, bitmap, any, encoding, size}))
-    case _ s2: s2
-
-def bdf.done(+s: BdfState) -> Bdf:
-  BdfState{phase, _, _, _, _, any, _, size} = s
-  Bdf{Bool.pick(U32, U32.is_eq(phase, 2), 2, Bool.pick(U32, any, 0, 1)), size}
-
-# LoadFontDataBDF(fileData, dataSize, codepoints, codepointCount, &fontSize)
-# with the requested codepoints (already count long) and the initial size.
-def bdf(+bytes: +List<U32>, +cps: +List<U32>, +size: U32) -> Bdf:
-  +b = TT.Blob.new(bytes)
-  bdf.done(bdf.go(U32.to_nat((TT.Blob.size(b) + 2 : U32)), b, cps, BdfState{0, 0, False{}, False{}, False{}, False{}, 4294967295, size}))
 
 # -----------------------------------------------------------------------------
 # LoadBMFont's text: GetLine over the LoadFileText buffer (its bytes and the
@@ -1354,3 +1204,326 @@ def bm.lines(+b: TT.Blob, +h: BmHeader) -> BmGlyphs:
   BmHeader{_, _, _, _, _, n, at} = h
   +g = bm.glyphs(U32.to_nat(Bool.pick(U32, neg(n), 0, n)), b, BmGlyphs{True{}, at, Nil{}})
   BmGlyphs{BmGlyphs.ok(g) && Bool.not(neg(n)) && (n <= 65536 : U32), 0, List.reverse(&2, +List<U32>, BmGlyphs.glyphs(g))}
+
+# -----------------------------------------------------------------------------
+# LoadFontDataBDF as raylib 6.2 runs it (6.0 reused the glyph array pointer
+# for the glyph being read, so a font with characters returned NULL). The
+# result holds one zeroed GlyphInfo per requested codepoint. Lines are told
+# apart with strstr in raylib's order; a BITMAP whose ENCODING is requested
+# (at its first index) gives that glyph value ENCODING, offsetX the BBX x
+# offset, offsetY fontAscent - (BBX height + BBX y offset), advanceX the
+# DWIDTH x and a zeroed GRAYSCALE image of the BBX size; each following line
+# is a row of hex digits (HexToInt: other bytes count 0), bit 8 >> (x % 4) of
+# digit x / 4 setting pixel x to 255; a row past the image height ends the
+# whole read. fontAscent is FONT_ASCENT, or FONTBOUNDINGBOX's height plus its
+# y offset; sscanf fills its fields left to right and leaves the others.
+# Refused, besides reads past the data: sscanf int overflows, int overflows
+# of the offsets and a requested glyph whose BBX is negative or beyond 4096.
+
+# status 1 the glyph array, 2 refused; size is *outFontSize.
+type Bdf is Data:
+  Bdf{status: U32, size: U32, glyphs: +List<Glyph>}
+
+def str.COMMENT() -> +List<U32>:
+  [67, 79, 77, 77, 69, 78, 84]
+
+def str.ENDCHAR() -> +List<U32>:
+  [69, 78, 68, 67, 72, 65, 82]
+
+def str.ENCODING() -> +List<U32>:
+  [69, 78, 67, 79, 68, 73, 78, 71]
+
+def str.BITMAP() -> +List<U32>:
+  [66, 73, 84, 77, 65, 80]
+
+def str.ENDFONT() -> +List<U32>:
+  [69, 78, 68, 70, 79, 78, 84]
+
+def str.BBX() -> +List<U32>:
+  [66, 66, 88]
+
+def str.DWIDTH() -> +List<U32>:
+  [68, 87, 73, 68, 84, 72]
+
+def str.FONTBOUNDINGBOX() -> +List<U32>:
+  [70, 79, 78, 84, 66, 79, 85, 78, 68, 73, 78, 71, 66, 79, 88]
+
+def str.FONT_ASCENT() -> +List<U32>:
+  [70, 79, 78, 84, 95, 65, 83, 67, 69, 78, 84]
+
+def str.SIZE() -> +List<U32>:
+  [83, 73, 90, 69]
+
+def str.STARTCHAR() -> +List<U32>:
+  [83, 84, 65, 82, 84, 67, 72, 65, 82]
+
+def str.STARTFONT() -> +List<U32>:
+  [83, 84, 65, 82, 84, 70, 79, 78, 84]
+
+# "ENCODING %"
+def fmt.ENCODING() -> +List<U32>:
+  [69, 78, 67, 79, 68, 73, 78, 71, 32, 37]
+
+# "BBX % % % %"
+def fmt.BBX() -> +List<U32>:
+  [66, 66, 88, 32, 37, 32, 37, 32, 37, 32, 37]
+
+# "DWIDTH % %"
+def fmt.DWIDTH() -> +List<U32>:
+  [68, 87, 73, 68, 84, 72, 32, 37, 32, 37]
+
+# "SIZE %"
+def fmt.SIZE() -> +List<U32>:
+  [83, 73, 90, 69, 32, 37]
+
+# "FONTBOUNDINGBOX % % % %"
+def fmt.FONTBOUNDINGBOX() -> +List<U32>:
+  [70, 79, 78, 84, 66, 79, 85, 78, 68, 73, 78, 71, 66, 79, 88, 32, 37, 32, 37, 32, 37, 32, 37]
+
+# "FONT_ASCENT %"
+def fmt.FONT_ASCENT() -> +List<U32>:
+  [70, 79, 78, 84, 95, 65, 83, 67, 69, 78, 84, 32, 37]
+
+# HexToInt: a hex digit's value, 0 for any other byte.
+def nibble(+c: U32) -> U32:
+  +d = digit(c, 16)
+  Bool.pick(U32, (d < 16 : U32), d, 0)
+
+def glyph.zero() -> Glyph:
+  Glyph{0, 0, 0, 0, 0, 0, False{}, Nil{}}
+
+def glyphs.zero(n: Nat, +acc: +List<Glyph>) -> +List<Glyph>:
+  match n:
+    case 0n: acc
+    case 1n+k: glyphs.zero(k, Con{glyph.zero(), acc})
+
+# The glyph array with glyph i replaced.
+def glyphs.put(+gs: +List<Glyph>, +i: U32, +g: Glyph, +k: U32, +acc: +List<Glyph>) -> +List<Glyph>:
+  match gs:
+    case Nil{}: List.reverse(&2, Glyph, acc)
+    case Con{+x, rest}: glyphs.put(rest, i, g, (k + 1 : U32), Con{Bool.pick(Glyph, U32.is_eq(k, i), g, x), acc})
+
+# The glyph a BITMAP points outGlyphPtr at: its index (4294967295 for NULL),
+# the rows written so far and the glyph, whose pixels are those rows reversed.
+type BdfOpen is Data:
+  BdfOpen{target: U32, row: U32, image: Glyph}
+
+def BdfOpen.none() -> BdfOpen:
+  BdfOpen{4294967295, 0, glyph.zero()}
+
+def BdfOpen.target(+o: BdfOpen) -> U32:
+  BdfOpen{t, _, _} = o
+  t
+
+# pixelY >= image.height: the row ends the read.
+def BdfOpen.full(+o: BdfOpen) -> Bool:
+  BdfOpen{_, r, g} = o
+  Bool.not(slt(r, Glyph.height(g)))
+
+# A bitmap row of the line's cnt bytes: pixel x is 255 when bit 8 >> (x % 4)
+# of digit x / 4 is set (digits past the line count 0).
+def bdf.row(n: Nat, +b: TT.Blob, +p: U32, +cnt: U32, +x: U32, +acc: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: acc
+    case 1n+r:
+      +i = (x / 4 : U32)
+      +v = Bool.pick(U32, (i < cnt : U32), nibble(TT.u8(b, (p + i : U32))), 0)
+      +mask = (8 >> U32.to_nat((x .&. 3 : U32)) : U32)
+      bdf.row(r, b, p, cnt, (x + 1 : U32), Con{Bool.pick(U32, U32.is_eq((v .&. mask : U32), 0), 0, 255), acc})
+
+def bdf.row.glyph(+t: U32, +r: U32, +b: TT.Blob, +p: U32, +cnt: U32, +g: Glyph) -> BdfOpen:
+  Glyph{value, ox, oy, adv, w, h, data, px} = g
+  BdfOpen{t, (r + 1 : U32), Glyph{value, ox, oy, adv, w, h, data, bdf.row(U32.to_nat(w), b, p, cnt, 0, px)}}
+
+def bdf.row.add(+b: TT.Blob, +p: U32, +cnt: U32, +o: BdfOpen) -> BdfOpen:
+  BdfOpen{t, r, g} = o
+  bdf.row.glyph(t, r, b, p, cnt, g)
+
+def bdf.row.open(full: Bool, +b: TT.Blob, +p: U32, +cnt: U32, +o: BdfOpen) -> BdfOpen:
+  match full:
+    case True{}: o
+    case False{}: bdf.row.add(b, p, cnt, o)
+
+# The glyph's image once read: the rows not written stay zero.
+def bdf.image(+r: U32, +g: Glyph) -> Glyph:
+  Glyph{value, ox, oy, adv, w, h, data, px} = g
+  Glyph{value, ox, oy, adv, w, h, data, List.reverse(&2, U32, zeros(U32.to_nat((w * (h - r : U32) : U32)), px))}
+
+def bdf.commit.at(found: Bool, +t: U32, +r: U32, +g: Glyph, +gs: +List<Glyph>) -> +List<Glyph>:
+  match found:
+    case False{}: gs
+    case True{}: glyphs.put(gs, t, bdf.image(r, g), 0, Nil{})
+
+# The open glyph written into the array (nothing for NULL).
+def bdf.commit(+o: BdfOpen, +gs: +List<Glyph>) -> +List<Glyph>:
+  BdfOpen{t, r, g} = o
+  bdf.commit.at(Bool.not(U32.is_eq(t, 4294967295)), t, r, g, gs)
+
+# The reader: phase 0 reading, 1 done (the loop ended), 2 refused; the bytes
+# read; fontStarted, charStarted, charBitmapStarted; *outFontSize; fontBBh,
+# fontBByoff0, fontAscent; charEncoding, charBBw, charBBh, charBBxoff0,
+# charBByoff0, charDWidthX; the open glyph and the glyph array.
+type BdfState is Data:
+  BdfState{phase: U32, total: U32, started: Bool, chr: Bool, bitmap: Bool, size: U32, fbh: U32, fby: U32, ascent: U32, encoding: U32, w: U32, h: U32, x: U32, y: U32, dw: U32, pending: BdfOpen, glyphs: +List<Glyph>}
+
+def BdfState.total(+s: BdfState) -> U32:
+  BdfState{_, total, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _} = s
+  total
+
+def BdfState.phased(+s: BdfState, +phase: U32) -> BdfState:
+  BdfState{_, total, started, chr, bitmap, size, fbh, fby, ascent, encoding, w, h, x, y, dw, pending, glyphs} = s
+  BdfState{phase, total, started, chr, bitmap, size, fbh, fby, ascent, encoding, w, h, x, y, dw, pending, glyphs}
+
+# sscanf's i-th %i when it was assigned, the old value otherwise.
+def bdf.field(+n: U32, +i: U32, +values: +List<U32>, +old: U32) -> U32:
+  Bool.pick(U32, (i < n : U32), nth(U32.to_nat(i), values), old)
+
+# ENDCHAR: the character ends; the glyph read (if any) is in the array.
+def bdf.endchar(+s: BdfState) -> BdfState:
+  BdfState{phase, total, started, _, bitmap, size, fbh, fby, ascent, encoding, w, h, x, y, dw, pending, glyphs} = s
+  BdfState{phase, total, started, False{}, bitmap, size, fbh, fby, ascent, encoding, w, h, x, y, dw, BdfOpen.none(), bdf.commit(pending, glyphs)}
+
+# A bitmap row into the open glyph, or the end of the read past its height.
+def bdf.bitmap.row(+b: TT.Blob, +p: U32, +cnt: U32, +s: BdfState) -> BdfState:
+  BdfState{phase, total, started, chr, bitmap, size, fbh, fby, ascent, encoding, w, h, x, y, dw, pending, glyphs} = s
+  +full = BdfOpen.full(pending)
+  BdfState{Bool.pick(U32, full, 1, phase), total, started, chr, bitmap, size, fbh, fby, ascent, encoding, w, h, x, y, dw,
+    bdf.row.open(full, b, p, cnt, pending), glyphs}
+
+def bdf.encoding(+r: Scanf, +s: BdfState) -> BdfState:
+  Scanf{ok, _, _, n, values, _} = r
+  BdfState{phase, total, started, chr, bitmap, size, fbh, fby, ascent, encoding, w, h, x, y, dw, pending, glyphs} = s
+  BdfState{Bool.pick(U32, ok, phase, 2), total, started, chr, bitmap, size, fbh, fby, ascent, bdf.field(n, 0, values, encoding), w, h, x, y, dw,
+    pending, glyphs}
+
+def bdf.bbx(+r: Scanf, +s: BdfState) -> BdfState:
+  Scanf{ok, _, _, n, values, _} = r
+  BdfState{phase, total, started, chr, bitmap, size, fbh, fby, ascent, encoding, w, h, x, y, dw, pending, glyphs} = s
+  BdfState{Bool.pick(U32, ok, phase, 2), total, started, chr, bitmap, size, fbh, fby, ascent, encoding, bdf.field(n, 0, values, w),
+    bdf.field(n, 1, values, h), bdf.field(n, 2, values, x), bdf.field(n, 3, values, y), dw, pending, glyphs}
+
+def bdf.dwidth(+r: Scanf, +s: BdfState) -> BdfState:
+  Scanf{ok, _, _, n, values, _} = r
+  BdfState{phase, total, started, chr, bitmap, size, fbh, fby, ascent, encoding, w, h, x, y, dw, pending, glyphs} = s
+  BdfState{Bool.pick(U32, ok, phase, 2), total, started, chr, bitmap, size, fbh, fby, ascent, encoding, w, h, x, y, bdf.field(n, 0, values, dw),
+    pending, glyphs}
+
+# BITMAP: outGlyphPtr is the first glyph whose requested codepoint is
+# charEncoding (NULL when none); the open glyph, if any, was already ended.
+def bdf.bitmap(+cps: +List<U32>, +n: U32, +s: BdfState) -> BdfState:
+  BdfState{phase, total, started, chr, _, size, fbh, fby, ascent, encoding, w, h, x, y, dw, pending, glyphs} = s
+  +index = first.index(cps, encoding, 0)
+  +found = (index < n : U32)
+  +t = (h + y : U32)
+  +sized = (w <= 4096 : U32) && (h <= 4096 : U32) && TT.add.ok(h, y) && TT.sub.ok(ascent, t)
+  BdfState{Bool.pick(U32, Bool.not(found) || sized, phase, 2), total, started, chr, True{}, size, fbh, fby, ascent, encoding, w, h, x, y, dw,
+    BdfOpen{Bool.pick(U32, found && sized, index, 4294967295), 0, Glyph{encoding, x, (ascent - t : U32), dw, w, h, True{}, Nil{}}}, bdf.commit(pending, glyphs)}
+
+def bdf.size(+r: Scanf, +s: BdfState) -> BdfState:
+  Scanf{ok, _, _, n, values, _} = r
+  BdfState{phase, total, started, chr, bitmap, size, fbh, fby, ascent, encoding, w, h, x, y, dw, pending, glyphs} = s
+  BdfState{Bool.pick(U32, ok, phase, 2), total, started, chr, bitmap, bdf.field(n, 0, values, size), fbh, fby, ascent, encoding, w, h, x, y, dw,
+    pending, glyphs}
+
+# FONTBOUNDINGBOX: fontAscent becomes its height plus its y offset.
+def bdf.bounds(+r: Scanf, +s: BdfState) -> BdfState:
+  Scanf{ok, _, _, n, values, _} = r
+  BdfState{phase, total, started, chr, bitmap, size, fbh, fby, _, encoding, w, h, x, y, dw, pending, glyphs} = s
+  +bh = bdf.field(n, 1, values, fbh)
+  +by = bdf.field(n, 3, values, fby)
+  BdfState{Bool.pick(U32, ok && TT.add.ok(bh, by), phase, 2), total, started, chr, bitmap, size, bh, by, (bh + by : U32), encoding, w, h, x, y, dw,
+    pending, glyphs}
+
+def bdf.ascent(+r: Scanf, +s: BdfState) -> BdfState:
+  Scanf{ok, _, _, n, values, _} = r
+  BdfState{phase, total, started, chr, bitmap, size, fbh, fby, ascent, encoding, w, h, x, y, dw, pending, glyphs} = s
+  BdfState{Bool.pick(U32, ok, phase, 2), total, started, chr, bitmap, size, fbh, fby, bdf.field(n, 0, values, ascent), encoding, w, h, x, y, dw,
+    pending, glyphs}
+
+def bdf.startchar(+s: BdfState) -> BdfState:
+  BdfState{phase, total, started, _, _, size, fbh, fby, ascent, _, _, _, _, _, _, _, glyphs} = s
+  BdfState{phase, total, started, True{}, False{}, size, fbh, fby, ascent, 4294967295, 0, 0, 0, 0, 0, BdfOpen.none(), glyphs}
+
+def bdf.startfont(+s: BdfState) -> BdfState:
+  BdfState{phase, total, _, chr, bitmap, size, fbh, fby, ascent, encoding, w, h, x, y, dw, pending, glyphs} = s
+  BdfState{phase, total, True{}, chr, bitmap, size, fbh, fby, ascent, encoding, w, h, x, y, dw, pending, glyphs}
+
+# Actions: 0 none, 1 ENDCHAR, 2 a bitmap row, 3 ENCODING, 4 BBX, 5 DWIDTH,
+# 6 BITMAP, 7 ENDFONT, 8 SIZE, 9 FONTBOUNDINGBOX, 10 FONT_ASCENT, 11
+# STARTCHAR, 12 STARTFONT.
+def bdf.act(action: U32, +b: TT.Blob, +cps: +List<U32>, +n: U32, +p: U32, +cnt: U32, +len: U32, +s: BdfState) -> BdfState:
+  match action:
+    case 0: s
+    case 1: bdf.endchar(s)
+    case 2: bdf.bitmap.row(b, p, cnt, s)
+    case 3: bdf.encoding(sscanf(b, p, len, fmt.ENCODING()), s)
+    case 4: bdf.bbx(sscanf(b, p, len, fmt.BBX()), s)
+    case 5: bdf.dwidth(sscanf(b, p, len, fmt.DWIDTH()), s)
+    case 6: bdf.bitmap(cps, n, s)
+    case 7: BdfState.phased(s, 1)
+    case 8: bdf.size(sscanf(b, p, len, fmt.SIZE()), s)
+    case 9: bdf.bounds(sscanf(b, p, len, fmt.FONTBOUNDINGBOX()), s)
+    case 10: bdf.ascent(sscanf(b, p, len, fmt.FONT_ASCENT()), s)
+    case 11: bdf.startchar(s)
+    case _: bdf.startfont(s)
+
+# Inside a character: ENDCHAR, then a bitmap row (skipped when outGlyphPtr is
+# NULL), ENCODING, BBX, DWIDTH and BITMAP.
+def bdf.in_char(+endchar: Bool, +bitmap: Bool, +target: Bool, +enc: Bool, +bbx: Bool, +dwidth: Bool, +bm: Bool) -> U32:
+  Bool.pick(U32, endchar, 1, Bool.pick(U32, bitmap, Bool.pick(U32, target, 2, 0), Bool.pick(U32, enc, 3, Bool.pick(U32, bbx, 4,
+    Bool.pick(U32, dwidth, 5, Bool.pick(U32, bm, 6, 0))))))
+
+# Inside the font: ENDFONT, SIZE (a PIXEL_SIZE line holds "SIZE" and fails
+# its sscanf), FONTBOUNDINGBOX, FONT_ASCENT and STARTCHAR.
+def bdf.in_font(+endfont: Bool, +sized: Bool, +bounds: Bool, +ascent: Bool, +startchar: Bool) -> U32:
+  Bool.pick(U32, endfont, 7, Bool.pick(U32, sized, 8, Bool.pick(U32, bounds, 9, Bool.pick(U32, ascent, 10, Bool.pick(U32, startchar, 11, 0)))))
+
+# One line (COMMENT lines are skipped first; before STARTFONT only STARTFONT
+# counts).
+def bdf.line(+b: TT.Blob, +cps: +List<U32>, +n: U32, +p: U32, +cnt: U32, +len: U32, +s: BdfState) -> BdfState:
+  BdfState{_, total, started, chr, bitmap, size, fbh, fby, ascent, encoding, w, h, x, y, dw, pending, glyphs} = s
+  +target = Bool.not(U32.is_eq(BdfOpen.target(pending), 4294967295))
+  +in_char = bdf.in_char(has(b, p, len, str.ENDCHAR()), bitmap, target, has(b, p, len, str.ENCODING()), has(b, p, len, str.BBX()),
+    has(b, p, len, str.DWIDTH()), has(b, p, len, str.BITMAP()))
+  +in_font = bdf.in_font(has(b, p, len, str.ENDFONT()), has(b, p, len, str.SIZE()), has(b, p, len, str.FONTBOUNDINGBOX()),
+    has(b, p, len, str.FONT_ASCENT()), has(b, p, len, str.STARTCHAR()))
+  +action = Bool.pick(U32, has(b, p, len, str.COMMENT()), 0, Bool.pick(U32, chr, in_char, Bool.pick(U32, started, in_font,
+    Bool.pick(U32, has(b, p, len, str.STARTFONT()), 12, 0))))
+  bdf.act(action, b, cps, n, p, cnt, len,
+    BdfState{0, (total + cnt + 1 : U32), started, chr, bitmap, size, fbh, fby, ascent, encoding, w, h, x, y, dw, pending, glyphs})
+
+def bdf.read.ok(ok: Bool, +b: TT.Blob, +cps: +List<U32>, +n: U32, +p: U32, +cnt: U32, +len: U32, +s: BdfState) -> BdfState:
+  match ok:
+    case False{}: BdfState.phased(s, 2)
+    case True{}: bdf.line(b, cps, n, p, cnt, len, s)
+
+def bdf.read(+b: TT.Blob, +cps: +List<U32>, +n: U32, +l: Line, +s: BdfState) -> BdfState:
+  Line{ok, p, cnt, len} = l
+  bdf.read.ok(ok, b, cps, n, p, cnt, len, s)
+
+# while (totalReadBytes <= dataSize)
+def bdf.step.at(over: Bool, +b: TT.Blob, +cps: +List<U32>, +n: U32, +s: BdfState) -> BdfState:
+  match over:
+    case True{}: BdfState.phased(s, 1)
+    case False{}: bdf.read(b, cps, n, getline(b, BdfState.total(s)), s)
+
+def bdf.step(+b: TT.Blob, +cps: +List<U32>, +n: U32, +s: BdfState) -> BdfState:
+  bdf.step.at(slt(TT.Blob.size(b), BdfState.total(s)), b, cps, n, s)
+
+def bdf.go(f: Nat, +b: TT.Blob, +cps: +List<U32>, +n: U32, s: BdfState) -> BdfState:
+  match f s:
+    case 1n+k BdfState{0, +total, +started, +chr, +bitmap, +size, +fbh, +fby, +ascent, +encoding, +w, +h, +x, +y, +dw, +pending, +glyphs}:
+      bdf.go(k, b, cps, n, bdf.step(b, cps, n, BdfState{0, total, started, chr, bitmap, size, fbh, fby, ascent, encoding, w, h, x, y, dw, pending, glyphs}))
+    case _ s2: s2
+
+def bdf.done(+s: BdfState) -> Bdf:
+  BdfState{phase, _, _, _, _, size, _, _, _, _, _, _, _, _, _, pending, glyphs} = s
+  Bdf{Bool.pick(U32, U32.is_eq(phase, 2), 2, 1), size, bdf.commit(pending, glyphs)}
+
+# LoadFontDataBDF(fileData, dataSize, codepoints, codepointCount, &fontSize)
+# with the requested codepoints (already count long) and the initial size.
+def bdf(+bytes: +List<U32>, +cps: +List<U32>, +size: U32) -> Bdf:
+  +b = TT.Blob.new(bytes)
+  +n = count(cps, 0)
+  bdf.done(bdf.go(U32.to_nat((TT.Blob.size(b) + 2 : U32)), b, cps, n, BdfState{0, 0, False{}, False{}, False{}, size, 0, 0, 0, 4294967295, 0, 0, 0, 0, 0,
+    BdfOpen.none(), glyphs.zero(U32.to_nat(n), Nil{})}))

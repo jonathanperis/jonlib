@@ -174,9 +174,9 @@ def script(tree):
     for subdirs in (False, True):
         add('load_ex', f'{t}/long', '*.*', subdirs)
         add('count_ex', f'{t}/long', None, subdirs)
-    # IsFileExtension's overflow on x.abcdefghijklmnopq and a 4095-byte path: contracts
-    add('load_ex', f'{t}-odd', '.png', False, defined=False)
-    add('count_ex', f'{t}-odd', '.png', False, defined=False)
+    # x.abcdefghijklmnopq's 17-byte extension: raylib 6.2's IsFileExtension copies at most 15 bytes (6.0 overflowed)
+    add('load_ex', f'{t}-odd', '.png', False)
+    add('count_ex', f'{t}-odd', '.png', False)
     add('load_ex', f'{t}-odd', 'FILES*', False)
     # a 4095-byte path, which snprintf cuts to 4094 bytes (and the cut path does not exist)
     add('load_ex', f'{t}/exact', '*.*', True)

@@ -24,10 +24,12 @@ format and export.
 
 ## WAV decoding
 
-`src/wav.bend` (with `src/wav_adpcm.bend`) follows `drwav_init_memory` and
-`drwav_read_pcm_frames_s16` exactly, as `LoadWaveFromMemory` calls them: it
-reads `(unsigned int)totalPCMFrameCount` frames, so a 64-bit count keeps only
-its low 32 bits. dr_wav's 64-bit sizes, positions and counts are two U32
+`src/wav.bend` (with `src/wav_adpcm.bend`) follows dr_wav 0.14.6's
+`drwav_init_memory` and `drwav_read_pcm_frames_s16` exactly, as raylib 6.2's
+`LoadWaveFromMemory` calls them: it reads `(unsigned int)totalPCMFrameCount`
+frames, so a 64-bit count keeps only its low 32 bits, into a buffer that is
+`RL_CALLOC`'d for that many frames: the frames dr_wav does not read are
+zeros (`Wav.load`). dr_wav's 64-bit sizes, positions and counts are two U32
 words that wrap as in C.
 
 - **Containers.** RIFF and RIFX (big-endian sizes, `fmt ` fields and
@@ -38,11 +40,12 @@ words that wrap as in C.
   the `data` chunk's and whose sample count, when nonzero, is the frame count);
   AIFF and AIFC (`COMM` and `SSND` chunks, below).
 - **The chunk walk.** dr_wav's memory stream position and its 64-bit cursor:
-  a `fmt ` chunk shorter than 16 bytes reads into the next chunk, its
-  remaining declared size is an int seek (it may move backwards) while the
+  a `fmt ` chunk declared shorter than 16 bytes fails, its remaining
+  declared size is an int seek (it may move backwards) while the
   cursor adds the 64-bit difference (a cursor past 4 GiB makes the data seek
   fail), padding, LIST/fact/unknown chunks, seeks past the end that end the
-  walk, a missing header that ends it, `WAVE_FORMAT_EXTENSIBLE` headers (a
+  walk, a missing header that ends it (and so does a Wave64 chunk whose size
+  is below the 24 bytes of its own header), `WAVE_FORMAT_EXTENSIBLE` headers (a
   22-byte extension whose subformat selects the codec, read in the
   container's byte order). The walk stops at `data` (RIFF, RIFX, RF64,
   Wave64) and continues past `SSND`. A RIFF/RIFX `fact` chunk keeps no count
@@ -68,7 +71,9 @@ words that wrap as in C.
   file (in wrapping 64-bit arithmetic) and rounded down to whole frames for
   uncompressed formats, and ADPCM with at most two channels. The frame count
   is the data size over the frame size, or for ADPCM dr_wav's block formula
-  (a trailing partial block counts; 6 or 4 header bytes per channel).
+  (a trailing partial block counts; 6 or 4 header bytes per channel). ADPCM
+  without a `fact` or `COMM` count fails when its blocks' header bytes are
+  as many as the data's bytes or more (an empty `data` chunk too).
 - **Samples.** PCM samples of 1 byte are recentred, of 2 to 8 bytes keep
   their top two bytes (big-endian containers swap 2, 3, 4 and 8-byte
   samples first) and above 8 bytes are 0. 32-bit float is clamped to
@@ -78,7 +83,8 @@ words that wrap as in C.
   rounding once to nearest even, with the truncation read from the result's
   words; other float widths are silence. a-law and mu-law use dr_wav's
   tables. Frames over dr_wav's 4096-byte read buffer (outside the 16-bit
-  PCM fast path) and formats it does not convert read nothing.
+  PCM fast path) and formats it does not convert read nothing: the wave
+  is zeros.
 - **ADPCM.** Microsoft ADPCM block headers (predictor, delta, two samples
   per channel, output oldest first), nibbles high first with dr_wav's
   coefficient and adaptation tables, the delta clamped to [16, 0x7FFFFFFF]
@@ -88,14 +94,17 @@ words that wrap as in C.
   frame count asks for it), keep the remaining block size as an unsigned
   32-bit count (small or uneven block alignments wrap it) and stop at a short
   read or an invalid predictor (MS) or step index (IMA).
+- **Frames not read.** Where dr_wav reads fewer frames than the count
+  (partial or truncated ADPCM blocks, invalid predictors or step indices,
+  frame counts above the data, formats it does not convert, frames over its
+  read buffer) the rest of the wave is zeros, as raylib 6.2's `RL_CALLOC`
+  leaves it. A wave with such zeros past 2^24 samples is past this port's
+  limits (`UnsupportedWaveFormat`). The music (`Wav.decode`,
+  `Wav.decode.wide`) still takes a file only when every frame is read.
 
 Jonlib contracts where raylib's result is not defined (all
 `InvalidWaveData`):
 
-- dr_wav reads fewer frames than raylib allocates (partial or truncated
-  ADPCM blocks, invalid predictors or step indices, frame counts above the
-  data, formats it does not convert, frames over its read buffer): raylib
-  returns those samples uninitialized;
 - NaN float samples (32- or 64-bit): an undefined float-to-int conversion;
 - MS ADPCM nibbles whose `nibble * delta` or prediction sum overflows an int
   (signed overflow is undefined), wherever it occurs in the decoded blocks;
@@ -110,17 +119,22 @@ Jonlib contracts where raylib's result is not defined (all
 
 ## QOA
 
-`src/qoa.bend` follows qoa.h's `qoa_decode` and `qoa_encode` exactly, with C
-ints as U32 two's-complement words (raylib's compiled code wraps where qoa.h's
+`src/qoa.bend` follows raylib 6.2's qoa.h `qoa_decode` and `qoa_encode`
+exactly, with C ints as U32 two's-complement words (raylib's compiled code wraps where qoa.h's
 int arithmetic overflows: `qoa_div` at scalefactor 0 for residuals of 2^15 and
 more, and LMS sums for weights taken from a file).
 
 - Decoding reads the channels and sample rate from the first frame header,
-  then frames until the declared sample count. A frame that is too short for
-  its LMS state, changes channels or rate, claims a size past the data or more
-  samples than its slices hold ends the file: the Wave keeps the frames decoded
-  so far (possibly 0). Files shorter than 16 bytes, without the `qoaf` magic or
-  with zero samples, channels or rate fail (`InvalidWaveHeader`).
+  then frames until the declared sample count or a frame shorter than 5120
+  samples (`qoa_decode`'s buffer is rounded up to whole frames: the wave's
+  frames are the samples decoded, which may pass the declared count). A frame
+  that is too short for its LMS state, changes channels or rate, has a size
+  below its own header or past the data, more than 256 slices a channel or
+  more slices than its size holds ends the file: the Wave keeps the frames
+  decoded so far (possibly 0). Files shorter than 16 bytes, without the
+  `qoaf` magic, with zero samples, channels or rate, with more than 8
+  channels or whose rounded buffer passes 0x7fffffff samples fail
+  (`InvalidWaveHeader`).
 - Encoding brute-forces the 16 scalefactors per 20-sample slice (starting from
   the previous slice's), ranks them by squared error plus the LMS weight
   penalty, and writes the frame's LMS state before its slices. `.qoa` export
@@ -129,11 +143,12 @@ more, and LMS sums for weights taken from a file).
   outside 1..8) leaves an empty file, as raylib's `qoa_write` opens the file
   first, and fails.
 
-Jonlib contracts where raylib's behavior is not defined: files whose frames
-decode past the declared sample count (raylib writes past its buffer), with
-more than 8 channels (past its LMS state) or more than 2^24 samples are
-`InvalidWaveData`; a wave whose sample list does not hold `frames * channels`
-samples is not encoded (`InvalidWaveRequest`).
+Jonlib contracts where raylib's behavior is not defined: a wave whose sample
+list does not hold `frames * channels` samples is not encoded
+(`InvalidWaveRequest`). The music decodes a QOA file whole (`Qoa.decode.played`,
+every frame up to the declared count, as qoaplay goes frame by frame): there a
+file whose frames pass the declared count or that declares more than 2^24
+samples is `InvalidWaveData`.
 
 ## MP3 (in progress)
 
@@ -162,10 +177,15 @@ MP3 files through it (see Music streams), and `Wave` and `Sound` load them
   64 KiB when below 16 KiB: it bounds how far the search can look), and the
   first frame that decodes gives the channels and the sample rate. An Xing
   or Info frame is not played: the stream starts after it, with the frames
-  it counts and LAME's delay and padding.
+  it counts and LAME's delay and padding. raylib 6.2's dr_mp3 checks that
+  each part of the tag (name and flags, the frames, bytes, table and scale
+  fields its flags have, 36 bytes of LAME tag) fits in the frame: a part
+  that does not ends the reading, and the frame is played as audio, keeping
+  a frame count already read and no delay or padding.
 - **The count** (`drmp3_get_pcm_frame_count`): the tag's frames times the
-  first frame's samples, less the delay and the padding; without a tag,
-  every frame of the stream.
+  first frame's samples, in 64 bits, less the delay and the padding (the
+  low 32 bits of the result); without a tag, every frame of the stream. A
+  read stops at the 64-bit total less the padding.
 
 dr_mp3 keeps its own idea of the read position (`streamCursor`), which goes
 back to the stream's start after an Xing/Info frame while the file does
@@ -177,9 +197,9 @@ does `Mp3.info.first`.
 
 `tools/mp3_probe.py` (gate `mp3`) compares with dr_mp3 itself, per file:
 whether it opens, channels, sample rate, delay, padding, the offset the
-frames start at, the tag's count, whether the first frame stays to be
-played, `drmp3_get_pcm_frame_count` and `drmp3_get_mp3_and_pcm_frame_count`.
-There is no MP3 encoder here, so the 85 files are raylib's `country.mp3`
+frames start at, the tag's 64-bit total (its low and high words), whether
+the first frame stays to be played, `drmp3_get_pcm_frame_count` and
+`drmp3_get_mp3_and_pcm_frame_count`. There is no MP3 encoder here, so the 92 files are raylib's `country.mp3`
 (MPEG-1 Layer III, 128 kbit/s, 44100 Hz, joint stereo, an Info frame with a
 LAME tag; 3583 frames, 4125934 PCM frames) and edits of its first frames:
 without the Info frame, cut inside a frame, one and two frames, bytes that
@@ -188,8 +208,11 @@ footer and one longer than the file, ID3v1 and APE tags (one claiming a
 megabyte), another sample rate in one header, every header rewritten (free
 format, with a CRC, mono, MPEG-2, MPEG-2.5, Layers I and II, the reserved
 layer, bit rate and sample rate), an Xing name, an Info frame without
-flags and without a LAME tag, files too short to open, 5000 zeros, and 48
-seeded edits (bytes changed, removed and inserted). 64 open and 21 do not,
+flags and without a LAME tag, files too short to open, 5000 zeros, 48
+seeded edits (bytes changed, removed and inserted), the first thirteen
+frames cut to 32, 40, 48, 56 and 64 kbit/s (an Info frame whose table,
+scale or LAME tag no longer fits) and Xing counts whose total passes 32
+bits (2^32 + 896 and 3 * 2^32 + 384 frames). Every file opens or not alike
 on both sides. CPU-1, CPU-2 and JavaScript.
 
 ### Layer III: from the bits to the samples
@@ -406,9 +429,10 @@ Three things dr_mp3 does that follow from its bookkeeping and are kept:
   frame before's) is read too. `Player.pcm` is that buffer. So where a
   read's chunks fall changes what such a frame gives, and the port reads in
   dr_mp3's chunks: `drmp3_read_pcm_frames_f32` (raylib's music and waves)
-  makes raw reads of 8192 / channels frames (`Mp3S.read.f32.raw`), and
-  `drmp3__full_read_and_close_f32` (`LoadWave`) asks for 4096 / channels
-  frames at a time until a read gives none (`Mp3S.read.f32.whole`).
+  makes raw reads of 2304 / channels frames (`Mp3S.read.f32.raw`), and
+  `drmp3__full_read_and_close_f32` (`LoadWave`) asks for 2304 / channels
+  frames at a time until a read gives none (`Mp3S.read.f32.whole`): raylib
+  6.2's dr_mp3 holds 1152*2 samples in both buffers (8192 and 4096 before).
 - A frame decoded without samples writes to `pcmFrames` too: a Layer I or
   II frame read past its end has written the granules it made, which a
   mono frame after it in a stereo stream reads.
@@ -417,7 +441,7 @@ A stream stops (`Player.status`) at a frame the decoder refuses: 1 where
 dr_mp3 leaves one of its arrays.
 
 `tools/mp3_stream_probe.py` (gate `mp3-stream`) runs one script on each of
-the `mp3` gate's 85 files and three Layer I and II streams (88) through
+the `mp3` gate's 92 files and three Layer I and II streams (95) through
 dr_mp3's functions and through
 `Mp3S`: a count, reads of 100 16-bit, 1000 float and 2000 16-bit frames,
 a seek back to 500, a read, a seek to where the count stands, the start, a
@@ -1270,14 +1294,14 @@ path)` is `LoadWave`, and `Sound.load_with(profile, libm, device, path)`
 - **A length that is not known**, or 0, is a wave of no frames (raylib's
   buffer is `malloc(0)`), and `LoadSoundFromWave` of it is the invalid
   sound.
-- **`InvalidWaveData`: a stream that gives fewer samples than its length
-  says.** raylib does not look at how many samples the read gave: its
-  buffer is `malloc`'d for `frameCount*channels` shorts, and the shorts the
-  read did not reach are what `malloc` left there. That count is an
-  unsigned product taken as an int: one past an int reads nothing at all,
+- **A stream that gives fewer samples than its length says** ends in
+  zeros. raylib does not look at how many samples the read gave: its
+  buffer is `RL_CALLOC`'d (raylib 6.2) for `frameCount*channels` shorts,
+  and the shorts the read did not reach stay 0. That count is an unsigned
+  product taken as an int: one past an int reads nothing at all (a wave of
+  zeros, past this port's limit of 2^24 zeros: `UnsupportedWaveFormat`),
   and one past 32 bits wraps to a few shorts under a frame count that says
-  billions. All of them are refused: a wave is given only where every
-  short of it was written.
+  billions (`InvalidWaveData`: the buffer is smaller than its wave).
 - **`InvalidWaveData`** also for data stb_vorbis does not open (raylib
   warns and has no wave), for a setup C leaves undefined and for what the
   decoder refuses in a packet or a sample (above).
@@ -1292,16 +1316,19 @@ channels at 22050 Hz, and a sound of 96000 frames) under `.ogg` and `.OGG`;
 cut at its last page and inside it (the page before is the last then: 30208
 frames), inside its setup and its first header (no wave); with seeded
 damage in its packets; with a last page that states no position or 0 (no
-frames), 30000 samples (a shorter wave), 50000 (more than it has), and
-positions past an int and past 32 bits; and six streams of one channel at
+frames), 30000 samples (a shorter wave), 50000 (more than it has: a wave
+ending in zeros), a position past an int (zeros past the port's limit) and
+one past 32 bits (no wave); and six streams of one channel at
 8000 Hz built by the vorbis-frame gate's probe: loud (every sample at an
 end of a short's range), quiet, with a position before the last block and
 one past the stream's samples, without checksums (no length) and loud
 enough to be refused. The reference program reads each stream itself
 first, with the read's loop written out, counting the samples and looking
-at each float: where the read would leave shorts unwritten or convert a
-float the port refuses, `LoadWave` is not called and the port must give no
-wave.
+at each float: where the read would convert a float the port refuses or
+`frameCount*channels` passes 32 bits, `LoadWave` is not called and the port
+must give no wave; where the zeros after the samples read pass 2^24
+samples, it is not called either and the port must answer
+`UnsupportedWaveFormat`. Every other wave, zeros included, is compared.
 
 Still to come: the music (`LoadMusicStream` for `.ogg`, with
 `stb_vorbis_seek_start` and `stb_vorbis_seek_frame`).
@@ -1826,25 +1853,28 @@ returns the unchanged wave with:
 ## How it is verified
 
 `tools/wav_probe.py` (gate `wav`) builds raylib with its audio module and
-compares native `LoadWave` with `Wave.load` on 179 generated files covering
+compares native `LoadWave` with `Wave.load` on 197 generated files covering
 each case above in every container (PCM widths, float values next to the
 rounding boundaries of `(c + 1) * 32767.5`, infinities and subnormals,
 companded and extensible data, Wave64 sizes and GUIDs, RF64 `ds64` edge cases,
 integral, fractional, unnormalized, negative and special AIFF rates, every
 AIFC type, MS/IMA ADPCM with partial blocks, bad predictors and step indices,
-negative deltas and small block alignments). For each file the native program
-first runs dr_wav itself and reports when it reads fewer frames than raylib
-allocates; those files must be `InvalidWaveData`, the others must match
-exactly or fail on both sides. The other contracts above are checked on
-Jonlib alone. Then `IsWaveValid`, `WaveCopy`, `WaveCrop` (in and out of
+negative deltas and small block alignments, header-only ADPCM data, Wave64
+sizes below 24 and short `fmt ` chunks). For each file the native program
+first runs dr_wav itself and counts the files it reads fewer frames of than
+raylib allocates (their zeros are compared like any sample); every file must
+match exactly or fail on both sides. The other contracts above (and the
+2^24-sample limit on zeros) are checked on Jonlib alone. Then `IsWaveValid`, `WaveCopy`, `WaveCrop` (in and out of
 range), `LoadWaveSamples`, `ExportWave` to `.wav` and `.RAW` and
 `ExportWaveAsCode` (the written bytes) on 8-, 16- and 32-bit waves, on CPU-1,
 CPU-2 and JavaScript. `tools/qoa_probe.py` (gate `qoa`) compares native
 `ExportWave(".qoa")` bytes with `Wave.write` on 13 waves (1 to 9 channels,
 partial and multiple QOA frames, sines, noise, full-scale square waves,
 silence and each refusal), then native `LoadWave` with `Wave.load` on those
-encodings and 22 edits of them (truncations, changed frame headers, declared
-totals above and below the data, bad magic, zero fields, `.QOA` names).
+encodings and 27 edits of them (truncations, changed frame headers, sizes
+below the frame header, more than 256 slices, a short first frame, declared
+totals above and below the data and past 2^24, a buffer past 0x7fffffff
+samples, nine channels, bad magic, zero fields, `.QOA` names).
 `tools/decimal_probe.py` (gate `decimal`) compares the
 `%.Nf` formatter with native `printf` on 1024 values at 0, 1, 4, 6 and 9
 decimals, including exact half-way ties, subnormals and the largest values.
@@ -2146,7 +2176,9 @@ filled again.
 
 Not loaded (a typed error, and no stream): WAV sample sizes other than 16,
 24 and 32 bits (raylib streams whatever its shared buffer holds for them),
-what `Wave.decode` refuses, a QOA file that does not hold every frame its
+what `Wave.decode` refuses, a WAV file dr_wav reads fewer frames of than its
+count (`Wav.decode`: raylib reads it again from the start), a QOA file that
+does not hold every frame its
 header counts (qoaplay decodes a frame at a time and would play what is
 there), an MP3 file dr_mp3 does not open or whose first frame it decodes by
 leaving one of its arrays, a module as "XM modules" says, an Ogg Vorbis

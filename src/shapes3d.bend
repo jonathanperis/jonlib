@@ -1,5 +1,5 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 rmodels.c's 3D shape drawing
+# Altered Bend adaptation of raylib 6.2 rmodels.c's 3D shape drawing
 # (DrawLine3D ... DrawGrid; zlib, LICENSES/raylib.txt). Each shape becomes the
 # rlPushMatrix/rlTranslatef/rlRotatef/rlScalef/rlBegin/rlColor4ub/
 # rlVertex3f/rlEnd/rlPopMatrix stream rmodels.c issues, with its F32 vertex
@@ -208,15 +208,11 @@ def bounding_box(low: M.Vector3, high: M.Vector3, +color: U32) -> S.Plan:
 # Angle tables: entry i is cosf/sinf of
 #   kind 0: (DEG2RAD*i)*k       (DrawCylinder, DrawCylinderWires)
 #   kind 1: k*i                 (DrawCylinderEx, DrawCapsule)
-#   kind 2: DEG2RAD*(270 + k*i) (DrawSphereWires rings)
-#   kind 3: DEG2RAD*(360*i/k)   (DrawSphereWires slices)
 
 def angle(kind: U32, +i: F32, +k: F32) -> F32:
   match kind:
     case 0: ((S.deg2rad() * i : F32) * k : F32)
-    case 1: (k * i : F32)
-    case 2: (S.deg2rad() * (270.0 + (k * i : F32) : F32) : F32)
-    case _: (S.deg2rad() * ((360.0 * i : F32) / k : F32) : F32)
+    case _: (k * i : F32)
 
 def table(n: Nat, +gnu: Bool, +kind: U32, +i: F32, +k: F32) -> +List<SC>:
   match n:
@@ -244,89 +240,56 @@ def sphere.turned(n: Nat, +c: F32, +s: F32, +v: M.Vector3) -> M.Vector3:
     case 0n: v
     case 1n+k: sphere.turned(k, c, s, turn.y(c, s, v))
 
-def sphere.slices(n: Nat, +c: F32, +s: F32, +a: M.Vector3, +b: M.Vector3, rest: +List<F.Command>) -> +List<F.Command>:
+# One face of DrawSphereEx (triangles 0-3-1 and 0-2-3) or DrawSphereWires (the
+# longitude, latitude and diagonal lines 0-1, 0-2 and 0-3).
+def sphere.face(wires: Bool, +v0: M.Vector3, +v1: M.Vector3, +v2: M.Vector3, +v3: M.Vector3) -> +List<F.Command>:
+  match wires:
+    case False{}: [vec(v0), vec(v3), vec(v1), vec(v0), vec(v2), vec(v3)]
+    case True{}: [vec(v0), vec(v1), vec(v0), vec(v2), vec(v0), vec(v3)]
+
+def sphere.slices(n: Nat, +wires: Bool, +c: F32, +s: F32, +a: M.Vector3, +b: M.Vector3, rest: +List<F.Command>) -> +List<F.Command>:
   match n:
     case 0n: rest
     case 1n+k:
       +na = turn.y(c, s, a)
       +nb = turn.y(c, s, b)
-      Con{vec(a), Con{vec(nb), Con{vec(b), Con{vec(a), Con{vec(na), Con{vec(nb), sphere.slices(k, c, s, na, nb, rest)}}}}}}
+      List.append(&2, F.Command, sphere.face(wires, a, b, na, nb), sphere.slices(k, wires, c, s, na, nb, rest))
 
-def sphere.rings(n: Nat, +slices: Nat, +ring: SC, +slice: SC, +a: M.Vector3, +b: M.Vector3) -> +List<F.Command>:
+def sphere.rings(n: Nat, +slices: Nat, +wires: Bool, +ring: SC, +slice: SC, +a: M.Vector3, +b: M.Vector3) -> +List<F.Command>:
   match n:
     case 0n: Nil{}
     case 1n+k:
       +last = sphere.turned(slices, SC.cos(slice), SC.sin(slice), b)
-      sphere.slices(slices, SC.cos(slice), SC.sin(slice), a, b,
-        sphere.rings(k, slices, ring, slice, last, turn.z(SC.cos(ring), SC.sin(ring), last)))
+      sphere.slices(slices, wires, SC.cos(slice), SC.sin(slice), a, b,
+        sphere.rings(k, slices, wires, ring, slice, last, turn.z(SC.cos(ring), SC.sin(ring), last)))
 
-def sphere.drawn(valid: Bool, +rings: Nat, +slices: Nat, +ring: SC, +slice: SC, center: M.Vector3, +radius: F32, +color: U32) -> S.Plan:
+def sphere.drawn(valid: Bool, +wires: Bool, +rings: Nat, +slices: Nat, +ring: SC, +slice: SC, center: M.Vector3, +radius: F32, +color: U32) -> S.Plan:
   match valid:
     case False{}: S.Plan.refused()
     case True{}:
-      placed(center, T.scale(radius, radius, radius), S.Plan.plain(3, S.Plan.only(True{},
-        Con{F.Color{color}, sphere.rings(rings, slices, ring, slice, M.Vector3{0.0, 1.0, 0.0}, M.Vector3{SC.sin(ring), SC.cos(ring), 0.0})})))
+      placed(center, T.scale(radius, radius, radius), S.Plan.plain(Bool.pick(U32, wires, 2, 3), S.Plan.only(True{},
+        Con{F.Color{color}, sphere.rings(rings, slices, wires, ring, slice, M.Vector3{0.0, 1.0, 0.0}, M.Vector3{SC.sin(ring), SC.cos(ring), 0.0})})))
 
-# DrawSphereEx(center, radius, int rings, int slices): the vertices rotated by
-# cosf/sinf of DEG2RAD*(180/(rings + 1)) and DEG2RAD*(360/slices).
-def sphere(+gnu: Bool, center: M.Vector3, +radius: F32, +rings: F32, +slices: F32, +color: U32) -> S.Plan:
+# DrawSphereEx / DrawSphereWires(center, radius, int rings, int slices) since
+# raylib 6.2: for i < rings and j < slices, the vertices rotated by cosf/sinf
+# of DEG2RAD*(180/rings) and DEG2RAD*(360/slices), as triangles or as three
+# lines per face (6.0 used 180/(rings + 1), rings + 1 bands and, for the wires,
+# per-vertex angles up to 450 degrees). Nothing is drawn for rings or slices
+# below 1.
+def sphere.counted(+gnu: Bool, +wires: Bool, center: M.Vector3, +radius: F32, +rings: F32, +slices: F32, +color: U32) -> S.Plan:
   +r = S.int.of(rings)
   +l = S.int.of(slices)
-  +ring = sc(gnu, (S.deg2rad() * (180.0 / (r + 1.0 : F32) : F32) : F32))
+  +ring = sc(gnu, (S.deg2rad() * (180.0 / r : F32) : F32))
   +slice = sc(gnu, (S.deg2rad() * (360.0 / l : F32) : F32))
-  +drawn = (r >= 0.0 : F32) && (l >= 1.0 : F32)
-  sphere.drawn(count.valid(rings, 4095.0) && count.valid(slices, 4096.0) && (Bool.not(drawn) || (SC.ok(ring) && SC.ok(slice))),
-    count.nat((r + 1.0 : F32)), count.nat(l), ring, slice, center, radius, color)
+  +drawn = (r >= 1.0 : F32) && (l >= 1.0 : F32)
+  sphere.drawn(count.valid(rings, 4096.0) && count.valid(slices, 4096.0) && (Bool.not(drawn) || (SC.ok(ring) && SC.ok(slice))),
+    wires, count.nat(r), count.nat(l), ring, slice, center, radius, color)
 
-def wire.point(+ring: SC, +slice: SC) -> F.Command:
-  v3((SC.cos(ring) * SC.sin(slice) : F32), SC.sin(ring), (SC.cos(ring) * SC.cos(slice) : F32))
+def sphere(+gnu: Bool, center: M.Vector3, +radius: F32, +rings: F32, +slices: F32, +color: U32) -> S.Plan:
+  sphere.counted(gnu, False{}, center, radius, rings, slices, color)
 
-def wire.slices(slices: +List<SC>, +a: SC, +b: SC, +s: SC, rest: +List<F.Command>) -> +List<F.Command>:
-  match slices:
-    case Nil{}: rest
-    case Con{+t, more}: Con{wire.point(a, s), Con{wire.point(b, t), Con{wire.point(b, t), Con{wire.point(b, s), Con{wire.point(b, s),
-      Con{wire.point(a, s), wire.slices(more, a, b, t, rest)}}}}}}
-
-def wire.slices.start(slices: +List<SC>, +a: SC, +b: SC, rest: +List<F.Command>) -> +List<F.Command>:
-  match slices:
-    case Nil{}: rest
-    case Con{+s, more}: wire.slices(more, a, b, s, rest)
-
-def wire.rings(rings: +List<SC>, +a: SC, +slices: +List<SC>) -> +List<F.Command>:
-  match rings:
-    case Nil{}: Nil{}
-    case Con{+b, more}: wire.slices.start(slices, a, b, wire.rings(more, b, slices))
-
-def wire.rings.start(rings: +List<SC>, +slices: +List<SC>) -> +List<F.Command>:
-  match rings:
-    case Nil{}: Nil{}
-    case Con{+a, more}: wire.rings(more, a, slices)
-
-def sphere_wires.drawn(valid: Bool, +rings: +List<SC>, +slices: +List<SC>, center: M.Vector3, +radius: F32, +color: U32) -> S.Plan:
-  match valid:
-    case False{}: S.Plan.refused()
-    case True{}:
-      placed(center, T.scale(radius, radius, radius),
-        S.Plan.plain(2, S.Plan.only(True{}, Con{F.Color{color}, wire.rings.start(rings, slices)})))
-
-def sphere_wires.tables(+gnu: Bool, +r: F32, +l: F32, center: M.Vector3, +radius: F32, +color: U32) -> S.Plan:
-  +drawn = (r >= F32.neg(1.0) : F32) && (l >= 1.0 : F32)
-  +rings = Bool.pick(+List<SC>, drawn, table(count.nat((r + 3.0 : F32)), gnu, 2, 0.0, (180.0 / (r + 1.0 : F32) : F32)), Nil{})
-  +slices = Bool.pick(+List<SC>, drawn, table(count.nat((l + 1.0 : F32)), gnu, 3, 0.0, l), Nil{})
-  sphere_wires.drawn(table.ok(rings) && table.ok(slices), rings, slices, center, radius, color)
-
-def sphere_wires.counted(valid: Bool, +gnu: Bool, +r: F32, +l: F32, center: M.Vector3, +radius: F32, +color: U32) -> S.Plan:
-  match valid:
-    case False{}: S.Plan.refused()
-    case True{}: sphere_wires.tables(gnu, r, l, center, radius, color)
-
-# DrawSphereWires(center, radius, int rings, int slices): for i < rings + 2
-# and j < slices, three lines between the points at DEG2RAD*(270 +
-# 180/(rings + 1)*i) and DEG2RAD*(360*j/slices). The ring angles reach 450
-# degrees: the glibc profiles draw them (glibc's own sinf/cosf), the Apple
-# profile (one turn) refuses every drawn sphere.
 def sphere_wires(+gnu: Bool, center: M.Vector3, +radius: F32, +rings: F32, +slices: F32, +color: U32) -> S.Plan:
-  sphere_wires.counted(count.valid(rings, 4094.0) && count.valid(slices, 4096.0), gnu, S.int.of(rings), S.int.of(slices), center, radius, color)
+  sphere.counted(gnu, True{}, center, radius, rings, slices, color)
 
 # -----------------------------------------------------------------------------
 # Cylinders (DrawCylinder, DrawCylinderWires)
@@ -538,20 +501,25 @@ def capsule.drawn(valid: Bool, +wires: Bool, +sphere: Bool, +start: M.Vector3, +
     case True{}: S.Plan.plain(Bool.pick(U32, wires, 2, 3), S.Plan.only(True{},
       Con{F.Color{color}, capsule.body(wires, sphere, start, end, direction, radius, rings, slices)}))
 
-def capsule.counted(valid: Bool, +gnu: Bool, +wires: Bool, +n: F32, +r: F32, +start: M.Vector3, +end: M.Vector3, +radius: F32, +color: U32) -> S.Plan:
+def capsule.counted(valid: Bool, +gnu: Bool, +wires: Bool, +r: F32, +n: F32, +start: M.Vector3, +end: M.Vector3, +radius: F32, +color: U32) -> S.Plan:
   match valid:
     case False{}: S.Plan.refused()
     case True{}:
       +difference = M.Vector3.subtract(end, start)
       +sphere = zero(difference)
       +slices = table(count.nat((n + 1.0 : F32)), gnu, 1, 0.0, (pi2() / n : F32))
-      +rings = Bool.pick(+List<SC>, (r >= 1.0 : F32), table(count.nat((r + 1.0 : F32)), gnu, 1, 0.0, ((F.float(1078530011) * 0.5 : F32) / r : F32)), Nil{})
-      +used = (r >= 1.0 : F32) || Bool.not(sphere)
-      capsule.drawn((Bool.not(used) || table.ok(slices)) && table.ok(rings), wires, sphere, start, end,
+      +rings = table(count.nat((r + 1.0 : F32)), gnu, 1, 0.0, ((F.float(1078530011) * 0.5 : F32) / r : F32))
+      capsule.drawn(table.ok(slices) && table.ok(rings), wires, sphere, start, end,
         Bool.pick(M.Vector3, sphere, M.Vector3{0.0, 1.0, 0.0}, difference), radius, rings, slices, color)
 
-# DrawCapsule / DrawCapsuleWires(start, end, radius, int slices, int rings):
-# slices below 3 become 3 (rings are not clamped); both hemispheres, then the
-# middle unless start equals end (a sphere around (0, 1, 0)-based axes).
-def capsule(+gnu: Bool, +wires: Bool, +start: M.Vector3, +end: M.Vector3, +radius: F32, +slices: F32, +rings: F32, +color: U32) -> S.Plan:
-  capsule.counted(count.valid(slices, 4096.0) && count.valid(rings, 4096.0), gnu, wires, cyl.sides(slices), S.int.of(rings), start, end, radius, color)
+# rings below 1 become 1 (raylib 6.2).
+def capsule.rings(+rings: F32) -> F32:
+  +r = S.int.of(rings)
+  Bool.pick(F32, (r < 1.0 : F32), 1.0, r)
+
+# DrawCapsule / DrawCapsuleWires(start, end, radius, int rings, int slices)
+# since raylib 6.2 (6.0 took slices before rings and did not clamp rings):
+# slices below 3 become 3 and rings below 1 become 1; both hemispheres, then
+# the middle unless start equals end (a sphere around (0, 1, 0)-based axes).
+def capsule(+gnu: Bool, +wires: Bool, +start: M.Vector3, +end: M.Vector3, +radius: F32, +rings: F32, +slices: F32, +color: U32) -> S.Plan:
+  capsule.counted(count.valid(rings, 4096.0) && count.valid(slices, 4096.0), gnu, wires, capsule.rings(rings), cyl.sides(slices), start, end, radius, color)

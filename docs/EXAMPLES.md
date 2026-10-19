@@ -13,7 +13,6 @@ Totals: 223 examples; 212 ported, 11 ready, 0 waiting.
 
 | API | Examples waiting on it |
 |---|---|
-| `ImageDrawImagePro` | 1 |
 
 ## Examples
 
@@ -117,7 +116,7 @@ Totals: 223 examples; 212 ported, 11 ready, 0 waiting.
 | `textures_magnifying_glass` | textures | ported |  |
 | `textures_logo_raylib` | textures | ported |  |
 | `textures_srcrec_dstrec` | textures | ported |  |
-| `textures_image_drawing` | textures | ported | `ImageDrawImagePro` |
+| `textures_image_drawing` | textures | ported |  |
 | `textures_image_generation` | textures | ported |  |
 | `textures_image_loading` | textures | ported |  |
 | `textures_image_processing` | textures | ported |  |

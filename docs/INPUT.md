@@ -96,8 +96,8 @@ raylib's C is undefined (see [Refusals](#refusals)).
 | `GetMouseWheelMove(V)` | `Input.get_mouse_wheel_move -> F32`, `Input.get_mouse_wheel_move_v` |
 | `Show/HideCursor`, `Enable/DisableCursor`, `IsCursorHidden/OnScreen` | `Input.show_cursor`, `hide_cursor`, `enable_cursor`, `disable_cursor`, `is_cursor_hidden`, `is_cursor_on_screen` |
 | `GetTouchX/Y`, `GetTouchPosition`, `GetTouchPointId`, `GetTouchPointCount` | `Input.get_touch_x/_y -> Maybe<U32>`, `Input.get_touch_position -> Maybe<M.Vector2>`, `Input.get_touch_point_id -> Maybe<U32>`, `Input.get_touch_point_count` |
-| `IsGamepadAvailable`, `IsGamepadButton*`, `GetGamepadName` | `Input.is_gamepad_available -> Maybe<Bool>`, `Input.is_gamepad_button_pressed/down/released/up -> Maybe<Bool>`, `Input.get_gamepad_name -> Maybe<String>` |
-| `GetGamepadButtonPressed`, `GetGamepadAxisCount`, `GetGamepadAxisMovement` | `Input.get_gamepad_button_pressed`, `Input.get_gamepad_axis_count -> Maybe<U32>`, `Input.get_gamepad_axis_movement -> Maybe<F32>` |
+| `IsGamepadAvailable`, `IsGamepadButton*`, `GetGamepadName` | `Input.is_gamepad_available -> Maybe<Bool>` (always `Some` since raylib 6.2), `Input.is_gamepad_button_pressed/down/released/up -> Maybe<Bool>`, `Input.get_gamepad_name -> Maybe<String>` (`None` is NULL) |
+| `GetGamepadButtonPressed`, `GetGamepadAxisCount`, `GetGamepadAxisMovement` | `Input.get_gamepad_button_pressed`, `Input.get_gamepad_axis_count -> Maybe<U32>` (always `Some` since raylib 6.2), `Input.get_gamepad_axis_movement -> Maybe<F32>` |
 | `ProcessGestureEvent` / `UpdateGestures` | `Gestures.process_event_for(libm, core, event, now)` (`process_event`: Apple), `Gestures.update(core, now)` |
 | `SetGesturesEnabled`, `IsGestureDetected`, `GetGestureDetected` | `Gestures.set_enabled`, `Gestures.is_detected`, `Gestures.get_detected` |
 | `GetGestureHoldDuration`, `GetGestureDrag*`, `GetGesturePinch*` | `Gestures.get_hold_duration(core, now) -> Maybe<F32>`, `get_drag_vector`, `get_drag_angle`, `get_pinch_vector`, `get_pinch_angle` |
@@ -152,7 +152,10 @@ ids stay 0 on the memory platform; indexes from 8 answer (-1, -1) and -1.
 ready answers false and the rest values (-1 for the trigger axes 4 and 5, 0
 otherwise); an axis value replaces the rest value when its movement (signed
 for triggers, absolute otherwise) is larger. The axis count, last button and
-names (empty) are never set on the memory platform.
+names (empty) are never set on the memory platform. raylib 6.2 checks
+`gamepad >= 0` in every gamepad query: an index outside 0..3, negative
+included, is not available, its buttons answer false, its axes the rest
+values, its axis count 0 and its name NULL (`None`).
 
 **The clock.** The `Core` keeps the clock `GetTime()` last answered in
 `CORE.Time.current` (which raylib only writes): InitWindow's `now`,
@@ -176,8 +179,11 @@ clock after the wait; then `IsKeyPressed(KEY_F12)` takes a screenshot (with
 the 260-key quirk a held F12 shoots every frame) and the frame counter
 increments. `GetFrameTime` is `(float)frame`. `GetFPS` keeps 30 samples of
 `frameTime/30` taken at most every `0.5f/30` seconds, resets them while the
-frame counter is 0, answers 0 while the frame time is 0 and
-`(int)roundf(1.0f/average)` otherwise. `WaitTime` itself (the sleep) is the
+frame counter is 0, answers 0 while the frame time is 0 and, since raylib
+6.2, counts its samples (`captureFramesCounted`, up to 30): 0 before the
+first sample, else `(int)roundf(counted/(average*30))` (the unsigned count
+converted to float, `average*30.0f`, then the float division), so the first
+frames are no longer averaged with the empty history. `WaitTime` itself (the sleep) is the
 driver's: with `SUPPORT_PARTIALBUSY_WAIT_LOOP` raylib sleeps
 `seconds - seconds*0.05` and busy-waits the rest.
 
@@ -212,7 +218,10 @@ later conditions.
 lines longer than 255 bytes continue as new "lines", a NUL ends a line for
 `sscanf`, a last line without a newline is never processed, `c` lines are
 read with `%i` but the count always becomes the number of `e` lines, and each
-`e` line fills the fields `sscanf` converts (others stay 0). The binary
+`e` line fills the fields `sscanf` converts (others stay 0). Since raylib 6.2
+the description is read with `%63[^\n]` (at most 63 bytes into
+`eventDesc[64]`), and `e` lines met once the list holds its capacity (16384)
+are skipped unread, with a warning. The binary
 `.rae` reader and writer are commented out in the pinned source; there is no
 binary format to port.
 
@@ -224,19 +233,16 @@ verified domain:
 - events whose index is outside raylib's arrays (keys outside 0..511, mouse
   buttons outside 0..7, gamepads outside 0..3, gamepad buttons outside 0..31,
   axes outside 0..7, touch points outside 0..7);
-- a negative gamepad index in any gamepad query, a negative button or axis of
-  a ready gamepad, `GetGamepadAxisCount`/`GetGamepadName` outside 0..3, a
-  negative touch index;
+- a negative button or axis of a ready gamepad, a negative touch index;
 - C int conversions out of range: `GetMouseX/Y`, `GetTouchX/Y`, `GetFPS`
-  before its first sample (`1/0`), recorded positions and axes, the key callback
-  for keys above 511;
+  (a history summing to 0 or below), recorded positions and axes, the key
+  callback for keys above 511;
 - starting a recording without a list (raylib writes through NULL at the next
   `EndDrawing`); an `after` clock before the wait's destination (raylib would
   keep waiting); time values outside the binary64 helpers' domain;
 - exporting an event type above 23 (its name would be read out of bounds);
-  loading a file whose numbers overflow an int, whose description exceeds
-  `eventDesc[64]`, with more than 16384 events, or with a `c 0x` without a hex
-  digit (C libraries disagree);
+  loading a file whose numbers overflow an int in a line it scans, or with a
+  `c 0x` without a hex digit (C libraries disagree);
 - gesture angles whose `atan2f` arguments or result are subnormal or
   nonfinite for the profile.
 
@@ -245,7 +251,7 @@ verified domain:
 | Gate | Tool | Compares |
 |---|---|---|
 | `window` | `tools/window_probe.py` | `GetTime` after InitWindow, BeginDrawing, EndDrawing and `WaitTime` (negative, zero, fractional and -infinity seconds, with the shim ending the sleep at raylib's destination), the NaN/+infinity/over-4096 contracts, and the input setters above ([DRIVER.md](DRIVER.md#window-state)) |
-| `input` | `tools/input_probe.py` | 37 scripts (1015 operations, 381 rows, 20 refusal contracts) row for row against the shimmed memory-platform raylib on CPU-1, CPU-2 and JavaScript; on macOS the 29 scripts whose clock stays 0 also against the unshimmed build |
+| `input` | `tools/input_probe.py` | 35 scripts (1018 operations, 383 rows, 17 refusal contracts) row for row against the shimmed memory-platform raylib on CPU-1, CPU-2 and JavaScript; on macOS the 27 scripts whose clock stays 0 also against the unshimmed build |
 
 ```sh
 python3 tools/input_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
@@ -260,8 +266,10 @@ rest values and trigger axes, window and action events, target-FPS waits and
 irregular frame times through `GetFPS`'s averaging, clocks near 10^6 s, taps,
 double taps, holds, drags, swipes in every direction, pinches, three-point and
 cancel events, gesture flags, the all-zero macOS clock, recording (including
-the capacity cut mid-frame), export bytes, crafted event files and replay of a
-loaded list. Queries are recorded both after playing events (before
+the capacity cut mid-frame), export bytes, crafted event files (long
+descriptions, lines past the 16384th event) and replay of a loaded list,
+`GetFPS` before and at its first sample, and every query row asks gamepads
+-1..4. Queries are recorded both after playing events (before
 `EndDrawing`, the order raylib's `core_automation_events` example uses) and
 after `EndDrawing`'s poll. Before each `EndDrawing` Jonlib's
 `Core.frame_wait` is mapped to the sleep `WaitTime` requests on the host
@@ -270,7 +278,10 @@ and compared with the request the shim records.
 
 `LAWS.bend` states the parts the memory platform cannot inject: the 16-entry
 queue bound, key repeats set by the key callback until the next poll, the
-260-key copy and `UpdateGestures`' tap-to-hold and swipe reset.
+260-key copy and `UpdateGestures`' tap-to-hold and swipe reset; it also
+states raylib 6.2's gamepad index checks, `GetFPS`'s sample count (capped at
+30, 0 before the first sample) and the event-file reader's 63-byte
+description and skipped lines past the capacity.
 
 ## Gaps
 

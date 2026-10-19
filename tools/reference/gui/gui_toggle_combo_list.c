@@ -1,7 +1,8 @@
 /*
  * Probe-only raygui program for tools/examples_probe.py (category gui); not a
  * raylib example. GuiToggleSlider, GuiComboBox and GuiListView, enabled and
- * disabled, under scripted input; the port is
+ * disabled, and a GuiToggleGroup of two rows with GROUP_WIDTH_FULL (raygui
+ * 5.1-dev), under scripted input; the port is
  * tests/gui/gui_toggle_combo_list.bend. raygui.h is the pinned raylib's
  * (examples/core/raygui.h, zlib/libpng, Copyright (c) 2014-2025 Ramon
  * Santamaria (@raysan5)).
@@ -17,6 +18,7 @@ int main(void)
 
     int toggle = 0, toggles = 0, combo = 0, scroll = 0, active = -1;
     int toggleOff = 1, comboOff = 3, scrollOff = 0, activeOff = 0;
+    int group = 1;
 
     while (!WindowShouldClose())
     {
@@ -31,6 +33,10 @@ int main(void)
             GuiComboBox((Rectangle){ 10, 180, 120, 24 }, "Only;Two", &comboOff);
             GuiListView((Rectangle){ 220, 150, 170, 60 }, NULL, &scrollOff, &activeOff);
             GuiEnable();
+            GuiSetStyle(TOGGLE, GROUP_WIDTH_FULL, 1);
+            GuiToggleGroup((Rectangle){ 10, 230, 200, 24 }, "A;B;C\nD;E", &group);
+            GuiSetStyle(TOGGLE, GROUP_WIDTH_FULL, 0);
+            DrawText(TextFormat("%d", group), 220, 240, 10, BLACK);
         EndDrawing();
     }
 

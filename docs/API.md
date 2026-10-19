@@ -314,7 +314,7 @@ compares every format-generic operation on formats 1..13 with raylib.
 |---|---|
 | `Surface.flip_horizontal/flip_vertical(surface) -> Surface` | Reorders stored pixels. |
 | `Surface.rotate_cw/rotate_ccw(surface) -> Surface` | Quarter turns; width and height swap. |
-| `Surface.extract(surface, rectangle) -> Surface & Maybe<Surface>` | `ImageFromImage` profile: keeps the original; positive integral in-bounds rectangles, otherwise `None`. |
+| `Surface.extract(surface, rectangle) -> Surface & Maybe<Surface>` | `ImageFromImage` (raylib 6.2 validation): keeps the original; `x, y >= 0`, `width, height >= 1` and `(int)x + (int)width <= image width` (same for y), fractional fields truncated; otherwise `None` (raylib's empty image; a width or height in (0, 1), which raylib turns into a 0-sized image, is `None` too). |
 | `Surface.crop(surface, rectangle)` | Clips an integral rectangle as raylib does; an origin strictly beyond the right/bottom edge is the reference no-op. |
 | `Surface.resize_canvas(surface, width, height, offset_x, offset_y, fill)` | Raw copy into a canvas filled with `SetPixelColor(fill)` (float canvases, formats 8..13, stay zero); dimensions 1..4096, bounded integral offsets, positive overlap for changed sizes; equal dimensions are a no-op. |
 | `Surface.to_pot(surface, fill)` | Canvas expansion to the next power-of-two dimensions; already-POT images are unchanged. |
@@ -345,21 +345,30 @@ returns the original owner.
 | `Surface.clear(surface, color)` | `ImageClearBackground`. |
 | `Surface.draw_pixel(surface, x, y, color)` / `draw_pixel_v` | Stores one in-bounds pixel; clips outside coordinates; vectors truncate. |
 | `Surface.draw_rectangle(surface, x, y, width, height, color)` / `_v` / `_rec` | `ImageDrawRectangle` for the integer profile; `_v` truncates, `_rec` clips bounded fields before conversion. |
-| `Surface.draw_rectangle_lines(surface, rectangle, thickness, color)` | Four reference edge strips; thickness 0..32767. |
+| `Surface.draw_rectangle_lines_ex(surface, rectangle, thickness, color)` | `ImageDrawRectangleLinesEx`: four reference edge strips; thickness 0..32767. |
+| `Surface.draw_rectangle_lines(surface, x, y, width, height, color)` | `ImageDrawRectangleLines` (raylib 6.2: integer rectangle, `ImageDrawRectangleLinesEx` with thickness 1). |
+| `Surface.draw_line_strip(surface, points, color)` | `ImageDrawLineStrip`: `ImageDrawLineV` between consecutive points; fewer than two draw nothing. |
 | `Surface.draw_circle(surface, cx, cy, radius, color)` / `_v` / `draw_circle_lines` / `_lines_v` | Midpoint coverage and outlines, radius U32; vector centers truncate. |
 | `Surface.draw_line(surface, x0, y0, x1, y1, color)` / `_v` / `_ex` | Fixed-point stepping including the final endpoint, short axis rounded; `_v` adds a half then truncates; `_ex` draws dominant-axis strips, thickness 0..32767. |
 | `Surface.draw_triangle(surface, v1, v2, v3, color)` / `draw_triangle_lines` / `draw_triangle_fan` / `draw_triangle_strip` | Truncated bounds and edge steps, both windings, inclusive edges; fans/strips with fewer than three points draw nothing. |
-| `Surface.draw_triangle_ex(surface, v1, v2, v3, c1, c2, c3)` | Byte-quantized barycentric colors, each stored as `ImageDrawPixel` encodes it. |
+| `Surface.draw_triangle_gradient(surface, v1, v2, v3, c1, c2, c3)` | `ImageDrawTriangleGradient` (6.0's `ImageDrawTriangleEx`): byte-quantized barycentric colors, each stored as `ImageDrawPixel` encodes it. |
+| `Surface.draw_rectangle_pro(surface, rectangle, origin, rotation, color)` / `draw_rectangle_pro_for(libm, ...)` | `ImageDrawRectanglePro` (raylib 6.2): every pixel of the turned rectangle's integer bounding box whose center, turned back about `rectangle + origin`, lies in `[-origin, size - origin)`. Bounded finite fields and a rotation whose `DEG2RAD` multiple the `M.Libm` profile verifies, otherwise `InvalidRequest`; nothing for a width or height `<= 0`. |
+| `Surface.draw_rectangle_gradient_ex(surface, rectangle, c1, c2, c3, c4)` | `ImageDrawRectangleGradientEx` (raylib 6.2): pixels `floorf(x)..ceilf(x + width)` (clipped), bilinear F32 weights of the clamped `tx`, `ty` on top-left, bottom-left, bottom-right and top-right colors, channels truncated. Bounded finite fields (`InvalidRequest`). |
+| `Surface.draw_circle_gradient(surface, center, radius, inner, outer)` | `ImageDrawCircleGradient` (raylib 6.2): pixels whose center lies within the radius, `inner + (outer - inner)*sqrtf(d²)/radius` per channel, truncated. Bounded finite center and radius (`InvalidRequest`); nothing for a radius `<= 0`. |
 
-Every drawing call consumes the owner and returns the updated one.
+Every drawing call consumes the owner and returns the updated one (the 6.2
+kernels above inside a `Result`, whose failure hands it back).
 
 ### Composition, masks, rotation and mipmaps
 
 | Operation | Contract |
 |---|---|
-| `Surface.draw_image(destination, source, x, y, tint)` | Full-source unscaled composition with integer `ColorAlphaBlend`, any formats; returns `Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>` with destination first and the unchanged source. A wide float source needs samples in 0..1 (`OutOfDomain`). |
-| `Surface.draw_image_region(destination, source, rectangle, x, y, tint)` | Valid unscaled source subrectangles with integer placement. |
+| `Surface.draw_image(destination, source, x, y, tint)` | `ImageDrawImage` (integer position): full-source unscaled composition with integer `ColorAlphaBlend`, any formats; returns `Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>` with destination first and the unchanged source. A wide float source needs samples in 0..1 (`OutOfDomain`). |
+| `Surface.draw_image_rec(destination, source, rectangle, position, tint)` | `ImageDrawImageRec`: `draw_image_rect` into `{position, rectangle's size}`. |
+| `Surface.draw_image_pro(destination, source, source_rectangle, destination_rectangle, origin, rotation, tint)` | `ImageDrawImagePro` (6.0's `ImageDraw`): origin and rotation are not implemented upstream and are ignored; the rest is `draw_image_rect`. |
+| `Surface.draw_image_region(destination, source, rectangle, x, y, tint)` | Valid unscaled source subrectangles with integer placement (a strict `ImageDrawImageRec` profile). |
 | `Surface.draw_image_rect(destination, source, source_rectangle, destination_rectangle, tint)` | Bounded finite rectangles, including fractional fields; reference clipping and default filtered scaling in the source format. |
+| `Surface.draw_image_ex(destination, source, position, rotation, scale, tint)` / `draw_image_ex_for(libm, ...)` | `ImageDrawImageEx` (raylib 6.2): the source scaled and turned about its top-left corner at the position; each destination pixel of the turned box samples the nearest source pixel, skips alpha zero and stores `ColorAlphaBlend(GetImageColor(dst), GetImageColor(src), tint)` with `ImageDrawPixel`. Word formats (1..8, 11) for both images (`UnsupportedFormat` otherwise); bounded finite position, nonzero bounded scale and a verified rotation (`InvalidRequest`). |
 | `Surface.alpha_mask(destination, mask)` | Same-size mask converted to GRAYSCALE becomes the alpha of a GRAY_ALPHA (from GRAYSCALE) or R8G8B8A8 destination; mismatched sizes are `InvalidSize`, conversion failures `OutOfDomain`. |
 | `Surface.alpha_clear(surface, color, threshold)` | Finite threshold 0..1: an inclusive alpha cutoff in GRAY_ALPHA, R5G5B5A1, R4G4B4A4, R8G8B8A8, R32G32B32A32 and R16G16B16A16 with raylib's per-format replacement words; other formats are unchanged. raylib packs R5G5B5A1/R4G4B4A4 colors from `round(channel*31)`/`round(channel*15)` byte casts, undefined above 255, so those formats require RGB channels up to 8 (and up to 17 with alpha for R4G4B4A4). Other requests are `InvalidRequest`. |
 | `Surface.mipmaps(surface) -> Image.Mipmaps` / `Image.Mipmaps.entries/unload` | Base-to-1x1 chain, each level `resize` of the previous one in the image's format. See [MIPMAPS.md](MIPMAPS.md). |
@@ -387,7 +396,7 @@ HDR); use `Surface.colors` or `Surface.format(surface, 7)` for RGBA8.
 Drawing coordinates and rectangle extents are represented as **F32 but must be
 finite integers in -32767..32767**. Radius is **0..32767**. This permits negative
 positions while Bend has no native signed integer type. The vector wrappers,
-`draw_rectangle_rec`, `draw_rectangle_lines` and `draw_image_rect` accept bounded
+`draw_rectangle_rec`, `draw_rectangle_lines_ex` and `draw_image_rect` accept bounded
 finite fractional fields with the conversion rules above, as do filled triangle
 vertices (truncated like raylib's `int` casts). NaN/infinity and larger values are outside the drawing profile.
 Surface operations do not promise successful allocation when the process runs
@@ -434,7 +443,9 @@ source must be separately owned surfaces. Both are returned; the source's pixels
 are unchanged and can be used for another draw. Use `Surface.copy` when a distinct
 copy is needed.
 
-This is a **partial ImageDraw profile**: R8G8B8A8 and one mip level. The
+raylib 6.2 renamed `ImageDraw` to `ImageDrawImagePro` (with origin and
+rotation it ignores) and added `ImageDrawImage`, `ImageDrawImageRec` and the
+new `ImageDrawImageEx` kernel. This is a **partial ImageDrawImagePro profile**: R8G8B8A8 and one mip level. The
 `draw_image_rect` path clips source fields first, compares truncated extents to
 decide whether to resize, then clips the destination before truncating pixel
 indices/counts. It accepts fractional rectangles when the clipped source has at
@@ -497,9 +508,10 @@ the file (the owner comes back). Writers consume accepted owners and close the
 handle before returning.
 
 The owner invariant excludes zero-sized images, so empty crop results return an
-error. `ImageFromImage` has no clipping in raylib; extraction requires an
-in-bounds rectangle here. Region drawing rejects out-of-bounds source
-rectangles; callers wanting clipping/scaling use `draw_image_rect`.
+error. `ImageFromImage` has no clipping in raylib; since 6.2 it validates the
+rectangle and truncates fractional fields, and so does `extract`. Region
+drawing rejects out-of-bounds source rectangles; callers wanting
+clipping/scaling use `draw_image_rect`.
 
 ### Ownership and proof boundary
 

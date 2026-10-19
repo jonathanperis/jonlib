@@ -34,13 +34,17 @@ maps it to the sleep request WaitTime makes on the host (usleep microseconds
 on macOS, nanosleep seconds/nanoseconds on Linux) and compares that with the
 recorded request.
 
+raylib 6.2 bounds-checks gamepad indexes, so the query rows ask gamepads -1..4
+(GetGamepadName's NULL prints null); GetFPS answers 0 before its first sample;
+LoadAutomationEventList reads at most 63 description bytes and skips "e" lines
+past the list's 16384 events unread: those are compared, not contracts.
+
 Contracts (Jonlib must answer null; never run natively): event indexes outside
-raylib's arrays, negative gamepad/touch indexes, GetMouseX/GetTouchX
-conversions out of int range, GetFPS before its first sample (1/0), recording
-an (int) position of 2^31, starting a recording without a list, a wait end
-before the WaitTime destination, export of an event type above 23, and event
-files with out-of-range numbers, an over-long description, "0x" without hex
-digits or more than 16384 events.
+raylib's arrays, a negative button or axis of a ready gamepad, negative touch
+indexes, GetMouseX/GetTouchX conversions out of int range, recording an (int)
+position of 2^31, starting a recording without a list, a wait end before the
+WaitTime destination, export of an event type above 23, and event files with
+out-of-range numbers or "0x" without hex digits.
 
 The rgestures.h swipe and pinch angles use atan2f: the M.Libm profile is the
 host's, selected from native controls (tools/native_profiles.py). CPU-1, CPU-2
@@ -206,6 +210,8 @@ def timing_scripts():
     ops = frame(1e6, 1e6 + 0.25) + [('query',), ('fps',)] + frame(1e6 + 0.25, 1e6 + 0.25) + [('query',), ('fps',)]
     ops += frame(2e6, 2e6 + 1e-9) + [('query',), ('fps',)]
     out.append(script('timing-large', ops, start=1e6))
+    # GetFPS before its first sample (raylib 6.2: 0; 6.0 rounded 1/0).
+    out.append(script('fps-before-sample', frame(0.0, 0.001) + [('clock', 0.002), ('fps',), ('clock', 0.02), ('fps',)]))
     return out
 
 
@@ -279,7 +285,7 @@ EXPORTED = (b'#\n# comment\n#\n\nc 4\ne 0 2 65 0 0 0 // Event: INPUT_KEY_DOWN\ne
 
 
 def load_texts():
-    """(name, file bytes, whether raylib's reader is defined on it, whether its events all have a name)."""
+    """(name, file bytes, whether raylib's reader is defined on it, whether its events all have a name; None: not exported)."""
     long_line = b'e 1 2 3 4 5 6 ' + b'x' * 250 + b'\n'
     return [
         ('exported', EXPORTED, True, True),
@@ -293,12 +299,15 @@ def load_texts():
         ('long-line-split', b'c 1\n' + b'e 5 5 5 5 5 5\n' + b'z' * 254 + b'e 2 2 2 2 2 2\n' + b'x' * 255 + b'e 3 3 3 3 3 3\n', True, True),
         ('type-24', b'e 1 24 0 0 0 0\n', True, False),
         ('empty', b'', True, True),
-        ('description-overflow', long_line, False, False),
+        ('description-overflow', long_line, True, True),
+        ('description-63-64', b'e 1 2 3 4 5 6 ' + b'd' * 64 + b'\ne 2 3 4 5 6 7 ' + b'd' * 63 + b'\ne 3 1 1 1 1 1 d\n', True, True),
         ('int-overflow', b'e 2147483648 1 1 1 1 1\n', False, False),
         ('int-underflow', b'e 1 -2147483649 1 1 1 1\n', False, False),
         ('count-overflow', b'c 0x80000000\n', False, False),
         ('hex-without-digits', b'c 0x\ne 1 1 1 1 1 1\n', False, False),
-        ('too-many-events', b'e 1\n' * 16385, False, False),
+        # 16384 events fill the list; the next lines (one with an out-of-range
+        # number) are skipped unread.
+        ('too-many-events', b'e 1\n' * 16385 + b'e 2147483648 1 1 1 1 1\n', True, None),
     ]
 
 
@@ -307,7 +316,7 @@ def load_scripts():
     ops = []
     for name, text, defined, named in load_texts():
         ops.append(('load', name, text, defined))
-        if defined:
+        if defined and named is not None:
             ops.append(('export', named))
     out.append(script('load-export', ops))
     ops = [('load', 'replay', EXPORTED, True), ('list',)]
@@ -326,14 +335,11 @@ def contract_scripts():
         ('gamepad-connect-negative', [ev(PAD_DISCONNECT, -1)]), ('gamepad-button-32', [ev(PAD_DOWN, 0, 32)]),
         ('gamepad-axis-8', [ev(PAD_AXIS, 1, 8, 0)]), ('touch-down-8', [ev(TOUCH_DOWN, 8)]),
         ('touch-position-8', [ev(TOUCH_POSITION, 8, 0, 0)]),
-        ('gamepad-available-negative', [('query_pad_available', -1)]),
         ('gamepad-button-negative', [ev(PAD_CONNECT, 0), ('query_pad_button', 0, -1)]),
-        ('gamepad-axis-count-4', [('query_axis_count', 4)]),
         ('gamepad-axis-negative', [ev(PAD_CONNECT, 2), ('query_axis', 2, -1)]),
         ('touch-position-negative', [('query_touch_position', -1)]),
         ('mouse-x-overflow', [('mouse_scale', 1e10, 1.0), ev(MOUSE_POSITION, 1, 1), ('query_mouse_x',)]),
         ('touch-x-overflow', [ev(TOUCH_POSITION, 0, 2147483647, 0), ('query_touch_x',)]),
-        ('fps-before-sample', frame(0.0, 0.001) + [('clock', 0.002), ('fps',)]),
         ('record-int-position', [ev(MOUSE_POSITION, 2147483647, 0), ('list_new',), ('record_start',)] + frame(0, 0)),
         ('record-without-list', [('record_start',)]),
         ('wait-not-reached', [('target_fps', 10)] + frame(0.0, 0.01, 0.05)),
@@ -446,14 +452,19 @@ static void query(void)
     for (int i = 0; i <= 8; i++) { printf(" tp%d:", i); vec(GetTouchPosition(i)); }
     for (int i = 0; i <= 9; i++) printf(" ti%d:%d", i, GetTouchPointId(i));
     printf(" tc:%d", GetTouchPointCount());
-    for (int g = 0; g <= 4; g++)
+    for (int g = -1; g <= 4; g++)
     {
         printf(" ga%d:%d", g, IsGamepadAvailable(g));
         for (int i = 0; i < COUNT(pad_buttons); i++) { int b = pad_buttons[i];
             printf(" gb%d.%d:%d%d%d%d", g, b, IsGamepadButtonPressed(g, b), IsGamepadButtonDown(g, b), IsGamepadButtonReleased(g, b), IsGamepadButtonUp(g, b)); }
         for (int a = 0; a <= 8; a++) printf(" gx%d.%d:%u", g, a, fb(GetGamepadAxisMovement(g, a)));
     }
-    for (int g = 0; g <= 3; g++) printf(" gn%d:%d gname%d:%d", g, GetGamepadAxisCount(g), g, (int)strlen(GetGamepadName(g)));
+    for (int g = -1; g <= 4; g++)
+    {
+        const char *name = GetGamepadName(g);
+        printf(" gn%d:%d gname%d:", g, GetGamepadAxisCount(g), g);
+        if (name != NULL) printf("%d", (int)strlen(name)); else printf("null");
+    }
     printf(" gl:%d", GetGamepadButtonPressed());
     printf(" gd:%d gi:", GetGestureDetected());
     for (int i = 0; i < COUNT(gesture_flags); i++) printf("%d", IsGestureDetected(gesture_flags[i]));
@@ -715,7 +726,7 @@ def q.gestures(+c: J.Core, +now: M.Float64) -> String:
     ++ " pa:" ++ bits(J.Gestures.get_pinch_angle(c))
 
 def q.row(+c: J.Core, +now: M.Float64) -> String:
-  "Q" ++ q.keys(c, KEYS) ++ q.buttons(c, BUTTONS) ++ q.mouse(c) ++ q.touch(c) ++ q.pads(5n, c, 0, PAD_BUTTONS) ++ q.counts(4n, c, 0)
+  "Q" ++ q.keys(c, KEYS) ++ q.buttons(c, BUTTONS) ++ q.mouse(c) ++ q.touch(c) ++ q.pads(6n, c, 4294967295, PAD_BUTTONS) ++ q.counts(6n, c, 4294967295)
     ++ " gl:" ++ int(J.Input.get_gamepad_button_pressed(c)) ++ q.gestures(c, now) ++ " close:" ++ bit(J.Core.window_should_close(c))
     ++ " ft:" ++ bits(J.Core.get_frame_time(c)) ++ " shots:" ++ int(J.Core.screenshot_count(c))
 
@@ -1000,7 +1011,7 @@ def b_script(index, item, libm):
 
 
 def load_defs(items):
-    """One def per loaded file: its bytes as a list (large files as a generated loop)."""
+    """One def per loaded file: its bytes as a list (a file of many "e 1" lines as a generated loop and its tail)."""
     seen, defs = set(), []
     for item in items:
         for op in item['ops']:
@@ -1008,14 +1019,26 @@ def load_defs(items):
                 continue
             seen.add(op[1])
             name, text = op[1].replace('-', '_').upper(), op[2]
-            if name == 'TOO_MANY_EVENTS':
-                lines = text.count(b'\n')
-                defs.append('def load.repeat(n: Nat, +acc: +List<U32>) -> +List<U32>:\n  match n:\n    case 0n: acc\n'
-                            '    case 1n+k: load.repeat(k, Con{101, Con{32, Con{49, Con{10, acc}}}})\n\n'
-                            f'def LOAD_{name}() -> +List<U32>:\n  load.repeat({lines}n, Nil{{}})')
+            repeats, tail = repeated_lines(text)
+            if repeats:
+                if not any(d.startswith('def load.repeat(') for d in defs):
+                    defs.append('def load.repeat(n: Nat, +acc: +List<U32>) -> +List<U32>:\n  match n:\n    case 0n: acc\n'
+                                '    case 1n+k: load.repeat(k, Con{101, Con{32, Con{49, Con{10, acc}}}})')
+                defs.append(f'def LOAD_{name}() -> +List<U32>:\n  load.repeat({repeats}n, {b_list(tail)})')
             else:
                 defs.append(f'def LOAD_{name}() -> +List<U32>:\n  {b_list(text)}')
     return defs
+
+
+REPEATED_LINE = b'e 1\n'
+
+
+def repeated_lines(text):
+    """(n, tail) when text is n > 64 copies of "e 1\\n" followed by tail, else (0, text)."""
+    n = 0
+    while text.startswith(REPEATED_LINE, n * len(REPEATED_LINE)):
+        n += 1
+    return (n, text[n * len(REPEATED_LINE):]) if n > 64 else (0, text)
 
 
 def render(libm, items):

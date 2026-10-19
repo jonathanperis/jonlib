@@ -1,5 +1,5 @@
 # Jongui - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raygui v5.0-dev (raygui.h as raylib 6.0's
+# Altered Bend adaptation of raygui v5.1-dev (raygui.h as raylib 6.2's
 # examples ship it; zlib/libpng, Copyright (c) 2014-2026 Ramon Santamaria
 # (@raysan5)); see LICENSES/raygui.txt. Jongui is to raygui what Jonlib is to
 # raylib: the controls' update and drawing code in raygui's F32 and C int
@@ -13,7 +13,7 @@
 # edit mode), GuiStatusBar, GuiPanel, GuiDropdownBox, GuiTextBox,
 # GuiScrollBar and GuiScrollPanel, with the default font,
 # TEXT_WRAP_NONE and raygui's icon set (src/gui_icons.bend, GuiSetIconScale). An
-# icon id above 255 (raygui reads past its table) and the other wrap modes
+# icon past the icon table (raygui reads past it) and the other wrap modes
 # mark the frame undefined. See docs/GUI.md.
 import Base
 import ./jonlib.bend as J
@@ -32,13 +32,15 @@ type Gui.Font is Data:
 # (guiControlExclusiveMode and guiControlExclusiveRec), guiStyle (16
 # controls of 24 properties each), guiIconScale, guiTooltip, the tooltip's
 # text (guiTooltipPtr; tipped is False for NULL), the icon table
-# (guiIcons, 256 icons of eight words) and guiFont.
+# (guiIconsPtr: guiIcons, 512 icons of eight words, until GuiLoadIcons
+# replaces it) and guiFont.
 type Gui is Data:
   Gui{state: U32, locked: Bool, alpha: F32, exclusive: Bool, exclusive_rec: J.Rectangle, style: +List<U32>, icon_scale: U32, tips: Bool, tip: String, tipped: Bool, icons: +List<U32>, font: Gui.Font}
 
-# guiStyle after GuiLoadStyleDefault (printed by raygui itself).
+# guiStyle after GuiLoadStyleDefault (printed by raygui itself; raygui
+# 5.1-dev: TEXT_LINE_SPACING 12, TABBAR's TAB_ITEMS_WIDTH 160).
 def Gui.style.default() -> +List<U32>:
-  [2206434303, 3385444863, 1751673087, 1538447871, 3387948799, 1822145791, 76728319, 2548629503, 915124223, 3049374463, 3874089471, 2931276031, 1, 0, 1, 0, 10, 1, 2427172351, 4126537215, 5, 1, 0, 0, 
+  [2206434303, 3385444863, 1751673087, 1538447871, 3387948799, 1822145791, 76728319, 2548629503, 915124223, 3049374463, 3874089471, 2931276031, 1, 0, 1, 0, 10, 1, 2427172351, 4126537215, 12, 1, 0, 0, 
     2206434303, 3385444863, 1751673087, 1538447871, 3387948799, 1822145791, 76728319, 2548629503, 915124223, 3049374463, 3874089471, 2931276031, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
     2206434303, 3385444863, 1751673087, 1538447871, 3387948799, 1822145791, 76728319, 2548629503, 915124223, 3049374463, 3874089471, 2931276031, 2, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
     2206434303, 3385444863, 1751673087, 1538447871, 3387948799, 1822145791, 76728319, 2548629503, 915124223, 3049374463, 3874089471, 2931276031, 1, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 
@@ -49,7 +51,7 @@ def Gui.style.default() -> +List<U32>:
     2206434303, 3385444863, 1751673087, 1538447871, 3387948799, 1822145791, 76728319, 2548629503, 915124223, 3049374463, 3874089471, 2931276031, 1, 0, 1, 0, 16, 2, 0, 0, 0, 0, 0, 0, 
     2206434303, 3385444863, 1751673087, 1538447871, 3387948799, 1822145791, 76728319, 2548629503, 915124223, 3049374463, 3874089471, 2931276031, 1, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
     2206434303, 3385444863, 1751673087, 1538447871, 3387948799, 1822145791, 76728319, 2548629503, 915124223, 3049374463, 3874089471, 2931276031, 1, 0, 0, 0, 24, 2, 0, 0, 0, 0, 0, 0, 
-    2206434303, 3385444863, 1751673087, 1538447871, 3387948799, 1822145791, 76728319, 2548629503, 915124223, 3049374463, 3874089471, 2931276031, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    2206434303, 3385444863, 1751673087, 1538447871, 3387948799, 1822145791, 76728319, 2548629503, 915124223, 3049374463, 3874089471, 2931276031, 1, 0, 1, 0, 160, 0, 0, 0, 0, 0, 0, 0, 
     2206434303, 3385444863, 1751673087, 1538447871, 3387948799, 1822145791, 76728319, 2548629503, 915124223, 3049374463, 3874089471, 2931276031, 1, 0, 1, 0, 28, 2, 12, 1, 0, 1, 0, 0, 
     2206434303, 3385444863, 1751673087, 1538447871, 3387948799, 1822145791, 76728319, 2548629503, 915124223, 3049374463, 3874089471, 2931276031, 1, 0, 1, 0, 8, 16, 8, 8, 2, 0, 0, 0, 
     2206434303, 3385444863, 1751673087, 1538447871, 3387948799, 1822145791, 76728319, 2548629503, 915124223, 3049374463, 3874089471, 2931276031, 0, 0, 1, 0, 6, 0, 0, 16, 0, 12, 0, 0, 
@@ -81,6 +83,38 @@ def Gui.PROGRESSBAR() -> U32:
 
 def Gui.CHECKBOX() -> U32:
   6
+
+# The control raygui 5.1-dev added in CONTROL11's row.
+def Gui.TABBAR() -> U32:
+  11
+
+# TOGGLE's GROUP_WIDTH_FULL: GuiToggleGroup's bounds span the whole row.
+def Gui.GROUP_WIDTH_FULL() -> U32:
+  17
+
+# TABBAR's properties: the tabs' width, their close buttons (0 hidden), the
+# side of the border line (0 bottom, 1 top).
+def Gui.TAB_ITEMS_WIDTH() -> U32:
+  16
+
+def Gui.TAB_CLOSE_BUTTON() -> U32:
+  17
+
+def Gui.TAB_LINE_SIDE() -> U32:
+  18
+
+# GuiResult: what the controls return.
+def Gui.RESULT_NONE() -> U32:
+  0
+
+def Gui.RESULT_PRESSED() -> U32:
+  1
+
+def Gui.RESULT_CHANGED() -> U32:
+  2
+
+def Gui.RESULT_TAB_CLOSE() -> U32:
+  4
 
 def Gui.BORDER_WIDTH() -> U32:
   12
@@ -218,8 +252,9 @@ def Gui.set_icon_scale(gui: Gui, +scale: U32) -> Gui:
   Gui{state, locked, alpha, exclusive, rec, style, old, tips, tip, tipped, icons, font} = gui
   Gui{state, locked, alpha, exclusive, rec, style, Bool.pick(U32, (scale >= 1 : U32) && (scale < 2147483648 : U32), scale, old), tips, tip, tipped, icons, font}
 
-# GuiGetIcons: the icon table, 2048 words (eight an icon, two rows of 16
-# pixels a word, the low bit first).
+# GuiGetIcons: the icon table, 4096 words at start (eight an icon, two rows
+# of 16 pixels a word, the low bit first), or the words of the last
+# GuiLoadIcons.
 def Gui.icons(gui: Gui) -> +List<U32>:
   Gui{_, _, _, _, _, _, _, _, _, _, icons, _} = gui
   icons
@@ -230,6 +265,12 @@ def Gui.get_icons(gui: Gui) -> +List<U32>:
 def Gui.icons.put(gui: Gui, +icons: +List<U32>) -> Gui:
   Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, _, font} = gui
   Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons, font}
+
+# Whether the icon table holds icon id's eight words: raygui reads
+# guiIconsPtr[id*8 + i] whatever the table's length (512 icons at start,
+# the loaded count after GuiLoadIcons).
+def Gui.icons.has(+icons: +List<U32>, +id: U32) -> Bool:
+  (id < (U32.from_nat(List.length(&2, U32, icons)) / 8 : U32) : U32)
 
 # GuiEnableTooltip, GuiDisableTooltip: guiTooltip (off in a new gui).
 def Gui.enable_tooltip(gui: Gui) -> Gui:
@@ -362,8 +403,8 @@ def Gui.line.bytes(bytes: +List<U32>, +stop_cr: Bool) -> +List<U32>:
 def Gui.scale(+gui: Gui) -> F32:
   (Gui.style.f32(gui, 0, 16) / U32.to_f32(Gui.font_base_size(gui)) : F32)
 
-# GuiGetTextWidth of bytes without an icon prefix: the first line's glyph
-# widths plus TEXT_SPACING each (at most 256 bytes), truncated to an int.
+# GuiMeasureText of bytes: the first line's glyph widths plus TEXT_SPACING
+# each (at most 256 bytes).
 def Gui.width.sum(+gui: Gui, bytes: +List<U32>) -> F32:
   Gui.text.sum(Gui.face(gui), TextCore.codepoints(List.take(&2, U32, Gui.line.bytes(bytes, False{}), 256n)), Gui.scale(gui), Gui.style.f32(gui, 0, 17), 0.0)
 
@@ -375,30 +416,9 @@ def Gui.first(bytes: +List<U32>) -> U32:
     case Con{b, _}: b
     case Nil{}: 0
 
-# The index (1 to 4) of the next '#' after a leading one, or 0.
-def Gui.width.offset(n: Nat, text: +List<U32>, +index: U32) -> U32:
-  match n text:
-    case 1n+p Con{+c, rest}: Bool.pick(U32, U32.is_eq(c, 35), index, Gui.width.offset(p, rest, (index + 1 : U32)))
-    case _ _: 0
-
-def Gui.width.tail(bytes: +List<U32>) -> +List<U32>:
-  match bytes:
-    case Con{_, +rest}: rest
-    case Nil{}: Nil{}
-
-# GuiGetTextWidth of bytes: a text starting with '#' that has another '#'
-# within its next four bytes is measured from that second '#' (it included),
-# plus 20 for the icon and its padding.
-def Gui.width.text(+gui: Gui, +bytes: +List<U32>) -> F32:
-  +offset = Bool.pick(U32, U32.is_eq(Gui.first(bytes), 35), Gui.width.offset(4n, Gui.width.tail(bytes), 1), 0)
-  Bool.pick(F32, U32.is_eq(offset, 0), Gui.width.bytes(gui, bytes), F32.trunc((Gui.width.sum(gui, List.drop(&2, U32, bytes, U32.to_nat(offset))) + 20.0 : F32)))
-
-# GuiGetTextWidth(text) as a C int in F32.
-def Gui.get_text_width(+gui: Gui, text: String) -> Maybe<F32>:
-  Some{Gui.width.text(gui, TextCore.bytes(text))}
-
 # GetTextIcon: a line starting with '#', up to three digits and '#' names an
-# icon, and its text follows; id is 4294967295 for a line without one.
+# icon below RAYGUI_ICON_MAX_ICONS (512), and its text follows; id is
+# 4294967295 for a line without one.
 type Gui.Icon is Data:
   GuiIcon{id: U32, text: +List<U32>}
 
@@ -418,10 +438,20 @@ def Gui.icon.closed(+scan: Gui.Icon, +whole: +List<U32>) -> Gui.Icon:
   GuiIcon{+id, +text} = scan
   Gui.icon.after(text, id, whole)
 
-def Gui.icon.of(line: +List<U32>) -> Gui.Icon:
+# The icon marker GetTextIcon and GetLineWidth look for: '#', up to three
+# digits and '#', whatever the number (0 to 999), and the text after it.
+def Gui.icon.scan(line: +List<U32>) -> Gui.Icon:
   match line:
     case Con{+c, +rest}: Bool.pick(Gui.Icon, U32.is_eq(c, 35), Gui.icon.closed(Gui.icon.digits(3n, rest, 0), Con{c, rest}), GuiIcon{4294967295, Con{c, rest}})
     case Nil{}: GuiIcon{4294967295, Nil{}}
+
+# A marker of 512 or more is not an icon: the line stays whole.
+def Gui.icon.held(+scan: Gui.Icon, +line: +List<U32>) -> Gui.Icon:
+  GuiIcon{+id, +text} = scan
+  Bool.pick(Gui.Icon, (id < 512 : U32), GuiIcon{id, text}, GuiIcon{4294967295, line})
+
+def Gui.icon.of(+line: +List<U32>) -> Gui.Icon:
+  Gui.icon.held(Gui.icon.scan(line), line)
 
 def Gui.empty(bytes: +List<U32>) -> Bool:
   match bytes:
@@ -437,6 +467,34 @@ def Gui.lines.go(bytes: +List<U32>, +current: +List<U32>) -> +List<+List<U32>>:
       +split = U32.is_eq(b, 10) && Bool.not(Gui.empty(rest))
       +tail = Gui.lines.go(rest, Bool.pick(+List<U32>, split, Nil{}, Con{b, current}))
       Bool.pick(+List<+List<U32>>, split, Con{List.reverse(&2, U32, current), tail}, tail)
+
+def Gui.width.marked(+scan: Gui.Icon, +gui: Gui, +bytes: +List<U32>) -> F32:
+  GuiIcon{+id, +text} = scan
+  Bool.pick(F32, U32.is_eq(id, 4294967295), Gui.width.bytes(gui, bytes), F32.trunc((Gui.width.sum(gui, text) + 20.0 : F32)))
+
+# GetLineWidth (raygui 5.1-dev) of a line: GuiMeasureText's width, from
+# after an icon marker ('#', up to three digits and '#', any number) plus 20
+# for the icon and its padding when the line starts with one, truncated to an
+# int.
+def Gui.width.line(+gui: Gui, +bytes: +List<U32>) -> F32:
+  Gui.width.marked(Gui.icon.scan(bytes), gui, bytes)
+
+# The widest line that starts within the text's first 256 bytes.
+def Gui.width.lines(lines: +List<+List<U32>>, +gui: Gui, +start: U32, +best: F32) -> F32:
+  match lines:
+    case Nil{}: best
+    case Con{+line, rest}:
+      +width = Gui.width.line(gui, line)
+      Gui.width.lines(rest, gui, ((start + TextCore.len(line) : U32) + 1 : U32), Bool.pick(F32, (start < 256 : U32) && (width > best : F32), width, best))
+
+# GuiGetTextWidth (raygui 5.1-dev) of bytes: the widest of its lines by
+# GetLineWidth, as a C int in F32.
+def Gui.width.text(+gui: Gui, +bytes: +List<U32>) -> F32:
+  Gui.width.lines(Gui.lines.go(bytes, Nil{}), gui, 0, 0.0)
+
+# GuiGetTextWidth(text) as a C int in F32.
+def Gui.get_text_width(+gui: Gui, text: String) -> Maybe<F32>:
+  Some{Gui.width.text(gui, TextCore.bytes(text))}
 
 # The frame a text is drawn on, with the gui's font when GuiSetFont set one
 # (built from the gui's copy once for the whole text).
@@ -607,12 +665,12 @@ def Gui.pen.icon(has: Bool, +icons: +List<U32>, +id: U32, +x: F32, +y: F32, +sca
 def Gui.text.line(+icon: Gui.Icon, +last: Bool, +gui: Gui, +bounds: J.Rectangle, +alignment: U32, +tint: U32, +offset: F32, +total: F32, pen: Gui.Pen) -> Gui.Pen:
   GuiIcon{+id, +text} = icon
   J.Rectangle{+bx, +by, +bw, +bh} = bounds
-  +has = (id < 256 : U32)
+  +has = U32.is_ne(id, 4294967295)
   +size = Gui.style.f32(gui, 0, 16)
   +empty = last && Gui.empty(text)
   +scale = Gui.icon_scale(gui)
   +wide = U32.to_f32((16 * scale : U32))
-  +text_width = (Gui.width.text(gui, text) + Bool.pick(F32, has, Bool.pick(F32, empty, wide, (wide + 4.0 : F32)), 0.0) : F32)
+  +text_width = (Gui.width.line(gui, text) + Bool.pick(F32, has, Bool.pick(F32, empty, wide, (wide + 4.0 : F32)), 0.0) : F32)
   +x = F32.trunc(Bool.pick(F32, (text_width > bw : F32) && Bool.not(empty), bx, Gui.line.x(alignment, bx, bw, text_width)))
   +y = F32.trunc(Gui.line.y(Gui.get_style(gui, 0, 21), by, bh, offset, total))
   +inset = Bool.pick(F32, has, (wide + 4.0 : F32), 0.0)
@@ -632,30 +690,26 @@ def Gui.text.lines(lines: +List<+List<U32>>, +gui: Gui, +bounds: J.Rectangle, +a
       Gui.text.lines(rest, gui, bounds, alignment, tint, (offset + (Gui.style.f32(gui, 0, 16) + Gui.style.f32(gui, 0, 20)) : F32), total,
         Gui.text.line(Gui.icon.of(line), Gui.lines.last(rest), gui, bounds, alignment, tint, offset, total, pen))
 
-# Fewer than n bytes, none of them a '#'.
-def Gui.icon.short(n: Nat, text: +List<U32>) -> Bool:
-  match n text:
-    case 0n Nil{}: False{}
-    case 0n Con{_, _}: False{}
-    case 1n+p Nil{}: True{}
-    case 1n+p Con{+c, rest}: U32.is_ne(c, 35) && Gui.icon.short(p, rest)
-
-# A line raygui does not draw from its own bytes: an icon id above 255 is
-# outside its table, and a '#' right after the icon (or first in a line
-# without one) with fewer than four bytes after it and no second '#' makes
-# GuiGetTextWidth look for that '#' in the lines that follow.
+# A line raygui does not draw from its own bytes: an icon whose words lie
+# past the icon table (raygui reads them there).
 def Gui.icon.in(icon: Gui.Icon) -> Bool:
   GuiIcon{id, _} = icon
-  (id < 256 : U32)
+  U32.is_ne(id, 4294967295)
 
-def Gui.icon.out(+icon: Gui.Icon, +last: Bool) -> Bool:
-  GuiIcon{+id, +text} = icon
-  ((id >= 256 : U32) && U32.is_ne(id, 4294967295)) || (Bool.not(last) && U32.is_eq(Gui.first(text), 35) && Gui.icon.short(4n, Gui.width.tail(text)))
+# The table is measured only for a line with an icon.
+def Gui.icon.missing(icon: Bool, +icons: +List<U32>, +id: U32) -> Bool:
+  match icon:
+    case False{}: False{}
+    case True{}: Bool.not(Gui.icons.has(icons, id))
 
-def Gui.has_icon(lines: +List<+List<U32>>) -> Bool:
+def Gui.icon.out(+icon: Gui.Icon, +icons: +List<U32>) -> Bool:
+  GuiIcon{+id, _} = icon
+  Gui.icon.missing(U32.is_ne(id, 4294967295), icons, id)
+
+def Gui.has_icon(lines: +List<+List<U32>>, +icons: +List<U32>) -> Bool:
   match lines:
     case Nil{}: False{}
-    case Con{+line, +rest}: Gui.icon.out(Gui.icon.of(line), Gui.lines.last(rest)) || Gui.has_icon(rest)
+    case Con{+line, +rest}: Gui.icon.out(Gui.icon.of(line), icons) || Gui.has_icon(rest, icons)
 
 def Gui.count(lines: +List<+List<U32>>, +n: F32) -> F32:
   match lines:
@@ -676,7 +730,7 @@ def Gui.icon.some(lines: +List<+List<U32>>) -> Bool:
     case Con{+line, rest}: Gui.icon.in(Gui.icon.of(line)) || Gui.icon.some(rest)
 
 def Gui.draw_text.lines(+lines: +List<+List<U32>>, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +alignment: U32, +tint: U32) -> J.Frame:
-  Gui.text.checked(Gui.has_icon(lines) || U32.is_ne(Gui.get_style(gui, 0, 22), 0) || ((Gui.icon_scale(gui) > 65536 : U32) && Gui.icon.some(lines)),
+  Gui.text.checked(Gui.has_icon(lines, Gui.icons(gui)) || U32.is_ne(Gui.get_style(gui, 0, 22), 0) || ((Gui.icon_scale(gui) > 65536 : U32) && Gui.icon.some(lines)),
     lines, gui, bounds, alignment, tint, frame)
 
 # GuiDrawText(text, bounds, alignment, tint): nothing for an empty text. The
@@ -745,11 +799,12 @@ def Gui.icon.near(+v: U32, +limit: U32) -> Bool:
 # GuiDrawIcon(iconId, posX, posY, pixelSize, color): a GuiDrawRectangle of
 # pixelSize square at (posX + (k%16)*pixelSize, posY + row*pixelSize) for
 # each set bit of the icon in the gui's table, faded by guiAlpha. Ints are
-# given as their bits. An id outside 0..255 (raygui reads past its table)
-# and coordinates that may leave int's range (see Gui.icon.near) mark the
-# frame undefined.
+# given as their bits. An id whose words are not in the table (a negative
+# one, 512 or more at start, past the icons GuiLoadIcons loaded: raygui
+# reads past its table) and coordinates that may leave int's range (see
+# Gui.icon.near) mark the frame undefined.
 def Gui.draw_icon(+gui: Gui, frame: J.Frame, +id: U32, +x: U32, +y: U32, +size: U32, +color: U32) -> J.Frame:
-  +fine = (id < 256 : U32) && Gui.icon.near(x, 1073741824) && Gui.icon.near(y, 1073741824) && Gui.icon.near(size, 67108864)
+  +fine = Gui.icons.has(Gui.icons(gui), id) && Gui.icon.near(x, 1073741824) && Gui.icon.near(y, 1073741824) && Gui.icon.near(size, 67108864)
   Gui.refused(Bool.not(fine), Gui.icon.drawn(fine, Gui.icons(gui), id, FontCore.int.f32(x), FontCore.int.f32(y), size, Gui.fade(color, Gui.alpha.of(gui)), frame))
 
 def Gui.icon_text.cut(+long: Bool, +bytes: +List<U32>) -> Maybe<String>:
@@ -772,8 +827,8 @@ def Gui.icon_text.with(text: Maybe<String>, +prefix: +List<U32>) -> Maybe<String
 def Gui.icon_text(+id: U32, text: Maybe<String>) -> Maybe<String>:
   Gui.icon_text.with(text, TextCore.glue([35], TextCore.glue(TextCore.integer.field(True{}, 10, False{}, id, 16, 3, False{}, 0), [35])))
 
-# What GuiLoadIcons returns: NULL, the name ids (32 bytes each, as read,
-# zeros past the end of the file), or a load raygui does not define.
+# What GuiLoadIcons returns: NULL, the name ids (32 bytes each, as read),
+# or a load raygui does not define.
 type Gui.Names is Data:
   GuiNamesNull{}
   GuiNames{names: +List<+List<U32>>}
@@ -785,11 +840,12 @@ def Gui.byte(bytes: +List<U32>, +i: U32) -> U32:
 def Gui.icons.word(+bytes: +List<U32>) -> U32:
   (Gui.byte(bytes, 0) .|. (Gui.byte(bytes, 1) << 8n) .|. (Gui.byte(bytes, 2) << 16n) .|. (Gui.byte(bytes, 3) << 24n) : U32)
 
-# The first n words of the bytes (little-endian) over the old table.
-def Gui.icons.words(n: Nat, +bytes: +List<U32>, +old: +List<U32>) -> +List<U32>:
+# The first n words of the bytes (little-endian), the table raygui
+# allocates and copies them into.
+def Gui.icons.words(n: Nat, +bytes: +List<U32>, +acc: +List<U32>) -> +List<U32>:
   match n:
-    case 0n: old
-    case 1n+p: Con{Gui.icons.word(bytes), Gui.icons.words(p, TextCore.drop(bytes, 4), List.drop(&2, U32, old, 1n))}
+    case 0n: List.reverse(&2, U32, acc)
+    case 1n+p: Gui.icons.words(p, TextCore.drop(bytes, 4), Con{Gui.icons.word(bytes), acc})
 
 def Gui.icons.name(n: Nat, +bytes: +List<U32>) -> +List<U32>:
   match n:
@@ -806,11 +862,16 @@ def Gui.icons.named(names: Bool, +count: U32, +bytes: +List<U32>) -> Gui.Names:
     case False{}: GuiNamesNull{}
     case True{}: GuiNames{Gui.icons.names(U32.to_nat(count), TextCore.drop(bytes, 12))}
 
-def Gui.icons.fine(bad: Bool, +gui: Gui, +bytes: +List<U32>, +names: Bool, +count: U32, +read: U32) -> Gui & Gui.Names:
+def Gui.icons.fine(bad: Bool, +gui: Gui, +bytes: +List<U32>, +names: Bool, +count: U32, +words: U32) -> Gui & Gui.Names:
   match bad:
     case True{}: (gui, GuiNamesUndefined{})
-    case False{}: (Gui.icons.put(gui, Gui.icons.words(U32.to_nat(read), TextCore.drop(bytes, (12 + 32 * count : U32)), Gui.icons(gui))), Gui.icons.named(names, count, bytes))
+    case False{}: (Gui.icons.put(gui, Gui.icons.words(U32.to_nat(words), TextCore.drop(bytes, (12 + 32 * count : U32)), Nil{})), Gui.icons.named(names, count, bytes))
 
+# A signed file: the icon count and size are shorts; the table becomes
+# count*(size*size/32) words (C's int arithmetic). Undefined: a negative
+# count (a gap where no word is read), an int overflow of the table's byte
+# size, more than 512 name ids asked (raygui's name array), and name ids or
+# words read past the data.
 def Gui.icons.signed(signed: Bool, +gui: Gui, +bytes: +List<U32>, +names: Bool) -> Gui & Gui.Names:
   match signed:
     case False{}: (gui, GuiNamesNull{})
@@ -820,29 +881,44 @@ def Gui.icons.signed(signed: Bool, +gui: Gui, +bytes: +List<U32>, +names: Bool) 
       +side = (Gui.byte(bytes, 10) .|. (Gui.byte(bytes, 11) << 8n) : U32)
       +m = Bool.pick(U32, (side >= 32768 : U32), (65536 - side : U32), side)
       +k = ((m * m : U32) / 32 : U32)
-      +over = (count > 0 : U32) && (k > (2147483647 / Bool.pick(U32, U32.is_eq(count, 0), 1, count) : U32) : U32)
-      +total = Bool.pick(U32, over, 0, (count * k : U32))
+      +over = (count > 0 : U32) && (k > (536870911 / Bool.pick(U32, U32.is_eq(count, 0), 1, count) : U32) : U32)
+      +words = Bool.pick(U32, over, 0, (count * k : U32))
       +start = (12 + 32 * (count .&. 32767 : U32) : U32)
-      +avail = Bool.pick(U32, (n > start : U32), (n - start : U32), 0)
-      +read = U32.min(total, (avail / 4 : U32))
-      +bad = (count >= 32768 : U32) || U32.is_eq(n, 9) || U32.is_eq(n, 11) || over || (read > 2048 : U32) || (((avail / 4 : U32) < total : U32) && U32.is_ne((avail % 4 : U32), 0))
-      Gui.icons.fine(bad, gui, bytes, names, count, read)
+      +named_past = names && (((count > 512 : U32)) || (start > n : U32))
+      +data_past = (words > 0 : U32) && ((start > n : U32) || ((4 * words : U32) > (n - start : U32) : U32))
+      Gui.icons.fine((count >= 32768 : U32) || over || named_past || data_past, gui, bytes, names, count, words)
+
+def Gui.icons.headed(fits: Bool, +gui: Gui, +bytes: +List<U32>, +names: Bool) -> Gui & Gui.Names:
+  match fits:
+    case False{}: (gui, GuiNamesUndefined{})
+    case True{}: Gui.icons.signed(U32.is_eq(Gui.byte(bytes, 0), 114) && U32.is_eq(Gui.byte(bytes, 1), 71) && U32.is_eq(Gui.byte(bytes, 2), 73) && U32.is_eq(Gui.byte(bytes, 3), 32), gui, bytes, names)
+
+# GuiLoadIconsFromMemory(fileData, dataSize, loadIconsName) over a .rgi
+# file's bytes ("rGI ", version, reserved, icon count and size as
+# little-endian shorts, a 32-byte name id an icon, then the icons' words):
+# with the signature, the gui's table becomes the icon count times
+# size*size/32 words (C's int division) read from the data, whatever the
+# icon size, and the name ids are returned when asked (GuiNames); GuiNamesNull
+# for another signature or names not asked. Undefined (GuiNamesUndefined,
+# the gui unchanged): data shorter than the 12-byte header, a negative icon
+# count (a gap), a table whose byte size overflows an int, more than 512 name
+# ids asked, and name ids or words past the data.
+def Gui.load_icons_from_memory(gui: Gui, +bytes: +List<U32>, +names: Bool) -> Gui & Gui.Names:
+  Gui.icons.headed((TextCore.len(bytes) >= 12 : U32), gui, bytes, names)
+
+def Gui.icons.sized(empty: Bool, +gui: Gui, +bytes: +List<U32>, +names: Bool) -> Gui & Gui.Names:
+  match empty:
+    case True{}: (gui, GuiNamesNull{})
+    case False{}: Gui.load_icons_from_memory(gui, bytes, names)
 
 def Gui.icons.loaded(r: Result<&1, &1, J.Surface.IOError, +List<U32>>, +gui: Gui, +names: Bool) -> Gui & Gui.Names:
   match r:
     case Fail{_}: (gui, GuiNamesNull{})
-    case Done{+bytes}: Gui.icons.signed(U32.is_eq(Gui.byte(bytes, 0), 114) && U32.is_eq(Gui.byte(bytes, 1), 71) && U32.is_eq(Gui.byte(bytes, 2), 73) && U32.is_eq(Gui.byte(bytes, 3), 32), gui, bytes, names)
+    case Done{+bytes}: Gui.icons.sized(Gui.empty(bytes), gui, bytes, names)
 
-# GuiLoadIcons(fileName, loadIconsName) over a .rgi file ("rGI ", version,
-# reserved, icon count and size as little-endian shorts, a 32-byte name id
-# an icon, then the icons' words): the icon count times size*size/32 words
-# (C's int division), as many as the file holds, are read over the table
-# from its start, whatever the icon size. The gui and the name ids
-# (GuiNames, when asked) or NULL (GuiNamesNull: a file that does not open
-# or read, a wrong signature, or names not asked). Undefined
-# (GuiNamesUndefined, the gui unchanged): a negative icon count (a gap), a
-# count of words past int's range, data that would pass the 2048 words of
-# the table, a file that ends inside the count, the size or a word.
+# GuiLoadIcons(fileName, loadIconsName): the whole file through
+# GuiLoadIconsFromMemory; NULL (GuiNamesNull, the gui unchanged) for a file
+# that does not open or read, or an empty one.
 def Gui.load_icons(gui: Gui, path: String, +names: Bool) -> IO(Gui & Gui.Names):
   IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Gui & Gui.Names, J.Files.load_data(path), r => IO.pure(Gui & Gui.Names, Gui.icons.loaded(r, gui, names)))
 
@@ -923,32 +999,35 @@ def Gui.tip.count(lines: +List<+List<U32>>, +n: U32) -> U32:
     case Nil{}: n
     case Con{_, rest}: Gui.tip.count(rest, U32.min((n + 1 : U32), 128))
 
-# The tooltip's GuiPanel (no text) and its text centered in it as a GuiLabel
-# without padding.
-def Gui.tip.boxed(+gui: Gui, frame: J.Frame, +rec: J.Rectangle) -> J.Frame:
-  Gui.label(Gui.set_style(Gui.set_style(gui, 1, 13, 0), 1, 14, 1), Gui.panel.body(gui, frame, rec), rec, Gui.tip.text(gui))
+# The tooltip's GuiPanel (no text), then its text centered as a GuiLabel
+# without padding in a rectangle of the panel's place and width, as high as
+# the text plus 8 a line (raygui 5.1-dev sizes the panel by
+# TEXT_LINE_SPACING, the label still by 8).
+def Gui.tip.boxed(+gui: Gui, frame: J.Frame, +panel: J.Rectangle, +label: J.Rectangle) -> J.Frame:
+  Gui.label(Gui.set_style(Gui.set_style(gui, 1, 13, 0), 1, 14, 1), Gui.panel.body(gui, frame, panel), label, Gui.tip.text(gui))
 
-def Gui.tip.placed(e: FontCore.Extent, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +lines: U32) -> J.Frame:
-  FontCore.Extent{+tx, +ty} = e
+def Gui.tip.placed(+tx: F32, +ty: F32, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +lines: U32) -> J.Frame:
   J.Rectangle{+x, +y, +w, +h} = bounds
-  +extra = U32.to_f32((8 * lines : U32))
+  +extra = FontCore.int.f32((Gui.get_style(gui, 0, 20) * lines : U32))
   +px = Bool.pick(F32, (((x + tx : F32) + 16.0 : F32) > FontCore.int.f32(J.Core.get_screen_width(core)) : F32), (x - ((tx + 16.0 : F32) - w : F32) : F32), x)
   +py = Bool.pick(F32, (((((y + h : F32) + ty : F32) + 4.0 : F32) + extra : F32) > FontCore.int.f32(J.Core.get_screen_height(core)) : F32), (y - (((h + ty : F32) + 4.0 : F32) + extra : F32) : F32), y)
-  Gui.tip.boxed(gui, frame, J.Rectangle{px, ((py + h : F32) + 4.0 : F32), (tx + 16.0 : F32), (ty + (8.0 * U32.to_f32(lines) : F32) : F32)})
+  Gui.tip.boxed(gui, frame, J.Rectangle{px, ((py + h : F32) + 4.0 : F32), (tx + 16.0 : F32), (ty + extra : F32)},
+    J.Rectangle{px, ((py + h : F32) + 4.0 : F32), (tx + 16.0 : F32), (ty + (8.0 * U32.to_f32(lines) : F32) : F32)})
 
-# GuiTooltip(controlRec): the tooltip measured with MeasureTextEx (TEXT_SIZE,
-# TEXT_SPACING), moved left to end at the control's right edge when it would
-# pass the screen's width and above the control when it would pass its
-# height; a GuiPanel 4 pixels below the control, 16 pixels wider than the
-# text and 8 higher a line, and the text centered in it as a GuiLabel
-# without padding.
+# GuiTooltip(controlRec): the tooltip measured with GuiMeasureText (its
+# first line: the glyph widths plus TEXT_SPACING each, and baseSize times
+# TEXT_SIZE/baseSize high), moved left to end at the control's right edge
+# when it would pass the screen's width and above the control when it would
+# pass its height; a GuiPanel 4 pixels below the control, 16 pixels wider
+# than the text and TEXT_LINE_SPACING higher a line, and the text centered
+# in it as a GuiLabel without padding.
 def Gui.tip.drawn(on: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle) -> J.Frame:
   match on:
     case False{}: frame
     case True{}:
-      +tip = Gui.tip.text(gui)
-      Gui.tip.placed(FontCore.measure(J.Font.codepoints(tip), Gui.face(gui), Gui.style.f32(gui, 0, 16), Gui.style.f32(gui, 0, 17), 2.0),
-        gui, core, frame, bounds, Gui.tip.count(Gui.lines.go(TextCore.bytes(tip), Nil{}), 0))
+      +tip = TextCore.bytes(Gui.tip.text(gui))
+      Gui.tip.placed(Gui.width.sum(gui, tip), (U32.to_f32(Gui.font_base_size(gui)) * Gui.scale(gui) : F32),
+        gui, core, frame, bounds, Gui.tip.count(Gui.lines.go(tip, Nil{}), 0))
 
 # GuiButton(bounds, text): the frame and whether the button was clicked (the
 # pointer released over it). A focused button shows the tooltip.
@@ -1046,46 +1125,80 @@ def Gui.group.toggled(+i: U32, +active: U32, +selected: Bool, r: J.Frame & Bool)
   (frame, +on) = r
   GuiGroup{frame, Bool.pick(U32, Bool.not(selected) && on, i, active)}
 
-def Gui.group.next(+place: J.Rectangle, +padding: F32) -> J.Rectangle:
-  J.Rectangle{+x, +y, +w, +h} = place
-  J.Rectangle{(x + (w + padding) : F32), y, w, h}
-
-def Gui.item.row(item: Gui.Item) -> U32:
-  GuiItem{row, _} = item
-  row
-
 def Gui.item.bytes(item: Gui.Item) -> +List<U32>:
   GuiItem{_, bytes} = item
   bytes
 
-# A new row returns to the first column, one height and GROUP_PADDING lower.
-def Gui.group.place(+bounds: J.Rectangle, +first_x: F32, +padding: F32, +moved: Bool) -> J.Rectangle:
+# GuiToggleGroup's items (raygui 5.1-dev reads its text itself, without
+# GuiTextSplit): each item with its row (the '\n's before it) and column
+# (the ';'s before it in its row).
+type Gui.Cell is Data:
+  GuiCell{row: U32, col: U32, bytes: +List<U32>}
+
+def Gui.cells(bytes: +List<U32>, +row: U32, +col: U32, +current: +List<U32>) -> +List<Gui.Cell>:
+  match bytes:
+    case Nil{}: [GuiCell{row, col, List.reverse(&2, U32, current)}]
+    case Con{+b, +rest}:
+      +newline = U32.is_eq(b, 10)
+      +cut = newline || U32.is_eq(b, 59)
+      +tail = Gui.cells(rest, Bool.pick(U32, newline, (row + 1 : U32), row), Bool.pick(U32, newline, 0, Bool.pick(U32, cut, (col + 1 : U32), col)), Bool.pick(+List<U32>, cut, Nil{}, Con{b, current}))
+      Bool.pick(+List<Gui.Cell>, cut, Con{GuiCell{row, col, List.reverse(&2, U32, current)}, tail}, tail)
+
+def Gui.cell.bytes(cell: Gui.Cell) -> +List<U32>:
+  GuiCell{_, _, bytes} = cell
+  bytes
+
+# An item of 256 bytes or more overflows raygui's static itemText buffer.
+def Gui.cells.long(cells: +List<Gui.Cell>) -> Bool:
+  match cells:
+    case Nil{}: False{}
+    case Con{+cell, rest}: (TextCore.len(Gui.cell.bytes(cell)) >= 256 : U32) || Gui.cells.long(rest)
+
+# The ';'s of a text.
+def Gui.semis(bytes: +List<U32>, +n: U32) -> U32:
+  match bytes:
+    case Nil{}: n
+    case Con{+b, rest}: Gui.semis(rest, Bool.pick(U32, U32.is_eq(b, 59), (n + 1 : U32), n))
+
+# The first item at the bounds; the others at x + col*(width + GROUP_PADDING)
+# and y + row*(height + GROUP_PADDING), as raygui places each after the one
+# before.
+def Gui.cell.place(+cell: Gui.Cell, +bounds: J.Rectangle, +first: Bool, +padding: F32) -> J.Rectangle:
+  GuiCell{+row, +col, _} = cell
   J.Rectangle{+x, +y, +w, +h} = bounds
-  J.Rectangle{Bool.pick(F32, moved, first_x, x), Bool.pick(F32, moved, (y + (h + padding) : F32), y), w, h}
+  J.Rectangle{Bool.pick(F32, first, x, (x + (U32.to_f32(col) * (w + padding) : F32) : F32)), Bool.pick(F32, first, y, (y + (U32.to_f32(row) * (h + padding) : F32) : F32)), w, h}
 
 # One item as a toggle, active when its index is; a toggle switched on takes the index.
 def Gui.group.one(+bytes: +List<U32>, +gui: Gui, +core: J.Core, +place: J.Rectangle, +i: U32, group: Gui.Group) -> Gui.Group:
   GuiGroup{frame, +active} = group
   Gui.group.toggled(i, active, U32.is_eq(i, active), Gui.toggle.bytes(gui, core, frame, place, bytes, U32.is_eq(i, active)))
 
-def Gui.group.items(items: +List<Gui.Item>, +gui: Gui, +core: J.Core, +first_x: F32, +bounds: J.Rectangle, +previous: U32, +i: U32, group: Gui.Group) -> Gui.Group:
-  match items:
+def Gui.group.cells(cells: +List<Gui.Cell>, +gui: Gui, +core: J.Core, +bounds: J.Rectangle, +i: U32, group: Gui.Group) -> Gui.Group:
+  match cells:
     case Nil{}: group
-    case Con{+item, rest}:
-      +row = Gui.item.row(item)
-      +padding = Gui.style.f32(gui, 3, 16)
-      +place = Gui.group.place(bounds, first_x, padding, U32.is_ne(previous, row))
-      Gui.group.items(rest, gui, core, first_x, Gui.group.next(place, padding), row, (i + 1 : U32), Gui.group.one(Gui.item.bytes(item), gui, core, place, i, group))
+    case Con{+cell, rest}:
+      Gui.group.cells(rest, gui, core, bounds, (i + 1 : U32), Gui.group.one(Gui.cell.bytes(cell), gui, core, Gui.cell.place(cell, bounds, U32.is_eq(i, 0), Gui.style.f32(gui, 3, 16)), i, group))
 
 def Gui.group.done(group: Gui.Group) -> J.Frame & U32:
   GuiGroup{frame, active} = group
   (frame, active)
 
-# GuiToggleGroup(bounds, text, &active): the items of text (split at ';',
-# a '\n' starting a new row) as toggles; the frame and the active index.
+def Gui.group.run(long: Bool, +cells: +List<Gui.Cell>, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +active: U32) -> J.Frame & U32:
+  match long:
+    case True{}: (J.Frame.refuse(frame), active)
+    case False{}: Gui.group.done(Gui.group.cells(cells, gui, core, bounds, 0, GuiGroup{frame, active}))
+
+# GuiToggleGroup(bounds, text, &active): the items of text (';' moves to the
+# next column, '\n' to the next row) as toggles, each as wide as the bounds,
+# or (TOGGLE's GROUP_WIDTH_FULL) the bounds' width over one more than the
+# text's ';'s; the frame and the active index. An item of 256 bytes or more
+# marks the frame undefined.
 def Gui.toggle_group(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: String, +active: U32) -> J.Frame & U32:
-  J.Rectangle{+x, _, _, _} = bounds
-  Gui.group.done(Gui.group.items(Gui.split(TextCore.bytes(text), 59, 0, Nil{}), gui, core, x, bounds, 0, 0, GuiGroup{frame, active}))
+  J.Rectangle{+x, +y, +w, +h} = bounds
+  +bytes = TextCore.bytes(text)
+  +cells = Gui.cells(bytes, 0, 0, Nil{})
+  +width = Bool.pick(F32, U32.is_ne(Gui.get_style(gui, 3, 17), 0), (w / U32.to_f32((Gui.semis(bytes, 0) + 1 : U32)) : F32), w)
+  Gui.group.run(Gui.cells.long(cells), cells, gui, core, frame, J.Rectangle{x, y, width, h}, active)
 
 # -----------------------------------------------------------------------------
 # GuiSlider and GuiSliderBar
@@ -1616,8 +1729,11 @@ def Gui.box.edit(typed: J.Core & U32, +gui: Gui, +bounds: J.Rectangle, +tb: J.Re
   +offset = Gui.box.offset(U32.to_nat((length + 1 : U32)), gui, bytes, 0, cursor0, tbw)
   +stuck = (Gui.box.span(gui, bytes, offset, cursor0) >= tbw : F32)
   +clip = Gui.box.clip(J.Core.get_clipboard_text(core))
-  +piece = Bool.pick(+List<U32>, J.Input.is_key_pressed(core, 86) && ctrl, TextCore.take(clip, Gui.box.paste(U32.to_nat((TextCore.len(clip) + 1 : U32)), clip, 0, length, size)),
+  +pasting = J.Input.is_key_pressed(core, 86) && ctrl
+  +pasted = TextCore.take(clip, Gui.box.paste(U32.to_nat((TextCore.len(clip) + 1 : U32)), clip, 0, length, size))
+  +piece = Bool.pick(+List<U32>, pasting, pasted,
     Bool.pick(+List<U32>, Bool.not(Gui.int.less(cp, 32)) && Gui.int.less((length + TextCore.len(TextCore.utf8(cp)) : U32), size), TextCore.utf8(cp), Nil{}))
+  +mid_paste = pasting && Bool.not(Gui.empty(pasted)) && (cursor0 < length : U32)
   +bytes1 = Gui.box.insert(bytes, cursor0, piece)
   +length1 = (length + TextCore.len(piece) : U32)
   +cursor1 = (cursor0 + TextCore.len(piece) : U32)
@@ -1653,7 +1769,7 @@ def Gui.box.edit(typed: J.Core & U32, +gui: Gui, +bounds: J.Rectangle, +tb: J.Re
   +cx = ((((bx + Gui.style.f32(gui, 9, 13) : F32) + end : F32) - Gui.width.text(gui, TextCore.drop(bytes3, cursor6)) : F32) + Gui.style.f32(gui, 0, 17) : F32)
   +done = J.Input.is_key_pressed(core, 257) || (Bool.not(J.Collision.point_rec(mouse, bounds)) && pressed)
   (core, GuiEdit{bytes3, Bool.pick(U32, done, 0, cursor6), Bool.pick(U32, done, 0, counter), offset, done, 2, cx, hx,
-    stuck || word_delete || word_back || bad_back || word_left || bad_left || word_right || lost})
+    stuck || mid_paste || word_delete || word_back || bad_back || word_left || bad_left || word_right || lost})
 
 # The cursor's x before any update: after the text up to the cursor index.
 def Gui.box.start(+gui: Gui, +tb: J.Rectangle, +bytes: +List<U32>, +index: U32) -> F32:
@@ -1721,10 +1837,13 @@ def Gui.box.done(r: J.Core & Gui.Edit, +gui: Gui, frame: J.Frame, +bounds: J.Rec
 # from its queue), the text, the globals and raygui's result (a press over
 # the box out of edit mode; ENTER or a press outside it in edit mode). The
 # box reacts when the gui is enabled and unlocked, no slider is dragged,
-# TEXT_READONLY is 0 and the wrap mode is TEXT_WRAP_NONE. The Ctrl word
-# operations (Ctrl+DELETE, BACKSPACE, LEFT, RIGHT), a box too narrow for the
-# glyph before the cursor, and a cursor inside a UTF-8 sequence mark the
-# frame undefined.
+# TEXT_READONLY is 0 and the wrap mode is TEXT_WRAP_NONE. A paste goes in
+# at the text's end; the Ctrl word operations (Ctrl+DELETE, BACKSPACE,
+# LEFT, RIGHT), a paste before the text's end (raygui 5.1-dev's move loop
+# never runs: the paste overwrites what follows the cursor and the length
+# takes in bytes of the caller's buffer past the text), a box too narrow
+# for the glyph before the cursor, and a cursor inside a UTF-8 sequence mark
+# the frame undefined.
 def Gui.text_box(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +text: String, +size: U32, +edit: Bool, +editing: Gui.Editing) -> J.Frame & (J.Core & (String & (Gui.Editing & Bool))):
   +live = Gui.active(gui) && U32.is_eq(Gui.get_style(gui, 9, 16), 0) && Bool.not(Gui.exclusive(gui)) && U32.is_eq(Gui.get_style(gui, 0, 22), 0)
   Gui.box.done(Gui.box.updated(Bool.pick(U32, live, Bool.pick(U32, edit, 2, 1), 0), gui, core, bounds, Gui.text_bounds(gui, 9, bounds), TextCore.bytes(text), size, editing),
@@ -1919,7 +2038,7 @@ def Gui.pane.body(+headed: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +boun
   +sx = Gui.mouse.x(scroll)
   +sy = Gui.pane.y(scroll)
   +y = Bool.pick(F32, headed, (y0 + 23.0 : F32), y0)
-  +h = Bool.pick(F32, headed, (Gui.pane.least(h0, 48.0) - 25.0 : F32), Gui.pane.least(h0, 48.0))
+  +h = Bool.pick(F32, headed, (Gui.pane.least(h0, 48.0) - 23.0 : F32), Gui.pane.least(h0, 48.0))
   +b = Gui.style.f32(gui, 0, 12)
   +bar = Gui.style.f32(gui, 12, 18)
   +left = U32.is_eq(Gui.get_style(gui, 12, 19), 0)
@@ -1937,7 +2056,7 @@ def Gui.pane.body(+headed: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +boun
   +view_h = ((h - 2.0 * b : F32) - hw : F32)
   +hmin = (Bool.pick(F32, left, (0.0 - vw : F32), 0.0) - b : F32)
   +hmax = Bool.pick(F32, has_h, ((((cw - w : F32) + vw : F32) + b : F32) - Bool.pick(F32, left, vw, 0.0) : F32), (0.0 - b : F32))
-  +vmin = Bool.pick(F32, has_v, 0.0, F32.neg(1.0))
+  +vmin = F32.neg(b)
   +vmax = Bool.pick(F32, has_v, (((ch - h : F32) + hw : F32) + b : F32), (0.0 - b : F32))
   +place = {J.Rectangle{x, y, w, h} : J.Rectangle}
   +inside = Gui.active(gui) && J.Collision.point_rec(J.Input.get_mouse_position(core), place)
@@ -1965,7 +2084,9 @@ def Gui.pane.headed(text: Maybe<String>, +gui: Gui, +core: J.Core, frame: J.Fram
     case Some{t}: Gui.pane.body(True{}, gui, core, Gui.status_bar(gui, frame, J.Rectangle{Gui.rec.x(bounds), Gui.rec.y(bounds), Gui.rec.width(bounds), 24.0}, Some{t}), bounds, content, scroll)
 
 # GuiScrollPanel(bounds, text, content, &scroll, &view): a panel at least 48
-# high (below a status bar when a text is given) over a content larger than
+# high (below a status bar when a text is given, 23 pixels lower and less
+# high; the vertical scroll stops at -BORDER_WIDTH, as in raygui 5.1-dev)
+# over a content larger than
 # it, with a scroll bar for each axis that does not fit (SCROLLBAR_WIDTH
 # wide, on LISTVIEW's SCROLLBAR_SIDE). The frame, the Gui (a bar's drag),
 # the scroll offset and the view: the panel's inside less the bars, no
@@ -2184,7 +2305,8 @@ def Gui.list_view_ex(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectan
 # GuiWindowBox, GuiLabelButton, GuiDummyRec, GuiGrid
 
 # GuiWindowBox(bounds, title): a panel below a status bar 24 pixels high (the
-# window at least 48 high), and a close button 18 pixels square, 3 from the
+# window at least 48 high; the title left aligned whatever STATUSBAR's
+# TEXT_ALIGNMENT), and a close button 18 pixels square, 3 from the
 # bar's top and right border, drawn with BUTTON's BORDER_WIDTH 1 and centered
 # text for its ICON_CROSS_SMALL (#128#). The frame and whether the button was
 # clicked. NULL titles are None.
@@ -2193,7 +2315,7 @@ def Gui.window_box(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangl
   +sbw = Gui.style.f32(gui, 15, 12)
   +height = Bool.pick(F32, (h < 48.0 : F32), 48.0, h)
   f1 = Gui.panel(gui, frame, J.Rectangle{x, ((y + 24.0 : F32) - sbw : F32), w, ((height - 24.0 : F32) + sbw : F32)}, None{})
-  f2 = Gui.status_bar(gui, f1, J.Rectangle{x, y, w, 24.0}, title)
+  f2 = Gui.status_bar(Gui.set_style(gui, 15, 14, 0), f1, J.Rectangle{x, y, w, 24.0}, title)
   Gui.button(Gui.set_style(Gui.set_style(gui, 2, 12, 1), 2, 14, 1), core, f2, J.Rectangle{((((x + w : F32) - sbw : F32) - 18.0 : F32) - 3.0 : F32), (y + 3.0 : F32), 18.0, 18.0}, "#128#")
 
 def Gui.label_button.at(+gui: Gui, +core: J.Core, frame: J.Frame, +wide: J.Rectangle, text: String) -> J.Frame & Bool:
@@ -2336,7 +2458,7 @@ def Gui.toggle_slider.run(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.R
   +touched = Bool.pick(U32, over, Bool.pick(U32, down || clicked, 2, 1), Gui.get_state(gui))
   +state = Bool.pick(U32, live && U32.is_ne(moved, 0) && U32.is_ne(touched, 1), 2, touched)
   +shown = Bool.pick(U32, (moved >= count : U32), 0, moved)
-  (Gui.toggle_slider.drawn(Gui.get_text_width(gui, text), gui, frame, bounds, items, count, shown, state), (shown, clicked))
+  (Gui.toggle_slider.drawn(Gui.get_text_width(gui, text), gui, frame, bounds, items, count, shown, state), (shown, clicked || U32.is_ne(active, shown)))
 
 def Gui.toggle_slider.of(fine: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +text: String, +items: +List<Gui.Item>, +count: U32, +active: U32) -> J.Frame & (U32 & Bool):
   match fine:
@@ -2348,9 +2470,11 @@ def Gui.toggle_slider.of(fine: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +
 # the active item, the pointer's release over the bounds moving it on (back
 # to the first past the last), the item's text centered on the knob over the
 # width of the whole text, as raygui measures it. The frame, the active index
-# and whether it moved. An active index below 0 (raygui indexes the items
-# with it), a text of 1024 bytes or more or 128 items or more (GuiTextSplit's
-# static buffers), and a text raygui cannot measure mark the frame undefined.
+# and whether raygui's result is not 0 (a release over it, or an index that
+# changed, which raygui 5.1-dev reports as RESULT_CHANGED). An active index
+# below 0 (raygui indexes the items with it), a text of 1024 bytes or more
+# or 128 items or more (GuiTextSplit's static buffers), and a text raygui
+# cannot measure mark the frame undefined.
 def Gui.toggle_slider(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +text: String, +active: U32) -> J.Frame & (U32 & Bool):
   +items = Gui.split(TextCore.bytes(text), 59, 0, Nil{})
   +count = Gui.drop.count(items, 0)
@@ -2430,6 +2554,17 @@ def Gui.list_view(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle
 # -----------------------------------------------------------------------------
 # GuiMessageBox, GuiTabBar
 
+# What GuiMessageBox and GuiTextInputBox give back (raygui 5.1-dev):
+# *btnActive (0 for the close button, a button's number from 1, or as it
+# was) and raygui's result (RESULT_PRESSED when one of them was clicked,
+# else RESULT_NONE).
+type Gui.Reply is Data:
+  GuiReply{active: U32, result: U32}
+
+# The reply from the clicked button's number (or -1 for none).
+def Gui.reply.of(+old: U32, +clicked: U32) -> Gui.Reply:
+  Bool.pick(Gui.Reply, (clicked >= 2147483648 : U32), GuiReply{old, 0}, GuiReply{clicked, 1})
+
 # A row of controls drawn so far: the frame and an int result (as its bits).
 type Gui.Buttons is Type:
   GuiButtons{frame: J.Frame, result: U32}
@@ -2468,34 +2603,50 @@ def Gui.message.of(fine: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds
     case False{}: (J.Frame.refuse(frame), 4294967295)
     case True{}: Gui.message.run(gui, core, frame, bounds, title, message, items, count)
 
-# GuiMessageBox(bounds, title, message, buttons): a GuiWindowBox, the message
-# centered in a label below its bar (12 pixels in, 24 + 36 + 24 pixels less
-# high than the box), and the ';'-separated buttons in a row along the
-# bottom, centered, 24 high and 12 apart. The frame and raygui's result: 0
-# for the close button, a button's number from 1, or -1 (4294967295). A
-# buttons text of 1024 bytes or more or 128 items or more marks the frame
-# undefined.
-def Gui.message_box(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, title: Maybe<String>, +message: String, +buttons: String) -> J.Frame & U32:
+def Gui.message.replied(+active: U32, r: J.Frame & U32) -> J.Frame & Gui.Reply:
+  (frame, +clicked) = r
+  (frame, Gui.reply.of(active, clicked))
+
+# GuiMessageBox(bounds, title, message, btnText, &btnActive): a GuiWindowBox,
+# the message centered in a label below its bar (12 pixels in, 24 + 36 + 24
+# pixels less high than the box), and the ';'-separated buttons in a row
+# along the bottom, centered, 24 high and 12 apart. The frame and the reply:
+# btnActive (`active` as given unless the close button (0) or a button (its
+# number from 1) was clicked, the last one clicked) and raygui's result (1
+# when one was, else 0). A btnText of 1024 bytes or more or 128 items or
+# more marks the frame undefined.
+def Gui.message_box(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, title: Maybe<String>, +message: String, +buttons: String, +active: U32) -> J.Frame & Gui.Reply:
   +items = Gui.split(TextCore.bytes(buttons), 59, 0, Nil{})
   +count = Gui.drop.count(items, 0)
-  Gui.message.of((count < 128 : U32) && (TextCore.len(TextCore.bytes(buttons)) < 1024 : U32), gui, core, frame, bounds, title, message, items, count)
+  Gui.message.replied(active, Gui.message.of((count < 128 : U32) && (TextCore.len(TextCore.bytes(buttons)) < 1024 : U32), gui, core, frame, bounds, title, message, items, count))
 
 # The tab bar so far: the frame, the active tab and raygui's result.
 type Gui.Tabs is Type:
   GuiTabs{frame: J.Frame, active: U32, result: U32}
 
-def Gui.tabs.closed(+i: U32, +active: U32, +result: U32, r: J.Frame & Bool) -> Gui.Tabs:
+def Gui.tabs.closed(+active: U32, +result: U32, r: J.Frame & Bool) -> Gui.Tabs:
   (frame, +clicked) = r
-  GuiTabs{frame, active, Bool.pick(U32, clicked, i, result)}
+  GuiTabs{frame, active, Bool.pick(U32, clicked, 4, result)}
 
-# After the tab's toggle: a middle press over it, then its close button (14
-# pixels, BUTTON's border 1 and centered, #128#), each request the result.
+# GUI_BUTTON_PRESSED_MID: the middle mouse button or gamepad 0's
+# GAMEPAD_BUTTON_RIGHT_FACE_UP pressed.
+def Gui.pressed.mid(+core: J.Core) -> Bool:
+  J.Input.is_mouse_button_pressed(core, 2) || Gui.pad(J.Input.is_gamepad_button_pressed(core, 0, 5))
+
+# With TAB_CLOSE_BUTTON, the tab's close button (14 pixels, BUTTON's border
+# 1 and centered, #128#): a click on it is RESULT_TAB_CLOSE.
+def Gui.tabs.button(shown: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +x: F32, +y: F32, +w: F32, +active: U32, +result: U32) -> Gui.Tabs:
+  match shown:
+    case False{}: GuiTabs{frame, active, result}
+    case True{}: Gui.tabs.closed(active, result, Gui.button(Gui.set_style(Gui.set_style(gui, 2, 12, 1), 2, 14, 1), core, frame, J.Rectangle{(((x + w : F32) - 14.0 : F32) - 5.0 : F32), (y + 5.0 : F32), 14.0, 14.0}, "#128#"))
+
+# After the tab's toggle: a middle press over it is RESULT_TAB_CLOSE, then
+# the close button.
 def Gui.tabs.toggled(+gui: Gui, +core: J.Core, +x: F32, +y: F32, +w: F32, +h: F32, +i: U32, +active: U32, +result: U32, r: J.Frame & Bool) -> Gui.Tabs:
   (frame, +on) = r
   +now = Bool.pick(U32, on && U32.is_ne(i, active), i, active)
-  +middle = J.Collision.point_rec(J.Input.get_mouse_position(core), J.Rectangle{x, y, w, h}) && J.Input.is_mouse_button_pressed(core, 2)
-  Gui.tabs.closed(i, now, Bool.pick(U32, middle, i, result),
-    Gui.button(Gui.set_style(Gui.set_style(gui, 2, 12, 1), 2, 14, 1), core, frame, J.Rectangle{(((x + w : F32) - 14.0 : F32) - 5.0 : F32), (y + 5.0 : F32), 14.0, 14.0}, "#128#"))
+  +middle = J.Collision.point_rec(J.Input.get_mouse_position(core), J.Rectangle{x, y, w, h}) && Gui.pressed.mid(core)
+  Gui.tabs.button(U32.is_ne(Gui.get_style(gui, 11, 17), 0), gui, core, frame, x, y, w, now, Bool.pick(U32, middle, 4, result))
 
 # A tab left of the screen's right edge: its GuiToggle (TOGGLE's text left
 # aligned with a padding of 8), on for the active tab; an off tab switched
@@ -2507,35 +2658,62 @@ def Gui.tabs.step(visible: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +tab:
       J.Rectangle{+x, +y, +w, +h} = tab
       Gui.tabs.toggled(gui, core, x, y, w, h, i, active, result, Gui.toggle(Gui.set_style(Gui.set_style(gui, 3, 14, 0), 3, 13, 8), core, frame, J.Rectangle{x, y, w, h}, text, U32.is_eq(i, active)))
 
-def Gui.tabs.run(items: +List<String>, +gui: Gui, +core: J.Core, +x: F32, +y: F32, +h: F32, +offset: U32, +screen: U32, +i: U32, tabs: Gui.Tabs) -> Gui.Tabs:
+# Tab i at x + (TAB_ITEMS_WIDTH + 4)*i + offset (raygui 5.1-dev adds the
+# offset), TAB_ITEMS_WIDTH wide.
+def Gui.tabs.run(items: +List<String>, +gui: Gui, +core: J.Core, +x: F32, +y: F32, +h: F32, +width: U32, +offset: U32, +screen: U32, +i: U32, tabs: Gui.Tabs) -> Gui.Tabs:
   match items:
     case Nil{}: tabs
     case Con{+text, rest}:
       GuiTabs{frame, +active, +result} = tabs
-      +tx = ((x + U32.to_f32((152 * i : U32)) : F32) - U32.to_f32(offset) : F32)
-      Gui.tabs.run(rest, gui, core, x, y, h, offset, screen, (i + 1 : U32),
-        Gui.tabs.step((tx < U32.to_f32(screen) : F32), gui, core, frame, J.Rectangle{tx, y, 148.0, h}, text, i, active, result))
+      +tx = ((x + FontCore.int.f32(((width + 4) * i : U32)) : F32) + FontCore.int.f32(offset) : F32)
+      Gui.tabs.run(rest, gui, core, x, y, h, width, offset, screen, (i + 1 : U32),
+        Gui.tabs.step((tx < FontCore.int.f32(screen) : F32), gui, core, frame, J.Rectangle{tx, y, FontCore.int.f32(width), h}, text, i, active, result))
 
-def Gui.tabs.done(+gui: Gui, +bounds: J.Rectangle, tabs: Gui.Tabs) -> J.Frame & (U32 & U32):
+# The border line in TABBAR's border color, along the bottom (TAB_LINE_SIDE
+# 0) or the top (1); RESULT_CHANGED when the active tab changed and no tab
+# asked to close.
+def Gui.tabs.done(+gui: Gui, +bounds: J.Rectangle, +before: U32, tabs: Gui.Tabs) -> J.Frame & (U32 & U32):
   J.Rectangle{+x, +y, +w, +h} = bounds
   GuiTabs{frame, +active, +result} = tabs
-  (Gui.draw_rectangle(frame, J.Rectangle{x, ((y + h : F32) - 1.0 : F32), w, 1.0}, 0, 0, Gui.color(gui, 3, 0)), (active, result))
+  +side = Bool.pick(F32, U32.is_eq(Gui.get_style(gui, 11, 18), 1), 0.0, (h - 1.0 : F32))
+  (Gui.draw_rectangle(frame, J.Rectangle{x, (y + side : F32), w, 1.0}, 0, 0, Gui.color(gui, 11, 0)),
+    (active, Bool.pick(U32, U32.is_ne(result, 4) && U32.is_ne(before, active), 2, result)))
 
-# GuiTabBar(bounds, text, count, &active): the active tab clamped to the
-# tabs (-1 without any), the bar moved left by (active + 2) * 148 - the
-# screen's width when that is positive, then each tab 148 wide and 152
-# apart, the ones left of the screen's right edge drawn and live, and a line
-# along the bottom in TOGGLE's border color. The frame, the active tab and
-# raygui's result: the tab whose close button was clicked or that a middle
-# press is over (the last such tab), or -1, as int bits.
-def Gui.tab_bar(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +items: +List<String>, +active: U32) -> J.Frame & (U32 & U32):
+# GuiTabBarEx(bounds, text, count, &hscroll, &active, &focus) over the list
+# of tab texts: the active tab clamped to the tabs (0 when negative, else
+# the last one, -1 without any, when past it), the bar moved right by
+# active*TAB_ITEMS_WIDTH - the screen's width when that is positive, then
+# each tab TAB_ITEMS_WIDTH wide and 4 apart, the ones left of the screen's
+# right edge drawn and live, and the border line. The frame, the active tab
+# and raygui's result: RESULT_TAB_CLOSE (4) for a middle press over a tab or
+# a click on a close button, else RESULT_CHANGED (2) when the active tab
+# changed, else 0. raygui 5.1-dev neither reads nor writes hscroll and
+# focus; they are taken for the signature. An offset C's int arithmetic
+# overflows (TAB_ITEMS_WIDTH past 2^31 over the tabs) wraps (a gap).
+def Gui.tab_bar_ex(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +items: +List<String>, +hscroll: U32, +active: U32, +focus: U32) -> J.Frame & (U32 & U32):
   J.Rectangle{+x, +y, +w, +h} = bounds
   +count = U32.from_nat(List.length(&2, String, items))
-  +low = Bool.pick(U32, Gui.int.less(active, 0), 0, active)
-  +clamped = Bool.pick(U32, Gui.int.less((count - 1 : U32), low), (count - 1 : U32), low)
+  +clamped = Bool.pick(U32, Gui.int.less(active, 0), 0, Bool.pick(U32, Gui.int.less((count - 1 : U32), active), (count - 1 : U32), active))
+  +width = Gui.get_style(gui, 11, 16)
   +screen = J.Core.get_screen_width(core)
-  +offset = (((clamped + 2 : U32) * 148 : U32) - screen : U32)
-  Gui.tabs.done(gui, J.Rectangle{x, y, w, h}, Gui.tabs.run(items, gui, core, x, y, h, Bool.pick(U32, Gui.int.less(offset, 0), 0, offset), screen, 0, GuiTabs{frame, clamped, 4294967295}))
+  +offset = ((clamped * width : U32) - screen : U32)
+  Gui.tabs.done(gui, J.Rectangle{x, y, w, h}, clamped,
+    Gui.tabs.run(items, gui, core, x, y, h, width, Bool.pick(U32, Gui.int.less(offset, 0), 0, offset), screen, 0, GuiTabs{frame, clamped, 0}))
+
+def Gui.tab_bar.of(fine: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +items: +List<String>, +hscroll: U32, +active: U32) -> J.Frame & (U32 & U32):
+  match fine:
+    case False{}: (J.Frame.refuse(frame), (active, 0))
+    case True{}: Gui.tab_bar_ex(gui, core, frame, bounds, items, hscroll, active, 4294967295)
+
+# GuiTabBar(bounds, text, &hscroll, &active): GuiTabBarEx over the
+# ';'-separated tabs of `text` (none for NULL, None). A text of 1024 bytes
+# or more or 128 tabs or more marks the frame undefined.
+def Gui.tab_bar(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, +hscroll: U32, +active: U32) -> J.Frame & (U32 & U32):
+  match text:
+    case None{}: Gui.tab_bar.of(True{}, gui, core, frame, bounds, Nil{}, hscroll, active)
+    case Some{+t}:
+      +items = Gui.split(TextCore.bytes(t), 59, 0, Nil{})
+      Gui.tab_bar.of((Gui.drop.count(items, 0) < 128 : U32) && (TextCore.len(TextCore.bytes(t)) < 1024 : U32), gui, core, frame, bounds, Gui.list.strings(items, Nil{}), hscroll, active)
 
 # -----------------------------------------------------------------------------
 # GuiValueBoxFloat (not in edit mode)
@@ -2592,7 +2770,8 @@ def Gui.input.viewed(+gui: Gui, +core: J.Core, +text: String, +edit: Bool, +edit
   (frame, +on) = r
   Gui.input.finished(gui, core, frame, x, y, w, h, items, count, closed, text, Bool.pick(U32, on, 1, 0), edit, editing)
 
-# The secret view's GuiToggle (#44# when on, #45# when off) beside the box,
+# The secret view's GuiToggle (ICON_EYE_ON, #044#, when on, ICON_EYE_OFF,
+# #045#, when off) beside the box,
 # 26 pixels square; none without a secret pointer.
 def Gui.input.toggled(secret: U32, +gui: Gui, +core: J.Core, +text: String, +edit: Bool, +editing: Gui.Editing, +x: F32, +y: F32, +w: F32, +h: F32, +bx: F32, +by: F32, +bw: F32, +items: +List<Gui.Item>, +count: U32, +closed: Bool, frame: J.Frame) -> J.Frame & (J.Core & (Gui.Input & U32)):
   match secret:
@@ -2600,7 +2779,7 @@ def Gui.input.toggled(secret: U32, +gui: Gui, +core: J.Core, +text: String, +edi
     case _:
       +on = U32.is_eq(secret, 1)
       Gui.input.viewed(gui, core, text, edit, editing, x, y, w, h, items, count, closed,
-        Gui.toggle(gui, core, frame, J.Rectangle{((bx + bw : F32) - 26.0 : F32), by, 26.0, 26.0}, Bool.pick(String, on, "#44#", "#45#"), on))
+        Gui.toggle(gui, core, frame, J.Rectangle{((bx + bw : F32) - 26.0 : F32), by, 26.0, 26.0}, Bool.pick(String, on, "#044#", "#045#"), on))
 
 def Gui.input.boxed.state(+gui: Gui, +core: J.Core, +text: String, +edit: Bool, +secret: U32, +x: F32, +y: F32, +w: F32, +h: F32, +bx: F32, +by: F32, +bw: F32, +items: +List<Gui.Item>, +count: U32, +closed: Bool,
     frame: J.Frame, state: Gui.Editing & Bool) -> J.Frame & (J.Core & (Gui.Input & U32)):
@@ -2681,19 +2860,31 @@ def Gui.input.of(fine: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: 
     case False{}: (J.Frame.refuse(frame), (core, (input, 4294967295)))
     case True{}: Gui.input.run(gui, core, frame, bounds, title, message, items, count, size, input)
 
-# GuiTextInputBox(bounds, title, message, buttons, text, textMaxSize,
-# secretViewActive): a GuiWindowBox, the message centered below its bar, a
-# GuiTextBox (with a toggle that shows or hides the text as stars when the
-# input has a secret view), and the ';'-separated buttons along the bottom;
-# the box enters and leaves edit mode as raygui's static textEditMode does,
-# which any result clears. The frame, the Core, the input as it is now and
-# the result: 0 for the close button, a button's number from 1, or -1
-# (4294967295). The text box's own refusals apply; a buttons text of 1024
+def Gui.input.replied.inner(+active: U32, frame: J.Frame, +core: J.Core, rest: Gui.Input & U32) -> J.Frame & (J.Core & (Gui.Input & Gui.Reply)):
+  (input, +clicked) = rest
+  (frame, (core, (input, Gui.reply.of(active, clicked))))
+
+def Gui.input.replied.cored(+active: U32, frame: J.Frame, rest: J.Core & (Gui.Input & U32)) -> J.Frame & (J.Core & (Gui.Input & Gui.Reply)):
+  (+core, more) = rest
+  Gui.input.replied.inner(active, frame, core, more)
+
+def Gui.input.replied(+active: U32, r: J.Frame & (J.Core & (Gui.Input & U32))) -> J.Frame & (J.Core & (Gui.Input & Gui.Reply)):
+  (frame, rest) = r
+  Gui.input.replied.cored(active, frame, rest)
+
+# GuiTextInputBox(bounds, title, message, text, textSize, btnText,
+# &btnActive, secretViewActive): a GuiWindowBox, the message centered below
+# its bar, a GuiTextBox (with a toggle that shows or hides the text as stars
+# when the input has a secret view), and the ';'-separated buttons along the
+# bottom; the box enters and leaves edit mode as raygui's static
+# textEditMode does, which any click on the buttons or the close button
+# clears. The frame, the Core, the input as it is now and the reply (as
+# GuiMessageBox's). The text box's own refusals apply; a btnText of 1024
 # bytes or more or 128 items or more marks the frame undefined.
-def Gui.text_input_box(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, title: Maybe<String>, message: Maybe<String>, +buttons: String, +size: U32, input: Gui.Input) -> J.Frame & (J.Core & (Gui.Input & U32)):
+def Gui.text_input_box(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, title: Maybe<String>, message: Maybe<String>, +size: U32, +buttons: String, +active: U32, input: Gui.Input) -> J.Frame & (J.Core & (Gui.Input & Gui.Reply)):
   +items = Gui.split(TextCore.bytes(buttons), 59, 0, Nil{})
   +count = Gui.drop.count(items, 0)
-  Gui.input.of((count < 128 : U32) && (TextCore.len(TextCore.bytes(buttons)) < 1024 : U32), gui, core, frame, bounds, title, message, items, count, size, input)
+  Gui.input.replied(active, Gui.input.of((count < 128 : U32) && (TextCore.len(TextCore.bytes(buttons)) < 1024 : U32), gui, core, frame, bounds, title, message, items, count, size, input))
 
 # -----------------------------------------------------------------------------
 # GuiColorPanel, GuiColorBarAlpha, GuiColorBarHue, GuiColorPicker and their
@@ -2971,9 +3162,11 @@ def Gui.alpha.run(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle
 def Gui.color_bar_alpha(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, +alpha: F32) -> J.Frame & (Gui & F32):
   Gui.alpha.run(gui, core, frame, bounds, Gui.alpha.selector(gui, bounds, alpha), alpha)
 
-# One sixth of the hue bar: DrawRectangleGradientV with C int arguments.
+# One sixth of the hue bar: DrawRectangleGradientEx(rec, top, bottom,
+# bottom, top), the colors faded by guiAlpha (raygui 5.1-dev keeps the float
+# rectangle).
 def Gui.hue.band(frame: J.Frame, +bx: F32, +y: F32, +bw: F32, +h: F32, +top: U32, +bottom: U32, +alpha: F32) -> J.Frame:
-  J.Draw.rectangle_gradient_v(frame, F32.trunc(bx), F32.trunc(y), F32.trunc(bw), F32.trunc(h), J.Color.with_alpha(top, alpha), J.Color.with_alpha(bottom, alpha))
+  J.Draw.rectangle_gradient_ex(frame, J.Rectangle{bx, y, bw, h}, J.Color.with_alpha(top, alpha), J.Color.with_alpha(bottom, alpha), J.Color.with_alpha(bottom, alpha), J.Color.with_alpha(top, alpha))
 
 def Gui.hue.surface(disabled: Bool, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle) -> J.Frame:
   match disabled:
@@ -2984,12 +3177,11 @@ def Gui.hue.surface(disabled: Bool, +gui: Gui, frame: J.Frame, +bounds: J.Rectan
       J.Rectangle{+bx, +by, +bw, +bh} = bounds
       +alpha = Gui.alpha.of(gui)
       +sixth = (bh / 6.0 : F32)
-      +tall = F32.ceil(sixth)
-      f1 = Gui.hue.band(frame, bx, by, bw, tall, 4278190335, 4294902015, alpha)
-      f2 = Gui.hue.band(f1, bx, (by + sixth : F32), bw, tall, 4294902015, 16711935, alpha)
-      f3 = Gui.hue.band(f2, bx, (by + (2.0 * sixth : F32) : F32), bw, tall, 16711935, 16777215, alpha)
-      f4 = Gui.hue.band(f3, bx, (by + (3.0 * sixth : F32) : F32), bw, tall, 16777215, 65535, alpha)
-      f5 = Gui.hue.band(f4, bx, (by + (4.0 * sixth : F32) : F32), bw, tall, 65535, 4278255615, alpha)
+      f1 = Gui.hue.band(frame, bx, by, bw, sixth, 4278190335, 4294902015, alpha)
+      f2 = Gui.hue.band(f1, bx, (by + sixth : F32), bw, sixth, 4294902015, 16711935, alpha)
+      f3 = Gui.hue.band(f2, bx, (by + (2.0 * sixth : F32) : F32), bw, sixth, 16711935, 16777215, alpha)
+      f4 = Gui.hue.band(f3, bx, (by + (3.0 * sixth : F32) : F32), bw, sixth, 16777215, 65535, alpha)
+      f5 = Gui.hue.band(f4, bx, (by + (4.0 * sixth : F32) : F32), bw, sixth, 65535, 4278255615, alpha)
       Gui.hue.band(f5, bx, (by + (5.0 * sixth : F32) : F32), bw, sixth, 4278255615, 4278190335, alpha)
 
 def Gui.hue.drawn(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +selector: J.Rectangle, bar: Gui.Picked) -> J.Frame & (Gui & F32):
@@ -3012,13 +3204,13 @@ def Gui.hue.run(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, 
       gui, bounds, hue, Bool.pick(F32, (pointed <= 0.0 : F32), 0.0, Bool.pick(F32, (pointed >= 359.0 : F32), 359.0, pointed))))
 
 # GuiColorBarHue(bounds, text, &hue): six vertical gradients through red,
-# yellow, green, cyan, blue, magenta and back to red (ceil(height/6) high but
-# the last), the border, and a selector HUEBAR_SELECTOR_HEIGHT high (placed
+# yellow, green, cyan, blue, magenta and back to red (each height/6 high,
+# float rectangles), or one gradient over the bar when disabled, the border, and a selector HUEBAR_SELECTOR_HEIGHT high (placed
 # by the hue before the update) passing the bar by HUEBAR_SELECTOR_OVERFLOW
 # on each side. A press over the bar or the selector, or a drag that started
 # there, sets the hue from the pointer, clamped to [0, 359]. The frame, the
 # gui (the drag) and the hue. A selector outside int's range marks the frame
-# undefined, and so does a band (DrawRectangleGradientV's ints).
+# undefined.
 def Gui.color_bar_hue(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, +hue: F32) -> J.Frame & (Gui & F32):
   Gui.hue.run(gui, core, frame, bounds, Gui.hue.selector(gui, bounds, hue), hue)
 
@@ -3070,19 +3262,27 @@ def Gui.picker_hsv.hued(+hsv: M.Vector3, r: J.Frame & (Gui & F32)) -> J.Frame & 
   (frame, rest) = r
   Gui.picker_hsv.done(hsv, frame, rest)
 
-def Gui.picker_hsv.panel_done(+core: J.Core, +bounds: J.Rectangle, frame: J.Frame, rest: Gui & M.Vector3) -> J.Frame & (Gui & M.Vector3):
+# The hue bar only when the panel left the HSV as it was (raygui 5.1-dev
+# runs GuiColorBarHue only while the result is RESULT_NONE).
+def Gui.picker_hsv.barred(same: Bool, +core: J.Core, +bounds: J.Rectangle, frame: J.Frame, +gui: Gui, +hsv: M.Vector3) -> J.Frame & (Gui & M.Vector3):
+  match same:
+    case False{}: (frame, (gui, hsv))
+    case True{}: Gui.picker_hsv.hued(hsv, Gui.color_bar_hue(gui, core, frame, Gui.picker.hue_bounds(gui, bounds), None{}, Gui.hsv.hue(hsv)))
+
+def Gui.picker_hsv.panel_done(+core: J.Core, +bounds: J.Rectangle, +before: M.Vector3, frame: J.Frame, rest: Gui & M.Vector3) -> J.Frame & (Gui & M.Vector3):
   (+gui, +hsv) = rest
-  Gui.picker_hsv.hued(hsv, Gui.color_bar_hue(gui, core, frame, Gui.picker.hue_bounds(gui, bounds), None{}, Gui.hsv.hue(hsv)))
+  Gui.picker_hsv.barred(Gui.hsv.same(before, hsv), core, bounds, frame, gui, hsv)
 
-def Gui.picker_hsv.paneled(+core: J.Core, +bounds: J.Rectangle, r: J.Frame & (Gui & M.Vector3)) -> J.Frame & (Gui & M.Vector3):
+def Gui.picker_hsv.paneled(+core: J.Core, +bounds: J.Rectangle, +before: M.Vector3, r: J.Frame & (Gui & M.Vector3)) -> J.Frame & (Gui & M.Vector3):
   (frame, rest) = r
-  Gui.picker_hsv.panel_done(core, bounds, frame, rest)
+  Gui.picker_hsv.panel_done(core, bounds, before, frame, rest)
 
-# GuiColorPickerHSV(bounds, text, &colorHsv): GuiColorPanelHSV, then
-# GuiColorBarHue beside it over the HSV's hue. The frame, the gui and the
-# HSV. The panel's and the bar's refusals apply.
+# GuiColorPickerHSV(bounds, text, &colorHsv): GuiColorPanelHSV, then, when
+# the panel left the HSV as it was (compared as floats, so a NaN always
+# counts as changed), GuiColorBarHue beside it over the HSV's hue. The
+# frame, the gui and the HSV. The panel's and the bar's refusals apply.
 def Gui.color_picker_hsv(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, +hsv: M.Vector3) -> J.Frame & (Gui & M.Vector3):
-  Gui.picker_hsv.paneled(core, bounds, Gui.color_panel_hsv(gui, core, frame, bounds, None{}, hsv))
+  Gui.picker_hsv.paneled(core, bounds, hsv, Gui.color_panel_hsv(gui, core, frame, bounds, None{}, hsv))
 
 # -----------------------------------------------------------------------------
 # GuiLoadStyle
@@ -3266,19 +3466,22 @@ def Gui.scan.line(bytes: +List<U32>) -> +List<U32>:
     case Nil{}: Nil{}
     case Con{+b, +rest}: Bool.pick(+List<U32>, U32.is_eq(b, 13) || U32.is_eq(b, 10), Nil{}, Con{b, Gui.scan.line(rest)})
 
-# An 'f' line, sscanf(buffer, "f %d %s %[^\r\n]s", &fontSize,
-# charmapFileName, fontFileName): what matched (0 and empty names
-# otherwise) and whether the size is an int.
+# An 'f' line, sscanf(buffer, "f %d %31s %31[^\r\n]s", &fontSize, first,
+# second): the charmap's name first and the font file's second, or (raygui
+# 5.1-dev, after a 'v' line of 600 or more) the other way round; what
+# matched (0 and empty names otherwise), each name at most 31 bytes (a
+# longer first word goes on into the second conversion), and whether the
+# size is an int.
 type Gui.FontLine is Data:
   GuiFontLine{size: U32, charmap: +List<U32>, file: +List<U32>, fine: Bool}
 
-def Gui.rgs.font.line(+chunk: +List<U32>) -> Gui.FontLine:
+def Gui.rgs.font.line(+chunk: +List<U32>, +modern: Bool) -> Gui.FontLine:
   +text = Gui.scan.text(chunk)
   +size = Gui.scan.int(List.drop(&2, U32, text, 1n))
-  +charmap = Bool.pick(+List<U32>, Gui.scan.matched(size), Gui.scan.word(Gui.scan.skip(Gui.scan.rest(size))), Nil{})
-  +after = List.drop(&2, U32, Gui.scan.skip(Gui.scan.rest(size)), U32.to_nat(TextCore.len(charmap)))
-  +file = Bool.pick(+List<U32>, Gui.scan.matched(size) && Bool.not(Gui.empty(charmap)), Gui.scan.line(Gui.scan.skip(after)), Nil{})
-  GuiFontLine{Bool.pick(U32, Gui.scan.matched(size), Gui.scan.value(size), 0), charmap, file, Gui.scan.fine(size)}
+  +first = Bool.pick(+List<U32>, Gui.scan.matched(size), TextCore.take(Gui.scan.word(Gui.scan.skip(Gui.scan.rest(size))), 31), Nil{})
+  +after = List.drop(&2, U32, Gui.scan.skip(Gui.scan.rest(size)), U32.to_nat(TextCore.len(first)))
+  +second = Bool.pick(+List<U32>, Gui.scan.matched(size) && Bool.not(Gui.empty(first)), TextCore.take(Gui.scan.line(Gui.scan.skip(after)), 31), Nil{})
+  GuiFontLine{Bool.pick(U32, Gui.scan.matched(size), Gui.scan.value(size), 0), Bool.pick(+List<U32>, modern, second, first), Bool.pick(+List<U32>, modern, first, second), Gui.scan.fine(size)}
 
 def Gui.scan.path_fits(+dir: String, +name: +List<U32>) -> Bool:
   ((TextCore.len(TextCore.bytes(dir)) + (1 + TextCore.len(name)) : U32) < 1024 : U32)
@@ -3381,37 +3584,63 @@ def Gui.rgs.font.parsed(line: Gui.FontLine, +dir: String, state: Gui.Loading) ->
 # TEXT_SPACING 1. Undefined: a size outside int, a line without a charmap
 # name (raygui reads the directory itself as the charmap), a path past
 # TextFormat's buffer, and a font LoadFontFromMemory refuses.
-def Gui.rgs.font(+chunk: +List<U32>, +dir: String, state: Gui.Loading) -> IO(Gui.Loading):
-  Gui.rgs.font.parsed(Gui.rgs.font.line(chunk), dir, state)
+def Gui.rgs.font(+chunk: +List<U32>, +dir: String, +version: U32, state: Gui.Loading) -> IO(Gui.Loading):
+  Gui.rgs.font.parsed(Gui.rgs.font.line(chunk, (version >= 600 : U32)), dir, state)
 
-def Gui.rgs.line.by(first: U32, +chunk: +List<U32>, +dir: String, state: Gui.Loading) -> IO(Gui.Loading):
+# %u (raygui 5.1-dev's 'v' line, sscanf(buffer, "v %u", &version)): spaces,
+# an optional sign, decimal digits. A '-' and a value of 2^31 or more are
+# refused (a gap: C converts them).
+def Gui.scan.unsigned.signed(+minus: Bool, scan: Gui.Scan) -> Gui.Scan:
+  GuiScan{+matched, +value, +rest, +fine} = scan
+  GuiScan{matched, value, rest, fine && Bool.not(matched && minus)}
+
+def Gui.scan.unsigned(bytes: +List<U32>) -> Gui.Scan:
+  +text = Gui.scan.skip(bytes)
+  Gui.scan.unsigned.signed(U32.is_eq(Gui.first(text), 45), Gui.scan.sign(text))
+
+def Gui.rgs.version.scan(+chunk: +List<U32>) -> Gui.Scan:
+  Gui.scan.unsigned(List.drop(&2, U32, Gui.scan.text(chunk), 1n))
+
+# The version after a line: a 'v' line's value when it matched.
+def Gui.rgs.version(+chunk: +List<U32>, +version: U32) -> U32:
+  +scan = Gui.rgs.version.scan(chunk)
+  Bool.pick(U32, U32.is_eq(Gui.first(chunk), 118) && Gui.scan.matched(scan), Gui.scan.value(scan), version)
+
+def Gui.rgs.version.checked(+chunk: +List<U32>, state: Gui.Loading) -> Gui.Loading:
+  GuiLoading{+gui, frame, +control, +property, +value, +fine} = state
+  GuiLoading{gui, frame, control, property, value, fine && Gui.scan.fine(Gui.rgs.version.scan(chunk))}
+
+def Gui.rgs.line.by(first: U32, +chunk: +List<U32>, +dir: String, +version: U32, state: Gui.Loading) -> IO(Gui.Loading):
   match first:
     case 112: IO.pure(Gui.Loading, Gui.rgs.property(chunk, state))
-    case 102: Gui.rgs.font(chunk, dir, state)
+    case 102: Gui.rgs.font(chunk, dir, version, state)
+    case 118: IO.pure(Gui.Loading, Gui.rgs.version.checked(chunk, state))
     case _: IO.pure(Gui.Loading, state)
 
-def Gui.rgs.line.kind(+chunk: +List<U32>, +dir: String, state: Gui.Loading) -> IO(Gui.Loading):
-  Gui.rgs.line.by(Gui.first(chunk), chunk, dir, state)
+def Gui.rgs.line.kind(+chunk: +List<U32>, +dir: String, +version: U32, state: Gui.Loading) -> IO(Gui.Loading):
+  Gui.rgs.line.by(Gui.first(chunk), chunk, dir, version, state)
 
 def Gui.rgs.fine(state: Gui.Loading) -> Gui.Loading & Bool:
   GuiLoading{+gui, frame, +control, +property, +value, +fine} = state
   (GuiLoading{gui, frame, control, property, value, fine}, fine)
 
-def Gui.rgs.line.go(fine: Bool, +chunk: +List<U32>, +dir: String, state: Gui.Loading) -> IO(Gui.Loading):
+def Gui.rgs.line.go(fine: Bool, +chunk: +List<U32>, +dir: String, +version: U32, state: Gui.Loading) -> IO(Gui.Loading):
   match fine:
     case False{}: IO.pure(Gui.Loading, state)
-    case True{}: Gui.rgs.line.kind(chunk, dir, state)
+    case True{}: Gui.rgs.line.kind(chunk, dir, version, state)
 
-def Gui.rgs.line.checked(+chunk: +List<U32>, +dir: String, r: Gui.Loading & Bool) -> IO(Gui.Loading):
+def Gui.rgs.line.checked(+chunk: +List<U32>, +dir: String, +version: U32, r: Gui.Loading & Bool) -> IO(Gui.Loading):
   (state, +fine) = r
-  Gui.rgs.line.go(fine, chunk, dir, state)
+  Gui.rgs.line.go(fine, chunk, dir, version, state)
 
 # raygui's text loop: each chunk by its first byte ('p' a property, 'f' a
-# font, anything else nothing); nothing more once a line is undefined.
-def Gui.rgs.lines(chunks: +List<+List<U32>>, +dir: String, state: Gui.Loading) -> IO(Gui.Loading):
+# font, 'v' the version (raygui 5.1-dev; 0 at start) that orders the next
+# 'f' lines' names, anything else nothing); nothing more once a line is
+# undefined.
+def Gui.rgs.lines(chunks: +List<+List<U32>>, +dir: String, +version: U32, state: Gui.Loading) -> IO(Gui.Loading):
   match chunks:
     case Nil{}: IO.pure(Gui.Loading, state)
-    case Con{+chunk, +rest}: IO.bind(Gui.Loading, Gui.Loading, Gui.rgs.line.checked(chunk, dir, Gui.rgs.fine(state)), s => Gui.rgs.lines(rest, dir, s))
+    case Con{+chunk, +rest}: IO.bind(Gui.Loading, Gui.Loading, Gui.rgs.line.checked(chunk, dir, version, Gui.rgs.fine(state)), s => Gui.rgs.lines(rest, dir, Gui.rgs.version(chunk, version), s))
 
 # The answer: the gui as loaded and the frame, or the gui as it was and the
 # frame marked undefined.
@@ -3422,7 +3651,7 @@ def Gui.rgs.done(+before: Gui, state: Gui.Loading) -> J.Frame & Gui:
 def Gui.rgs.text(dir: Maybe<String>, +bytes: +List<U32>, +gui: Gui, frame: J.Frame) -> IO(J.Frame & Gui):
   match dir:
     case None{}: IO.pure(J.Frame & Gui, (J.Frame.refuse(frame), gui))
-    case Some{+d}: IO.bind(Gui.Loading, J.Frame & Gui, Gui.rgs.lines(Gui.rgs.chunks(U32.to_nat((TextCore.len(bytes) + 1 : U32)), Gui.rgs.cut(bytes)), d, GuiLoading{gui, frame, 0, 0, 0, True{}}),
+    case Some{+d}: IO.bind(Gui.Loading, J.Frame & Gui, Gui.rgs.lines(Gui.rgs.chunks(U32.to_nat((TextCore.len(bytes) + 1 : U32)), Gui.rgs.cut(bytes)), d, 0, GuiLoading{gui, frame, 0, 0, 0, True{}}),
       s => IO.pure(J.Frame & Gui, Gui.rgs.done(gui, s)))
 
 # ----- The binary format (GuiLoadStyleFromMemory)
@@ -3534,24 +3763,19 @@ def Gui.rgs.font.applied(+white: J.Rectangle, frame: J.Frame, r: Gui & J.Font) -
   (+gui, font) = r
   (Gui.rgs.white.set(Gui.rgs.white.positive(white), frame, white, font), gui)
 
-def Gui.rgs.block.white(block: Gui.FontBlock) -> J.Rectangle:
-  GuiFontBlock{_, _, white, _, _, _, _, _, _} = block
-  white
-
-def Gui.rgs.font.glyphed(fine: Bool, +gui: Gui, frame: J.Frame, font: J.Font, +white: J.Rectangle) -> J.Frame & Gui:
-  match fine:
-    case False{}: (J.Frame.refuse(frame), gui)
-    case True{}: Gui.rgs.font.applied(white, frame, Gui.set_font(gui, font))
-
 def Gui.rgs.atlas(found: Maybe<J.Surface>) -> J.Surface:
   match found:
     case Some{s}: s
     case None{}: J.Surface{0, 0, 7, J.Words{Array.new(U32, 0n, 0)}}
 
-# The recs and glyph blocks after the texture: version 400 and later give
-# each one's compressed size first.
-def Gui.rgs.font.with_texture(t: J.Texture, +gui: Gui, frame: J.Frame, +bytes: +List<U32>, +block: Gui.FontBlock, +version: U32, +atlas: +List<U32>) -> J.Frame & Gui:
-  GuiFontBlock{+base, +count, +white, _, _, +width, +height, +format, +at} = block
+# The recs and glyph blocks after the image: version 400 and later give
+# each one's compressed size first. raygui 5.1-dev reads them before it
+# loads the texture, whether the texture then loads or not.
+type Gui.Read is Data:
+  GuiRead{recs: +List<U32>, infos: +List<U32>, fine: Bool}
+
+def Gui.rgs.font.blocks(+bytes: +List<U32>, +block: Gui.FontBlock, +version: U32) -> Gui.Read:
+  GuiFontBlock{_, +count, _, _, _, _, _, _, +at} = block
   +modern = (version >= 400 : U32) && (version < 32768 : U32)
   +n = TextCore.len(bytes)
   +recs_at = Bool.pick(U32, modern, (at + 4 : U32), at)
@@ -3559,24 +3783,37 @@ def Gui.rgs.font.with_texture(t: J.Texture, +gui: Gui, frame: J.Frame, +bytes: +
   +glyphs_at = Gui.rgs.block.next(recs)
   +infos = Gui.rgs.block(bytes, Bool.pick(U32, modern, (glyphs_at + 4 : U32), glyphs_at), (16 * count : U32), Bool.pick(U32, modern, Gui.rgs.u32(bytes, glyphs_at), 0), (16 * count : U32))
   +fine = (Bool.not(modern) || ((at + 4 : U32) <= n : U32)) && Gui.rgs.block.fine(recs) && (Bool.not(modern) || ((glyphs_at + 4 : U32) <= n : U32)) && Gui.rgs.block.fine(infos)
-  Gui.rgs.font.glyphed(fine, gui, frame, J.Font{base, 0, Gui.rgs.glyphs(U32.to_nat(count), Gui.rgs.block.bytes(recs), Gui.rgs.block.bytes(infos), 0), t,
-    Gui.rgs.atlas(J.Surface.from_bytes(width, height, format, atlas))}, white)
+  GuiRead{Gui.rgs.block.bytes(recs), Gui.rgs.block.bytes(infos), fine}
 
-# The font block once its texture is loaded, or GetFontDefault when it is
-# not (raygui's fallback).
-def Gui.rgs.atlas.textured(texture: Maybe<J.Texture>, +gui: Gui, frame: J.Frame, +bytes: +List<U32>, +block: Gui.FontBlock, +version: U32, +atlas: +List<U32>) -> J.Frame & Gui:
+def Gui.rgs.font.dropped(r: Gui & J.Font) -> Gui:
+  (+gui, _) = r
+  gui
+
+# A texture that did not load: GuiSetFont(GetFontDefault()), and (raygui
+# 5.1-dev) no shapes texture.
+def Gui.rgs.font.fallback.binary(+gui: Gui, frame: J.Frame) -> J.Frame & Gui:
+  (frame, Gui.rgs.font.dropped(Gui.set_font(gui, J.Font.default())))
+
+# The font with its texture: the white rectangle, when positive, becomes the
+# shapes texture's source, then GuiSetFont.
+def Gui.rgs.font.with_texture(t: J.Texture, +gui: Gui, frame: J.Frame, +block: Gui.FontBlock, +recs: +List<U32>, +infos: +List<U32>, +pixels: +List<U32>) -> J.Frame & Gui:
+  GuiFontBlock{+base, +count, +white, _, _, +width, +height, +format, _} = block
+  Gui.rgs.font.applied(white, frame, Gui.set_font(gui, J.Font{base, 0, Gui.rgs.glyphs(U32.to_nat(count), recs, infos, 0), t,
+    Gui.rgs.atlas(J.Surface.from_bytes(width, height, format, pixels))}))
+
+def Gui.rgs.atlas.textured(texture: Maybe<J.Texture>, +gui: Gui, frame: J.Frame, +block: Gui.FontBlock, +recs: +List<U32>, +infos: +List<U32>, +pixels: +List<U32>) -> J.Frame & Gui:
   match texture:
-    case None{}: Gui.rgs.font.applied(Gui.rgs.block.white(block), frame, Gui.set_font(gui, J.Font.default()))
-    case Some{t}: Gui.rgs.font.with_texture(t, gui, frame, bytes, block, version, atlas)
+    case None{}: Gui.rgs.font.fallback.binary(gui, frame)
+    case Some{t}: Gui.rgs.font.with_texture(t, gui, frame, block, recs, infos, pixels)
 
-def Gui.rgs.font.texture_loaded(r: J.Frame & Maybe<J.Texture>, +gui: Gui, +bytes: +List<U32>, +block: Gui.FontBlock, +version: U32, +pixels: +List<U32>) -> J.Frame & Gui:
+def Gui.rgs.font.texture_loaded(r: J.Frame & Maybe<J.Texture>, +gui: Gui, +block: Gui.FontBlock, +recs: +List<U32>, +infos: +List<U32>, +pixels: +List<U32>) -> J.Frame & Gui:
   (frame, texture) = r
-  Gui.rgs.atlas.textured(texture, gui, frame, bytes, block, version, pixels)
+  Gui.rgs.atlas.textured(texture, gui, frame, block, recs, infos, pixels)
 
-def Gui.rgs.font.surface(found: Maybe<J.Surface>, +gui: Gui, frame: J.Frame, +bytes: +List<U32>, +block: Gui.FontBlock, +version: U32, +pixels: +List<U32>) -> J.Frame & Gui:
+def Gui.rgs.font.surface(found: Maybe<J.Surface>, +gui: Gui, frame: J.Frame, +block: Gui.FontBlock, +recs: +List<U32>, +infos: +List<U32>, +pixels: +List<U32>) -> J.Frame & Gui:
   match found:
     case None{}: (J.Frame.refuse(frame), gui)
-    case Some{s}: Gui.rgs.font.texture_loaded(J.Texture.load_from_image(frame, s), gui, bytes, block, version, pixels)
+    case Some{s}: Gui.rgs.font.texture_loaded(J.Texture.load_from_image(frame, s), gui, block, recs, infos, pixels)
 
 def Gui.rgs.block.at(+block: Gui.FontBlock, +at: U32) -> Gui.FontBlock:
   GuiFontBlock{+base, +count, +white, +uncompressed, +compressed, +width, +height, +format, _} = block
@@ -3585,19 +3822,28 @@ def Gui.rgs.block.at(+block: Gui.FontBlock, +at: U32) -> Gui.FontBlock:
 # The image: a width or height of 0 is LoadTextureFromImage's id 0 (the
 # default font); otherwise its pixels, which must be at least the format's
 # data size.
-def Gui.rgs.font.sized(zero: Bool, +gui: Gui, frame: J.Frame, +bytes: +List<U32>, +block: Gui.FontBlock, +version: U32, +pixels: +List<U32>, +width: U32, +height: U32, +format: U32) -> J.Frame & Gui:
+def Gui.rgs.font.atlas(zero: Bool, +gui: Gui, frame: J.Frame, +block: Gui.FontBlock, +recs: +List<U32>, +infos: +List<U32>, +pixels: +List<U32>) -> J.Frame & Gui:
   match zero:
-    case True{}: Gui.rgs.atlas.textured(None{}, gui, frame, bytes, block, version, pixels)
-    case False{}: Gui.rgs.font.surface(J.Surface.from_bytes(width, height, format, pixels), gui, frame, bytes, block, version, pixels)
+    case True{}: Gui.rgs.font.fallback.binary(gui, frame)
+    case False{}:
+      GuiFontBlock{_, _, _, _, _, +width, +height, +format, _} = block
+      Gui.rgs.font.surface(J.Surface.from_bytes(width, height, format, pixels), gui, frame, block, recs, infos, pixels)
+
+def Gui.rgs.font.read(fine: Bool, +zero: Bool, +gui: Gui, frame: J.Frame, +block: Gui.FontBlock, +recs: +List<U32>, +infos: +List<U32>, +pixels: +List<U32>) -> J.Frame & Gui:
+  match fine:
+    case False{}: (J.Frame.refuse(frame), gui)
+    case True{}: Gui.rgs.font.atlas(zero, gui, frame, block, recs, infos, pixels)
+
+def Gui.rgs.font.sized(read: Gui.Read, +zero: Bool, +gui: Gui, frame: J.Frame, +block: Gui.FontBlock, +pixels: +List<U32>) -> J.Frame & Gui:
+  GuiRead{+recs, +infos, +fine} = read
+  Gui.rgs.font.read(fine, zero, gui, frame, block, recs, infos, pixels)
 
 def Gui.rgs.font.pixels(fine: Bool, +zero: Bool, +gui: Gui, frame: J.Frame, +bytes: +List<U32>, +block: Gui.FontBlock, +version: U32, +image: Gui.Block, +needed: U32) -> J.Frame & Gui:
   match fine:
     case False{}: (J.Frame.refuse(frame), gui)
     case True{}:
-      GuiFontBlock{_, _, _, _, _, +width, +height, +format, _} = block
-      +pixels = TextCore.take(Gui.rgs.block.bytes(image), needed)
       +next = Gui.rgs.block.at(block, Gui.rgs.block.next(image))
-      Gui.rgs.font.sized(zero, gui, frame, bytes, next, version, pixels, width, height, format)
+      Gui.rgs.font.sized(Gui.rgs.font.blocks(bytes, next, version), zero, gui, frame, next, TextCore.take(Gui.rgs.block.bytes(image), needed))
 
 def Gui.rgs.pixels.of(found: Maybe<&2, U32>) -> U32:
   match found:
@@ -3626,11 +3872,14 @@ def Gui.rgs.font.header(fits: Bool, +bytes: +List<U32>, +at: U32, +version: U32,
     case False{}: (J.Frame.refuse(frame), gui)
     case True{}: Gui.rgs.font.image(bytes, Gui.rgs.font.block(bytes, at), version, gui, frame)
 
-# fontDataSize above 0: a font follows.
+# fontDataSize above 0: a font follows, its header after the font file's
+# 32-byte name from version 600 (raygui 5.1-dev).
 def Gui.rgs.binary.fonted(has: Bool, +bytes: +List<U32>, +at: U32, +version: U32, +gui: Gui, frame: J.Frame) -> J.Frame & Gui:
   match has:
     case False{}: (frame, gui)
-    case True{}: Gui.rgs.font.header(((at + 52 : U32) <= TextCore.len(bytes) : U32), bytes, (at + 4 : U32), version, gui, frame)
+    case True{}:
+      +named = Bool.pick(U32, (version >= 600 : U32) && (version < 32768 : U32), 32, 0)
+      Gui.rgs.font.header((((at + 52 : U32) + named : U32) <= TextCore.len(bytes) : U32), bytes, ((at + 4 : U32) + named : U32), version, gui, frame)
 
 def Gui.rgs.binary.kept(fine: Bool, +before: Gui, +gui: Gui, +bytes: +List<U32>, +at: U32, +version: U32, frame: J.Frame) -> J.Frame & Gui:
   match fine:
@@ -3684,18 +3933,35 @@ def Gui.style.file(r: Result<&1, &1, J.Surface.IOError, +List<U32>>, +path: Stri
 # file whose first byte is '#' is read as text: each line (fgets's chunks of
 # up to 255 bytes; a last line without '\n' is not read) by its first
 # byte, 'p' a property ("p <control> <property> 0x<value>" through sscanf,
-# whose targets keep their values from one line to the next) and 'f' a font
-# ("f <size> <charmap or 0> <font file>", relative to the style's
-# directory). Any other file is the binary format: "rGS ", version,
-# reserved, the property count and the properties, then an optional font
-# (its atlas image, rects and glyphs, raw or DEFLATE-compressed; the white
-# rectangle, when positive, becomes the shapes texture's source). A file
+# whose targets keep their values from one line to the next), 'v' the
+# version ("v <version>") and 'f' a font ("f <size> <charmap or 0> <font
+# file>", or "f <size> <font file> <charmap or 0>" from version 600, names
+# of at most 31 bytes relative to the style's directory). Any other file is
+# the binary format (GuiLoadStyleFromMemory): "rGS ", version, reserved,
+# the property count and the properties, then an optional font (from
+# version 600 its file's 32-byte name, then its atlas image, rects and
+# glyphs, raw or DEFLATE-compressed; the white rectangle, when positive and
+# the atlas's texture loaded, becomes the shapes texture's source). A file
 # that does not open changes nothing. What raygui leaves undefined marks the
 # frame undefined: GuiSetStyle indices outside
 # the table, sscanf values outside their types, reads past the file,
 # compressed data that does not inflate to what the next step reads, a
 # font with no glyphs or a base size below 1, and (gaps) image formats
 # above 13, samples Jonlib's images refuse, an 'f' line without a charmap
-# name and a style path past GetDirectoryPath's buffer.
+# name, a 'v' value with a '-' or of 2^31 or more, and a style path past
+# GetDirectoryPath's buffer.
 def Gui.load_style(gui: Gui, frame: J.Frame, +path: String) -> IO(J.Frame & Gui):
   IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, J.Frame & Gui, J.Files.load_data(path), r => Gui.style.file(r, path, gui, frame))
+
+def Gui.rgs.binary.from(empty: Bool, +bytes: +List<U32>, +gui: Gui, frame: J.Frame) -> J.Frame & Gui:
+  match empty:
+    case True{}: (J.Frame.refuse(frame), gui)
+    case False{}: Gui.rgs.binary(bytes, gui, frame)
+
+# GuiLoadStyleFromMemory(fileData, dataSize) (public since raygui 5.1-dev):
+# the binary format of GuiLoadStyle over the bytes, with the frame. Data
+# shorter than the 12-byte header, an empty one too (raygui reads the header
+# first), is undefined, as is what GuiLoadStyle's binary format leaves
+# undefined.
+def Gui.load_style_from_memory(gui: Gui, frame: J.Frame, +bytes: +List<U32>) -> J.Frame & Gui:
+  Gui.rgs.binary.from(Gui.empty(bytes), bytes, gui, frame)

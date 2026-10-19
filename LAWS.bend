@@ -81,12 +81,15 @@ import ./src/resampler.bend as Resampler
 import ./src/lowpass.bend as Lowpass
 import ./src/shapes.bend as Shapes
 import ./src/frame.bend as FrameCore
+import ./src/shapes3d.bend as Shapes3D
 import ./src/fonts.bend as FontCore
+import ./src/font_data.bend as FontData
 import ./src/input.bend as InputCore
 import ./src/sha.bend as ShaCore
 import ./src/gestures.bend as GestureCore
 import ./src/clock.bend as Clock
 import ./src/core_state.bend as CoreState
+import ./src/automation.bend as AutomationCore
 
 law clear_dimensions:
   for +width: U32
@@ -1409,8 +1412,16 @@ law iqm_name_before_its_nul:
 law iqm_name_without_nul_refused:
   {Iqm.named.go(2n, [97, 98, 99], Nil{}) == Iqm.Named{False{}, Nil{}} : Iqm.Named}
 
-law iqm_material_must_name_a_file:
-  {(Iqm.texture.named(Nil{}), (Iqm.texture.named([47, 97]), Iqm.texture.named([97, 46, 112]))) == (False{}, (False{}, True{})) : Bool & (Bool & Bool)}
+# raylib 6.2: an empty material name is kept (it asks for no texture); a
+# name from the root is still refused.
+law iqm_material_names_a_file_or_none:
+  {(Iqm.texture.named(Nil{}), (Iqm.texture.named([47, 97]), Iqm.texture.named([97, 46, 112]))) == (True{}, (False{}, True{})) : Bool & (Bool & Bool)}
+
+law iqm_empty_material_asks_no_texture:
+  {J.Model.iqm.request(Nil{}) == None{} : Maybe<&2, +List<U32>>}
+
+law iqm_named_material_asks_its_texture:
+  {J.Model.iqm.request([97, 46, 112]) == Some{[97, 46, 112]} : Maybe<&2, +List<U32>>}
 
 law iqm_pose_parents:
   {(Iqm.parented([4294967295, 0, 1], 3), Iqm.parented([4294967295, 0, 3], 3)) == (True{}, False{}) : Bool & Bool}
@@ -1471,9 +1482,9 @@ law m3d_other_magic_no_model:
   {M3d.model([51, 100, 109, 111, 10]) == M3d.Empty{} : M3d.Loaded}
 
 # Skeletons and animations (src/gltf_anim.bend): a joint's place among the
-# joints is its bone index and a node outside them has none (-1); a time
-# with no key pair reads key 0; bytes that are not a .glb file give neither
-# a skeleton nor animations.
+# joints is its bone index and a node outside them has none (-1); fewer than
+# two keys read key 0; bytes that are not a .glb file give neither a
+# skeleton nor animations.
 law gltf_anim_joint_place:
   {GltfAnim.find([5, 7, 9], 7, 0) == 1 : U32}
 
@@ -1482,7 +1493,53 @@ law gltf_anim_node_outside_skeleton:
 
 law gltf_anim_no_key_pair_reads_first:
   for time: F32
-  {GltfAnim.key.index(GltfAnim.key(Nil{}, time, 0, 0.0, 0.0)) == 0 : U32}
+  {GltfAnim.key.index(GltfAnim.key(Nil{}, time)) == 0 : U32}
+
+# raylib 6.2's GetPoseAtTimeGLTF without a pair that holds the time: the
+# last pair (count - 2), the first one before the first key, the search's
+# pair when there is one.
+law gltf_anim_key_past_last_pair:
+  {(GltfAnim.key.chosen(4294967295, False{}, 5), (GltfAnim.key.chosen(4294967295, True{}, 5), GltfAnim.key.chosen(1, False{}, 5))) == (3, (0, 1)) : U32 & (U32 & U32)}
+
+# raylib 6.2's LoadBoneInfoGLTF walks up past nodes that are not joints: a
+# node without a parent has no parent bone, a stopped walk keeps its answer,
+# and a walk out of fuel (a cycle) is not a bone index, which refuses the
+# skeleton.
+law gltf_anim_parent_walk_root:
+  {GltfAnim.parent.walk(2n, Nil{}, 0, Nil{}, 0, 0, True{}) == 4294967295 : U32}
+
+law gltf_anim_parent_walk_stops:
+  for nodes: +List<Json.Json>
+  for total: U32
+  for all: +List<U32>
+  for at: U32
+  {GltfAnim.parent.walk(3n, nodes, total, all, at, 7, False{}) == 7 : U32}
+
+law gltf_anim_parent_walk_unended:
+  for nodes: +List<Json.Json>
+  for total: U32
+  for all: +List<U32>
+  for at: U32
+  for answer: U32
+  {GltfAnim.parent.walk(0n, nodes, total, all, at, answer, True{}) == 4294967294 : U32}
+
+law gltf_anim_unended_parent_refused:
+  {GltfAnim.bones.ok(Con{GltfAnim.Bone{Nil{}, 4294967294}, Nil{}}) == False{} : Bool}
+
+# raylib 6.2's bind pose: without inverse bind matrices the world matrices
+# (mode 0); float MAT4 inverses always bind, another layout is refused.
+law gltf_anim_no_inverses_world_bind:
+  for root: Json.Json
+  for bin: +List<+List<U32>>
+  for limit: U32
+  for joints: U32
+  {GltfAnim.inverses.read(False{}, root, bin, limit, joints) == GltfAnim.Inverses{0, Nil{}} : GltfAnim.Inverses}
+
+law gltf_anim_inverse_modes_bind:
+  for items: +List<U32>
+  for nodes: +List<Json.Json>
+  for total: U32
+  {(GltfAnim.bind.ok(1, items, nodes, total), GltfAnim.bind.ok(2, items, nodes, total)) == (True{}, False{}) : Bool & Bool}
 
 law gltf_anim_empty_file_no_skeleton:
   {GltfAnim.skeleton(Nil{}) == None{} : Maybe<GltfAnim.Skeleton>}
@@ -1550,7 +1607,9 @@ law mesh_knot_fused_refused:
 # none, and a bone whose node or channels cannot be read ends the pose.
 law gltf_anim_no_joints_no_rest:
   for nodes: +List<Json.Json>
-  {GltfAnim.rests(Nil{}, nodes) == Nil{} : +List<GltfAnim.Rest>}
+  for total: U32
+  for all: +List<U32>
+  {GltfAnim.rests(Nil{}, nodes, total, all) == Nil{} : +List<GltfAnim.Rest>}
 
 law gltf_anim_unreadable_bone_ends_pose:
   for base: GltfAnim.Rest
@@ -1812,6 +1871,14 @@ law gui_default_property_propagates:
 law gui_extended_property_stays:
   {JG.Gui.get_style(JG.Gui.set_style(JG.Gui.new(), 0, 16, 20), 4, 16) == 16 : U32}
 
+# raygui 5.1-dev's default style: TEXT_LINE_SPACING 12, and TABBAR (the
+# control in CONTROL11's row) with TAB_ITEMS_WIDTH 160.
+law gui_default_line_spacing:
+  {JG.Gui.get_style(JG.Gui.new(), 0, 20) == 12 : U32}
+
+law gui_default_tab_width:
+  {JG.Gui.get_style(JG.Gui.new(), JG.Gui.TABBAR(), JG.Gui.TAB_ITEMS_WIDTH()) == 160 : U32}
+
 law gui_disable_then_enable:
   for gui: JG.Gui
   {JG.Gui.get_state(JG.Gui.enable(JG.Gui.disable(JG.Gui.set_state(gui, 0)))) == 0 : U32}
@@ -1846,33 +1913,51 @@ law gui_icon_unclosed_is_text:
 law gui_icon_four_digits_is_text:
   {JG.Gui.icon.of([35, 49, 50, 51, 52, 35]) == JG.GuiIcon{4294967295, [35, 49, 50, 51, 52, 35]} : JG.Gui.Icon}
 
-# raygui's table has 256 icons: "#255#" is drawn, "#256#" (a read past the
-# table) is refused. A line that is not the last and holds only '#' is
-# refused too: GuiGetTextWidth would look for a second '#' in the next lines.
-law gui_icon_last_of_table_drawn:
-  {JG.Gui.has_icon([[35, 50, 53, 53, 35]]) == False{} : Bool}
+# raygui 5.1-dev's GetTextIcon names icons below 512: "#511#" is one,
+# "#512#" is text (the line stays whole), while the marker GetLineWidth
+# skips is any '#', up to three digits and '#'.
+law gui_icon_last_of_table:
+  {JG.Gui.icon.of([35, 53, 49, 49, 35]) == JG.GuiIcon{511, []} : JG.Gui.Icon}
 
-law gui_icon_beyond_table_refused:
-  {JG.Gui.has_icon([[35, 50, 53, 54, 35]]) == True{} : Bool}
+law gui_icon_past_max_is_text:
+  {JG.Gui.icon.of([35, 53, 49, 50, 35, 97]) == JG.GuiIcon{4294967295, [35, 53, 49, 50, 35, 97]} : JG.Gui.Icon}
 
-law gui_hash_before_another_line_refused:
-  {JG.Gui.has_icon([[35], [97]]) == True{} : Bool}
+law gui_marker_any_number:
+  {JG.Gui.icon.scan([35, 54, 48, 48, 35, 97]) == JG.GuiIcon{600, [97]} : JG.Gui.Icon}
+
+law gui_marker_needs_digits_or_hash:
+  {JG.Gui.icon.scan([35, 97, 35]) == JG.GuiIcon{4294967295, [35, 97, 35]} : JG.Gui.Icon}
+
+# A line is refused only for an icon whose eight words are not in the icon
+# table (raygui reads them past it): with a table of two icons, "#1#" is
+# drawn and "#2#" refused; a lone '#' no longer is (GetLineWidth stops at
+# the line's end).
+law gui_icon_in_loaded_table_drawn:
+  {JG.Gui.has_icon([[35, 49, 35]], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) == False{} : Bool}
+
+law gui_icon_past_loaded_table_refused:
+  {JG.Gui.has_icon([[35, 50, 35]], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) == True{} : Bool}
+
+law gui_hash_before_another_line_drawn:
+  {JG.Gui.has_icon([[35], [97]], [0, 0, 0, 0, 0, 0, 0, 0]) == False{} : Bool}
 
 law gui_hash_on_last_line_drawn:
-  {JG.Gui.has_icon([[97], [35]]) == False{} : Bool}
+  {JG.Gui.has_icon([[97], [35]], [0, 0, 0, 0, 0, 0, 0, 0]) == False{} : Bool}
 
-# GuiGetTextWidth measures from a second '#' at index 1 to 4, not further.
-law gui_width_second_hash_at_four:
-  {JG.Gui.width.offset(4n, [49, 49, 56, 35], 1) == 4 : U32}
+law gui_icon_table_holds_512:
+  {JG.Gui.icons.has(GuiIcons.words(), 511) == True{} : Bool}
 
-law gui_width_second_hash_beyond:
-  {JG.Gui.width.offset(4n, [97, 98, 99, 100, 35], 1) == 0 : U32}
+law gui_icon_table_ends_at_512:
+  {JG.Gui.icons.has(GuiIcons.words(), 512) == False{} : Bool}
 
 # The icon set: ICON_ARROW_LEFT_FILL's rows 6 and 7 are bits 6..9 and 5..9
-# (word 3 is 0x03E003C0); a word past the 256 icons is 0, not a read outside
-# the table.
+# (word 3 is 0x03E003C0); ICON_FILETYPE_ICON (256, new in raygui 5.1-dev)
+# starts with 0x3FF00000, and the icons past raygui's initializers are 0.
+law gui_icon_filetype_icon_word:
+  {GuiIcons.word(256, 0) == 1072693248 : U32}
+
 law gui_icon_past_table_is_empty:
-  {GuiIcons.word(256, 0) == 0 : U32}
+  {GuiIcons.word(511, 7) == 0 : U32}
 
 law gui_icon_arrow_left_word:
   {GuiIcons.word(118, 3) == 65012672 : U32}
@@ -1923,6 +2008,48 @@ law gui_dropdown_focus_without_items:
   for pitch: F32
   for up: Bool
   {JG.Gui.drop.focus(0n, 0, mouse, x, y, w, h, pitch, up) == 4294967295 : U32}
+
+# raygui 5.1-dev's GuiToggleGroup reads its items itself: ';' moves to the
+# next column, '\n' to the next row's first; GROUP_WIDTH_FULL divides by the
+# ';'s plus one.
+law gui_toggle_group_cells:
+  {JG.Gui.cells([65, 59, 66, 10, 67], 0, 0, Nil{}) == [JG.GuiCell{0, 0, [65]}, JG.GuiCell{0, 1, [66]}, JG.GuiCell{1, 0, [67]}] : +List<JG.Gui.Cell>}
+
+law gui_toggle_group_semicolons:
+  {JG.Gui.semis([65, 59, 66, 10, 67, 59, 68], 0) == 2 : U32}
+
+# GuiMessageBox and GuiTextInputBox (raygui 5.1-dev): btnActive is kept and
+# the result 0 when nothing was clicked; a click (the close button is 0)
+# sets it and the result is 1.
+law gui_reply_none:
+  {JG.Gui.reply.of(7, 4294967295) == JG.GuiReply{7, 0} : JG.Gui.Reply}
+
+law gui_reply_close:
+  {JG.Gui.reply.of(7, 0) == JG.GuiReply{0, 1} : JG.Gui.Reply}
+
+# GuiLoadIconsFromMemory's table is the data's words, little-endian.
+law gui_icons_words_little_endian:
+  {JG.Gui.icons.words(2n, [1, 0, 0, 0, 2, 1, 0, 0, 9], Nil{}) == [1, 258] : +List<U32>}
+
+# GuiLoadStyle's 'v' line (raygui 5.1-dev): its %u value, other lines keep
+# the version, and a '-' is refused.
+law gui_style_version_line:
+  {JG.Gui.rgs.version([118, 32, 54, 48, 48, 10], 0) == 600 : U32}
+
+law gui_style_version_kept:
+  {JG.Gui.rgs.version([112, 32, 49, 10], 600) == 600 : U32}
+
+law gui_style_version_negative_refused:
+  {JG.Gui.scan.fine(JG.Gui.rgs.version.scan([118, 32, 45, 49])) == False{} : Bool}
+
+# An 'f' line names the font first from version 600, and each name is at
+# most 31 bytes (the rest of a longer first word goes to the second).
+law gui_style_font_line_modern:
+  {JG.Gui.rgs.font.line([102, 32, 49, 54, 32, 97, 32, 98], True{}) == JG.GuiFontLine{16, [98], [97], True{}} : JG.Gui.FontLine}
+
+law gui_style_font_line_31_bytes:
+  {JG.Gui.rgs.font.line([102, 32, 49, 32, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 98, 99], False{})
+    == JG.GuiFontLine{1, [97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97], [98, 99], True{}} : JG.Gui.FontLine}
 
 # GuiTextBox edits bytes at the cursor: a piece goes in before it, a
 # codepoint comes out whole (two bytes for U+00E9), and nothing is before
@@ -2564,10 +2691,10 @@ law mp3_info_no_field:
   {Mp3.info.fields(0) == 8 : U32}
 
 law mp3_total_less_delay_and_padding:
-  {Mp3.total.tagged(4127616, 1105, 577) == 4125934 : U32}
+  {Mp3.total.tagged(4127616, 1105, 577, False{}) == 4125934 : U32}
 
 law mp3_total_delay_too_large_ignored:
-  {Mp3.total.tagged(1000, 1105, 577) == 423 : U32}
+  {Mp3.total.tagged(1000, 1105, 577, False{}) == 423 : U32}
 
 # dr_mp3 reads no more than it thinks is left of the stream, and no more than
 # the file has; and a file of fewer than ten bytes does not open.
@@ -2955,10 +3082,10 @@ law mp3_stream_of_a_short_file_does_not_open:
   {Mp3S.open([255, 251, 144, 68]) == None{} : Maybe<Mp3S.Player>}
 
 law mp3_read_of_no_frame:
-  {Mp3S.read.raw(Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 0, True{}) == Mp3S.Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 0, Nil{}} : Mp3S.Read}
+  {Mp3S.read.raw(Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, 0, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 0, True{}) == Mp3S.Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, 0, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 0, Nil{}} : Mp3S.Read}
 
 law mp3_stopped_stream_gives_no_frame:
-  {Mp3S.read.raw(Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 2}, 100, True{}) == Mp3S.Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 2}, 0, Nil{}} : Mp3S.Read}
+  {Mp3S.read.raw(Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, 0, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 2}, 100, True{}) == Mp3S.Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, 0, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 2}, 0, Nil{}} : Mp3S.Read}
 
 # MP3 music (Music.mp3.read, raylib's loop in UpdateMusicStream). A read
 # that brings every frame needed ends the loop; a short one takes the
@@ -2967,25 +3094,25 @@ law mp3_stopped_stream_gives_no_frame:
 # are joined in the order they were made, an MP3 context counts as a loaded
 # decoder, and the music's stream has the MP3 stream's channels and rate.
 law music_mp3_read_with_every_frame_is_over:
-  {J.Music.mp3.turn(Mp3S.Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 5, [1, 2]}, 5, Nil{}, False{}) == J.MusicMp3Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 0, [[1, 2]], True{}, True{}} : J.Music.Mp3}
+  {J.Music.mp3.turn(Mp3S.Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, 0, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 5, [1, 2]}, 5, Nil{}, False{}) == J.MusicMp3Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, 0, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 0, [[1, 2]], True{}, True{}} : J.Music.Mp3}
 
 law music_mp3_short_read_goes_back_to_the_start:
-  {J.Music.mp3.turn(Mp3S.Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 3, [1, 2]}, 5, Nil{}, False{}) == J.MusicMp3Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 2, [[1, 2]], True{}, False{}} : J.Music.Mp3}
+  {J.Music.mp3.turn(Mp3S.Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, 0, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 3, [1, 2]}, 5, Nil{}, False{}) == J.MusicMp3Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, 0, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 2, [[1, 2]], True{}, False{}} : J.Music.Mp3}
 
 law music_mp3_stream_without_frames_ends_the_read:
-  {J.Music.mp3.turn(Mp3S.Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 0, Nil{}}, 5, Nil{}, True{}) == J.MusicMp3Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 5, [Nil{}], True{}, True{}} : J.Music.Mp3}
+  {J.Music.mp3.turn(Mp3S.Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, 0, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 0, Nil{}}, 5, Nil{}, True{}) == J.MusicMp3Read{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, 0, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}, 5, [Nil{}], True{}, True{}} : J.Music.Mp3}
 
 law music_mp3_reads_joined_in_order:
   {J.Music.mp3.joined([[3, 4], [1, 2]], Nil{}) == [1, 2, 3, 4] : +List<U32>}
 
 law music_mp3_is_a_loaded_context:
-  {J.Music.context.loaded(J.MusicMp3{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}}) == True{} : Bool}
+  {J.Music.context.loaded(J.MusicMp3{Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, 0, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}}) == True{} : Bool}
 
 law music_mp3_stream_channels:
-  {Mp3S.Player.channels(Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}) == 2 : U32}
+  {Mp3S.Player.channels(Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, 0, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}) == 2 : U32}
 
 law music_mp3_stream_rate:
-  {Mp3S.Player.rate(Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}) == 44100 : U32}
+  {Mp3S.Player.rate(Mp3S.Player{Mp3.Stream{Nil{}, 0, 0, 0, Nil{}, 0, 0, 0, 0, False{}, Mp3.Dec.zero(), 0, 0, 0, 0, 2, 44100}, Mp3L3.Decoder.zero(), Nil{}, 0, 0, 2, 0, 0}) == 44100 : U32}
 
 # Frame: InitWindow sizes are 1..4096; a zero or oversized width has no frame
 # whatever the height.
@@ -3057,6 +3184,48 @@ law input_poll_copies_low_keys:
 
 law input_poll_keeps_high_keys:
   {InputCore.Keyboard.is_pressed(InputCore.Keyboard.poll(InputCore.Keyboard.press(InputCore.Keyboard.new(), 301)), 301) == True{} : Bool}
+
+# raylib 6.2 bounds-checks gamepad indexes: a negative gamepad is not
+# available and its buttons answer false, the axis count of any index outside
+# 0..3 is 0, and the name of one is NULL (None).
+law input_gamepad_negative_unavailable:
+  {InputCore.gamepad.available(InputCore.Input.new(), 4294967295) == Some{False{}} : Maybe<Bool>}
+
+law input_gamepad_negative_button:
+  {InputCore.gamepad.button(InputCore.Input.new(), 1, 4294967295, 0) == Some{False{}} : Maybe<Bool>}
+
+law input_gamepad_axis_count_outside:
+  {(InputCore.gamepad.axis_count(InputCore.Input.new(), 4), InputCore.gamepad.axis_count(InputCore.Input.new(), 4294967295))
+    == (Some{0}, Some{0}) : Maybe<U32> & Maybe<U32>}
+
+law input_gamepad_name_negative_null:
+  {InputCore.gamepad.name(4294967295) == None{} : Maybe<String>}
+
+# GetFPS (raylib 6.2) counts its samples up to 30 and answers 0 before the
+# first one.
+law core_fps_counted_grows:
+  {(CoreState.capture.counted(0), CoreState.capture.counted(29)) == (1, 30) : U32 & U32}
+
+law core_fps_counted_capped:
+  {CoreState.capture.counted(30) == 30 : U32}
+
+law core_fps_unsampled_zero:
+  {CoreState.fps.result(CoreState.Fps.new()) == Some{0} : Maybe<U32>}
+
+# LoadAutomationEventList (raylib 6.2): a 64-byte description is read into
+# its buffer up to 63 bytes, and an "e" line once the list holds 16384 events
+# is skipped unread (even one whose numbers are out of range).
+law automation_load_long_description:
+  {AutomationCore.parse([101, 32, 49, 32, 50, 32, 51, 32, 52, 32, 53, 32, 54, 32, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 10])
+    == Some{AutomationCore.AutoList{16384, 1, [AutomationCore.AutoEvent{1, 2, 3, 4, 5, 6}]}} : Maybe<AutomationCore.AutoList>}
+
+law automation_load_event_added:
+  {AutomationCore.scan.e(AutomationCore.Loading{0, [], False{}}, AutomationCore.Fields{[7, 2], False{}})
+    == AutomationCore.Loading{1, [AutomationCore.AutoEvent{7, 2, 0, 0, 0, 0}], False{}} : AutomationCore.Loading}
+
+law automation_load_full_skips:
+  {AutomationCore.scan.e(AutomationCore.Loading{16384, [], False{}}, AutomationCore.Fields{[1], True{}})
+    == AutomationCore.Loading{16384, [], False{}} : AutomationCore.Loading}
 
 # rgestures.h UpdateGestures turns a tap into a hold and ends a swipe.
 law gesture_tap_becomes_hold:
@@ -3143,6 +3312,62 @@ law texture_pool_reuses_freed:
   for id: U32
   for rest: +List<U32>
   {FrameCore.Pool.take(FrameCore.Pool{next, capacity, Con{id, rest}}) == (FrameCore.Pool{next, capacity, rest}, id) : FrameCore.Pool & U32}
+
+# Text (rtext.c, raylib 6.2): the functions 6.2 defines for every input
+# answer Some; TextInsertAlloc's NULL (a negative position) is None.
+law text_subtext_negative_position_is_empty:
+  {J.Text.subtext("hello", 4294967295, 3) == Some{""} : Maybe<String>}
+
+law text_subtext_zero_length_is_empty:
+  {J.Text.subtext("hello", 1, 0) == Some{""} : Maybe<String>}
+
+law text_subtext_clamped_to_the_text:
+  {J.Text.subtext("hello", 3, 9) == Some{"lo"} : Maybe<String>}
+
+law text_remove_spaces_tests_the_input_index:
+  {J.Text.remove_spaces(" a b ") == Some{"ab"} : Maybe<String>}
+
+law text_replace_between_short:
+  {J.Text.replace_between("<m>z", "<", ">", "R") == Some{"<R>z"} : Maybe<String>}
+
+law text_insert_inside:
+  {J.Text.insert("abc", "XY", 1) == Some{"aXYbc"} : Maybe<String>}
+
+law text_insert_clamped_past_the_end:
+  {J.Text.insert("abc", "XY", 9) == Some{"abcXY"} : Maybe<String>}
+
+law text_insert_negative_is_empty:
+  {J.Text.insert("abc", "XY", 4294967295) == Some{""} : Maybe<String>}
+
+law text_insert_alloc_negative_is_null:
+  {J.Text.insert_alloc("abc", "XY", 4294967295) == None{} : Maybe<String>}
+
+law text_join_delimiter_between:
+  {J.Text.join(["a", "b"], ",") == Some{"a,b"} : Maybe<String>}
+
+law text_split_pieces:
+  {J.Text.split("a,,b", ',') == Some{["a", "", "b"]} : Maybe<+List<String>>}
+
+law text_to_pascal_empty_is_empty:
+  {J.Text.to_pascal("") == Some{""} : Maybe<String>}
+
+law text_to_pascal_skips_underscore_runs:
+  {J.Text.to_pascal("a__1") == Some{"A1"} : Maybe<String>}
+
+law text_to_pascal_final_underscore_ends:
+  {J.Text.to_pascal("trail_") == Some{"Trail"} : Maybe<String>}
+
+law text_to_camel_copies_non_letters:
+  {J.Text.to_camel("A_-b") == Some{"a-b"} : Maybe<String>}
+
+law text_to_snake_spaces_collapse:
+  {J.Text.to_snake("  a  b ") == Some{"a_b_"} : Maybe<String>}
+
+law text_to_snake_acronym_word:
+  {J.Text.to_snake("HTTPRequest") == Some{"http_request"} : Maybe<String>}
+
+law text_to_snake_no_double_underscore:
+  {J.Text.to_snake("a_B") == Some{"a_b"} : Maybe<String>}
 
 # Fonts (rtext.c): GetGlyphIndex of an invalid font (baseSize <= 0 or no
 # glyphs) is 0 whatever the codepoint.
@@ -4276,6 +4501,34 @@ law frame_interp_keeps_attributes:
   for at: FrameCore.Attr
   {FrameCore.Attr.flat(True{}, flat, at) == at : FrameCore.Attr}
 
+# raylib 6.2's DrawSphereEx face: triangles 0-3-1 and 0-2-3 of the rotated
+# vertices; DrawSphereWires joins the same vertices with lines 0-1, 0-2, 0-3.
+law sphere_face_triangles:
+  {Shapes3D.sphere.face(False{}, M.Vector3{0.0, 1.0, 0.0}, M.Vector3{1.0, 0.0, 0.0}, M.Vector3{0.0, 0.0, 1.0}, M.Vector3{0.5, 0.5, 0.0}) == [FrameCore.Vertex3{0.0, 1.0, 0.0}, FrameCore.Vertex3{0.5, 0.5, 0.0}, FrameCore.Vertex3{1.0, 0.0, 0.0}, FrameCore.Vertex3{0.0, 1.0, 0.0}, FrameCore.Vertex3{0.0, 0.0, 1.0}, FrameCore.Vertex3{0.5, 0.5, 0.0}] : +List<FrameCore.Command>}
+
+law sphere_wires_face_lines:
+  {Shapes3D.sphere.face(True{}, M.Vector3{0.0, 1.0, 0.0}, M.Vector3{1.0, 0.0, 0.0}, M.Vector3{0.0, 0.0, 1.0}, M.Vector3{0.5, 0.5, 0.0}) == [FrameCore.Vertex3{0.0, 1.0, 0.0}, FrameCore.Vertex3{1.0, 0.0, 0.0}, FrameCore.Vertex3{0.0, 1.0, 0.0}, FrameCore.Vertex3{0.0, 0.0, 1.0}, FrameCore.Vertex3{0.0, 1.0, 0.0}, FrameCore.Vertex3{0.5, 0.5, 0.0}] : +List<FrameCore.Command>}
+
+# GetImageColor, ImageDrawImageEx's reader: R8G8B8A8 words are Colors;
+# GRAYSCALE replicates the byte with alpha 255.
+law image_color_rgba:
+  {J.Surface.image_color(7, 305419896) == 305419896 : U32}
+
+law image_color_grayscale:
+  {J.Surface.image_color(1, 128) == 2155905279 : U32}
+
+# LoadRenderTextureEx: R8G8B8A8 loads, compressed formats are rejected, other
+# color formats are outside the profile.
+law render_texture_format_rgba:
+  {J.RenderTexture.format_kind(7) == 0 : U32}
+
+law render_texture_format_compressed:
+  {J.RenderTexture.format_kind(14) == 1 : U32}
+
+law render_texture_format_other:
+  {J.RenderTexture.format_kind(4) == 2 : U32}
+
+
 law gui_pick_hover_keeps_drag:
   for gui: JG.Gui
   for bounds: J.Rectangle
@@ -4288,10 +4541,10 @@ law gui_pick_hover_keeps_drag:
 # are such streams; a music from a file is not.
 
 law mp3_memory_stream_has_its_bytes_at_hand:
-  {Mp3.stream.began(True{}, [1, 2, 3, 4, 5], 5, 4, 1) == Mp3.Stream{[1, 2, 3, 4, 5], 5, 4, 1, [2, 3, 4, 5], 3, 1, 1, 4294967295, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 0, 0} : Mp3.Stream}
+  {Mp3.stream.began(True{}, [1, 2, 3, 4, 5], 5, 4, 1) == Mp3.Stream{[1, 2, 3, 4, 5], 5, 4, 1, [2, 3, 4, 5], 3, 1, 1, 4294967295, False{}, Mp3.Dec.zero(), 0, 0, 0, 0, 0, 0} : Mp3.Stream}
 
 law mp3_file_stream_begins_with_an_empty_buffer:
-  {Mp3.stream.began(False{}, [1, 2, 3, 4, 5], 5, 4, 1) == Mp3.Stream{[1, 2, 3, 4, 5], 5, 4, 1, [2, 3, 4, 5], 0, 1, 1, 0, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 0, 0} : Mp3.Stream}
+  {Mp3.stream.began(False{}, [1, 2, 3, 4, 5], 5, 4, 1) == Mp3.Stream{[1, 2, 3, 4, 5], 5, 4, 1, [2, 3, 4, 5], 0, 1, 1, 0, False{}, Mp3.Dec.zero(), 0, 0, 0, 0, 0, 0} : Mp3.Stream}
 
 law mp3_memory_stream_is_told_by_its_capacity:
   {Mp3.stream.memory(Mp3.stream.began(True{}, [1, 2, 3, 4, 5], 5, 4, 1)) == True{} : Bool}
@@ -4311,10 +4564,135 @@ law mp3_memory_stream_is_over_when_no_byte_is_passed:
 law mp3_memory_stream_rewound_has_its_bytes_again:
   {Mp3.stream.rewound(Mp3.stream.stopped(Mp3.stream.used(Mp3.stream.began(True{}, [1, 2, 3, 4, 5], 5, 4, 1), Mp3.Dec.zero(), 3), True{})) == Mp3.stream.began(True{}, [1, 2, 3, 4, 5], 5, 4, 1) : Mp3.Stream}
 
+# dr_wav 0.14.6: a Wave64 chunk whose size is below its own 24-byte header
+# ends the walk; one of exactly 24 is an empty chunk, skipped.
+law wav_w64_chunk_below_header_ends_walk:
+  {Wav.Scan.state(Wav.step([106, 117, 110, 107, 243, 172, 211, 17, 140, 209, 0, 192, 79, 142, 219, 138, 23, 0, 0, 0, 0, 0, 0, 0], 24, 2, False{}, Wav.Scan.initial(0, Wav.W{0, 0}, Wav.W{0, 0}, 0))) == 1 : U32}
+
+law wav_w64_chunk_of_header_size_skipped:
+  {Wav.Scan.state(Wav.step([106, 117, 110, 107, 243, 172, 211, 17, 140, 209, 0, 192, 79, 142, 219, 138, 24, 0, 0, 0, 0, 0, 0, 0], 24, 2, False{}, Wav.Scan.initial(0, Wav.W{0, 0}, Wav.W{0, 0}, 0))) == 0 : U32}
+
+# dr_wav 0.14.6: a "fmt " chunk declared shorter than 16 bytes fails init.
+law wav_fmt_chunk_below_16_fails:
+  {Wav.Scan.state(Wav.fmt.chunk([1, 0, 1, 0, 64, 31, 0, 0, 128, 62, 0, 0, 2, 0, 16, 0], 100, False{}, 0, Wav.W{0, 14}, 0, Wav.Scan.initial(0, Wav.W{0, 0}, Wav.W{0, 0}, 0))) == 2 : U32}
+
+law wav_fmt_chunk_of_16_reads:
+  {Wav.Scan.state(Wav.fmt.chunk([1, 0, 1, 0, 64, 31, 0, 0, 128, 62, 0, 0, 2, 0, 16, 0], 100, False{}, 0, Wav.W{0, 16}, 0, Wav.Scan.initial(0, Wav.W{0, 0}, Wav.W{0, 0}, 0))) == 0 : U32}
+
+# ADPCM blocks: a trailing partial block counts.
+law wav_adpcm_blocks_count_partial:
+  {Wav.block.count(Wav.W{0, 37}, 32) == Wav.W{0, 2} : Wav.W}
+
+# IMA ADPCM without a fact count whose one block header (4 bytes) is the
+# whole data chunk: dr_wav 0.14.6 fails init.
+law wave_wav_ima_headers_fill_data:
+  {J.Wave.decode(".wav", [82, 73, 70, 70, 44, 0, 0, 0, 87, 65, 86, 69, 102, 109, 116, 32, 20, 0, 0, 0, 17, 0, 1, 0, 64, 31, 0, 0, 0, 0, 0, 0, 36, 0, 4, 0, 2, 0, 65, 0, 100, 97, 116, 97, 4, 0, 0, 0, 232, 3, 0, 0]) == Fail{J.InvalidWaveHeader{}} : Result<&1, &1, J.Wave.Error, J.Wave>}
+
+# An AIFF COMM count of 3 frames over one frame of data: raylib 6.2's
+# RL_CALLOC'd wave ends in zeros (0x0102 big-endian is 258).
+law wave_aiff_unread_frames_are_zeros:
+  {J.Wave.decode(".wav", [70, 79, 82, 77, 0, 0, 0, 48, 65, 73, 70, 70, 67, 79, 77, 77, 0, 0, 0, 18, 0, 1, 0, 0, 0, 3, 0, 16, 64, 14, 172, 68, 0, 0, 0, 0, 0, 0, 83, 83, 78, 68, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2]) == Done{J.Wave{3, 44100, 16, 1, [258, 0, 0]}} : Result<&1, &1, J.Wave.Error, J.Wave>}
+
+# Zeros past 2^24 samples are past the port's limits; none to add never is.
+law wav_zeros_limit_past_2_24:
+  {Wav.zero_filled.over(16777217, 0, 1) == True{} : Bool}
+
+law wav_zeros_limit_at_2_24:
+  {Wav.zero_filled.over(8388608, 0, 2) == False{} : Bool}
+
+law wav_zeros_limit_nothing_unread:
+  {Wav.zero_filled.over(16777217, 16777217, 1) == False{} : Bool}
+
+# stb_vorbis gave 1 of 3 frames: raylib 6.2's wave ends in zeros.
+law wave_ogg_unread_frames_are_zeros:
+  {J.Wave.ogg.whole(True{}, 3, 8000, 1, 1, [5]) == Done{J.Wave{3, 8000, 16, 1, [5, 0, 0]}} : Result<&1, &1, J.Wave.Error, J.Wave>}
+
+law wave_ogg_zeros_past_limit:
+  {J.Wave.ogg.whole(True{}, 16777217, 8000, 1, 0, Nil{}) == Fail{J.UnsupportedWaveFormat{}} : Result<&1, &1, J.Wave.Error, J.Wave>}
+
+# qoa.h of raylib 6.2: a frame size below its own header, more than 256
+# slices a channel; one slice in a 32-byte mono frame fits.
+law qoa_frame_size_below_its_header:
+  {Qoa.frame.refused(1000, 1, 8000, 1, 8000, 20, 23) == True{} : Bool}
+
+law qoa_frame_of_one_slice_fits:
+  {Qoa.frame.refused(1000, 1, 8000, 1, 8000, 20, 32) == False{} : Bool}
+
+law qoa_frame_257_slices_refused:
+  {Qoa.frame.refused(10000, 1, 8000, 1, 8000, 5121, 2080) == True{} : Bool}
+
+# qoa_decode's buffer, rounded up to whole frames, past 0x7fffffff samples.
+law qoa_buffer_rounded_at_limit:
+  {Qoa.buffer.refused(2147481600, 1) == False{} : Bool}
+
+law qoa_buffer_rounded_past_limit:
+  {Qoa.buffer.refused(2147481601, 1) == True{} : Bool}
+
+# dr_mp3 (raylib 6.2) checks that each part of an Xing/Info tag fits in the
+# frame; one that does not ends the reading and the frame is played, with
+# a frame count already read kept.
+law mp3_info_table_past_frame_not_a_tag:
+  {Mp3.info.read([73, 110, 102, 111, 0, 0, 0, 15, 0, 0, 0, 12], 36, 104) == Mp3.Info{False{}, 12, 0, 0} : Mp3.Info}
+
+law mp3_info_too_small_for_its_name:
+  {Mp3.info.read([73, 110, 102, 111, 0, 0, 0, 15, 0, 0, 0, 12], 36, 43) == Mp3.Info{False{}, 4294967295, 0, 0} : Mp3.Info}
+
+law mp3_info_lame_tag_short_not_a_tag:
+  {Mp3.info.read([73, 110, 102, 111, 0, 0, 0, 0, 76], 36, 79) == Mp3.Info{False{}, 4294967295, 0, 0} : Mp3.Info}
+
+law mp3_info_lame_tag_fits:
+  {Mp3.info.read([73, 110, 102, 111, 0, 0, 0, 0, 76], 36, 80) == Mp3.Info{True{}, 4294967295, 529, 0} : Mp3.Info}
+
+# The 64-bit total's high word: 3728271 * 1152 = 2^32 + 896,
+# 11184811 * 1152 = 3 * 2^32 + 384; country.mp3's fits in 32 bits.
+law mp3_total_high_word_one:
+  {Mp3.product.high(3728271, 1152) == 1 : U32}
+
+law mp3_total_high_word_three:
+  {Mp3.product.high(11184811, 1152) == 3 : U32}
+
+law mp3_total_high_word_zero:
+  {Mp3.product.high(3583, 1152) == 0 : U32}
+
+# A total of 2^32 or more is above the delay and the padding: both go, and
+# the low word is the count (3 * 2^32 + 384 - 1105 - 577, mod 2^32).
+law mp3_total_wide_subtracts_both:
+  {Mp3.total.tagged(384, 1105, 577, True{}) == 4294965998 : U32}
+
+law mp3_total_narrow_keeps_small:
+  {Mp3.total.tagged(384, 1105, 577, False{}) == 384 : U32}
+
+# The padding edge: 2^32 + 896 less 577 is past a 32-bit position; 2^32 +
+# 100 less 577 is 2^32 - 477.
+law mp3_limit_wide_past_32_bits:
+  {Mp3.limit.known(2, 896, 577) == False{} : Bool}
+
+law mp3_limit_narrow_edge_known:
+  {Mp3.limit.known(1, 4127616, 577) == True{} : Bool}
+
+law mp3_limit_narrow_edge:
+  {Mp3.limit.edge(1, 4127616, 577) == 4127039 : U32}
+
+law mp3_limit_wide_below_padding:
+  {Mp3.limit.known(2, 100, 577) == True{} : Bool}
+
+law mp3_limit_wide_below_padding_edge:
+  {Mp3.limit.edge(2, 100, 577) == 4294966819 : U32}
+
+law mp3_limit_high_three:
+  {Mp3.limit.known(4, 384, 577) == False{} : Bool}
+
+# dr_mp3's temporary buffers hold 1152*2 samples (raylib 6.2).
+law mp3_temp_frames_stereo:
+  {Mp3S.temp.frames(2) == 1152 : U32}
+
+law mp3_temp_frames_mono:
+  {Mp3S.temp.frames(1) == 2304 : U32}
+
 # Passing more bytes than the stream has leaves none to decode: the byte that
 # stays listed is the tag's, past what the stream holds.
 law mp3_memory_stream_holds_no_byte_of_its_tags:
-  {Mp3.stream.used(Mp3.stream.began(True{}, [1, 2, 3, 4, 5], 5, 4, 1), Mp3.Dec.zero(), 9) == Mp3.Stream{[1, 2, 3, 4, 5], 5, 4, 1, [5], 0, 1, 1, 4294967295, False{}, Mp3.Dec.zero(), 0, 0, False{}, 0, 0, 0} : Mp3.Stream}
+  {Mp3.stream.used(Mp3.stream.began(True{}, [1, 2, 3, 4, 5], 5, 4, 1), Mp3.Dec.zero(), 9) == Mp3.Stream{[1, 2, 3, 4, 5], 5, 4, 1, [5], 0, 1, 1, 4294967295, False{}, Mp3.Dec.zero(), 0, 0, 0, 0, 0, 0} : Mp3.Stream}
 
 law mp3_memory_of_a_short_file_does_not_open:
   {Mp3.open.memory([255, 251, 144, 68]) == None{} : Maybe<Mp3.Opened>}
@@ -5543,10 +5921,10 @@ law wave_ogg_shorts_wrap_as_the_unsigned_product_does:
   {J.Wave.ogg.shorts(2147483649, 2) == 2 : U32}
 
 law wave_ogg_every_short_written_is_a_wave:
-  {J.Wave.ogg.whole(True{}, 2, 8000, 1, [5, 65535]) == Done{J.Wave{2, 8000, 16, 1, [5, 65535]}} : Result<&1, &1, J.Wave.Error, J.Wave>}
+  {J.Wave.ogg.whole(True{}, 2, 8000, 1, 2, [5, 65535]) == Done{J.Wave{2, 8000, 16, 1, [5, 65535]}} : Result<&1, &1, J.Wave.Error, J.Wave>}
 
 law wave_ogg_shorts_never_written_are_no_wave:
-  {J.Wave.ogg.whole(False{}, 2, 8000, 1, [5]) == Fail{J.InvalidWaveData{}} : Result<&1, &1, J.Wave.Error, J.Wave>}
+  {J.Wave.ogg.whole(False{}, 2, 8000, 1, 1, [5]) == Fail{J.InvalidWaveData{}} : Result<&1, &1, J.Wave.Error, J.Wave>}
 
 # An XM module read from its file (src/xm_module.bend): the data's bytes
 # and offsets, sizes in jar_xm's block of memory, a sample's loop, packed
@@ -5986,6 +6364,55 @@ law font_assemble_pairs_a_glyph_with_its_rectangle:
 
 law font_assemble_stops_at_the_shorter_list:
   {J.Font.assemble.glyphs([J.GlyphInfo{65, 1, 2, 9, J.GlyphEmpty{0, 0}}], Nil{}) == Nil{} : +List<FontCore.Glyph>}
+
+# raylib 6.2's LoadFontData gives the Unicode space codepoints an empty
+# advanceX x fontSize image (FontData.blank.codepoint): U+0020, U+00A0,
+# U+1680, U+2000..U+200A, U+202F, U+205F and U+3000 (6.0: U+0020, U+3000).
+
+law font_data_blank_no_break_space:
+  {FontData.blank.codepoint(160) == True{} : Bool}
+
+law font_data_blank_general_punctuation_spaces:
+  {[Bool.to_u32(FontData.blank.codepoint(8191)), Bool.to_u32(FontData.blank.codepoint(8192)), Bool.to_u32(FontData.blank.codepoint(8202)),
+    Bool.to_u32(FontData.blank.codepoint(8203)), Bool.to_u32(FontData.blank.codepoint(8239)), Bool.to_u32(FontData.blank.codepoint(8287))] == [0, 1, 1, 0, 1, 1] : +List<U32>}
+
+law font_data_blank_ogham_ascii_and_ideographic:
+  {(Bool.to_u32(FontData.blank.codepoint(5760)) + Bool.to_u32(FontData.blank.codepoint(32)) + Bool.to_u32(FontData.blank.codepoint(12288)) : U32) == 3 : U32}
+
+law font_data_letter_not_blank:
+  {FontData.blank.codepoint(65) == False{} : Bool}
+
+# raylib 6.2's LoadFontDataBDF: HexToInt gives 0 for bytes that are not hex
+# digits; a requested glyph (its first index) gets the ENCODING, the BBX x
+# offset, fontAscent (FONTBOUNDINGBOX height plus y offset, here 2) minus
+# BBX height plus y offset, the DWIDTH x and its rows (bit 8 >> (x % 4) of
+# digit x / 4; rows not given stay zero); unrequested glyphs stay zeroed; a
+# row past the glyph height ends the read.
+
+law font_bdf_hex_digits:
+  {[FontData.nibble(70), FontData.nibble(97), FontData.nibble(57), FontData.nibble(71), FontData.nibble(13)] == [15, 10, 9, 0, 0] : +List<U32>}
+
+law font_bdf_reads_a_requested_glyph:
+  {FontData.bdf([83, 84, 65, 82, 84, 70, 79, 78, 84, 10, 70, 79, 78, 84, 66, 79, 85, 78, 68, 73, 78, 71, 66, 79, 88, 32, 52, 32, 51, 32, 48, 32, 45, 49, 10, 83, 84, 65, 82, 84, 67, 72, 65, 82, 32, 65, 10, 69, 78, 67, 79, 68, 73, 78, 71, 32, 54, 53, 10, 66, 66, 88, 32, 51, 32, 51, 32, 49, 32, 45, 49, 10, 68, 87, 73, 68, 84, 72, 32, 52, 32, 48, 10, 66, 73, 84, 77, 65, 80, 10, 65, 48, 10, 52, 10, 69, 78, 68, 67, 72, 65, 82, 10, 69, 78, 68, 70, 79, 78, 84, 10], [66, 65], 9) ==
+    FontData.Bdf{1, 9, [FontData.glyph.zero(), FontData.Glyph{65, 1, 0, 4, 3, 3, True{}, [255, 0, 255, 0, 255, 0, 0, 0, 0]}]} : FontData.Bdf}
+
+law font_bdf_row_past_the_height_ends_the_read:
+  {FontData.bdf([83, 84, 65, 82, 84, 70, 79, 78, 84, 10, 83, 84, 65, 82, 84, 67, 72, 65, 82, 10, 69, 78, 67, 79, 68, 73, 78, 71, 32, 54, 53, 10, 66, 66, 88, 32, 50, 32, 49, 32, 48, 32, 48, 10, 66, 73, 84, 77, 65, 80, 10, 56, 10, 67, 10, 69, 78, 68, 67, 72, 65, 82, 10, 83, 84, 65, 82, 84, 67, 72, 65, 82, 10, 69, 78, 67, 79, 68, 73, 78, 71, 32, 54, 54, 10, 66, 66, 88, 32, 49, 32, 49, 32, 48, 32, 48, 10, 66, 73, 84, 77, 65, 80, 10, 56, 10, 69, 78, 68, 67, 72, 65, 82, 10, 69, 78, 68, 70, 79, 78, 84, 10], [65, 66], 9) ==
+    FontData.Bdf{1, 9, [FontData.Glyph{65, 0, 4294967295, 0, 2, 1, True{}, [255, 0]}, FontData.glyph.zero()]} : FontData.Bdf}
+
+# ImageDrawTextPro (new in raylib 6.2) has an empty body: nothing changes.
+
+law font_image_draw_text_pro_draws_nothing:
+  for destination: J.Surface
+  for font: J.Font
+  for text: String
+  for position: M.Vector2
+  for origin: M.Vector2
+  for rotation: F32
+  for size: F32
+  for spacing: F32
+  for tint: U32
+  {J.Font.image_draw_text_pro(destination, font, text, position, origin, rotation, size, spacing, tint) == (destination, font) : J.Surface & J.Font}
 
 # Ogg Vorbis musics: the ".ogg" token in either case, and a read padded with
 # zeros where it ended early, cut to the samples the stream takes.

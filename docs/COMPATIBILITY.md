@@ -63,8 +63,10 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | `ImageDrawTriangle` | `Surface.draw_triangle` | Integral-vertex winding, clipping, degeneracy and signed edge stepping | `conformance` |
 | `ImageDrawTriangleLines` | `Surface.draw_triangle_lines` | Truncated vertices and three reference-compatible segments | `conformance` |
 | Vector wrappers, outlines, thick lines, fans/strips, vertex-colored triangles | `Surface.draw_*` families | Truncation, winding and byte-quantized vertex weights | `conformance` |
-| `ImageDraw` | `Surface.draw_image / draw_image_region / draw_image_rect` | Formats 1..13, one mip: source clipping, default scaling in the source format, destination clipping, `GetPixelColor`/`ColorAlphaBlend`/`SetPixelColor` and memcpy rows, bounded fractional rectangles; both owners retained | `conformance`, `surface-format` |
-| `ImageFromImage` | `Surface.extract` | Positive integral in-bounds region; independent output; original retained | `conformance` |
+| `ImageDrawImage` / `ImageDrawImageRec` / `ImageDrawImagePro` (6.0: `ImageDraw`) | `Surface.draw_image / draw_image_rec / draw_image_pro` (`draw_image_region`, `draw_image_rect`) | Formats 1..13, one mip: source clipping, default scaling in the source format, destination clipping, `GetPixelColor`/`ColorAlphaBlend`/`SetPixelColor` and memcpy rows, bounded fractional rectangles; origin and rotation ignored as upstream; both owners retained | `conformance`, `surface-format` |
+| `ImageDrawImageEx` | `Surface.draw_image_ex(_for)` | Word formats 1..8 and 11 for both images: turned, scaled nearest sampling, `GetImageColor`/`ColorAlphaBlend`/`ImageDrawPixel`; verified rotations, bounded finite position and nonzero scale | `surface-format` |
+| `ImageDrawRectanglePro` / `ImageDrawRectangleGradientEx` / `ImageDrawCircleGradient` / `ImageDrawLineStrip` / `ImageDrawRectangleLines(Ex)` | `Surface.draw_rectangle_pro(_for) / draw_rectangle_gradient_ex / draw_circle_gradient / draw_line_strip / draw_rectangle_lines(_ex)` | Formats 1..13 through `ImageDrawPixel`; bounded finite fields, verified rotations | `surface-format` |
+| `ImageFromImage` | `Surface.extract` | raylib 6.2's validation: in-bounds after truncation, fractional fields truncated; widths in (0, 1) refused; independent output; original retained | `conformance`, `surface-format` |
 | `ImageCrop` | `Surface.crop` | Integral clipping, outside-origin no-op; typed failure returns the original | `conformance` |
 | `ImageResizeNN` | `Surface.resize_nn` | Exact fixed-point ratios; invalid/unsafe mappings return the original | `conformance` |
 | `ImageResize` | `Surface.resize` | Default filters with exact normalization: alpha-aware RGBA8, unweighted 1..3-channel GRAYSCALE/GRAY_ALPHA/R8G8B8, owner-preserving size errors ([RESAMPLING.md](RESAMPLING.md)) | `resize`, `conformance`, `surface-format` |
@@ -121,7 +123,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | RGB float/RGBA8 conversion | `Surface.format` | Byte normalization, finite `[0,1]` truncation, opaque alpha, rejected-owner preservation ([FLOAT-RGB.md](FLOAT-RGB.md)) | `float-rgb` |
 | RGB float raw bytes | `Surface.from_bytes/export` | Non-NaN little-endian format-9 samples, strict size/byte checks | `float-rgb-bytes` |
 | RGB float copy/orientation | `Surface.copy/flip_*/rotate_*` | Independent owners, exact sample movement (also forced Metal) | `float-rgb-transform` |
-| RGB float rectangles | `Surface.extract/crop` | Integral region/crop words and clipping | `float-rgb-crop` |
+| RGB float rectangles | `Surface.extract/crop` | Region (raylib 6.2 fractional extraction) and crop words and clipping | `float-rgb-crop` |
 | RGB float resize | `Surface.resize_nn/resize` | Native RGBA8 quantization (nearest or default filter) then float normalization | `float-rgb-resize`, `float-rgb-resize-filtered` |
 | RGB float canvas/POT | `Surface.resize_canvas/to_pot` | Sample movement, ignored fill/zero background, same-size no-ops | `float-rgb-canvas` |
 | RGB float color transforms | `Surface.color_*` | Native byte-quantized format-9 paths | `float-rgb-color` |

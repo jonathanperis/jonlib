@@ -9,12 +9,14 @@ dr_wav detects and every codec drwav_read_pcm_frames_s16 converts:
   subnormal, values next to the rounding boundaries of (c + 1) * 32767.5),
   float widths dr_wav silences, a-law and mu-law, WAVE_FORMAT_EXTENSIBLE
   headers, LIST/fact chunks with odd padding, short and extended "fmt "
-  chunks, a "fmt " seek that moves the 64-bit cursor past 4 GiB, frames over
+  chunks (and ones declared shorter than 16 bytes, which dr_wav 0.14.6
+  refuses), a "fmt " seek that moves the 64-bit cursor past 4 GiB, frames over
   dr_wav's 4096-byte read buffer, data sizes past the end of the file or not a
   whole number of frames, empty data and malformed headers;
 - RIFX (big-endian): every PCM width, float, companded and extensible data;
 - Wave64: GUID chunks, 64-bit and wrapping sizes, dr_wav's size-modulo-8
-  padding, fact counts (including above 2^32), bad GUIDs and sizes;
+  padding, fact counts (including above 2^32), bad GUIDs and sizes, chunk
+  sizes below their own 24-byte header (which end dr_wav 0.14.6's walk);
 - RF64: ds64 sizes and sample counts (zero, smaller, larger, odd chunks,
   short or missing ds64, a wrong RIFF size);
 - AIFF/AIFC: COMM chunks with integral, fractional, huge, unnormalized,
@@ -23,14 +25,19 @@ dr_wav detects and every codec drwav_read_pcm_frames_s16 converts:
   alaw/ulaw (both cases), ima4 and unknown compression, 4- to 64-bit samples;
 - MS and IMA ADPCM: mono and stereo, partial final blocks and headers, bad
   predictors and step indices, negative header deltas, small and uneven block
-  alignments, more than two channels, fact-chunk counts in Wave64 and RF64.
+  alignments, more than two channels, fact-chunk counts in Wave64 and RF64,
+  data that its blocks' headers fill (or empty), which dr_wav 0.14.6 refuses
+  without a fact count.
 
 For each file the native program first runs dr_wav itself (drwav_init_memory,
-then drwav_read_pcm_frames_s16 of (unsigned int)totalPCMFrameCount frames):
-when dr_wav reads fewer frames, LoadWave would return uninitialized samples
-and Jonlib must answer InvalidWaveData; otherwise LoadWave must give the same
-frame count, sample rate, sample size, channels and every 16-bit sample, or
-fail on both sides. Jonlib contracts not run natively (InvalidWaveData): NaN
+then drwav_read_pcm_frames_s16 of (unsigned int)totalPCMFrameCount frames)
+and reports whether it reads fewer frames than the count: raylib 6.2's
+LoadWave buffer is RL_CALLOC'd, so those frames are zeros, compared like any
+sample (the gate counts such files to keep them in the corpus). LoadWave and
+Jonlib must give the same frame count, sample rate, sample size, channels and
+every 16-bit sample, or fail on both sides. Jonlib contracts not run natively:
+zeros past 2^24 samples (UnsupportedWaveFormat, the port's limit) and
+(InvalidWaveData) NaN
 float samples (an undefined float-to-int conversion), MS ADPCM samples whose
 int arithmetic overflows, an 80-bit rate of -2^63 (negating INT64_MIN), AIFF
 channel and bit counts whose int product overflows, byte swaps of 5-7 or 9+
@@ -448,10 +455,34 @@ def cases():
     add('ima-extreme-steps', riff(chunk(b'fmt ', ima_fmt(1, 20)), chunk(b'data', ima_block(rng, 1, 20, steps=[88]) + struct.pack('<hBB', -32768, 0, 0) + b'\x88' * 16)))
     add('ima-3ch', riff(chunk(b'fmt ', fmt(0x11, 3, 8000, 4, align=96)), chunk(b'data', noise(96))))
     add('ima-rifx', rifx(chunk(b'fmt ', fmt(0x11, 1, 8000, 4, align=20, be=True), be=True), chunk(b'data', ima_block(rng, 1, 20) * 2, be=True)))
+    # raylib 6.2 (dr_wav 0.14.6). Appended last so the cases above keep their bytes. A Wave64 chunk size
+    # below its own 24-byte header ends the walk; "fmt " chunks declared shorter than 16 bytes fail.
+    add('w64-size-0', w64(w64_chunk(b'junk', b'', size=0, pad=0), w_fmt(1, 1, 8000, 16), w64_chunk(b'data', noise(10))))
+    add('w64-size-24', w64(w64_chunk(b'junk', b'', size=24, pad=0), w_fmt(1, 1, 8000, 16), w64_chunk(b'data', noise(10))))
+    add('w64-data-size-23', w64(w_fmt(1, 1, 8000, 16), w64_chunk(b'data', noise(12), size=23)))
+    add('w64-fmt-14', w64(w64_chunk(b'fmt ', fmt(1, 1, 8000, 16)[:14], pad=2), w64_chunk(b'data', noise(10))))
+    add('fmt-size-15', riff(chunk(b'fmt ', fmt(1, 1, 8000, 16)[:15]), chunk(b'data', noise(12))))
+    add('fmt-size-0-then-fmt', riff(chunk(b'fmt ', b''), chunk(b'fmt ', fmt(1, 1, 8000, 16)), chunk(b'data', noise(8))))
+    add('rifx-fmt-14', rifx(chunk(b'fmt ', fmt(1, 1, 8000, 16, be=True)[:14], be=True), chunk(b'data', noise(8), be=True)))
+    add('rf64-fmt-14', rf64(ds64(8, 0), chunk(b'fmt ', fmt(1, 1, 8000, 16)[:14]), chunk(b'data', noise(8), size=0xFFFFFFFF)))
+    # ADPCM without a fact count fails when its blocks' headers (6 or 4 bytes a channel, as dr_wav counts
+    # them) are as many bytes as the data or more; one byte more decodes.
+    add('msadpcm-data-empty', riff(chunk(b'fmt ', ms_fmt(1, 64)), chunk(b'data', b'')))
+    add('msadpcm-headers-fill', riff(chunk(b'fmt ', ms_fmt(1, 64)), chunk(b'data', ms_block(rng, 1, 64, 6))))
+    add('msadpcm-headers-plus-one', riff(chunk(b'fmt ', ms_fmt(1, 64)), chunk(b'data', ms_block(rng, 1, 64, 7))))
+    add('msadpcm-headers-stereo', riff(chunk(b'fmt ', ms_fmt(2, 96)), chunk(b'data', ms_block(rng, 2, 96, 12))))
+    add('ima-data-empty', riff(chunk(b'fmt ', ima_fmt(1, 36)), chunk(b'data', b'')))
+    add('ima-headers-fill', riff(chunk(b'fmt ', ima_fmt(1, 36)), chunk(b'data', ima_block(rng, 1, 36, 4))))
+    add('ima-headers-plus-one', riff(chunk(b'fmt ', ima_fmt(1, 36)), chunk(b'data', ima_block(rng, 1, 36, 5))))
+    add('ima-headers-stereo', riff(chunk(b'fmt ', ima_fmt(2, 40)), chunk(b'data', ima_block(rng, 2, 40, 8))))
+    # A fact count skips that check: the frames past header-only data are zeros (raylib 6.2's RL_CALLOC).
+    add('w64-msadpcm-fact-headers', w64(w64_chunk(b'fmt ', ms_fmt(1, 64), pad=2), w64_chunk(b'fact', struct.pack('<Q', 40)), w64_chunk(b'data', ms_block(rng, 1, 64, 6))))
+    # Zeros past 2^24 samples are past the port's limits.
+    add('w64-fact-zeros-limit', w64(w_fmt(1, 1, 8000, 16), w64_chunk(b'fact', struct.pack('<Q', 2 ** 24 + 1)), w64_chunk(b'data', noise(16))), 'unsupported')
     return out
 
 
-EXPECTED = {'data': ['error', 'data']}
+EXPECTED = {'data': ['error', 'data'], 'unsupported': ['error', 'unsupported']}
 
 # Waves built in memory for the utilities: (size, channels, rate, samples).
 WAVES = [(8, 1, 8000, [0, 1, 127, 128, 129, 200, 255]), (16, 2, 22050, [0, 1, 32767, 32768, 65535, 12345, 40000, 7]),
@@ -473,14 +504,14 @@ def native(probe, items):
              'printf("%s%u",i?",":"",v);}puts("]]");}',
              'static void file(const char *path){FILE *f=fopen(path,"rb");int c,i=0;printf("[");while((c=fgetc(f))!=EOF)printf("%s%d",i++?",":"",c);puts("]");fclose(f);}',
              # dr_wav itself first: LoadWaveFromMemory reads (unsigned int)totalPCMFrameCount
-             # frames; fewer frames read leave its samples uninitialized.
+             # frames into an RL_CALLOC'd buffer; whether fewer frames are read (left zeros) is
+             # printed before LoadWave's wave.
              'static short scratch[4096*256];',
-             'static void load(const char *path){int n=0;unsigned char *d=LoadFileData(path,&n);drwav w;'
-             'if(!d||!drwav_init_memory(&w,d,(size_t)n,NULL)){puts("null");if(d)UnloadFileData(d);return;}'
-             'unsigned count=(unsigned)w.totalPCMFrameCount,got=0;'
+             'static void load(const char *path){int n=0,padded=0;unsigned char *d=LoadFileData(path,&n);drwav w;'
+             'if(d&&drwav_init_memory(&w,d,(size_t)n,NULL)){unsigned count=(unsigned)w.totalPCMFrameCount,got=0;'
              'while(got<count){unsigned want=count-got>4096?4096:count-got;drwav_uint64 r=drwav_read_pcm_frames_s16(&w,want,scratch);got+=(unsigned)r;if(r<want)break;}'
-             'drwav_uninit(&w);UnloadFileData(d);if(got<count){puts("\\"unread\\"");return;}'
-             'Wave v=LoadWave(path);wave(v);UnloadWave(v);}',
+             'drwav_uninit(&w);padded=got<count;}'
+             'if(d)UnloadFileData(d);printf("%d\\n",padded);Wave v=LoadWave(path);wave(v);UnloadWave(v);}',
              'int main(void){SetTraceLogLevel(LOG_NONE);']
     for case in items:
         if case['kind'] == 'native':
@@ -577,14 +608,14 @@ def main():
     rows = iter(json.loads(line) for line in text)
     expected = []
     for case in items:
-        row = next(rows) if case['kind'] == 'native' else EXPECTED[case['kind']]
-        expected.append(EXPECTED['data'] if row == 'unread' else row)
-        case['unread'] = row == 'unread'
+        native_case = case['kind'] == 'native'
+        case['padded'] = native_case and next(rows) == 1
+        expected.append(next(rows) if native_case else EXPECTED[case['kind']])
     decoded = sum(isinstance(row, list) and row[:1] != ['error'] for row in expected)
     failed = sum(row is None for row in expected)
-    unread = sum(case['unread'] for case in items)
-    if failed < 40 or decoded < 100 or unread < 10:
-        raise ProbeFailure(f'wav: unexpected native outcomes (decoded={decoded}, failed={failed}, unread={unread})')
+    padded = sum(case['padded'] and isinstance(row, list) for case, row in zip(items, expected))
+    if failed < 40 or decoded < 100 or padded < 10:
+        raise ProbeFailure(f'wav: unexpected native outcomes (decoded={decoded}, failed={failed}, padded={padded})')
     utility_rows = []
     for _ in WAVES:
         utility_rows.append([next(rows) for _ in range(8)])
@@ -610,7 +641,7 @@ def main():
     lanes = probe.candidates(render, actions, batch=48, parse=parse)
     lanes = {lane: values for lane, values in lanes.items() if lane != 'gpu'}
     probe.compare(expected, lanes, describe=lambda i: items[i]['id'] if i < len(items) else f'utilities {i - len(items)}')
-    probe.finish(files=len(items), decoded=decoded, failed=failed, unread=unread,
+    probe.finish(files=len(items), decoded=decoded, failed=failed, padded=padded,
                  contracts=sum(case['kind'] != 'native' for case in items), utility_waves=len(WAVES),
                  inputs_sha256=hashlib.sha256(b''.join(case['bytes'] for case in items)).hexdigest())
 

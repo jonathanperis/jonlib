@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "source": "raygui.h v5.0-dev (RAYGUI_VERSION 4.5.0) as shipped in raylib 6.0 examples/*/raygui.h",
+ "source": "raygui.h v5.1-dev (RAYGUI_VERSION_MAJOR 5, RAYGUI_VERSION_MINOR 1) as shipped in raylib 6.2 examples/*/raygui.h",
  "functions": {
   "GuiEnable": {
    "status": "partial",
@@ -166,7 +166,7 @@
   "GuiLoadStyle": {
    "status": "partial",
    "jongui": "Gui.load_style",
-   "scope": "A file whose first byte is '#' is read as text: fgets chunks of up to 255 bytes (a last line without a newline is not read), 'p' lines through sscanf(\"p %d %d 0x%x\") whose targets keep their values between lines, 'f' lines loading a font (LoadFontEx with the charmap's codepoints, relative to the style's directory) or the default font with TEXT_SIZE 10 and TEXT_SPACING 1. Any other file is GuiLoadStyleFromMemory: properties, then an optional font whose atlas, rects and glyphs are raw or DEFLATE-compressed (version 400 sizes), set with GuiSetFont, its positive white rectangle becoming the shapes texture's source.",
+   "scope": "A file whose first byte is '#' is read as text: fgets chunks of up to 255 bytes (a last line without a newline is not read), 'p' lines through sscanf(\"p %d %d 0x%x\") whose targets keep their values between lines, 'v' lines setting the version (raygui 5.1-dev), 'f' lines (\"f %d %31s %31[^\\r\\n]s\": the charmap then the font file, the font file first from version 600) loading a font (LoadFontEx with the charmap's codepoints, relative to the style's directory) or the default font with TEXT_SIZE 10 and TEXT_SPACING 1. Any other file is GuiLoadStyleFromMemory.",
    "evidence": [
     "tools/examples_probe.py",
     "tools/reference/gui/gui_style.c",
@@ -177,15 +177,34 @@
    ],
    "gaps": [
     "Undefined in raygui and marked so: GuiSetStyle indices outside the table, sscanf values outside their types, reads past the file, data that does not inflate to what is read next, fonts with no glyphs or a base size below 1",
-    "Refused although raygui runs them: an 'f' line without a charmap name, a sign or second 0x in a hex value, image formats above 13 and samples Jonlib's images refuse, a style path past GetDirectoryPath's buffer",
+    "Refused although raygui runs them: an 'f' line without a charmap name, a sign or second 0x in a hex value, a 'v' value with a '-' or of 2^31 or more, image formats above 13 and samples Jonlib's images refuse, a style path past GetDirectoryPath's buffer",
     "A directory is a file that does not open",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
+  },
+  "GuiLoadStyleFromMemory": {
+   "status": "partial",
+   "jongui": "Gui.load_style_from_memory",
+   "scope": "The binary .rgs format (public in raygui 5.1-dev): rGS signature, properties (a DEFAULT base property reaches every control), then an optional font (from version 600 after its file's 32-byte name) whose atlas, rects and glyphs are raw or DEFLATE-compressed (version 400 sizes), read before its texture loads; set with GuiSetFont, its positive white rectangle becoming the shapes texture's source when the texture loaded, else the default font.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_style.c",
+    "tests/gui/gui_style.bend",
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "Undefined in raygui and marked so: data shorter than the 12-byte header, GuiSetStyle indices outside the table, reads past the data, data that does not inflate to what is read next, fonts with no glyphs or a base size below 1",
+    "Refused although raygui runs them: image formats above 13 and samples Jonlib's images refuse",
+    "Compared through GuiLoadStyle (the probe's style files)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
   },
   "GuiLoadStyleDefault": {
    "status": "partial",
    "jongui": "Gui.new / Gui.style.default",
-   "scope": "The default style table as raygui fills it (a new Gui holds it).",
+   "scope": "The default style table as raygui 5.1-dev fills it (TEXT_LINE_SPACING 12, TABBAR's TAB_ITEMS_WIDTH 160; a new Gui holds it).",
    "evidence": [
     "tools/examples_probe.py",
     "examples/shapes_circle_sector_drawing.bend",
@@ -226,7 +245,7 @@
   "GuiSetTooltip": {
    "status": "partial",
    "jongui": "Gui.set_tooltip",
-   "scope": "The tooltip text (None for NULL). GuiButton, GuiToggle and GuiTextBox (out of edit mode) draw it when focused, unlocked and no control is dragged: a GuiPanel 4 pixels below the control, 16 wider than MeasureTextEx of the text and 8 higher a line (GetTextLines, at most 128), moved left to end at the control right edge where it would pass the screen width and above the control where it would pass its height, the text centered as a GuiLabel without padding.",
+   "scope": "The tooltip text (None for NULL). GuiButton, GuiToggle and GuiTextBox (out of edit mode) draw it when focused, unlocked and no control is dragged: a GuiPanel 4 pixels below the control, 16 wider than GuiMeasureText of the text (its first line) and TEXT_LINE_SPACING higher a line (GetTextLines, at most 128), moved left to end at the control right edge where it would pass the screen width and above the control where it would pass its height, the text centered as a GuiLabel without padding (8 higher a line).",
    "evidence": [
     "tools/examples_probe.py",
     "tools/reference/gui/gui_tooltip_icons.c",
@@ -281,7 +300,7 @@
   "GuiGetIcons": {
    "status": "partial",
    "jongui": "Gui.get_icons",
-   "scope": "The gui's icon table: 2048 words, eight an icon.",
+   "scope": "The gui's icon table: 4096 words (512 icons, eight words each) at start, or the words the last signed GuiLoadIcons read.",
    "evidence": [
     "tools/gui_icon_files_probe.py",
     "tests/test_gui_icon_files_probe.py",
@@ -297,7 +316,7 @@
   "GuiLoadIcons": {
    "status": "partial",
    "jongui": "Gui.load_icons",
-   "scope": "Reads an .rgi file (rGI signature, little-endian count and size, 32-byte name ids, then icon count times size*size/32 words, as many as the file holds) over the table from its start; the name ids when asked, else NULL; NULL for a file that does not open or a wrong signature.",
+   "scope": "The whole .rgi file through GuiLoadIconsFromMemory (raygui 5.1-dev); NULL and the table kept for a file that does not open or is empty.",
    "evidence": [
     "tools/gui_icon_files_probe.py",
     "tests/test_gui_icon_files_probe.py",
@@ -306,8 +325,27 @@
     "LAWS.bend"
    ],
    "gaps": [
-    "A negative icon count answers undefined (host-dependent fseek and calloc)",
-    "Undefined (gui unchanged): a count of words past int range, data past the 2048-word table, a file that ends inside the count, the size or a word",
+    "The undefined loads of GuiLoadIconsFromMemory, and a file shorter than its 12-byte header",
+    "A directory is a file that does not open",
+    "The name ids are lists of 32 bytes instead of allocated strings (language adaptation)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
+  },
+  "GuiLoadIconsFromMemory": {
+   "status": "partial",
+   "jongui": "Gui.load_icons_from_memory",
+   "scope": "An .rgi file's bytes (rGI signature, little-endian count and size, 32-byte name ids, then the words): with the signature the icon table becomes count*(size*size/32) words read from the data (raygui 5.1-dev allocates a new table), and the name ids are returned when asked; NULL for another signature or names not asked.",
+   "evidence": [
+    "tools/gui_icon_files_probe.py",
+    "tests/test_gui_icon_files_probe.py",
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "Undefined (gui unchanged): data shorter than the 12-byte header, name ids or words past the data, more than 512 name ids asked, a table whose byte size overflows an int",
+    "A negative icon count answers undefined (a gap where no word is read)",
+    "Compared through GuiLoadIcons (the probe's files)",
     "The name ids are lists of 32 bytes instead of allocated strings (language adaptation)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -325,14 +363,14 @@
     "LAWS.bend"
    ],
    "gaps": [
-    "An id outside 0..255 (raygui reads past its table) and coordinates that may leave int range (|x| or |y| at 2^30 or more, |pixelSize| at 2^26 or more) mark the frame undefined",
+    "An id whose words are not in the icon table (negative, 512 or more at start, past the icons GuiLoadIcons loaded) and coordinates that may leave int range (|x| or |y| at 2^30 or more, |pixelSize| at 2^26 or more) mark the frame undefined",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
   },
   "GuiGetTextWidth": {
    "status": "partial",
    "jongui": "Gui.get_text_width",
-   "scope": "The first line with the default font, TEXT_SIZE and TEXT_SPACING, as a C int; a text starting with '#' with another '#' in its next four bytes is measured from the second one plus 20, as raygui does.",
+   "scope": "raygui 5.1-dev's: the widest line starting in the text's first 256 bytes, each measured by GetLineWidth (GuiMeasureText's glyph widths plus TEXT_SPACING each, after an icon marker '#', up to three digits and '#', plus 20 when the line starts with one), as a C int.",
    "evidence": [
     "tools/examples_probe.py",
     "examples/shapes_hilbert_curve.bend",
@@ -350,7 +388,7 @@
   "GuiWindowBox": {
    "status": "partial",
    "jongui": "Gui.window_box",
-   "scope": "A panel below a 24-pixel status bar (the window at least 48 high) and an 18-pixel close button (#128#, BUTTON border 1, centered) 3 pixels in from the bar's top right; whether it was clicked.",
+   "scope": "A panel below a 24-pixel status bar (the window at least 48 high; the title left aligned whatever STATUSBAR's TEXT_ALIGNMENT) and an 18-pixel close button (#128#, BUTTON border 1, centered) 3 pixels in from the bar's top right; whether it was clicked.",
    "evidence": [
     "tools/examples_probe.py",
     "tools/reference/gui/gui_window_grid.c",
@@ -359,7 +397,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -375,7 +413,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -392,7 +430,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -408,8 +446,9 @@
     "jongui.bend"
    ],
    "gaps": [
+    "raygui 5.1-dev's int result (RESULT_PRESSED for a release over it) is not returned",
     "With a text (the status bar header) it is compared with raygui by reading only",
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -418,7 +457,26 @@
   "GuiTabBar": {
    "status": "partial",
    "jongui": "Gui.tab_bar",
-   "scope": "The active tab clamped, the bar moved left by (active + 2) * 148 - the screen width when positive, each tab a GuiToggle 148 wide and 152 apart (left aligned, padding 8) with a 14-pixel close button, the ones left of the screen's edge drawn and live, and a bottom line; the active tab and the closed or middle-pressed tab.",
+   "scope": "GuiTabBarEx over the ';'-separated tabs of the text (none for NULL); hscroll is neither read nor written (raygui 5.1-dev); the active tab and the result.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "tools/reference/gui/gui_message_tabs.c",
+    "tests/gui/gui_message_tabs.bend",
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "A text of 1024 bytes or more or 128 tabs or more marks the frame undefined (GuiTextSplit's static buffers)",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
+  },
+  "GuiTabBarEx": {
+   "status": "partial",
+   "jongui": "Gui.tab_bar_ex",
+   "scope": "The active tab clamped (0 when negative, else the last one, -1 without tabs), the bar moved right by active*TAB_ITEMS_WIDTH - the screen width when positive, each tab a GuiToggle TAB_ITEMS_WIDTH wide and 4 apart (left aligned, padding 8), with a 14-pixel close button when TAB_CLOSE_BUTTON is set, the ones left of the screen's edge drawn and live, and the border line in TABBAR's color at the bottom or (TAB_LINE_SIDE 1) the top; the active tab and the result: RESULT_TAB_CLOSE for a middle press (GUI_BUTTON_PRESSED_MID) over a tab or a close button's click, else RESULT_CHANGED when the active tab changed.",
    "evidence": [
     "tools/examples_probe.py",
     "tools/reference/gui/gui_message_tabs.c",
@@ -427,15 +485,16 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
-    "The default font only (GuiSetFont is not delivered)",
+    "hscroll and focus are taken for the signature: raygui 5.1-dev neither reads nor writes them",
+    "An offset whose C int arithmetic overflows (a TAB_ITEMS_WIDTH past 2^31 over the tabs) wraps",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
   },
   "GuiScrollPanel": {
    "status": "partial",
    "jongui": "Gui.scroll_panel",
-   "scope": "The panel, its view and scroll offset, the wheel, and a scroll bar (Gui.scroll_bar, static GuiScrollBar in raygui) for each axis that does not fit.",
+   "scope": "The panel, its view and scroll offset, the wheel, and a scroll bar (Gui.scroll_bar, static GuiScrollBar in raygui) for each axis that does not fit. raygui 5.1-dev: below a header the panel is 23 pixels lower and less high, and the vertical scroll stops at -BORDER_WIDTH.",
    "evidence": [
     "tools/examples_probe.py",
     "examples/shapes_pie_chart.bend",
@@ -447,7 +506,7 @@
     "The scroll bars, the wheel on an overflowing content and the header are compared with raygui by reading only",
     "GuiScrollBar marks the frame undefined where C's int conversions or arithmetic are undefined",
     "SUPPORT_SCROLLBAR_KEY_INPUT (off by default) is not delivered",
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered); tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -465,7 +524,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -485,7 +544,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -504,7 +563,7 @@
    ],
    "gaps": [
     "A text whose width raygui cannot measure marks the frame undefined",
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -520,7 +579,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -529,7 +588,7 @@
   "GuiToggleGroup": {
    "status": "partial",
    "jongui": "Gui.toggle_group",
-   "scope": "The items of the text (split at ';', a newline starting a new row) as toggles spaced by GROUP_PADDING; the active index.",
+   "scope": "raygui 5.1-dev's: the items of the text (';' the next column, a newline the next row) as toggles at x + col*(width + GROUP_PADDING) and y + row*(height + GROUP_PADDING), the width divided by the ';'s plus one with GROUP_WIDTH_FULL; the active index.",
    "evidence": [
     "tools/examples_probe.py",
     "examples/shaders_color_correction.bend",
@@ -537,17 +596,17 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-    "Texts of more than 128 items or 1024 bytes (raygui truncates them)"
+    "An item of 256 bytes or more marks the frame undefined (raygui's static itemText buffer)"
    ]
   },
   "GuiToggleSlider": {
    "status": "partial",
    "jongui": "Gui.toggle_slider",
-   "scope": "The knob (width - 2 border - (count + 1) padding) / count wide at the active item, moved on (cyclically) by a release over the bounds; the item's text centered on the knob over the whole text's width; the active index and whether it moved.",
+   "scope": "The knob (width - 2 border - (count + 1) padding) / count wide at the active item, moved on (cyclically) by a release over the bounds; the item's text centered on the knob over the whole text's width; the active index and whether raygui's result is not 0 (a release, or an index that changed: RESULT_CHANGED in raygui 5.1-dev).",
    "evidence": [
     "tools/examples_probe.py",
     "tools/reference/gui/gui_toggle_combo_list.c",
@@ -558,7 +617,7 @@
    "gaps": [
     "A text of 1024 bytes or more or 128 items or more marks the frame undefined (GuiTextSplit's static buffers)",
     "An active index below 0 marks the frame undefined",
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -576,7 +635,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -595,7 +654,7 @@
    ],
    "gaps": [
     "A text of 1024 bytes or more or 128 items or more marks the frame undefined (GuiTextSplit's static buffers)",
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -614,7 +673,7 @@
    "gaps": [
     "An active index outside the items, a text of 1024 bytes or more and 128 items or more mark the frame undefined",
     "DROPDOWN_ROLL_UP and DROPDOWN_ARROW_HIDDEN are compared with raygui by reading only",
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -635,7 +694,7 @@
    "gaps": [
     "Edit mode (keyboard entry and its cursor) marks the frame undefined",
     "A step below INT_MIN or above INT_MAX (signed overflow in C) marks the frame undefined",
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -654,7 +713,7 @@
    ],
    "gaps": [
     "Edit mode (keyboard entry and its cursor) marks the frame undefined",
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -673,7 +732,7 @@
    ],
    "gaps": [
     "Edit mode (keyboard entry) marks the frame undefined",
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -693,9 +752,10 @@
    ],
    "gaps": [
     "The Ctrl word operations (Ctrl+DELETE/BACKSPACE/LEFT/RIGHT) mark the frame undefined",
+    "A paste before the text's end marks the frame undefined (raygui 5.1-dev's move loop never runs: the paste overwrites the bytes after the cursor and the length takes in the caller's buffer past the text)",
     "A box too narrow for the glyph before the cursor and a cursor inside a UTF-8 sequence mark the frame undefined",
     "Typed characters, paste and the offset of a text wider than its box are compared with raygui by reading only",
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered); tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -712,7 +772,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -731,7 +791,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -751,7 +811,7 @@
    "gaps": [
     "The disabled state is not compared with raygui yet",
     "A NULL value (half the range natively) has no counterpart",
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -765,8 +825,9 @@
     "jongui.bend"
    ],
    "gaps": [
+    "raygui 5.1-dev's int result (RESULT_PRESSED for a release over it) is not returned",
     "No example draws one yet: compared with raygui by reading only",
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -784,7 +845,8 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "raygui 5.1-dev's int result (RESULT_PRESSED for a release over it) is not returned",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -801,8 +863,9 @@
     "jongui.bend"
    ],
    "gaps": [
+    "raygui 5.1-dev's int result (RESULT_PRESSED for a release over it) is not returned",
     "A line count C cannot convert marks the frame undefined",
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -820,7 +883,7 @@
    ],
    "gaps": [
     "A text of 1024 bytes or more or 128 items or more marks the frame undefined (GuiTextSplit's static buffers)",
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -840,7 +903,7 @@
     "A NULL text, scrollIndex, active or focus is not delivered: the list and the three ints are always given",
     "The disabled state and LIST_ITEMS_BORDER_NORMAL are compared with raygui by reading only",
     "An item height or spacing above 32767, more than 32767 items, a height and spacing that add up to 0, a list view's height that is negative or not a C int and a wheel movement that is not one mark the frame undefined",
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered); tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -848,7 +911,7 @@
   "GuiMessageBox": {
    "status": "partial",
    "jongui": "Gui.message_box",
-   "scope": "A GuiWindowBox, the message in a centered label, and the ';'-separated buttons in a row along the bottom; 0 for the close button, a button's number from 1, or -1.",
+   "scope": "A GuiWindowBox, the message in a centered label, and the ';'-separated buttons in a row along the bottom; btnActive (0 for the close button, a button's number from 1, else as given) and the result (1 when one was clicked, else 0), raygui 5.1-dev's signature.",
    "evidence": [
     "tools/examples_probe.py",
     "tools/reference/gui/gui_message_tabs.c",
@@ -858,7 +921,7 @@
    ],
    "gaps": [
     "A buttons text of 1024 bytes or more or 128 items or more marks the frame undefined (GuiTextSplit's static buffers)",
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -866,7 +929,7 @@
   "GuiTextInputBox": {
    "status": "partial",
    "jongui": "Gui.text_input_box",
-   "scope": "A GuiWindowBox, the message centered, a GuiTextBox (with the secret view's toggle and stars), the buttons along the bottom, raygui's static edit mode carried by the caller; 0 closed, a button's number, or -1.",
+   "scope": "A GuiWindowBox, the message centered, a GuiTextBox (with the secret view's toggle, ICON_EYE_ON/ICON_EYE_OFF, and stars), the buttons along the bottom, raygui's static edit mode carried by the caller and cleared by a click; btnActive and the result as GuiMessageBox's (raygui 5.1-dev's signature).",
    "evidence": [
     "tools/examples_probe.py",
     "tools/reference/gui/gui_value_input.c",
@@ -877,7 +940,7 @@
    "gaps": [
     "The text box's own refusals apply",
     "A buttons text of 1024 bytes or more or 128 items or more marks the frame undefined (GuiTextSplit's static buffers)",
-    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icons past the icon table (512 at start, the loaded ones after GuiLoadIcons), icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -939,7 +1002,7 @@
   "GuiColorBarHue": {
    "status": "partial",
    "jongui": "Gui.color_bar_hue",
-   "scope": "Six vertical gradients (red, yellow, green, cyan, blue, magenta, red; ceil(height/6) high but the last) as DrawRectangleGradientV ints, the border and a selector placed by the hue before the update; a press or drag sets the hue from the pointer, clamped to [0, 359].",
+   "scope": "Six vertical gradients (red, yellow, green, cyan, blue, magenta, red), each height/6 high in float rectangles (DrawRectangleGradientEx, raygui 5.1-dev), the border and a selector placed by the hue before the update; a press or drag sets the hue from the pointer, clamped to [0, 359].",
    "evidence": [
     "tools/examples_probe.py",
     "tools/reference/gui/gui_color_pickers.c",
@@ -950,14 +1013,14 @@
    ],
    "gaps": [
     "A value, not a pointer: the NULL pointer (raygui's temporary color) has no counterpart",
-    "A selector or band outside int range marks the frame undefined",
+    "A selector outside int range marks the frame undefined",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
   },
   "GuiColorPickerHSV": {
    "status": "partial",
    "jongui": "Gui.color_picker_hsv",
-   "scope": "GuiColorPanelHSV, then GuiColorBarHue beside it over the HSV's hue.",
+   "scope": "GuiColorPanelHSV, then, when the panel left the HSV as it was (raygui 5.1-dev), GuiColorBarHue beside it over the HSV's hue.",
    "evidence": [
     "tools/examples_probe.py",
     "tools/reference/gui/gui_color_pickers.c",

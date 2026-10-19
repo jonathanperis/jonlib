@@ -527,23 +527,34 @@ For a `.glb` file (`src/gltf_anim.bend`, over the loader's container,
 accessor and node code):
 
 - **Bones**: the first skin's joints, each with its node's name (31 bytes,
-  as `strncpy` keeps) and the place of its parent node among the joints.
-  The bind pose is `MatrixDecompose` of each joint's world matrix.
+  as `strncpy` keeps) and its parent bone: raylib 6.2 walks up from the
+  joint's parent node past every node that is not a joint, to the first
+  joint (its place among the joints) or the root (-1).
+- **Bind pose** (raylib 6.2): with inverse bind matrices for every joint
+  (an accessor of at least `joints_count` elements),
+  `MatrixDecompose(MatrixInvert(inverseBindMatrices[i]))`; without them, or
+  with fewer, `MatrixDecompose` of each joint's world matrix.
 - **Animations**: for each one, the channels whose node is a joint (a later
-  channel for the same bone and path replaces an earlier one, and the bone
-  takes the interpolation of the last one listed for it); the duration is
-  the largest last key time of those channels;
+  channel for the same bone and path replaces an earlier one; raylib 6.2
+  reads each channel's own sampler interpolation); the duration is the
+  largest last key time of those channels;
   `keyframeCount = (int)(duration*60) + 1`, frame `j` at `j/60` seconds.
 - **Poses**: each bone starts from its node's translation, rotation and
   scale and takes its channels' values at the frame's time: the key `i`
-  with `times[i] <= time < times[i + 1]` (key 0 with `t` clamped to 1 at or
-  after the last key, as the reference's loop leaves it), `t = (time -
+  with `times[i] <= time < times[i + 1]`; without one (raylib 6.2) the last
+  pair (`count - 2`, so `t` clamps to 1 and STEP reads the key before the
+  last), or the first pair when the time is before the first key (`t`
+  clamps to 0); a sampler of one key is constant. `t = (time -
   tstart)/max(tend - tstart, EPSILON)` clamped to 0..1, the key's value for
   STEP or equal key times, else `Vector3Lerp` or `QuaternionSlerp` to the
-  next key. The root bone is then composed with the world transform of the
-  first joint's parent node, and every bone with its parent's
-  (`BuildPoseFromParentJoints`: a bone listed before its parent is left as
-  it is).
+  next key. Each joint's pose is then composed as a matrix (scale, rotation,
+  translation), multiplied by its `extOffset` (the product, from the joint's
+  parent up to its parent bone or the root, of each node that is not a
+  joint, built the same way from its own translation, rotation and scale)
+  and decomposed again (`MatrixDecompose`); every bone is then composed with
+  its parent's (`BuildPoseFromParentJoints`: a bone listed before its
+  parent is left as it is). The 6.0 composition of the root bone with the
+  world transform of the first joint's parent node is gone.
 - **libm**: `QuaternionSlerp` calls `acosf` and `sinf` unless the two
   rotations are within about 36 degrees of each other; `Model.load_animations_for` takes
   the profile and refuses where it does not answer (the Apple profile and
@@ -551,15 +562,19 @@ accessor and node code):
 
 Refused (`OutOfDomain`): CUBICSPLINE samplers, key times or values that are
 not float accessors inside the buffer, a sampler without keys, a pose that
-would read past its output accessor, a first joint without a parent node
-(cgltf reads through a null pointer there), a node with two parents, more
-than 100000 keyframes, and what the loader refuses of the container. Other
-extensions are `UnsupportedFileType`.
+would read past its output accessor, inverse bind matrices (for every
+joint) that are not float `MAT4` elements inside the buffer (cgltf converts
+other component types, reads zeros without a buffer view and nothing from a
+sparse accessor), a skin without joints, a cycle of nodes above a joint (the
+reference's walk does not end), a node with two parents, more than 100000
+keyframes, and what the loader refuses of the container. Other extensions
+are `UnsupportedFileType`.
 
 Gate `gltf-anim` (`tools/gltf_anim_probe.py`) compares the skeleton words and
 a hash of every keyframe pose of `greenman.glb` (12 bones, 4 animations) and
-`robot.glb` (43 bones, 14 animations) and of generated files for each rule
-above with the native loader.
+`robot.glb` (43 bones, 14 animations), both with inverse bind matrices and
+joints under nodes that are not joints, and of generated files for each
+rule above with the native loader.
 
 ### Poses
 
@@ -682,9 +697,11 @@ and counts and offsets of its arrays.
   vertex, as unsigned shorts (a corner below the first vertex wraps).
 - **Materials.** One a mesh, `meshMaterial[i] = i`: `LoadMaterialDefault`
   with its albedo texture replaced by `LoadTexture(directory/material)`,
-  the material's name in the file. A name that opens no file gives a
-  texture of zeros (id 0), as `LoadTexture` returns; the loaded textures
-  come back with the model. A file without meshes is the empty model.
+  the material's name in the file; an empty name (raylib 6.2:
+  `TextLength(material) > 0`) loads no texture and keeps the default one. A
+  name that opens no file gives a texture of zeros (id 0), as `LoadTexture`
+  returns; the loaded textures come back with the model. A file without
+  meshes is the empty model.
 - **Skeleton** (`Model.load_skeleton`): the joints' names and parents, and
   `BuildPoseFromParentJoints` of their transforms: a joint whose parent
   comes later, or is negative, stays as read; a joint that is its own
@@ -710,15 +727,14 @@ animations, frame data) outside the file; a mesh, material, bone or
 animation name whose 32 bytes pass the end of the file; a material, bone or
 animation name without its NUL in those bytes; a mesh whose vertices or
 triangles pass the file's counts, and one without vertices or triangles
-(the loader allocates zero bytes); an empty material name (the texture's
-path is the directory) and one that starts with a slash; frame data that
-ends before the masks do; a pose whose parent is not a pose. The profile
+(the loader allocates zero bytes); a material name that starts with a
+slash; frame data that ends before the masks do; a pose whose parent is not a pose. The profile
 ends at files of 2 MiB, 524288 vertices, 65535 frames or channels, 4096
 poses and 262144 poses in an animation's keyframes.
 
 Gate `iqm` (`tools/iqm_probe.py`) loads generated files covering each of
 those rules and the two files of `models_loading_iqm` (`guy.iqm`: one mesh
-of 240 vertices and 14 joints; `guyanim.iqm`: two animations of 61
+of 224 vertices, 112 triangles and an empty material name, and 14 joints; `guyanim.iqm`: two animations of 61
 keyframes), natively and with Jonlib, and compares the model (as gate
 `vox` does), every bone's parent, name and bind pose, and a hash of every
 keyframe's pose.
@@ -849,16 +865,20 @@ color is set exactly as often as `rmodels.c` sets it, which matters for
 rlsw's per-primitive alpha flag ([FRAME.md](FRAME.md#the-rendering-path)).
 
 - **Trigonometry.** `DrawCircle3D` uses multiples of 10 degrees and its
-  `rlRotatef` angle; `DrawSphereEx` the two angles `DEG2RAD*(180/(rings +
-  1))` and `DEG2RAD*(360/slices)`; `DrawCylinder(Wires)` `(DEG2RAD*i)*(360/sides)`;
-  the `Ex` cylinders and capsules `((2*PI)/sides)*i` and
+  `rlRotatef` angle; `DrawSphereEx` and `DrawSphereWires` the two angles
+  `DEG2RAD*(180/rings)` and `DEG2RAD*(360/slices)`; `DrawCylinder(Wires)` `(DEG2RAD*i)*(360/sides)`;
+  the `Ex` cylinders and capsules `((2*PI)/slices)*i` and
   `(PI*0.5/rings)*i`. Every argument must be verified for the profile.
-  `DrawSphereWires`' ring angles `DEG2RAD*(270 + 180/(rings + 1)*i)` reach 450
-  degrees: the glibc profiles draw them (glibc's own `sinf`/`cosf`,
-  [SINCOSF.md](SINCOSF.md)); the Apple profile refuses every drawn wire sphere.
-- **Loops.** rings, slices and sides above 4096 (`DrawSphereWires` rings above
-  4094) and grids above 4097 lines are refused, as are NaN or out-of-range C
-  ints.
+- **raylib 6.2.** `DrawSphereEx` draws `rings` bands with the ring angle
+  `180/rings` (6.0: `rings + 1` bands of `180/(rings + 1)`), so nothing is
+  drawn below one ring. `DrawSphereWires` was rewritten on the same rotated
+  vertices: per face the longitude, latitude and diagonal lines `0-1`, `0-2`
+  and `0-3` (6.0 evaluated `sinf`/`cosf` per vertex at angles up to 450
+  degrees, which the Apple profile could not draw). `DrawCapsule(Wires)` take
+  `(start, end, radius, rings, slices)` (6.0: slices, then rings) and raise
+  rings below 1 to 1. The cylinders and billboards only renamed parameters.
+- **Loops.** rings, slices and sides above 4096 and grids above 4097 lines are
+  refused, as are NaN or out-of-range C ints.
 
 ## Verification
 
@@ -873,7 +893,7 @@ rlsw's per-primitive alpha flag ([FRAME.md](FRAME.md#the-rendering-path)).
 | `obj` | `tools/obj_probe.py` | 40 OBJ/MTL loads (written by the probe with PNG textures) word for word against the linked raylib with the host contraction (on macOS arm64 the fused `tryParseDouble`, `M.Fused{}`): mesh and material counts, `IsModelValid`, every mesh's counts, material index and vertex, normal and texcoord word, every material map; 27 compared, 13 refused |
 | `obj-uncontracted` | `tools/obj_probe.py --uncontracted-control` | the same files against the raylib built with `-ffp-contract=off` (`M.Uncontracted{}`); the corpus includes literals whose fused and unfused parses round to different floats |
 | `vox` | `tools/vox_probe.py` | 53 MagicaVoxel loads (the four models of `models_loading_vox` and files written by the probe): mesh and material counts, `IsModelValid`, every mesh's counts, material index and FNV-1a hashes of its vertex, normal, color and index words, every material map; 33 compared, 20 refused |
-| `iqm` | `tools/iqm_probe.py` | 46 Inter-Quake Model files (the two of `models_loading_iqm` and files written by the probe) through `LoadModel`, the skeleton and `LoadModelAnimations` against the uncontracted raylib build: the model rows of gate `vox`, every bone's parent, name and bind pose words, every animation's name, counts and a hash of each keyframe's pose; 62 loads compared, 30 refused |
+| `iqm` | `tools/iqm_probe.py` | 46 Inter-Quake Model files (the two of `models_loading_iqm` and files written by the probe) through `LoadModel`, the skeleton and `LoadModelAnimations` against the uncontracted raylib build: the model rows of gate `vox`, every bone's parent, name and bind pose words, every animation's name, counts and a hash of each keyframe's pose; 63 loads compared, 29 refused |
 | `m3d` | `tools/m3d_probe.py` | 65 Model 3D files (the three of the models examples and files written by the probe) through `LoadModel`, the skeleton and `LoadModelAnimations` against the uncontracted raylib build, with the rows of gate `iqm`; 80 loads compared, 50 refused |
 
 ```sh
@@ -893,7 +913,7 @@ attribute builders are tail-recursive.
   `par_shapes` sphere, hemisphere and torus under Apple's `qsort` and
   `sinf`/`cosf`; their fused contraction is implemented but only the
   uncontracted glibc reference is compared.
-- Perspective cameras and `DrawSphereWires` under the Apple profile;
+- Perspective cameras under the Apple profile;
   the Apple profile's `sinf`/`cosf` beyond the integral degrees (most curved
   shapes are verified only under the glibc profile).
 - Shaders (no shader is compiled under OpenGL 1.1), `UploadMesh`/GPU

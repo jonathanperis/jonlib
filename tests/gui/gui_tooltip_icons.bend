@@ -35,8 +35,12 @@ def draw.done(+core: J.Core, +gui: G.Gui, +clicks: U32, +on: Bool, +text: String
   f7 = G.Gui.label(off, f6, J.Rectangle{200.0, 160.0, 150.0, 20.0}, shown(G.Gui.icon_text(4294967291, Some{"negative"})))
   f8 = G.Gui.label(off, f7, J.Rectangle{200.0, 190.0, 150.0, 20.0}, shown(G.Gui.icon_text(1000, Some{"four digits"})))
   f9 = G.Gui.label(off, f8, J.Rectangle{200.0, 220.0, 150.0, 20.0}, shown(G.Gui.icon_text(121, None{})))
-  f10 = J.Draw.text(f9, U32.show(clicks) ++ " " ++ Bool.pick(String, on, "1", "0"), 440.0, 285.0, 10.0, J.Color.BLACK())
-  (core, (State{off, clicks, on, text, editing}, f10))
+  f10 = G.Gui.draw_icon(off, f9, 256, 330, 60, 1, J.Color.BLACK())
+  f11 = G.Gui.draw_icon(off, f10, 511, 350, 60, 1, J.Color.BLACK())
+  f12 = first(G.Gui.button(off, core, f11, J.Rectangle{330.0, 245.0, 160.0, 20.0}, "#600#Six"))
+  f13 = first(G.Gui.button(off, core, f12, J.Rectangle{330.0, 270.0, 100.0, 20.0}, "#250##5#Two"))
+  f14 = J.Draw.text(f13, U32.show(clicks) ++ " " ++ Bool.pick(String, on, "1", "0"), 440.0, 285.0, 10.0, J.Color.BLACK())
+  (core, (State{off, clicks, on, text, editing}, f14))
 
 def draw.texted(+core: J.Core, +gui: G.Gui, +clicks: U32, +on: Bool, frame: J.Frame, rest: String & (G.Gui.Editing & Bool)) -> J.Core & (State & J.Frame):
   (+text, more) = rest

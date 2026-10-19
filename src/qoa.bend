@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of qoa.h (Dominic Szablewski, MIT) as pinned raylib
-# 6.0 vendors it in src/external/qoa.h: qoa_decode and qoa_encode. C ints are
+# 6.2 vendors it in src/external/qoa.h: qoa_decode and qoa_encode. C ints are
 # U32 two's-complement words; 64-bit values are two U32 words. See
 # THIRD_PARTY_NOTICES.md and LICENSES/qoa.txt.
 import Base
@@ -232,34 +232,49 @@ def capacity(+count: U32) -> Nat:
 
 # The file's decoding state: position, frames decoded, samples (the last
 # first), and whether raylib's behavior became undefined (writes past its
-# buffer, reads past the data, more than 8 channels).
+# buffer, reads past the data).
 type Run is Data:
   Run{p: U32, frames: U32, samples: +List<U32>, done: Bool, undefined: Bool}
 
-def run.frame(frame: Frame, +start: U32, +decoded: U32, +samples: +List<U32>, +count: U32, +channels: U32, +total: U32) -> Run:
+# After a frame of `count` samples. qoa_decode (`rounded`, raylib 6.2) goes on
+# only after a whole frame of 5120 samples, into a buffer rounded up to whole
+# frames: it never writes past it, and its count is the samples decoded,
+# which may pass the declared total. Without `rounded` (the music, which
+# qoaplay decodes frame by frame) every frame is decoded up to the total, and
+# one past it is undefined.
+def run.frame(frame: Frame, +start: U32, +decoded: U32, +samples: +List<U32>, +count: U32, +channels: U32, +total: U32, +rounded: Bool) -> Run:
   match frame:
     case Frame{p, _, _, True{}}: Run{p, decoded, samples, True{}, True{}}
     case Frame{+p, _, out, False{}}:
-      Run{p, (decoded + count : U32), take.onto(U32.to_nat((count * channels : U32)), Array.to_list(~U32, out), samples), ((decoded + count) >= total : U32), ((decoded + count) > total : U32)}
+      Run{p, (decoded + count : U32), take.onto(U32.to_nat((count * channels : U32)), Array.to_list(~U32, out), samples),
+        ((decoded + count) >= total : U32) || (rounded && U32.is_ne(count, 5120)), Bool.not(rounded) && ((decoded + count) > total : U32)}
+
+# qoa_decode_frame's checks (raylib 6.2's qoa.h): the data holds the frame
+# header and LMS state, the frame keeps the file's channels and rate, its
+# size covers its own header and stays in the data, and its slices (at most
+# 256 a channel) fit in its size.
+def frame.refused(+size: U32, +channels: U32, +rate: U32, +fch: U32, +frate: U32, +count: U32, +fsize: U32) -> Bool:
+  +lead = (8 + 16 * fch : U32)
+  +slices = ((count + 19) / 20 : U32)
+  (size < (8 + 16 * channels) : U32) || U32.is_ne(fch, channels) || U32.is_ne(frate, rate) || (fsize < lead : U32) || (fsize > size : U32)
+    || (slices > 256 : U32) || ((slices * fch) > ((fsize - lead) / 8) : U32)
 
 # qoa_decode_frame at p; a failed frame ends the file with what was decoded.
-def run.step(+bytes: +List<U32>, +len: U32, +channels: U32, +rate: U32, +total: U32, +p: U32, +decoded: U32, +samples: +List<U32>) -> Run:
+def run.step(+bytes: +List<U32>, +len: U32, +channels: U32, +rate: U32, +total: U32, +rounded: Bool, +p: U32, +decoded: U32, +samples: +List<U32>) -> Run:
   +size = (len - p : U32)
   +header = be64(bytes, p)
   +fch = (W.hi(header) >> 24n : U32)
   +frate = (W.hi(header) .&. 16777215 : U32)
   +count = (W.lo(header) >> 16n : U32)
   +fsize = (W.lo(header) .&. 65535 : U32)
-  +slices = ((fsize - 8 - 16 * fch) / 8 : U32)
-  +failed = (size < (8 + 16 * channels) : U32) || U32.is_ne(fch, channels) || U32.is_ne(frate, rate) || (fsize > size : U32) || ((count * fch) > (slices * 20) : U32)
-  Bool.pick(Run, failed, Run{p, decoded, samples, True{}, False{}},
+  Bool.pick(Run, frame.refused(size, channels, rate, fch, frate, count, fsize), Run{p, decoded, samples, True{}, False{}},
     run.frame(frame.units(units(U32.to_nat(((count + 19) / 20 : U32)), 0, channels, Nil{}), bytes, len, count, channels,
       Frame{(p + 8 + 16 * channels : U32), frame.states(U32.to_nat(channels), bytes, (p + 8 : U32), Nil{}), Array.new(U32, capacity((count * channels : U32)), 0), False{}}),
-      p, decoded, samples, count, channels, total))
+      p, decoded, samples, count, channels, total, rounded))
 
-def run.loop(n: Nat, +bytes: +List<U32>, +len: U32, +channels: U32, +rate: U32, +total: U32, run: Run) -> Run:
+def run.loop(n: Nat, +bytes: +List<U32>, +len: U32, +channels: U32, +rate: U32, +total: U32, +rounded: Bool, run: Run) -> Run:
   match n run:
-    case 1n+k Run{p, decoded, samples, False{}, _}: run.loop(k, bytes, len, channels, rate, total, run.step(bytes, len, channels, rate, total, p, decoded, samples))
+    case 1n+k Run{p, decoded, samples, False{}, _}: run.loop(k, bytes, len, channels, rate, total, rounded, run.step(bytes, len, channels, rate, total, rounded, p, decoded, samples))
     case _ other: other
 
 type Outcome is Type:
@@ -276,19 +291,39 @@ def byte_count(data: +List<U32>, +count: U32) -> U32:
     case Nil{}: count
     case Con{_, rest}: byte_count(rest, (count + 1 : U32))
 
-# qoa_decode: the header, then frames until the declared samples or a frame
-# that fails. Files whose samples exceed 2^24 are Invalid (undefined: Jonlib's
-# bound); more than 8 channels overrun raylib's LMS state.
-def decode(+bytes: +List<U32>) -> Outcome:
+# qoa_decode's buffer (raylib 6.2's qoa.h): the declared samples rounded up
+# to whole 5120-sample frames, times the channels; past 0x7fffffff shorts
+# qoa_decode returns NULL.
+def buffer.refused(+total: U32, +channels: U32) -> Bool:
+  +frames = ((total / 5120) + Bool.to_u32(U32.is_ne((total % 5120 : U32), 0)) : U32)
+  ((frames * channels) >= 419431 : U32)
+
+# The header, then frames. qoa_decode_header fails (Invalid, not undefined)
+# for fewer than 16 bytes, no `qoaf` magic, zero samples, channels or rate
+# and (raylib 6.2) more than 8 channels; qoa_decode (`rounded`) also for a
+# buffer past 0x7fffffff shorts. The music's whole decoding (not `rounded`)
+# keeps Jonlib's bound: more than 2^24 samples are Invalid (undefined).
+def decode.run(+bytes: +List<U32>, +rounded: Bool) -> Outcome:
   +len = byte_count(bytes, 0)
   +header = be64(bytes, 0)
   +total = W.lo(header)
   +frame = be64(bytes, 8)
   +channels = (W.hi(frame) >> 24n : U32)
   +rate = (W.hi(frame) .&. 16777215 : U32)
-  Bool.pick(Outcome, (len < 16 : U32) || U32.is_ne(W.hi(header), 1903124838) || U32.is_eq(total, 0) || U32.is_eq(channels, 0) || U32.is_eq(rate, 0), Invalid{False{}},
-    Bool.pick(Outcome, (channels > 8 : U32) || (total > 16777216 : U32) || ((total * channels) > 16777216 : U32), Invalid{True{}},
-      run.result(run.loop(U32.to_nat(((len / (8 + 16 * channels)) + 1 : U32)), bytes, len, channels, rate, total, Run{8, 0, Nil{}, False{}, False{}}), rate, channels)))
+  Bool.pick(Outcome, (len < 16 : U32) || U32.is_ne(W.hi(header), 1903124838) || U32.is_eq(total, 0) || U32.is_eq(channels, 0) || U32.is_eq(rate, 0) || (channels > 8 : U32)
+      || (rounded && buffer.refused(total, channels)), Invalid{False{}},
+    Bool.pick(Outcome, Bool.not(rounded) && ((total > 16777216 : U32) || ((total * channels) > 16777216 : U32)), Invalid{True{}},
+      run.result(run.loop(U32.to_nat(((len / (8 + 16 * channels)) + 1 : U32)), bytes, len, channels, rate, total, rounded, Run{8, 0, Nil{}, False{}, False{}}), rate, channels)))
+
+# qoa_decode, as LoadWaveFromMemory calls it: frames until a frame that
+# fails, one shorter than 5120 samples or the declared samples reached.
+def decode(+bytes: +List<U32>) -> Outcome:
+  decode.run(bytes, True{})
+
+# The file decoded whole for the music (qoaplay_decode_frame frame after
+# frame): frames until a frame that fails or the declared samples reached.
+def decode.played(+bytes: +List<U32>) -> Outcome:
+  decode.run(bytes, False{})
 
 # -----------------------------------------------------------------------------
 # Encoder (qoa_encode)

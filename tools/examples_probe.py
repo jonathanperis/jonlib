@@ -504,8 +504,10 @@ UNDEFINED_FROM['core_directory_files-noext'] = 0
 # sscanf that matches part of a line and keeps the last line's values, an index past a control's row, a line longer
 # than fgets's buffer, a last line without '\n', a TTF font with and without a charmap, a font that does not load)
 # and binary ones (properties and a font of 95 glyphs, raw and DEFLATE-compressed, whose white rectangle tints every
-# shape; a font image of width 0). Two are undefined from the start: a property index outside the table, and a
-# binary file cut inside its font.
+# shape; a font image of width 0, whose white rectangle raygui 5.1-dev no longer sets). raygui 5.1-dev's forms: a text
+# style of version 600 (its 'f' line names the font first), a font name past the 31 bytes its sscanf reads (the first
+# 31 name a font that loads), a binary style of version 600 (the font file's 32-byte name before the font). Two are
+# undefined from the start: a property index outside the table, and a binary file cut inside its font.
 IO_SETUP.add('gui_style'); SCRATCH.add('gui_style')
 
 
@@ -544,7 +546,7 @@ def rgs_binary(version, properties, font=None, white=(91.0, 41.0, 4.0, 4.0), com
         (w, h, fmt, pixels), recs, glyphs = rgs_font_atlas()
         if image is not None:
             w, h = image
-        body = struct.pack('<iii', 8, len(recs), 0) + struct.pack('<4f', *white)
+        body = (b'pixantiqua.ttf'.ljust(32, b'\0') if version >= 600 else b'') + struct.pack('<iii', 8, len(recs), 0) + struct.pack('<4f', *white)
         packed = deflate(pixels) if compress else pixels
         body += struct.pack('<ii', len(pixels), len(packed) if compress else 0) + struct.pack('<iii', w, h, fmt) + packed
         for block in (b''.join(struct.pack('<4f', *r) for r in recs), b''.join(struct.pack('<4i', *g) for g in glyphs)):
@@ -571,6 +573,10 @@ BINARY_PROPS = [(0, 0, 0x2f7486ff), (0, 16, 16), (0, 17, 1), (2, 12, 3), (0, 18,
 FILES['gui_style-binary'] = {'style.rgs': rgs_binary(200, BINARY_PROPS, font=True)}
 FILES['gui_style-compressed'] = {'style.rgs': rgs_binary(400, BINARY_PROPS, font=True, compress=True)}
 FILES['gui_style-empty-image'] = {'style.rgs': rgs_binary(400, BINARY_PROPS, font=True, image=(0, 48))}
+FILES['gui_style-v600'] = {'style.rgs': rgs_text(['#', 'v 600', 'p 00 16 0x0000000c', 'f 12 pixantiqua.ttf charmap.txt']),
+                           'charmap.txt': 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 #?/'.encode(), 'pixantiqua.ttf': TTF}
+FILES['gui_style-long-name'] = {'style.rgs': rgs_text(['#', 'f 16 0 ' + 'p' * 27 + '.ttf-not-read']), 'p' * 27 + '.ttf': TTF}
+FILES['gui_style-binary600'] = {'style.rgs': rgs_binary(600, BINARY_PROPS, font=True, compress=True)}
 FILES['gui_style-index'] = {'style.rgs': rgs_text(['#', 'p 00 16 0x00000010', 'p 16 0 0x00000001'])}
 FILES['gui_style-cut'] = {'style.rgs': rgs_binary(400, BINARY_PROPS, font=True, cut=12 + 8 * 7 + 4 + 48 + 96 * 48 * 2 + 4 + 100)}
 UNDEFINED_FROM['gui_style-index'] = 0
@@ -1603,8 +1609,8 @@ def scripts():
                                                      quick([mouse_at(130, 200)]), quick([mouse_at(10, 140)]), quick([mouse_at(395, 145)]),
                                                      quick([mouse_at(320, 85)]), slow()]))
     # The toggle slider clicked three times (to its last item and back to the first), the combo box pressed on its box and on
-    # its selector button, a list item chosen, the list scrolled by the wheel and another item chosen, and the disabled
-    # controls pressed.
+    # its selector button, a list item chosen, the list scrolled by the wheel and another item chosen, the disabled
+    # controls pressed, and the toggle group's second row and first row clicked (GROUP_WIDTH_FULL items, 50 wide).
     out.append(script('gui_toggle_combo_list', 'controls', [quick(), quick([mouse_at(100, 25)]), quick([button(0)]), quick([button(0, False)]),
                                                            quick([button(0)]), quick([button(0, False)]), quick([button(0)]), slow([button(0, False)]),
                                                            quick([mouse_at(60, 75)]), quick([button(0)]), quick([button(0, False)]), quick([mouse_at(200, 75)]),
@@ -1612,16 +1618,21 @@ def scripts():
                                                            slow([button(0, False)]), quick([(MOUSE_WHEEL, 0, -1, 0)]), quick([(MOUSE_WHEEL, 0, -1, 0)]),
                                                            quick([mouse_at(300, 100)]), quick([button(0)]), quick([button(0, False)]),
                                                            quick([mouse_at(60, 150)]), quick([button(0)]), quick([button(0, False)]),
-                                                           quick([mouse_at(300, 170)]), slow()]))
-    # The first tab clicked, the last one (the bar then moves left by 240), a tab's close button after the move, a middle press
-    # over a tab; the message box's second and third buttons and its close button; the disabled box pressed.
-    out.append(script('gui_message_tabs', 'controls', [quick(), quick([mouse_at(80, 12)]), quick([button(0)]), quick([button(0, False)]),
-                                                      quick([mouse_at(470, 12)]), quick([button(0)]), slow([button(0, False)]), quick([mouse_at(200, 10)]),
-                                                      quick([button(0)]), quick([button(0, False)]), quick([mouse_at(100, 12)]), quick([button(2)]),
-                                                      quick([button(2, False)]), quick([mouse_at(200, 195)]), quick([button(0)]), quick([button(0, False)]),
-                                                      quick([mouse_at(300, 195)]), quick([button(0)]), quick([button(0, False)]), quick([mouse_at(347, 72)]),
-                                                      quick([button(0)]), quick([button(0, False)]), quick([mouse_at(430, 140)]), quick([button(0)]),
-                                                      slow([button(0, False)])]))
+                                                           quick([mouse_at(300, 170)]), quick([mouse_at(85, 268)]), quick([button(0)]),
+                                                           quick([button(0, False)]), quick([mouse_at(140, 240)]), quick([button(0)]),
+                                                           quick([button(0, False)]), slow()]))
+    # The text tab bar's first tab clicked (its active tab 5 had moved the bar right by 300), a third tab clicked, a middle
+    # press over a tab; the GuiTabBarEx's close button clicked over its second tab, its third tab clicked; the message
+    # box's second and third buttons and its close button; the disabled box pressed.
+    out.append(script('gui_message_tabs', 'controls', [quick(), quick([mouse_at(380, 12)]), quick([button(0)]), slow([button(0, False)]),
+                                                      quick([mouse_at(400, 12)]), quick([button(0)]), quick([button(0, False)]),
+                                                      quick([mouse_at(100, 12)]), quick([button(2)]), quick([button(2, False)]),
+                                                      quick([mouse_at(192, 42)]), quick([button(0)]), quick([button(0, False)]),
+                                                      quick([mouse_at(250, 42)]), quick([button(0)]), quick([button(0, False)]),
+                                                      quick([mouse_at(200, 195)]), quick([button(0)]), quick([button(0, False)]),
+                                                      quick([mouse_at(300, 195)]), quick([button(0)]), quick([button(0, False)]),
+                                                      quick([mouse_at(347, 72)]), quick([button(0)]), quick([button(0, False)]),
+                                                      quick([mouse_at(430, 140)]), quick([button(0)]), slow([button(0, False)])]))
     # The value box pressed; the secret view switched on, the secret box entered (edit mode) and Cancel pressed; the plain box
     # entered, which turns raygui's shared edit mode on for both, and Done pressed; the secret box closed, its view switched
     # off; the disabled value box pressed.
@@ -1643,7 +1654,7 @@ def scripts():
                       + drag(330, 250, 330, 170) + clicks(440, 50) + [slow()]))
     # The button hovered and clicked, the toggle switched on, the text box hovered, the tooltip's button hovered.
     # Each style: a button hovered, pressed and released, a check box clicked.
-    for variant in ('text', 'charmap', 'missing', 'binary', 'compressed', 'empty-image', 'index', 'cut'):
+    for variant in ('text', 'charmap', 'missing', 'binary', 'compressed', 'empty-image', 'v600', 'long-name', 'binary600', 'index', 'cut'):
         out.append(script('gui_style', variant, [quick(), quick([mouse_at(80, 65)])] + clicks(80, 65) + clicks(20, 112) + [slow()]))
     out.append(script('gui_font', 'controls', [quick(), quick([mouse_at(80, 65)])] + clicks(80, 65) + clicks(230, 65)
                       + [quick([mouse_at(100, 105)]), quick([mouse_at(270, 105)]), slow()]))

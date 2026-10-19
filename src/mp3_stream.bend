@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of dr_mp3 v0.7.4 (David Reid; public domain or MIT
-# No Attribution; its decoder is minimp3, by lieff, CC0), as raylib 6.0
+# No Attribution; its decoder is minimp3, by lieff, CC0), as raylib 6.2
 # vendors it in src/external/dr_mp3.h: a stream's samples
 # (drmp3_decode_next_frame_ex__callbacks with its samples, drmp3_init's first
 # frame, drmp3_read_pcm_frames_raw, drmp3_read_pcm_frames_s16,
@@ -216,8 +216,9 @@ def turn.more(stop: Bool, +player: Player, +want: U32, +got: U32, +out: +List<+L
 # A turn of drmp3_read_pcm_frames_raw's loop. The frames of the delay are
 # passed first (they count in currentPCMFrame and not in what is read); then
 # as many frames as the frame at hand has and are wanted, no further than
-# the padding when the stream's total is known (inside the padding the read
-# is over before anything is copied); a frame is as many samples as the
+# the padding when the stream's total is known and above it (inside the
+# padding the read is over before anything is copied; H.limit.known and
+# H.limit.edge read the 64-bit total); a frame is as many samples as the
 # stream has channels, from where the frame's own channel count puts it.
 def turn.taken(into: Bool, +player: Player, +want: U32, +got: U32, +out: +List<+List<U32>>, +keep: Bool, +take: U32, +limited: Bool, +edge: U32, +frames: U32) -> Step:
   match into:
@@ -243,8 +244,8 @@ def turn(+player: Player, +want: U32, +got: U32, +out: +List<+List<U32>>, +keep:
   Player{+stream, decoder, pcm, +consumed, +remaining, channels, +current, status} = player
   H.Stream{_, _, _, _, _, _, _, _, _, _, _, +delay, +padding, +known, +total, +frames, _} = stream
   +skip = turn.skip(current, delay, remaining)
-  +limited = known && (total > padding : U32)
-  +edge = (total - U32.min(padding, total) : U32)
+  +limited = H.limit.known(known, total, padding)
+  +edge = H.limit.edge(known, total, padding)
   +at = (current + skip : U32)
   +left = (remaining - skip : U32)
   turn.taken(limited && (at >= edge : U32), Player{stream, decoder, pcm, (consumed + skip : U32), left, channels, at, status}, want, got, out, keep, turn.take(left, want, limited, edge, at), limited, edge,
@@ -329,19 +330,26 @@ def read.chunks(n: Nat, stop: Bool, +each: U32, +left: U32, +total: U32, +acc: +
 def read.chunked(+player: Player, +frames: U32, +each: U32) -> Read:
   read.chunks(U32.to_nat(((frames / U32.max(each, 1)) + 2 : U32)), False{}, each, frames, 0, Nil{}, read.raw(player, U32.min(frames, each), True{}))
 
+# The frames of dr_mp3's temporary buffers for `channels`: raylib 6.2's
+# dr_mp3 holds 1152*2 samples in both drmp3_read_pcm_frames_f32's pTempS16
+# and drmp3__full_read_and_close_f32's temp (8192 and 4096 before).
+def temp.frames(+channels: U32) -> U32:
+  (2304 / U32.max(channels, 1) : U32)
+
 # drmp3_read_pcm_frames_f32 in raylib's build: 16-bit raw reads of at most
-# 8192 samples (8192 / channels frames) converted to floats; the 16-bit
+# 2304 samples (2304 / channels frames) converted to floats; the 16-bit
 # samples, before the division by 32768.
 def read.f32.raw(+player: Player, +frames: U32) -> Read:
-  read.chunked(player, frames, (8192 / U32.max(Player.channels(player), 1) : U32))
+  read.chunked(player, frames, temp.frames(Player.channels(player)))
 
 def read.f32(+player: Player, +frames: U32) -> Floats:
   read.floats(read.f32.raw(player, frames))
 
-# drmp3__full_read_and_close_f32: reads of 4096 / channels frames (one raw
-# read each) until one gives none; `most` bounds the frames.
+# drmp3__full_read_and_close_f32: reads of 2304 / channels frames (each one
+# drmp3_read_pcm_frames_f32 of as many, so one raw read) until one gives
+# none; `most` bounds the frames.
 def read.f32.whole(+player: Player, +most: U32) -> Floats:
-  read.floats(read.chunked(player, most, (4096 / U32.max(Player.channels(player), 1) : U32)))
+  read.floats(read.chunked(player, most, temp.frames(Player.channels(player))))
 
 # -----------------------------------------------------------------------------
 # Seeking
@@ -415,4 +423,4 @@ def total.known(known: Bool, +player: Player) -> Counted:
 # makes the result 0.
 def total(+player: Player) -> Counted:
   Player{H.Stream{_, _, _, _, _, _, _, _, _, _, _, _, _, +known, _, _, _}, _, _, _, _, _, _, _} = player
-  total.known(known, player)
+  total.known(U32.is_ne(known, 0), player)

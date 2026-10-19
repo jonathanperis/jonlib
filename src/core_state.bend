@@ -16,9 +16,10 @@ import ./automation.bend as A
 type Time is Data:
   Time{current: W.Words, previous: W.Words, update: W.Words, draw: W.Words, frame: W.Words, target: W.Words, counter: U32}
 
-# GetFPS's static state: index, 30-entry history, average and last time.
+# GetFPS's static state: index, 30-entry history, average, last time and the
+# number of samples taken (captureFramesCounted, raylib 6.2).
 type Fps is Data:
-  Fps{index: U32, history: +List<F32>, average: F32, last: F32}
+  Fps{index: U32, history: +List<F32>, average: F32, last: F32, counted: U32}
 
 # The window state of the memory platform's CORE.Window that no other field
 # holds: the configuration flags (SetConfigFlags; SetWindowState and the
@@ -36,7 +37,7 @@ type Core is Data:
   Core{window: Screen, input: In.Input, gestures: G.Gestures, time: Time, fps: Fps, recording: Bool, list: Maybe<&2, A.AutoList>}
 
 def Fps.new() -> Fps:
-  Fps{0, List.replicate(F32, 30n, 0.0), 0.0, 0.0}
+  Fps{0, List.replicate(F32, 30n, 0.0), 0.0, 0.0, 0}
 
 def Config.new() -> Config:
   Config{0, "", 0, 0, 0, 0, False{}}
@@ -241,24 +242,34 @@ def Core.frame_time(+core: Core) -> Maybe<F32>:
   Clock.narrow(Time.frame(Core.time(core)))
 
 # -----------------------------------------------------------------------------
-# GetFPS: FPS_CAPTURE_FRAMES_COUNT 30, FPS_STEP 0.5f/30; the history resets
-# while the frame counter is 0.
+# GetFPS (raylib 6.2): FPS_CAPTURE_FRAMES_COUNT 30, FPS_STEP 0.5f/30; the
+# history resets while the frame counter is 0. The answer divides the samples
+# taken (at most 30) by the summed history: 0 before the first sample.
 
 def roundf(+x: F32) -> F32:
   +t = F32.trunc(x)
   Bool.pick(F32, (F32.abs((x - t : F32)) >= 0.5 : F32), Bool.pick(F32, (x < 0.0 : F32), (t - 1.0 : F32), (t + 1.0 : F32)), t)
 
-def fps.answer(+average: F32) -> Maybe<U32>:
-  In.f32_int(roundf((1.0 / average : F32)))
+# captureFramesCounted after a sample: one more, up to 30.
+def capture.counted(+counted: U32) -> U32:
+  Bool.pick(U32, (counted < 30 : U32), (counted + 1 : U32), counted)
+
+# (int)roundf(captureFramesCounted/(average*FPS_CAPTURE_FRAMES_COUNT)) once
+# sampled: the unsigned count converted to float, average*30.0f, then the
+# division; None where the int conversion is undefined.
+def fps.answer(sampled: Bool, +counted: U32, +average: F32) -> Maybe<U32>:
+  match sampled:
+    case False{}: Some{0}
+    case True{}: In.f32_int(roundf((U32.to_f32(counted) / (average * 30.0 : F32) : F32)))
 
 def fps.update(+fps: Fps, +frame: F32, +now: W.Words) -> Maybe<Fps>:
-  Fps{+index, +history, +average, _} = fps
+  Fps{+index, +history, +average, _, +counted} = fps
   +next = ((index + 1) % 30 : U32)
   +old = In.item(F32, history, U32.to_nat(next), 0.0)
   +entry = (frame / 30.0 : F32)
   do Maybe<&1, Fps>:
     last : F32 <- Clock.narrow(now)
-    return Fps{next, List.set(&2, F32, history, U32.to_nat(next), entry), ((average - old) + entry : F32), last}
+    return Fps{next, List.set(&2, F32, history, U32.to_nat(next), entry), ((average - old) + entry : F32), last, capture.counted(counted)}
 
 def fps.step() -> W.Words:
   target.of(Clock.promote((0.5 / 30.0 : F32)))
@@ -268,17 +279,17 @@ def fps.stepped(due: Bool, +fps: Fps, +frame: F32, +now: W.Words) -> Maybe<Fps>:
     case False{}: Some{fps}
     case True{}: fps.update(fps, frame, now)
 
-def fps.average(+fps: Fps) -> F32:
-  Fps{_, _, average, _} = fps
-  average
+def fps.result(+fps: Fps) -> Maybe<U32>:
+  Fps{_, _, +average, _, +counted} = fps
+  fps.answer((counted > 0 : U32), counted, average)
 
 def fps.measured(+fps: Fps, +frame: F32, +now: W.Words) -> Maybe<(Fps & U32)>:
-  Fps{_, _, _, +last} = fps
+  Fps{_, _, _, +last, _} = fps
   do Maybe<&1, (Fps & U32)>:
     since : W.Words <- Clock.promote(last)
     elapsed : W.Words <- Clock.sub(now, since)
     +updated : Fps <- fps.stepped(Clock.greater(elapsed, fps.step()), fps, frame, now)
-    value : U32 <- fps.answer(fps.average(updated))
+    value : U32 <- fps.result(updated)
     return (updated, value)
 
 def fps.frame(nonzero: Bool, +fps: Fps, +frame: F32, +now: W.Words) -> Maybe<(Fps & U32)>:

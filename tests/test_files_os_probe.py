@@ -42,9 +42,8 @@ class ScriptTests(unittest.TestCase):
                 fp.c_op(op, args, self.tree)
         self.assertEqual({op for op, _, _ in ops}, {'is_dir', 'absolute', 'hidden', 'exists', 'is_file', 'dir_exists', 'mod_time', 'count', 'count_ex', 'load', 'load_ex', 'rename',
                                                      'remove', 'make', 'copy', 'move', 'text', 'change', 'cwd', 'app', 'url'})
-        # the contracts are the listings of the directory whose file overflows IsFileExtension, with an extension list
-        self.assertEqual([(op, args[0][-8:], args[1]) for op, args, defined in ops if not defined],
-                         [('load_ex', 'tree-odd', '.png'), ('count_ex', 'tree-odd', '.png')])
+        # no contracts: raylib 6.2's IsFileExtension bounds the 17-byte extension 6.0 overflowed
+        self.assertEqual([(op, args[0][-8:], args[1]) for op, args, defined in ops if not defined], [])
         # the working directory changes last
         ops_names = [op for op, _, _ in ops]
         self.assertGreater(ops_names.index('change'), max(i for i, op in enumerate(ops_names) if op in ('copy', 'move', 'url')))

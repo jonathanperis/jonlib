@@ -1,6 +1,6 @@
 # Text and codepoints
 
-Jonlib adapts raylib 6.0's `rtext.c` text strings management and UTF-8
+Jonlib adapts raylib 6.2's `rtext.c` text strings management and UTF-8
 codepoint functions as `Text.*`, `Codepoint.*` and `UTF8.*` in `jonlib.bend`;
 the algorithms are in `src/text.bend` (an altered Bend adaptation of rtext.c,
 LICENSES/raylib.txt). Texts are raylib byte strings, as in
@@ -22,7 +22,9 @@ above 255 are not bytes and are outside every contract on this page.
 - **Destination buffers** (`TextCopy`, `TextAppend`) are Strings of the buffer's
   size; the result is the whole buffer after the write.
 - **NULL**: Bend has no NULL inputs. The `*Alloc` functions' NULL results are
-  `None`; `LoadUTF8` of no codepoints is `""`.
+  `None` (`TextReplaceAlloc` with an empty search, `TextReplaceBetweenAlloc`
+  with a missing marker, `TextInsertAlloc` at a negative position);
+  `LoadUTF8` of no codepoints is `""`.
 - **Varargs**: `TextFormat` takes a typed `List<Text.Arg>`
   (`TextInt{word}`, `TextString{text}`, `TextFloat{f32}`).
 
@@ -36,22 +38,22 @@ above 255 are not bytes and are outside every contract on this page.
 | `Text.is_equal(a, b) -> Bool` | `TextIsEqual` | `strcmp` equality. |
 | `Text.length(text) -> U32` | `TextLength` | Bytes before the NUL. |
 | `Text.format(format, args) -> Maybe<String>` | `TextFormat` | The subset below; output of 1024+ bytes keeps 1020 and appends `...`; a `%c` of 0 ends the result. |
-| `Text.subtext(text, position, length) -> Maybe<String>` | `TextSubtext` | `length` bytes from `position`, clamped to the text and to 1023 bytes; `""` from positions at or past the end. |
-| `Text.remove_spaces(text) -> Maybe<String>` | `TextRemoveSpaces` | The bytes other than `' '` among the first 1023. |
+| `Text.subtext(text, position, length) -> Maybe<String>` | `TextSubtext` | `length` bytes from `position`, clamped to the text and to 1023 bytes; `""` for a negative position, a length below 1 or a position at or past the end. Always `Some`. |
+| `Text.remove_spaces(text) -> Maybe<String>` | `TextRemoveSpaces` | The bytes other than `' '` among the first 1023. Always `Some`. |
 | `Text.between(text, begin, end) -> String` | `GetTextBetween` | The bytes (at most 1023) between the first `begin` and the first `end` after it; `""` when either is missing (an empty marker matches at once). |
 | `Text.replace(text, search, replacement) -> Maybe<String>` | `TextReplace` | Non-overlapping occurrences, left to right; `""` for an empty search or a result of 1023+ bytes. |
 | `Text.replace_alloc(...)` | `TextReplaceAlloc` | The same without the limit; `None` (NULL) for an empty search. |
-| `Text.replace_between(text, begin, end, replacement) -> Maybe<String>` | `TextReplaceBetween` | The text through `begin`, the replacement, the text from `end`; `""` when a marker is missing. |
+| `Text.replace_between(text, begin, end, replacement) -> Maybe<String>` | `TextReplaceBetween` | The text through `begin`, the replacement, the text from `end`; `""` when a marker is missing or the result needs 1023+ bytes. Always `Some`. |
 | `Text.replace_between_alloc(...)` | `TextReplaceBetweenAlloc` | The same without the limit; `None` (NULL) when a marker is missing. |
-| `Text.insert(text, insert, position) -> Maybe<String>` | `TextInsert` | `""` when text + insert need 1023+ bytes; otherwise see below. |
-| `Text.insert_alloc(...)` | `TextInsertAlloc` | The same positions without the limit. |
-| `Text.join(texts, delimiter) -> Maybe<String>` | `TextJoin` | Each text that fits (`total + length < 1024`, others skipped with their delimiter), the delimiter after each copied text but the last item. |
-| `Text.split(text, delimiter: Char) -> Maybe<List<String>>` | `TextSplit` | The substrings between delimiter bytes; at the 127th delimiter raylib stops and the 128th substring is `""`. A NUL delimiter never splits. |
+| `Text.insert(text, insert, position) -> Maybe<String>` | `TextInsert` | `insert` placed before the byte at `position`, a position past the end clamped to the text's length; `""` for a negative position or when text + insert need 1023+ bytes. Always `Some`. |
+| `Text.insert_alloc(...)` | `TextInsertAlloc` | The same without the limit; `None` (NULL) for a negative position. |
+| `Text.join(texts, delimiter) -> Maybe<String>` | `TextJoin` | Each text that fits with a delimiter (`total + length + delimiterLen < 1024`, the last item included; others skipped with their delimiter), the delimiter after each copied text but the last item. Always `Some`. |
+| `Text.split(text, delimiter: Char) -> Maybe<List<String>>` | `TextSplit` | The substrings between delimiter bytes among the first 1023 bytes (a longer text's last substring ends at byte 1022); at the 127th delimiter raylib stops and the 128th substring is `""`. A NUL delimiter never splits. Always `Some`. |
 | `Text.find_index(text, search) -> Maybe<U32>` | `TextFindIndex` | `strstr`'s index; `None` for -1. An empty search is at 0. |
 | `Text.to_upper` / `to_lower(text) -> String` | `TextToUpper` / `TextToLower` | ASCII letters converted, at most 1023 bytes. |
-| `Text.to_pascal(text) -> Maybe<String>` | `TextToPascal` | The first byte upper-cased; `_x` becomes `X` for a-z, `x` for 0-9, otherwise a NUL that ends the result. At most 1023 output bytes. |
-| `Text.to_camel(text) -> Maybe<String>` | `TextToCamel` | The first byte lower-cased; `_x` becomes `X` for a-z, otherwise a NUL. |
-| `Text.to_snake(text) -> Maybe<String>` | `TextToSnake` | `_` before each upper-case letter after output byte 0, letters lower-cased, at most 1023 bytes. |
+| `Text.to_pascal(text) -> Maybe<String>` | `TextToPascal` | The first byte upper-cased; a run of `_` and the byte after it become that byte, upper-cased for a-z and copied otherwise; a run of `_` at the end is dropped. `""` for an empty text; at most 1023 output bytes. Always `Some`. |
+| `Text.to_camel(text) -> Maybe<String>` | `TextToCamel` | The same with the first byte lower-cased. |
+| `Text.to_snake(text) -> Maybe<String>` | `TextToSnake` | See below; at most 1023 bytes. Always `Some`. |
 | `Text.to_integer(text) -> Maybe<U32>` | `TextToInteger` | An optional sign and the leading digits (0 without digits; no whitespace skipping). |
 | `Text.to_float_for(contraction, text) -> F32`, `Text.to_float` | `TextToFloat` | An optional sign, digits as `value*10 + d` in F32, then after `.` each `d/divisor` added and the divisor multiplied by 10; the sign multiplied last (`-0` for `"-"`). `to_float` is the uncontracted profile. |
 | `UTF8.load(codepoints) -> String` / `unload` | `LoadUTF8` / `UnloadUTF8` | Every `CodepointToUTF8` encoding, concatenated (a codepoint 0 encodes a NUL byte, which ends raylib's C string). |
@@ -62,15 +64,15 @@ above 255 are not bytes and are outside every contract on this page.
 | `Codepoint.previous(text, position) -> Maybe<(U32 & U32)>` | `GetCodepointPrevious` | `GetCodepointPrevious(text + position)`: steps back over continuation bytes and returns `GetCodepointNext` there (its size, not the distance). Position length + 1 reads the NUL: `(0, 1)`. |
 | `Codepoint.to_utf8(codepoint) -> String` | `CodepointToUTF8` | 1..4 bytes; a negative codepoint is one byte (its low byte), above 0x10FFFF none. |
 
-### TextInsert
+### TextToSnake
 
-raylib copies the text after the insertion from `text[i]` instead of
-`text[i - insertLen]`. The defined positions are therefore: `position ==
-length` (the insert appended), `position == length + 1` (the text unchanged:
-its NUL is copied before the insert) and, for inserts of at most one byte,
-positions inside the text (an empty insert leaves the text; one byte replaces
-the byte at `position`). All other positions read past the text or write
-before the buffer.
+raylib 6.2 walks the text up to output byte 1023: a `' '` becomes `_` unless
+the output is empty or ends with `_` (runs of spaces collapse, leading ones
+vanish); an upper-case letter is lower-cased, preceded by `_` when the output
+does not end with `_` and the letter starts a word (the input byte before it
+is a-z, or it is A-Z and the byte after it a-z: `HTTPRequest` is
+`http_request`), unless that `_` would take output byte 1022; other bytes are
+copied (`_` included).
 
 ### TextFormat subset
 
@@ -95,6 +97,11 @@ ignored, as in C.
 
 ## Undefined native behavior: None
 
+raylib 6.2 defines `TextSubtext`, `TextRemoveSpaces`, `TextReplaceBetween`,
+`TextInsert`/`TextInsertAlloc`, `TextJoin`, `TextSplit` and the case
+conversions for every text, so those are never `None` (but
+`TextInsertAlloc`'s NULL). What remains:
+
 Where raylib's C code reads or writes outside a string or buffer, or
 overflows an `int`, Jonlib returns `None` instead of running it:
 
@@ -106,26 +113,8 @@ overflows an `int`, Jonlib returns `None` instead of running it:
   libraries). Other conversions (`e`, `g`, `a`, `p`, `n`), length modifiers,
   `*`, `+`/space with unsigned conversions and `%f` precisions above 9 are
   outside the subset and also `None`.
-- `TextSubtext`: a negative length (writes before the buffer), or a negative
-  position with a positive length (reads before the text) or whose
-  `textLength - position` overflows.
-- `TextRemoveSpaces`: texts of up to 1021 bytes with two or more spaces. Its
-  loop tests `text[j]` (the output index) while copying `text[i]`, so it keeps
-  reading after the NUL until `j` reaches it.
 - `TextReplace`/`TextReplaceAlloc`: `textLen + count*(replaceLen - searchLen)`
   (plus one for the allocation) overflowing an `int`.
-- `TextReplaceBetween`: a result of 1024 or more bytes (an overflow, or exactly
-  1024 bytes without a terminator).
-- `TextInsert`/`TextInsertAlloc`: the positions outside the list above.
-- `TextJoin`: a delimiter ending past byte 1022 (raylib checks only the text
-  against the buffer).
-- `TextSplit`: a text whose first 1024 bytes hold no NUL and fewer than 127
-  delimiters, or whose 127th delimiter is byte 1023: the last substring is
-  unterminated or starts past the buffer.
-- `TextToPascal`/`TextToCamel`: an empty text, or a final `_` reached before
-  output byte 1022 (the `_` consumes the NUL and the loop reads past it).
-- `TextToSnake`: an upper-case letter at output byte 1022 fills the buffer
-  without a terminator.
 - `TextToInteger`: digits beyond `INT_MAX` (including `-2147483648`).
 - `GetCodepointPrevious`: stepping before the text, or a position more than one
   byte past its NUL.
@@ -162,7 +151,10 @@ truncated UTF-8 (every suffix and position of each decoding text), embedded
 NULs, empty texts, texts of 1019..2100 bytes around each static limit, 126..300
 delimiters, overlapping search patterns, buffer sizes around each write, all
 insert positions, every `TextSubtext` boundary including `INT_MIN`/`INT_MAX`,
-signed integer limits, long and fractional float texts, and 273 random and
+signed integer limits, raylib 6.2's new limits (`TextReplaceBetween`
+results of 1021..1024 bytes, `TextJoin` fits around 1023, `TextSplit` texts
+around byte 1022, `TextToSnake` word boundaries at output bytes 1019..1023,
+runs of `_` before and at the end of a text), long and fractional float texts, and 273 random and
 targeted `TextFormat` formats (96 of them refused) (including outputs of 1023, 1024 and more
 bytes and a `%c` NUL before and after the truncation point).
 

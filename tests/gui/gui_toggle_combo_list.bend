@@ -1,4 +1,5 @@
-# Jongui's GuiToggleSlider, GuiComboBox and GuiListView, ported from
+# Jongui's GuiToggleSlider, GuiComboBox, GuiListView and GuiToggleGroup
+# (GROUP_WIDTH_FULL), ported from
 # tools/reference/gui/gui_toggle_combo_list.c (a probe-only raygui program,
 # not a raylib example) and replayed against it by tools/examples_probe.py
 # (category gui).
@@ -12,7 +13,7 @@ type Values is Data:
   Values{toggle: U32, toggles: U32, combo: U32, scroll: U32, active: U32}
 
 type State is Data:
-  State{gui: G.Gui, values: Values, off: Values}
+  State{gui: G.Gui, values: Values, off: Values, group: U32}
 
 # TextFormat's "%d" of an int given as its bits.
 def int(+v: U32) -> String:
@@ -33,53 +34,60 @@ def first.list(r: J.Frame & (G.Gui & (U32 & U32))) -> J.Frame:
   (frame, _) = r
   frame
 
-# The disabled controls, then GuiEnable.
-def draw.off(+core: J.Core, +gui: G.Gui, +values: Values, +off: Values, frame: J.Frame) -> J.Core & (State & J.Frame):
+# The toggle group's index, printed.
+def draw.grouped(+core: J.Core, +gui: G.Gui, +values: Values, +off: Values, r: J.Frame & U32) -> J.Core & (State & J.Frame):
+  (frame, +group) = r
+  (core, (State{gui, values, off, group}, J.Draw.text(frame, int(group), 220.0, 240.0, 10.0, J.Color.BLACK())))
+
+# The disabled controls, then GuiEnable and the toggle group, drawn with
+# GROUP_WIDTH_FULL set for it alone.
+def draw.off(+core: J.Core, +gui: G.Gui, +values: Values, +off: Values, +group: U32, frame: J.Frame) -> J.Core & (State & J.Frame):
   Values{+t, _, +c, +s, +a} = off
   +disabled = G.Gui.disable(gui)
   f1 = first(G.Gui.toggle_slider(disabled, core, frame, J.Rectangle{10.0, 140.0, 120.0, 24.0}, "A;B", t))
   f2 = first.combo(G.Gui.combo_box(disabled, core, f1, J.Rectangle{10.0, 180.0, 120.0, 24.0}, "Only;Two", c))
   f3 = first.list(G.Gui.list_view(disabled, core, f2, J.Rectangle{220.0, 150.0, 170.0, 60.0}, None{}, s, a))
-  (core, (State{G.Gui.enable(disabled), values, off}, f3))
+  +enabled = G.Gui.enable(disabled)
+  draw.grouped(core, enabled, values, off, G.Gui.toggle_group(G.Gui.set_style(enabled, 3, 17, 1), core, f3, J.Rectangle{10.0, 230.0, 200.0, 24.0}, "A;B;C\nD;E", group))
 
-def draw.listed.values(+core: J.Core, +gui: G.Gui, +toggle: U32, +toggles: U32, +combo: U32, +off: Values, frame: J.Frame, list: U32 & U32) -> J.Core & (State & J.Frame):
+def draw.listed.values(+core: J.Core, +gui: G.Gui, +toggle: U32, +toggles: U32, +combo: U32, +off: Values, +group: U32, frame: J.Frame, list: U32 & U32) -> J.Core & (State & J.Frame):
   (+scroll, +active) = list
   f1 = J.Draw.text(frame, int(toggles) ++ " " ++ int(toggle) ++ " " ++ int(combo) ++ " " ++ int(scroll) ++ " " ++ int(active), 10.0, 110.0, 10.0, J.Color.BLACK())
-  draw.off(core, gui, Values{toggle, toggles, combo, scroll, active}, off, f1)
+  draw.off(core, gui, Values{toggle, toggles, combo, scroll, active}, off, group, f1)
 
-def draw.listed.rest(+core: J.Core, +toggle: U32, +toggles: U32, +combo: U32, +off: Values, frame: J.Frame, rest: G.Gui & (U32 & U32)) -> J.Core & (State & J.Frame):
+def draw.listed.rest(+core: J.Core, +toggle: U32, +toggles: U32, +combo: U32, +off: Values, +group: U32, frame: J.Frame, rest: G.Gui & (U32 & U32)) -> J.Core & (State & J.Frame):
   (gui, list) = rest
-  draw.listed.values(core, gui, toggle, toggles, combo, off, frame, list)
+  draw.listed.values(core, gui, toggle, toggles, combo, off, group, frame, list)
 
-def draw.listed(+core: J.Core, +toggle: U32, +toggles: U32, +combo: U32, +off: Values, r: J.Frame & (G.Gui & (U32 & U32))) -> J.Core & (State & J.Frame):
+def draw.listed(+core: J.Core, +toggle: U32, +toggles: U32, +combo: U32, +off: Values, +group: U32, r: J.Frame & (G.Gui & (U32 & U32))) -> J.Core & (State & J.Frame):
   (frame, rest) = r
-  draw.listed.rest(core, toggle, toggles, combo, off, frame, rest)
+  draw.listed.rest(core, toggle, toggles, combo, off, group, frame, rest)
 
-def draw.combo(+core: J.Core, +gui: G.Gui, +toggle: U32, +toggles: U32, +scroll: U32, +active: U32, +off: Values, r: J.Frame & U32) -> J.Core & (State & J.Frame):
+def draw.combo(+core: J.Core, +gui: G.Gui, +toggle: U32, +toggles: U32, +scroll: U32, +active: U32, +off: Values, +group: U32, r: J.Frame & U32) -> J.Core & (State & J.Frame):
   (frame, +combo) = r
-  draw.listed(core, toggle, toggles, combo, off, G.Gui.list_view(gui, core, frame, J.Rectangle{220.0, 10.0, 170.0, 120.0}, Some{"Alpha;Beta;Gamma;Delta;Epsilon;Zeta;Eta;Theta;Iota"}, scroll, active))
+  draw.listed(core, toggle, toggles, combo, off, group, G.Gui.list_view(gui, core, frame, J.Rectangle{220.0, 10.0, 170.0, 120.0}, Some{"Alpha;Beta;Gamma;Delta;Epsilon;Zeta;Eta;Theta;Iota"}, scroll, active))
 
-def draw.toggled.moved(+core: J.Core, +gui: G.Gui, +toggles: U32, +combo: U32, +scroll: U32, +active: U32, +off: Values, frame: J.Frame, moved: U32 & Bool) -> J.Core & (State & J.Frame):
+def draw.toggled.moved(+core: J.Core, +gui: G.Gui, +toggles: U32, +combo: U32, +scroll: U32, +active: U32, +off: Values, +group: U32, frame: J.Frame, moved: U32 & Bool) -> J.Core & (State & J.Frame):
   (+toggle, +clicked) = moved
-  draw.combo(core, gui, toggle, Bool.pick(U32, clicked, (toggles + 1 : U32), toggles), scroll, active, off,
+  draw.combo(core, gui, toggle, Bool.pick(U32, clicked, (toggles + 1 : U32), toggles), scroll, active, off, group,
     G.Gui.combo_box(gui, core, frame, J.Rectangle{10.0, 60.0, 200.0, 30.0}, "Red;Green;Blue;White", combo))
 
-def draw.toggled(+core: J.Core, +gui: G.Gui, +toggles: U32, +combo: U32, +scroll: U32, +active: U32, +off: Values, r: J.Frame & (U32 & Bool)) -> J.Core & (State & J.Frame):
+def draw.toggled(+core: J.Core, +gui: G.Gui, +toggles: U32, +combo: U32, +scroll: U32, +active: U32, +off: Values, +group: U32, r: J.Frame & (U32 & Bool)) -> J.Core & (State & J.Frame):
   (frame, moved) = r
-  draw.toggled.moved(core, gui, toggles, combo, scroll, active, off, frame, moved)
+  draw.toggled.moved(core, gui, toggles, combo, scroll, active, off, group, frame, moved)
 
 def draw(+core: J.Core, +state: State, frame: J.Frame) -> J.Core & (State & J.Frame):
-  State{+gui, +values, +off} = state
+  State{+gui, +values, +off, +group} = state
   Values{+toggle, +toggles, +combo, +scroll, +active} = values
   f1 = J.Frame.clear_background(frame, J.Color.RAYWHITE())
-  draw.toggled(core, gui, toggles, combo, scroll, active, off, G.Gui.toggle_slider(gui, core, f1, J.Rectangle{10.0, 10.0, 200.0, 30.0}, "One;Two;Three", toggle))
+  draw.toggled(core, gui, toggles, combo, scroll, active, off, group, G.Gui.toggle_slider(gui, core, f1, J.Rectangle{10.0, 10.0, 200.0, 30.0}, "One;Two;Three", toggle))
 
 def program(+libm: M.Libm) -> J.Program<State>:
   J.Program{core => state => update(core, state), core => state => frame => draw(core, state, frame)}
 
 # After InitWindow(400, 300): SetTargetFPS(60).
 def setup(+core: J.Core, frame: J.Frame) -> J.Core & (J.Frame & State):
-  (J.Core.set_target_fps(core, 60), (frame, State{G.Gui.new(), Values{0, 0, 0, 0, 4294967295}, Values{1, 0, 3, 0, 0}}))
+  (J.Core.set_target_fps(core, 60), (frame, State{G.Gui.new(), Values{0, 0, 0, 0, 4294967295}, Values{1, 0, 3, 0, 0}, 1}))
 
 def run(args: List<String>) -> IO(Unit):
   J.Desktop.run(~State, ~program(M.AppleLibm{}), ~M.AppleLibm{}, "jonlib gui - toggle slider, combo box, list view", 400, 300, J.Desktop.frames_arg(args),

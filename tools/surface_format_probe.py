@@ -52,6 +52,20 @@ DRAWS = (
     ('rect-rgb', 4, '(Rectangle){0.5f,0,3,2}', '(Rectangle){1,1,5,3}', WHITE),
     ('region-gray-alpha', 2, '(Rectangle){1,0,2,2}', '(Rectangle){0,1,2,2}', HALF),
 )
+# raylib 6.2's other image draws: (name, source format or 0, C call on `m`, draw.op kind).
+# ImageDrawImageEx needs word formats (Jonlib refuses R32G32B32(A32) and R16G16B16(A16)).
+IMAGE_DRAWS = (
+    ('image-int', 7, f'ImageDrawImage(&im,m,-1,2,{c_color(TINT)});', 6),
+    ('image-rec', 0, f'ImageDrawImageRec(&im,m,(Rectangle){{1,0.5f,3,2}},(Vector2){{0.5f,1}},{c_color(WHITE)});', 7),
+    ('image-pro-turned', 0, f'ImageDrawImagePro(&im,m,(Rectangle){{0,0,3,2}},(Rectangle){{1,1,4,3}},(Vector2){{1,1}},45.0f,{c_color(HALF)});', 8),
+    ('image-ex', 0, f'ImageDrawImageEx(&im,m,(Vector2){{2.5f,0.5f}},30.0f,0.75f,{c_color(TINT)});', 9),
+    ('image-ex-scaled', 0, f'ImageDrawImageEx(&im,m,(Vector2){{-1,0.5f}},0.0f,2.0f,{c_color(WHITE)});', 10),
+)
+EX_DRAWS = {'draw-image-ex', 'draw-image-ex-scaled'}
+WIDE = {9, 10, 12, 13}
+# ImageFromImage outside the image: raylib's empty Image is Jonlib's None.
+EMPTY_IMAGE_OPS = {'from-image-outside'}
+GRADIENT = ((255, 0, 0, 255), (0, 255, 0, 128), (0, 0, 255, 0), (250, 250, 20, 255))
 
 
 # name: (C statement on `Image im` that leaves the result in `out`, kind, Bend expression on `s`)
@@ -65,6 +79,11 @@ OPS = {
     'crop': ('ImageCrop(&im,(Rectangle){1,1,3,2});', 'image', 'J.Surface.crop(s, J.Rectangle{1.0, 1.0, 3.0, 2.0})'),
     'from-image': ('{Image r=ImageFromImage(im,(Rectangle){1,0,2,3});UnloadImage(im);im=r;}', 'image',
                    'second(J.Surface.extract(s, J.Rectangle{1.0, 0.0, 2.0, 3.0}))'),
+    # raylib 6.2 truncates a fractional rectangle that passes its validation and rejects one outside.
+    'from-image-fractional': ('{Image r=ImageFromImage(im,(Rectangle){0.5f,1.75f,2.5f,2.25f});UnloadImage(im);im=r;}', 'image',
+                              'second(J.Surface.extract(s, J.Rectangle{0.5, 1.75, 2.5, 2.25}))'),
+    'from-image-outside': ('{Image r=ImageFromImage(im,(Rectangle){4,0,3,2});UnloadImage(im);im=r;}', 'image',
+                           'second(J.Surface.extract(s, J.Rectangle{4.0, 0.0, 3.0, 2.0}))'),
     'resize-canvas': (f'ImageResizeCanvas(&im,7,3,-1,1,{c_color(FILL)});', 'image',
                       f'J.Surface.resize_canvas(s, 7, 3, F32.neg(1.0), 1.0, {word(FILL)})'),
     'copy': ('{Image r=ImageCopy(im);UnloadImage(im);im=r;}', 'image', 'copied(J.Surface.copy(s))'),
@@ -91,9 +110,9 @@ OPS = {
     'line': (f'ImageDrawLine(&im,0,0,4,3,{c_color(DRAW)});', 'total', f'J.Surface.draw_line(s, 0.0, 0.0, 4.0, 3.0, {word(DRAW)})'),
     'triangle': (f'ImageDrawTriangle(&im,(Vector2){{0,0}},(Vector2){{1,3}},(Vector2){{4,1}},{c_color(DRAW)});', 'total',
                  f'J.Surface.draw_triangle(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{1.0, 3.0}}, M.Vector2{{4.0, 1.0}}, {word(DRAW)})'),
-    'triangle-ex': ('ImageDrawTriangleGradient(&im,(Vector2){0,0},(Vector2){1,3},(Vector2){4,1},(Color){255,0,0,255},(Color){0,255,0,128},(Color){0,0,255,0});',
-                    'total', f'J.Surface.draw_triangle_ex(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{1.0, 3.0}}, M.Vector2{{4.0, 1.0}}, '
-                    f'{word((255, 0, 0, 255))}, {word((0, 255, 0, 128))}, {word((0, 0, 255, 0))})'),
+    'triangle-gradient': ('ImageDrawTriangleGradient(&im,(Vector2){0,0},(Vector2){1,3},(Vector2){4,1},(Color){255,0,0,255},(Color){0,255,0,128},(Color){0,0,255,0});',
+                          'total', f'J.Surface.draw_triangle_gradient(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{1.0, 3.0}}, M.Vector2{{4.0, 1.0}}, '
+                          f'{word((255, 0, 0, 255))}, {word((0, 255, 0, 128))}, {word((0, 0, 255, 0))})'),
     'from-channel': ('{Image r=ImageFromChannel(im,1);UnloadImage(im);im=r;}', 'image', 'second(J.Surface.from_channel(s, 1.0))'),
     'alpha-crop': ('ImageAlphaCrop(&im,0.3f);', 'total', 'J.Surface.alpha_crop(s, 0.3)'),
     'pixel-v': (f'ImageDrawPixelV(&im,(Vector2){{2.7f,1.2f}},{c_color(DRAW)});', 'total', f'J.Surface.draw_pixel_v(s, M.Vector2{{2.7, 1.2}}, {word(DRAW)})'),
@@ -101,8 +120,20 @@ OPS = {
                     f'J.Surface.draw_rectangle_v(s, M.Vector2{{1.0, 1.0}}, M.Vector2{{3.0, 2.0}}, {word(DRAW)})'),
     'rectangle-rec': (f'ImageDrawRectangleRec(&im,(Rectangle){{0.5f,1,3.5f,2}},{c_color(DRAW)});', 'total',
                       f'J.Surface.draw_rectangle_rec(s, J.Rectangle{{0.5, 1.0, 3.5, 2.0}}, {word(DRAW)})'),
-    'rectangle-lines': (f'ImageDrawRectangleLinesEx(&im,(Rectangle){{0,0,5,3}},1,{c_color(DRAW)});', 'total',
-                        f'J.Surface.draw_rectangle_lines(s, J.Rectangle{{0.0, 0.0, 5.0, 3.0}}, 1, {word(DRAW)})'),
+    'rectangle-lines-ex': (f'ImageDrawRectangleLinesEx(&im,(Rectangle){{0,0,5,3}},1,{c_color(DRAW)});', 'total',
+                           f'J.Surface.draw_rectangle_lines_ex(s, J.Rectangle{{0.0, 0.0, 5.0, 3.0}}, 1, {word(DRAW)})'),
+    'rectangle-lines': (f'ImageDrawRectangleLines(&im,1,0,4,3,{c_color(DRAW)});', 'total',
+                        f'J.Surface.draw_rectangle_lines(s, 1.0, 0.0, 4.0, 3.0, {word(DRAW)})'),
+    'line-strip': (f'{{Vector2 p[4]={{{{0,0}},{{4,1}},{{1,3}},{{5.6f,2.4f}}}};ImageDrawLineStrip(&im,p,4,{c_color(DRAW)});}}', 'total',
+                   f'J.Surface.draw_line_strip(s, [M.Vector2{{0.0, 0.0}}, M.Vector2{{4.0, 1.0}}, M.Vector2{{1.0, 3.0}}, M.Vector2{{5.6, 2.4}}], {word(DRAW)})'),
+    'rectangle-pro': (f'ImageDrawRectanglePro(&im,(Rectangle){{2,1.5f,3,2}},(Vector2){{1,0.5f}},30.0f,{c_color(DRAW)});', 'image',
+                      f'J.Surface.draw_rectangle_pro_for(M.{LIBM}{{}}, s, J.Rectangle{{2.0, 1.5, 3.0, 2.0}}, M.Vector2{{1.0, 0.5}}, 30.0, {word(DRAW)})'),
+    'rectangle-pro-flat': (f'ImageDrawRectanglePro(&im,(Rectangle){{0.5f,-0.5f,3.25f,2.5f}},(Vector2){{0,0}},0.0f,{c_color(FILL)});', 'image',
+                           f'J.Surface.draw_rectangle_pro_for(M.{LIBM}{{}}, s, J.Rectangle{{0.5, F32.neg(0.5), 3.25, 2.5}}, M.Vector2{{0.0, 0.0}}, 0.0, {word(FILL)})'),
+    'rectangle-gradient': ('ImageDrawRectangleGradientEx(&im,(Rectangle){0.5f,0.25f,4,2.5f},' + ','.join(map(c_color, GRADIENT)) + ');', 'image',
+                           'J.Surface.draw_rectangle_gradient_ex(s, J.Rectangle{0.5, 0.25, 4.0, 2.5}, ' + ', '.join(str(word(c)) for c in GRADIENT) + ')'),
+    'circle-gradient': (f'ImageDrawCircleGradient(&im,(Vector2){{2.5f,1.5f}},2.25f,{c_color(GRADIENT[0])},{c_color(GRADIENT[2])});', 'image',
+                        f'J.Surface.draw_circle_gradient(s, M.Vector2{{2.5, 1.5}}, 2.25, {word(GRADIENT[0])}, {word(GRADIENT[2])})'),
     'circle-v': (f'ImageDrawCircleV(&im,(Vector2){{2,2}},2,{c_color(DRAW)});', 'total', f'J.Surface.draw_circle_v(s, M.Vector2{{2.0, 2.0}}, 2, {word(DRAW)})'),
     'circle-lines': (f'ImageDrawCircleLines(&im,2,2,2,{c_color(DRAW)});', 'total', f'J.Surface.draw_circle_lines(s, 2.0, 2.0, 2, {word(DRAW)})'),
     'circle-lines-v': (f'ImageDrawCircleLinesV(&im,(Vector2){{2,2}},2,{c_color(DRAW)});', 'total',
@@ -126,6 +157,10 @@ OPS = {
     **{f'draw-{name}': (f'{{Image m=ImageCopy(im);ImageFlipVertical(&m);{fmt_c}ImageDrawImagePro(&im,m,{src_rec},{dst_rec},(Vector2){{0,0}},0.0f,{c_color(tint)});UnloadImage(m);}}',
                         'image', f'drawn({kind}, {target}, J.Surface.copy(s))')
        for kind, (name, target, src_rec, dst_rec, tint) in enumerate(DRAWS)
+       for fmt_c in [f'ImageFormat(&m,{target});' if target else '']},
+    **{f'draw-{name}': (f'{{Image m=ImageCopy(im);ImageFlipVertical(&m);{fmt_c}{call}UnloadImage(m);}}', 'image',
+                        f'drawn({kind}, {target}, J.Surface.copy(s))')
+       for name, target, call, kind in IMAGE_DRAWS
        for fmt_c in [f'ImageFormat(&m,{target});' if target else '']},
     **{f'to-{target}': (f'ImageFormat(&im,{target});', 'image', f'J.Surface.format(s, {target})') for target in range(1, 14)},
     'alpha-mask': ('{Image m=ImageCopy(im);ImageFlipHorizontal(&m);ImageAlphaMask(&im,m);UnloadImage(m);}', 'image', 'masked(0, J.Surface.copy(s))'),
@@ -186,7 +221,12 @@ def draw.op(kind: U32, image: J.Surface, source: J.Surface) -> Result<&1, &1, (J
     case 2: J.Surface.draw_image(image, source, 2.0, F32.neg(1.0), 4294967295)
     case 3: J.Surface.draw_image(image, source, 1.0, 0.0, 4294967295)
     case 4: J.Surface.draw_image_rect(image, source, J.Rectangle{0.5, 0.0, 3.0, 2.0}, J.Rectangle{1.0, 1.0, 5.0, 3.0}, 4294967295)
-    case _: J.Surface.draw_image_region(image, source, J.Rectangle{1.0, 0.0, 2.0, 2.0}, 0.0, 1.0, 4294967240)
+    case 5: J.Surface.draw_image_region(image, source, J.Rectangle{1.0, 0.0, 2.0, 2.0}, 0.0, 1.0, 4294967240)
+    case 6: J.Surface.draw_image(image, source, F32.neg(1.0), 2.0, 3362009780)
+    case 7: J.Surface.draw_image_rec(image, source, J.Rectangle{1.0, 0.5, 3.0, 2.0}, M.Vector2{0.5, 1.0}, 4294967295)
+    case 8: J.Surface.draw_image_pro(image, source, J.Rectangle{0.0, 0.0, 3.0, 2.0}, J.Rectangle{1.0, 1.0, 4.0, 3.0}, M.Vector2{1.0, 1.0}, 45.0, 4294967240)
+    case 9: J.Surface.draw_image_ex_for(M.LIBM_PROFILE{}, image, source, M.Vector2{2.5, 0.5}, 30.0, 0.75, 3362009780)
+    case _: J.Surface.draw_image_ex_for(M.LIBM_PROFILE{}, image, source, M.Vector2{F32.neg(1.0), 0.5}, 0.0, 2.0, 4294967295)
 def drawn.with(kind: U32, image: J.Surface, source: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
   match source:
     case Fail{Tuple{_, error}}: Fail{(image, error)}
@@ -211,7 +251,7 @@ def run(~operation: J.Surface -> IO(Unit), +format: U32, source: Maybe<J.Surface
   match source:
     case None{}: IO.die(Unit, 1, "fixture creation failed")
     case Some{surface}: formatted(~operation, J.Surface.format(surface, format))
-'''
+'''.replace('LIBM_PROFILE', LIBM)
 
 
 def fixtures():
@@ -296,8 +336,14 @@ def alpha_clear_undefined(op, fmt):
 def owner_domain(op, fmt, row):
     """Jonlib refuses rotated float bytes outside the owner domain (R32 and R16
     finite [0,1], F32 samples of R32G32B32(A32) not NaN) and undefined native
-    alpha-clear conversions."""
+    alpha-clear conversions; ImageDrawImageEx is refused on the wide formats
+    (UnsupportedFormat) and raylib's empty ImageFromImage result is Jonlib's
+    None."""
     if alpha_clear_undefined(op, fmt):
+        return None
+    if op in EX_DRAWS and fmt in WIDE:
+        return None
+    if op in EMPTY_IMAGE_OPS and row is not None and not any(row):
         return None
     if not op.startswith('rotate') or fmt not in (8, 9, 10, 11) or row is None:
         return row

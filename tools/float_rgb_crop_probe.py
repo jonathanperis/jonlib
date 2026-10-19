@@ -77,7 +77,11 @@ def fixtures():
     data=list(struct.pack('<'+'f'*72,*[i+c for i in range(24) for c in (0.25,0.5,0.75)]))
     cases=[dict(kind=kind,rect=rect) for kind in ('extract','crop') for rect in ((0,0,6,4),(1,1,3,2),(5,3,1,1),(0,0,1,4),(0,3,6,1))]
     cases += [dict(kind='crop',rect=rect) for rect in ((-2,-1,5,4),(-1,-1,8,6),(4,2,9,9),(7,0,1,1),(0,5,1,1))]
-    controls=[dict(kind='extract',rect=rect) for rect in ((-1,0,2,1),(5,0,2,1),(0.5,0,2,1),(0,0,0,1))]
+    # raylib 6.2's ImageFromImage truncates fractional rectangles that pass its validation.
+    cases += [dict(kind='extract',rect=rect) for rect in ((0.5,0,2,1),(1.5,0,2.5,1.5))]
+    # Rejected by raylib 6.2 (the empty image); a width in (0, 1) passes raylib's check
+    # but truncates to a 0-sized image, which Jonlib refuses.
+    controls=[dict(kind='extract',rect=rect) for rect in ((-1,0,2,1),(5,0,2,1),(5.5,0,2,1),(0,0,0,1),(0,0,0.5,1))]
     controls += [dict(kind='crop',rect=rect) for rect in ((6,0,1,1),(-10,0,2,1),(0,0,0,1),(0.5,0,2,1))]
     return data,cases,controls
 

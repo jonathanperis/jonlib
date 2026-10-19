@@ -84,8 +84,11 @@ class ProgramTests(unittest.TestCase):
     def test_the_reference_is_raudio(self):
         self.assertTrue(wp.NATIVE.startswith('#include "raudio.c"'))
         self.assertIn('Wave wave = LoadWave(files[a]);', wp.NATIVE)
-        self.assertIn('if (!whole(files[a])) { printf("none\\n"); continue; }', wp.NATIVE)
-        self.assertIn('fine = fine && (unsigned)n == frames;', wp.NATIVE)
+        self.assertIn('if (made == 0) { printf("none\\n"); continue; }', wp.NATIVE)
+        self.assertIn('if (made == 1) { printf("unsupported\\n"); continue; }', wp.NATIVE)
+        # raylib 6.2's RL_CALLOC: a short read is a wave ending in zeros, compared; a wrapped frameCount*channels is none
+        self.assertIn('if ((unsigned long long)frames*f->channels > 0xFFFFFFFFull) fine = 0;', wp.NATIVE)
+        self.assertNotIn('(unsigned)n == frames', wp.NATIVE)
         self.assertIn('-ffp-contract=off', wp.FLAGS)
         self.assertIn('-DMA_ENABLE_NULL', wp.FLAGS)
 

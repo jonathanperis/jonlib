@@ -1,11 +1,12 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 rtext.c; LICENSES/raylib.txt.
+# Altered Bend adaptation of raylib 6.2 rtext.c; LICENSES/raylib.txt.
 # The text strings management and UTF-8 codepoint functions over byte lists.
 # A C string is the list of its bytes before the first NUL; C ints are U32
 # two's-complement words. Each function reproduces raylib's loops, static
 # buffer limits (MAX_TEXT_BUFFER_LENGTH 1024, MAX_TEXTSPLIT_COUNT 128) and
 # quirks; inputs for which the C code reads or writes outside its strings or
-# buffers, or overflows an int, are None.
+# buffers, or overflows an int, are None, as are the *Alloc functions' NULL
+# results.
 import Base
 import ./decimal.bend as Decimal
 
@@ -114,6 +115,12 @@ def map.lower(bytes: +List<U32>) -> +List<U32>:
 def digit(+c: U32) -> Bool:
   ((c >= 48) && (c <= 57) : U32)
 
+def uppercase(+c: U32) -> Bool:
+  ((c >= 65) && (c <= 90) : U32)
+
+def lowercase(+c: U32) -> Bool:
+  ((c >= 97) && (c <= 122) : U32)
+
 # -----------------------------------------------------------------------------
 # Lines and splitting
 
@@ -137,46 +144,46 @@ def lines(+text: +List<U32>) -> +List<String>:
   lines.go(text, Nil{}, Nil{})
 
 # TextSplit's loop: i is the byte index, counter the substrings started so far.
-# status 0: scanning; 1: stopped at MAX_TEXTSPLIT_COUNT; 2: undefined.
+# status 0: scanning; 1: stopped (MAX_TEXTSPLIT_COUNT or the buffer's last
+# byte), the substrings all in done.
 type Split is Data:
   Split{i: U32, counter: U32, current: +List<U32>, done: +List<String>, status: U32}
 
 def split.kind(+state: Split, +b: U32, +delimiter: U32) -> U32:
   Split{+i, +counter, _, _, +status} = state
   Bool.pick(U32, U32.is_ne(status, 0), 0,
-    Bool.pick(U32, (i >= 1024 : U32), 1,
+    Bool.pick(U32, (i >= 1023 : U32), 1,
       Bool.pick(U32, U32.is_ne(b, delimiter), 2,
-        Bool.pick(U32, ((counter + 1) < 128 : U32), 3, Bool.pick(U32, ((i + 1) < 1024 : U32), 4, 1)))))
+        Bool.pick(U32, ((counter + 1) < 128 : U32), 3, 4))))
 
 def split.step(kind: U32, +b: U32, state: Split) -> Split:
   match kind state:
-    case 1 Split{i, counter, current, done, _}: Split{i, counter, current, done, 2}
+    case 1 Split{i, counter, current, done, _}: Split{i, counter, Nil{}, Con{string(List.reverse(&2, U32, current)), done}, 1}
     case 2 Split{i, counter, current, done, status}: Split{(i + 1 : U32), counter, Con{b, current}, done, status}
     case 3 Split{i, counter, current, done, status}: Split{(i + 1 : U32), (counter + 1 : U32), Nil{}, Con{string(List.reverse(&2, U32, current)), done}, status}
     case 4 Split{i, _, current, done, _}: Split{(i + 1 : U32), 128, Nil{}, Con{"", Con{string(List.reverse(&2, U32, current)), done}}, 1}
     case _ other: other
 
-def split.status(status: U32, +i: U32, current: +List<U32>, done: +List<String>) -> Maybe<+List<String>>:
+def split.status(status: U32, current: +List<U32>, done: +List<String>) -> +List<String>:
   match status:
-    case 0: Bool.pick(Maybe<+List<String>>, (i >= 1024 : U32), None{}, Some{List.reverse(&2, String, Con{string(List.reverse(&2, U32, current)), done})})
-    case 1: Some{List.reverse(&2, String, done)}
-    case _: None{}
+    case 0: List.reverse(&2, String, Con{string(List.reverse(&2, U32, current)), done})
+    case _: List.reverse(&2, String, done)
 
-def split.end(state: Split) -> Maybe<+List<String>>:
+def split.end(state: Split) -> +List<String>:
   match state:
-    case Split{i, _, current, done, status}: split.status(status, i, current, done)
+    case Split{_, _, current, done, status}: split.status(status, current, done)
 
-def split.go(bytes: +List<U32>, +delimiter: U32, +state: Split) -> Maybe<+List<String>>:
+def split.go(bytes: +List<U32>, +delimiter: U32, +state: Split) -> +List<String>:
   match bytes:
     case Nil{}: split.end(state)
     case Con{+b, rest}: split.go(rest, delimiter, split.step(split.kind(state, b, delimiter), b, state))
 
-# TextSplit: the text copied into a 1024-byte buffer with every delimiter
-# replaced by a NUL. At the 127th delimiter the loop stops and the 128th
-# substring is the empty rest of the buffer. A text that fills the buffer
-# without a NUL leaves its last substring unterminated: None.
+# TextSplit: the first 1023 bytes of the text copied into a 1024-byte buffer
+# with every delimiter replaced by a NUL; the last byte stays a NUL, so a
+# longer text ends its last substring at byte 1022. At the 127th delimiter
+# the loop stops and the 128th substring is the empty rest of the buffer.
 def split(+text: +List<U32>, +delimiter: U32) -> Maybe<+List<String>>:
-  split.go(text, delimiter, Split{0, 1, Nil{}, Nil{}, 0})
+  Some{split.go(text, delimiter, Split{0, 1, Nil{}, Nil{}, 0})}
 
 # -----------------------------------------------------------------------------
 # Static-buffer string functions
@@ -196,29 +203,25 @@ def join.text(fits: Bool, +item: +List<U32>, out: +List<U32>) -> +List<U32>:
     case True{}: revappend(item, out)
     case False{}: out
 
-# TextJoin: each text that fits (total + length < 1024) is copied, followed by
-# the delimiter unless it is the last item; raylib does not check the
-# delimiter, so one ending past index 1022 overflows or leaves the buffer
-# unterminated: None.
-def join.go(items: +List<String>, +delimiter: +List<U32>, +total: U32, +out: +List<U32>, +ok: Bool) -> Maybe<String>:
+# TextJoin: each text that fits with a delimiter (total + length +
+# delimiterLen < 1024, the last item included) is copied, followed by the
+# delimiter unless it is the last item; other texts are skipped with their
+# delimiter. The copies end before byte 1023, which stays a NUL.
+def join.go(items: +List<String>, +delimiter: +List<U32>, +total: U32, +out: +List<U32>) -> String:
   match items:
-    case Nil{}: Bool.pick(Maybe<String>, ok, Some{string(List.reverse(&2, U32, out))}, None{})
+    case Nil{}: string(List.reverse(&2, U32, out))
     case Con{item, +rest}:
       +text = bytes(item)
       +length = len(text)
-      +fits = ((total + length) < 1024 : U32)
-      +separated = fits && (len(delimiter) > 0 : U32) && nonempty(rest)
+      +size = len(delimiter)
+      +fits = ((total + length + size) < 1024 : U32)
+      +separated = fits && (size > 0 : U32) && nonempty(rest)
       +copied = Bool.pick(U32, fits, (total + length : U32), total)
-      +after = Bool.pick(U32, separated, (copied + len(delimiter) : U32), copied)
-      join.go(rest, delimiter, after, join.text(separated, delimiter, join.text(fits, text, out)), ok && Bool.not(separated && (after > 1023 : U32)))
+      +after = Bool.pick(U32, separated, (copied + size : U32), copied)
+      join.go(rest, delimiter, after, join.text(separated, delimiter, join.text(fits, text, out)))
 
 def join(+items: +List<String>, +delimiter: +List<U32>) -> Maybe<String>:
-  join.go(items, delimiter, 0, Nil{}, True{})
-
-def spaces(bytes: +List<U32>) -> U32:
-  match bytes:
-    case Nil{}: 0
-    case Con{b, rest}: (Bool.to_u32(U32.is_eq(b, 32)) + spaces(rest) : U32)
+  Some{join.go(items, delimiter, 0, Nil{})}
 
 def unspaced.keep(+b: U32, +rest: +List<U32>) -> +List<U32>:
   Bool.pick(+List<U32>, U32.is_eq(b, 32), rest, Con{b, rest})
@@ -228,34 +231,24 @@ def unspaced(bytes: +List<U32>) -> +List<U32>:
     case Nil{}: Nil{}
     case Con{+b, rest}: unspaced.keep(b, unspaced(rest))
 
-# TextRemoveSpaces. Its loop tests text[j] (the output index) but copies
-# text[i], so after the NUL it keeps reading while j has not reached it: two or
-# more spaces in a text of up to 1021 bytes read past the string (None).
+# TextRemoveSpaces: the bytes other than ' ' among the first 1023 (raylib 6.2
+# tests text[i], the input index, against the NUL).
 def remove_spaces(+text: +List<U32>) -> Maybe<String>:
-  +length = len(text)
-  Bool.pick(Maybe<String>, (length >= 1023 : U32), Some{string(unspaced(take(text, 1023)))},
-    Bool.pick(Maybe<String>, (spaces(text) >= 2 : U32) && (length <= 1021 : U32), None{}, Some{string(unspaced(text))}))
+  Some{string(unspaced(take(text, 1023)))}
 
 # TextSubtext: bytes position..position+length-1 clamped to the text and 1023
-# bytes. A negative length writes before the buffer and a negative position
-# reads before the text (None), except for an empty request whose
-# textLength - position does not overflow.
-def subtext.kind(+total: U32, +position: U32, +length: U32) -> U32:
-  Bool.pick(U32, Bool.not(negative(position) || (position < total : U32)), 0,
-    Bool.pick(U32, negative(length), 1,
-      Bool.pick(U32, negative(position), Bool.pick(U32, U32.is_eq(length, 0) && ((total + (0 - position)) <= 2147483647 : U32), 0, 1), 2)))
-
-def subtext.run(kind: U32, +text: +List<U32>, +total: U32, +position: U32, +length: U32) -> Maybe<String>:
-  match kind:
-    case 0: Some{""}
-    case 2:
+# bytes; "" for a negative position, a length below 1 or a position at or
+# past the end. Under that test textLength - position cannot overflow.
+def subtext.run(copied: Bool, +text: +List<U32>, +total: U32, +position: U32, +length: U32) -> String:
+  match copied:
+    case False{}: ""
+    case True{}:
       +count = Bool.pick(U32, (length > (total - position) : U32), (total - position : U32), length)
-      Some{string(take(drop(text, position), Bool.pick(U32, (count > 1023 : U32), 1023, count)))}
-    case _: None{}
+      string(take(drop(text, position), Bool.pick(U32, (count > 1023 : U32), 1023, count)))
 
 def subtext(+text: +List<U32>, +position: U32, +length: U32) -> Maybe<String>:
   +total = len(text)
-  subtext.run(subtext.kind(total, position, length), text, total, position, length)
+  Some{subtext.run(Bool.not(negative(position) || negative(length) || U32.is_eq(length, 0)) && (position < total : U32), text, total, position, length)}
 
 # The text around a begin/end pair: through the first begin, the bytes before
 # the first end after it, and the rest from that end.
@@ -282,13 +275,15 @@ def between(found: Maybe<Span>) -> String:
     case Some{Span{_, middle, _}}: string(take(middle, 1023))
 
 # TextReplaceBetween(Alloc): the text through begin, the replacement, then the
-# text from end. The static form is None when that needs 1024 or more bytes.
+# text from end. The static form is "" when that needs 1023 or more bytes
+# (raylib 6.2's beginIndex + beginLen + replaceLen + (textLen - endIndex) <
+# MAX_TEXT_BUFFER_LENGTH - 1).
 def replace_between(found: Maybe<Span>, +replacement: +List<U32>, +limited: Bool) -> Maybe<String>:
   match found:
     case None{}: Bool.pick(Maybe<String>, limited, Some{""}, None{})
     case Some{Span{head, _, tail}}:
       +result = glue(head, glue(replacement, tail))
-      Bool.pick(Maybe<String>, limited && (len(result) > 1023 : U32), None{}, Some{string(result)})
+      Bool.pick(Maybe<String>, limited && (len(result) >= 1023 : U32), Some{""}, Some{string(result)})
 
 # TextReplace's non-overlapping left-to-right occurrences and the replaced text.
 type Replaced is Data:
@@ -334,27 +329,20 @@ def replace(+text: +List<U32>, +search: +List<U32>, +replacement: +List<U32>, +l
   Bool.pick(Maybe<String>, U32.is_eq(len(search), 0), Bool.pick(Maybe<String>, limited, Some{""}, None{}),
     replace.counted(replaced(text, search, replacement), len(text), len(search), len(replacement), limited))
 
-# TextInsert(Alloc). raylib copies the text after the insertion from text[i]
-# instead of text[i - insertLen], so only these are defined: position == length
-# (append), position == length + 1 (the text, its NUL copied first), and
-# positions inside the text for inserts of at most one byte (the byte replaces
-# the text's byte). Other positions read past the text or write before the
-# buffer: None. The static form returns "" for 1023 or more bytes.
-def insert.kind(+length: U32, +size: U32, +position: U32, +limited: Bool) -> U32:
-  Bool.pick(U32, limited && ((length + size) >= 1023 : U32), 0,
-    Bool.pick(U32, negative(position) || (position >= (length + 2) : U32) || ((size >= 2) && (position < length) : U32), 1,
-      Bool.pick(U32, U32.is_eq(position, length), 2, Bool.pick(U32, U32.is_eq(position, (length + 1 : U32)) || U32.is_eq(size, 0), 3, 4))))
-
+# TextInsert(Alloc): insert placed before the byte at position, a position past
+# the end clamped to the text's length. A negative position is "" (TextInsert)
+# or NULL (TextInsertAlloc: None); the static form also returns "" when text
+# and insert need 1023 or more bytes. kind 0: ""; 1: None; 2: inserted.
 def insert.run(kind: U32, +text: +List<U32>, +insert: +List<U32>, +position: U32) -> Maybe<String>:
   match kind:
     case 0: Some{""}
-    case 2: Some{string(glue(text, insert))}
-    case 3: Some{string(text)}
-    case 4: Some{string(glue(take(text, position), glue(insert, drop(text, (position + 1 : U32)))))}
-    case _: None{}
+    case 1: None{}
+    case _: Some{string(glue(take(text, position), glue(insert, drop(text, position))))}
 
 def insert(+text: +List<U32>, +insert: +List<U32>, +position: U32, +limited: Bool) -> Maybe<String>:
-  insert.run(insert.kind(len(text), len(insert), position, limited), text, insert, position)
+  +length = len(text)
+  insert.run(Bool.pick(U32, negative(position), Bool.pick(U32, limited, 0, 1), Bool.pick(U32, limited && ((length + len(insert)) >= 1023 : U32), 0, 2)),
+    text, insert, Bool.pick(U32, (position > length : U32), length, position))
 
 # TextCopy/TextAppend into a buffer of fixed size: text and its NUL written at
 # position. A write outside the buffer is None.
@@ -370,76 +358,88 @@ def write(+buffer: +List<U32>, +text: +List<U32>, +position: U32) -> Maybe<Strin
 # -----------------------------------------------------------------------------
 # Case conversion
 
-# TextToPascal/TextToCamel after the first byte: i is the output index; a '_'
-# takes the next byte (Pascal: a-z upper-cased or 0-9 kept, Camel: a-z
-# upper-cased) and any other byte leaves a NUL. status 0: scanning; 1: stopped
-# at index 1023.
+# TextToPascal/TextToCamel after the first byte: i is the output index; a run
+# of '_' (pending) takes the next byte, a-z upper-cased and any other byte
+# copied, and a run that reaches the NUL ends the output. status 0: scanning;
+# 1: stopped at index 1023.
 type Cased is Data:
   Cased{i: U32, out: +List<U32>, pending: Bool, status: U32}
 
-def cased.after(+pascal: Bool, +c: U32) -> U32:
-  Bool.pick(U32, ((c >= 97) && (c <= 122) : U32), (c - 32 : U32), Bool.pick(U32, pascal && digit(c), c, 0))
-
+# 0: no-op (stopped, or one more '_' of a run); 1: the byte after a run;
+# 2: stop; 3: a run starts; 4: a byte copied.
 def cased.kind(+state: Cased, +c: U32) -> U32:
   Cased{+i, _, +pending, +status} = state
-  Bool.pick(U32, U32.is_ne(status, 0), 0, Bool.pick(U32, pending, 1, Bool.pick(U32, (i >= 1023 : U32), 2, Bool.pick(U32, U32.is_eq(c, 95), 3, 4))))
+  Bool.pick(U32, U32.is_ne(status, 0), 0, Bool.pick(U32, pending, Bool.pick(U32, U32.is_eq(c, 95), 0, 1),
+    Bool.pick(U32, (i >= 1023 : U32), 2, Bool.pick(U32, U32.is_eq(c, 95), 3, 4))))
 
-def cased.step(kind: U32, +pascal: Bool, +c: U32, state: Cased) -> Cased:
+def cased.step(kind: U32, +c: U32, state: Cased) -> Cased:
   match kind state:
-    case 1 Cased{i, out, _, status}: Cased{(i + 1 : U32), Con{cased.after(pascal, c), out}, False{}, status}
+    case 1 Cased{i, out, _, status}: Cased{(i + 1 : U32), Con{ascii.upper(c), out}, False{}, status}
     case 2 Cased{i, out, pending, _}: Cased{i, out, pending, 1}
     case 3 Cased{i, out, _, status}: Cased{i, out, True{}, status}
     case 4 Cased{i, out, pending, status}: Cased{(i + 1 : U32), Con{c, out}, pending, status}
     case _ other: other
 
-def cased.go(bytes: +List<U32>, +pascal: Bool, +state: Cased) -> Cased:
+def cased.go(bytes: +List<U32>, +state: Cased) -> Cased:
   match bytes:
     case Nil{}: state
-    case Con{+c, rest}: cased.go(rest, pascal, cased.step(cased.kind(state, c), pascal, c, state))
+    case Con{+c, rest}: cased.go(rest, cased.step(cased.kind(state, c), c, state))
 
-# A '_' before the NUL takes the NUL and the next test reads past the string,
-# unless index 1023 stops the loop first.
 def cased.end(state: Cased, +first: U32) -> Maybe<String>:
   match state:
-    case Cased{i, out, pending, _}:
-      Bool.pick(Maybe<String>, pending && ((i + 1) < 1023 : U32), None{}, Some{cstring(Con{first, List.reverse(&2, U32, out)})})
+    case Cased{_, out, _, _}: Some{string(Con{first, List.reverse(&2, U32, out)})}
 
+# TextToPascal (pascal: the first byte upper-cased) and TextToCamel (lower-
+# cased); "" for an empty text.
 def cased(text: +List<U32>, +pascal: Bool) -> Maybe<String>:
   match text:
-    case Nil{}: None{}
+    case Nil{}: Some{""}
     case Con{+first, rest}:
-      cased.end(cased.go(rest, pascal, Cased{1, Nil{}, False{}, 0}), Bool.pick(U32, pascal, ascii.upper(first), ascii.lower(first)))
+      cased.end(cased.go(rest, Cased{1, Nil{}, False{}, 0}), Bool.pick(U32, pascal, ascii.upper(first), ascii.lower(first)))
 
 # TextToSnake: i is the output index; status 0: scanning; 1: stopped at index
-# 1023; 2: an upper-case letter at index 1022 fills the buffer without a NUL.
+# 1023. The previous output byte is the head of out.
 type Snake is Data:
   Snake{i: U32, out: +List<U32>, status: U32}
 
-def snake.kind(+state: Snake, +c: U32) -> U32:
-  Snake{+i, _, +status} = state
+# before/after: the input bytes around c (text[j - 1], read only when i > 0,
+# and text[j + 1], the NUL at the end). 0: no-op (stopped, or a ' ' after
+# nothing or after '_'); 1: stop; 2: a byte copied; 3: a ' ' as '_'; 4: an
+# upper-case letter lower-cased; 5: '_' and the letter lower-cased (a word
+# boundary below output index 1022).
+def snake.kind(+state: Snake, +before: U32, +c: U32, +after: U32) -> U32:
+  Snake{+i, +out, +status} = state
+  +joined = (i > 0 : U32) && U32.is_ne(head(out), 95)
+  +boundary = lowercase(before) || (uppercase(before) && lowercase(after))
   Bool.pick(U32, U32.is_ne(status, 0), 0, Bool.pick(U32, (i >= 1023 : U32), 1,
-    Bool.pick(U32, ((c >= 65) && (c <= 90) : U32), Bool.pick(U32, U32.is_eq(i, 0), 2, Bool.pick(U32, U32.is_eq(i, 1022), 3, 4)), 5)))
+    Bool.pick(U32, U32.is_eq(c, 32), Bool.pick(U32, joined, 3, 0),
+      Bool.pick(U32, uppercase(c), Bool.pick(U32, joined && boundary && (i < 1022 : U32), 5, 4), 2))))
 
 def snake.step(kind: U32, +c: U32, state: Snake) -> Snake:
   match kind state:
     case 1 Snake{i, out, _}: Snake{i, out, 1}
-    case 2 Snake{i, out, status}: Snake{(i + 1 : U32), Con{(c + 32 : U32), out}, status}
-    case 3 Snake{i, out, _}: Snake{i, out, 2}
-    case 4 Snake{i, out, status}: Snake{(i + 2 : U32), Con{(c + 32 : U32), Con{95, out}}, status}
-    case 5 Snake{i, out, status}: Snake{(i + 1 : U32), Con{c, out}, status}
+    case 2 Snake{i, out, status}: Snake{(i + 1 : U32), Con{c, out}, status}
+    case 3 Snake{i, out, status}: Snake{(i + 1 : U32), Con{95, out}, status}
+    case 4 Snake{i, out, status}: Snake{(i + 1 : U32), Con{(c + 32 : U32), out}, status}
+    case 5 Snake{i, out, status}: Snake{(i + 2 : U32), Con{(c + 32 : U32), Con{95, out}}, status}
     case _ other: other
 
-def snake.go(bytes: +List<U32>, +state: Snake) -> Snake:
+def snake.go(bytes: +List<U32>, +before: U32, +state: Snake) -> Snake:
   match bytes:
     case Nil{}: state
-    case Con{+c, rest}: snake.go(rest, snake.step(snake.kind(state, c), c, state))
+    case Con{+c, +rest}: snake.go(rest, c, snake.step(snake.kind(state, before, c, head(rest)), c, state))
 
 def snake.end(state: Snake) -> Maybe<String>:
   match state:
-    case Snake{_, out, status}: Bool.pick(Maybe<String>, U32.is_eq(status, 2), None{}, Some{string(List.reverse(&2, U32, out))})
+    case Snake{_, out, _}: Some{string(List.reverse(&2, U32, out))}
 
+# TextToSnake (raylib 6.2): a ' ' becomes '_' unless the output is empty or
+# ends with '_'; an upper-case letter is lower-cased, after a '_' when the
+# output does not end with one and the letter starts a word (after a-z, or
+# after A-Z and before a-z: "HTTPRequest" is "http_request"), unless that '_'
+# would take output byte 1022; other bytes are copied. At most 1023 bytes.
 def snake(+text: +List<U32>) -> Maybe<String>:
-  snake.end(snake.go(text, Snake{0, Nil{}, 0}))
+  snake.end(snake.go(text, 0, Snake{0, Nil{}, 0}))
 
 # -----------------------------------------------------------------------------
 # Numbers

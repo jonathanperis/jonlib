@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Compare Jonlib's fonts, text measurement, text drawing and image text with
-raylib 6.0's rtext.c and rtextures.c.
+the pinned raylib's (6.2) rtext.c and rtextures.c.
 
 Same reference as tools/frame_probe.py and tools/texture_probe.py: pinned
 raylib on PLATFORM=Memory (rlgl.h's OpenGL 1.1 path into rlsw.h) built with
@@ -19,7 +19,8 @@ truncated UTF-8, unknown codepoints (drawn and measured as '?'), tabs,
 newlines, embedded NULs, empty texts and integral, fractional, zero,
 negative, tiny, huge and nonfinite sizes and spacings under several
 SetTextLineSpacing values; ImageText/ImageTextEx images and
-ImageDrawText/ImageDrawTextEx results on images of several formats (bytes).
+ImageDrawText/ImageDrawTextEx/ImageDrawTextPro results on images of several
+formats (bytes; ImageDrawTextPro has an empty body in raylib 6.2).
 Fonts built by LoadFontFromImage from generated XNA-style images (opaque and
 translucent glyphs, R8G8B8A8, R8G8B8, R5G5B5A1 and GRAY_ALPHA sources,
 several first characters, exactly 256 glyphs, images that return the
@@ -310,7 +311,11 @@ def scenes(libm):
         ('image_draw_text_ex', 0, targets[k % len(targets)], T(t), x, y, s, sp, c) for k, (t, x, y, s, sp, c) in enumerate((
             ('Ex', 1.5, 2.75, 10.0, 1.0, WHITE), ('Ex', -2.5, -1.5, 12.5, 0.5, RED), ('frac', 0.9, 0.1, 10.0, 2.0, half[2]),
             ('a\nb', 3.0, -4.0, 10.0, 1.0, GREEN), ('wide', 12.25, 4.0, 15.0, 1.5, WHITE), ('Q', 5.0, 5.0, 30.0, 1.0, half[0])))] + [
-        ('image_draw_text_ex', 0, targets[0], T('far'), 40000.0, 2.0, 10.0, 1.0, WHITE, 'R')])
+        ('image_draw_text_ex', 0, targets[0], T('far'), 40000.0, 2.0, 10.0, 1.0, WHITE, 'R')] + [
+        # ImageDrawTextPro (new in 6.2) leaves the image as it is, whatever its arguments.
+        ('image_draw_text_pro', 0, targets[k], T(t), x, y, ox, oy, r, s, sp, c) for k, (t, x, y, ox, oy, r, s, sp, c) in enumerate((
+            ('Pro', 1.5, 2.75, 0.0, 0.0, 0.0, 10.0, 1.0, WHITE), ('Pro', 4.0, 3.0, 2.0, 5.0, 30.0, 12.5, 0.5, RED),
+            ('a\nb', -3.0, 40.0, -1.0, 0.5, -90.0, 20.0, 2.0, half[2]), ('nan', NAN, 2.0, 0.0, 0.0, NAN, 10.0, NAN, WHITE)))])
 
     # Image text with image fonts (ImageResize, not NN).
     add('image-text-font', 4, 4, [('load', 1, std, KEY, 32), ('load', 2, tra, MAGENTA, 65)] + [
@@ -578,6 +583,8 @@ def c_op(op):
         'image_text_ex': lambda: f'{{ Image im = ImageTextEx(f[{a[0]}], {ctext(a[1])}, {cf(a[2])}, {cf(a[3])}, {fp.cc(a[4])}); image_out(im); UnloadImage(im); }}',
         'image_draw_text_ex': lambda: (f'{{ Image im = {cimg(a[1])}; ImageDrawTextEx(&im, f[{a[0]}], {ctext(a[2])}, {fp.cv(a[3], a[4])}, {cf(a[5])}, '
                                        f'{cf(a[6])}, {fp.cc(a[7])}); image_out(im); UnloadImage(im); }}'),
+        'image_draw_text_pro': lambda: (f'{{ Image im = {cimg(a[1])}; ImageDrawTextPro(&im, f[{a[0]}], {ctext(a[2])}, {fp.cv(a[3], a[4])}, '
+                                        f'{fp.cv(a[5], a[6])}, {cf(a[7])}, {cf(a[8])}, {cf(a[9])}, {fp.cc(a[10])}); image_out(im); UnloadImage(im); }}'),
     }
     return '    ' + calls[name]()
 
@@ -685,6 +692,7 @@ type FontOp is Data:
   FCodepoints{cps: +List<U32>, x: F32, y: F32, size: F32, spacing: F32, tint: U32}
   FImageTextEx{text: +List<U32>, size: F32, spacing: F32, tint: U32}
   FImageDrawTextEx{image: Img, text: +List<U32>, x: F32, y: F32, size: F32, spacing: F32, tint: U32}
+  FImageDrawTextPro{image: Img, text: +List<U32>, x: F32, y: F32, ox: F32, oy: F32, rotation: F32, size: F32, spacing: F32, tint: U32}
 
 type Op is Data:
   OBegin{}
@@ -796,6 +804,15 @@ def image.draw_ex(+line: U32, frame: J.Frame, font: J.Font, target: Maybe<J.Surf
     case None{}: ((frame, font), " no-image")
     case Some{dst}: image.drawn(frame, J.Font.image_draw_text_ex_spaced(line, dst, font, TC.string(text), M.Vector2{x, y}, size, spacing, tint))
 
+def image.pro.out(frame: J.Frame, r: J.Surface & J.Font) -> (J.Frame & J.Font) & String:
+  (dst, font) = r
+  ((frame, font), image.out(dst))
+
+def image.draw_pro(frame: J.Frame, font: J.Font, target: Maybe<J.Surface>, text: +List<U32>, +x: F32, +y: F32, +ox: F32, +oy: F32, +rotation: F32, +size: F32, +spacing: F32, +tint: U32) -> (J.Frame & J.Font) & String:
+  match target:
+    case None{}: ((frame, font), " no-image")
+    case Some{dst}: image.pro.out(frame, J.Font.image_draw_text_pro(dst, font, TC.string(text), M.Vector2{x, y}, M.Vector2{ox, oy}, rotation, size, spacing, tint))
+
 def fontop(call: FontOp, +line: U32, frame: J.Frame, font: J.Font) -> (J.Frame & J.Font) & String:
   match call:
     case FFilter{filter}: ((frame, J.Font.set_filter(font, filter)), "")
@@ -811,6 +828,8 @@ def fontop(call: FontOp, +line: U32, frame: J.Frame, font: J.Font) -> (J.Frame &
     case FCodepoints{cps, x, y, size, spacing, tint}: drawn(J.Draw.text_codepoints_spaced(line, frame, font, cps, M.Vector2{x, y}, size, spacing, tint))
     case FImageTextEx{text, size, spacing, tint}: image.font(frame, J.Font.image_text_ex_spaced(line, font, TC.string(text), size, spacing, tint))
     case FImageDrawTextEx{image, text, x, y, size, spacing, tint}: image.draw_ex(line, frame, font, Img.surface(image), text, x, y, size, spacing, tint)
+    case FImageDrawTextPro{image, text, x, y, ox, oy, rotation, size, spacing, tint}:
+      image.draw_pro(frame, font, Img.surface(image), text, x, y, ox, oy, rotation, size, spacing, tint)
 
 def slot.pair(text: String, pair: J.Frame & J.Font) -> (J.Frame & Maybe<J.Font>) & String:
   (frame, font) = pair
@@ -1033,6 +1052,7 @@ def b_op(op):
         'codepoints': lambda: f'FCodepoints{{{blist(a[1])}, {bf(a[2])}, {bf(a[3])}, {bf(a[4])}, {bf(a[5])}, {a[6]}}}',
         'image_text_ex': lambda: f'FImageTextEx{{{blist(a[1])}, {bf(a[2])}, {bf(a[3])}, {a[4]}}}',
         'image_draw_text_ex': lambda: f'FImageDrawTextEx{{{bimg(a[1])}, {blist(a[2])}, {bf(a[3])}, {bf(a[4])}, {bf(a[5])}, {bf(a[6])}, {a[7]}}}',
+        'image_draw_text_pro': lambda: f'FImageDrawTextPro{{{bimg(a[1])}, {blist(a[2])}, {", ".join(bf(v) for v in a[3:10])}, {a[10]}}}',
     }
     return f'OFont{{{a[0]}, {fonts[name]()}}}'
 

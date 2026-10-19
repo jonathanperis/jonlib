@@ -111,8 +111,9 @@ def export(+list: AutoList) -> Maybe<String>:
   export.checked(named(AutoList.events(list), True{}), list)
 
 # -----------------------------------------------------------------------------
-# LoadAutomationEventList (text): fgets into a 256-byte buffer, then
-# sscanf(buffer, "c %i") or sscanf(buffer, "e %d %d %d %d %d %d %[^\n]s").
+# LoadAutomationEventList (text, raylib 6.2): fgets into a 256-byte buffer,
+# then sscanf(buffer, "c %i") or, while the list has room,
+# sscanf(buffer, "e %d %d %d %d %d %d %63[^\n]s").
 
 # fgets(buffer, 256, file): the next chunk (up to 255 bytes, through the first
 # newline) and whether reading it reached the end of the file.
@@ -221,22 +222,18 @@ def number.skipped(+integer: Bool, bytes: +List<U32>) -> Scan:
 def number(+integer: Bool, bytes: +List<U32>) -> Scan:
   number.skipped(integer, skip(bytes))
 
-# " %[^\n]" into char eventDesc[64]: more than 63 characters overflow it.
-def description.length(bytes: +List<U32>) -> U32:
-  match bytes:
-    case Nil{}: 0
-    case Con{+b, rest}: Bool.pick(U32, U32.is_eq(b, 10), 0, (1 + description.length(rest) : U32))
-
-# The fields of an "e" line: up to six numbers, then the description check.
+# The fields of an "e" line: up to six numbers and whether one is undefined.
 type Fields is Data:
   Fields{values: +List<U32>, bad: Bool}
 
-# Six %d conversions (n counts those left after this one), then " %[^\n]".
+# Six %d conversions (n counts those left after this one), then " %63[^\n]",
+# which reads at most 63 bytes into char eventDesc[64] (raylib 6.2; 6.0's
+# unbounded %[^\n] overflowed it): the description never matters.
 def fields.go(n: Nat, scan: Scan, +values: +List<U32>) -> Fields:
   match n scan:
     case _ NoMatch{}: Fields{values, False{}}
     case _ Bad{}: Fields{values, True{}}
-    case 0n Number{+v, rest}: Fields{List.append(&2, U32, values, [v]), (description.length(skip(rest)) > 63 : U32)}
+    case 0n Number{+v, _}: Fields{List.append(&2, U32, values, [v]), False{}}
     case 1n+k Number{+v, rest}: fields.go(k, number(False{}, rest), List.append(&2, U32, values, [v]))
 
 def fields(+bytes: +List<U32>) -> Fields:
@@ -252,12 +249,26 @@ def event.of(+values: +List<U32>) -> AutoEvent:
 type Loading is Data:
   Loading{count: U32, events: +List<AutoEvent>, bad: Bool}
 
+def Loading.count(+state: Loading) -> U32:
+  Loading{count, _, _} = state
+  count
+
 # "e" line: the next slot gets the scanned fields (others stay 0, as the list is
-# calloc'ed); a 16385th event would be written past MAX_AUTOMATION_EVENTS.
-def scan.e(state: Loading, scanned: Fields) -> Loading:
+# calloc'ed).
+def scan.e.add(state: Loading, scanned: Fields) -> Loading:
   Loading{+count, events, bad} = state
   Fields{+values, wrong} = scanned
-  Loading{(count + 1 : U32), Con{event.of(values), events}, bad || wrong || (count >= 16384 : U32)}
+  Loading{(count + 1 : U32), Con{event.of(values), events}, bad || wrong}
+
+# raylib 6.2 scans an "e" line only while the counter is below the capacity
+# (MAX_AUTOMATION_EVENTS 16384): later lines are skipped unread (a warning).
+def scan.e.room(full: Bool, +state: Loading, scanned: Fields) -> Loading:
+  match full:
+    case True{}: state
+    case False{}: scan.e.add(state, scanned)
+
+def scan.e(+state: Loading, scanned: Fields) -> Loading:
+  scan.e.room((Loading.count(state) >= 16384 : U32), state, scanned)
 
 # "c" line: the count is replaced by the number of "e" lines at the end; only an
 # undefined %i conversion matters.
@@ -299,7 +310,7 @@ def length(bytes: +List<U32>, +acc: Nat) -> Nat:
     case Con{_, rest}: length(rest, 1n+acc)
 
 # The list LoadAutomationEventList reads from these file bytes; None when the
-# C reader is undefined (an int conversion out of range, a description longer
-# than its 64-byte buffer, more than 16384 events) or for an ambiguous "0x".
+# C reader is undefined (an int conversion out of range in a scanned line) or
+# for an ambiguous "0x".
 def parse(+bytes: +List<U32>) -> Maybe<AutoList>:
   loaded(load.go(1n+length(bytes, 0n), chunk(bytes), Loading{0, Nil{}, False{}}))

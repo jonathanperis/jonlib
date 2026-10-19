@@ -1,7 +1,7 @@
 # Cropping and resampling
 
 Jonlib adapts raylib 6.0's extraction, crop, nearest and default filtered
-resize, and the scaled `ImageDraw` path, for `Surface` owners.
+resize, and the scaled `ImageDrawImagePro` path (6.0: `ImageDraw`), for `Surface` owners.
 
 | API | raylib profile |
 |---|---|
@@ -9,8 +9,8 @@ resize, and the scaled `ImageDraw` path, for `Surface` owners.
 | `Surface.crop(surface, rect) -> Result<&1, &1, Surface & Surface.Error, Surface>` | `ImageCrop` |
 | `Surface.resize_nn(surface, w, h) -> Result<&1, &1, Surface & Surface.Error, Surface>` | `ImageResizeNN` |
 | `Surface.resize(surface, w, h) -> Result<&1, &1, Surface & Surface.Error, Surface>` | `ImageResize` |
-| `Surface.draw_image_region(destination, source, rect, x, y, tint)` | Unscaled `ImageDraw` |
-| `Surface.draw_image_rect(destination, source, rect, target, tint)` | Scaled `ImageDraw` |
+| `Surface.draw_image_region(destination, source, rect, x, y, tint)` | Unscaled `ImageDrawImageRec` |
+| `Surface.draw_image_rect(destination, source, rect, target, tint)` / `draw_image_pro` | Scaled `ImageDrawImagePro` (origin and rotation ignored, as raylib does) |
 | `Surface.mipmaps(surface)` | `ImageMipmaps`, see [MIPMAPS.md](MIPMAPS.md) |
 
 The [RGB float wrappers](FLOAT-RGB.md) reuse these RGBA8 filters after
@@ -48,7 +48,7 @@ rejects it with `UnsafeNearestMapping` and returns the original image.
 
 ## Default filtered resize
 
-`ImageResize` and the scaling path of `ImageDraw` use **stb_image_resize2**.
+`ImageResize` and the scaling path of `ImageDrawImagePro` use **stb_image_resize2**.
 `src/resample.bend` reproduces, in reference operation order:
 
 - Catmull-Rom for upsampling and Mitchell for downsampling; point sampling on an

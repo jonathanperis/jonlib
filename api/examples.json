@@ -2990,9 +2990,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "ImageDrawImagePro"
-   ]
+   "missing": []
   },
   {
    "name": "textures_image_generation",

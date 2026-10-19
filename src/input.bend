@@ -600,12 +600,15 @@ def touch.point_id(+input: Input, +index: U32) -> Maybe<U32>:
   Bool.pick(Maybe<U32>, negative(index), None{},
     Some{Bool.pick(U32, (index < 8 : U32), item(U32, Touch.ids(Input.touch(input)), U32.to_nat(index), 0), 4294967295)})
 
+# IsGamepadAvailable: raylib 6.2 checks gamepad >= 0, so every index answers
+# (false outside 0..3).
 def gamepad.available(+input: Input, +gamepad: U32) -> Maybe<Bool>:
-  Bool.pick(Maybe<Bool>, negative(gamepad), None{}, Some{Gamepads.is_ready(Input.gamepads(input), gamepad)})
+  Some{Gamepads.is_ready(Input.gamepads(input), gamepad)}
 
-# IsGamepadButton*: kind 0 pressed, 1 down, 2 released, 3 up. A negative gamepad,
-# or a negative button of a ready gamepad, is None (raylib reads outside its
-# arrays); buttons from 32 answer false.
+# IsGamepadButton*: kind 0 pressed, 1 down, 2 released, 3 up. A gamepad outside
+# 0..3 (negative included, raylib 6.2) or not ready answers false; a negative
+# button of a ready gamepad is None (raylib reads outside its arrays); buttons
+# from 32 answer false.
 def gamepad.answer(+kind: U32, +previous: Bool, +current: Bool) -> Bool:
   match kind:
     case 0: Bool.not(previous) && current
@@ -622,13 +625,16 @@ def gamepad.ready_button(ready: Bool, +kind: U32, +pads: Gamepads, +gamepad: U32
 
 def gamepad.button(+input: Input, +kind: U32, +gamepad: U32, +button: U32) -> Maybe<Bool>:
   +pads = Input.gamepads(input)
-  Bool.pick(Maybe<Bool>, negative(gamepad), None{}, gamepad.ready_button(Gamepads.is_ready(pads, gamepad), kind, pads, gamepad, button))
+  gamepad.ready_button(Gamepads.is_ready(pads, gamepad), kind, pads, gamepad, button)
 
-# GetGamepadAxisCount reads axisCount[gamepad] unchecked: 0..3 only.
+# GetGamepadAxisCount: axisCount[gamepad] for 0..3, 0 for any other index
+# (raylib 6.2 bounds-checks it; the list has 4 entries, so index 4 reads the
+# default).
 def gamepad.axis_count(+input: Input, +gamepad: U32) -> Maybe<U32>:
-  Bool.pick(Maybe<U32>, (gamepad < 4 : U32), Some{item(U32, Gamepads.axis_counts(Input.gamepads(input)), U32.to_nat(gamepad), 0)}, None{})
+  Some{item(U32, Gamepads.axis_counts(Input.gamepads(input)), U32.to_nat(U32.min(gamepad, 4)), 0)}
 
-# GetGamepadName: the (empty) name of gamepads 0..3.
+# GetGamepadName: the (empty) name of gamepads 0..3; None is the NULL raylib
+# 6.2 returns for any other index.
 def gamepad.name(+gamepad: U32) -> Maybe<String>:
   Bool.pick(Maybe<String>, (gamepad < 4 : U32), Some{""}, None{})
 
@@ -649,6 +655,8 @@ def gamepad.ready_axis(ready: Bool, +rest: F32, +pads: Gamepads, +gamepad: U32, 
 def gamepad.rest(+axis: U32) -> F32:
   Bool.pick(F32, U32.is_eq(axis, 4) || U32.is_eq(axis, 5), F32.neg(1.0), 0.0)
 
+# GetGamepadAxisMovement: the rest value for a gamepad outside 0..3 (negative
+# included, raylib 6.2) or not ready.
 def gamepad.axis_movement(+input: Input, +gamepad: U32, +axis: U32) -> Maybe<F32>:
   +pads = Input.gamepads(input)
-  Bool.pick(Maybe<F32>, negative(gamepad), None{}, gamepad.ready_axis(Gamepads.is_ready(pads, gamepad), gamepad.rest(axis), pads, gamepad, axis))
+  gamepad.ready_axis(Gamepads.is_ready(pads, gamepad), gamepad.rest(axis), pads, gamepad, axis)

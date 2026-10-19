@@ -1002,7 +1002,13 @@ def Laws.iqm_name_before_its_nul():
 def Laws.iqm_name_without_nul_refused():
   {==}
 
-def Laws.iqm_material_must_name_a_file():
+def Laws.iqm_material_names_a_file_or_none():
+  {==}
+
+def Laws.iqm_empty_material_asks_no_texture():
+  {==}
+
+def Laws.iqm_named_material_asks_its_texture():
   {==}
 
 def Laws.iqm_pose_parents():
@@ -1062,6 +1068,27 @@ def Laws.gltf_anim_node_outside_skeleton():
 def Laws.gltf_anim_no_key_pair_reads_first(time):
   {==}
 
+def Laws.gltf_anim_key_past_last_pair():
+  {==}
+
+def Laws.gltf_anim_parent_walk_root():
+  {==}
+
+def Laws.gltf_anim_parent_walk_stops(nodes, total, all, at):
+  {==}
+
+def Laws.gltf_anim_parent_walk_unended(nodes, total, all, at, answer):
+  {==}
+
+def Laws.gltf_anim_unended_parent_refused():
+  {==}
+
+def Laws.gltf_anim_no_inverses_world_bind(root, bin, limit, joints):
+  {==}
+
+def Laws.gltf_anim_inverse_modes_bind(items, nodes, total):
+  {==}
+
 def Laws.gltf_anim_empty_file_no_skeleton():
   {==}
 
@@ -1095,7 +1122,7 @@ def Laws.mesh_knot_of_two_sides_is_empty(arithmetic, libm, radius, size, rad_seg
 def Laws.mesh_knot_fused_refused(radius, size):
   {==}
 
-def Laws.gltf_anim_no_joints_no_rest(nodes):
+def Laws.gltf_anim_no_joints_no_rest(nodes, total, all):
   {==}
 
 def Laws.gltf_anim_unreadable_bone_ends_pose(base, tracks, time, libm, rest):
@@ -1209,6 +1236,12 @@ def Laws.gui_default_property_propagates():
 def Laws.gui_extended_property_stays():
   {==}
 
+def Laws.gui_default_line_spacing():
+  {==}
+
+def Laws.gui_default_tab_width():
+  {==}
+
 def Laws.gui_disable_then_enable(gui):
   JG.Gui{state, locked, alpha, exclusive, rec, style, scale, tips, tip, tipped, icons, font} = gui
   {==}
@@ -1238,22 +1271,37 @@ def Laws.gui_icon_unclosed_is_text():
 def Laws.gui_icon_four_digits_is_text():
   {==}
 
-def Laws.gui_icon_last_of_table_drawn():
+def Laws.gui_icon_last_of_table():
   {==}
 
-def Laws.gui_icon_beyond_table_refused():
+def Laws.gui_icon_past_max_is_text():
   {==}
 
-def Laws.gui_hash_before_another_line_refused():
+def Laws.gui_marker_any_number():
+  {==}
+
+def Laws.gui_marker_needs_digits_or_hash():
+  {==}
+
+def Laws.gui_icon_in_loaded_table_drawn():
+  {==}
+
+def Laws.gui_icon_past_loaded_table_refused():
+  {==}
+
+def Laws.gui_hash_before_another_line_drawn():
   {==}
 
 def Laws.gui_hash_on_last_line_drawn():
   {==}
 
-def Laws.gui_width_second_hash_at_four():
+def Laws.gui_icon_table_holds_512():
   {==}
 
-def Laws.gui_width_second_hash_beyond():
+def Laws.gui_icon_table_ends_at_512():
+  {==}
+
+def Laws.gui_icon_filetype_icon_word():
   {==}
 
 def Laws.gui_icon_past_table_is_empty():
@@ -1293,6 +1341,36 @@ def Laws.gui_dropdown_second_item():
   {==}
 
 def Laws.gui_dropdown_focus_without_items(mouse, x, y, w, h, pitch, up):
+  {==}
+
+def Laws.gui_toggle_group_cells():
+  {==}
+
+def Laws.gui_toggle_group_semicolons():
+  {==}
+
+def Laws.gui_reply_none():
+  {==}
+
+def Laws.gui_reply_close():
+  {==}
+
+def Laws.gui_icons_words_little_endian():
+  {==}
+
+def Laws.gui_style_version_line():
+  {==}
+
+def Laws.gui_style_version_kept():
+  {==}
+
+def Laws.gui_style_version_negative_refused():
+  {==}
+
+def Laws.gui_style_font_line_modern():
+  {==}
+
+def Laws.gui_style_font_line_31_bytes():
   {==}
 
 def Laws.gui_text_box_insert_at_cursor():
@@ -2192,6 +2270,36 @@ def Laws.input_poll_copies_low_keys():
 def Laws.input_poll_keeps_high_keys():
   {==}
 
+def Laws.input_gamepad_negative_unavailable():
+  {==}
+
+def Laws.input_gamepad_negative_button():
+  {==}
+
+def Laws.input_gamepad_axis_count_outside():
+  {==}
+
+def Laws.input_gamepad_name_negative_null():
+  {==}
+
+def Laws.core_fps_counted_grows():
+  {==}
+
+def Laws.core_fps_counted_capped():
+  {==}
+
+def Laws.core_fps_unsampled_zero():
+  {==}
+
+def Laws.automation_load_long_description():
+  {==}
+
+def Laws.automation_load_event_added():
+  {==}
+
+def Laws.automation_load_full_skips():
+  {==}
+
 def Laws.gesture_tap_becomes_hold():
   {==}
 
@@ -2245,6 +2353,60 @@ def Laws.texture_filter_point(mag, min, s_clamp, t_clamp):
   {==}
 
 def Laws.texture_pool_reuses_freed(next, capacity, id, rest):
+  {==}
+
+def Laws.text_subtext_negative_position_is_empty():
+  {==}
+
+def Laws.text_subtext_zero_length_is_empty():
+  {==}
+
+def Laws.text_subtext_clamped_to_the_text():
+  {==}
+
+def Laws.text_remove_spaces_tests_the_input_index():
+  {==}
+
+def Laws.text_replace_between_short():
+  {==}
+
+def Laws.text_insert_inside():
+  {==}
+
+def Laws.text_insert_clamped_past_the_end():
+  {==}
+
+def Laws.text_insert_negative_is_empty():
+  {==}
+
+def Laws.text_insert_alloc_negative_is_null():
+  {==}
+
+def Laws.text_join_delimiter_between():
+  {==}
+
+def Laws.text_split_pieces():
+  {==}
+
+def Laws.text_to_pascal_empty_is_empty():
+  {==}
+
+def Laws.text_to_pascal_skips_underscore_runs():
+  {==}
+
+def Laws.text_to_pascal_final_underscore_ends():
+  {==}
+
+def Laws.text_to_camel_copies_non_letters():
+  {==}
+
+def Laws.text_to_snake_spaces_collapse():
+  {==}
+
+def Laws.text_to_snake_acronym_word():
+  {==}
+
+def Laws.text_to_snake_no_double_underscore():
   {==}
 
 def Laws.font_index_invalid(glyphs, base, padding, cp):
@@ -3039,6 +3201,27 @@ def Laws.frame_colors_empty_flat():
 def Laws.frame_interp_keeps_attributes(flat, at):
   {==}
 
+def Laws.sphere_face_triangles():
+  {==}
+
+def Laws.sphere_wires_face_lines():
+  {==}
+
+def Laws.image_color_rgba():
+  {==}
+
+def Laws.image_color_grayscale():
+  {==}
+
+def Laws.render_texture_format_rgba():
+  {==}
+
+def Laws.render_texture_format_compressed():
+  {==}
+
+def Laws.render_texture_format_other():
+  {==}
+
 def Laws.gui_pick_hover_keeps_drag(gui, bounds):
   {==}
 
@@ -3064,6 +3247,108 @@ def Laws.mp3_memory_stream_is_over_when_no_byte_is_passed():
   {==}
 
 def Laws.mp3_memory_stream_rewound_has_its_bytes_again():
+  {==}
+
+def Laws.wav_w64_chunk_below_header_ends_walk():
+  {==}
+
+def Laws.wav_w64_chunk_of_header_size_skipped():
+  {==}
+
+def Laws.wav_fmt_chunk_below_16_fails():
+  {==}
+
+def Laws.wav_fmt_chunk_of_16_reads():
+  {==}
+
+def Laws.wav_adpcm_blocks_count_partial():
+  {==}
+
+def Laws.wave_wav_ima_headers_fill_data():
+  {==}
+
+def Laws.wave_aiff_unread_frames_are_zeros():
+  {==}
+
+def Laws.wav_zeros_limit_past_2_24():
+  {==}
+
+def Laws.wav_zeros_limit_at_2_24():
+  {==}
+
+def Laws.wav_zeros_limit_nothing_unread():
+  {==}
+
+def Laws.wave_ogg_unread_frames_are_zeros():
+  {==}
+
+def Laws.wave_ogg_zeros_past_limit():
+  {==}
+
+def Laws.qoa_frame_size_below_its_header():
+  {==}
+
+def Laws.qoa_frame_of_one_slice_fits():
+  {==}
+
+def Laws.qoa_frame_257_slices_refused():
+  {==}
+
+def Laws.qoa_buffer_rounded_at_limit():
+  {==}
+
+def Laws.qoa_buffer_rounded_past_limit():
+  {==}
+
+def Laws.mp3_info_table_past_frame_not_a_tag():
+  {==}
+
+def Laws.mp3_info_too_small_for_its_name():
+  {==}
+
+def Laws.mp3_info_lame_tag_short_not_a_tag():
+  {==}
+
+def Laws.mp3_info_lame_tag_fits():
+  {==}
+
+def Laws.mp3_total_high_word_one():
+  {==}
+
+def Laws.mp3_total_high_word_three():
+  {==}
+
+def Laws.mp3_total_high_word_zero():
+  {==}
+
+def Laws.mp3_total_wide_subtracts_both():
+  {==}
+
+def Laws.mp3_total_narrow_keeps_small():
+  {==}
+
+def Laws.mp3_limit_wide_past_32_bits():
+  {==}
+
+def Laws.mp3_limit_narrow_edge_known():
+  {==}
+
+def Laws.mp3_limit_narrow_edge():
+  {==}
+
+def Laws.mp3_limit_wide_below_padding():
+  {==}
+
+def Laws.mp3_limit_wide_below_padding_edge():
+  {==}
+
+def Laws.mp3_limit_high_three():
+  {==}
+
+def Laws.mp3_temp_frames_stereo():
+  {==}
+
+def Laws.mp3_temp_frames_mono():
   {==}
 
 def Laws.mp3_memory_stream_holds_no_byte_of_its_tags():
@@ -4603,6 +4888,30 @@ def Laws.font_assemble_pairs_a_glyph_with_its_rectangle():
   {==}
 
 def Laws.font_assemble_stops_at_the_shorter_list():
+  {==}
+
+def Laws.font_data_blank_no_break_space():
+  {==}
+
+def Laws.font_data_blank_general_punctuation_spaces():
+  {==}
+
+def Laws.font_data_blank_ogham_ascii_and_ideographic():
+  {==}
+
+def Laws.font_data_letter_not_blank():
+  {==}
+
+def Laws.font_bdf_hex_digits():
+  {==}
+
+def Laws.font_bdf_reads_a_requested_glyph():
+  {==}
+
+def Laws.font_bdf_row_past_the_height_ends_the_read():
+  {==}
+
+def Laws.font_image_draw_text_pro_draws_nothing(destination, font, text, position, origin, rotation, size, spacing, tint):
   {==}
 
 def Laws.music_token_of_an_ogg_stream():

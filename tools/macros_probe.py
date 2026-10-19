@@ -69,8 +69,10 @@ NAME = re.compile(r'^[A-Z][A-Z0-9_]*$')
 
 def module_default(source, name):
     """The value of every unconditional `#ifndef NAME` / `#define NAME value` default in raylib's sources
-    except config.h (None without one); the sites must agree."""
-    found = set()
+    except config.h (None without one); the sites must agree. Without such a default, a module's fixed
+    `#define NAME value` when every site agrees: raylib 6.2's rlgl.h defines its default shader attribute and uniform names
+    unguarded ("can not be changed") while config.h still documents them as commented-out overrides."""
+    guarded, fixed = set(), set()
     for pattern in MODULE_SOURCES:
         for path in sorted(source.glob(pattern)):
             if path.name == 'config.h':
@@ -79,8 +81,10 @@ def module_default(source, name):
             for index in range(1, len(lines)):
                 match = re.match(r'\s*#\s*define\s+' + re.escape(name) + r'\s+(.*?)\s*(//.*)?$', lines[index])
                 guard = lines[index - 1].strip()
-                if match and guard in (f'#ifndef {name}', f'#if !defined({name})'):
-                    found.add(match.group(1))
+                if match:
+                    (guarded if guard in (f'#ifndef {name}', f'#if !defined({name})') else fixed).add(match.group(1))
+    # Fixed defines that differ are per-platform branches (rlgl.h's batch sizes), not a default.
+    found = guarded or (fixed if len(fixed) == 1 else set())
     if len(found) > 1:
         raise ProbeFailure(f'macros: raylib defines {name} as {sorted(found)} in different modules')
     return found.pop() if found else None

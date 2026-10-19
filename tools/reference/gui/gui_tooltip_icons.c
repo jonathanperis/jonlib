@@ -2,9 +2,11 @@
  * Probe-only raygui program for tools/examples_probe.py (category gui); not a
  * raylib example. Tooltips (GuiEnableTooltip, GuiDisableTooltip,
  * GuiSetTooltip) over a button, a toggle near the right edge and a text box
- * near the bottom, and GuiDrawIcon and GuiIconText, under scripted input; the
- * port is tests/gui/gui_tooltip_icons.bend. raygui.h is the pinned raylib's
- * (examples/core/raygui.h, zlib/libpng, Copyright (c) 2014-2025 Ramon
+ * near the bottom, and GuiDrawIcon and GuiIconText, with raygui 5.1-dev's
+ * 512 icons and its icon markers (one of 512 or more is text; GetLineWidth
+ * skips a second marker), under scripted input; the port is
+ * tests/gui/gui_tooltip_icons.bend. raygui.h is the pinned raylib's
+ * (examples/core/raygui.h, zlib/libpng, Copyright (c) 2014-2026 Ramon
  * Santamaria (@raysan5)).
  */
 #include "raylib.h"
@@ -45,6 +47,10 @@ int main(void)
             GuiLabel((Rectangle){ 200, 160, 150, 20 }, GuiIconText(-5, "negative"));
             GuiLabel((Rectangle){ 200, 190, 150, 20 }, GuiIconText(1000, "four digits"));
             GuiLabel((Rectangle){ 200, 220, 150, 20 }, GuiIconText(121, NULL));
+            GuiDrawIcon(256, 330, 60, 1, BLACK);
+            GuiDrawIcon(511, 350, 60, 1, BLACK);
+            GuiButton((Rectangle){ 330, 245, 160, 20 }, "#600#Six");
+            GuiButton((Rectangle){ 330, 270, 100, 20 }, "#250##5#Two");
             DrawText(TextFormat("%d %d", clicks, (int)on), 440, 285, 10, BLACK);
         EndDrawing();
     }

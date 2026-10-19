@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Compare Jonlib's TrueType/BDF font loading with raylib 6.0's rtext.c and
-its stb_truetype.h / stb_rect_pack.h.
+"""Compare Jonlib's TrueType/BDF font loading with the pinned raylib's (6.2)
+rtext.c and its stb_truetype.h / stb_rect_pack.h.
 
 Same reference as tools/font_probe.py: pinned raylib on PLATFORM=Memory
 (rlsw) built with CMAKE_C_FLAGS=-ffp-contract=off and checked free of fused
@@ -15,10 +15,14 @@ contours starting off the curve, single-point contours; composites with
 byte/short offsets, scale, x/y scale, 2x2 and point-matching forms, nested;
 glyph boxes smaller than the outline, which drive the rasterizer's clipping
 path; pixel-style line fonts for SDF; a space with an outline; negative
-advances) plus two OFL fonts read from the pinned raylib checkout
+advances; raylib 6.2's Unicode spaces, empty and with outlines) plus two OFL
+fonts read from the pinned raylib checkout
 (examples/text/resources/anonymous_pro_bold.ttf and DotGothic16-Regular.ttf,
-SIL Open Font License; read in place, not redistributed). BDF files and an
-XNA-style PNG are generated here.
+SIL Open Font License; read in place, not redistributed). BDF files (glyph
+bitmaps, FONT_ASCENT or FONTBOUNDINGBOX ascents, partial sscanf fields,
+CRLF lines, invalid and extra hex digits, missing rows, a row past the
+height ending the read, repeated and missing ENCODINGs, lines longer than
+GetLine's 255 bytes) and an XNA-style PNG are generated here.
 
 Logged: LoadFontData glyphs (value, offsets, advance, image size and every
 byte) for FONT_DEFAULT, FONT_BITMAP and FONT_SDF at several sizes and
@@ -30,8 +34,9 @@ whole glyph table with every glyph image, GetGlyphInfo), MeasureTextEx,
 ImageTextEx, ExportFontAsCode's file bytes and DrawTextEx frames.
 
 Contracts: operations marked 'R' are not run natively; Jonlib must refuse
-them (undefined C behavior: reads past the font data, the BDF reader's NULL
-pointer write; or outside Jonlib's profile: CFF outlines). Those marked 'J'
+them (undefined C behavior: reads past the font data, a requested BDF glyph
+with a negative BBX, an ENCODING beyond an int; or outside Jonlib's profile:
+CFF outlines). Those marked 'J'
 are not run natively either, and Jonlib does run them and must answer a
 refusal: SDF glyphs needing the cubic solver without a profile
 (Font.load_data) or under one whose pow, acos and cos are not glibc 2.39's
@@ -67,6 +72,9 @@ cf = fp.cf
 bf = fp.bf
 WHITE, BLACK, RED, BLUE = C(255, 255, 255), C(0, 0, 0), C(230, 41, 55), C(0, 121, 241)
 RESOURCES = 'examples/text/resources'
+# The codepoints raylib 6.2's LoadFontData gives an empty advanceX x fontSize
+# image (6.0: 0x20 and 0x3000 only).
+SPACES = [0x20, 0xA0, 0x1680] + list(range(0x2000, 0x200B)) + [0x202F, 0x205F, 0x3000]
 
 def T8(text):
     return list(text.encode('utf-8')) if isinstance(text, str) else list(text)
@@ -76,6 +84,63 @@ def T8(text):
 
 def bdf_text(lines):
     return ('\n'.join(lines) + '\n').encode('latin-1')
+
+def bdf_char(name, encoding, bbx, rows, dwidth=None, extra=()):
+    """A BDF character; encoding None leaves ENCODING out, bbx is the BBX line's text."""
+    lines = [f'STARTCHAR {name}'] + ([] if encoding is None else [f'ENCODING {encoding}']) + list(extra)
+    lines += ([] if dwidth is None else [f'DWIDTH {dwidth} 0']) + [f'BBX {bbx}', 'BITMAP'] + list(rows) + ['ENDCHAR']
+    return lines
+
+def bdf_fonts():
+    """BDF files with glyphs, as raylib 6.2's LoadFontDataBDF reads them."""
+    fonts = {}
+    # A plain font: properties (PIXEL_SIZE and POINT_SIZE hold "SIZE" and fail
+    # its sscanf), FONT_ASCENT after FONTBOUNDINGBOX, a space without rows, a
+    # COMMENT between rows, a glyph with fewer rows than its height, one
+    # without ENCODING (-1) and one outside 32..126.
+    fonts['glyphs.bdf'] = bdf_text(
+        ['STARTFONT 2.1', 'COMMENT generated', 'FONT -gen-glyphs-medium-r-normal--12-120-75-75-c-60-iso10646-1', 'SIZE 12 75 75',
+         'FONTBOUNDINGBOX 6 12 -1 -3', 'STARTPROPERTIES 4', 'PIXEL_SIZE 12', 'POINT_SIZE 120', 'FONT_ASCENT 10', 'FONT_DESCENT 2', 'ENDPROPERTIES',
+         'CHARS 8'] +
+        bdf_char('space', 32, '0 0 0 0', [], 6, extra=['SWIDTH 500 0']) +
+        bdf_char('exclam', 33, '1 7 2 0', ['80', '80', '80', '80', '80', '00', '80'], 6) +
+        bdf_char('A', 65, '5 7 0 0', ['20', '50', '88', '88', 'F8', '88', '88'], 6) +
+        bdf_char('g', 103, '5 7 0 -2', ['78', '88', '88', '78', '08', 'COMMENT inside the bitmap', '88', '70'], 6) +
+        bdf_char('i', 105, '1 7 1 0', ['80', '00', '80', '80', '80', '80', '80'], 3) +
+        bdf_char('question', 63, '4 7 1 0', ['60', '90', '10', '20', '40', '00', '40'], 6) +
+        bdf_char('eacute', 233, '5 8 0 0', ['10', '20', '70', '88', 'F8', '80', '70'], 6) +
+        bdf_char('noenc', None, '2 2 0 0', ['C0', '40'], 4) + ['ENDFONT'])
+    # CRLF lines (HexToInt('\r') is 0), SIZE in hex, the ascent from
+    # FONTBOUNDINGBOX, lower and upper case and invalid hex digits, a row wider
+    # than the glyph, a short row, no DWIDTH (advanceX 0).
+    lines = (['STARTFONT 2.1', 'SIZE 0x0d', 'FONTBOUNDINGBOX 8 10 0 -2'] +
+             bdf_char('A', 65, '6 6 0 0', ['3c', 'Gz', 'fF', 'a5', 'FFFF', '0'], 7) +
+             bdf_char('g', 103, '5 7 0 -2', ['78', '88', '88', '78', '08', '88', '70'], 6) +
+             bdf_char('exclam', 33, '2 5 1 0', ['C0', 'c0', '80', '00', '80']) + ['ENDFONT'])
+    fonts['crlf.bdf'] = ''.join(line + '\r\n' for line in lines).encode('latin-1')
+    # sscanf fills fields left to right: FONTBOUNDINGBOX without its offsets
+    # (ascent 11), BBX without its offsets, then a full FONTBOUNDINGBOX
+    # between characters (ascent 8); negative offsets.
+    fonts['ascent.bdf'] = bdf_text(
+        ['STARTFONT 2.1', 'FONTBOUNDINGBOX 7 11'] + bdf_char('A', 65, '4 3 -1 -4', ['f0', '90', 'f0']) +
+        bdf_char('B', 66, '3 2', ['e0', 'a0'], 4) + ['FONTBOUNDINGBOX 7 9 0 -1'] + bdf_char('C', 67, '2 2 0 0', ['c0', '40'], 3) + ['ENDFONT'])
+    # GetLine reads 255 bytes at most and skips the next: a 300-byte COMMENT
+    # leaves a line of its tail, a 300-digit row is two rows. Then a glyph
+    # with one row more than its height: the read ends there (B stays zeroed).
+    fonts['rows.bdf'] = bdf_text(
+        ['STARTFONT 2.1', 'COMMENT ' + 'x' * 292, 'SIZE 8', 'FONT_ASCENT 7'] + bdf_char('C', 67, '8 2 0 0', ['A5' * 150], 9) +
+        bdf_char('A', 65, '4 2 0 0', ['F0', '90', '60'], 5) + bdf_char('B', 66, '4 4 0 0', ['F0'], 5) + ['ENDFONT'])
+    # A repeated ENCODING (the later glyph replaces the earlier), a requested
+    # codepoint listed twice (only its first index is filled), ENCODING left
+    # out (-1, requested here) and an unrequested glyph with a negative BBX.
+    fonts['dup.bdf'] = bdf_text(
+        ['STARTFONT 2.1', 'SIZE 10', 'FONTBOUNDINGBOX 5 10 0 -2'] + bdf_char('first', 65, '3 3 0 0', ['e0', 'a0', 'e0'], 5) +
+        bdf_char('second', 65, '2 2 1 1', ['40'], 6) + bdf_char('noenc', None, '2 1 0 0', ['c0'], 4) + bdf_char('neg', 900, '-2 3 0 0', ['ff'], 4) +
+        bdf_char('B', 66, '4 3 0 -1', ['e0', '90', 'e0'], 5) + ['ENDFONT'])
+    # Refused: a requested glyph with a negative BBX width, an ENCODING beyond an int.
+    fonts['negbbx.bdf'] = bdf_text(['STARTFONT 2.1'] + bdf_char('A', 65, '-3 2 0 0', ['ff', 'ff']) + ['ENDFONT'])
+    fonts['bigenc.bdf'] = bdf_text(['STARTFONT 2.1'] + bdf_char('A', 99999999999, '2 2 0 0', ['ff', 'ff']) + ['ENDFONT'])
+    return fonts
 
 def png(width, height, pixels, gray=False):
     """A minimal 8-bit PNG: RGBA of canonical 0xRRGGBBAA words, or gray bytes."""
@@ -123,6 +188,10 @@ def font_files(work, raylib_source):
         'f2.ttf': dict(seed=9, cmap='2', kind='mixed'),
         'outline_space.ttf': dict(seed=10, cmap='4', kind='lines', empty=()),
         'raw.ttf': dict(seed=11, cmap='4', kind='mixed', compress=False),
+        # raylib 6.2's space codepoints, some empty and some with an outline, a
+        # zero-width space (not one of them) and a hyphen.
+        'spaces.ttf': dict(seed=14, cmap='4', kind='lines', codepoints=list(range(32, 127)) + SPACES[1:] + [0x200B, 0x2010],
+                           empty=(32, 0xA0, 0x2003, 0x2007, 0x202F, 0x3000, 0x200B)),
     }
     for name, spec in specs.items():
         put(name, T.build_font(**spec)[0])
@@ -144,9 +213,9 @@ def font_files(work, raylib_source):
                            'head': T.head_table(), 'hhea': T.hhea_table(800, -200, 0, 2), 'hmtx': b'\0' * 8, 'maxp': T.maxp_table(2)},
                           version=0x4F54544F))
     put('empty.ttf', b'')
-    # BDF: without characters (the zeroed glyph array), with a space only (NULL:
-    # the default font), with a requested character (raylib writes through
-    # NULL), and without ENDFONT (GetLine reads past the data).
+    # BDF: without characters (the zeroed glyph array), SIZE in hex and octal,
+    # a space only, a glyph without BBX whose first row ends the read, and
+    # without ENDFONT (GetLine reads past the data).
     put('plain.bdf', bdf_text(['STARTFONT 2.1', 'COMMENT a SIZE comment', 'FONT -gen-plain', 'SIZE 13 75 75', 'PIXEL_SIZE 99',
                                'FONTBOUNDINGBOX 8 13 0 -2', 'FONT_ASCENT 11', 'ENDFONT', 'trailing']))
     put('hex.bdf', bdf_text(['STARTFONT 2.1', 'SIZE 0x10', 'SIZE   012', 'ENDFONT']))
@@ -154,6 +223,9 @@ def font_files(work, raylib_source):
                                'STARTCHAR x', 'ENCODING 1000', 'BITMAP', 'ff', 'ENDCHAR', 'ENDFONT']))
     put('crash.bdf', bdf_text(['STARTFONT 2.1', 'SIZE 9', 'STARTCHAR A', 'ENCODING 65', 'BITMAP', 'ff', 'ENDCHAR', 'ENDFONT']))
     put('open.bdf', bdf_text(['STARTFONT 2.1', 'SIZE 9']))
+    # BDF fonts with glyphs (raylib 6.2 reads them; 6.0 lost them).
+    for name, data in bdf_fonts().items():
+        put(name, data)
     # An XNA-style image font for LoadFont (MAGENTA key, first char 32).
     spec = fpb.font_image(40, 16, 0xFF00FFFF, 1, 1, 6, [[2, 3, 1, 4, 2], [3, 3, 2]], seed=5)
     put('image_font.png', png(spec['width'], spec['height'], fpb.font_pixels(spec)))
@@ -209,6 +281,14 @@ def scenes(paths, libm, cubic=False):
                            ('data', P['DotGothic16-Regular.ttf'], 20, [32, 65, 103, 0x3042, 0x3000], 5, 2)])
     add('data-odd', 4, 4, [('data', P['f2.ttf'], 20, [], 0, 0), ('data', P['nocmap.ttf'], 20, [], 0, 0), ('data', P['outline_space.ttf'], 20, [32, 33], 2, 0), ('data', P['outline_space.ttf'], 20, [32, 33], 2, 1, 'R'),
                            ('data', P['negative_space.ttf'], 20, [32, 65], 2, 0)])
+    # raylib 6.2's space codepoints: empty images advanceX x fontSize whether
+    # the glyph is empty or has an outline (FONT_SDF computes the outline's SDF
+    # first, except for 0x20); FONT_BITMAP only over empty spaces (an outline
+    # larger than the space image would be thresholded past its end).
+    spaced = SPACES + [0x200B, 0x2010, 65, 103]
+    add('data-spaces', 4, 4, [('data', P['spaces.ttf'], 20, spaced, len(spaced), 0), ('data', P['spaces.ttf'], 13, spaced, len(spaced), 2),
+                              ('data', P['spaces.ttf'], 16, [65, 0xA0, 0x2003, 0x2007, 0x202F, 0x3000, 0x200B, 32, 0x2010], 9, 1),
+                              ('data', P['DotGothic16-Regular.ttf'], 18, SPACES + [65], len(SPACES) + 1, 0)])
     add('data-refused', 4, 4, [('data', P['truncated.ttf'], 20, [], 0, 0, 'R'), ('data', P['cff.otf'], 20, [], 0, 0, 'R'),
                                ('data', P['f4.ttf'], 20, [65, 66], 2, 2, 'J'), ('data', P['f4.ttf'], 20, [65, 66, 67], 5, 0, 'R')])
     # the cubic solver under the profile: compared on a glibc 2.39 host, a refusal Jonlib must give elsewhere
@@ -245,18 +325,39 @@ def scenes(paths, libm, cubic=False):
                                  ('image_text_ex', 0, T8('Ab'), float(size), 2.0, BLUE), ('code', 0, f'gen_font-{k}.h'), ('unload', 0), ('end',)])
     add('mem-codepoints', 64, 32, [('begin',), ('clear', WHITE), ('mem', 0, P['f12.ttf'], '.ttf', 24, [65, 0x3000, 66, 0xE9, 32, 0x1F600], 6), ('info', 0), ('table', 0),
                                    ('text_ex', 0, T8('A\u3000B\u00e9 \U0001F600'), 1.0, 1.0, 24.0, 0.0, RED), ('end',)])
+    add('mem-spaces', 96, 32, [('begin',), ('clear', WHITE), ('mem', 0, P['spaces.ttf'], '.ttf', 18, [65, 66] + SPACES[1:] + [0x200B, 0x2010],
+                                                                     len(SPACES) + 3), ('info', 0), ('table', 0), ('glyph', 0, 0x2003), ('glyph', 0, 0x200B),
+                               ('measure', 0, T8('A\u2003B\u00a0A\u3000B\u200bA'), 18.0, 1.0),
+                               ('text_ex', 0, T8('A\u2003B\u00a0A\u2009B\u200b\u2010\u1680A'), 1.0, 2.0, 18.0, 1.0, BLACK),
+                               ('image_text_ex', 0, T8('A\u2002B'), 18.0, 1.0, BLUE), ('end',)])
     add('mem-other', 16, 16, [('mem', 0, P['f4.ttf'], '.png', 20, [], 0), ('info', 0), ('mem', 1, P['nocmap.ttf'], '.ttf', 20, [], 0), ('info', 1),
                               ('mem', 0, P['plain.bdf'], '.bdf', 20, [], 0), ('info', 0), ('table', 0), ('code', 0, 'plain_bdf.h'),
-                              ('mem', 1, P['hex.bdf'], '.BDF', 20, [], 40), ('info', 1), ('mem', 1, P['space.bdf'], '.bdf', 20, [], 0), ('info', 1)])
+                              ('mem', 1, P['hex.bdf'], '.BDF', 20, [], 40), ('info', 1), ('mem', 1, P['space.bdf'], '.bdf', 20, [], 0), ('info', 1), ('table', 1),
+                              ('mem', 0, P['crash.bdf'], '.bdf', 20, [], 0), ('info', 0), ('table', 0)])
+    # BDF fonts with glyphs (raylib 6.2's LoadFontDataBDF), then the font in use.
+    word = T8('Ag i!\n?A')
+    add('mem-bdf', 64, 40, [('begin',), ('clear', WHITE), ('mem', 0, P['glyphs.bdf'], '.bdf', 20, [], 0), ('info', 0), ('table', 0), ('glyph', 0, 65),
+                            ('glyph', 0, 103), ('glyph', 0, 0x263A), ('measure', 0, word, 12.0, 1.0), ('text_ex', 0, word, 1.0, 1.0, 12.0, 1.0, BLACK),
+                            ('text_ex', 0, T8('gA'), 30.5, 14.0, 24.0, 0.0, RED), ('image_text_ex', 0, T8('Ag!'), 12.0, 1.0, BLUE), ('code', 0, 'glyphs_bdf.h'),
+                            ('mem', 1, P['glyphs.bdf'], '.bdf', 16, [65, 103, 33, 233, 1000, 0xFFFFFFFF], 6), ('info', 1), ('table', 1),
+                            ('text_ex', 1, T8('g!A\u00e9'), 40.0, 26.0, 12.0, 1.0, BLUE), ('end',)])
+    add('mem-bdf-lines', 48, 24, [('begin',), ('clear', WHITE), ('mem', 0, P['crlf.bdf'], '.bdf', 20, [65, 103, 33], 3), ('info', 0), ('table', 0),
+                                  ('text_ex', 0, T8('A!g'), 1.0, 1.0, 13.0, 1.0, BLACK), ('mem', 1, P['rows.bdf'], '.bdf', 20, [65, 66, 67], 3), ('info', 1),
+                                  ('table', 1), ('text_ex', 1, T8('CAB'), 2.0, 12.0, 8.0, 1.0, RED), ('end',)])
+    add('mem-bdf-fields', 32, 24, [('begin',), ('clear', WHITE), ('mem', 0, P['ascent.bdf'], '.bdf', 20, [65, 66, 67], 3), ('info', 0), ('table', 0),
+                                   ('text_ex', 0, T8('ABC'), 3.0, 2.0, 20.0, 1.0, BLACK),
+                                   ('mem', 1, P['dup.bdf'], '.bdf', 20, [66, 65, 65, 0xFFFFFFFF, 67], 5), ('info', 1), ('table', 1), ('glyph', 1, 65),
+                                   ('text_ex', 1, T8('BA'), 4.0, 12.0, 10.0, 1.0, RED), ('end',)])
     add('mem-refused', 16, 16, [('mem', 0, P['f2.ttf'], '.ttf', 20, [], 0, 'R'), ('mem', 0, P['negative_space.ttf'], '.ttf', 20, [], 0, 'R'),
-                                ('mem', 0, P['crash.bdf'], '.bdf', 20, [], 0, 'R'), ('mem', 0, P['open.bdf'], '.bdf', 20, [], 0, 'R'),
-                                ('mem', 0, P['cff.otf'], '.otf', 20, [], 0, 'R')])
+                                ('mem', 0, P['open.bdf'], '.bdf', 20, [], 0, 'R'), ('mem', 0, P['negbbx.bdf'], '.bdf', 20, [65], 1, 'R'),
+                                ('mem', 0, P['bigenc.bdf'], '.bdf', 20, [65], 1, 'R'), ('mem', 0, P['cff.otf'], '.otf', 20, [], 0, 'R')])
     add('ex-load', 64, 40, [('begin',), ('clear', WHITE), ('ex', 0, P['big.ttf'], 30, [72, 105, 33], 3), ('info', 0), ('table', 0),
                             ('text_ex', 0, T8('Hi!'), 2.0, 2.0, 30.0, 2.0, BLACK), ('ex', 1, P['missing.ttf'], 20, [], 0), ('info', 1),
                             ('ex', 1, P['empty.ttf'], 20, [], 0), ('info', 1), ('end',)])
     add('load', 48, 24, [('begin',), ('clear', WHITE), ('load', 0, P['f6.ttf']), ('info', 0), ('measure', 0, T8('load'), 32.0, 0.0),
                          ('load', 1, P['upper.TTF']), ('info', 1), ('text_ex', 1, T8('ok'), 1.0, 1.0, 20.0, 1.0, BLACK), ('unload', 1),
-                         ('load', 1, P['plain.bdf']), ('info', 1), ('unload', 1), ('load', 1, P['image_font.png']), ('info', 1), ('table', 1),
+                         ('load', 1, P['plain.bdf']), ('info', 1), ('unload', 1), ('load', 1, P['glyphs.bdf']), ('info', 1), ('table', 1),
+                         ('text_ex', 1, T8('Ag!'), 20.0, 2.0, 12.0, 1.0, BLACK), ('unload', 1), ('load', 1, P['image_font.png']), ('info', 1), ('table', 1),
                          ('code', 1, 'image_font.h'), ('unload', 1), ('load', 1, P['missing.png']), ('info', 1), ('code', 1, 'default.h'), ('end',)])
     add('bmfont', 64, 32, [('begin',), ('clear', C(20, 30, 40)), ('load', 0, P['gen.fnt']), ('info', 0), ('table', 0), ('glyph', 0, 32), ('glyph', 0, 0x263A),
                            ('measure', 0, T8('AB g\u263a?'), 18.0, 1.0), ('text_ex', 0, T8('AB g\u263a?!'), 1.0, 2.0, 18.0, 1.0, WHITE),

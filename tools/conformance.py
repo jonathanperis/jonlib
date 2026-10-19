@@ -21,6 +21,9 @@ else:
     import native_profiles
     import reference_environment
 
+# Fixture kinds whose Surface functions follow raylib 6.2's names: the kind
+# rectangle_lines is ImageDrawRectangleLinesEx, triangle_ex ImageDrawTriangleGradient.
+RENAMED_DRAWS = {'rectangle_lines': 'rectangle_lines_ex', 'triangle_ex': 'triangle_gradient'}
 UNARY_IMAGE_APIS = {'flip_horizontal':'ImageFlipHorizontal', 'flip_vertical':'ImageFlipVertical',
                     'rotate_cw':'ImageRotateCW', 'rotate_ccw':'ImageRotateCCW', 'color_invert':'ImageColorInvert',
                     'alpha_premultiply':'ImageAlphaPremultiply', 'color_grayscale':'ImageColorGrayscale'}
@@ -1374,7 +1377,7 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
                 args += [str(rgba(op['color']))]
             if kind == 'triangle_ex':
                 args += [str(rgba(op['color2'])), str(rgba(op['color3']))]
-            function = kind if kind == 'clear' or kind in UNARY_IMAGE_APIS else 'draw_' + kind
+            function = kind if kind == 'clear' or kind in UNARY_IMAGE_APIS else 'draw_' + RENAMED_DRAWS.get(kind, kind)
             if kind in ('blend_color', 'color_value', 'number_value'):
                 function = 'draw_pixel'
             previous = f's{j}'

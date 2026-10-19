@@ -18,8 +18,9 @@ and a custom array (the last two are not read); two meshes with their own
 first vertex, triangles and materials (the corners reversed and rebased, a
 corner below the mesh's first vertex wrapping to an unsigned short); two
 position arrays (the last one counts); a material that names a PNG beside
-the file (its texture's id, size and format are in the material's map) and
-one that names no file (a texture of zeros); joints with a chain of
+the file (its texture's id, size and format are in the material's map), one
+that names no file (a texture of zeros) and one with an empty name (raylib
+6.2 asks for no texture: the default one stays); joints with a chain of
 parents, a parent that comes later (left as read), a joint that is its own
 parent and negative parents; animations whose poses have every mask, no
 mask and mixed masks, a second animation that starts at a later frame, an
@@ -33,8 +34,8 @@ arithmetic is uncontracted). Contracts (Jonlib must answer null for the
 rows whose native call is not run): a magic or a header cut short; the
 meshes, the triangles, a vertex array or the joints outside the file; a
 mesh or material name whose 32 bytes pass the end of the file, a material
-or bone name without its NUL, an empty material name and one from the
-root; a mesh whose vertices or triangles pass the file's, and one without
+or bone name without its NUL, a material name from the root; a mesh whose
+vertices or triangles pass the file's, and one without
 vertices or without triangles; the poses, the animations, the frame data
 or an animation's name outside the file; frame data that ends before the
 masks do; a pose whose parent is not a pose; a file over 2 MiB. CPU-1,
@@ -176,7 +177,7 @@ def cases(work, raylib):
     add('mesh-name-outside', iqm(names=['mesh', 'none'], meshes=[(size - 140, 'none', 0, 3, 0, 1)], **TRIANGLE), model=False)
     add('material-name-outside', iqm(names=['mesh', 'none'], meshes=[('mesh', size - 140, 0, 3, 0, 1)], **TRIANGLE), model=False)
     add('material-unterminated', iqm(text=b'\x00mesh\x00' + b'm' * 34, meshes=[(1, 6, 0, 3, 0, 1)], **TRIANGLE), model=False)
-    add('empty-material', iqm(names=['mesh'], meshes=[('mesh', '', 0, 3, 0, 1)], **TRIANGLE), model=False)
+    add('empty-material', iqm(names=['mesh'], meshes=[('mesh', '', 0, 3, 0, 1)], **TRIANGLE))
     add('material-from-root', iqm(names=['mesh', '/none'], meshes=[('mesh', '/none', 0, 3, 0, 1)], **TRIANGLE), model=False)
     add('vertices-past', iqm(names=['mesh', 'none'], meshes=[('mesh', 'none', 1, 3, 0, 1)], **TRIANGLE), model=False)
     add('triangles-past', iqm(names=['mesh', 'none'], meshes=[('mesh', 'none', 0, 3, 0, 2)], **TRIANGLE), model=False)
@@ -299,13 +300,13 @@ def main():
         path.write_bytes(data)
     compared = sum(case['model'] + case['anims'] for case in items)
     contracts = sum((not case['model']) + (not case['anims']) for case in items)
-    if compared < 40 or contracts < 30:
+    if compared < 40 or contracts < 29:
         raise ProbeFailure(f'iqm: {compared} compared and {contracts} refused loads; the corpus lost coverage')
     source = C_PREFIX + '\n'.join(c_case(case) for case in items) + '\n    return 0;\n}\n'
     output = [line.rstrip() for line in probe.native(source, 'reference').splitlines() if line[:1] in ('n', 'k', 'a')]
     expected = expected_rows(items, output)
     by_id = {case['id']: row for case, row in zip(items, expected)}
-    if (not by_id['guy'][0].startswith('n1,1,') or ' m240,120,0 ' not in by_id['guy'][0] or not by_id['guy'][1].startswith('k14 ') or not by_id['guy'][2].startswith('a2 A6a756d70,14,61,')
+    if (not by_id['guy'][0].startswith('n1,1,') or ' m224,112,0 ' not in by_id['guy'][0] or not by_id['guy'][1].startswith('k14 ') or not by_id['guy'][2].startswith('a2 A6a756d70,14,61,')
             or not by_id['guyanim'][0].startswith('n0,1,0') or by_id['guyanim'][1] != 'k0' or not by_id['guyanim'][2].startswith('a2 A6a756d70,14,61,')
             or by_id['missing'] != ['n0,1,0' + by_id['missing'][0][6:], 'k0', 'a0'] or by_id['other-magic'][1:] != ['k0', 'a0'] or ',2,2,1,7,' not in by_id['textured'][0]
             or not by_id['animated'][2].startswith('a3 A77616c6b,6,3,') or not by_id['joints'][1].startswith('k7 ')):

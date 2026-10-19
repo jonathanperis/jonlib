@@ -179,13 +179,13 @@ redistributed by Jonlib.
 
 ## raygui
 
-`jongui.bend` is an altered Bend adaptation of raygui v5.0-dev
-(`RAYGUI_VERSION` 4.5.0) by Ramon Santamaria (@raysan5), as raylib 6.0 ships
-it beside its examples (`examples/*/raygui.h`; the three variants there differ
-only in an MSVC warning define). zlib/libpng; the notice is retained in
+`jongui.bend` is an altered Bend adaptation of raygui v5.1-dev
+(`RAYGUI_VERSION` 5.1) by Ramon Santamaria (@raysan5), as raylib 6.2 ships
+it beside its examples (`examples/*/raygui.h`, the same file in every
+directory). zlib/libpng; the notice is retained in
 [LICENSES/raygui.txt](LICENSES/raygui.txt). The delivered controls and their
 gaps are in [docs/GUI.md](docs/GUI.md) and `api/jongui.json`.
-`src/gui_icons.bend` is raygui's icon set (the `guiIcons` table: 256 icons of
+`src/gui_icons.bend` is raygui's icon set (the `guiIcons` table: 512 icons of
 16x16 bits), generated from the pinned checkout by `tools/gui_icons.py` and
 marked as such; the `gui-icons` gate compares it with every copy of raygui.h
 there. No raygui file is redistributed: the probes compile the pinned

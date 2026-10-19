@@ -1,6 +1,6 @@
 # Jongui: raygui controls
 
-`jongui.bend` ports raygui (v5.0-dev, `RAYGUI_VERSION` 4.5.0, as raylib 6.0
+`jongui.bend` ports raygui (v5.1-dev, `RAYGUI_VERSION` 5.1, as raylib 6.2
 ships it beside its examples) the way Jonlib ports raylib: the controls'
 update and drawing code in raygui's F32 and C `int` order, over Jonlib's
 frame and input. raygui's globals (`guiState`, `guiLocked`, `guiAlpha`, the
@@ -23,18 +23,19 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 |---|---|---|
 | `GuiLoadStyleDefault` | `Gui.new()`, `Gui.style.default()` | the default 16x24 style table (as raygui fills it) |
 | `GuiSetStyle` / `GuiGetStyle` | `Gui.set_style(gui, control, property, value)` / `Gui.get_style(gui, control, property)` | `Gui` / `U32`; the table entry control*24 + property (a property of 24 or more is the next rows', as in raygui); a DEFAULT base property (below 16) reaches every control |
-| `GuiLoadStyle` | `Gui.load_style(gui, frame, path)` | `IO(Frame & Gui)` (text and binary .rgs files, their fonts loaded into the frame; a binary style's white rectangle sets the shapes texture) |
+| `GuiLoadStyle` | `Gui.load_style(gui, frame, path)` | `IO(Frame & Gui)` (text and binary .rgs files, their fonts loaded into the frame; a binary style's white rectangle sets the shapes texture when its atlas loads) |
+| `GuiLoadStyleFromMemory` | `Gui.load_style_from_memory(gui, frame, bytes)` | `Frame & Gui` (the binary format of `GuiLoadStyle`, public since raygui 5.1-dev) |
 | `GuiEnable` / `GuiDisable` | `Gui.enable(gui)` / `Gui.disable(gui)` | `Gui` |
 | `GuiLock` / `GuiUnlock` / `GuiIsLocked` | `Gui.lock`, `Gui.unlock`, `Gui.is_locked` | `Gui` / `Bool` |
 | `GuiSetState` / `GuiGetState` | `Gui.set_state(gui, state)` / `Gui.get_state(gui)` | `Gui` / `U32` |
 | `GuiSetAlpha` | `Gui.set_alpha(gui, alpha)` | `Gui` (alpha clamped to [0, 1]) |
 | `GuiSetIconScale` | `Gui.set_icon_scale(gui, scale)` | `Gui` (a scale below 1 is ignored) |
-| `GuiGetTextWidth` | `Gui.get_text_width(gui, text)` | `Maybe<F32>` (the C int, always `Some`; an icon prefix counts as raygui counts it) |
+| `GuiGetTextWidth` | `Gui.get_text_width(gui, text)` | `Maybe<F32>` (the C int, always `Some`: the widest line, an icon marker counted as raygui counts it) |
 | `GuiLabel` | `Gui.label(gui, frame, bounds, text)` | `Frame` |
 | `GuiButton` | `Gui.button(gui, core, frame, bounds, text)` | `Frame & Bool` (clicked) |
 | `GuiCheckBox` | `Gui.check_box(gui, core, frame, bounds, text, checked)` | `Frame & (Bool & Bool)` (checked, changed) |
 | `GuiToggle` | `Gui.toggle(gui, core, frame, bounds, text, active)` | `Frame & Bool` (active) |
-| `GuiToggleGroup` | `Gui.toggle_group(gui, core, frame, bounds, text, active)` | `Frame & U32` (the active index) |
+| `GuiToggleGroup` | `Gui.toggle_group(gui, core, frame, bounds, text, active)` | `Frame & U32` (the active index; TOGGLE's `GROUP_WIDTH_FULL` divides the width among a row's items) |
 | `GuiSlider` | `Gui.slider(gui, core, frame, bounds, left, right, value, min, max)` | `Frame & (Gui & (F32 & Bool))` (value, changed) |
 | `GuiSliderBar` | `Gui.slider_bar(...)` | the same |
 | `GuiLine` | `Gui.line(gui, frame, bounds, text)` | `Frame` (`text` is `Maybe<String>`: `None` for NULL) |
@@ -55,25 +56,27 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiLabelButton` | `Gui.label_button(gui, core, frame, bounds, text)` | `Frame & Bool` (clicked; the bounds widened to the text) |
 | `GuiDummyRec` | `Gui.dummy_rec(gui, frame, bounds, text)` | `Frame` |
 | `GuiGrid` | `Gui.grid(gui, core, frame, bounds, text, spacing, subdivs)` | `Frame & Vector2` (the cell under the pointer, or (-1, -1); `subdivs` is a C int as a word) |
-| `GuiToggleSlider` | `Gui.toggle_slider(gui, core, frame, bounds, text, active)` | `Frame & (U32 & Bool)` (the active item, moved on by a release) |
+| `GuiToggleSlider` | `Gui.toggle_slider(gui, core, frame, bounds, text, active)` | `Frame & (U32 & Bool)` (the active item, moved on by a release, and whether raygui's result is not 0: a release, or an index that changed) |
 | `GuiComboBox` | `Gui.combo_box(gui, core, frame, bounds, text, active)` | `Frame & U32` (the active item, moved on by a press over the box or its button) |
-| `GuiTabBar` | `Gui.tab_bar(gui, core, frame, bounds, items, active)` | `Frame & (U32 & U32)` (the active tab, and the tab whose close button was clicked or that a middle press is over, or -1, as int bits) |
-| `GuiMessageBox` | `Gui.message_box(gui, core, frame, bounds, title, message, buttons)` | `Frame & U32` (0 for the close button, a button's number from 1, or -1 as 4294967295) |
+| `GuiTabBar` | `Gui.tab_bar(gui, core, frame, bounds, text, hscroll, active)` | `Frame & (U32 & U32)` (`GuiTabBarEx` over the `';'`-separated tabs of `text`, `None` for NULL: the active tab and the result) |
+| `GuiTabBarEx` | `Gui.tab_bar_ex(gui, core, frame, bounds, items, hscroll, active, focus)` | `Frame & (U32 & U32)` (the active tab, and the result: `RESULT_TAB_CLOSE` (4) for a close button or a middle press over a tab, else `RESULT_CHANGED` (2) when the active tab changed, else 0; raygui 5.1-dev neither reads nor writes `hscroll` and `focus`) |
+| `GuiMessageBox` | `Gui.message_box(gui, core, frame, bounds, title, message, buttons, active)` | `Frame & Gui.Reply` (`GuiReply{active, result}`: `btnActive`, 0 for the close button or a button's number from 1 when one was clicked, else as given, and the result, 1 when one was, else 0) |
 | `GuiValueBoxFloat` | `Gui.value_box_float(gui, core, frame, bounds, text, text_value, value, edit)` | `Frame & (F32 & Bool)` (the value, unchanged outside edit mode, and whether the box was pressed; `text_value` is the buffer raygui shows) |
-| `GuiTextInputBox` | `Gui.text_input_box(gui, core, frame, bounds, title, message, buttons, size, input)` | `Frame & (Core & (Gui.Input & U32))` (`GuiInput{text, secret, edit, editing}`: the text, the secret view (0 off, 1 on, 2 for NULL), raygui's static edit mode and the text box globals, which a program passes from one input box to the next; the result: 0 closed, a button's number, or -1) |
+| `GuiTextInputBox` | `Gui.text_input_box(gui, core, frame, bounds, title, message, size, buttons, active, input)` | `Frame & (Core & (Gui.Input & Gui.Reply))` (`GuiInput{text, secret, edit, editing}`: the text, the secret view (0 off, 1 on, 2 for NULL), raygui's static edit mode and the text box globals, which a program passes from one input box to the next; the reply as `GuiMessageBox`'s) |
 | `GuiListView` | `Gui.list_view(gui, core, frame, bounds, text, scroll, active)` | `Frame & (Gui & (U32 & U32))` (`GuiListViewEx` over the items of `text`, `None` for NULL; the scroll index and active item as words) |
 | `GuiEnableTooltip` / `GuiDisableTooltip` | `Gui.enable_tooltip(gui)` / `Gui.disable_tooltip(gui)` | `Gui` (tooltips are off in a new gui) |
 | `GuiSetTooltip` | `Gui.set_tooltip(gui, tooltip)` | `Gui` (`tooltip` is `Maybe<String>`: `None` for NULL, which shows none); a focused button, toggle or text box out of edit mode draws it below itself, moved left or above where it would leave the screen |
 | `GuiDrawIcon` | `Gui.draw_icon(gui, frame, id, x, y, pixel_size, color)` | `Frame` (the ints as words; the gui's icon table, faded by its alpha) |
 | `GuiIconText` | `Gui.icon_text(id, text)` | `Maybe<String>` (`"#%03i#"` then the text from the sixth byte; `text` `None` for NULL gives the prefix alone; `None` for a text raygui's buffer cannot terminate) |
-| `GuiGetIcons` | `Gui.get_icons(gui)` | `+List<U32>` (the 2048 words of the gui's icon table) |
+| `GuiGetIcons` | `Gui.get_icons(gui)` | `+List<U32>` (the gui's icon table: 4096 words at start, the words of the last signed `GuiLoadIcons` after it) |
 | `GuiColorPanelHSV` | `Gui.color_panel_hsv(gui, core, frame, bounds, text, hsv)` | `Frame & (Gui & Vector3)` (the HSV; the drag in the gui; the text is not drawn, as in raygui) |
 | `GuiColorPanel` | `Gui.color_panel(gui, core, frame, bounds, text, color)` | `Frame & (Gui & U32)` (the color, changed only when the panel changes its HSV) |
 | `GuiColorBarAlpha` | `Gui.color_bar_alpha(gui, core, frame, bounds, text, alpha)` | `Frame & (Gui & F32)` (the alpha in [0, 1]) |
 | `GuiColorBarHue` | `Gui.color_bar_hue(gui, core, frame, bounds, text, hue)` | `Frame & (Gui & F32)` (the hue in [0, 359]) |
 | `GuiColorPicker` | `Gui.color_picker(gui, core, frame, bounds, text, color)` | `Frame & (Gui & U32)` (the panel, then the hue bar beside it; the color rebuilt from the HSV every frame, as raygui does) |
 | `GuiColorPickerHSV` | `Gui.color_picker_hsv(gui, core, frame, bounds, text, hsv)` | `Frame & (Gui & Vector3)` |
-| `GuiLoadIcons` | `Gui.load_icons(gui, path, names)` | `IO(Gui & Gui.Names)` (`GuiNames{names}` with each name id's 32 bytes, `GuiNamesNull{}` for NULL, `GuiNamesUndefined{}` for a load raygui does not define) |
+| `GuiLoadIcons` | `Gui.load_icons(gui, path, names)` | `IO(Gui & Gui.Names)` (the file through `GuiLoadIconsFromMemory`; `GuiNamesNull{}` for a file that does not open or is empty) |
+| `GuiLoadIconsFromMemory` | `Gui.load_icons_from_memory(gui, bytes, names)` | `Gui & Gui.Names` (the table replaced by the data's count*(size*size/32) words; `GuiNames{names}` with each name id's 32 bytes, `GuiNamesNull{}` for NULL, `GuiNamesUndefined{}` for a load raygui does not define) |
 
 Two additions have no raygui counterpart. They run a row of controls in order
 for programs that keep their values in lists (Bend has no pointers to write
@@ -91,7 +94,9 @@ example waiting on each raygui function it calls that is not delivered.
 
 - **Style.** `guiStyle` is 16 controls of 24 properties (16 base, 8
   extended). `Gui.new()` holds the table `GuiLoadStyleDefault` builds, taken
-  from raygui's own output. Colors are `0xRRGGBBAA` words, Jonlib's colors.
+  from raygui's own output (raygui 5.1-dev: `TEXT_LINE_SPACING` 12 between
+  a text's lines, and `TABBAR`, the control in `CONTROL11`'s row, with
+  `TAB_ITEMS_WIDTH` 160). Colors are `0xRRGGBBAA` words, Jonlib's colors.
 - **Drawing.** `GuiDrawRectangle` is up to five `DrawRectangle` calls with
   `(int)` coordinates (the fill when its alpha is above 0, then the border).
   `GuiDrawText` splits the text at `'\n'`, places each line by the horizontal
@@ -107,11 +112,16 @@ example waiting on each raygui function it calls that is not delivered.
   bounds' height, with the text 4 pixels after the icon and that much less
   room before the ellipsis. The line's width for the alignment is the
   text's plus the icon's, plus 4 more unless the whole text ends there.
-  `GuiGetTextWidth` has its own rule, kept as it is: a text starting with
-  `#` that has another `#` within its next four bytes is measured from that
-  second `#` (the `#` included) plus 20, whatever the scale. The set is
-  `src/gui_icons.bend`, generated from the pinned raygui.h
-  (`tools/gui_icons.py`).
+  raygui 5.1-dev has 512 icons (the ones past its initializers are zeros);
+  a marker of 512 or more is not an icon, and the line is drawn whole. A
+  line's text width is `GetLineWidth`'s, with its own rule, kept as it is:
+  a line starting with a marker (`#`, up to three digits and `#`, whatever
+  the number) is measured after it plus 20, whatever the scale, even after
+  the icon `GetTextIcon` took. `GuiGetTextWidth` is the widest line starting
+  in the text's first 256 bytes. The set is `src/gui_icons.bend`, generated
+  from the pinned raygui.h (`tools/gui_icons.py`), until `GuiLoadIcons`
+  replaces the table: raygui then reads an icon's words in the new table,
+  of the loaded size.
 - **Pointer.** `GetMousePosition`, and for the button the left mouse button or
   gamepad 0's `GAMEPAD_BUTTON_RIGHT_FACE_DOWN`, as raygui's defaults.
 - **Sliders.** A press inside the bounds starts a drag: the Gui remembers
@@ -120,9 +130,12 @@ example waiting on each raygui function it calls that is not delivered.
   released. While a drag is on, buttons and check boxes do not react. The
   value is `(max - min)*((mouse.x - x - sliderWidth/2)/(width - sliderWidth)) +
   min`, then clamped.
-- **Toggle groups.** The text splits at `';'` and `'\n'` (`GuiTextSplit`); a
-  `'\n'` starts a new row. Each item is a `GuiToggle`; switching one on makes
-  it the active index, and the active item cannot be switched off.
+- **Toggle groups.** raygui 5.1-dev reads the text itself: `';'` moves to the
+  next column, `'\n'` to the next row's first, and item n+1 is at x +
+  column*(width + `GROUP_PADDING`), y + row*(height + `GROUP_PADDING`).
+  With TOGGLE's `GROUP_WIDTH_FULL` the width is divided by the text's `';'`s
+  plus one. Each item is a `GuiToggle`; switching one on makes it the active
+  index, and the active item cannot be switched off.
 - **Value boxes and spinners.** C ints are two's-complement `U32` words,
   compared as signed. `GuiValueBox` draws the value as it came (`"%i"`,
   centered) and returns it clamped (`max` when above it, else `min` when
@@ -161,7 +174,8 @@ example waiting on each raygui function it calls that is not delivered.
   The box does not react when `TEXT_READONLY` is set, the gui is disabled or
   locked, a slider is dragged or a wrap mode is on.
 - **Scroll panels.** The panel is at least 48 high (below a status bar when
-  a text is given). An axis whose content does not fit inside the border
+  a text is given, 23 pixels lower and less high; the vertical scroll stops
+  at `-BORDER_WIDTH`, as in raygui 5.1-dev). An axis whose content does not fit inside the border
   gets a scroll bar (`SCROLLBAR_WIDTH` wide, on LISTVIEW's
   `SCROLLBAR_SIDE`), and a bar's room can make the other axis need one. The
   view is the inside less the bars, no larger than the content. Under the
@@ -217,20 +231,25 @@ example waiting on each raygui function it calls that is not delivered.
   undefined where raygui's conversions are: an HSV whose RGB is not a byte
   ((unsigned char) of a value outside (-1, 256)), a hue whose `(long)(hue/60)`
   is outside long's range or NaN, a selector or bar outside int's range.
-- `GuiLoadIcons` answers undefined (the gui unchanged) for a negative icon
-  count (a gap: raygui's `fseek` and `calloc` of a negative count are
-  host-dependent), a count of words past int's range, data that would pass
-  the 2048 words of the table, and a file that ends inside the icon count,
-  the icon size or a word (`fread`'s partial element is indeterminate).
-  `GuiDrawIcon` marks the frame undefined for an id outside 0..255 and
-  coordinates that may leave int's range (|x| or |y| at 2^30 or more,
-  |pixel size| at 2^26 or more); `GuiIconText` answers `None` for a text of
-  1019 bytes or more.
-- An icon id above 255 reads past raygui's table and marks the frame
-  undefined, and so does an icon drawn at a scale above 65536. So does a line that is not the text's last, starts with `#`
-  (after its icon, if it has one), and has fewer than four bytes after that
-  `#` with no second `#`: raygui's `GuiGetTextWidth` would look for it in the
-  lines that follow.
+- `GuiLoadIconsFromMemory` (and `GuiLoadIcons` through it) answers
+  undefined (the gui unchanged) for data shorter than the 12-byte header
+  (raygui copies it first), name ids or words past the data, more than 512
+  name ids asked (raygui's name array), a table whose byte size overflows an
+  int, and a negative icon count (a gap where no word is read). A directory
+  is a file that does not open. `GuiDrawIcon` marks the frame undefined for
+  an id whose words are not in the icon table (a negative one, 512 or more
+  at start, past the loaded icons after `GuiLoadIcons`) and coordinates that
+  may leave int's range (|x| or |y| at 2^30 or more, |pixel size| at 2^26 or
+  more); `GuiIconText` answers `None` for a text of 1019 bytes or more.
+- An icon whose words are not in the icon table reads past it and marks the
+  frame undefined, and so does an icon drawn at a scale above 65536.
+- `GuiToggleGroup` marks the frame undefined for an item of 256 bytes or
+  more (raygui's static `itemText` buffer).
+- raygui 5.1-dev's int results of `GuiStatusBar`, `GuiPanel`,
+  `GuiScrollPanel`, `GuiDummyRec` and `GuiGrid` (`RESULT_PRESSED` for a
+  release over them) are not returned; `GuiTabBarEx`'s `hscroll` and
+  `focus` are taken for the signature only (raygui does not use them), and
+  an offset whose int arithmetic overflows wraps.
 - The `TEXT_WRAP_CHAR` and `TEXT_WRAP_WORD` modes mark the frame undefined.
 - `GuiToggleSlider`, `GuiComboBox` and `GuiListView` mark the frame
   undefined for a text of 1024 bytes or more or 128 items or more
@@ -320,21 +339,27 @@ released three times, to its last item and back to the first; its text
 centered over the whole text's width), `GuiComboBox` (pressed on its box and
 on its selector button, which draws as a button of its own), `GuiListView`
 (an item chosen, the list scrolled by the wheel, another chosen) and the
-three disabled, the list view with a NULL text. `gui_message_tabs` covers
-`GuiTabBar` with more tabs than the window holds (a tab clicked, the last one
-clicked so that the bar moves left, a tab's close button and a middle press)
-and `GuiMessageBox` (its buttons and its close button, a two-line message, an
-icon in the title, and a disabled box with a NULL title). `gui_value_input`
-covers `GuiValueBoxFloat` (hovered, pressed, disabled) and two
-`GuiTextInputBox`es sharing raygui's static edit mode: the secret view
+three disabled, the list view with a NULL text, and a `GuiToggleGroup` of
+two rows with `GROUP_WIDTH_FULL` (an item of each row clicked).
+`gui_message_tabs` covers `GuiTabBar` with more tabs than the window holds
+(the bar moved right by its active tab, a tab clicked, another, a middle
+press over one), `GuiTabBarEx` with `TAB_ITEMS_WIDTH` 100, close buttons and
+the border line on top (a close button clicked over its tab, a tab clicked),
+and `GuiMessageBox` (its buttons and its close button through `btnActive`, a
+two-line message, an icon in the title, and a disabled box with a NULL
+title). `gui_value_input` covers `GuiValueBoxFloat` (hovered, pressed,
+disabled) and two `GuiTextInputBox`es sharing raygui's static edit mode
+(their `btnActive` and the frames their result was 1): the secret view
 switched on and off, a box entered and left by a button, the other box
 entered (which shows the first one's text, its stars gone, while edit mode is
 on), and the close button. `gui_tooltip_icons` covers tooltips: a button's
 below it (with a `GuiIconText` label), a toggle's moved left from the right
 edge, a text box's two lines moved above it near the bottom, none for a NULL
 tooltip and none with tooltips off, none while the button is pressed; and
-`GuiDrawIcon` at pixel sizes 1, 2, 3 (at half alpha) and -2, and labels of
-`GuiIconText` with a negative id, a four-digit id and a NULL text.
+`GuiDrawIcon` at pixel sizes 1, 2, 3 (at half alpha) and -2 and icons 256
+and 511, labels of `GuiIconText` with a negative id, a four-digit id and a
+NULL text, and buttons with a marker of 600 (drawn as text, measured as a
+marker) and an icon followed by a second marker.
 `gui_color_pickers` covers the color controls: a `GuiColorPicker`'s panel
 hovered, pressed and dragged out of it (the selector held at its edge), its
 hue bar dragged above itself (the hue held at 0); a `GuiColorPickerHSV`'s
@@ -357,15 +382,22 @@ is not read, and pixantiqua.ttf at 16), one with a charmap, one whose font
 does not load (the default font with `TEXT_SIZE` 10 and `TEXT_SPACING` 1),
 binary styles with a 95-glyph font raw (version 200) and DEFLATE-compressed
 (version 400) whose white rectangle (gray) tints every shape, one whose
-font image has width 0 (the default font), and two undefined from the
-start (an index outside the table, a binary file cut inside its font).
+font image has width 0 (the default font, and no shapes texture since
+raygui 5.1-dev), raygui 5.1-dev's forms (a text style of version 600 whose
+`f` line names the font first, a font name past the 31 bytes `sscanf`
+reads, whose first 31 name the font that loads, and a binary style of
+version 600 with the font file's name), and two undefined from the start
+(an index outside the table, a binary file cut inside its font).
 
 The `gui-icon-files` gate (`tools/gui_icon_files_probe.py`) compares
-`GuiLoadIcons`, `GuiGetIcons` and `GuiIconText` with raygui without a
-window: a corpus of .rgi files (icon sizes 16, 32, 0 and -16, with and
-without name ids, one 32 bytes long without a terminator, a full table,
-data and names cut short, headers cut before and at the count and size, a
-wrong signature, a missing file, a directory, and headers asking for more
-than the table holds over data that does not) loaded in order, the names
-and a hash of the 2048 table words after each load, then `GuiIconText` for
-eighteen ids (negative ones, four digits and more) and six texts.
+`GuiLoadIcons` (raygui 5.1-dev's, through `GuiLoadIconsFromMemory`),
+`GuiGetIcons` and `GuiIconText` with raygui without a window: a corpus of
+.rgi files (icon sizes 16, 32, 0 and -16, with and without name ids, one 32
+bytes long without a terminator, tables of 256 and 512 icons, 513 icons
+without names, a header without icons, an empty file, a wrong signature, a
+missing file and a directory; and as contracts data and names cut short,
+files shorter than the header, 513 names asked, an overflowing and a
+negative count) loaded in order, the names, the table's length (the
+script knows it) and a hash of its words after each load, then
+`GuiIconText` for eighteen ids (negative ones, four digits and more) and
+six texts.
