@@ -1,5 +1,5 @@
 # raylib [models] example - skybox rendering, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_skybox_rendering.c
+# Adapted from raylib 6.2 examples/models/models_skybox_rendering.c
 # (zlib/libpng, Copyright (c) 2017-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

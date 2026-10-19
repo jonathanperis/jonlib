@@ -1,5 +1,5 @@
 # raylib [core] example - automation events, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_automation_events.c
+# Adapted from raylib 6.2 examples/core/core_automation_events.c
 # (zlib/libpng, Copyright (c) 2023-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #
@@ -53,6 +53,9 @@ def items() -> +List<Item>:
    Item{J.Rectangle{250.0, 300.0, 100.0, 10.0}, True{}, J.Color.GRAY()},
    Item{J.Rectangle{650.0, 300.0, 100.0, 10.0}, True{}, J.Color.GRAY()}]
 
+# (GetRenderWidth()/2.0f, GetRenderHeight()/2.0f) (raylib 6.2; 6.0 took
+# screenWidth/2.0f): a Base window's render size is its InitWindow size
+# (J.Core.get_render_width), so the offset is the same constant.
 def center() -> M.Vector2:
   M.Vector2{(800.0 / 2.0 : F32), (450.0 / 2.0 : F32)}
 

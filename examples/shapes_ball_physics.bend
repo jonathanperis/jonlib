@@ -1,10 +1,13 @@
 # raylib [shapes] example - ball physics, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_ball_physics.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_ball_physics.c (zlib/libpng,
 # Copyright (c) 2025 David Buzatto (@davidbuzatto)); see LICENSES/raylib.txt.
 #
 # A left press grabs the topmost ball under the mouse and a release throws
 # it; a right press adds a ball (held with left control: one a frame); a
-# middle press shakes them; the wheel changes gravity. The press test is C's
+# middle press shakes them, and so does moving the window more than 5
+# pixels in a frame (raylib 6.2: the free balls take ten times the move
+# against their speed; a Base window reports no position, so its move is
+# zero); the wheel changes gravity. The press test is C's
 # hypot(dx, dy) <= radius in binary64: M.Libm.hypot_within, which refuses the
 # frame where two faithful hypot results could disagree. raylib seeds
 # GetRandomValue from time(NULL) in InitWindow; here the seed is a setup
@@ -19,8 +22,9 @@ import ../jonmath.bend as M
 type Ball is Data:
   Ball{x: F32, y: F32, sx: F32, sy: F32, px: F32, py: F32, radius: F32, color: U32, grabbed: Bool}
 
+# window: windowPosition, GetWindowPosition() at the end of the last update.
 type State is Type:
-  State{rng: J.Random.State, balls: +List<Ball>, count: U32, ox: F32, oy: F32, gravity: F32, refused: Bool}
+  State{rng: J.Random.State, balls: +List<Ball>, count: U32, ox: F32, oy: F32, gravity: F32, refused: Bool, window: M.Vector2}
 
 # The result of a press over the balls from one index up: status 0 while no
 # ball was hit, 1 once one is grabbed, 2 when the test was refused; the offset
@@ -162,10 +166,30 @@ def all.stepped(balls: +List<Ball>, +mx: F32, +my: F32, +ox: F32, +oy: F32, +del
     case Nil{}: Nil{}
     case Con{+ball, rest}: Con{stepped(ball, mx, my, ox, oy, delta, gravity), all.stepped(rest, mx, my, ox, oy, delta, gravity)}
 
+# windowPosition = GetWindowPosition() after the balls moved.
 def update.moved(+core: J.Core, +count: U32, +ox: F32, +oy: F32, +gravity: F32, +refused: Bool, +mx: F32, +my: F32, r: J.Random.State & +List<Ball>) -> J.Core & State:
   (rng, +balls) = r
   +g = (gravity + J.Input.get_mouse_wheel_move(core) * 5.0 : F32)
-  (core, State{rng, all.stepped(balls, mx, my, ox, oy, J.Core.get_frame_time(core), g), count, ox, oy, g, refused})
+  (core, State{rng, all.stepped(balls, mx, my, ox, oy, J.Core.get_frame_time(core), g), count, ox, oy, g, refused, J.Core.get_window_position(core)})
+
+# balls[i].speed = Vector2Add(balls[i].speed, Vector2Scale(windowPositionDelta, 10.0f)) for the balls not grabbed.
+def pushed(balls: +List<Ball>, +dx: F32, +dy: F32) -> +List<Ball>:
+  match balls:
+    case Nil{}: Nil{}
+    case Con{Ball{+x, +y, +sx, +sy, +px, +py, +radius, +color, +grabbed}, rest}:
+      Con{Bool.pick(Ball, grabbed, Ball{x, y, sx, sy, px, py, radius, color, grabbed}, Ball{x, y, (sx + (dx * 10.0) : F32), (sy + (dy * 10.0) : F32), px, py, radius, color, grabbed}),
+        pushed(rest, dx, dy)}
+
+def update.pushed(delta: M.Vector2, r: J.Random.State & +List<Ball>) -> J.Random.State & +List<Ball>:
+  M.Vector2{+dx, +dy} = delta
+  (rng, +balls) = r
+  (rng, pushed(balls, dx, dy))
+
+# windowPositionDelta = Vector2Subtract(windowPosition, GetWindowPosition()); past a length of 5 it pushes the balls.
+def update.pushing(shake: Bool, +delta: M.Vector2, r: J.Random.State & +List<Ball>) -> J.Random.State & +List<Ball>:
+  match shake:
+    case False{}: r
+    case True{}: update.pushed(delta, r)
 
 def update.shaken(r: J.Random.State & +List<Ball>) -> J.Random.State & +List<Ball>:
   (rng, +balls) = r
@@ -185,21 +209,23 @@ def update.creating(create: Bool, rng: J.Random.State, +balls: +List<Ball>, +mx:
     case False{}: (rng, balls)
     case True{}: update.appended(balls, created(rng, mx, my))
 
-def update.pressed(+core: J.Core, rng: J.Random.State, +count: U32, +gravity: F32, +refused: Bool, +mx: F32, +my: F32, result: Press) -> J.Core & State:
+def update.pressed(+core: J.Core, rng: J.Random.State, +count: U32, +gravity: F32, +refused: Bool, +window: M.Vector2, +mx: F32, +my: F32, result: Press) -> J.Core & State:
   Press{+pressed, +status, +ox, +oy} = result
   +left = J.MouseButton.MOUSE_BUTTON_LEFT()
   +right = J.MouseButton.MOUSE_BUTTON_RIGHT()
   +balls = Bool.pick(+List<Ball>, J.Input.is_mouse_button_released(core, left), released(pressed), pressed)
   +wanted = J.Input.is_mouse_button_pressed(core, right) || (J.Input.is_key_down(core, J.KeyboardKey.KEY_LEFT_CONTROL()) && J.Input.is_mouse_button_down(core, right))
   +create = wanted && (count < 5000 : U32)
+  +delta = M.Vector2.subtract(window, J.Core.get_window_position(core))
   update.moved(core, (count + Bool.to_u32(create) : U32), ox, oy, gravity, refused || U32.is_eq(status, 2), mx, my,
-    update.shaking(J.Input.is_mouse_button_pressed(core, J.MouseButton.MOUSE_BUTTON_MIDDLE()), update.creating(create, rng, balls, mx, my)))
+    update.shaking(J.Input.is_mouse_button_pressed(core, J.MouseButton.MOUSE_BUTTON_MIDDLE()),
+      update.pushing((M.Vector2.length(delta) > 5.0 : F32), delta, update.creating(create, rng, balls, mx, my))))
 
 def update.at(+core: J.Core, state: State, +mouse: M.Vector2) -> J.Core & State:
-  State{rng, +balls, +count, +ox, +oy, +gravity, +refused} = state
+  State{rng, +balls, +count, +ox, +oy, +gravity, +refused, +window} = state
   M.Vector2{+mx, +my} = mouse
   +down = J.Input.is_mouse_button_pressed(core, J.MouseButton.MOUSE_BUTTON_LEFT())
-  update.pressed(core, rng, count, gravity, refused, mx, my, Bool.pick(Press, down, press(balls, mx, my, ox, oy), Press{balls, 0, ox, oy}))
+  update.pressed(core, rng, count, gravity, refused, window, mx, my, Bool.pick(Press, down, press(balls, mx, my, ox, oy), Press{balls, 0, ox, oy}))
 
 def update(+core: J.Core, state: State) -> J.Core & State:
   update.at(core, state, J.Input.get_mouse_position(core))
@@ -221,23 +247,24 @@ def draw.shown(refused: Bool, frame: J.Frame) -> J.Frame:
     case False{}: frame
 
 def draw(+libm: M.Libm, +core: J.Core, state: State, frame: J.Frame) -> J.Core & (State & J.Frame):
-  State{rng, +balls, +count, +ox, +oy, +gravity, +refused} = state
+  State{rng, +balls, +count, +ox, +oy, +gravity, +refused, +window} = state
   f1 = draw.balls(libm, balls, J.Frame.clear_background(draw.shown(refused, frame), J.Color.RAYWHITE()))
   f2 = J.Draw.text(f1, "grab a ball by pressing with the mouse and throw it by releasing", 10.0, 10.0, 10.0, J.Color.DARKGRAY())
   f3 = J.Draw.text(f2, "right click to create new balls (keep left control pressed to create a lot)", 10.0, 30.0, 10.0, J.Color.DARKGRAY())
   f4 = J.Draw.text(f3, "use mouse wheel to change gravity", 10.0, 50.0, 10.0, J.Color.DARKGRAY())
   f5 = J.Draw.text(f4, "middle click to shake", 10.0, 70.0, 10.0, J.Color.DARKGRAY())
   f6 = draw.line(J.Text.format("BALL COUNT: %d", [J.TextInt{count}]), 380.0, f5)
-  (core, (State{rng, balls, count, ox, oy, gravity, refused}, draw.line(J.Text.format("GRAVITY: %.2f", [J.TextFloat{gravity}]), 410.0, f6)))
+  (core, (State{rng, balls, count, ox, oy, gravity, refused, window}, draw.line(J.Text.format("GRAVITY: %.2f", [J.TextFloat{gravity}]), 410.0, f6)))
 
 # The main loop's body; libm is the sinf/cosf profile of the circles.
 def program(+libm: M.Libm) -> J.Program<State>:
   J.Program{core => state => update(core, state), core => state => frame => draw(libm, core, state, frame)}
 
 # After InitWindow(800, 450) and SetRandomSeed(seed): one blue ball of radius
-# 40 at the center moving at (200, 200), gravity 100, SetTargetFPS(60).
+# 40 at the center moving at (200, 200), gravity 100, windowPosition =
+# GetWindowPosition(), SetTargetFPS(60).
 def setup(+seed: U32, +core: J.Core, frame: J.Frame) -> J.Core & (J.Frame & State):
-  (J.Core.set_target_fps(core, 60), (frame, State{J.Random.seed(seed), [Ball{400.0, 225.0, 200.0, 200.0, 0.0, 0.0, 40.0, J.Color.BLUE(), False{}}], 1, 0.0, 0.0, 100.0, False{}}))
+  (J.Core.set_target_fps(core, 60), (frame, State{J.Random.seed(seed), [Ball{400.0, 225.0, 200.0, 200.0, 0.0, 0.0, 40.0, J.Color.BLUE(), False{}}], 1, 0.0, 0.0, 100.0, False{}, J.Core.get_window_position(core)}))
 
 def run(args: List<String>) -> IO(Unit):
   J.Desktop.run(~State, ~program(M.AppleLibm{}), ~M.AppleLibm{}, "raylib [shapes] example - ball physics", 800, 450, J.Desktop.frames_arg(args),

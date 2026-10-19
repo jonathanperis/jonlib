@@ -1,5 +1,5 @@
 # raylib [shaders] example - mesh instancing, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_mesh_instancing.c
+# Adapted from raylib 6.2 examples/shaders/shaders_mesh_instancing.c
 # (zlib/libpng, Copyright (c) 2020-2025 seanpringle (@seanpringle), Max
 # (@moliad) and Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #

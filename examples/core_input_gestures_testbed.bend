@@ -1,13 +1,13 @@
 # raylib [core] example - input gestures testbed, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_input_gestures_testbed.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_input_gestures_testbed.c (zlib/libpng,
 # Copyright (c) 2023-2025 ubkp (@ubkp)); see LICENSES/raylib.txt.
 #
 # The last gesture shown on a pad of swipes, taps, pinches and touch points,
 # a log of the gestures (two buttons hide the repeated ones and the holds),
 # a protractor for the drag or pinch angle, and the touch or mouse points.
-# The example starts its log index at GESTURE_LOG_SIZE and draws
-# gestureLog[index] first: until a gesture is logged that is a read past
-# the array (undefined in C), so those frames are refused. The circles'
+# The log index starts at 0 (raylib 6.2; 6.0 started it at
+# GESTURE_LOG_SIZE and read past the array until a gesture was logged), so
+# every frame is defined. The circles'
 # and the protractor line's sinf/cosf follow the libm profile
 # (docs/SINCOSF.md). See docs/INPUT.md and docs/DRIVER.md.
 import Base
@@ -227,17 +227,11 @@ def points(none: Bool, +libm: M.Libm, +core: J.Core, +current: U32, +count: U32,
     case True{}: frame
     case False{}: points.at(Bool.not(U32.is_eq(count, 0)), libm, core, current, count, color, frame)
 
-# gestureLog[gestureLogIndex] with the index still GESTURE_LOG_SIZE is past the array.
-def defined(unlogged: Bool, frame: J.Frame) -> J.Frame:
-  match unlogged:
-    case False{}: frame
-    case True{}: J.Frame.refuse(frame)
-
 def draw(+libm: M.Libm, +core: J.Core, +state: State, frame: J.Frame) -> J.Core & (State & J.Frame):
   State{+last, +log, +index, _, +mode, +color, +angle} = state
   +current = J.Gestures.get_detected(core)
   +count = J.Input.get_touch_point_count(core)
-  f1 = J.Draw.text(J.Frame.clear_background(defined(U32.is_eq(index, 20), frame), J.Color.RAYWHITE()), "*", (160.0 + 5.0 : F32), (7.0 + 5.0 : F32), 10.0, J.Color.BLACK())
+  f1 = J.Draw.text(J.Frame.clear_background(frame, J.Color.RAYWHITE()), "*", (160.0 + 5.0 : F32), (7.0 + 5.0 : F32), 10.0, J.Color.BLACK())
   f2 = J.Draw.text(f1, "Example optimized for Web/HTML5\non Smartphones with Touch Screen.", (160.0 + 15.0 : F32), (7.0 + 5.0 : F32), 10.0, J.Color.BLACK())
   f3 = J.Draw.text(J.Draw.text(f2, "*", (160.0 + 5.0 : F32), (7.0 + 35.0 : F32), 10.0, J.Color.BLACK()), "While running on Desktop Web Browsers,\ninspect and turn on Touch Emulation.",
     (160.0 + 15.0 : F32), (7.0 + 35.0 : F32), 10.0, J.Color.BLACK())
@@ -254,9 +248,9 @@ def blank(n: Nat) -> +List<String>:
     case 0n: Nil{}
     case 1n+p: Con{"", blank(p)}
 
-# After InitWindow(800, 450): an empty log with its index at GESTURE_LOG_SIZE, logMode 1, a black gesture color; SetTargetFPS(60).
+# After InitWindow(800, 450): an empty log with its index at 0, logMode 1, a black gesture color; SetTargetFPS(60).
 def setup(+core: J.Core, frame: J.Frame) -> J.Core & (J.Frame & State):
-  (J.Core.set_target_fps(core, 60), (frame, State{0, blank(20n), 20, 0, 1, J.Color.rgba(0, 0, 0, 255), 0.0}))
+  (J.Core.set_target_fps(core, 60), (frame, State{0, blank(20n), 0, 0, 1, J.Color.rgba(0, 0, 0, 255), 0.0}))
 
 def run(args: List<String>) -> IO(Unit):
   J.Desktop.run(~State, ~program(M.AppleLibm{}), ~M.AppleLibm{}, "raylib [core] example - input gestures testbed", 800, 450, J.Desktop.frames_arg(args),

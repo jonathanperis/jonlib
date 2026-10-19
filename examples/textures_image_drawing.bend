@@ -1,5 +1,5 @@
 # raylib [textures] example - image drawing, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_image_drawing.c
+# Adapted from raylib 6.2 examples/textures/textures_image_drawing.c
 # (zlib/libpng, Copyright (c) 2016-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #
@@ -47,11 +47,12 @@ def composed.kept(result: Result<&1, &1, (J.Surface & J.Surface) & J.Surface.Err
     case Fail{_}: None{}
     case Done{pair}: composed.first(pair)
 
-# ImageDraw(&parrots, cat, the whole cat (150x200), (30, 40, cat.width*1.5f, cat.height*1.5f), WHITE).
+# ImageDrawImagePro(&parrots, cat, the whole cat (150x200), (30, 40, cat.width*1.5f, cat.height*1.5f), (0, 0), 0.0f, WHITE)
+# (raylib 6.2; 6.0's ImageDraw).
 def composed(parrots: Maybe<J.Surface>, cat: Maybe<J.Surface>) -> Maybe<J.Surface>:
   match parrots cat:
-    case Some{p} Some{c}: composed.kept(J.Surface.draw_image_rect(p, c, J.Rectangle{0.0, 0.0, 150.0, 200.0},
-      J.Rectangle{30.0, 40.0, (150.0 * 1.5 : F32), (200.0 * 1.5 : F32)}, J.Color.WHITE()))
+    case Some{p} Some{c}: composed.kept(J.Surface.draw_image_pro(p, c, J.Rectangle{0.0, 0.0, 150.0, 200.0},
+      J.Rectangle{30.0, 40.0, (150.0 * 1.5 : F32), (200.0 * 1.5 : F32)}, M.Vector2{0.0, 0.0}, 0.0, J.Color.WHITE()))
     case _ _: None{}
 
 # ImageCrop(&parrots, (0, 50, parrots.width, parrots.height - 100)).

@@ -1,14 +1,17 @@
 # raylib [models] example - loading iqm, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_loading_iqm.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/models/models_loading_iqm.c (zlib/libpng,
 # Copyright (c) 2019-2025 Culacant (@culacant) and Ramon Santamaria
 # (@raysan5)); see LICENSES/raylib.txt.
 #
-# The guy model (LoadModel of an .iqm file: one mesh of 240 vertices and a
-# skeleton of 14 joints) with its texture set as the material's diffuse map
-# (the file's own material names no file, so LoadIQM leaves a texture of
-# zeros there first), under an orbital camera, and the first animation of
-# guyanim.iqm (LoadModelAnimations) advanced a keyframe a frame
-# (UpdateModelAnimation), back to keyframe 0 after the last. The frame
+# The guy model (LoadModel of an .iqm file: one mesh of 224 vertices in
+# raylib 6.2's resources, 240 in 6.0's, and a skeleton of 14 joints) with
+# its texture set as the material's diffuse map (the file's own material
+# names no file, so LoadIQM leaves a texture of zeros there first), under an
+# orbital camera, and an animation of guyanim.iqm (LoadModelAnimations:
+# "jump" and "dance", 61 keyframes each) advanced animSpeed keyframes a frame
+# (UpdateModelAnimation), back to keyframe 0 after the last. raylib 6.2's
+# keys: RIGHT and LEFT choose the animation (from keyframe 0), UP and DOWN
+# change the speed by 0.1 within fminf(5, ..) and fmaxf(0, ..). The frame
 # counter is a float and reaches the keyframe count before it is reset, as
 # in the example. The reference library is built with GPU skinning and its
 # software renderer runs no shader, so the model is drawn in its bind pose
@@ -22,9 +25,10 @@ import ../jonlib.bend as J
 import ../jonmath.bend as M
 
 # valid: everything loaded, an animation to play and no refusal so far.
-# current is animCurrentFrame.
+# current is animCurrentFrame, index animIndex and speed animSpeed.
 type State is Type:
-  State{valid: Bool, camera: +Maybe<J.Camera3D>, model: J.Model, textures: List<J.Texture>, skeleton: J.ModelSkeleton, animations: +List<J.ModelAnimation>, pose: J.ModelPose, current: F32}
+  State{valid: Bool, camera: +Maybe<J.Camera3D>, model: J.Model, textures: List<J.Texture>, skeleton: J.ModelSkeleton, animations: +List<J.ModelAnimation>, pose: J.ModelPose, current: F32,
+    index: U32, speed: F32}
 
 def start() -> J.Camera3D:
   J.Camera3D{M.Vector3{10.0, 10.0, 10.0}, M.Vector3{0.0, 4.0, 0.0}, M.Vector3{0.0, 1.0, 0.0}, 45.0, J.CameraProjection.CAMERA_PERSPECTIVE()}
@@ -34,11 +38,14 @@ def count(items: +List<J.ModelAnimation>, +n: U32) -> U32:
     case Nil{}: n
     case Con{_, rest}: count(rest, (n + 1 : U32))
 
-# anims[0].
 def first(items: +List<J.ModelAnimation>) -> J.ModelAnimation:
   match items:
     case Con{item, _}: item
     case Nil{}: J.ModelAnimation{"", 0, 0, Nil{}}
+
+# anims[animIndex].
+def chosen(items: +List<J.ModelAnimation>, +index: U32) -> J.ModelAnimation:
+  first(List.drop(&2, J.ModelAnimation, items, U32.to_nat(index)))
 
 def keyframes(animation: J.ModelAnimation) -> U32:
   J.ModelAnimation{_, _, total, _} = animation
@@ -48,62 +55,86 @@ def name(animation: J.ModelAnimation) -> String:
   J.ModelAnimation{text, _, _, _} = animation
   text
 
-# if (animCurrentFrame >= anims[0].keyframeCount) animCurrentFrame = 0.
+# if (animCurrentFrame >= anims[animIndex].keyframeCount) animCurrentFrame = 0.
 def wrapped(+frame: F32, +total: U32) -> F32:
   Bool.pick(F32, (frame >= U32.to_f32(total) : F32), 0.0, frame)
 
 def update.posed(posed: Maybe<J.ModelPose>, +camera: J.Camera3D, +model: J.Model, textures: List<J.Texture>, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +previous: J.ModelPose,
-    +frame: F32) -> State:
+    +frame: F32, +index: U32, +speed: F32) -> State:
   match posed:
-    case None{}: State{False{}, Some{camera}, model, textures, skeleton, animations, previous, frame}
-    case Some{+pose}: State{True{}, Some{camera}, model, textures, skeleton, animations, pose, wrapped(frame, keyframes(first(animations)))}
+    case None{}: State{False{}, Some{camera}, model, textures, skeleton, animations, previous, frame, index, speed}
+    case Some{+pose}: State{True{}, Some{camera}, model, textures, skeleton, animations, pose, wrapped(frame, keyframes(chosen(animations, index))), index, speed}
 
-# animCurrentFrame += 1.0f; UpdateModelAnimation(model, anims[0], animCurrentFrame).
-def update.moved(updated: Maybe<J.Camera3D>, +libm: M.Libm, +model: J.Model, textures: List<J.Texture>, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +pose: J.ModelPose, +current: F32) -> State:
+# animCurrentFrame += animSpeed; UpdateModelAnimation(model, anims[animIndex], animCurrentFrame).
+def update.moved(updated: Maybe<J.Camera3D>, +libm: M.Libm, +model: J.Model, textures: List<J.Texture>, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +pose: J.ModelPose, +current: F32,
+    +index: U32, +speed: F32) -> State:
   match updated:
-    case None{}: State{False{}, None{}, model, textures, skeleton, animations, pose, current}
-    case Some{+c}: update.posed(J.Model.update_animation_for(libm, skeleton, first(animations), (current + 1.0 : F32), pose), c, model, textures, skeleton, animations, pose, (current + 1.0 : F32))
+    case None{}: State{False{}, None{}, model, textures, skeleton, animations, pose, current, index, speed}
+    case Some{+c}: update.posed(J.Model.update_animation_for(libm, skeleton, chosen(animations, index), (current + speed : F32), pose), c, model, textures, skeleton, animations, pose,
+      (current + speed : F32), index, speed)
 
-# UpdateCamera(&camera, CAMERA_ORBITAL), then the next keyframe.
+# RIGHT: the next animation (after the last, the first), LEFT the previous
+# (before the first, the last), either from frame 0; UP and DOWN change the
+# speed by 0.1 within 0..5.
+def update.keyed(updated: Maybe<J.Camera3D>, +libm: M.Libm, +core: J.Core, +model: J.Model, textures: List<J.Texture>, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>,
+    +pose: J.ModelPose, +current: F32, +index: U32, +speed: F32) -> State:
+  +last = (count(animations, 0) - 1 : U32)
+  +right = J.Input.is_key_pressed(core, J.KeyboardKey.KEY_RIGHT())
+  +left = J.Input.is_key_pressed(core, J.KeyboardKey.KEY_LEFT())
+  +i1 = Bool.pick(U32, right, Bool.pick(U32, U32.is_eq(index, last), 0, (index + 1 : U32)), index)
+  +i2 = Bool.pick(U32, left, Bool.pick(U32, U32.is_eq(i1, 0), last, (i1 - 1 : U32)), i1)
+  +s1 = Bool.pick(F32, J.Input.is_key_pressed(core, J.KeyboardKey.KEY_UP()), F32.min(5.0, (speed + 0.1 : F32)), speed)
+  +s2 = Bool.pick(F32, J.Input.is_key_pressed(core, J.KeyboardKey.KEY_DOWN()), F32.max(0.0, (s1 - 0.1 : F32)), s1)
+  update.moved(updated, libm, model, textures, skeleton, animations, pose, Bool.pick(F32, right || left, 0.0, current), i2, s2)
+
+# UpdateCamera(&camera, CAMERA_ORBITAL), the keys, then the next frame.
 def update.live(valid: Bool, camera: +Maybe<J.Camera3D>, +libm: M.Libm, +core: J.Core, +model: J.Model, textures: List<J.Texture>, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>,
-    +pose: J.ModelPose, +current: F32) -> State:
+    +pose: J.ModelPose, +current: F32, +index: U32, +speed: F32) -> State:
   match valid camera:
-    case True{} Some{+c}: update.moved(J.Camera.update_for(M.Uncontracted{}, libm, core, c, J.CameraMode.CAMERA_ORBITAL()), libm, model, textures, skeleton, animations, pose, current)
-    case _ None{}: State{False{}, None{}, model, textures, skeleton, animations, pose, current}
-    case False{} Some{+c}: State{False{}, Some{c}, model, textures, skeleton, animations, pose, current}
+    case True{} Some{+c}: update.keyed(J.Camera.update_for(M.Uncontracted{}, libm, core, c, J.CameraMode.CAMERA_ORBITAL()), libm, core, model, textures, skeleton, animations, pose, current, index, speed)
+    case _ None{}: State{False{}, None{}, model, textures, skeleton, animations, pose, current, index, speed}
+    case False{} Some{+c}: State{False{}, Some{c}, model, textures, skeleton, animations, pose, current, index, speed}
 
 def update(+libm: M.Libm, +core: J.Core, state: State) -> J.Core & State:
-  State{+valid, +camera, +model, textures, +skeleton, +animations, +pose, +current} = state
-  (core, update.live(valid, camera, libm, core, model, textures, skeleton, animations, pose, current))
+  State{+valid, +camera, +model, textures, +skeleton, +animations, +pose, +current, +index, +speed} = state
+  (core, update.live(valid, camera, libm, core, model, textures, skeleton, animations, pose, current, index, speed))
 
-# DrawGrid(10, 1.0f); EndMode3D(); the animation's name (animIndex is 0) and the credit.
-def draw.model(+core: J.Core, +camera: J.Camera3D, +model: J.Model, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +pose: J.ModelPose, +current: F32,
+def label(text: Maybe<String>, +y: F32, frame: J.Frame) -> J.Frame:
+  match text:
+    case None{}: J.Frame.refuse(frame)
+    case Some{t}: J.Draw.text(frame, t, 10.0, y, 20.0, J.Color.MAROON())
+
+# DrawGrid(10, 1.0f); EndMode3D(); the animation's name, the speed, the help lines and the credit.
+def draw.model(+core: J.Core, +camera: J.Camera3D, +model: J.Model, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +pose: J.ModelPose, +current: F32, +index: U32, +speed: F32,
     r: J.Frame & List<J.Texture>) -> J.Core & (State & J.Frame):
   (frame, textures) = r
   f1 = J.Frame.end_mode_3d(J.Draw.grid(frame, 10.0, 1.0))
-  f2 = J.Draw.text(f1, "Current animation: " ++ name(first(animations)), 10.0, 10.0, 20.0, J.Color.MAROON())
-  (core, (State{True{}, Some{camera}, model, textures, skeleton, animations, pose, current}, J.Draw.text(f2, "(c) Guy IQM 3D model by @culacant", 600.0, 430.0, 10.0, J.Color.GRAY())))
+  f2 = label(J.Text.format("Current animation: %s", [J.TextString{name(chosen(animations, index))}]), 10.0, f1)
+  f3 = label(J.Text.format("Animation speed: %.2f", [J.TextFloat{speed}]), 40.0, f2)
+  f4 = J.Draw.text(f3, "Use left and right arrow keys to change current animation", 10.0, (450.0 - 34.0 : F32), 10.0, J.Color.BLACK())
+  f5 = J.Draw.text(f4, "Use up and down arrow keys to change animation speed", 10.0, (450.0 - 20.0 : F32), 10.0, J.Color.BLACK())
+  (core, (State{True{}, Some{camera}, model, textures, skeleton, animations, pose, current, index, speed}, J.Draw.text(f5, "(c) Guy IQM 3D model by @culacant", 600.0, 430.0, 10.0, J.Color.GRAY())))
 
 # DrawModelEx(model, (0, 0, 0), (1, 0, 0), -90.0f, (1, 1, 1), WHITE).
 def draw.at(valid: Bool, camera: +Maybe<J.Camera3D>, +libm: M.Libm, +core: J.Core, +model: J.Model, textures: List<J.Texture>, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>,
-    +pose: J.ModelPose, +current: F32, frame: J.Frame) -> J.Core & (State & J.Frame):
+    +pose: J.ModelPose, +current: F32, +index: U32, +speed: F32, frame: J.Frame) -> J.Core & (State & J.Frame):
   match valid camera:
-    case True{} Some{+c}: draw.model(core, c, model, skeleton, animations, pose, current,
+    case True{} Some{+c}: draw.model(core, c, model, skeleton, animations, pose, current, index, speed,
       J.Draw.model_ex_for(libm, J.Frame.begin_mode_3d_for(libm, J.Frame.clear_background(frame, J.Color.RAYWHITE()), c), textures, model, M.Vector3.zero(), M.Vector3{1.0, 0.0, 0.0}, F32.neg(90.0), M.Vector3{1.0, 1.0, 1.0},
         J.Color.WHITE()))
-    case _ None{}: (core, (State{False{}, None{}, model, textures, skeleton, animations, pose, current}, J.Frame.refuse(frame)))
-    case False{} Some{+c}: (core, (State{False{}, Some{c}, model, textures, skeleton, animations, pose, current}, J.Frame.refuse(frame)))
+    case _ None{}: (core, (State{False{}, None{}, model, textures, skeleton, animations, pose, current, index, speed}, J.Frame.refuse(frame)))
+    case False{} Some{+c}: (core, (State{False{}, Some{c}, model, textures, skeleton, animations, pose, current, index, speed}, J.Frame.refuse(frame)))
 
 def draw(+libm: M.Libm, +core: J.Core, state: State, frame: J.Frame) -> J.Core & (State & J.Frame):
-  State{+valid, +camera, +model, textures, +skeleton, +animations, +pose, +current} = state
-  draw.at(valid, camera, libm, core, model, textures, skeleton, animations, pose, current, frame)
+  State{+valid, +camera, +model, textures, +skeleton, +animations, +pose, +current, +index, +speed} = state
+  draw.at(valid, camera, libm, core, model, textures, skeleton, animations, pose, current, index, speed, frame)
 
 # The main loop's body; libm is the profile of UpdateCamera's and DrawModelEx's sinf/cosf, the perspective tan and the pose's QuaternionSlerp.
 def program(+libm: M.Libm) -> J.Program<State>:
   J.Program{core => state => update(libm, core, state), core => state => frame => draw(libm, core, state, frame)}
 
 def setup.done(+core: J.Core, frame: J.Frame, +valid: Bool, +model: J.Model, textures: List<J.Texture>, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>) -> J.Core & (J.Frame & State):
-  (J.Core.set_target_fps(core, 60), (frame, State{valid, Some{start()}, model, textures, skeleton, animations, J.Model.pose(skeleton), 0.0}))
+  (J.Core.set_target_fps(core, 60), (frame, State{valid, Some{start()}, model, textures, skeleton, animations, J.Model.pose(skeleton), 0.0, 0, 1.0}))
 
 # An animation to play: anims[0] with a keyframe.
 def setup.animations(result: Result<&1, &1, J.Surface.IOError, +List<J.ModelAnimation>>, +core: J.Core, frame: J.Frame, +valid: Bool, +model: J.Model, textures: List<J.Texture>, +skeleton: J.ModelSkeleton) -> J.Core & (J.Frame & State):

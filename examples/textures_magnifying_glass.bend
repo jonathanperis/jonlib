@@ -1,5 +1,5 @@
 # raylib [textures] example - magnifying glass, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_magnifying_glass.c
+# Adapted from raylib 6.2 examples/textures/textures_magnifying_glass.c
 # (zlib/libpng, Copyright (c) 2026 Luke Vaughan (@badram)); see
 # LICENSES/raylib.txt.
 #
@@ -78,7 +78,7 @@ def draw.scene(+libm: M.Libm, +core: J.Core, +mouse: M.Vector2, bunny: J.Texture
   (frame, parrots) = r
   draw.zoomed(libm, core, mouse, bunny, mask, J.Draw.texture(J.Frame.begin_mode_2d_for(libm,
     J.Frame.clear_background(J.Frame.begin_texture_mode(title(frame), target), J.Color.RAYWHITE()),
-    J.Camera2D{M.Vector2{128.0, 128.0}, mouse, 0.0, 2.0}), parrots, 144.0, 33.0, J.Color.WHITE()))
+    J.Camera2D{M.Vector2.multiply(M.Vector2{128.0, 128.0}, J.Core.get_window_scale_dpi(core)), mouse, 0.0, 2.0}), parrots, 144.0, 33.0, J.Color.WHITE()))
 
 def draw.kit(+libm: M.Libm, +core: J.Core, +mouse: M.Vector2, frame: J.Frame, kit: Kit) -> J.Core & (State & J.Frame):
   Kit{bunny, parrots, mask, target} = kit

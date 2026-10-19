@@ -1,5 +1,5 @@
 # raylib [text] example - 3d drawing, ported to Jonlib.
-# Adapted from raylib 6.0 examples/text/text_3d_drawing.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/text/text_3d_drawing.c (zlib/libpng,
 # Copyright (c) 2021-2025 Vlad Adrian (@demizdor)); see LICENSES/raylib.txt.
 #
 # Text laid out on the ground of a 3D scene as textured quads, one a glyph

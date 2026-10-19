@@ -1,5 +1,5 @@
 # raylib [textures] example - image processing, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_image_processing.c
+# Adapted from raylib 6.2 examples/textures/textures_image_processing.c
 # (zlib/libpng, Copyright (c) 2016-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #
@@ -95,7 +95,8 @@ def update.reload(reload: Bool, +valid: Bool, +current: U32, +hover: U32, origin
     case True{}: reload.at(current, hover, origin, texture)
 
 # A left release over a toggle picks it; DOWN takes the next process (after
-# the last, the first), otherwise UP the previous (before the first, 7).
+# the last, the first), otherwise UP the previous (before the first, the
+# last: NUM_PROCESSES - 1 since raylib 6.2, 6.0 took 7).
 def update(+core: J.Core, state: State) -> J.Core & State:
   State{+valid, origin, texture, +current, _} = state
   +hover = hovered(9n, 0, J.Input.get_mouse_position(core))
@@ -103,7 +104,7 @@ def update(+core: J.Core, state: State) -> J.Core & State:
   +picked = Bool.pick(U32, clicked, hover, current)
   +down = J.Input.is_key_pressed(core, J.KeyboardKey.KEY_DOWN())
   +up = Bool.not(down) && J.Input.is_key_pressed(core, J.KeyboardKey.KEY_UP())
-  +next = Bool.pick(U32, down, Bool.pick(U32, (picked >= 8 : U32), 0, (picked + 1 : U32)), Bool.pick(U32, up, Bool.pick(U32, U32.is_eq(picked, 0), 7, (picked - 1 : U32)), picked))
+  +next = Bool.pick(U32, down, Bool.pick(U32, (picked >= 8 : U32), 0, (picked + 1 : U32)), Bool.pick(U32, up, Bool.pick(U32, U32.is_eq(picked, 0), 8, (picked - 1 : U32)), picked))
   (core, update.reload(clicked || down || up, valid, next, hover, origin, texture))
 
 def toggle.text(width: Maybe<U32>, +i: U32, +color: U32, frame: J.Frame) -> J.Frame:

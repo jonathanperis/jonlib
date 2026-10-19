@@ -1,5 +1,5 @@
 # raylib [core] example - highdpi testbed, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_highdpi_testbed.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_highdpi_testbed.c (zlib/libpng,
 # Copyright (c) 2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # A 40-pixel grid with the monitor, window position, screen and render
@@ -51,11 +51,11 @@ def info(+core: J.Core, +monitor: U32, +window: M.Vector2, +scale: M.Vector2, fr
   label(J.Text.format("SCALE FACTOR: %.2fx%.2f", [J.TextFloat{sx}, J.TextFloat{sy}]), 50.0, 210.0, 20.0, J.Color.GRAY(), f4)
 
 # DrawRectangleRec((mousePos.x - 25, mousePos.y, 50, 2)), ((mousePos.x, mousePos.y - 25, 2, 50)) and
-# DrawText("[GetMouseX(),GetMouseY()]", mousePos.x - 44, mousePos.y > GetScreenHeight() - 60? y - 46 : y + 30, 20, BLACK).
+# DrawText("[GetMouseX(),GetMouseY()]", (int)mousePos.x - 44 (6.2; 6.0 truncated mousePos.x - 44), mousePos.y > GetScreenHeight() - 60? y - 46 : y + 30, 20, BLACK).
 def cross.at(+libm: M.Libm, +core: J.Core, +mouse: M.Vector2, +ix: U32, +iy: U32, frame: J.Frame) -> J.Frame:
   M.Vector2{+x, +y} = mouse
   f1 = J.Draw.rectangle_rec(J.Draw.rectangle_rec(frame, J.Rectangle{(x - 25.0 : F32), y, 50.0, 2.0}, J.Color.BLACK()), J.Rectangle{x, (y - 25.0 : F32), 2.0, 50.0}, J.Color.BLACK())
-  label(J.Text.format("[%i,%i]", [J.TextInt{ix}, J.TextInt{iy}]), F32.trunc((x - 44.0 : F32)),
+  label(J.Text.format("[%i,%i]", [J.TextInt{ix}, J.TextInt{iy}]), (F32.trunc(x) - 44.0 : F32),
     Bool.pick(F32, (y > U32.to_f32(J.Core.get_screen_height(core)) - 60.0 : F32), (F32.trunc(y) - 46.0 : F32), (F32.trunc(y) + 30.0 : F32)), 20.0, J.Color.BLACK(), f1)
 
 # The cross on the mouse and its "[x,y]" label, above the mouse near the bottom edge.

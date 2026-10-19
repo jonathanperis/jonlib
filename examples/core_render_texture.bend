@@ -1,5 +1,5 @@
 # raylib [core] example - render texture, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_render_texture.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_render_texture.c (zlib/libpng,
 # Copyright (c) 2023-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # A ball bounces inside a 300x300 render texture drawn rotating on the

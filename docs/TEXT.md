@@ -121,16 +121,21 @@ overflows an `int`, Jonlib returns `None` instead of running it:
 
 ### `text_codepoints_loading`
 
-The example's own `CodepointRemoveDuplicates` copies the codepoints into
-`codepointCount` ints and, at the first repeated one, shifts the tail down
-with `codepointsNoDups[k] = codepointsNoDups[k + 1]` up to `k = count - 1`:
-one int read past the allocation (AddressSanitizer: a heap-buffer-overflow
-read of 4 bytes, 0 bytes after the region). Its text repeats the
-ideographic space and the line break, so this happens before the first
-frame. `examples/text_codepoints_loading.bend` finds the repetition with
-`Codepoint.load` and refuses every frame; nothing after that point is
-ported and the reference is not run (`UNDEFINED_NATIVE` in
-`tools/examples_probe.py`).
+raylib 6.0's `CodepointRemoveDuplicates` (the example's own) copied the
+codepoints into `codepointCount` ints and, at the first repeated one,
+shifted the tail down with `codepointsNoDups[k] = codepointsNoDups[k + 1]`
+up to `k = count - 1`: one int read past the allocation (AddressSanitizer: a
+heap-buffer-overflow read of 4 bytes, 0 bytes after the region), before the
+first frame, since the text repeats the ideographic space and the line
+break. The 6.0 port refused every frame. raylib 6.2 stops the shift at
+`count - 2`, and `examples/text_codepoints_loading.bend` is the whole
+example: the 54 codepoints, the 49 left (each at its first place), the
+font loaded from `DotGothic16-Regular.ttf` at size 36 with them and
+filtered bilinearly, the text drawn with line spacing 20 or the atlas, and
+the RIGHT and LEFT pointer steps (`GetCodepointNext` and
+`GetCodepointPrevious`, which draw nothing). A step before the text is
+undefined in C: the probe's `before` script takes LEFT at the start and is
+compared up to that frame (`UNDEFINED_FROM`), the port refusing from it.
 
 ## TextToFloat and contraction
 

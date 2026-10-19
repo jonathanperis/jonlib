@@ -1,5 +1,5 @@
 # raylib [models] example - animation blending, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_animation_blending.c
+# Adapted from raylib 6.2 examples/models/models_animation_blending.c
 # (zlib/libpng, Copyright (c) 2024-2026 Kirandeep (@Kirandeep-Singh-Khehra)
 # and Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
@@ -7,11 +7,14 @@
 # SPACE blends into the other one over two seconds (UpdateModelAnimationEx)
 # and P pauses. raygui controls (Jongui): a dropdown box and a speed slider
 # for each animation, a progress bar for the blend (filled from the right
-# on the way back) and one with a tick a keyframe for each animation. The
-# reference library is built with GPU skinning and its software renderer
-# runs no shader, so the model is drawn in its bind pose; the updates fill
-# the State's ModelPose (docs/MODELS.md). The skinning shader the native
-# example loads is never compiled; the port does not read it. The
+# on the way back), raylib 6.2's centered "PRESS SPACE to START BLENDING"
+# label at twice the font's size, and a bar with a tick a keyframe for each
+# animation. The reference library is built with GPU skinning and its
+# software renderer runs no shader, so the model is drawn in its bind pose;
+# the updates fill the State's ModelPose (docs/MODELS.md). 6.2's example
+# loads and assigns its skinning shader only under SUPPORT_GPU_SKINNING,
+# which raylib.h does not define for it (6.0 loaded it unused); its
+# animCount > 0 checks hold here, where both animations are required. The
 # perspective needs the libm profile's binary64 tan (docs/PERSPECTIVE.md),
 # UpdateCamera its sinf/cosf (docs/SINCOSF.md) and QuaternionSlerp its acosf
 # and sinf. See docs/GUI.md and docs/DRIVER.md.
@@ -299,9 +302,19 @@ def draw.first(text: Maybe<String>, frame: J.Frame, +core: J.Core, +camera: J.Ca
     case Some{t}: draw.first.bar(G.Gui.progress_bar(gui, frame, J.Rectangle{60.0, 390.0, 620.0, 20.0}, Some{"ANIM 0"}, Some{t}, track.frame(play.first(play)), 0.0,
       U32.to_f32(total(play, play.first(play)))), core, camera, model, textures, gui, play)
 
+# GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER); GuiSetStyle(DEFAULT, TEXT_SIZE, GuiGetFont().baseSize*2);
+# GuiLabel((0, GetScreenHeight() - 100, GetScreenWidth(), 40), "PRESS SPACE to START BLENDING").
+def hint(+gui: G.Gui, frame: J.Frame) -> J.Frame:
+  G.Gui.label(G.Gui.set_style(G.Gui.set_style(gui, G.Gui.LABEL(), G.Gui.TEXT_ALIGNMENT(), G.Gui.TEXT_ALIGN_CENTER()), G.Gui.DEFAULT(), G.Gui.TEXT_SIZE(), (G.Gui.font_base_size(gui) * 2 : U32)),
+    frame, J.Rectangle{0.0, (450.0 - 100.0 : F32), 800.0, 40.0}, "PRESS SPACE to START BLENDING")
+
+# GuiSetStyle(DEFAULT, TEXT_SIZE, GuiGetFont().baseSize); GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT).
+def restyled(+gui: G.Gui) -> G.Gui:
+  G.Gui.set_style(G.Gui.set_style(gui, G.Gui.DEFAULT(), G.Gui.TEXT_SIZE(), G.Gui.font_base_size(gui)), G.Gui.LABEL(), G.Gui.TEXT_ALIGNMENT(), G.Gui.TEXT_ALIGN_LEFT())
+
 def draw.picked1(pair: U32 & Bool, frame: J.Frame, +core: J.Core, +camera: J.Camera3D, +model: J.Model, textures: List<J.Texture>, +gui: G.Gui, +play: Play) -> J.Core & (State & J.Frame):
   (+index, +toggled) = pair
-  draw.first(progress.text(with.second(play, with.picked(play.second(play), index, toggled)), play.first(play)), frame, core, camera, model, textures, gui,
+  draw.first(progress.text(with.second(play, with.picked(play.second(play), index, toggled)), play.first(play)), hint(gui, frame), core, camera, model, textures, restyled(gui),
     with.second(play, with.picked(play.second(play), index, toggled)))
 
 def draw.dropped1(r: J.Frame & (U32 & Bool), +core: J.Core, +camera: J.Camera3D, +model: J.Model, textures: List<J.Texture>, +gui: G.Gui, +play: Play) -> J.Core & (State & J.Frame):

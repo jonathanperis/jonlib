@@ -1,5 +1,5 @@
 # raylib [shaders] example - rlgl compute, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_rlgl_compute.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shaders/shaders_rlgl_compute.c (zlib/libpng,
 # Copyright (c) 2021-2025 Teddy Astie (@tsnake41)); see LICENSES/raylib.txt.
 #
 # Conway's game of life in compute shaders and shader storage buffers. rlgl
@@ -7,8 +7,8 @@
 # and buffers are id 0 and every compute call does nothing (docs/RLGL.md,
 # docs/SHADERS.md), so the example shows its white 768x768 texture, the
 # brush's outline and the frame rate. The shader sources the native example
-# reads are never compiled; the port does not read them. The window sets no
-# target frame rate. See docs/DRIVER.md.
+# reads are never compiled; the port does not read them. SetTargetFPS(0)
+# (raylib 6.2; 6.0 set none): frames do not wait. See docs/DRIVER.md.
 import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M
@@ -116,11 +116,11 @@ def setup.state(texture: Maybe<J.Texture>, +ids: +List<U32>) -> State:
 
 def setup.uploaded(+core: J.Core, +ids: +List<U32>, r: J.Frame & Maybe<J.Texture>) -> J.Core & (J.Frame & State):
   (frame, texture) = r
-  (core, (frame, setup.state(texture, ids)))
+  (J.Core.set_target_fps(core, 0), (frame, setup.state(texture, ids)))
 
 def setup.image(image: Maybe<J.Surface>, +core: J.Core, +ids: +List<U32>, frame: J.Frame) -> J.Core & (J.Frame & State):
   match image:
-    case None{}: (core, (frame, setup.state(None{}, ids)))
+    case None{}: (J.Core.set_target_fps(core, 0), (frame, setup.state(None{}, ids)))
     case Some{i}: setup.uploaded(core, ids, J.Texture.load_from_image(frame, i))
 
 def setup.loaded(loaded: Ids, +core: J.Core) -> J.Core & (J.Frame & State):
@@ -129,7 +129,8 @@ def setup.loaded(loaded: Ids, +core: J.Core) -> J.Core & (J.Frame & State):
 
 # After InitWindow(768, 768): the logic and transfer compute programs, the
 # render shader, three storage buffers (768*768 unsigned ints twice, and the
-# 772-byte command buffer) and a white texture from GenImageColor.
+# 772-byte command buffer), a white texture from GenImageColor and
+# SetTargetFPS(0).
 def setup(+core: J.Core, frame: J.Frame) -> J.Core & (J.Frame & State):
   setup.loaded(buffer.loaded(buffer.loaded(buffer.loaded(program.loaded(program.loaded(Ids{frame, Nil{}})), 2359296), 2359296), 772), core)
 

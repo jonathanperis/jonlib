@@ -1,5 +1,5 @@
 # raylib [models] example - decals, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_decals.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/models/models_decals.c (zlib/libpng,
 # Copyright (c) 2025 JP Mortiboys (@themushroompirates) and Ramon Santamaria
 # (@raysan5)); see LICENSES/raylib.txt.
 #
@@ -10,9 +10,9 @@
 # builders as lists). A translucent cube shows where the next decal would
 # go; the table counts the vertices and triangles; RMB moves the camera.
 # LoadOBJ's meshes are not indexed, so GenMeshDecal's branch for indexed
-# meshes is not ported (such a mesh makes no decal here). The example's
-# first button is drawn at screenHeight - 1000, above the screen, where the
-# mouse cannot reach it: it is kept there. The perspective needs the libm
+# meshes is not ported (such a mesh makes no decal here). Both buttons sit
+# at screenHeight - 100 (6.0 drew the first at screenHeight - 1000, above the
+# screen; 6.2 moved it back). The perspective needs the libm
 # profile's binary64 tan (docs/PERSPECTIVE.md); UpdateCamera's and
 # MatrixRotateZ's sinf/cosf follow the profile (docs/SINCOSF.md). raylib
 # seeds the generator from time(NULL) in InitWindow; here the seed is a
@@ -410,7 +410,7 @@ def draw.scene(+core: J.Core, +camera: J.Camera3D, rng: J.Random.State, +scene: 
   (frame, textures) = r
   f1 = table(model, decals, J.Frame.end_mode_3d(J.Draw.grid(frame, 10.0, 10.0)))
   f2 = J.Draw.text(J.Draw.text(f1, "Hold RMB to move camera", 10.0, 430.0, 10.0, J.Color.GRAY()), "(c) Character model and texture from kenney.nl", 540.0, 430.0, 10.0, J.Color.GRAY())
-  draw.toggled(core, camera, rng, scene, textures, show, decals, hit, button(core, f2, 10.0, (450.0 - 1000.0 : F32), show.label(show), J.Font.measure_text(show.label(show), 10.0)))
+  draw.toggled(core, camera, rng, scene, textures, show, decals, hit, button(core, f2, 10.0, (450.0 - 100.0 : F32), show.label(show), J.Font.measure_text(show.label(show), 10.0)))
 
 # BeginMode3D(camera); the model when shown, the decals and the placement cube at the hit in Fade(WHITE, 0.5f).
 def draw.live(+libm: M.Libm, +core: J.Core, +camera: J.Camera3D, rng: J.Random.State, +scene: Scene, textures: List<J.Texture>, +show: Bool, +decals: +List<J.Model>, +hit: J.RayCollision, frame: J.Frame) -> J.Core & (State & J.Frame):

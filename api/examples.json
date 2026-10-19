@@ -2668,7 +2668,7 @@
   {
    "name": "shapes_drag_puzzle",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointCircle",
@@ -2700,7 +2700,7 @@
   {
    "name": "shapes_ellipse_collision",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -2723,7 +2723,7 @@
   {
    "name": "shapes_outlines_testbed",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode2D",
@@ -2791,7 +2791,7 @@
   {
    "name": "shapes_outlines_thickness",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -2820,7 +2820,7 @@
   {
    "name": "shapes_polygon_lines",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -3804,7 +3804,7 @@
   {
    "name": "textures_portal_window",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4371,7 +4371,7 @@
   {
    "name": "text_animations",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "Clamp",
@@ -5511,7 +5511,7 @@
   {
    "name": "models_mesh_uv_painting",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -5575,7 +5575,7 @@
   {
    "name": "models_procedural_decals",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -7025,7 +7025,7 @@
   {
    "name": "shaders_lights_bloom",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -7407,7 +7407,7 @@
   {
    "name": "audio_amp_envelope",
    "category": "audio",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",

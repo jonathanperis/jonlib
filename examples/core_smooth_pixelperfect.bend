@@ -1,51 +1,60 @@
 # raylib [core] example - smooth pixelperfect, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_smooth_pixelperfect.c
+# Adapted from raylib 6.2 examples/core/core_smooth_pixelperfect.c
 # (zlib/libpng, Copyright (c) 2021-2025 Giancamillo Alessandroni
 # (@NotManyIdeasDev) and Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # Three turning rectangles drawn into a 160x90 render texture through a
-# world camera snapped to whole pixels, the texture then scaled five times
-# through a screen camera that carries the fraction, so the motion stays
-# smooth. The cameras follow sinf/cosf of GetTime and the rectangles turn
-# with the frame time; both follow the libm profile, and an argument outside
-# it refuses the frame (docs/SINCOSF.md). See docs/DRIVER.md.
+# world camera snapped to whole pixels, the texture then drawn at 640x360 in
+# the middle of the screen (or, after O toggles the overscan, five times over
+# the whole screen and a pixel past each edge) through a screen camera that
+# carries the fraction, so the motion stays smooth; S toggles that camera off
+# and on (raylib 6.2's keys). The cameras follow sinf/cosf of GetTime and the
+# rectangles turn with the frame time; both follow the libm profile, and an
+# argument outside it refuses the frame (docs/SINCOSF.md). See
+# docs/DRIVER.md.
 import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M
 
 # world: the world camera's target (whole pixels); screen: the screen
-# camera's (the fraction times the virtual ratio).
+# camera's (the fraction times the virtual ratio); smoothOn and overscan.
 type Motion is Data:
-  Motion{valid: Bool, rotation: F32, wx: F32, wy: F32, sx: F32, sy: F32}
+  Motion{valid: Bool, rotation: F32, wx: F32, wy: F32, sx: F32, sy: F32, smooth: Bool, overscan: Bool}
 
 type State is Type:
   State{target: Maybe<J.RenderTexture>, motion: Motion}
 
-def moved.at(+rotation: F32, sine: Maybe<F32>, cosine: Maybe<F32>) -> Motion:
+def moved.at(+rotation: F32, +smooth: Bool, +overscan: Bool, sine: Maybe<F32>, cosine: Maybe<F32>) -> Motion:
   match sine cosine:
     case Some{+s} Some{+c}:
       +x = (s * 50.0 - 10.0 : F32)
       +y = (c * 30.0 : F32)
-      Motion{True{}, rotation, F32.trunc(x), F32.trunc(y), ((x - F32.trunc(x)) * (800.0 / 160.0) : F32), ((y - F32.trunc(y)) * (800.0 / 160.0) : F32)}
-    case _ _: Motion{False{}, rotation, 0.0, 0.0, 0.0, 0.0}
+      Motion{True{}, rotation, F32.trunc(x), F32.trunc(y), ((x - F32.trunc(x)) * (800.0 / 160.0) : F32), ((y - F32.trunc(y)) * (800.0 / 160.0) : F32), smooth, overscan}
+    case _ _: Motion{False{}, rotation, 0.0, 0.0, 0.0, 0.0, smooth, overscan}
 
-def moved(+libm: M.Libm, +rotation: F32, time: Maybe<F32>) -> Motion:
+def moved(+libm: M.Libm, +rotation: F32, +smooth: Bool, +overscan: Bool, time: Maybe<F32>) -> Motion:
   match time:
-    case None{}: Motion{False{}, rotation, 0.0, 0.0, 0.0, 0.0}
-    case Some{+t}: moved.at(rotation, M.Libm.sin(libm, t), M.Libm.cos(libm, t))
+    case None{}: Motion{False{}, rotation, 0.0, 0.0, 0.0, 0.0, smooth, overscan}
+    case Some{+t}: moved.at(rotation, smooth, overscan, M.Libm.sin(libm, t), M.Libm.cos(libm, t))
 
-# rotation += 60*GetFrameTime(); the camera at (sinf(time)*50 - 10, cosf(time)*30).
+def toggled(pressed: Bool, +on: Bool) -> Bool:
+  match pressed:
+    case True{}: Bool.not(on)
+    case False{}: on
+
+# rotation += 60*GetFrameTime(); the camera at (sinf(time)*50 - 10, cosf(time)*30); S toggles smoothOn, O overscan.
 def update(+libm: M.Libm, +core: J.Core, state: State) -> J.Core & State:
   State{target, +motion} = state
-  Motion{_, +rotation, _, _, _, _} = motion
-  (core, State{target, moved(libm, (rotation + 60.0 * J.Core.get_frame_time(core) : F32), M.Float64.to_f32(J.Core.get_time(core)))})
+  Motion{_, +rotation, _, _, _, _, +smooth, +overscan} = motion
+  (core, State{target, moved(libm, (rotation + 60.0 * J.Core.get_frame_time(core) : F32), toggled(J.Input.is_key_pressed(core, J.KeyboardKey.KEY_S()), smooth),
+    toggled(J.Input.is_key_pressed(core, J.KeyboardKey.KEY_O()), overscan), M.Float64.to_f32(J.Core.get_time(core)))})
 
 def camera(+x: F32, +y: F32) -> J.Camera2D:
   J.Camera2D{M.Vector2.zero(), M.Vector2{x, y}, 0.0, 1.0}
 
 # The world: three rectangles turning about their corners.
 def world(+libm: M.Libm, +motion: Motion, frame: J.Frame) -> J.Frame:
-  Motion{_, +rotation, +wx, +wy, _, _} = motion
+  Motion{_, +rotation, +wx, +wy, _, _, _, _} = motion
   f1 = J.Frame.begin_mode_2d_for(libm, J.Frame.clear_background(frame, J.Color.RAYWHITE()), camera(wx, wy))
   f2 = J.Draw.rectangle_pro_for(libm, f1, J.Rectangle{70.0, 35.0, 20.0, 20.0}, M.Vector2.zero(), rotation, J.Color.BLACK())
   f3 = J.Draw.rectangle_pro_for(libm, f2, J.Rectangle{90.0, 55.0, 30.0, 10.0}, M.Vector2.zero(), F32.neg(rotation), J.Color.RED())
@@ -53,15 +62,42 @@ def world(+libm: M.Libm, +motion: Motion, frame: J.Frame) -> J.Frame:
 
 def shown(+id: U32, +depth: U32, r: J.Frame & J.Texture) -> J.Frame & Maybe<J.RenderTexture>:
   (frame, texture) = r
-  (J.Frame.end_mode_2d(frame), Some{J.RenderTexture{id, texture, depth}})
+  (frame, Some{J.RenderTexture{id, texture, depth}})
 
-# DrawTexturePro(target.texture, (0, 0, width, -height), (-ratio, -ratio, 800 + 2*ratio, 450 + 2*ratio), (0, 0), 0, WHITE).
-def show(frame: J.Frame, target: J.RenderTexture) -> J.Frame & Maybe<J.RenderTexture>:
+# destRec: with overscan (-ratio, -ratio, 800 + ratio*2, 450 + ratio*2), else
+# ((800 - 800/1.25f)/2, (450 - 450/1.25f)/2, 800/1.25f, 450/1.25f).
+def destination(+overscan: Bool) -> J.Rectangle:
+  +ratio = (800.0 / 160.0 : F32)
+  Bool.pick(J.Rectangle, overscan, J.Rectangle{F32.neg(ratio), F32.neg(ratio), (800.0 + (ratio * 2.0) : F32), (450.0 + (ratio * 2.0) : F32)},
+    J.Rectangle{((800.0 - (800.0 / 1.25)) / 2.0 : F32), ((450.0 - (450.0 / 1.25)) / 2.0 : F32), (800.0 / 1.25 : F32), (450.0 / 1.25 : F32)})
+
+# DrawTexturePro(target.texture, (0, 0, width, -height), destRec, (0, 0), 0, WHITE).
+def show(frame: J.Frame, target: J.RenderTexture, +overscan: Bool) -> J.Frame & Maybe<J.RenderTexture>:
   J.RenderTexture{+id, texture, +depth} = target
   J.Texture{+tid, +w, +h, +format, +linear, +alpha, texels} = texture
-  +ratio = (800.0 / 160.0 : F32)
   shown(id, depth, J.Draw.texture_pro(frame, J.Texture{tid, w, h, format, linear, alpha, texels}, J.Rectangle{0.0, 0.0, U32.to_f32(w), F32.neg(U32.to_f32(h))},
-    J.Rectangle{F32.neg(ratio), F32.neg(ratio), (800.0 + (ratio * 2.0) : F32), (450.0 + (ratio * 2.0) : F32)}, M.Vector2.zero(), 0.0, J.Color.WHITE()))
+    destination(overscan), M.Vector2.zero(), 0.0, J.Color.WHITE()))
+
+# BeginMode2D(screenSpaceCamera) when smoothOn.
+def begun(smooth: Bool, +libm: M.Libm, +sx: F32, +sy: F32, frame: J.Frame) -> J.Frame:
+  match smooth:
+    case True{}: J.Frame.begin_mode_2d_for(libm, frame, camera(sx, sy))
+    case False{}: frame
+
+def ended.at(r: J.Frame & Maybe<J.RenderTexture>) -> J.Frame & Maybe<J.RenderTexture>:
+  (frame, target) = r
+  (J.Frame.end_mode_2d(frame), target)
+
+# EndMode2D() when smoothOn.
+def ended(smooth: Bool, r: J.Frame & Maybe<J.RenderTexture>) -> J.Frame & Maybe<J.RenderTexture>:
+  match smooth:
+    case True{}: ended.at(r)
+    case False{}: r
+
+def flag.text(enabled: Bool) -> String:
+  match enabled:
+    case True{}: "ON"
+    case False{}: "OFF"
 
 def label(text: Maybe<String>, +y: F32, +color: U32, frame: J.Frame) -> J.Frame:
   match text:
@@ -78,22 +114,25 @@ def draw.fps.done(state: State, frame: J.Frame, result: Maybe<(J.Core & U32)>, +
     case Some{pair}: draw.fps.at(state, frame, pair)
 
 def draw.screen(+core: J.Core, +motion: Motion, r: J.Frame & Maybe<J.RenderTexture>) -> J.Core & (State & J.Frame):
+  Motion{_, _, _, _, _, _, +smooth, +overscan} = motion
   (frame, target) = r
   f1 = label(J.Text.format("Screen resolution: %ix%i", [J.TextInt{800}, J.TextInt{450}]), 10.0, J.Color.DARKBLUE(), frame)
   f2 = label(J.Text.format("World resolution: %ix%i", [J.TextInt{160}, J.TextInt{90}]), 40.0, J.Color.DARKGREEN(), f1)
-  draw.fps.done(State{target, motion}, f2, J.Core.get_fps(core, J.Core.get_time(core)), core)
+  f3 = label(J.Text.format("Smooth: %s", [J.TextString{flag.text(smooth)}]), (450.0 - 60.0 : F32), J.Color.RED(), f2)
+  f4 = label(J.Text.format("Overscan: %s", [J.TextString{flag.text(overscan)}]), (450.0 - 30.0 : F32), J.Color.RED(), f3)
+  draw.fps.done(State{target, motion}, f4, J.Core.get_fps(core, J.Core.get_time(core)), core)
 
 def draw.world(+libm: M.Libm, +core: J.Core, +motion: Motion, r: J.Frame & Maybe<J.RenderTexture>) -> J.Core & (State & J.Frame):
-  Motion{_, _, _, _, +sx, +sy} = motion
+  Motion{_, _, _, _, +sx, +sy, +smooth, +overscan} = motion
   (frame, target) = r
   match target:
-    case None{}: (core, (State{None{}, motion}, J.Frame.clear_background(frame, J.Color.RED())))
-    case Some{t}: draw.screen(core, motion, show(J.Frame.begin_mode_2d_for(libm, J.Frame.clear_background(frame, J.Color.RED()), camera(sx, sy)), t))
+    case None{}: (core, (State{None{}, motion}, J.Frame.clear_background(frame, J.Color.LIGHTGRAY())))
+    case Some{t}: draw.screen(core, motion, ended(smooth, show(begun(smooth, libm, sx, sy, J.Frame.clear_background(frame, J.Color.LIGHTGRAY())), t, overscan)))
 
 def draw.textured(+libm: M.Libm, +core: J.Core, +motion: Motion, frame: J.Frame, target: Maybe<J.RenderTexture>) -> J.Core & (State & J.Frame):
   match target:
     case Some{t}: draw.world(libm, core, motion, J.Frame.end_texture_mode(world(libm, motion, J.Frame.begin_texture_mode(frame, t))))
-    case None{}: (core, (State{None{}, motion}, J.Frame.clear_background(frame, J.Color.RED())))
+    case None{}: (core, (State{None{}, motion}, J.Frame.clear_background(frame, J.Color.LIGHTGRAY())))
 
 def draw.valid(valid: Bool, +libm: M.Libm, +core: J.Core, +motion: Motion, frame: J.Frame, target: Maybe<J.RenderTexture>) -> J.Core & (State & J.Frame):
   match valid:
@@ -104,7 +143,7 @@ def draw.valid(valid: Bool, +libm: M.Libm, +core: J.Core, +motion: Motion, frame
 # that first, the same pixels), then the screen.
 def draw(+libm: M.Libm, +core: J.Core, state: State, frame: J.Frame) -> J.Core & (State & J.Frame):
   State{target, +motion} = state
-  Motion{+valid, _, _, _, _, _} = motion
+  Motion{+valid, _, _, _, _, _, _, _} = motion
   draw.valid(valid, libm, core, motion, frame, target)
 
 # The main loop's body; libm is the profile of the cameras' sinf/cosf and DrawRectanglePro's.
@@ -113,9 +152,9 @@ def program(+libm: M.Libm) -> J.Program<State>:
 
 def setup.loaded(+core: J.Core, r: J.Frame & Maybe<J.RenderTexture>) -> J.Core & (J.Frame & State):
   (frame, target) = r
-  (J.Core.set_target_fps(core, 60), (frame, State{target, Motion{True{}, 0.0, 0.0, 0.0, 0.0, 0.0}}))
+  (J.Core.set_target_fps(core, 60), (frame, State{target, Motion{True{}, 0.0, 0.0, 0.0, 0.0, 0.0, True{}, False{}}}))
 
-# After InitWindow(800, 450): the 160x90 render texture, SetTargetFPS(60).
+# After InitWindow(800, 450): the 160x90 render texture, smoothOn, no overscan, SetTargetFPS(60).
 def setup(+core: J.Core, frame: J.Frame) -> J.Core & (J.Frame & State):
   setup.loaded(core, J.RenderTexture.load(frame, 160, 90))
 

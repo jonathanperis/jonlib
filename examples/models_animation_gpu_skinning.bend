@@ -1,5 +1,5 @@
 # raylib [models] example - animation gpu skinning, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_animation_gpu_skinning.c
+# Adapted from raylib 6.2 examples/models/models_animation_gpu_skinning.c
 # (zlib/libpng, Copyright (c) 2024-2025 Daniel Holden (@orangeduck)); see
 # LICENSES/raylib.txt.
 #
@@ -9,9 +9,11 @@
 # (UpdateModelAnimation). The reference library is built with GPU skinning
 # and its software renderer runs no shader, so the model is drawn in its
 # bind pose whatever the pose is: the update fills the pose and the bone
-# matrices only, here the State's ModelPose (docs/MODELS.md). The skinning
-# shader the native example loads is never compiled; the port does not read
-# it. The perspective needs the libm profile's binary64 tan
+# matrices only, here the State's ModelPose (docs/MODELS.md). raylib 6.2's
+# example loads and assigns its skinning shader only under
+# SUPPORT_GPU_SKINNING, which raylib.h does not define for the example (6.0
+# loaded it for materials[1], and no shader runs here either way). The
+# perspective needs the libm profile's binary64 tan
 # (docs/PERSPECTIVE.md), UpdateCamera its sinf/cosf (docs/SINCOSF.md) and
 # the animations' QuaternionSlerp its acosf and sinf: under a profile
 # without them the animations do not load and every frame is refused. See

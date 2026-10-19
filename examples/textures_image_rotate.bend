@@ -1,5 +1,5 @@
 # raylib [textures] example - image rotate, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_image_rotate.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/textures/textures_image_rotate.c (zlib/libpng,
 # Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # The logo rotated by 45, 90 and -90 degrees with ImageRotate; a left click

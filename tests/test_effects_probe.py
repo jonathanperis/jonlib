@@ -247,7 +247,7 @@ class FileTimeExampleTests(unittest.TestCase):
 
 
 class UndefinedNativeExampleTests(unittest.TestCase):
-    def test_the_codepoints_example_repeats_a_codepoint_and_is_not_run(self):
+    def test_the_codepoints_example_runs_on_6_2_and_only_its_step_before_the_text_is_undefined(self):
         import re
         text = (ROOT / 'examples/text_codepoints_loading.bend').read_text()
         literal = re.search(r'def text\(\) -> String:\n  "(.*)"', text).group(1)
@@ -255,10 +255,22 @@ class UndefinedNativeExampleTests(unittest.TestCase):
         points = [ord(c) for c in data.decode('utf-8')]
         self.assertEqual((len(points), len(set(points))), (54, 49))
         self.assertEqual(sorted(c for c in set(points) if points.count(c) > 1), [0x0A, 0x3000])
-        self.assertIn('text_codepoints_loading', ep.UNDEFINED_NATIVE)
-        item = next(item for item in ep.scripts() if item['example'] == 'text_codepoints_loading')
-        self.assertEqual(ep.refusal(item, 'Glibc239Libm'), 0)
-        self.assertEqual(ep.refusal(item, 'AppleLibm'), 0)
+        # raylib 6.2's CodepointRemoveDuplicates no longer reads past its array: the example runs natively.
+        self.assertEqual(ep.UNDEFINED_NATIVE, {})
+        self.assertIn('text_codepoints_loading', ep.IO_SETUP)
+        items = {item['name']: item for item in ep.scripts() if item['example'] == 'text_codepoints_loading'}
+        self.assertEqual(sorted(items), ['text_codepoints_loading-before', 'text_codepoints_loading-frames'])
+        for libm in ('Glibc239Libm', 'AppleLibm'):
+            self.assertIsNone(ep.refusal(items['text_codepoints_loading-frames'], libm))
+            self.assertEqual(ep.refusal(items['text_codepoints_loading-before'], libm), 1)
+        self.assertIn('DotGothic16-Regular.ttf", 36, deduped()', text)
+
+    def test_the_stream_callback_example_runs_on_the_audio_clock(self):
+        self.assertIn('audio_stream_callback', ep.AUDIO_CLOCK)
+        self.assertIn('audio_stream_callback', ep.IO_SETUP)
+        port = (ROOT / 'examples/audio_stream_callback.bend').read_text()
+        self.assertIn('lines(799n, 0, recent, f4)', port)
+        self.assertNotIn('sin64', port)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 # raylib [shaders] example - lightmap rendering, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_lightmap_rendering.c
+# Adapted from raylib 6.2 examples/shaders/shaders_lightmap_rendering.c
 # (zlib/libpng, Copyright (c) 2019-2025 Jussi Viitala (@nullstare) and Ramon
 # Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #

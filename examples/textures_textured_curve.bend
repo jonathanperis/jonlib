@@ -1,5 +1,5 @@
 # raylib [textures] example - textured curve, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_textured_curve.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/textures/textures_textured_curve.c (zlib/libpng,
 # Copyright (c) 2022-2025 Jeffery Myers (@JeffM2501) and Ramon Santamaria (@raysan5));
 # see LICENSES/raylib.txt.
 #

@@ -1,5 +1,5 @@
 # raylib [audio] example - raw stream, ported to Jonlib.
-# Adapted from raylib 6.0 examples/audio/audio_raw_stream.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/audio/audio_raw_stream.c (zlib/libpng,
 # Copyright (c) 2015-2026 Ramon Santamaria (@raysan5) and James Hofmann
 # (@triplefox)); see LICENSES/raylib.txt.
 #
@@ -12,9 +12,10 @@
 # has a clock (J.AudioClock, docs/AUDIO.md): every pass of the loop first
 # makes the callbacks that were due by the frame's time, one each 10 ms, so
 # the halves are processed when the script's clock says. The samples go
-# nowhere: there is no host device. sin takes a double: the libm profile's
-# binary64 sin (M.Libm.sin64, docs/MATH.md); a frame is refused where it
-# gives no answer, and every later one. See docs/DRIVER.md.
+# nowhere: there is no host device. The samples and the drawn wave are
+# sinf of a float (raylib 6.2; 6.0 took the double sin): the libm profile's
+# sinf (M.Libm.sin, docs/SINCOSF.md); a frame is refused where it gives no
+# answer, and every later one. See docs/DRIVER.md.
 import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M
@@ -30,16 +31,11 @@ type State is Data:
 type Fill is Data:
   Fill{fine: Bool, frequency: U32, index: U32, started: M.Float64, data: +List<U32>}
 
-# sin(2*PI*n/wavelength): the argument is a float, the sine a double.
-def wave(+libm: M.Libm, +n: U32, +wavelength: U32) -> Maybe<M.Float64>:
-  M.Libm.sin64(libm, M.Float64.from_f32((((2.0 * M.Math.PI()) * U32.to_f32(n)) / U32.to_f32(wavelength) : F32)))
+# sinf(2*PI*n/wavelength), all in float.
+def wave(+libm: M.Libm, +n: U32, +wavelength: U32) -> Maybe<F32>:
+  M.Libm.sin(libm, (((2.0 * M.Math.PI()) * U32.to_f32(n)) / U32.to_f32(wavelength) : F32))
 
-def narrowed(value: Maybe<M.Float64>) -> Maybe<F32>:
-  match value:
-    case None{}: None{}
-    case Some{v}: M.Float64.to_f32(v)
-
-# buffer[i] = sin(2*PI*sineIndex/wavelength) with wavelength =
+# buffer[i] = sinf(2*PI*sineIndex/wavelength) with wavelength =
 # SAMPLE_RATE/sineFrequency, for BUFFER_SIZE samples: after its last sample a
 # period gives way to the new frequency, and its start is the frame's time.
 # `sample` is the sample of the counters given.
@@ -53,7 +49,7 @@ def fill(n: Nat, sample: Maybe<F32>, +libm: M.Libm, +wanted: U32, +now: M.Float6
           +over = ((index + 1) >= (44100 / frequency) : U32)
           +next = Bool.pick(U32, over, wanted, frequency)
           +at = Bool.pick(U32, over, 0, (index + 1 : U32))
-          fill(rest, narrowed(wave(libm, at, (44100 / next : U32))), libm, wanted, now, next, at, Bool.pick(M.Float64, over, now, started), Con{F32.bits(value), acc})
+          fill(rest, wave(libm, at, (44100 / next : U32)), libm, wanted, now, next, at, Bool.pick(M.Float64, over, now, started), Con{F32.bits(value), acc})
 
 # UpdateAudioStream(stream, buffer, BUFFER_SIZE).
 def update.fed(filled: Fill, +valid: Bool, +audio: J.AudioDevice, +clock: J.AudioClock, +stream: J.AudioStream, +pan: F32, +wanted: U32) -> State:
@@ -65,7 +61,7 @@ def update.stream(processed: Bool, +libm: M.Libm, +now: M.Float64, +valid: Bool,
     +wanted: U32, +index: U32, +started: M.Float64) -> State:
   match processed:
     case False{}: State{valid, audio, clock, stream, pan, frequency, wanted, index, started}
-    case True{}: update.fed(fill(4096n, narrowed(wave(libm, index, (44100 / frequency : U32))), libm, wanted, now, frequency, index, started, Nil{}), valid, audio, clock, stream, pan, wanted)
+    case True{}: update.fed(fill(4096n, wave(libm, index, (44100 / frequency : U32)), libm, wanted, now, frequency, index, started, Nil{}), valid, audio, clock, stream, pan, wanted)
 
 # The keys: up and down move newSineFrequency by 10 within 20..12500, left
 # and right the pan by 0.01f within -1..1 (SetAudioStreamPan).
@@ -90,24 +86,13 @@ def label(text: Maybe<String>, +x: F32, +y: F32, frame: J.Frame) -> J.Frame:
     case None{}: J.Frame.refuse(frame)
     case Some{t}: J.Draw.text(frame, t, x, y, 20.0, J.Color.RED())
 
-def height.narrow(sum: Maybe<M.Float64>) -> Maybe<F32>:
-  match sum:
-    case None{}: None{}
-    case Some{v}: M.Float64.to_f32(v)
-
-def height.raise(product: Maybe<M.Float64>) -> Maybe<F32>:
-  match product:
-    case None{}: None{}
-    case Some{p}: height.narrow(M.Float64.internal.add(M.Float64{1081032704, 0}, p))
-
-def height.scale(sine: Maybe<M.Float64>) -> Maybe<F32>:
+def height.scale(sine: Maybe<F32>) -> Maybe<F32>:
   match sine:
     case None{}: None{}
-    case Some{s}: height.raise(M.Float64.internal.multiply(M.Float64{1078525952, 0}, s))
+    case Some{+s}: Some{(250.0 + (50.0 * s) : F32)}
 
-# 250 + 50*sin(2*PI*t/wavelength) for t = windowStart + k*windowSize/screenWidth,
-# with windowSize = (int)(0.1f*SAMPLE_RATE) = 4410: a double, then the float
-# of a Vector2.
+# 250 + 50*sinf(2*PI*t/wavelength) for t = windowStart + k*windowSize/screenWidth,
+# with windowSize = SAMPLE_RATE/10 = 4410, in float.
 def height(+libm: M.Libm, +start: U32, +k: U32, +wavelength: U32) -> Maybe<F32>:
   height.scale(wave(libm, (start + ((k * 4410) / 800) : U32), wavelength))
 
@@ -159,7 +144,7 @@ def draw(+libm: M.Libm, +core: J.Core, +state: State, frame: J.Frame) -> J.Core 
   State{+valid, _, _, _, +pan, +frequency, _, _, +started} = state
   (core, (state, draw.at(valid, libm, J.Core.get_time(core), pan, frequency, started, frame)))
 
-# The main loop's body; libm is the profile of the binary64 sin.
+# The main loop's body; libm is the profile of sinf.
 def program(+libm: M.Libm) -> J.Program<State>:
   J.Program{core => state => update(libm, core, state), core => state => frame => draw(libm, core, state, frame)}
 

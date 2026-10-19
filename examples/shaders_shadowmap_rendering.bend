@@ -1,5 +1,5 @@
 # raylib [shaders] example - shadowmap rendering, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_shadowmap_rendering.c
+# Adapted from raylib 6.2 examples/shaders/shaders_shadowmap_rendering.c
 # (zlib/libpng, Copyright (c) 2023-2025 TheManTheMythTheGameDev
 # (@TheManTheMythTheGameDev)); see LICENSES/raylib.txt.
 #
@@ -79,7 +79,8 @@ def uniform.vec3(+shader: J.Shader, name: String, +value: M.Vector3) -> J.Shader
   J.Shader.set_value(shader, J.Shader.get_location(shader, name), [F32.bits(x), F32.bits(y), F32.bits(z)], 2)
 
 # The Assets with the shader's uniforms of a frame's update: viewPos (the
-# camera's position before UpdateCamera) and lightDir.
+# camera's position after UpdateCamera since raylib 6.2; 6.0 sent it before)
+# and lightDir.
 def uniforms(+assets: Assets, +position: M.Vector3, +light: M.Vector3) -> Assets:
   Assets{+cube, +robot, +skeleton, +animations, +shader} = assets
   Assets{cube, robot, skeleton, animations, uniform.vec3(uniform.vec3(shader, "viewPos", position), "lightDir", light)}
@@ -107,13 +108,13 @@ def advanced(+assets: Assets, +counter: U32) -> U32:
 def update.moved(moved: Maybe<J.Camera3D>, +libm: M.Libm, +assets: Assets, textures: List<J.Texture>, +pose: J.ModelPose, +counter: U32, +light: M.Vector3, +turned: M.Vector3, shadow: Shadow) -> State:
   match moved:
     case None{}: State{False{}, None{}, assets, textures, pose, counter, light, shadow}
-    case Some{+c}: update.animated(libm, c, assets, textures, pose, advanced(assets, counter), turned, shadow)
+    case Some{+c}: update.animated(libm, c, uniforms(assets, eye(c), turned), textures, pose, advanced(assets, counter), turned, shadow)
 
 # UpdateCamera(&camera, CAMERA_ORBITAL), the next keyframe, the light.
 def update.live(valid: Bool, camera: +Maybe<J.Camera3D>, +libm: M.Libm, +core: J.Core, +assets: Assets, textures: List<J.Texture>, +pose: J.ModelPose, +counter: U32, +light: M.Vector3, shadow: Shadow) -> State:
   match valid camera:
     case True{} Some{+c}: update.moved(J.Camera.update_for(M.Uncontracted{}, libm, core, c, J.CameraMode.CAMERA_ORBITAL()), libm,
-      uniforms(assets, eye(c), sun.moved(core, light)), textures, pose, counter, light, sun.moved(core, light), shadow)
+      assets, textures, pose, counter, light, sun.moved(core, light), shadow)
     case _ None{}: State{False{}, None{}, assets, textures, pose, counter, light, shadow}
     case False{} Some{+c}: State{False{}, Some{c}, assets, textures, pose, counter, light, shadow}
 
@@ -141,12 +142,13 @@ def draw.done(+core: J.Core, +camera: J.Camera3D, +assets: Assets, +pose: J.Mode
   (frame, depth) = r
   (core, (State{True{}, Some{camera}, assets, textures, pose, counter, light, Shadow{fb, depth, Some{target}}}, texts(frame)))
 
-# EndMode3D(); the frame hands shadowMap.depth back (DrawMesh left it
-# unbound, as its rlDisableTexture does); the texts.
+# EndMode3D(); rlActiveTextureSlot(textureActiveSlot); rlDisableTexture()
+# (raylib 6.2): the frame hands shadowMap.depth back (the slot is an OpenGL
+# 3.3 call, nothing on the software renderer); the texts.
 def draw.lit(+core: J.Core, +camera: J.Camera3D, +assets: Assets, +pose: J.ModelPose, +counter: U32, +light: M.Vector3, +fb: J.Rlgl.Framebuffer, target: J.RenderTexture,
     r: J.Frame & List<J.Texture>) -> J.Core & (State & J.Frame):
   (frame, textures) = r
-  draw.done(core, camera, assets, pose, counter, light, fb, target, textures, J.Rlgl.disable_texture(J.Frame.end_mode_3d(frame)))
+  draw.done(core, camera, assets, pose, counter, light, fb, target, textures, J.Rlgl.disable_texture(J.Rlgl.active_texture_slot(J.Frame.end_mode_3d(frame), 10)))
 
 # rlSetUniform(shadowMapLoc, &textureActiveSlot, SHADER_UNIFORM_INT, 1); BeginMode3D(camera); DrawScene(cube, robot).
 def draw.bound(+libm: M.Libm, +core: J.Core, +camera: J.Camera3D, +assets: Assets, +pose: J.ModelPose, +counter: U32, +light: M.Vector3, +fb: J.Rlgl.Framebuffer, +location: U32, target: J.RenderTexture,

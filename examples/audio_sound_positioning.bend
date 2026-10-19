@@ -1,5 +1,5 @@
 # raylib [audio] example - sound positioning, ported to Jonlib.
-# Adapted from raylib 6.0 examples/audio/audio_sound_positioning.c
+# Adapted from raylib 6.2 examples/audio/audio_sound_positioning.c
 # (zlib/libpng, Copyright (c) 2025 Le Juez Victor (@Bigfoot71)); see
 # LICENSES/raylib.txt.
 #
@@ -27,17 +27,19 @@ def start() -> J.Camera3D:
 
 # SetSoundPosition(listener, sound, position, 1.0f): the volume is
 # 1/(1 + distance/maxDist) clamped to 0..1, reduced by (1 + dot*0.5) behind
-# the listener, and the pan 0.5 + 0.5*dot(direction, right).
+# the listener, and the pan dot(direction, right) with right =
+# normalize(cross(forward, up)) (raylib 6.2; 6.0 crossed up with forward and
+# panned by 0.5 + 0.5*dot).
 def positioned(+audio: J.AudioDevice, +sound: J.Sound, +camera: J.Camera3D, +position: M.Vector3) -> J.AudioDevice:
   J.Camera3D{+p, +t, +u, _, _} = camera
   +direction = M.Vector3.subtract(position, p)
   +near = M.Math.clamp((1.0 / (1.0 + (M.Vector3.length(direction) / 1.0)) : F32), 0.0, 1.0)
   +toward = M.Vector3.normalize(direction)
   +forward = M.Vector3.normalize(M.Vector3.subtract(t, p))
-  +right = M.Vector3.normalize(M.Vector3.cross_product(u, forward))
+  +right = M.Vector3.normalize(M.Vector3.cross_product(forward, u))
   +facing = M.Vector3.dot_product(forward, toward)
   +volume = Bool.pick(F32, (facing < 0.0 : F32), (near * (1.0 + (facing * 0.5)) : F32), near)
-  J.Sound.set_pan(J.Sound.set_volume(audio, sound, volume), sound, (0.5 + (0.5 * M.Vector3.dot_product(toward, right)) : F32))
+  J.Sound.set_pan(J.Sound.set_volume(audio, sound, volume), sound, M.Vector3.dot_product(toward, right))
 
 # if (!IsSoundPlaying(sound)) PlaySound(sound).
 def played(+audio: J.AudioDevice, +sound: J.Sound) -> J.AudioDevice:

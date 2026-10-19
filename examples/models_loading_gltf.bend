@@ -1,5 +1,5 @@
 # raylib [models] example - loading gltf, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_loading_gltf.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/models/models_loading_gltf.c (zlib/libpng,
 # Copyright (c) 2020-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

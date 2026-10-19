@@ -1,5 +1,5 @@
 # raylib [models] example - bone socket, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_bone_socket.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/models/models_bone_socket.c (zlib/libpng,
 # Copyright (c) 2024-2025 iP (@ipzaur)); see LICENSES/raylib.txt.
 #
 # The greenman model with a hat, a sword and a shield (four .glb files with

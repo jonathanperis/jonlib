@@ -1,5 +1,5 @@
 # raylib [core] example - delta time, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_delta_time.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_delta_time.c (zlib/libpng,
 # Copyright (c) 2025 Robin (@RobinsAviary)); see LICENSES/raylib.txt.
 #
 # One circle moves by GetFrameTime(), the other a fixed step per frame; the
@@ -49,7 +49,7 @@ def draw.line(text: Maybe<String>, +y: F32, frame: J.Frame) -> J.Frame:
     case Some{t}: J.Draw.text(frame, t, 10.0, y, 20.0, J.Color.DARKGRAY())
 
 def draw.rest(+core: J.Core, +state: State, frame: J.Frame) -> J.Core & (State & J.Frame):
-  f1 = draw.line(J.Text.format("Frame time: %02.02f ms", [J.TextFloat{J.Core.get_frame_time(core)}]), 30.0, frame)
+  f1 = draw.line(J.Text.format("Frame time: %02.02f ms", [J.TextFloat{(J.Core.get_frame_time(core) * 1000.0 : F32)}]), 30.0, frame)
   f2 = J.Draw.text(f1, "Use the scroll wheel to change the fps limit, r to reset", 10.0, 50.0, 20.0, J.Color.DARKGRAY())
   f3 = J.Draw.text(f2, "FUNC: x += GetFrameTime()*speed", 10.0, 90.0, 20.0, J.Color.RED())
   (core, (state, J.Draw.text(f3, "FUNC: x += speed", 10.0, 240.0, 20.0, J.Color.BLUE())))

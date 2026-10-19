@@ -1,5 +1,5 @@
 # raylib [models] example - loading m3d, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_loading_m3d.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/models/models_loading_m3d.c (zlib/libpng,
 # Copyright (c) 2022-2025 bzt (@bztsrc)); see LICENSES/raylib.txt.
 #
 # The CesiumMan model (LoadModel of an .m3d file: 4672 faces, a material

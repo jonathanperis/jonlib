@@ -1,5 +1,5 @@
 # raylib [audio] example - mixed processor, ported to Jonlib.
-# Adapted from raylib 6.0 examples/audio/audio_mixed_processor.c
+# Adapted from raylib 6.2 examples/audio/audio_mixed_processor.c
 # (zlib/libpng, Copyright (c) 2023-2025 hkc (@hatkidchan)); see LICENSES/raylib.txt.
 #
 # resources/country.mp3 plays as a music stream and space plays

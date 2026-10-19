@@ -1,5 +1,5 @@
 # raylib [audio] example - stream callback, ported to Jonlib.
-# Adapted from raylib 6.0 examples/audio/audio_stream_callback.c
+# Adapted from raylib 6.2 examples/audio/audio_stream_callback.c
 # (zlib/libpng, Copyright (c) 2026 Dan Hoang (@dan-hoang)); see
 # LICENSES/raylib.txt.
 #
@@ -12,18 +12,16 @@
 # the program's own state (J.AudioClock.advance_answering).
 #
 # The example draws the last 10 ms it wrote, 441 samples of a one-second
-# buffer, as 800 columns, and the end of its last column is
-# buffer[SAMPLE_RATE - SAMPLE_RATE/100 + 800*SAMPLE_RATE/100/screenWidth] =
-# buffer[SAMPLE_RATE]: one float past the array, in every frame. Its
-# behavior is undefined from there (docs/COMPATIBILITY.md): this port does
-# everything up to that read and then refuses the frame, every frame. The
-# reference is not run. The sine takes a double: the libm profile's binary64
-# sin (M.Libm.sin64, docs/MATH.md). See docs/DRIVER.md.
+# buffer, as 799 lines (raylib 6.2 stops at screenWidth - 1: 6.0 drew 800,
+# and the end of the last read buffer[SAMPLE_RATE], one float past the
+# array). The sine is sinf of a float (6.2; 6.0 took the double sin): the
+# libm profile's sinf (M.Libm.sin, docs/SINCOSF.md); a frame is refused
+# where it gives no answer, and every later one. See docs/DRIVER.md.
 import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M
 
-# What the callbacks read and write: the libm profile of the sine (the
+# What the callbacks read and write: the libm profile of sinf (the
 # stream's function is a template that closes over nothing: all it needs is
 # here), whether every sample was answered, the wave (0 sine, 1 square, 2
 # triangle, 3 sawtooth), waveFrequency, newWaveFrequency, waveIndex, and the
@@ -34,17 +32,12 @@ type Synth is Data:
 type State is Data:
   State{valid: Bool, audio: J.AudioDevice, clock: J.AudioClock, stream: J.AudioStream, synth: Synth}
 
-def narrowed(value: Maybe<M.Float64>) -> Maybe<F32>:
-  match value:
-    case None{}: None{}
-    case Some{v}: M.Float64.to_f32(v)
-
 # One sample of a wave at waveIndex `i` for the callback's wavelength `w`:
-# sin(2*PI*i/w) (a float argument, a double sine); 1 or -1; a float ramp up
-# and down over the halves; a float ramp up.
+# sinf(2*PI*i/w); 1.0f or -1.0f; a float ramp up and down over the halves;
+# a float ramp up.
 def sample(kind: U32, +libm: M.Libm, +i: U32, +w: U32) -> Maybe<F32>:
   match kind:
-    case 0: narrowed(M.Libm.sin64(libm, M.Float64.from_f32((((2.0 * M.Math.PI()) * U32.to_f32(i)) / U32.to_f32(w) : F32))))
+    case 0: M.Libm.sin(libm, (((2.0 * M.Math.PI()) * U32.to_f32(i)) / U32.to_f32(w) : F32))
     case 1: Some{Bool.pick(F32, (i < (w / 2) : U32), 1.0, F32.neg(1.0))}
     case 2: Some{Bool.pick(F32, (i < (w / 2) : U32), (F32.neg(1.0) + ((2.0 * U32.to_f32(i)) / U32.to_f32((w / 2 : U32))) : F32),
       (1.0 - ((2.0 * U32.to_f32((i - (w / 2) : U32))) / U32.to_f32((w / 2 : U32))) : F32))}
@@ -125,31 +118,37 @@ def nth(xs: +List<U32>, +i: U32) -> U32:
 
 # 250 - 50*buffer[SAMPLE_RATE - SAMPLE_RATE/100 + k*SAMPLE_RATE/100/screenWidth]
 # for k below 800: sample (k*441)/800 of the last 441, the newest being 440
-# (a float; samples never written are the array's zeros).
+# (a float; samples never written are the array's zeros). Column 798's end
+# (k = 799) is the last read: sample 440.
 def height(+recent: +List<U32>, +k: U32) -> F32:
   (250.0 - (50.0 * J.Wave.float_bits(nth(recent, (440 - ((k * 441) / 800) : U32)))) : F32)
 
-# DrawLineV(startPos, endPos, RED) for the columns whose two samples are in
-# the buffer: 0..798.
+# DrawLineV(startPos, endPos, RED) for i < screenWidth - 1: 0..798.
 def lines(n: Nat, +i: U32, +recent: +List<U32>, frame: J.Frame) -> J.Frame:
   match n:
     case 0n: frame
     case 1n+rest: lines(rest, (i + 1 : U32), recent, J.Draw.line_v(frame, M.Vector2{U32.to_f32(i), height(recent, i)}, M.Vector2{U32.to_f32((i + 1 : U32)), height(recent, (i + 1 : U32))}, J.Color.RED()))
 
-# The frame up to column 799, whose end reads buffer[SAMPLE_RATE]: refused.
+# A frame after a callback or a sample without an answer is refused.
+def draw.checked(valid: Bool, frame: J.Frame) -> J.Frame:
+  match valid:
+    case True{}: frame
+    case False{}: J.Frame.refuse(frame)
+
+# The texts and the wave.
 def draw.frame(+synth: Synth, frame: J.Frame) -> J.Frame:
   Synth{_, _, +kind, _, +wanted, _, +recent} = synth
   f1 = label(J.Text.format("frequency: %i", [J.TextInt{wanted}]), 580.0, 10.0, J.Frame.clear_background(frame, J.Color.RAYWHITE()))
   f2 = label(J.Text.format("wave type: %s", [J.TextString{named(kind)}]), 580.0, 30.0, f1)
   f3 = J.Draw.text(f2, "Up/down to change frequency", 10.0, 10.0, 20.0, J.Color.DARKGRAY())
   f4 = J.Draw.text(f3, "Left/right to change wave type", 10.0, 30.0, 20.0, J.Color.DARKGRAY())
-  J.Frame.refuse(lines(799n, 0, recent, f4))
+  lines(799n, 0, recent, f4)
 
 def draw(+core: J.Core, +state: State, frame: J.Frame) -> J.Core & (State & J.Frame):
-  State{_, _, _, _, +synth} = state
-  (core, (state, draw.frame(synth, frame)))
+  State{+valid, _, _, _, +synth} = state
+  (core, (state, draw.checked(valid, draw.frame(synth, frame))))
 
-# The main loop's body. The profile of the binary64 sin is in the state the
+# The main loop's body. The profile of sinf is in the state the
 # setup makes (the probe's `program(libm)` passes the same one).
 def program(+libm: M.Libm) -> J.Program<State>:
   J.Program{core => state => update(core, state), core => state => frame => draw(core, state, frame)}

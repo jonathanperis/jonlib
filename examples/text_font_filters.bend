@@ -1,5 +1,5 @@
 # raylib [text] example - font filters, ported to Jonlib.
-# Adapted from raylib 6.0 examples/text/text_font_filters.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/text/text_font_filters.c (zlib/libpng,
 # Copyright (c) 2015-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # A font generated from a TTF at size 96 drawn at a size the mouse wheel

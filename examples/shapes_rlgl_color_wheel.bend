@@ -1,16 +1,16 @@
 # raylib [shapes] example - rlgl color wheel, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_rlgl_color_wheel.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_rlgl_color_wheel.c (zlib/libpng,
 # Copyright (c) 2025 Robin (@RobinsAviary)); see LICENSES/raylib.txt.
 #
 # A hue wheel drawn with rlgl triangles (lines while SPACE is held) whose
 # center takes the value of a raygui slider; a click on the wheel picks a
 # color (ColorFromHSV by the handle's angle and distance, ColorLerp from
 # the gray of the value), UP and DOWN scale the wheel, CTRL+C copies the
-# color as hex. The wheel adds (unsigned int)GetMouseWheelMove() to the
-# triangle count: a negative wheel move is an out-of-range conversion in C
-# (C11 6.3.1.4), so that frame and every later one are refused. sinf/cosf
-# and Vector2Angle's atan2f follow the libm profile (docs/SINCOSF.md,
-# docs/ANGLES.md); a value outside it refuses the same way. MSAA does not
+# color as hex. The wheel adds roundf(GetMouseWheelMove()) to the triangle
+# count within 3..256 (raylib 6.2; 6.0 added (unsigned int) of the move, an
+# out-of-range conversion for a negative one). sinf/cosf and Vector2Angle's
+# atan2f follow the libm profile (docs/SINCOSF.md, docs/ANGLES.md); a value
+# outside it refuses that frame and every later one. MSAA does not
 # change the software renderer. See docs/RLGL.md and docs/GUI.md.
 import Base
 import ../jonlib.bend as J
@@ -174,16 +174,22 @@ def copy(copying: Bool, +core: J.Core, +color: U32) -> J.Core:
 def copying(+core: J.Core) -> Bool:
   J.Input.is_key_down(core, J.KeyboardKey.KEY_LEFT_CONTROL()) && J.Input.is_key_down(core, J.KeyboardKey.KEY_C())
 
-# triangleCount += (unsigned int)GetMouseWheelMove(), clamped to 3..256; the wheel scaling; the clicks and the color.
+# roundf(x): the integer nearest x, halfway cases away from zero (x - truncf(x)
+# is exact).
+def roundf(+x: F32) -> F32:
+  +t = F32.trunc(x)
+  +d = (x - t : F32)
+  Bool.pick(F32, (d >= 0.5 : F32), (t + 1.0 : F32), Bool.pick(F32, (d <= F32.neg(0.5) : F32), (t - 1.0 : F32), t))
+
+# triangleCount = (unsigned int)Clamp((float)triangleCount + roundf(GetMouseWheelMove()), 3, 256); the wheel
+# scaling; the clicks and the color.
 def update(+libm: M.Libm, +core: J.Core, +state: State) -> J.Core & State:
   State{+wheel, +gui} = state
   Wheel{+count, +scale, +value, +circle, +color, +slider, +setting, +lines, +ok} = wheel
-  +turns = J.Input.get_mouse_wheel_move(core)
-  +fine = ok && (turns >= 0.0 : F32) && (turns < 4294967296.0 : F32)
-  +next = F32.to_u32(M.Math.clamp(U32.to_f32((count + F32.to_u32(Bool.pick(F32, fine, turns, 0.0)) : U32)), 3.0, 256.0))
+  +next = F32.to_u32(M.Math.clamp((U32.to_f32(count) + roundf(J.Input.get_mouse_wheel_move(core)) : F32), 3.0, 256.0))
   +mouse = J.Input.get_mouse_position(core)
   (copy(copying(core) && J.Input.is_key_pressed(core, J.KeyboardKey.KEY_C()), core, color),
-    update.dial(libm, core, gui, next, value, color, slider, setting, lines, fine, hover(mouse), mouse, scale, circle,
+    update.dial(libm, core, gui, next, value, color, slider, setting, lines, ok, hover(mouse), mouse, scale, circle,
       down.dial(J.Input.is_key_down(core, J.KeyboardKey.KEY_DOWN()), libm, up(J.Input.is_key_down(core, J.KeyboardKey.KEY_UP()), scale, circle))))
 
 def tinted(frame: J.Frame, +color: U32) -> J.Frame:

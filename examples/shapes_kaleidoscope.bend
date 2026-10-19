@@ -1,5 +1,5 @@
 # raylib [shapes] example - kaleidoscope, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_kaleidoscope.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_kaleidoscope.c (zlib/libpng,
 # Copyright (c) 2025 Hugo ARNAL (@hugoarnal) and Ramon Santamaria (@raysan5));
 # see LICENSES/raylib.txt.
 #
@@ -36,6 +36,8 @@ def back_rec() -> J.Rectangle:
 def next_rec() -> J.Rectangle:
   J.Rectangle{(800.0 - 30.0 : F32), (450.0 - 30.0 : F32), 25.0, 25.0}
 
+# (GetRenderWidth()/2.0f, GetRenderHeight()/2.0f) (raylib 6.2; 6.0 took
+# the screen size): a Base window's render size is its InitWindow size.
 def offset() -> M.Vector2:
   M.Vector2{(800.0 / 2.0 : F32), (450.0 / 2.0 : F32)}
 

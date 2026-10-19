@@ -1,5 +1,5 @@
 # raylib [models] example - loading vox, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_loading_vox.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/models/models_loading_vox.c (zlib/libpng,
 # Copyright (c) 2021-2025 Johann Nadalutti (@procfxgen) and Ramon Santamaria
 # (@raysan5)); see LICENSES/raylib.txt.
 #

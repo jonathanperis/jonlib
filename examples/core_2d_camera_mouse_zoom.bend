@@ -1,5 +1,5 @@
 # raylib [core] example - 2d camera mouse zoom, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_2d_camera_mouse_zoom.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_2d_camera_mouse_zoom.c (zlib/libpng,
 # Copyright (c) 2022-2025 Jeffery Myers (@JeffM2501)); see LICENSES/raylib.txt.
 #
 # A 2D camera dragged with the left button and zoomed around the mouse: by
@@ -52,17 +52,19 @@ def rezoomed(+libm: M.Libm, +scale: F32, +on: Bool, camera: Maybe<J.Camera2D>) -
     case None{}: None{}
     case Some{+c}: rezoomed.on(on, libm, scale, c)
 
-# camera.offset = GetMousePosition(); camera.target = the world point under the mouse.
-def anchored(+mouse: M.Vector2, camera: J.Camera2D, world: Maybe<M.Vector2>) -> Maybe<J.Camera2D>:
+# camera.offset = Vector2Multiply(GetMousePosition(), GetWindowScaleDPI())
+# (raylib 6.2; the scale of a Base window is 1); camera.target = the world
+# point under the (unscaled) mouse.
+def anchored(+offset: M.Vector2, camera: J.Camera2D, world: Maybe<M.Vector2>) -> Maybe<J.Camera2D>:
   J.Camera2D{_, _, +rotation, +zoom} = camera
   match world:
     case None{}: None{}
-    case Some{+w}: Some{J.Camera2D{mouse, w, rotation, zoom}}
+    case Some{+w}: Some{J.Camera2D{offset, w, rotation, zoom}}
 
-def anchor(on: Bool, +libm: M.Libm, +mouse: M.Vector2, +camera: J.Camera2D) -> Maybe<J.Camera2D>:
+def anchor(on: Bool, +libm: M.Libm, +mouse: M.Vector2, +offset: M.Vector2, +camera: J.Camera2D) -> Maybe<J.Camera2D>:
   match on:
     case False{}: Some{camera}
-    case True{}: anchored(mouse, camera, J.Camera.screen_to_world_2d_for(M.Uncontracted{}, libm, mouse, camera))
+    case True{}: anchored(offset, camera, J.Camera.screen_to_world_2d_for(M.Uncontracted{}, libm, mouse, camera))
 
 # The left button drags the target by the mouse delta scaled by -1/zoom.
 def panned(+on: Bool, camera: J.Camera2D, delta: M.Vector2) -> J.Camera2D:
@@ -84,12 +86,13 @@ def update(+libm: M.Libm, +core: J.Core, +state: State) -> J.Core & State:
   State{+camera, +mode, +ok} = state
   +next = Bool.pick(U32, J.Input.is_key_pressed(core, J.KeyboardKey.KEY_ONE()), 0, Bool.pick(U32, J.Input.is_key_pressed(core, J.KeyboardKey.KEY_TWO()), 1, mode))
   +mouse = J.Input.get_mouse_position(core)
+  +offset = M.Vector2.multiply(mouse, J.Core.get_window_scale_dpi(core))
   +moved = panned(J.Input.is_mouse_button_down(core, J.MouseButton.MOUSE_BUTTON_LEFT()), camera, J.Input.get_mouse_delta(core))
   +wheel = J.Input.get_mouse_wheel_move(core)
   +turned = Bool.not(F32.is_eq(wheel, 0.0))
   +right = J.MouseButton.MOUSE_BUTTON_RIGHT()
-  (core, update.done(next, ok, camera, Bool.pick(Maybe<J.Camera2D>, U32.is_eq(next, 0), rezoomed(libm, (0.2 * wheel : F32), turned, anchor(turned, libm, mouse, moved)),
-    rezoomed(libm, (0.005 * x.of(J.Input.get_mouse_delta(core)) : F32), J.Input.is_mouse_button_down(core, right), anchor(J.Input.is_mouse_button_pressed(core, right), libm, mouse, moved)))))
+  (core, update.done(next, ok, camera, Bool.pick(Maybe<J.Camera2D>, U32.is_eq(next, 0), rezoomed(libm, (0.2 * wheel : F32), turned, anchor(turned, libm, mouse, offset, moved)),
+    rezoomed(libm, (0.005 * x.of(J.Input.get_mouse_delta(core)) : F32), J.Input.is_mouse_button_down(core, right), anchor(J.Input.is_mouse_button_pressed(core, right), libm, mouse, offset, moved)))))
 
 def checked(ok: Bool, frame: J.Frame) -> J.Frame:
   match ok:

@@ -1,5 +1,5 @@
 # raylib [models] example - basic voxel, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_basic_voxel.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/models/models_basic_voxel.c (zlib/libpng,
 # Copyright (c) 2025 Tim Little (@timlittle)); see LICENSES/raylib.txt.
 #
 # An 8x8x8 block of cubes seen from a first-person camera; a left click
@@ -79,7 +79,7 @@ def clicked.ray(+libm: M.Libm, +voxels: +List<Bool>, ray: Maybe<J.Ray>) -> Maybe
     case None{}: None{}
     case Some{+r}: clicked.found(voxels, closest(voxels, libm, r, 0, Some{Closest{99999.0, 512}}))
 
-# A left click casts GetMouseRay from the screen center and clears the closest hit voxel.
+# A left click casts GetScreenToWorldRay (6.0: the GetMouseRay alias) from the screen center and clears the closest hit voxel.
 def clicked(click: Bool, +libm: M.Libm, +core: J.Core, +camera: J.Camera3D, +voxels: +List<Bool>) -> Maybe<(+List<Bool>)>:
   match click:
     case False{}: Some{voxels}

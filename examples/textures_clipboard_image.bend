@@ -1,5 +1,5 @@
 # raylib [textures] example - clipboard image, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_clipboard_image.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/textures/textures_clipboard_image.c (zlib/libpng,
 # Copyright (c) 2026 Maicon Santana (@maiconpintoabreu)); see LICENSES/raylib.txt.
 #
 # CTRL+V pastes the clipboard's image as a texture at the mouse (20 at

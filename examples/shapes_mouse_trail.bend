@@ -1,5 +1,5 @@
 # raylib [shapes] example - mouse trail, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_mouse_trail.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_mouse_trail.c (zlib/libpng,
 # Copyright (c) 2025 Balamurugan R (@Bala050814)); see LICENSES/raylib.txt.
 #
 # The last 30 mouse positions drawn as shrinking, fading circles. See

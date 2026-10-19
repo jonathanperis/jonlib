@@ -1,5 +1,5 @@
 # raylib [shaders] example - cel shading, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_cel_shading.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shaders/shaders_cel_shading.c (zlib/libpng,
 # Copyright (c) 2026 Gleb A (@ggrizzly)); see LICENSES/raylib.txt.
 #
 # The old car model (old_car_new.glb, LoadGLTF) under an orbital camera, drawn

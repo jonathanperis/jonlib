@@ -1,5 +1,5 @@
 # raylib [textures] example - mouse painting, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_mouse_painting.c
+# Adapted from raylib 6.2 examples/textures/textures_mouse_painting.c
 # (zlib/libpng, Copyright (c) 2019-2025 Chris Dill (@MysteriousSpace) and
 # Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
@@ -76,7 +76,7 @@ def update.brush(+core: J.Core, +brush: Brush) -> Brush:
   Brush{valid && Bool.not((over && J.Input.is_mouse_button_released(core, 0)) || J.Input.is_key_pressed(core, J.KeyboardKey.KEY_S())),
     Bool.pick(U32, right, 0, Bool.pick(U32, back, kept, chosen)), Bool.pick(U32, right && Bool.not(was), chosen, kept), hover,
     Bool.pick(F32, (low > 50.0 : F32), 50.0, low), right || (was && Bool.not(back)), over, mouse, J.Input.is_key_pressed(core, J.KeyboardKey.KEY_C()),
-    J.Input.is_mouse_button_down(core, 0) || U32.is_eq(J.Gestures.get_detected(core), J.Gesture.GESTURE_DRAG()), chosen, right}
+    J.Input.is_mouse_button_down(core, 0) || J.Gestures.is_detected(core, J.Gesture.GESTURE_DRAG()), chosen, right}
 
 def update(+core: J.Core, state: State) -> J.Core & State:
   State{target, +brush} = state

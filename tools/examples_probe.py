@@ -105,7 +105,8 @@ LANE_TIMEOUT = 1800
 SLOW_LANES = {'text_font_sdf': 3600}
 # Examples whose SetTargetFPS is not 60 (the scripted wait ends where raylib's does).
 TARGET_FPS = {'shapes_kaleidoscope': 20, 'shapes_penrose_tile': 120, 'textures_mouse_painting': 120}
-# shaders_rlgl_compute never calls SetTargetFPS: with a target of a nanosecond no scripted frame is short enough to wait.
+# shaders_rlgl_compute calls SetTargetFPS(0) (raylib 6.2; 6.0 never called it): no wait. With a target of a nanosecond
+# no scripted frame is short enough to wait.
 TARGET_FPS['shaders_rlgl_compute'] = 10**9
 # core_custom_frame_control never calls SetTargetFPS either; after EndDrawing it waits itself (OWN_WAIT: its target).
 TARGET_FPS['core_custom_frame_control'] = 10**9
@@ -122,6 +123,7 @@ KEY_G, KEY_SPACE, KEY_C, KEY_ENTER = 71, 32, 67, 257
 KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR = 49, 50, 51, 52
 KEY_P, KEY_W, KEY_D, KEY_TAB = 80, 87, 68, 258
 KEY_F = 70
+KEY_O = 79
 KEY_LEFT_CONTROL = 341
 # Touch point events: a touch point counts as the mouse button of its index, and the memory platform, which never
 # registers a mouse button's previous state, registers a touch point's: IsMouseButtonReleased fires for it alone.
@@ -293,7 +295,7 @@ EXAMPLES = {
     'models_skybox_rendering': ('models/models_skybox_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_decals': ('models/models_decals.c', 'Ex.setup(M.LIBM{}, seed, RESOURCES, core, frame)'),
     'shaders_hot_reloading': ('shaders/shaders_hot_reloading.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
-    'text_codepoints_loading': ('text/text_codepoints_loading.c', 'Ex.setup(core, frame)'),
+    'text_codepoints_loading': ('text/text_codepoints_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
     'text_unicode_emojis': ('text/text_unicode_emojis.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'text_3d_drawing': ('text/text_3d_drawing.c', 'Ex.setup(seed, core, frame)'),
     'models_loading_vox': ('models/models_loading_vox.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
@@ -341,6 +343,17 @@ EXAMPLES = {
     'core_smooth_pixelperfect': ('core/core_smooth_pixelperfect.c', 'Ex.setup(core, frame)'),
     'models_tesseract_view': ('models/models_tesseract_view.c', 'Ex.setup(core, frame)'),
     'textures_particles_blending': ('textures/textures_particles_blending.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
+    'shapes_drag_puzzle': ('shapes/shapes_drag_puzzle.c', 'Ex.setup(core, frame)'),
+    'shapes_ellipse_collision': ('shapes/shapes_ellipse_collision.c', 'Ex.setup(core, frame)'),
+    'shapes_outlines_testbed': ('shapes/shapes_outlines_testbed.c', 'Ex.setup(core, frame)'),
+    'shapes_outlines_thickness': ('shapes/shapes_outlines_thickness.c', 'Ex.setup(core, frame)'),
+    'shapes_polygon_lines': ('shapes/shapes_polygon_lines.c', 'Ex.setup(core, frame)'),
+    'textures_portal_window': ('textures/textures_portal_window.c', 'Ex.setup(core, frame)'),
+    'text_animations': ('text/text_animations.c', 'Ex.setup(seed, core, frame)'),
+    'models_mesh_uv_painting': ('models/models_mesh_uv_painting.c', 'Ex.setup(M.LIBM{}, core, frame)'),
+    'models_procedural_decals': ('models/models_procedural_decals.c', 'Ex.setup(M.LIBM{}, seed, core, frame)'),
+    'shaders_lights_bloom': ('shaders/shaders_lights_bloom.c', 'Ex.setup(core, frame)'),
+    'audio_amp_envelope': ('audio/audio_amp_envelope.c', 'Ex.setup(core, frame)'),
 }
 
 # Probe-only raygui programs (category gui): Jongui's controls that no raylib example calls, each a C program of
@@ -469,14 +482,12 @@ IO_SETUP.add('models_loading_m3d'); PERSPECTIVE.add('models_loading_m3d')
 AUDIO = {'textures_sprite_button', 'textures_sprite_explosion', 'audio_sound_multi', 'audio_sound_positioning', 'audio_sound_loading'}
 # Examples whose frames show what the device did: its thread is stopped and the scripted clock asks for its callbacks
 # (tools/reference/audio_clock.c; AudioClock in Jonlib).
-AUDIO_CLOCK = {'audio_raw_stream', 'audio_music_stream', 'audio_stream_effects', 'audio_mixed_processor', 'audio_spectrum_visualizer', 'audio_module_playing'}
+AUDIO_CLOCK = {'audio_raw_stream', 'audio_music_stream', 'audio_stream_effects', 'audio_mixed_processor', 'audio_spectrum_visualizer', 'audio_module_playing',
+               'audio_stream_callback'}
 AUDIO.update(AUDIO_CLOCK)
 IO_SETUP.update(AUDIO)
-# The binary64 sin of its samples and of its wave has no AppleLibm profile (docs/MATH.md): the same contract.
-PERSPECTIVE.add('audio_raw_stream')
 # The cosf of its Blackman window and transform has no AppleLibm profile either: the same contract.
 PERSPECTIVE.add('audio_spectrum_visualizer')
-IO_SETUP.add('audio_stream_callback')
 PERSPECTIVE.add('audio_sound_positioning')
 # The SDF font's cubic solver takes glibc 2.39's pow, acos and cos; the AppleLibm profile has none: the same contract.
 IO_SETUP.add('text_font_sdf'); PERSPECTIVE.add('text_font_sdf')
@@ -485,11 +496,16 @@ SEEDED.add('audio_module_playing'); PERSPECTIVE.add('audio_module_playing'); CON
 PERSPECTIVE.add('core_vr_simulator')
 IO_SETUP.add('shaders_game_of_life'); SEEDED.add('shaders_game_of_life')
 IO_SETUP.add('text_unicode_ranges'); EFFECTS.add('text_unicode_ranges')
+# text_codepoints_loading: LoadFontEx of DotGothic16-Regular.ttf in the setup. LEFT at the start of the text steps its
+# pointer before the array (GetCodepointPrevious reads text[-1]): undefined from that frame.
+IO_SETUP.add('text_codepoints_loading')
+UNDEFINED_FROM['text_codepoints_loading-before'] = 1
 IO_SETUP.add('textures_sprite_stacking')
-# core_directory_files lists its working directory and, after its back button, the directories above. Base has no
-# directory listing: the port is handed the listings (LISTED: its setup takes them, read here with readdir's order from the
-# very directories the reference lists). Each script's working directory (WORKING) is three levels inside its own
-# directory, whose files this probe puts: a script goes up twice, never to a directory other programs write in.
+# core_directory_files lists its working directory, after its back button the directory above and, after a click on a
+# directory of the list (raylib 6.2), that directory. Base has no directory listing: the port is handed the listings
+# (LISTED: its setup takes them, read here with readdir's order from the very directories the reference may list, every
+# directory of the script's own). Each script's working directory (WORKING) is three levels inside its own directory,
+# whose files this probe puts: a script goes up twice at most, never to a directory other programs write in.
 LISTED, WORKING = {'core_directory_files'}, {'core_directory_files': 'top/mid/cwd'}
 SCRATCH.add('core_directory_files')
 FILES['core_directory_files-browse'] = {**{f'top/mid/cwd/{name}': b'' for name in (
@@ -497,9 +513,12 @@ FILES['core_directory_files-browse'] = {**{f'top/mid/cwd/{name}': b'' for name i
     *[f'file{n:02}.c' for n in range(18)], *[f'shot{n}.png' for n in range(5)])},
     'top/mid/notes.md': b'notes', 'top/mid/photo.png': b'', 'top/mid/build/out.o': b'', 'top/readme': b'read me'}
 # A file without an extension in a path with a dot before it (the probe's .build): IsFileExtension takes everything from
-# that dot for the extension and copies 16 bytes of it into a char[16] it then reads as a string. Refused from the start.
+# that dot for the extension. raylib 6.0 copied 16 bytes of it into a char[16] it then read as a string (undefined); 6.2
+# copies 15 and compares them: the file is left out.
 FILES['core_directory_files-noext'] = {'top/mid/cwd/alpha.png': b'', 'top/mid/cwd/noext': b''}
-UNDEFINED_FROM['core_directory_files-noext'] = 0
+# A working directory whose one entry is a directory: a click on the first item goes into it (its .png and .c files and
+# its own directory, not its .txt), a click there on the first item again, then "<" twice.
+FILES['core_directory_files-enter'] = {'top/mid/cwd/only/a.png': b'', 'top/mid/cwd/only/skip.txt': b'', 'top/mid/cwd/only/deeper/b.c': b''}
 # gui_style: GuiLoadStyle("style.rgs") in the setup, from the script's own directory. Text styles (properties, a
 # sscanf that matches part of a line and keeps the last line's values, an index past a control's row, a line longer
 # than fgets's buffer, a last line without '\n', a TTF font with and without a charmap, a font that does not load)
@@ -609,17 +628,51 @@ def scratch_left(probe, index, native=False):
     root = scratch(probe, index, native)
     return {path.relative_to(root).as_posix(): path.read_bytes() for path in sorted(root.rglob('*')) if path.is_file()}
 IO_SETUP.add('shaders_shadowmap_rendering'); PERSPECTIVE.add('shaders_shadowmap_rendering'); CONFIG_FLAGS['shaders_shadowmap_rendering'] = 32
+# The raylib 6.2 examples (REPORTED, below, holds the ones whose AppleLibm refusal is Jonlib's own).
+# shapes_drag_puzzle, shapes_ellipse_collision, shapes_polygon_lines and shapes_outlines_*: no setup flags.
+# textures_portal_window: BeginMode3D's perspective from the first frame (no SetConfigFlags, no seed, setup is pure:
+# LoadRenderTexture(480, 640), DisableCursor, SetTargetFPS(60)).
+PERSPECTIVE.add('textures_portal_window')
+# text_animations: GetRandomValue (the shaking animation) after InitWindow's SetRandomSeed: the setup takes the seed.
+# Its sine easings' cosf/sinf take t/d*(PI/2) and PI*t/d for every glyph's time, outside the AppleLibm profile's
+# whole degrees from the first frame: under AppleLibm the refusal frame is Jonlib's own (REPORTED); the glibc
+# profiles answer every finite argument.
+SEEDED.add('text_animations')
+# Drawn through a perspective camera from its first frame (its sphere also needs the glibc profile's sinf/cosf and
+# qsort weld, the cylinder its binary64 cos and sin): every frame is a contract under AppleLibm. No SetConfigFlags,
+# no GetRandomValue, no IO setup, SetTargetFPS(60).
+PERSPECTIVE.add('models_mesh_uv_painting')
+# GetRandomValue after InitWindow (the splat's angle): the setup takes the seed. Drawn through a perspective camera
+# from its first frame (the torus also needs the glibc profile's sinf/cosf and qsort weld): every frame is a contract
+# under AppleLibm. SetConfigFlags(FLAG_MSAA_4X_HINT) before InitWindow. No IO setup (generated mesh and images).
+SEEDED.add('models_procedural_decals'); PERSPECTIVE.add('models_procedural_decals'); CONFIG_FLAGS['models_procedural_decals'] = 32
+# shaders_lights_bloom: SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT) = 32 | 64 (as text_3d_drawing,
+# textures_textured_curve); BeginMode3D's perspective from the first frame. The setup is pure (LoadShader's text does not
+# matter on rlsw: id 0 whatever the files hold, as in shaders_basic_lighting).
+PERSPECTIVE.add('shaders_lights_bloom'); CONFIG_FLAGS['shaders_lights_bloom'] = 96
+# audio_amp_envelope: its frames show what the device did (IsAudioStreamProcessed decides when the envelope steps):
+# the audio clock, as audio_raw_stream (TARGET_FPS stays the default 60), added to AUDIO and IO_SETUP as well. The samples' sinf(2*PI*440*audioTime) leaves the
+# AppleLibm profile at the second sample of the first sounding refill (sinf(0) is answered), so under AppleLibm the
+# refusal frame is Jonlib's own (REPORTED); the frames before SPACE are compared. The glibc
+# profiles answer every finite argument.
+AUDIO_CLOCK.add('audio_amp_envelope'); AUDIO.add('audio_amp_envelope'); IO_SETUP.add('audio_amp_envelope')
 
 
 def listings(root, working):
     """What a script of a LISTED example may list: its working directory and each directory above it up to the script's
-    own, as [(path, [(name, is a file), ...]), ...] with the entries in readdir's order."""
+    own, then every other directory in the script's own (sorted), as [(path, [(name, is a file), ...]), ...] with the
+    entries in readdir's order."""
     out, directory = [], root / working
     while True:
         out.append((str(directory), [(entry.name, entry.is_file()) for entry in os.scandir(directory)]))
         if directory == root:
-            return out
+            break
         directory = directory.parent
+    seen = {path for path, _ in out}
+    for path in sorted(str(found) for found in root.rglob('*') if found.is_dir() and not found.is_symlink()):
+        if path not in seen:
+            out.append((path, [(entry.name, entry.is_file()) for entry in os.scandir(path)]))
+    return out
 
 
 def listings_text(found):
@@ -974,10 +1027,10 @@ def scripts():
         script('core_3d_camera_fps', 'walk', [quick(), quick([mouse_at(430, 240)]), quick([key(KEY_W)]), quick(), slow(), quick([key(KEY_D)]), quick([key(KEY_SPACE)]),
                                               quick([key(KEY_SPACE, False)]), slow(), quick([key(KEY_W, False), key(341)]), quick([key(KEY_D, False)]), quick([key(341, False)]),
                                               quick()]),
-        # A gesture from the first frame (before one is logged the example reads past its log array); every
-        # gesture with repeats hidden; "Hide Repeat" off (repeats logged), "Hide Hold" on, both on, an unknown
-        # gesture, then enough gestures to wrap the log of 20.
-        script('core_input_gestures_testbed', 'log', [quick([mouse_at(500, 250), gesture(1)]), quick([gesture(1)]), slow([gesture(4)]), quick([gesture(8), mouse_at(520, 280)]),
+        # A frame with the empty log (6.2 starts its index at 0; 6.0 read past the log array until a gesture was
+        # logged); every gesture with repeats hidden; "Hide Repeat" off (repeats logged), "Hide Hold" on, both on,
+        # an unknown gesture, then enough gestures to wrap the log of 20.
+        script('core_input_gestures_testbed', 'log', [quick([mouse_at(500, 250)]), quick([gesture(1)]), quick([gesture(1)]), slow([gesture(4)]), quick([gesture(8), mouse_at(520, 280)]),
                                                       quick([gesture(16)]), quick([gesture(32)]), quick([gesture(64)]), quick([gesture(128)]), quick([gesture(256)]),
                                                       quick([gesture(512)]), quick([gesture(0), mouse_at(70, 20)]), quick([button(0)]), quick([button(0, False)]),
                                                       quick([gesture(1)]), quick([gesture(1)]), quick([gesture(2)]), quick([mouse_at(120, 20), gesture(0)]), quick([button(0)]),
@@ -1065,8 +1118,8 @@ def scripts():
         script('textures_magnifying_glass', 'look', [quick(), quick([mouse_at(266, 366)]), slow([mouse_at(520, 110)]), quick([mouse_at(300, 20)]),
                                                      quick([mouse_at(780, 440)])]),
         # Hover and click toggles (tint, then grayscale: its one-channel colors go back as RGBA), DOWN through
-        # invert, contrast, brightness and the Gaussian blur, UP from the first process (to the eighth, as the example does), the
-        # last one by DOWN and around to none.
+        # invert, contrast, brightness and the Gaussian blur, UP from the first process (to the last: 6.2 takes
+        # NUM_PROCESSES - 1, 6.0 took the eighth), DOWN around to none and to the first.
         script('textures_image_processing', 'processes', [quick(), quick([mouse_at(100, 125)]), quick([button(0)]), quick([button(0, False)]),
                                                           quick([mouse_at(100, 95), button(0)]), slow([button(0, False)]), quick([mouse_at(500, 300), key(KEY_DOWN)]),
                                                           quick([key(KEY_DOWN, False)]), quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]),
@@ -1351,8 +1404,13 @@ def scripts():
                                                 slow([button(2, False), (MOUSE_WHEEL, 0, 2, 0)]), quick([key(264), key(263)]), quick([key(264, False), key(263, False), key(83), key(265)]),
                                                 quick([key(83, False), key(265, False), (MOUSE_WHEEL, 0, -1, 0)]), quick()]),
         # The camera orbits while the animation plays: 61 keyframes, so the counter reaches the count (frame 61 is
-        # asked of UpdateModelAnimation) and starts again within these frames.
-        script('models_loading_iqm', 'orbit', [quick() for _ in range(31)] + [slow()] + [quick() for _ in range(32)]),
+        # asked of UpdateModelAnimation) and starts again within these frames. Then 6.2's keys: RIGHT to "dance" from
+        # keyframe 0, UP twice and DOWN once (speed 1.1: fractional keyframes), LEFT back to "jump" and LEFT around
+        # to the last animation.
+        script('models_loading_iqm', 'orbit', [quick() for _ in range(31)] + [slow()] + [quick() for _ in range(32)]
+               + [quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), quick([key(KEY_UP)]), quick([key(KEY_UP, False)]), quick([key(KEY_UP)]),
+                  quick([key(KEY_UP, False)]), quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False), key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]),
+                  quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]), quick()]),
         # The textured car and floor under the orbital camera; 1 turns the red light off (a wire sphere), 2 the
         # green one, 3 and 4 together the blue and the yellow, then 1 turns the red one on again.
         script('shaders_basic_pbr', 'lights', [quick(), quick([key(49)]), quick([key(49, False), key(50)]), quick([key(50, False), key(51), key(52)]), quick([key(51, False), key(52, False)]),
@@ -1361,7 +1419,12 @@ def scripts():
         # lines); RIGHT and LEFT keep the one animation; SPACE released shows the model again.
         script('models_loading_m3d', 'skeleton', [quick(), quick(), quick([key(KEY_SPACE)]), quick(), slow(), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]),
                                                   quick(), quick([key(KEY_SPACE, False)]), quick()]),
-        script('text_codepoints_loading', 'frames', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), key(KEY_RIGHT)])]),
+        # The text in the loaded font; SPACE toggles the atlas on and off; RIGHT and LEFT move the pointer, which draws nothing.
+        script('text_codepoints_loading', 'frames', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]),
+                                                     quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_LEFT)]), quick([key(KEY_LEFT, False), key(KEY_SPACE)]),
+                                                     quick([key(KEY_SPACE, False)])]),
+        # LEFT at the start: GetCodepointPrevious steps before the text (UNDEFINED_FROM).
+        script('text_codepoints_loading', 'before', [quick(), quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False)])]),
         # The button's frame is (288, 172) to (512, 278): hovered, pressed and released on it (the sound plays), pressed
         # outside and released inside (the action too), then its top edge and the row above it.
         script('textures_sprite_button', 'click', [quick(), quick([mouse_at(400, 225)]), quick([button(0)]), slow(), quick([button(0, False)]), quick(),
@@ -1437,11 +1500,12 @@ def scripts():
         script('core_screen_recording', 'record', [quick(), quick([key(KEY_LEFT_CONTROL)]), quick([key(KEY_R)]), quick([key(KEY_R, False)]), quick(), slow(), quick(),
                                                    quick(), quick(), quick(), long(), quick(), quick(), quick(), quick([key(KEY_R)]),
                                                    quick([key(KEY_R, False), key(KEY_LEFT_CONTROL, False)]), quick([key(KEY_R)]), quick()]),
-        # The working directory has 27 files the filter takes, more than the 13 the list shows: the pointer focuses an
-        # item, a press selects it and a second one clears it, the wheel moves the list down by one and by three, a press
-        # on the bar's track jumps there and a drag follows the pointer. Then "<" twice: the directory above and the one
-        # above it, listed whole (files and directories), with the scroll index and the selection the example keeps. The
-        # button answers a release, which the memory platform sees for a touch point only.
+        # The working directory has more items the filter takes (its .png and .c files and, since 6.2, its directory sub)
+        # than the 13 the list shows: the pointer focuses an item, a press selects it and a second one clears it (where
+        # readdir's order puts sub there, the press goes into it instead), the wheel moves the list down by one and by
+        # three, a press on the bar's track jumps there and a drag follows the pointer. Then "<" twice: the directories
+        # above, listed with the same filter (6.0 listed them whole), the list view reset each time (6.2). The button
+        # answers a release, which the memory platform sees for a touch point only.
         script('core_directory_files', 'browse', [quick(), quick([mouse_at(200, 150)]), quick([button(0)]), quick([button(0, False)]), quick([button(0)]),
                                                   quick([button(0, False), (MOUSE_WHEEL, 0, -1, 0)]), slow([(MOUSE_WHEEL, 0, -3, 0)]), quick([mouse_at(793, 420)]),
                                                   quick([button(0)]), quick([mouse_at(793, 150)]), quick([mouse_at(300, 200)]), quick([button(0, False)]),
@@ -1449,6 +1513,9 @@ def scripts():
                                                   quick(), quick([mouse_at(300, 100)]), quick([button(0)]), quick([button(0, False), mouse_at(64, 24)]),
                                                   quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0)]), quick(), quick([mouse_at(250, 70)])]),
         script('core_directory_files', 'noext', [quick(), quick([mouse_at(200, 150)])]),
+        script('core_directory_files', 'enter', [quick(), quick([mouse_at(200, 65)]), quick([button(0)]), quick([button(0, False)]), quick(), quick([button(0)]),
+                                                 quick([button(0, False)]), quick([mouse_at(64, 24)]), quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0)]), quick(),
+                                                 quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0)]), quick()]),
         # The whole of country.mp3 is loaded as a wave before the first frame (minutes in the JavaScript lane). The frame is
         # the empty render texture under a shader the software renderer does not run: what the frames compare is that the
         # stream is fed and the spectrum computed without a refusal, over callbacks that empty the stream's halves (a
@@ -1464,14 +1531,19 @@ def scripts():
         # atlas grows to 512x512 and the font has 212 glyphs. 0 goes back to the 95. The other choices are not scripted:
         # the second loads the file five times and the fourth eighteen, the last ones for tens of thousands of codepoints.
         script('text_unicode_ranges', 'ranges', [quick(), quick([key(49)]), quick([key(49, False)]), quick(), quick([key(48)]), slow([key(48, False)]), quick()]),
-        # Every frame is a refusal (UNDEFINED_NATIVE): the port still runs the clock and the stream's callback, the
-        # frequency keys and both wave keys before it refuses.
+        # The sine's callbacks on the device's clock (3 or 4 a frame at 30 FPS), the frequency up (taken at the wave's
+        # next period), right to the square and back left to the sine over a slow frame, then left to the sawtooth and
+        # the triangle with the frequency down. 6.2 draws 799 lines (6.0's 800th read one float past the buffer and
+        # was not run).
         script('audio_stream_callback', 'waves', [quick(), quick([key(KEY_UP)]), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), slow([key(KEY_LEFT)]),
-                                                  quick([key(KEY_UP, False), key(KEY_LEFT, False)])]),
+                                                  quick([key(KEY_UP, False), key(KEY_LEFT, False)]), quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]),
+                                                  quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False), key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]), quick()]),
         # The mouse on the character shows the placement cube; two clicks splat two decals (the table lists them);
-        # RMB with a move turns the camera; a click on "Clear Decals" removes them.
+        # RMB with a move turns the camera; a click on "Clear Decals" removes them; "Hide Model" (at screenHeight - 100
+        # since 6.2) hides the character and "Show Model" brings it back.
         script('models_decals', 'splat', [quick(), quick([mouse_at(400, 230)]), quick([button(0)]), quick([button(0, False), mouse_at(400, 150)]), quick([button(0)]),
                                           quick([button(0, False), button(1), mouse_at(430, 160)]), slow([mouse_at(460, 170)]), quick([button(1, False), mouse_at(150, 380)]), quick([button(0)]),
+                                          quick([button(0, False), mouse_at(60, 380)]), quick([button(0)]), quick([button(0, False)]), quick([button(0)]),
                                           quick([button(0, False)])], seed=0xDECA),
         # The camera starts with the cube behind it: the mouse turns it half a turn and down (the white cube, drawn
         # without culling or depth writes, under the grid), then W walks toward it.
@@ -1516,10 +1588,12 @@ def scripts():
                                                 quick(), quick()], seed=0xBA11),
         # The five rounded gradients (the scene has no input).
         script('shapes_rectangle_advanced', 'still', [quick(), quick()]),
-        # Two more triangles (a positive wheel move); a color picked inside the wheel, dragged, then outside it
+        # Two more triangles (a positive wheel move), one fewer, the count clamped to 3 and to 256 and back (6.2 rounds
+        # the move; 6.0's negative move was undefined); a color picked inside the wheel, dragged, then outside it
         # (the handle snaps to the rim); the wheel scaled up and down with the handle; the lines while SPACE is
         # held; the value slider dragged down (the color follows); a pick at the center (the gray handle); CTRL+C.
-        script('shapes_rlgl_color_wheel', 'pick', [quick(), quick([(MOUSE_WHEEL, 0, 2, 0)]), quick([mouse_at(450, 200)]), quick([button(0)]), quick([mouse_at(480, 150)]),
+        script('shapes_rlgl_color_wheel', 'pick', [quick(), quick([(MOUSE_WHEEL, 0, 2, 0)]), quick([(MOUSE_WHEEL, 0, -1, 0)]), quick([(MOUSE_WHEEL, 0, -70, 0)]),
+                                                   quick([(MOUSE_WHEEL, 0, 300, 0)]), quick([(MOUSE_WHEEL, 0, -190, 0)]), quick([mouse_at(450, 200)]), quick([button(0)]), quick([mouse_at(480, 150)]),
                                                    quick([mouse_at(700, 80)]), quick([button(0, False)]), quick([key(KEY_UP)]), quick(), quick([key(KEY_UP, False), key(KEY_DOWN)]),
                                                    quick(), quick(), quick([key(KEY_DOWN, False), key(KEY_SPACE)]), quick(), quick([key(KEY_SPACE, False)]),
                                                    quick([mouse_at(80, 133)]), quick([button(0)]), quick([mouse_at(60, 133)]), quick([button(0, False)]),
@@ -1558,7 +1632,10 @@ def scripts():
         # The last word (10 seconds) wraps to the first at 11.
         script('text_words_alignment', 'wrap', [quick(), quick(), slow(), quick()], start=10.975),
         # The cameras follow GetTime and the rectangles the frame time: frames of both lengths.
-        script('core_smooth_pixelperfect', 'drift', [quick(), quick(), slow(), quick(), slow(), quick()]),
+        # 6.2's keys: S turns the smoothing camera off (the texture at whole pixels), O the overscan on (the texture over
+        # the whole screen), S the camera on again over the overscan, O back to the centered 640x360.
+        script('core_smooth_pixelperfect', 'drift', [quick(), quick(), slow(), quick(), slow(), quick(), quick([key(KEY_S)]), quick([key(KEY_S, False), key(KEY_O)]),
+                                                     slow([key(KEY_O, False)]), quick([key(KEY_S)]), quick([key(KEY_S, False), key(KEY_O)]), quick([key(KEY_O, False)])]),
         # The rotation follows GetTime: frames of both lengths.
         script('models_tesseract_view', 'turn', [quick(), quick(), slow(), quick(), slow()]),
         # A particle starts each frame at the mouse; SPACE switches to additive blending and back.
@@ -1599,6 +1676,139 @@ def scripts():
         script('core_2d_camera_split_screen', 'move', [quick(), quick([key(68), key(83)]), quick(), slow([key(68, False), key(83, False), key(KEY_UP)]),
                                                        quick([key(KEY_LEFT)]), quick([key(KEY_UP, False), key(KEY_LEFT, False), key(83), key(87)]),
                                                        quick([key(83, False), key(87, False), key(65)]), quick([key(65, False)])]),
+        # The drops are touch points (IsMouseButtonReleased only fires for one on the reference platform): the
+        # rectangle, the circle and the triangle each picked up (TOUCH_DOWN), dragged into its area (green) and
+        # dropped (TOUCH_UP). Then the mouse button: held, IsMouseButtonPressed fires every frame, so moving
+        # inside the rectangle re-takes the offset; outside it the rectangle follows, and after the button's
+        # MOUSE_UP it keeps following (no release) until a touch picks it again and drops it.
+        script('shapes_drag_puzzle', 'place', [quick(), quick([mouse_at(200, 325)]), quick([(TOUCH_DOWN, 0, 0, 0)]), quick([mouse_at(300, 250)]),
+                                               quick([mouse_at(395, 170)]), quick([(TOUCH_UP, 0, 0, 0)]), quick([mouse_at(400, 325)]),
+                                               quick([(TOUCH_DOWN, 0, 0, 0)]), slow([mouse_at(300, 250)]), quick([mouse_at(207, 171)]),
+                                               quick([(TOUCH_UP, 0, 0, 0)]), quick([mouse_at(600, 340)]), quick([(TOUCH_DOWN, 0, 0, 0)]),
+                                               quick([mouse_at(500, 250)]), quick([mouse_at(600, 183)]), quick([(TOUCH_UP, 0, 0, 0)]), quick(),
+                                               quick([mouse_at(395, 170)]), quick([button(0)]), quick([mouse_at(420, 190)]),
+                                               slow([mouse_at(520, 300)]), quick([button(0, False)]), quick([mouse_at(150, 400)]),
+                                               quick([mouse_at(170, 420), (TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0)]),
+                                               quick([mouse_at(400, 300)])]),
+        # Ellipse A on the mouse: apart, touching along the x axis (theta 0), with the mouse inside B; B taken
+        # (KEY_B, 66) where A is (the centers equal: no atan2f), moved apart in each quadrant; A taken back (KEY_A);
+        # off screen; A and B pressed in the same frame (B wins).
+        script('shapes_ellipse_collision', 'control', [quick(), quick([mouse_at(200, 225)]), quick([mouse_at(420, 225)]), quick([mouse_at(450, 300)]),
+                                                       slow([mouse_at(530, 225)]), quick([key(66)]), quick([key(66, False), mouse_at(700, 100)]),
+                                                       quick([mouse_at(100, 400)]), quick([key(KEY_A), mouse_at(250, 150)]),
+                                                       quick([key(KEY_A, False), mouse_at(150, 300)]), quick([mouse_at(-40, 500)]),
+                                                       slow([mouse_at(400, 10)]), quick([key(KEY_A), key(66)]),
+                                                       quick([key(KEY_A, False), key(66, False), mouse_at(600, 300)])]),
+        # The camera first: wheel zoom in and out around the scene's center, a left drag pans (GetMouseDelta/zoom),
+        # the drag leaves the scene to the left and below it (SetMousePosition wraps the mouse to (490, 180) and
+        # (300, 20); the next delta is taken from there), release; UP held two frames, DOWN, D+S, A+W, Z resets
+        # the zoom (KEY_Z = 90), C the target, a wheel zoom again. Then the ten slider bars, each pressed by a
+        # touch point (the memory platform only reports a touch point's release, which turns the mouse control
+        # back on): opacity dragged past its right bound and back, thickness past its left bound (-20), a
+        # negative roundness, 1 rectangle segment, ellipse 1.125, angles -288 and 192, 2 circle segments (the
+        # estimated count), ring radius 1.9 (inner > outer), 5 polygon sides; a wheel zoom with the new values.
+        # Last, a mouse press over the panel turns the mouse control off for good (no mouse release is ever
+        # reported): the wheel is ignored, UP still zooms.
+        script('shapes_outlines_testbed', 'camera-sliders', [quick(), quick([mouse_at(250, 225)]), quick([(MOUSE_WHEEL, 0, 1, 0)]),
+                                                              quick([(MOUSE_WHEEL, 0, -2, 0)]), quick([button(0)]), quick([mouse_at(200, 200)]),
+                                                              quick([mouse_at(-20, 180)]), quick([mouse_at(470, 170)]), quick([mouse_at(300, 470)]),
+                                                              quick([button(0, False)]), quick([key(KEY_UP)]), quick(),
+                                                              quick([key(KEY_UP, False), key(KEY_DOWN)]), quick([key(KEY_DOWN, False), key(KEY_D), key(KEY_S)]),
+                                                              quick([key(KEY_D, False), key(KEY_S, False), key(KEY_A), key(KEY_W)]),
+                                                              quick([key(KEY_A, False), key(KEY_W, False), key(90)]), quick([key(90, False), key(KEY_C)]),
+                                                              quick([key(KEY_C, False), (MOUSE_WHEEL, 0, 3, 0)]),
+                                                              quick([mouse_at(680, 22)]), quick([(TOUCH_DOWN, 0, 0, 0)]), quick([mouse_at(820, 30)]),
+                                                              quick([mouse_at(640, 25)]), quick([(TOUCH_UP, 0, 0, 0)]),
+                                                              quick([mouse_at(700, 57), (TOUCH_DOWN, 0, 0, 0)]), quick([mouse_at(560, 57)]), quick([(TOUCH_UP, 0, 0, 0)]),
+                                                              quick([mouse_at(650, 92), (TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0), mouse_at(608, 127)]),
+                                                              quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0), mouse_at(740, 162)]),
+                                                              quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0), mouse_at(620, 197)]),
+                                                              quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0), mouse_at(720, 232)]),
+                                                              quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0), mouse_at(610, 267)]),
+                                                              quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0), mouse_at(750, 302)]),
+                                                              quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0), mouse_at(615, 337)]),
+                                                              quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0)]),
+                                                              quick([mouse_at(250, 225), (MOUSE_WHEEL, 0, -1, 0)]), quick(),
+                                                              quick([mouse_at(700, 400), button(0)]), quick([(MOUSE_WHEEL, 0, 2, 0)]),
+                                                              quick([key(KEY_UP)]), quick([key(KEY_UP, False)])]),
+        # raygui slider bar: hover, press inside (thickness 0), drag right, on past the right bound (30, the drag
+        # keeps following outside the bar), past the left bound (-30: outlines outside the shapes), back in,
+        # release; a press outside the bar that then enters it while held starts a drag, release.
+        script('shapes_outlines_thickness', 'slider', [quick(), quick([mouse_at(400, 62)]), quick([button(0)]), quick([mouse_at(470, 60)]),
+                                                       quick([mouse_at(560, 120)]), quick([mouse_at(250, 40)]), quick([mouse_at(330, 70)]),
+                                                       slow([button(0, False)]), quick([mouse_at(600, 300)]), quick([button(0)]),
+                                                       quick([mouse_at(300, 62)]), quick([button(0, False)]), quick()]),
+        # The polygons turn by 36 degrees a second of GetFrameTime (quick, slow and long frames); UP three times,
+        # DOWN five times (the last one clamped back to 1).
+        script('shapes_polygon_lines', 'thick', [quick(), slow(), long(), quick([key(KEY_UP)]), quick([key(KEY_UP, False)]), quick([key(KEY_UP)]),
+                                                 slow([key(KEY_UP, False)]), quick([key(KEY_UP)]), quick([key(KEY_UP, False)])]
+               + [quick([key(KEY_DOWN, down)]) for _ in range(5) for down in (True, False)] + [quick()]),
+        # UP sixty times: the thickness passes the inradii (DrawPolyLinesEx's inner radius clamped at 0 by fmaxf,
+        # DrawCircleLinesEx's DrawRing with a negative inner radius) and is clamped at 60.
+        script('shapes_polygon_lines', 'clamp', [quick([key(KEY_UP, down)]) for _ in range(60) for down in (True, False)] + [slow()]),
+        # The free camera looks around with the mouse and walks with W/A/S/D; each frame Dimension B is drawn into the
+        # 480x640 render texture (rlSetMatrixProjection is a no-op on rlsw: BeginTextureMode's ortho clips it to the
+        # clear color) and sampled by the archway's rlgl quad.
+        script('textures_portal_window', 'walk', [quick(), quick([mouse_at(420, 235)]), quick([mouse_at(445, 220)]), slow([mouse_at(380, 250), key(KEY_W)]),
+                                                  long(), quick([key(KEY_W, False), key(KEY_A)]), quick([key(KEY_A, False), key(KEY_S)]),
+                                                  slow([key(KEY_S, False), key(KEY_D)]), quick([key(KEY_D, False), mouse_at(400, 240)]), quick()]),
+        # Waving: W raises the intensity (26), X the glyph offset (7), D the duration (65, over a slow frame); E flashing:
+        # A twice (55) and Z (6); E shaking (GetRandomValue offsets): S nine times takes the intensity down to its clamp
+        # at 10 (the random range from -2..2 to -1..1); Q three times goes back through flashing and waving to shaking.
+        # Keys Q, E, X, Z are 81, 69, 88, 90.
+        script('text_animations', 'all', [quick() for _ in range(5)]
+               + [quick([key(KEY_W)]), quick([key(KEY_W, False)]), quick([key(88)]), quick([key(88, False)]), quick([key(KEY_D)]), slow([key(KEY_D, False)])]
+               + [quick() for _ in range(18)]
+               + [quick([key(69)]), quick([key(69, False)])] + [quick() for _ in range(8)]
+               + [quick([key(KEY_A)]), quick([key(KEY_A, False)]), quick([key(KEY_A)]), quick([key(KEY_A, False)]), quick([key(90)]), quick([key(90, False)])]
+               + [quick() for _ in range(10)]
+               + [quick([key(69)]), quick([key(69, False)])] + [quick() for _ in range(6)]
+               + [frame for _ in range(9) for frame in (quick([key(KEY_S)]), quick([key(KEY_S, False)]))]
+               + [long(), quick(), quick()]
+               + [quick([key(81)]), quick([key(81, False)]), quick(), quick([key(81)]), quick([key(81, False)]), quick(), quick([key(81)]), quick([key(81, False)])]
+               + [quick() for _ in range(6)], seed=0x7E47),
+        # The sphere painted red: a dab, then two frames of a stroke (circles placed with Lerp along it). The LIME swatch
+        # (a press over the panel, which paints nothing) and a lime dab. PICKER (a toggle answers a release: a touch
+        # point) and a press on the red stroke: the color is red again and the tool PAINT. SIZE + (brush 14), CUBE (the
+        # indexed mesh: its triangles through mesh.indices) and a red dab on its front face; RMB turns the camera
+        # (CAMERA_THIRD_PERSON); FILL paints the canvas red, CLEAR back to RAYWHITE. Each painting frame casts the ray
+        # through every triangle of the 32x32 sphere and updates the 512x512 texture: heavy on the JavaScript lane.
+        script('models_mesh_uv_painting', 'paint', [quick(), quick([mouse_at(400, 225)]), quick([button(0)]), quick([mouse_at(410, 230)]),
+                                                    slow([mouse_at(422, 236)]), quick([button(0, False), mouse_at(189, 264)]), quick([button(0)]),
+                                                    quick([button(0, False), mouse_at(470, 200)]), quick([button(0)]),
+                                                    quick([button(0, False), mouse_at(172, 71)]), quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0)]),
+                                                    quick([mouse_at(410, 230)]), quick([button(0)]), quick([button(0, False), mouse_at(172, 380)]),
+                                                    quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0)]), quick([mouse_at(172, 134)]),
+                                                    quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0)]), quick([mouse_at(400, 225)]), quick([button(0)]),
+                                                    quick([button(0, False), button(1)]), quick([mouse_at(430, 235)]), slow([mouse_at(460, 240)]),
+                                                    quick([button(1, False), mouse_at(172, 425)]), quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0)]),
+                                                    quick([mouse_at(72, 425)]), quick([(TOUCH_DOWN, 0, 0, 0)]), quick([(TOUCH_UP, 0, 0, 0)]), quick()]),
+        # The mouse on the torus shows the placement cube; two clicks splat two decals at random angles (the table's
+        # TOTAL grows); RMB with a move turns the camera (CAMERA_THIRD_PERSON). "Hide Model" (a raygui button answers a
+        # release: a touch point; the ray from there misses the torus, so the touch's press splats nothing) leaves the
+        # decals alone, then "Clear Decals" removes them. Every frame with the ray in the box casts it through the
+        # torus's 4096 triangles, and each splat transforms its 12288 vertices: heavy on the JavaScript lane.
+        script('models_procedural_decals', 'splat', [quick(), quick([mouse_at(480, 225)]), quick([button(0)]), quick([button(0, False), mouse_at(330, 205)]),
+                                                     quick([button(0)]), quick([button(0, False), button(1)]), quick([mouse_at(345, 212)]),
+                                                     slow([mouse_at(362, 220)]), quick([button(1, False), mouse_at(60, 390)]), quick([(TOUCH_DOWN, 0, 0, 0)]),
+                                                     quick([(TOUCH_UP, 0, 0, 0)]), quick([mouse_at(170, 390)]), quick([(TOUCH_DOWN, 0, 0, 0)]),
+                                                     quick([(TOUCH_UP, 0, 0, 0)]), quick()], seed=0xDEC0),
+        # The orbital camera turns and the eight lights circle the cube (sinf/cosf of the clock); a wheel move zooms in
+        # (CameraMoveToTarget). The lit scene goes through an 800x450 render texture drawn y-flipped in the (no-op)
+        # bloom shader mode.
+        script('shaders_lights_bloom', 'orbit', [quick(), quick(), slow(), quick([(MOUSE_WHEEL, 0, 2, 0)]), long(), quick()]),
+        # The first two passes fill both halves with silence and play the stream. The slider bars: Attack dragged to
+        # about 0.25 s, Decay pressed at about 0.28 s, Release at about 0.39 s. SPACE starts the attack: over frames of a
+        # tenth of a second the device reads more than a half each frame, so each pass refills one (4096 samples, 93 ms of
+        # envelope): attack, decay, then sustain, where the Sustain bar is pressed at 0.75. SPACE's release starts the
+        # release, which reaches 0 (IDLE: silence again, audioTime back to 0) within the last long frames.
+        script('audio_amp_envelope', 'adsr', [quick(), quick(),
+                                              quick([mouse_at(130, 75)]), quick([button(0)]), quick([mouse_at(120, 76)]), quick([button(0, False)]),
+                                              quick([mouse_at(125, 115), button(0)]), quick([button(0, False)]),
+                                              quick([mouse_at(140, 195), button(0)]), quick([button(0, False), mouse_at(600, 300)]),
+                                              quick([key(KEY_SPACE)]), long(), quick(), long(), slow(), long(), long(), long(), long(),
+                                              quick([mouse_at(400, 155), button(0)]), quick([button(0, False), mouse_at(600, 300)]), long(),
+                                              quick([key(KEY_SPACE, False)]), long(), long(), long(), long(), long(), long(), quick(), quick()]),
     ]
     # The probe-only raygui programs (tools/reference/gui/).
     # GuiWindowBox's close button (188..206 x 13..31) clicked, the label button clicked, the dummy rec hovered and pressed, the
@@ -1802,16 +2012,9 @@ def bullet_hell_refusal(item, libm):
 # Examples whose native run is undefined behavior in C, with the reason. Jonlib refuses the operation, so
 # every frame of the port is a contract (refused from the first one) on every profile and no frame of the
 # native example is evidence.
-UNDEFINED_NATIVE = {
-    # Its CodepointRemoveDuplicates shifts the list with codepointsNoDups[k] = codepointsNoDups[k + 1] up to
-    # k = count - 1 at the first repeated codepoint: one int read past the codepointCount ints allocated. The
-    # text repeats U+3000 and its line break, so the read happens before the first frame. docs/TEXT.md.
-    'text_codepoints_loading': 'CodepointRemoveDuplicates reads one int past its array',
-    # It draws the last 441 samples of its one-second buffer as 800 columns, and the end of the last column is
-    # buffer[SAMPLE_RATE - SAMPLE_RATE/100 + 800*SAMPLE_RATE/100/screenWidth] = buffer[SAMPLE_RATE]: one float
-    # past the array, in every frame. docs/AUDIO.md.
-    'audio_stream_callback': 'the last column of its wave reads one float past its buffer',
-}
+# raylib 6.2 fixed both of 6.0's (text_codepoints_loading's duplicate removal and audio_stream_callback's last
+# column each read one element past an array): none is left.
+UNDEFINED_NATIVE = {}
 REPORTED = {'textures_sprite_stacking', 'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
             'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass',
             'shapes_rlgl_color_wheel', 'shapes_rectangle_advanced', 'core_input_gestures_testbed', 'core_input_gamepad',
@@ -1819,7 +2022,10 @@ REPORTED = {'textures_sprite_stacking', 'shapes_triangle_strip', 'shapes_recursi
             'core_2d_camera_mouse_zoom', 'shapes_simple_particles',
             'shapes_math_sine_cosine',
             'shapes_pie_chart',
-            'shapes_digital_clock', 'shapes_clock_of_clocks'}
+            'shapes_digital_clock', 'shapes_clock_of_clocks',
+            # raylib 6.2's sinf of their samples and waves (6.0 took the double sin, which has no AppleLibm profile).
+            'audio_raw_stream', 'audio_stream_callback',
+            'shapes_outlines_testbed', 'shapes_outlines_thickness', 'text_animations', 'audio_amp_envelope'}
 
 
 def refusal(item, libm):
@@ -1897,6 +2103,17 @@ def refusal(item, libm):
     if item['example'] == 'shapes_following_eyes':
         # Outside a sclera's reach the iris needs atan2f and sinf/cosf of its angle, which the Apple profile
         # does not verify; the script starts with the mouse at the origin, outside both.
+        return 0 if libm == 'AppleLibm' else None
+    if item['example'] == 'shapes_ellipse_collision':
+        # CheckCollisionEllipses takes atan2f(dy, dx) of the centers' difference and its sinf/cosf, which the Apple
+        # profile only verifies at whole degrees; the script starts with the mouse (ellipse A) at the origin and B
+        # at (600, 225), atan2f(225, 600) = 20.56 degrees. The glibc profiles answer every integral difference.
+        return 0 if libm == 'AppleLibm' else None
+    if item['example'] == 'shapes_polygon_lines':
+        # DrawPoly/DrawPolyLinesEx of the heptagon at (290, 360) step by fl(fl(360/7)*DEG2RAD) from
+        # rotation*DEG2RAD: two consecutive angles 51.43 degrees apart cannot both be verified whole degrees, so
+        # the Apple profile refuses every frame, whatever GetFrameTime made the rotation. The glibc profiles answer
+        # every finite argument (docs/SINCOSF.md).
         return 0 if libm == 'AppleLibm' else None
     if item['example'] != 'core_2d_camera':
         return None

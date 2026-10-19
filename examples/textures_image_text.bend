@@ -1,16 +1,20 @@
 # raylib [textures] example - image text, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_image_text.c
+# Adapted from raylib 6.2 examples/textures/textures_image_text.c
 # (zlib/libpng, Copyright (c) 2017-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #
 # A line of text drawn into an image with a font generated from a TTF at
 # size 64 (ImageDrawTextEx), the image shown as a texture with the same text
-# drawn under it; SPACE shows the font's atlas texture instead. LoadImage of
+# drawn under it; SPACE shows the font's atlas texture instead, scaled to fit
+# the screen (raylib 6.2). The font loads the 94 printable ASCII codepoints
+# but '@', which KAISG.ttf has no glyph for (6.2; 6.0 loaded the default 95
+# and logged a warning). LoadImage of
 # a .png is the PNG loader (Surface.load_png). A font or an image operation
 # Jonlib refuses refuses the frames. See docs/FONTS.md and docs/DRIVER.md.
 import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M
+import ../src/fonts.bend as FontCore
 
 type State is Type:
   State{texture: Maybe<J.Texture>, font: Maybe<J.Font>, show: Bool}
@@ -40,12 +44,31 @@ def draw.image(+core: J.Core, frame: J.Frame, texture: J.Texture, font: J.Font) 
   +y = ((450.0 / 2.0 - U32.to_f32(h) / 2.0) - 20.0 : F32)
   draw.text(core, x, y, font, J.Draw.texture_v(frame, J.Texture{id, w, h, format, linear, alpha, texels}, M.Vector2{x, y}, J.Color.WHITE()))
 
+def draw.atlas.kept(+core: J.Core, image: J.Texture, +base: U32, +padding: U32, +glyphs: +List<FontCore.Glyph>, atlas: J.Surface, r: J.Frame & J.Texture) -> J.Core & (State & J.Frame):
+  (frame, texture) = r
+  draw.done(core, True{}, image, (frame, J.Font{base, padding, glyphs, texture, atlas}))
+
+# DrawTextureEx(font.texture, ((screenWidth - width)/2, (screenHeight - height)/2), 0, scale, BLACK).
+def draw.atlas.drawn(+core: J.Core, frame: J.Frame, image: J.Texture, font: J.Font, +width: F32, +height: F32, +scale: F32) -> J.Core & (State & J.Frame):
+  J.Font{+base, +padding, +glyphs, texture, atlas} = font
+  draw.atlas.kept(core, image, base, padding, glyphs, atlas,
+    J.Draw.texture_ex(frame, texture, M.Vector2{((800.0 - width) / 2.0 : F32), ((450.0 - height) / 2.0 : F32)}, 0.0, scale, J.Color.BLACK()))
+
+# The atlas fits the screen: scale = screenWidth/width when its ratio is at
+# least the screen's, otherwise screenHeight/height.
+def fit.scale(+w: F32, +h: F32) -> F32:
+  Bool.pick(F32, ((w / h : F32) >= (800.0 / 450.0 : F32) : F32), (800.0 / w : F32), (450.0 / h : F32))
+
+def draw.atlas.sized(+core: J.Core, frame: J.Frame, texture: J.Texture, font: J.Font, size: U32 & U32) -> J.Core & (State & J.Frame):
+  (+w, +h) = size
+  +scale = fit.scale(U32.to_f32(w), U32.to_f32(h))
+  draw.atlas.drawn(core, frame, texture, font, (U32.to_f32(w) * scale : F32), (U32.to_f32(h) * scale : F32), scale)
+
 def draw.atlas.at(+core: J.Core, frame: J.Frame, texture: J.Texture, r: J.Font & (U32 & U32)) -> J.Core & (State & J.Frame):
   (font, size) = r
-  (+w, _) = size
-  draw.done(core, True{}, texture, J.Draw.font_texture(frame, font, (800.0 / 2.0 - U32.to_f32((w / 2 : U32)) : F32), 50.0, J.Color.BLACK()))
+  draw.atlas.sized(core, frame, texture, font, size)
 
-# DrawTexture(font.texture, screenWidth/2 - font.texture.width/2, 50, BLACK).
+# The font atlas texture made to fit the screen.
 def draw.atlas(+core: J.Core, frame: J.Frame, texture: J.Texture, font: J.Font) -> J.Core & (State & J.Frame):
   draw.atlas.at(core, frame, texture, J.Font.texture_size(font))
 
@@ -110,9 +133,13 @@ def setup.made(+core: J.Core, r: J.Frame & Result<&1, &1, J.Surface.IOError, May
   (frame, result) = r
   setup.upload(core, frame, titled(image, font(result)))
 
-# LoadFontEx("resources/KAISG.ttf", 64, 0, 0): the default 95 codepoints.
+# LoadCodepoints of the printable ASCII characters but '@' (94).
+def codepoints() -> +List<U32>:
+  J.Codepoint.load(" !\"#$%&'()*+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~")
+
+# LoadFontEx("resources/KAISG.ttf", 64, codepoints, codepointCount).
 def setup.font(+dir: String, +core: J.Core, frame: J.Frame, image: Maybe<J.Surface>) -> IO(J.Core & (J.Frame & State)):
-  IO.bind(J.Frame & Result<&1, &1, J.Surface.IOError, Maybe<J.Font>>, J.Core & (J.Frame & State), J.Font.load_ex(frame, dir ++ "resources/KAISG.ttf", 64, Nil{}, 0),
+  IO.bind(J.Frame & Result<&1, &1, J.Surface.IOError, Maybe<J.Font>>, J.Core & (J.Frame & State), J.Font.load_ex(frame, dir ++ "resources/KAISG.ttf", 64, codepoints(), 94),
     r => IO.pure(J.Core & (J.Frame & State), setup.made(core, r, image)))
 
 # After InitWindow(800, 450): the parrots image, the font, the text drawn

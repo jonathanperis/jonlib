@@ -310,7 +310,7 @@ outside, and read-only boxes; a label in `TEXT_SIZE` 20 with
 `TEXT_SPACING` 2 and one drawn as focused. `core_clipboard_text` covers the icon scale: five buttons with icons at
 scale 2 beside their texts in `TEXT_SIZE` 20, a text box emptied and
 refilled, and disabled labels. `shapes_pie_chart` covers the scroll panel without bars (its content
-fits), with text boxes and slider bars drawn inside its view under a
+fits), with text boxes (raylib 6.2 hands them `TextFormat`'s buffer, so an edit lasts one frame) and slider bars drawn inside its view under a
 scissor, a spinner that changes the rows, and a slider bar disabled and
 enabled again. `shaders_color_correction` covers the toggle group: an item hovered, pressed
 and switched on, and a click on the active item that changes nothing. `models_animation_timing` covers the progress bar: a bar partly filled over
@@ -318,8 +318,9 @@ a range of keyframes, its border in two colors split at the bar's end, with
 a dropdown box of fourteen items opened over the scene, an item chosen and
 a slider dragged beside it. `models_animation_blending` adds an empty bar,
 one whose value passed its maximum (capped and full), one filling from the
-right (`PROGRESS_SIDE` 1), bars with both side texts, and a slider disabled
-while its dropdown box is open. The bar's own disabled state is not
+right (`PROGRESS_SIDE` 1), bars with both side texts, a slider disabled
+while its dropdown box is open, and (raylib 6.2) a label centered in
+`TEXT_SIZE` twice the font's base size, the styles set back after it. The bar's own disabled state is not
 compared with raygui yet. `LAWS.bend` states the default text size, the propagation of a DEFAULT
 property, the enable/disable rules, how an icon prefix is read and which
 lines are refused. The `gui-icons` gate compares the icon set with every

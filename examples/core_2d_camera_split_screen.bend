@@ -1,5 +1,5 @@
 # raylib [core] example - 2d camera split screen, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_2d_camera_split_screen.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_2d_camera_split_screen.c (zlib/libpng,
 # Copyright (c) 2023-2025 Gabriel dos Santos Sanches (@gabrielssanches)); see
 # LICENSES/raylib.txt.
 #
@@ -62,6 +62,8 @@ def labels(n: Nat, +k: U32, frame: J.Frame) -> J.Frame:
       +j = (k % 11 : U32)
       labels(p, (k + 1 : U32), label.drawn(J.Text.format("[%i,%i]", [J.TextInt{i}, J.TextInt{j}]), U32.to_f32((10 + 40 * i : U32)), U32.to_f32((15 + 40 * j : U32)), frame))
 
+# The offset is Vector2Multiply((200, 200), GetWindowScaleDPI()) since raylib
+# 6.2: a Base window's scale is (1, 1) (J.Core.get_window_scale_dpi).
 def camera(+target: J.Rectangle) -> J.Camera2D:
   J.Rectangle{+x, +y, _, _} = target
   J.Camera2D{M.Vector2{200.0, 200.0}, M.Vector2{x, y}, 0.0, 1.0}

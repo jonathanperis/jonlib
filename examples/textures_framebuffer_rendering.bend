@@ -1,5 +1,5 @@
 # raylib [textures] example - framebuffer rendering, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_framebuffer_rendering.c
+# Adapted from raylib 6.2 examples/textures/textures_framebuffer_rendering.c
 # (zlib/libpng, Copyright (c) 2026 Jack Boakes (@jackboakes)); see
 # LICENSES/raylib.txt.
 #

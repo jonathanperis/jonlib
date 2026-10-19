@@ -1,5 +1,5 @@
 # raylib [shapes] example - pie chart, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_pie_chart.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_pie_chart.c (zlib/libpng,
 # Copyright (c) 2025 Gideon Serfontein (@GideonSerf)); see LICENSES/raylib.txt.
 #
 # A pie chart of up to ten slices (the one under the pointer pops out), with
@@ -158,24 +158,30 @@ def row.pair(pair: G.Gui.Editing & Bool, +label: String, +core: J.Core, frame: J
   (+editing, +toggled) = pair
   row.bar(G.Gui.slider_bar(gui, core, frame, J.Rectangle{(x + 130.0 : F32), y, 110.0, 30.0}, None{}, None{}, value, 0.0, 1000.0), core, editing, label, Bool.pick(Bool, toggled, Bool.not(edit), edit), labels, edits, values)
 
-def row.text(more: String & (G.Gui.Editing & Bool), +core: J.Core, frame: J.Frame, +gui: G.Gui, +edit: Bool, +value: F32, +x: F32, +y: F32, +labels: +List<String>, +edits: +List<Bool>, +values: +List<F32>) -> Rows:
-  (+label, pair) = more
+# The text the box edited is TextFormat's buffer, written again the next
+# frame: an edit lasts the frame it is typed in, and the label stays.
+def row.text(more: String & (G.Gui.Editing & Bool), +core: J.Core, frame: J.Frame, +gui: G.Gui, +label: String, +edit: Bool, +value: F32, +x: F32, +y: F32, +labels: +List<String>, +edits: +List<Bool>,
+    +values: +List<F32>) -> Rows:
+  (_, pair) = more
   row.pair(pair, label, core, frame, gui, edit, value, x, y, labels, edits, values)
 
-def row.core(rest: J.Core & (String & (G.Gui.Editing & Bool)), frame: J.Frame, +gui: G.Gui, +edit: Bool, +value: F32, +x: F32, +y: F32, +labels: +List<String>, +edits: +List<Bool>, +values: +List<F32>) -> Rows:
+def row.core(rest: J.Core & (String & (G.Gui.Editing & Bool)), frame: J.Frame, +gui: G.Gui, +label: String, +edit: Bool, +value: F32, +x: F32, +y: F32, +labels: +List<String>, +edits: +List<Bool>,
+    +values: +List<F32>) -> Rows:
   (+core, more) = rest
-  row.text(more, core, frame, gui, edit, value, x, y, labels, edits, values)
+  row.text(more, core, frame, gui, label, edit, value, x, y, labels, edits, values)
 
-def row.box(r: J.Frame & (J.Core & (String & (G.Gui.Editing & Bool))), +gui: G.Gui, +edit: Bool, +value: F32, +x: F32, +y: F32, +labels: +List<String>, +edits: +List<Bool>, +values: +List<F32>) -> Rows:
+def row.box(r: J.Frame & (J.Core & (String & (G.Gui.Editing & Bool))), +gui: G.Gui, +label: String, +edit: Bool, +value: F32, +x: F32, +y: F32, +labels: +List<String>, +edits: +List<Bool>,
+    +values: +List<F32>) -> Rows:
   (frame, rest) = r
-  row.core(rest, frame, gui, edit, value, x, y, labels, edits, values)
+  row.core(rest, frame, gui, label, edit, value, x, y, labels, edits, values)
 
-# A slice's editor at rowY = (int)(contentY + 5 + i*35): its color, its label's text box and its value's slider bar.
+# A slice's editor at rowY = (int)(contentY + 5 + i*35): its color, the text box of TextFormat("Slice %02i", i + 1)
+# (raylib 6.2; 6.0 kept the labels in a char[10][32] the boxes edited) and its value's slider bar.
 def row(rows: Rows, +i: U32, +count: U32, +label: String, +edit: Bool, +value: F32, +cx: F32, +cy: F32) -> Rows:
   Rows{frame, +core, +gui, +editing, +labels, +edits, +values} = rows
   +y = F32.trunc(((cy + 5.0 : F32) + U32.to_f32((i * 35 : U32)) : F32))
   row.box(G.Gui.text_box(gui, core, J.Draw.rectangle(frame, F32.trunc((cx + 15.0 : F32)), (y + 5.0 : F32), 20.0, 20.0, hue(i, count)), J.Rectangle{(cx + 45.0 : F32), y, 75.0, 30.0}, label, 32, edit, editing),
-    gui, edit, value, cx, y, labels, edits, values)
+    gui, label, edit, value, cx, y, labels, edits, values)
 
 def row.kept(rows: Rows, +label: String, +edit: Bool, +value: F32) -> Rows:
   Rows{frame, core, gui, editing, labels, edits, values} = rows

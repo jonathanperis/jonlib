@@ -1,5 +1,5 @@
 # raylib [core] example - 2d camera, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_2d_camera.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_2d_camera.c (zlib/libpng,
 # Copyright (c) 2016-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # Right/Left move the player, A/S rotate the camera, R resets. raylib seeds
@@ -63,13 +63,18 @@ def buildings.list(made: Made) -> +List<Building>:
   Made{_, +list, _} = made
   List.reverse(&2, Building, list)
 
+# camera.offset = (GetRenderWidth()/2.0f, GetRenderHeight()/2.0f) (raylib
+# 6.2; 6.0 took the screen size, the same on a window without DPI scaling).
+def center(+core: J.Core) -> M.Vector2:
+  M.Vector2{(U32.to_f32(J.Core.get_render_width(core)) / 2.0 : F32), (U32.to_f32(J.Core.get_render_height(core)) / 2.0 : F32)}
+
 # After InitWindow(800, 450) and SetRandomSeed(seed): the buildings, the
-# player at (400, 280, 40, 40), the camera on the player with offset
-# (400, 225), rotation 0 and zoom 1, SetTargetFPS(60).
+# player at (400, 280, 40, 40), the camera on the player with the offset
+# centered, rotation 0 and zoom 1, SetTargetFPS(60).
 def setup(+seed: U32, +core: J.Core, frame: J.Frame) -> J.Core & (J.Frame & State):
   (J.Core.set_target_fps(core, 60), (frame, State{J.Rectangle{400.0, 280.0, 40.0, 40.0},
     buildings.list(buildings(100n, Made{J.Random.seed(seed), Nil{}, 0.0})),
-    J.Camera2D{M.Vector2{420.0, 300.0}, M.Vector2{400.0, 225.0}, 0.0, 1.0}, False{}}))
+    J.Camera2D{center(core), M.Vector2{420.0, 300.0}, 0.0, 1.0}, False{}}))
 
 # -----------------------------------------------------------------------------
 # Update
@@ -89,7 +94,7 @@ def rotated(+core: J.Core, +rotation: F32) -> F32:
 def update.camera(+core: J.Core, +x: F32, +y: F32, +w: F32, +h: F32, +buildings: +List<Building>, +rotation: F32, +zoom: F32, +refused: Bool) -> J.Core & State:
   +reset = J.Input.is_key_pressed(core, J.KeyboardKey.KEY_R())
   +unsupported = refused || F32.is_ne(J.Input.get_mouse_wheel_move(core), 0.0) || F32.is_ne(zoom, 1.0)
-  (core, State{J.Rectangle{x, y, w, h}, buildings, J.Camera2D{M.Vector2{400.0, 225.0}, M.Vector2{(x + 20.0 : F32), (y + 20.0 : F32)},
+  (core, State{J.Rectangle{x, y, w, h}, buildings, J.Camera2D{center(core), M.Vector2{(x + 20.0 : F32), (y + 20.0 : F32)},
     Bool.pick(F32, reset, 0.0, rotated(core, rotation)), 1.0}, unsupported})
 
 def update.player(+core: J.Core, +player: J.Rectangle, +buildings: +List<Building>, +rotation: F32, +zoom: F32, +refused: Bool) -> J.Core & State:

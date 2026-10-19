@@ -1,10 +1,10 @@
 # raylib [models] example - animation blend custom, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_animation_blend_custom.c
+# Adapted from raylib 6.2 examples/models/models_animation_blend_custom.c
 # (zlib/libpng, Copyright (c) 2026 dmitrii-brand (@dmitrii-brand)); see
 # LICENSES/raylib.txt.
 #
 # The greenman model under an orbital camera with two of its animations
-# blended bone by bone by the example's own UpdateModelAnimationBones: the
+# blended bone by bone by the example's own UpdateModelAnimationBoneCustom: the
 # upper body takes the attack and the lower body the walk, or (SPACE) every
 # bone half of each. The function writes model.boneMatrices only; the
 # reference library is built with GPU skinning (mesh.animVertices is never
@@ -160,7 +160,7 @@ def skeleton.empty(bones: +List<J.BoneInfo>) -> Bool:
     case Nil{}: True{}
     case Con{_, _}: False{}
 
-# UpdateModelAnimationBones(&model, &anim0, frame0, &anim1, frame1, blend, upperBodyBlend): nothing for an
+# UpdateModelAnimationBoneCustom(&model, &anim0, frame0, &anim1, frame1, blend, upperBodyBlend): nothing for an
 # animation or a skeleton without bones. The frames come in range from the main loop.
 def blended(+libm: M.Libm, skeleton: J.ModelSkeleton, +first: J.ModelAnimation, +frame_first: U32, +second: J.ModelAnimation, +frame_second: U32, +blend: F32, +upper: Bool, +pose: J.ModelPose) -> Maybe<J.ModelPose>:
   J.ModelSkeleton{+bones, +binds} = skeleton

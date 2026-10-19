@@ -1,5 +1,5 @@
 # raylib [core] example - 2d camera platformer, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_2d_camera_platformer.c
+# Adapted from raylib 6.2 examples/core/core_2d_camera_platformer.c
 # (zlib/libpng, Copyright (c) 2019-2025 arvyy (@arvyy)); see
 # LICENSES/raylib.txt.
 #
@@ -40,6 +40,9 @@ def items() -> +List<Item>:
    Item{J.Rectangle{250.0, 300.0, 100.0, 10.0}, True{}, J.Color.GRAY()},
    Item{J.Rectangle{650.0, 300.0, 100.0, 10.0}, True{}, J.Color.GRAY()}]
 
+# (width/2.0f, height/2.0f) of the update functions; the initial offset is
+# (GetRenderWidth()/2.0f, GetRenderHeight()/2.0f) since raylib 6.2, the same
+# on a Base window, whose render size is its InitWindow size.
 def center() -> M.Vector2:
   M.Vector2{(800.0 / 2.0 : F32), (450.0 / 2.0 : F32)}
 

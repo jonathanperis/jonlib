@@ -1,5 +1,5 @@
 # raylib [textures] example - bunnymark, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_bunnymark.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/textures/textures_bunnymark.c (zlib/libpng,
 # Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # Holding the left button adds 100 bunnies a frame at the mouse with random
@@ -8,8 +8,8 @@
 # GetRandomValue calls are an initializer list, whose order C leaves
 # unspecified; the reference compiler (clang) draws them left to right, as
 # here. LoadTexture of a .png file is LoadImage (raylib's PNG loader,
-# Surface.load_png here) and LoadTextureFromImage. No SetTargetFPS: frames
-# do not wait. See docs/DRIVER.md.
+# Surface.load_png here) and LoadTextureFromImage. SetTargetFPS(0) (raylib
+# 6.2; 6.0 never called it): frames do not wait. See docs/DRIVER.md.
 import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M
@@ -150,20 +150,20 @@ def program(+libm: M.Libm) -> J.Program<State>:
 
 def setup.sized(+seed: U32, +core: J.Core, frame: J.Frame, texture: J.Texture) -> J.Core & (J.Frame & State):
   J.Texture{+id, +w, +h, +format, +linear, +alpha, texels} = texture
-  (core, (frame, State{J.Random.seed(seed), Nil{}, 0, False{}, Some{J.Texture{id, w, h, format, linear, alpha, texels}}, U32.to_f32(w), U32.to_f32(h)}))
+  (J.Core.set_target_fps(core, 0), (frame, State{J.Random.seed(seed), Nil{}, 0, False{}, Some{J.Texture{id, w, h, format, linear, alpha, texels}}, U32.to_f32(w), U32.to_f32(h)}))
 
 def setup.uploaded(+seed: U32, +core: J.Core, r: J.Frame & Maybe<J.Texture>) -> J.Core & (J.Frame & State):
   (frame, texture) = r
   match texture:
-    case None{}: (core, (frame, State{J.Random.seed(seed), Nil{}, 0, False{}, None{}, 0.0, 0.0}))
+    case None{}: (J.Core.set_target_fps(core, 0), (frame, State{J.Random.seed(seed), Nil{}, 0, False{}, None{}, 0.0, 0.0}))
     case Some{t}: setup.sized(seed, core, frame, t)
 
 def setup.loaded(+seed: U32, +core: J.Core, frame: J.Frame, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> J.Core & (J.Frame & State):
   match result:
-    case Fail{_}: (core, (frame, State{J.Random.seed(seed), Nil{}, 0, False{}, None{}, 0.0, 0.0}))
+    case Fail{_}: (J.Core.set_target_fps(core, 0), (frame, State{J.Random.seed(seed), Nil{}, 0, False{}, None{}, 0.0, 0.0}))
     case Done{image}: setup.uploaded(seed, core, J.Texture.load_from_image(frame, image))
 
-# After InitWindow(800, 450) and SetRandomSeed(seed): LoadTexture("resources/raybunny.png"), no bunnies.
+# After InitWindow(800, 450) and SetRandomSeed(seed): LoadTexture("resources/raybunny.png"), no bunnies, SetTargetFPS(0).
 def setup(+seed: U32, dir: String, +core: J.Core, frame: J.Frame) -> IO(J.Core & (J.Frame & State)):
   IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, J.Core & (J.Frame & State), J.Surface.load_png(dir ++ "resources/raybunny.png"),
     result => IO.pure(J.Core & (J.Frame & State), setup.loaded(seed, core, frame, result)))
