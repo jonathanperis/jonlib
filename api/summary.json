@@ -6,16 +6,16 @@
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 23,
-    "partial": 1883
+    "not-started": 17,
+    "partial": 1889
   },
   "core_functions": {
     "total": 619,
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 17,
-    "partial": 602
+    "not-started": 11,
+    "partial": 608
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 17,
-    "partial": 933
+    "not-started": 11,
+    "partial": 939
   },
   "unique_c_function_names": 942,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 17,
-      "partial": 1038
+      "not-started": 11,
+      "partial": 1044
     },
     "raymath.h": {
       "total": 257,
@@ -332,8 +332,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 6,
-      "partial": 62
+      "not-started": 0,
+      "partial": 68
     },
     {
       "id": "textures",

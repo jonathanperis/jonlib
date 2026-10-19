@@ -2668,7 +2668,7 @@
   {
    "name": "shapes_drag_puzzle",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointCircle",
@@ -2695,10 +2695,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "DrawCircleLinesEx",
-    "DrawTriangleLinesEx"
-   ]
+   "missing": []
   },
   {
    "name": "shapes_ellipse_collision",
@@ -2726,7 +2723,7 @@
   {
    "name": "shapes_outlines_testbed",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode2D",
@@ -2789,18 +2786,12 @@
     "GuiSetStyle",
     "GuiSliderBar"
    ],
-   "missing": [
-    "DrawCircleLinesEx",
-    "DrawCircleSectorLinesEx",
-    "DrawEllipseLinesEx",
-    "DrawRingLinesEx",
-    "DrawTriangleLinesEx"
-   ]
+   "missing": []
   },
   {
    "name": "shapes_outlines_thickness",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -2824,14 +2815,12 @@
    "gui": [
     "GuiSliderBar"
    ],
-   "missing": [
-    "DrawCircleLinesEx"
-   ]
+   "missing": []
   },
   {
    "name": "shapes_polygon_lines",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -2853,9 +2842,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "DrawCircleLinesEx"
-   ]
+   "missing": []
   },
   {
    "name": "textures_clipboard_image",

@@ -2,7 +2,7 @@
 
 Phase 2, delivery slice 1 ([PHASE2-DESIGN.md](PHASE2-DESIGN.md)): a `Frame`
 owns a raylib screen's color buffer, and the `Draw.*` functions render
-`rshapes.c` shapes into it exactly as pinned raylib 6.0 renders them on its
+`rshapes.c` shapes into it exactly as pinned raylib 6.2 renders them on its
 memory platform. Altered Bend adaptations of `rcore.c`, `rlgl.h` and
 `rshapes.c` (zlib, [LICENSES/raylib.txt](../LICENSES/raylib.txt)) and of
 `src/external/rlsw.h` 1.5 (Copyright (c) 2025-2026 Le Juez Victor, MIT,
@@ -68,16 +68,36 @@ the frame. The title and the window/platform/timing state are the `Core`'s
 | `DrawRectangle` / `V` / `Rec` / `Pro` | `Draw.rectangle`, `Draw.rectangle_v`, `Draw.rectangle_rec`, `Draw.rectangle_pro_for(libm, ...)` |
 | `DrawRectangleGradientV` / `H` / `Ex` | `Draw.rectangle_gradient_v`, `_h`, `_ex` |
 | `DrawRectangleLines` / `LinesEx` | `Draw.rectangle_lines`, `Draw.rectangle_lines_ex` |
-| `DrawTriangle` / `Lines` / `Fan` / `Strip` | `Draw.triangle`, `Draw.triangle_lines`, `Draw.triangle_fan`, `Draw.triangle_strip` |
-| `DrawCircle` / `V` / `Lines` / `LinesV` / `Gradient` | `Draw.circle_for`, `circle_v_for`, `circle_lines_for`, `circle_lines_v_for`, `circle_gradient_for` |
+| `DrawTriangle` / `Gradient` / `Lines` / `LinesEx` / `Fan` / `Strip` | `Draw.triangle`, `Draw.triangle_gradient(frame, v1, v2, v3, c1, c2, c3)`, `Draw.triangle_lines`, `Draw.triangle_lines_ex(frame, v1, v2, v3, thick, color)`, `Draw.triangle_fan`, `Draw.triangle_strip` |
+| `DrawCircle` / `V` / `Lines` / `LinesV` / `LinesEx` / `Gradient` | `Draw.circle_for`, `circle_v_for`, `circle_lines_for`, `circle_lines_v_for`, `circle_lines_ex_for(libm, frame, center, radius, thick, color)`, `circle_gradient_for` |
 | `DrawCircleSector` / `SectorLines` | `Draw.circle_sector_for`, `Draw.circle_sector_lines_for` |
-| `DrawEllipse` / `V` / `Lines` / `LinesV` | `Draw.ellipse_for`, `ellipse_v_for`, `ellipse_lines_for`, `ellipse_lines_v_for` |
+| `DrawEllipse` / `V` / `Lines` / `LinesV` / `LinesEx` | `Draw.ellipse_for`, `ellipse_v_for`, `ellipse_lines_for`, `ellipse_lines_v_for`, `ellipse_lines_ex_for(libm, frame, center, h, v, thick, color)` |
 | `DrawRing` | `Draw.ring_for` |
 | `DrawPoly` / `DrawPolyLines` | `Draw.poly_for`, `Draw.poly_lines_for` |
 
-Rounded rectangles, `DrawRingLines`, `DrawPolyLinesEx`, Bezier and dashed
-lines, splines, the shapes texture and the rlgl immediate-mode API are in
-[RLGL.md](RLGL.md).
+raylib 6.2 changed these shapes, and Jonlib follows it:
+
+- `DrawCircleSector(Lines)` and `DrawRing(Lines)` draw nothing for a radius
+  (the outer one for rings) `<= 0` (6.0 drew 0.1), limit an ordered arc of
+  360 degrees or more to `start + 360` before counting segments, and estimate
+  missing segments as `(int)ceilf(span*(2*PI/th)/360)`. A whole turn drops
+  the cap lines of `DrawCircleSectorLines` and `DrawRingLines`.
+- `DrawRectangleLinesEx` clamps a thickness above half of either side to half
+  the smaller side; zero or a negative thickness draws the four bands outside
+  the rectangle.
+- `DrawTriangle` is `DrawTriangleGradient` with one color: the same quad with
+  the color set before each vertex.
+- New: `DrawTriangleGradient`, `DrawTriangleLinesEx` (quads between the
+  triangle and its copy scaled toward the incenter by `1 - thick/inradius`,
+  in `rshapes.c`'s F32 order; a scale `<= 0` draws `DrawTriangle`),
+  `DrawCircleLinesEx` (`DrawRing(center, radius - thick, radius, 0, 360,
+  36)`) and `DrawEllipseLinesEx` (36 quads between the radii and the radii
+  minus the thickness, swapped when it is negative; a thickness `>= 0`
+  reaching a radius draws `DrawEllipseV`).
+
+Rounded rectangles, `DrawRingLines(Ex)`, `DrawCircleSectorLinesEx`,
+`DrawPolyLinesEx`, Bezier and dashed lines, splines, the shapes texture and
+the rlgl immediate-mode API are in [RLGL.md](RLGL.md).
 
 Every `_for` function also has a convenience form without `_for` and the
 profile. Colors are `0xRRGGBBAA` words, points `M.Vector2`, rectangles
@@ -106,10 +126,10 @@ return `None` from then on (the frame is still returned and owned):
   (rshapes.c then estimates a count with `acosf`) under a profile other than
   `M.Glibc239Libm{}` ([RLGL.md](RLGL.md)), or more than 4096 segments or
   polygon sides (a loop bound of this profile);
-- conservatively, rasterizer integers beyond `2^24` and rows or columns
-  outside the color buffer. Clipping keeps every primitive inside the
-  viewport, so these only arise from clipping round-off with huge inputs
-  (where rlsw would write out of bounds or wrap rows).
+- conservatively, rasterizer integers beyond `2^24`, which only arise from
+  clipping round-off with huge inputs. (Triangle spans and axis-aligned quads
+  reaching outside the color buffer, as under a viewport larger than the
+  screen, are clamped to it as raylib 6.2's rlsw does; 6.0 wrote past it.)
 
 ## The rendering path
 
@@ -144,10 +164,20 @@ arithmetic in source order, interpreted as rlgl's software path does:
   texture coordinates interpolated from the screen bottom-left (base),
   bottom-right and top-left corners only. The top-right color of
   `DrawRectangleGradientEx` therefore has no effect, and inconsistent corners
-  extrapolate. Other quads are triangle fans.
+  extrapolate. The box is clamped to the color buffer and its first row
+  starts at the first pixel inside (the offset added color x-step first,
+  depth and texture coordinates y-step first). Other quads are triangle fans.
+- **Flat or interpolated.** A primitive whose pushed vertex colors are all
+  equal (C's `!=`, so a NaN channel differs) is flat colored: a triangle
+  with its top vertex's projected color times `1/w`, a box with its
+  base corner's color. Any difference, alpha alone included, interpolates.
 - **Triangles.** Scanlines between edge accumulators stepped per row with a
   `1 - fract(y)` substep, spans over `(x_left, x_right]` in 16-pixel blocks
-  whose ends are perspective corrected.
+  whose ends are perspective corrected. Every span steps with the
+  triangle's plane derivatives along x (`((A1 - A0)*h02 - (A2 - A0)*h01)/D`,
+  `D = e1x*h02 - e2x*h01`; `|D|` below `1e-9` draws nothing), starting
+  `1 - fract(x)` plus its clamped columns in; rows outside the color buffer
+  are skipped.
 - **Lines.** Liang-Barsky clipping, projection, `sw_clamp` to integers (which
   truncates the endpoints), then a DDA from the pixel centers: row 0 and
   column W-1 are never drawn and vertical lines land one column left.
@@ -170,7 +200,7 @@ swapped; the probe normalizes them before comparing.
 
 | Gate | Tool | Compares |
 |---|---|---|
-| `frame` | `tools/frame_probe.py` | 95 scenes (1348 operations, sizes 1x1 to 64x48, 24 random scenes) byte for byte against the uncontracted memory-platform raylib on CPU-1, CPU-2 and JavaScript; 17 contract scenes must be refused; every accepted Apple `sinf`/`cosf` argument against the host |
+| `frame` | `tools/frame_probe.py` | 103 scenes (1448 operations, sizes 1x1 to 64x48, 24 random scenes) byte for byte against the uncontracted memory-platform raylib on CPU-1, CPU-2 and JavaScript; 17 contract scenes must be refused on macOS (10 or 11 on glibc); every accepted Apple `sinf`/`cosf` argument against the host |
 
 ```sh
 python3 tools/frame_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --jobs 3
@@ -182,7 +212,8 @@ multiply-add and that `src/frame_font.bend` equals the pinned
 partially and entirely off-screen, zero, negative and degenerate sizes,
 clockwise and counter-clockwise triangles, translucent colors over opaque and
 translucent backgrounds, overlapping draws, long spans, every line octant,
-nonfinite and huge geometry, and draws outside `BeginDrawing`.
+flat and interpolated gradients, nonfinite and huge geometry, and draws
+outside `BeginDrawing`.
 
 ## Performance
 

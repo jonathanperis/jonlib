@@ -1,5 +1,5 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of rlsw.h 1.5 as pinned raylib 6.0 vendors it
+# Altered Bend adaptation of rlsw.h 1.6 as pinned raylib 6.2 vendors it
 # (src/external/rlsw.h, Copyright (c) 2025-2026 Le Juez Victor, MIT;
 # LICENSES/rlsw.txt) and of the rlgl.h OpenGL 1.1 immediate path that drives
 # it (zlib; LICENSES/raylib.txt): the projection and modelview stacks and
@@ -15,8 +15,8 @@
 # range or of NaN, out-of-range pixel stores or texel reads, uint8 stores of
 # values outside (-1, 256)), the canvas is marked undefined instead. A few
 # defined but pathological cases are refused the same way: converted raster
-# coordinates beyond 2^24 and rows or columns outside the framebuffer (they
-# only arise from clipping round-off on huge inputs). See docs/FRAME.md.
+# coordinates beyond 2^24 (they only arise from clipping round-off on huge
+# inputs). See docs/FRAME.md.
 import Base
 import ./present.bend as Present
 import ./frame_font.bend as Font
@@ -39,6 +39,10 @@ def clip_epsilon() -> F32:
 # The triangle rasterizer's height threshold (1e-6f)
 def height_epsilon() -> F32:
   float(897988541)
+
+# The triangle rasterizer's area threshold (1e-9f, raylib 6.2)
+def area_epsilon() -> F32:
+  float(814313567)
 
 def fract(+x: F32) -> F32:
   (x - F32.floor(x) : F32)
@@ -134,6 +138,21 @@ def Attr.z(+a: Attr) -> F32:
   Attr{_, _, _, _, _, _, z} = a
   z
 
+def Attr.zero() -> Attr:
+  Attr{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+
+# A flat primitive's pixel or step (rlsw 6.2 without SW_STATE_COLOR_INTERP):
+# the color channels of flat in place of the interpolated ones. A flat start
+# with zero color steps stays the flat color (c + 0 = c; a -0 channel turns
+# +0, which stores and blends alike).
+def Attr.flat(interp: Bool, +flat: Attr, +at: Attr) -> Attr:
+  match interp:
+    case True{}: at
+    case False{}:
+      Attr{r, g, b, a, _, _, _} = flat
+      Attr{_, _, _, _, u, v, z} = at
+      Attr{r, g, b, a, u, v, z}
+
 # swOrtho(0, width, height, 0, 0, 1) applied to an identity projection (rcore.c
 # SetupViewport); BeginDrawing's identity modelview leaves it as the MVP.
 def Matrix4.ortho(+width: U32, +height: U32) -> Matrix4:
@@ -192,12 +211,13 @@ def Matrix4.rotation(+x: F32, +y: F32, +z: F32, +c: F32, +s: F32) -> Matrix4:
 type Scissor is Data:
   Scissor{enabled: Bool, x0: F32, y0: F32, x1: F32, y1: F32, cx0: F32, cx1: F32, cy0: F32, cy1: F32}
 
-# swScissor(x, y, width, height) for a viewport of vw x vh pixels.
+# swScissor(x, y, width, height) for a viewport of vw x vh pixels; raylib 6.2
+# maps y like x (6.0 flipped it).
 def Scissor.set(enabled: Bool, +x: F32, +y: F32, +width: F32, +height: F32, +vw: F32, +vh: F32) -> Scissor:
   +x1 = (x + width : F32)
   +y1 = (y + height : F32)
   Scissor{enabled, x, y, x1, y1, (((2.0 * x : F32) / vw : F32) - 1.0 : F32), (((2.0 * x1 : F32) / vw : F32) - 1.0 : F32),
-    (1.0 - ((2.0 * y1 : F32) / vh : F32) : F32), (1.0 - ((2.0 * y : F32) / vh : F32) : F32)}
+    (((2.0 * y : F32) / vh : F32) - 1.0 : F32), (((2.0 * y1 : F32) / vh : F32) - 1.0 : F32)}
 
 def Scissor.enable(enabled: Bool, scissor: Scissor) -> Scissor:
   Scissor{_, x0, y0, x1, y1, cx0, cx1, cy0, cy1} = scissor
@@ -548,13 +568,13 @@ def nearest.wrapped(+s_clamp: Bool, +t_clamp: Bool, +u: F32, +v: F32, +width: U3
   texel.got(valid, Array.get(U32, texels, Bool.pick(U32, valid, index, 0)))
 
 # One axis of sw_texture_sample_linear: (int)xf and the next texel, REPEAT
-# wrapped both, or CLAMP's min(x, size - 1) (rlsw does not clamp below 0: a
-# coordinate below -1 reads before the texture, undefined).
+# wrapped both, or both clamped to 0..size - 1 (raylib 6.2 also clamps below 0:
+# from xf <= -1 both are texel 0).
 def bilinear.axis(clamp: Bool, +t: F32, +size: U32) -> U32 & (U32 & Bool):
   match clamp:
     case True{}:
       +low = F32.to_u32(F32.max(t, 0.0))
-      (U32.min(low, (size - 1 : U32)), (U32.min((low + 1 : U32), (size - 1 : U32)), (t >= 0.0 : F32)))
+      (U32.min(low, (size - 1 : U32)), (Bool.pick(U32, (t <= (0.0 - 1.0) : F32), 0, U32.min((low + 1 : U32), (size - 1 : U32))), True{}))
     case False{}: (wrap.mod(t, size), ((wrap.mod(t, size) + 1) % size : U32), True{})
 
 def bilinear.wrapped.ends(+fx: F32, +fy: F32, valid: Bool, +width: U32, +x0: U32, +y0: U32, xr: U32 & Bool, yr: U32 & Bool, texels: Array<U32>) -> Array<U32> & (Texel & Bool):
@@ -582,8 +602,9 @@ def sample.filter.by(linear: Bool, +s_clamp: Bool, +t_clamp: Bool, +u: F32, +v: 
     case False{}: nearest.wrapped(s_clamp, t_clamp, u, v, width, height, texels)
     case True{}: bilinear.wrapped(s_clamp, t_clamp, u, v, width, height, texels)
 
-# sw_texture_sample: the minification filter where the span's derivatives
-# make L2 above 1, the magnification filter otherwise.
+# The sampler sw_texture_pick_sampler picks for a triangle or quad: the
+# minification filter where its derivatives make L2 above 1 (tex bit 16),
+# the magnification filter otherwise.
 def sample.filter(linear: Filtering, +minified: Bool, +u: F32, +v: F32, +width: U32, +height: U32, texels: Array<U32>) -> Array<U32> & (Texel & Bool):
   Filtering{+mag, +min, +s_clamp, +t_clamp} = linear
   sample.filter.by(Bool.pick(Bool, minified, min, mag), s_clamp, t_clamp, u, v, width, height, texels)
@@ -634,7 +655,7 @@ def sample.user.at(temp: Bool, +slot: U32, +minified: Bool, +u: F32, +v: F32, pi
     case False{}: sample.slot.pick(slot, minified, u, v, pixels, atlas, sampler, ok, extra)
 
 # A user texture in slot 2 (one Draw* call), 3 (the shapes texture) or 4
-# (rlSetTexture); bit 16 of tex marks a minified span or quad.
+# (rlSetTexture); bit 16 of tex marks a minified triangle or quad.
 def sample.user(+tex: U32, +u: F32, +v: F32, raster: Raster) -> Raster & Texel:
   Raster{pixels, atlas, sampler, ok, extra} = raster
   +slot = (tex .&. 7 : U32)
@@ -668,7 +689,8 @@ def pixel.kind(plain: Bool, +tex: U32, blend: Bool, +offset: U32, +at: Attr, ras
     case False{}: pixel.sampled(U32.is_eq((tex .&. 7 : U32), 1), tex, blend, offset, at, raster)
 
 # tex: 0 untextured, 1 the shapes atlas, 2..4 a user texture slot; 8 adds
-# the depth test and 16 marks a minified span or quad.
+# the depth test, 16 marks a minified triangle or quad and 32 interpolated
+# colors (tex.interp).
 def pixel.base(+tex: U32, blend: Bool, +offset: U32, +at: Attr, raster: Raster) -> Raster:
   pixel.kind(U32.is_eq((tex .&. 7 : U32), 0), tex, blend, offset, at, raster)
 
@@ -708,6 +730,16 @@ def pixel.select(tested: Bool, +tex: U32, +blend: Bool, +offset: U32, +at: Attr,
 def pixel(+tex: U32, +blend: Bool, +offset: U32, +at: Attr, raster: Raster) -> Raster:
   pixel.select(U32.is_ne((tex .&. 8 : U32), 0), tex, blend, offset, at, raster)
 
+# tex bit 32: the primitive's pushed vertex colors differ (rlsw 6.2's
+# SW_STATE_COLOR_INTERP); without it triangles and quads are flat colored.
+def tex.interp(+tex: U32) -> Bool:
+  U32.is_ne((tex .&. 32 : U32), 0)
+
+def tex.with_interp(vary: Bool, +tex: U32) -> U32:
+  match vary:
+    case True{}: (tex .|. 32 : U32)
+    case False{}: tex
+
 # Consecutive pixels of a row, attributes stepped after each one; the
 # attributes after the last pixel come back with the raster.
 def cols(n: Nat, +tex: U32, +blend: Bool, +offset: U32, +at: Attr, +step: Attr, raster: Raster) -> Raster & Attr:
@@ -726,6 +758,9 @@ def Vertex.attr(+v: Vertex) -> Attr:
 # -----------------------------------------------------------------------------
 # Axis-aligned quads (SW_RASTER_QUAD): pixel centers in (x0, x1] x [y0, y1)
 # from the corners classified by x+y and x-y; colors from three corners.
+# raylib 6.2 clamps the box to the color buffer and starts the interpolation
+# at its first pixel inside, and fills it with the top-left corner's color
+# when the primitive's colors do not differ.
 
 type Corners is Data:
   Corners{tl: Vertex, tr: Vertex, br: Vertex, bl: Vertex}
@@ -746,7 +781,7 @@ def rows(n: Nat, +tex: U32, +blend: Bool, +offset: U32, +stride: U32, +columns: 
     case 0n: raster
     case 1n+rest: rows(rest, tex, blend, (offset + stride : U32), stride, columns, Attr.add(row, dy), dx, dy, cols.raster(cols(columns, tex, blend, offset, row, dx, raster)))
 
-# sw_texture_sample's choice: the larger of dU2 = dUdx^2 + dUdy^2 and
+# sw_texture_pick_sampler's choice: the larger of dU2 = dUdx^2 + dUdy^2 and
 # dV2 = dVdx^2 + dVdy^2 above 1 is minification.
 def minified(+dudx: F32, +dvdx: F32, +dudy: F32, +dvdy: F32) -> Bool:
   +du2 = ((dudx * dudx : F32) + (dudy * dudy : F32) : F32)
@@ -763,25 +798,36 @@ def tex.minified(+tex: U32, dx: F32 & F32, dy: F32 & F32) -> U32:
   (+dudy, +dvdy) = dy
   Bool.pick(U32, minified(dudx, dvdx, dudy, dvdy), (tex .|. 16 : U32), tex)
 
-def quad.fill(+tex: U32, +blend: Bool, +width: U32, +x0: F32, +y0: F32, +w: F32, +h: F32, +tl: Vertex, +tr: Vertex, +bl: Vertex, raster: Raster) -> Raster:
+# The first row's start moved to the first pixel inside the color buffer, ox
+# columns and oy rows in, each attribute in rlsw 6.2's order: color dx first,
+# texture coordinates and depth dy first.
+def quad.offset(+start: Attr, +dx: Attr, +dy: Attr, +ox: F32, +oy: F32) -> Attr:
+  Attr{r, g, b, a, u, v, z} = start
+  Attr{xr, xg, xb, xa, xu, xv, xz} = dx
+  Attr{yr, yg, yb, ya, yu, yv, yz} = dy
+  Attr{(r + ((xr * ox : F32) + (yr * oy : F32) : F32) : F32), (g + ((xg * ox : F32) + (yg * oy : F32) : F32) : F32),
+    (b + ((xb * ox : F32) + (yb * oy : F32) : F32) : F32), (a + ((xa * ox : F32) + (ya * oy : F32) : F32) : F32),
+    (u + ((yu * oy : F32) + (xu * ox : F32) : F32) : F32), (v + ((yv * oy : F32) + (xv * ox : F32) : F32) : F32),
+    (z + ((yz * oy : F32) + (xz * ox : F32) : F32) : F32)}
+
+# The box from (lx, ly), columns x lines pixels, ox and oy past its
+# unclamped corner (w x h).
+def quad.fill(+tex: U32, +blend: Bool, +width: U32, +lx: F32, +ly: F32, +columns: F32, +lines: F32, +ox: F32, +oy: F32, +w: F32, +h: F32, +tl: Vertex, +tr: Vertex, +bl: Vertex, raster: Raster) -> Raster:
   +dx = Vertex.grad(tl, tr, (1.0 / w : F32))
   +dy = Vertex.grad(tl, bl, (1.0 / h : F32))
   +start = Vertex.add_scaled(Vertex.add_scaled(tl, dx, (1.0 - fract(Vertex.x(tl)) : F32)), dy, (1.0 - fract(Vertex.y(tl)) : F32))
-  rows(U32.to_nat(F32.to_u32(h)), tex.minified(tex, Vertex.uv(dx), Vertex.uv(dy)), blend, (F32.to_u32(y0) * width + F32.to_u32(x0) : U32), width, U32.to_nat(F32.to_u32(w)),
-    Vertex.attr(start), Vertex.attr(dx), Vertex.attr(dy), raster)
+  +interp = tex.interp(tex)
+  rows(U32.to_nat(F32.to_u32(lines)), tex.minified(tex, Vertex.uv(dx), Vertex.uv(dy)), blend, (F32.to_u32(ly) * width + F32.to_u32(lx) : U32), width,
+    U32.to_nat(F32.to_u32(columns)), Attr.flat(interp, Vertex.attr(tl), quad.offset(Vertex.attr(start), Vertex.attr(dx), Vertex.attr(dy), ox, oy)),
+    Attr.flat(interp, Attr.zero(), Vertex.attr(dx)), Attr.flat(interp, Attr.zero(), Vertex.attr(dy)), raster)
 
-def quad.inside(inside: Bool, +tex: U32, +blend: Bool, +width: U32, +x0: F32, +y0: F32, +w: F32, +h: F32, +tl: Vertex, +tr: Vertex, +bl: Vertex, raster: Raster) -> Raster:
-  match inside:
-    case False{}: Raster.refuse(raster)
-    case True{}: quad.fill(tex, blend, width, x0, y0, w, h, tl, tr, bl, raster)
-
-def quad.sized(empty: Bool, +tex: U32, +blend: Bool, +width: U32, +height: U32, +x0: F32, +y0: F32, +x1: F32, +y1: F32, +tl: Vertex, +tr: Vertex, +bl: Vertex, raster: Raster) -> Raster:
+def quad.sized(empty: Bool, +tex: U32, +blend: Bool, +width: U32, +x0: F32, +y0: F32, +lx0: F32, +ly0: F32, +lx1: F32, +ly1: F32, +w: F32, +h: F32, +tl: Vertex, +tr: Vertex, +bl: Vertex, raster: Raster) -> Raster:
   match empty:
     case True{}: raster
-    case False{}:
-      +inside = (x0 >= 0.0 : F32) && (y0 >= 0.0 : F32) && (x1 <= U32.to_f32(width) : F32) && (y1 <= U32.to_f32(height) : F32)
-      quad.inside(inside, tex, blend, width, x0, y0, (x1 - x0 : F32), (y1 - y0 : F32), tl, tr, bl, raster)
+    case False{}: quad.fill(tex, blend, width, lx0, ly0, (lx1 - lx0 : F32), (ly1 - ly0 : F32), (lx0 - x0 : F32), (ly0 - y0 : F32), w, h, tl, tr, bl, raster)
 
+# (int) corners, the loop bounds clamped to [0, width) x [0, height): nothing
+# when they or the box are empty.
 def quad.converted(valid: Bool, +tex: U32, +blend: Bool, +width: U32, +height: U32, +tl: Vertex, +tr: Vertex, +br: Vertex, +bl: Vertex, raster: Raster) -> Raster:
   match valid:
     case False{}: Raster.refuse(raster)
@@ -790,7 +836,12 @@ def quad.converted(valid: Bool, +tex: U32, +blend: Bool, +width: U32, +height: U
       +y0 = F32.trunc(Vertex.y(tl))
       +x1 = F32.trunc(Vertex.x(br))
       +y1 = F32.trunc(Vertex.y(br))
-      quad.sized(((x1 - x0) <= 0.0 : F32) || ((y1 - y0) <= 0.0 : F32), tex, blend, width, height, x0, y0, x1, y1, tl, tr, bl, raster)
+      +lx0 = F32.max(x0, 0.0)
+      +ly0 = F32.max(y0, 0.0)
+      +lx1 = F32.min(x1, U32.to_f32(width))
+      +ly1 = F32.min(y1, U32.to_f32(height))
+      +empty = (lx0 >= lx1 : F32) || (ly0 >= ly1 : F32) || ((x1 - x0) <= 0.0 : F32) || ((y1 - y0) <= 0.0 : F32)
+      quad.sized(empty, tex, blend, width, x0, y0, lx0, ly0, lx1, ly1, (x1 - x0 : F32), (y1 - y0 : F32), tl, tr, bl, raster)
 
 def quad.box(+tex: U32, +blend: Bool, +width: U32, +height: U32, corners: Corners, raster: Raster) -> Raster:
   Corners{+tl, +tr, +br, +bl} = corners
@@ -803,6 +854,11 @@ def quad.raster(+tex: U32, +blend: Bool, +width: U32, +height: U32, +a: Vertex, 
 # -----------------------------------------------------------------------------
 # Triangles (SW_RASTER_TRIANGLE): scanlines between edge accumulators, spans
 # over (x_left, x_right] in 16-pixel blocks with perspective-correct ends.
+# raylib 6.2 steps every span with the triangle's plane derivatives along x
+# (whole-triangle constants from the doubled signed area D), picks the
+# texture filter once per triangle, skips rows outside the color buffer and
+# clamps spans to it, and fills a primitive whose colors do not differ with
+# the top vertex's color.
 
 def Span.of(+v: Vertex) -> Span:
   Vertex{_, _, _, w, r, g, b, a, u, t} = v
@@ -817,8 +873,10 @@ def Span.at(s: Span, d: Span, +k: F32) -> Span:
   Span{dw, dr, dg, db, da, du, dv} = d
   Span{(w + dw * k : F32), (r + dr * k : F32), (g + dg * k : F32), (b + db * k : F32), (a + da * k : F32), (u + du * k : F32), (v + dv * k : F32)}
 
-def span.slope(+start: Vertex, +end: Vertex, +k: F32) -> Span:
-  Span.of(Vertex.grad(start, end, k))
+# A triangle's span context (rlsw 6.2's SW_SPAN_CTX): the x derivatives of w,
+# color and texture coordinates (slope), dZdx and the flat color.
+type SpanContext is Data:
+  SpanContext{slope: Span, dz: F32, flat: Attr}
 
 def block.start(+acc: Span, +k: F32, +z: F32) -> Attr:
   Span{_, r, g, b, a, u, v} = acc
@@ -838,65 +896,66 @@ def block.step(+acc: Span, +slope: Span, +len: F32, +ka: F32, +dz: F32) -> Attr:
   block.step.with(acc, slope, len, ka, (1.0 / (Span.w(acc) + Span.w(slope) * len : F32) : F32), dz)
 
 # 16-pixel blocks; the depth z (with dz per pixel) runs on across blocks and
-# comes back from each block's pixels.
-def blocks(n: Nat, +tex: U32, +blend: Bool, +offset: U32, +x: F32, +x_end: F32, +acc: Span, +slope: Span, +dz: F32, state: Raster & Attr) -> Raster:
+# comes back from each block's pixels. A flat triangle's pixels take the flat
+# color (rlsw 6.2 tracks w only for color or texture interpolation; the
+# blocks change nothing else).
+def blocks(n: Nat, +tex: U32, +blend: Bool, +offset: U32, +x: F32, +x_end: F32, +acc: Span, +slope: Span, +dz: F32, +flat: Attr, state: Raster & Attr) -> Raster:
   match n state:
     case 0n Tuple{raster, _}: raster
     case 1n+rest Tuple{raster, +at}:
       +stop = F32.min((x + 16.0 : F32), x_end)
       +len = (stop - x : F32)
       +ka = (1.0 / Span.w(acc) : F32)
-      blocks(rest, tex, blend, (offset + F32.to_u32(len) : U32), stop, x_end, Span.at(acc, slope, len), slope, dz,
-        cols(U32.to_nat(F32.to_u32(len)), tex, blend, offset, block.start(acc, ka, Attr.z(at)), block.step(acc, slope, len, ka, dz), raster))
+      +interp = tex.interp(tex)
+      blocks(rest, tex, blend, (offset + F32.to_u32(len) : U32), stop, x_end, Span.at(acc, slope, len), slope, dz, flat,
+        cols(U32.to_nat(F32.to_u32(len)), tex, blend, offset, Attr.flat(interp, flat, block.start(acc, ka, Attr.z(at))),
+          Attr.flat(interp, Attr.zero(), block.step(acc, slope, len, ka, dz)), raster))
 
 def Attr.depth(+z: F32) -> Attr:
   Attr{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, z}
 
-def span.blocks(+tex: U32, +blend: Bool, +width: U32, +x0: F32, +x1: F32, +y: F32, +start: Vertex, +grad: Vertex, +gy: Vertex, raster: Raster) -> Raster:
-  +slope = Span.of(grad)
-  +xsub = (1.0 - fract(Vertex.x(start)) : F32)
-  +dz = Vertex.z(grad)
-  blocks(U32.to_nat(((F32.to_u32((x1 - x0 : F32)) + 15) / 16 : U32)), tex.minified(tex, Vertex.uv(grad), Vertex.uv(gy)), blend, (F32.to_u32(y) * width + F32.to_u32(x0) : U32),
-    x0, x1, Span.at(Span.of(start), slope, xsub), slope, dz, (raster, Attr.depth((Vertex.z(start) + dz * xsub : F32))))
+# The span's pixels x0..x1 (clamped) of row y, its attributes xoff pixels
+# past the start vertex.
+def span.blocks(+tex: U32, +blend: Bool, +width: U32, +x0: F32, +x1: F32, +y: F32, +xoff: F32, +start: Vertex, +ctx: SpanContext, raster: Raster) -> Raster:
+  SpanContext{+slope, +dz, +flat} = ctx
+  blocks(U32.to_nat(((F32.to_u32((x1 - x0 : F32)) + 15) / 16 : U32)), tex, blend, (F32.to_u32(y) * width + F32.to_u32(x0) : U32),
+    x0, x1, Span.at(Span.of(start), slope, xoff), slope, dz, flat, (raster, Attr.depth((Vertex.z(start) + dz * xoff : F32))))
 
-def span.fill(+tex: U32, +blend: Bool, +width: U32, +x0: F32, +x1: F32, +y: F32, +start: Vertex, +end: Vertex, +gy: Vertex, raster: Raster) -> Raster:
-  span.blocks(tex, blend, width, x0, x1, y, start, Vertex.grad(start, end, (1.0 / (Vertex.x(end) - Vertex.x(start)) : F32)), gy, raster)
-
-def span.inside(inside: Bool, +tex: U32, +blend: Bool, +width: U32, +x0: F32, +x1: F32, +y: F32, +start: Vertex, +end: Vertex, +gy: Vertex, raster: Raster) -> Raster:
-  match inside:
-    case False{}: Raster.refuse(raster)
-    case True{}: span.fill(tex, blend, width, x0, x1, y, start, end, gy, raster)
-
-def span.ordered(nonempty: Bool, +tex: U32, +blend: Bool, +width: U32, +height: U32, +x0: F32, +x1: F32, +start: Vertex, +end: Vertex, +gy: Vertex, raster: Raster) -> Raster:
+def span.columns(nonempty: Bool, +tex: U32, +blend: Bool, +width: U32, +x0: F32, +x1: F32, +y: F32, +xoff: F32, +start: Vertex, +ctx: SpanContext, raster: Raster) -> Raster:
   match nonempty:
     case False{}: raster
-    case True{}:
-      +y = F32.trunc(Vertex.y(start))
-      +inside = (y >= 0.0 : F32) && (y < U32.to_f32(height) : F32) && (x0 >= 0.0 : F32) && (x1 <= U32.to_f32(width) : F32)
-      span.inside(inside, tex, blend, width, x0, x1, y, start, end, gy, raster)
+    case True{}: span.blocks(tex, blend, width, x0, x1, y, xoff, start, ctx, raster)
 
-def span.checked(valid: Bool, +tex: U32, +blend: Bool, +width: U32, +height: U32, +start: Vertex, +end: Vertex, +gy: Vertex, raster: Raster) -> Raster:
+# (int) ends clamped to [0, width); the first pixel is 1 - fract(x) plus the
+# clamped columns past the start (xSubstep + dxStart).
+def span.checked(valid: Bool, +tex: U32, +blend: Bool, +width: U32, +start: Vertex, +end: Vertex, +ctx: SpanContext, raster: Raster) -> Raster:
   match valid:
     case False{}: Raster.refuse(raster)
     case True{}:
       +x0 = F32.trunc(Vertex.x(start))
-      +x1 = F32.trunc(Vertex.x(end))
-      span.ordered((x0 < x1 : F32), tex, blend, width, height, x0, x1, start, end, gy, raster)
+      +lx0 = F32.max(x0, 0.0)
+      +lx1 = F32.min(F32.trunc(Vertex.x(end)), U32.to_f32(width))
+      span.columns((lx0 < lx1 : F32), tex, blend, width, lx0, lx1, F32.trunc(Vertex.y(start)),
+        ((1.0 - fract(Vertex.x(start)) : F32) + (lx0 - x0 : F32) : F32), start, ctx, raster)
 
-# A span between the edges; gy is the triangle's long-edge gradient (rlsw's
-# dVXdy02), whose texture terms are the span's y derivatives.
-def span(+tex: U32, +blend: Bool, +width: U32, +height: U32, +start: Vertex, +end: Vertex, +gy: Vertex, raster: Raster) -> Raster:
-  span.checked(raster_int.valid(Vertex.x(start)) && raster_int.valid(Vertex.x(end)), tex, blend, width, height, start, end, gy, raster)
+def span.row(inside: Bool, +tex: U32, +blend: Bool, +width: U32, +start: Vertex, +end: Vertex, +ctx: SpanContext, raster: Raster) -> Raster:
+  match inside:
+    case False{}: raster
+    case True{}: span.checked(raster_int.valid(Vertex.x(start)) && raster_int.valid(Vertex.x(end)), tex, blend, width, start, end, ctx, raster)
 
-def tri.rows(n: Nat, +tex: U32, +blend: Bool, +width: U32, +height: U32, +row: F32, +left: Vertex, +right: Vertex, +gl: Vertex, +gr: Vertex, raster: Raster) -> Raster & Vertex:
+# A span between the edges; rows outside the color buffer are skipped.
+def span(+tex: U32, +blend: Bool, +width: U32, +height: U32, +start: Vertex, +end: Vertex, +ctx: SpanContext, raster: Raster) -> Raster:
+  span.row((F32.trunc(Vertex.y(start)) >= 0.0 : F32) && (F32.trunc(Vertex.y(start)) < U32.to_f32(height) : F32), tex, blend, width, start, end, ctx, raster)
+
+def tri.rows(n: Nat, +tex: U32, +blend: Bool, +width: U32, +height: U32, +row: F32, +left: Vertex, +right: Vertex, +gl: Vertex, +gr: Vertex, +ctx: SpanContext, raster: Raster) -> Raster & Vertex:
   match n:
     case 0n: (raster, left)
     case 1n+rest:
       +l = Vertex.with_y(left, row)
       +r = Vertex.with_y(right, row)
       +long = (Vertex.x(l) < Vertex.x(r) : F32)
-      tri.rows(rest, tex, blend, width, height, (row + 1.0 : F32), Vertex.add(l, gl), Vertex.add(r, gr), gl, gr,
-        span(tex, blend, width, height, Bool.pick(Vertex, long, l, r), Bool.pick(Vertex, long, r, l), gl, raster))
+      tri.rows(rest, tex, blend, width, height, (row + 1.0 : F32), Vertex.add(l, gl), Vertex.add(r, gr), gl, gr, ctx,
+        span(tex, blend, width, height, Bool.pick(Vertex, long, l, r), Bool.pick(Vertex, long, r, l), ctx, raster))
 
 def tri.count(+from: F32, +to: F32) -> Nat:
   U32.to_nat(F32.to_u32(F32.max((to - from : F32), 0.0)))
@@ -905,44 +964,74 @@ def tri.finish(result: Raster & Vertex) -> Raster:
   (raster, _) = result
   raster
 
-def tri.lower(+tex: U32, +blend: Bool, +width: U32, +height: U32, +mid: F32, +bottom: Vertex, +right: Vertex, +g02: Vertex, +g12: Vertex, upper: Raster & Vertex) -> Raster:
+def tri.lower(+tex: U32, +blend: Bool, +width: U32, +height: U32, +mid: F32, +bottom: Vertex, +right: Vertex, +g02: Vertex, +g12: Vertex, +ctx: SpanContext, upper: Raster & Vertex) -> Raster:
   (raster, +left) = upper
-  tri.finish(tri.rows(tri.count(mid, F32.trunc(Vertex.y(bottom))), tex, blend, width, height, mid, left, right, g02, g12, raster))
+  tri.finish(tri.rows(tri.count(mid, F32.trunc(Vertex.y(bottom))), tex, blend, width, height, mid, left, right, g02, g12, ctx, raster))
 
-def tri.scan(rows_ok: Bool, +tex: U32, +blend: Bool, +width: U32, +height: U32, +v0: Vertex, +v1: Vertex, +v2: Vertex, raster: Raster) -> Raster:
-  match rows_ok:
-    case False{}: Raster.refuse(raster)
-    case True{}:
-      +y0 = Vertex.y(v0)
-      +y1 = Vertex.y(v1)
-      +h01 = (y1 - y0 : F32)
-      +h12 = (Vertex.y(v2) - y1 : F32)
-      +g02 = Vertex.grad(v0, v2, (1.0 / (Vertex.y(v2) - y0 : F32) : F32))
-      +g01 = Vertex.grad(v0, v1, Bool.pick(F32, (h01 > height_epsilon() : F32), (1.0 / h01 : F32), 0.0))
-      +g12 = Vertex.grad(v1, v2, Bool.pick(F32, (h12 > height_epsilon() : F32), (1.0 / h12 : F32), 0.0))
-      +sub0 = (1.0 - fract(y0) : F32)
-      +top = F32.trunc(y0)
-      +mid = F32.trunc(y1)
-      tri.lower(tex, blend, width, height, mid, v2, Vertex.add_scaled(v1, g12, (1.0 - fract(y1) : F32)), g02, g12,
-        tri.rows(tri.count(top, mid), tex, blend, width, height, top, Vertex.add_scaled(v0, g02, sub0), Vertex.add_scaled(v0, g01, sub0), g02, g01, raster))
+def tri.scan(+tex: U32, +blend: Bool, +width: U32, +height: U32, +v0: Vertex, +v1: Vertex, +v2: Vertex, +ctx: SpanContext, raster: Raster) -> Raster:
+  +y0 = Vertex.y(v0)
+  +y1 = Vertex.y(v1)
+  +h01 = (y1 - y0 : F32)
+  +h12 = (Vertex.y(v2) - y1 : F32)
+  +g02 = Vertex.grad(v0, v2, (1.0 / (Vertex.y(v2) - y0 : F32) : F32))
+  +g01 = Vertex.grad(v0, v1, Bool.pick(F32, (h01 > height_epsilon() : F32), (1.0 / h01 : F32), 0.0))
+  +g12 = Vertex.grad(v1, v2, Bool.pick(F32, (h12 > height_epsilon() : F32), (1.0 / h12 : F32), 0.0))
+  +sub0 = (1.0 - fract(y0) : F32)
+  +top = F32.trunc(y0)
+  +mid = F32.trunc(y1)
+  tri.lower(tex, blend, width, height, mid, v2, Vertex.add_scaled(v1, g12, (1.0 - fract(y1) : F32)), g02, g12, ctx,
+    tri.rows(tri.count(top, mid), tex, blend, width, height, top, Vertex.add_scaled(v0, g02, sub0), Vertex.add_scaled(v0, g01, sub0), g02, g01, ctx, raster))
 
-def tri.converted(valid: Bool, +tex: U32, +blend: Bool, +width: U32, +height: U32, +v0: Vertex, +v1: Vertex, +v2: Vertex, raster: Raster) -> Raster:
+def tri.converted(valid: Bool, +tex: U32, +blend: Bool, +width: U32, +height: U32, +v0: Vertex, +v1: Vertex, +v2: Vertex, +ctx: SpanContext, raster: Raster) -> Raster:
   match valid:
     case False{}: Raster.refuse(raster)
-    case True{}:
-      +top = F32.trunc(Vertex.y(v0))
-      +mid = F32.trunc(Vertex.y(v1))
-      +bottom = F32.trunc(Vertex.y(v2))
-      +h = U32.to_f32(height)
-      +rows_ok = ((top >= mid : F32) || ((top >= 0.0 : F32) && (mid <= h : F32))) && ((mid >= bottom : F32) || ((mid >= 0.0 : F32) && (bottom <= h : F32)))
-      tri.scan(rows_ok, tex, blend, width, height, v0, v1, v2, raster)
+    case True{}: tri.scan(tex, blend, width, height, v0, v1, v2, ctx, raster)
 
+# SW_DADX and SW_DADY: an attribute's plane derivatives along x and y, k = 1/D.
+def plane.dx(+a0: F32, +a1: F32, +a2: F32, +h02: F32, +h01: F32, +k: F32) -> F32:
+  ((((a1 - a0 : F32) * h02 : F32) - ((a2 - a0 : F32) * h01 : F32) : F32) * k : F32)
+
+def plane.dy(+a0: F32, +a1: F32, +a2: F32, +e1x: F32, +e2x: F32, +k: F32) -> F32:
+  ((((a2 - a0 : F32) * e1x : F32) - ((a1 - a0 : F32) * e2x : F32) : F32) * k : F32)
+
+# The span context of a sorted triangle: the x derivatives, and the flat color
+# v0.color*rcp(v0.w) (v0's color and w are already the projected color/w and 1/w).
+def tri.context(+v0: Vertex, +v1: Vertex, +v2: Vertex, +h02: F32, +h01: F32, +k: F32) -> SpanContext:
+  Vertex{_, _, z0, w0, r0, g0, b0, a0, u0, t0} = v0
+  Vertex{_, _, z1, w1, r1, g1, b1, a1, u1, t1} = v1
+  Vertex{_, _, z2, w2, r2, g2, b2, a2, u2, t2} = v2
+  +fk = (1.0 / w0 : F32)
+  SpanContext{Span{plane.dx(w0, w1, w2, h02, h01, k), plane.dx(r0, r1, r2, h02, h01, k), plane.dx(g0, g1, g2, h02, h01, k),
+      plane.dx(b0, b1, b2, h02, h01, k), plane.dx(a0, a1, a2, h02, h01, k), plane.dx(u0, u1, u2, h02, h01, k), plane.dx(t0, t1, t2, h02, h01, k)},
+    plane.dx(z0, z1, z2, h02, h01, k), Attr{(r0 * fk : F32), (g0 * fk : F32), (b0 * fk : F32), (a0 * fk : F32), 0.0, 0.0, 0.0}}
+
+# tex with bit 16 when the texture's plane derivatives minify
+# (sw_texture_pick_sampler once per triangle).
+def tri.tex(+tex: U32, +v0: Vertex, +v1: Vertex, +v2: Vertex, +h02: F32, +h01: F32, +e1x: F32, +e2x: F32, +k: F32) -> U32:
+  Vertex{_, _, _, _, _, _, _, _, u0, t0} = v0
+  Vertex{_, _, _, _, _, _, _, _, u1, t1} = v1
+  Vertex{_, _, _, _, _, _, _, _, u2, t2} = v2
+  tex.minified(tex, (plane.dx(u0, u1, u2, h02, h01, k), plane.dx(t0, t1, t2, h02, h01, k)), (plane.dy(u0, u1, u2, e1x, e2x, k), plane.dy(t0, t1, t2, e1x, e2x, k)))
+
+def tri.area(degenerate: Bool, +tex: U32, +blend: Bool, +width: U32, +height: U32, +v0: Vertex, +v1: Vertex, +v2: Vertex, +h02: F32, +h01: F32, +e1x: F32, +e2x: F32, raster: Raster) -> Raster:
+  match degenerate:
+    case True{}: raster
+    case False{}:
+      +k = (1.0 / ((e1x * h02 : F32) - (e2x * h01 : F32) : F32) : F32)
+      +valid = raster_int.valid(Vertex.y(v0)) && raster_int.valid(Vertex.y(v1)) && raster_int.valid(Vertex.y(v2))
+      tri.converted(valid, tri.tex(tex, v0, v1, v2, h02, h01, e1x, e2x, k), blend, width, height, v0, v1, v2, tri.context(v0, v1, v2, h02, h01, k), raster)
+
+# The triangle's height (h02 below 1e-6f) or doubled signed area
+# D = e1x*h02 - e2x*h01 (|D| below 1e-9f) is degenerate: nothing drawn.
 def tri.sorted(flat: Bool, +tex: U32, +blend: Bool, +width: U32, +height: U32, +v0: Vertex, +v1: Vertex, +v2: Vertex, raster: Raster) -> Raster:
   match flat:
     case True{}: raster
     case False{}:
-      +valid = raster_int.valid(Vertex.y(v0)) && raster_int.valid(Vertex.y(v1)) && raster_int.valid(Vertex.y(v2))
-      tri.converted(valid, tex, blend, width, height, v0, v1, v2, raster)
+      +h02 = (Vertex.y(v2) - Vertex.y(v0) : F32)
+      +h01 = (Vertex.y(v1) - Vertex.y(v0) : F32)
+      +e1x = (Vertex.x(v1) - Vertex.x(v0) : F32)
+      +e2x = (Vertex.x(v2) - Vertex.x(v0) : F32)
+      tri.area((F32.abs(((e1x * h02 : F32) - (e2x * h01 : F32) : F32)) < area_epsilon() : F32), tex, blend, width, height, v0, v1, v2, h02, h01, e1x, e2x, raster)
 
 def tri.order(+tex: U32, +blend: Bool, +width: U32, +height: U32, +v0: Vertex, +v1: Vertex, +v2: Vertex, raster: Raster) -> Raster:
   tri.sorted(((Vertex.y(v2) - Vertex.y(v0)) < height_epsilon() : F32), tex, blend, width, height, v0, v1, v2, raster)
@@ -1039,13 +1128,13 @@ def line.count(valid: Bool, +zt: U32, +blend: Bool, +width: U32, +height: U32, +
     case False{}: Raster.refuse(raster)
     case True{}: line.pixels(U32.to_nat(F32.to_u32((F32.trunc(count) + 1.0 : F32))), zt, blend, width, height, at, step, raster)
 
-# Increments: color and depth times 1/steps, position d/steps;
+# Increments: color, depth and position times 1/steps (raylib 6.2);
 # Attr{r, g, b, a, x, y, z}.
 def line.step(+v0: Vertex, +v1: Vertex, +dx: F32, +dy: F32, +steps: F32) -> Attr:
   Vertex{_, _, z0, _, r0, g0, b0, a0, _, _} = v0
   Vertex{_, _, z1, _, r1, g1, b1, a1, _, _} = v1
   +k = (1.0 / steps : F32)
-  Attr{((r1 - r0) * k : F32), ((g1 - g0) * k : F32), ((b1 - b0) * k : F32), ((a1 - a0) * k : F32), (dx / steps : F32), (dy / steps : F32),
+  Attr{((r1 - r0) * k : F32), ((g1 - g0) * k : F32), ((b1 - b0) * k : F32), ((a1 - a0) * k : F32), (dx * k : F32), (dy * k : F32),
     ((z1 - z0) * k : F32)}
 
 def line.origin(+v0: Vertex, +x0: F32, +y0: F32) -> Attr:
@@ -1354,11 +1443,29 @@ def render.mode(poly: U32, +mode: U32, +cull: U32, +thick: F32, +radius: F32, +z
     case 1: render.wire(vertices, thick, zt, blend, port, width, height, scissor, raster)
     case _: render.points(vertices, radius, zt, blend, port, width, height, scissor, raster)
 
+def Vertex.color_ne(+a: Vertex, +b: Vertex) -> Bool:
+  Vertex{_, _, _, _, ar, ag, ab, aa, _, _} = a
+  Vertex{_, _, _, _, br, bg, bb, ba, _, _} = b
+  F32.is_ne(ar, br) || F32.is_ne(ag, bg) || F32.is_ne(ab, bb) || F32.is_ne(aa, ba)
+
+def colors.vary(rest: +List<Vertex>, +first: Vertex) -> Bool:
+  match rest:
+    case Nil{}: False{}
+    case Con{+v, more}: Vertex.color_ne(first, v) || colors.vary(more, first)
+
+# sw_immediate_push_vertex (raylib 6.2): a primitive interpolates colors when
+# a pushed vertex's color differs from the first one's (C's !=: a NaN channel
+# differs, -0 equals +0). Lines and points give the same pixels either way.
+def colors.interp(vertices: +List<Vertex>) -> Bool:
+  match vertices:
+    case Nil{}: False{}
+    case Con{+first, rest}: colors.vary(rest, first)
+
 # A complete primitive (mode = its vertex count) with the sampler tex, the
 # blend decision and the pipeline state.
-def render(+mode: U32, +tex: U32, +blend: Bool, +pipe: Pipe, +width: U32, +height: U32, +scissor: Scissor, vertices: +List<Vertex>, raster: Raster) -> Raster:
+def render(+mode: U32, +tex: U32, +blend: Bool, +pipe: Pipe, +width: U32, +height: U32, +scissor: Scissor, +vertices: +List<Vertex>, raster: Raster) -> Raster:
   Pipe{cull, poly, thick, radius, port, depth} = pipe
-  render.mode(poly, mode, cull, thick, radius, Bool.pick(U32, depth, 8, 0), tex, blend, port, width, height, scissor, vertices, raster)
+  render.mode(poly, mode, cull, thick, radius, Bool.pick(U32, depth, 8, 0), tex.with_interp(colors.interp(vertices), tex), blend, port, width, height, scissor, vertices, raster)
 
 # -----------------------------------------------------------------------------
 # The rlgl immediate path: rlBegin/rlColor*/rlTexCoord2f/rlVertex*/rlEnd and
@@ -1368,7 +1475,8 @@ def render(+mode: U32, +tex: U32, +blend: Bool, +pipe: Pipe, +width: U32, +heigh
 # latches the MVP, the texture (when GL_TEXTURE_2D is enabled and the bound
 # texture has pixels) and the blend and depth-test states; a primitive blends
 # when blending was enabled and its texture has alpha (the atlas always does)
-# or a color with alpha below 1 was set since the previous primitive. Culling,
+# or one of its vertices has alpha below 1; its colors are interpolated when
+# they differ, flat otherwise. Culling,
 # the scissor, the polygon mode, line width, point size and viewport are read
 # when the primitive completes. Matrix commands act on the stack selected by
 # rlMatrixMode.
@@ -2600,9 +2708,9 @@ def Immediate.texture(+kind: U32, state: Immediate) -> Immediate:
 def Immediate.paint.color(+r: F32, +g: F32, +b: F32, +a: F32, state: Immediate) -> Immediate:
   Immediate{mode, bound, textured, alpha, paint, pending, count, caps} = state
   Attr{_, _, _, _, u, v, z} = paint
-  Immediate{mode, bound, textured, alpha || (a < 1.0 : F32), Attr{r, g, b, a, u, v, z}, pending, count, caps}
+  Immediate{mode, bound, textured, alpha, Attr{r, g, b, a, u, v, z}, pending, count, caps}
 
-# swColor4ub: byte*SW_INV_255; any alpha below 1 marks the primitive.
+# swColor4ub: byte*SW_INV_255.
 def Immediate.color(+color: U32, state: Immediate) -> Immediate:
   Immediate.paint.color(lut((color >> 24n : U32)), lut(((color >> 16n) .&. 255 : U32)), lut(((color >> 8n) .&. 255 : U32)), lut((color .&. 255 : U32)), state)
 
@@ -2660,9 +2768,15 @@ def Canvas.emit(full: Bool, +mode: U32, +textured: U32, +alpha: Bool, +bound: U3
     case False{}: Canvas.with_state(Immediate{mode, bound, textured, alpha, paint, pending, count, caps}, canvas)
     case True{}: Canvas.render(mode, textured, alpha, bound, paint, caps, pending, canvas)
 
+def Attr.translucent(+paint: Attr) -> Bool:
+  Attr{_, _, _, a, _, _, _} = paint
+  (a < 1.0 : F32)
+
+# sw_immediate_push_vertex (raylib 6.2): every pushed vertex whose alpha is below
+# 1 marks the primitive (6.0 marked only the first after a color change).
 def Canvas.vertex(+vertex: Vertex, state: Immediate, canvas: Canvas) -> Canvas:
   Immediate{+mode, +bound, +textured, +alpha, +paint, pending, +count, +caps} = state
-  Canvas.emit(U32.is_eq((count + 1 : U32), mode), mode, textured, alpha, bound, paint, caps, Con{vertex, pending}, (count + 1 : U32), canvas)
+  Canvas.emit(U32.is_eq((count + 1 : U32), mode), mode, textured, alpha || Attr.translucent(paint), bound, paint, caps, Con{vertex, pending}, (count + 1 : U32), canvas)
 
 def Matrix4.point(+matrix: Matrix4, +x: F32, +y: F32, +z: F32, +paint: Attr) -> Vertex:
   Attr{r, g, b, a, u, v, _} = paint

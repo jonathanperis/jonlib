@@ -1802,7 +1802,7 @@
   "ComputeSHA256": {
     "jonlib": "Checksum.sha256",
     "status": "profile-covered",
-    "scope": "Immutable byte lists of 0..1048576 bytes; exactly eight native-order U32 hash words with native schedules/rounds and the native dataSize+4 padding rule, preserving its nonstandard digests at lengths 56..59 modulo 64. Invalid inputs return None before allocation.",
+    "scope": "Immutable byte lists of 0..1048576 bytes; exactly eight native-order U32 hash words with native schedules/rounds and standard padding (raylib 6.2 sizes it with the 8-byte bit length; 6.0's dataSize+4 rule differed at 56..59 mod 64). Invalid inputs return None before allocation.",
     "gaps": [
       "Larger domains and other native integer-width/compiler profiles",
       "Native mutable static-pointer/output-buffer ABI",
@@ -2570,13 +2570,25 @@
   "DrawTriangle": {
     "jonlib": "Draw.triangle",
     "status": "profile-covered",
-    "scope": "The textured quad (v1, v2, v3, v3): clockwise and degenerate triangles are culled; scanline rasterization in 16-pixel blocks, or the box path for axis-aligned degenerate quads.",
+    "scope": "DrawTriangleGradient with one color (raylib 6.2): the textured quad (v1, v2, v3, v3), clockwise and degenerate triangles culled; scanline rasterization in 16-pixel blocks, or the box path for axis-aligned degenerate quads.",
     "gaps": [
       "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
     ],
     "api_id": "raylib:function:DrawTriangle",
+    "milestone": "shapes"
+  },
+  "DrawTriangleGradient": {
+    "jonlib": "Draw.triangle_gradient",
+    "status": "profile-covered",
+    "scope": "The textured quad (v1, v2, v3, v3) with c1, c2, c3 and c3 set before each vertex (raylib 6.2), interpolated by the rasterizer; clockwise triangles culled.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawTriangleGradient",
     "milestone": "shapes"
   },
   "DrawTriangleLines": {
@@ -2589,6 +2601,18 @@
       "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
     ],
     "api_id": "raylib:function:DrawTriangleLines",
+    "milestone": "shapes"
+  },
+  "DrawTriangleLinesEx": {
+    "jonlib": "Draw.triangle_lines_ex",
+    "status": "profile-covered",
+    "scope": "Raylib 6.2: edge lengths (sqrtf), incenter and inradius in rshapes.c's F32 order, the triangle scaled toward the incenter by 1 - thick/inradius, three textured quads between both triangles (swapped for a negative thickness); a scale <= 0 draws DrawTriangle.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawTriangleLinesEx",
     "milestone": "shapes"
   },
   "DrawTriangleFan": {
@@ -2716,7 +2740,7 @@
   "DrawRectangleLinesEx": {
     "jonlib": "Draw.rectangle_lines_ex",
     "status": "profile-covered",
-    "scope": "Thickness clamped to half the smaller side when larger than a side, then four DrawRectangleRec bands.",
+    "scope": "Raylib 6.2: a thickness above half of either side becomes half the smaller side; a positive one draws four DrawRectangleRec bands inside the rectangle, zero or a negative one four bands outside it (top and bottom 2*|thick| wider).",
     "gaps": [
       "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -2728,9 +2752,9 @@
   "DrawRectangleRounded": {
     "jonlib": "Draw.rectangle_rounded_for / Draw.rectangle_rounded",
     "status": "profile-covered",
-    "scope": "Corner arcs and the middle in rshapes.c quad/triangle order with the shapes texture coordinates; roundness <= 0 draws DrawRectangleRec; segments below 4 are estimated.",
+    "scope": "Corner arcs and the middle in rshapes.c quad order with the shapes texture coordinates; roundness <= 0 draws DrawRectangleRec; segments below 1 are estimated as (int)ceilf((2*PI/th)/4) (raylib 6.2).",
     "gaps": [
-      "Segment estimation (acosf of rshapes.c) only for M.Glibc239Libm; under other profiles, or above 4096 segments, the frame is marked undefined",
+      "Corner segments below 1 are estimated with acosf for M.Glibc239Libm only (other profiles mark the frame undefined); above 4096 the frame is marked undefined",
       "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
       "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -2742,9 +2766,9 @@
   "DrawRectangleRoundedLines": {
     "jonlib": "Draw.rectangle_rounded_lines_for / Draw.rectangle_rounded_lines",
     "status": "profile-covered",
-    "scope": "DrawRectangleRoundedLinesEx with thickness 1.",
+    "scope": "Raylib 6.2's own RL_LINES: corner arcs of the corner radius around centers half a pixel inside, then four sides; roundness <= 0 draws DrawRectangleLines with the rectangle converted to C ints; segments below 1 are estimated.",
     "gaps": [
-      "Segment estimation (acosf of rshapes.c) only for M.Glibc239Libm; under other profiles, or above 4096 segments, the frame is marked undefined",
+      "Corner segments below 1 are estimated with acosf for M.Glibc239Libm only (other profiles mark the frame undefined); above 4096 the frame is marked undefined",
       "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
       "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -2756,9 +2780,9 @@
   "DrawRectangleRoundedLinesEx": {
     "jonlib": "Draw.rectangle_rounded_lines_ex_for / Draw.rectangle_rounded_lines_ex",
     "status": "profile-covered",
-    "scope": "Thick outlines (thickness > 1) as quads with triangle corner arcs, otherwise RL_LINES, as rshapes.c; roundness <= 0 draws DrawRectangleLinesEx.",
+    "scope": "Raylib 6.2: textured corner quads and four side quads between an outer and an inner edge, inside the rectangle for a thickness >= 0 (past the corner radius the inner part is drawn first with DrawRectangleLinesEx) and outside it for a negative one; roundness <= 0 draws DrawRectangleLinesEx.",
     "gaps": [
-      "Segment estimation (acosf of rshapes.c) only for M.Glibc239Libm; under other profiles, or above 4096 segments, the frame is marked undefined",
+      "Corner segments below 1 are estimated with acosf for M.Glibc239Libm only (other profiles mark the frame undefined); above 4096 the frame is marked undefined",
       "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
       "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -2798,7 +2822,7 @@
   "DrawPolyLinesEx": {
     "jonlib": "Draw.poly_lines_ex_for / Draw.poly_lines_ex",
     "status": "profile-covered",
-    "scope": "Quads between the radius and radius - lineThick/cosf(DEG2RAD*(360/sides*DEG2RAD)/2) per side; the Apple host cosf is correctly rounded on every such argument for 3..4096 sides (checked by the probe).",
+    "scope": "Raylib 6.2: quads between an outer and an inner radius per side, the thickness scaled by radius/apothem with apothem = radius*cosf(PI/sides): inward (inner radius clamped at 0) for a thickness >= 0, outward otherwise; the Apple host cosf is checked on every such argument for 3..4096 sides.",
     "gaps": [
       "More than 4096 sides mark the frame undefined",
       "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
@@ -2851,7 +2875,7 @@
   "DrawCircleSector": {
     "jonlib": "Draw.circle_sector_for / Draw.circle_sector",
     "status": "profile-covered",
-    "scope": "Ordered angles, quads of two segments plus an odd last piece, angles accumulated in F32.",
+    "scope": "Raylib 6.2: nothing for a radius <= 0, ordered angles limited to one turn (end = start + 360 from 360 degrees on), quads of two segments plus an odd last piece, angles accumulated in F32; the estimate is (int)ceilf(span*(2*PI/th)/360).",
     "gaps": [
       "Segments below ceil((end - start)/90) are estimated with acosf for M.Glibc239Libm only (other profiles mark the frame undefined); above 4096 the frame is marked undefined",
       "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
@@ -2865,7 +2889,7 @@
   "DrawCircleSectorLines": {
     "jonlib": "Draw.circle_sector_lines_for / Draw.circle_sector_lines",
     "status": "profile-covered",
-    "scope": "Cap lines from the center plus one RL_LINES segment per step.",
+    "scope": "Raylib 6.2: nothing for a radius <= 0, ordered angles limited to one turn; cap lines from the center (none for a whole turn) plus one RL_LINES segment per step.",
     "gaps": [
       "Segments below ceil((end - start)/90) are estimated with acosf for M.Glibc239Libm only (other profiles mark the frame undefined); above 4096 the frame is marked undefined",
       "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
@@ -2874,6 +2898,20 @@
       "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
     ],
     "api_id": "raylib:function:DrawCircleSectorLines",
+    "milestone": "shapes"
+  },
+  "DrawCircleSectorLinesEx": {
+    "jonlib": "Draw.circle_sector_lines_ex_for / Draw.circle_sector_lines_ex",
+    "status": "profile-covered",
+    "scope": "Raylib 6.2: arcs as DrawCircleSectorLines, a band of textured quads radius*thick/apothem thick (inward for thick >= 0), cap quads from rshapes.c's construction (C0..C5 with asinf, atan2f, rotations; none for a negative whole turn) and the gap fills; a covered sector draws DrawCircleSector.",
+    "gaps": [
+      "Libm: sinf/cosf of computed angles, asinf and atan2f (src/checked_angle.bend) must be reproduced by the profile; AppleLibm covers none in practice, so the draw is refused there",
+      "Segments below ceil((end - start)/90) are estimated with acosf for M.Glibc239Libm only (other profiles mark the frame undefined); above 4096 the frame is marked undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawCircleSectorLinesEx",
     "milestone": "shapes"
   },
   "DrawCircleLines": {
@@ -2900,6 +2938,19 @@
       "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
     ],
     "api_id": "raylib:function:DrawCircleLinesV",
+    "milestone": "shapes"
+  },
+  "DrawCircleLinesEx": {
+    "jonlib": "Draw.circle_lines_ex_for / Draw.circle_lines_ex",
+    "status": "profile-covered",
+    "scope": "Raylib 6.2: DrawRing(center, radius - thick, radius, 0, 360, 36): textured quads every 10 degrees, swapped radii for a negative thickness, DrawCircleSector when the inner radius is <= 0, nothing for no positive radius.",
+    "gaps": [
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawCircleLinesEx",
     "milestone": "shapes"
   },
   "DrawEllipse": {
@@ -2954,10 +3005,23 @@
     "api_id": "raylib:function:DrawEllipseLinesV",
     "milestone": "shapes"
   },
+  "DrawEllipseLinesEx": {
+    "jonlib": "Draw.ellipse_lines_ex_for / Draw.ellipse_lines_ex",
+    "status": "profile-covered",
+    "scope": "Raylib 6.2: 36 textured quads every 10 degrees between the radii and the radii - thick (swapped for a negative thickness), the color set once; a thickness >= 0 reaching either radius draws DrawEllipseV.",
+    "gaps": [
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawEllipseLinesEx",
+    "milestone": "shapes"
+  },
   "DrawRing": {
     "jonlib": "Draw.ring_for / Draw.ring",
     "status": "profile-covered",
-    "scope": "Swapped radii and angles as rshapes.c; textured quads between the radii, or DrawCircleSector for a non-positive inner radius.",
+    "scope": "Raylib 6.2: swapped radii and angles as rshapes.c, nothing for an outer radius <= 0, one turn at most; textured quads between the radii, or DrawCircleSector for a non-positive inner radius.",
     "gaps": [
       "Segments below ceil((end - start)/90) are estimated with acosf for M.Glibc239Libm only (other profiles mark the frame undefined); above 4096 the frame is marked undefined",
       "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
@@ -2971,7 +3035,7 @@
   "DrawRingLines": {
     "jonlib": "Draw.ring_lines_for / Draw.ring_lines",
     "status": "profile-covered",
-    "scope": "Swapped radii and angles as rshapes.c; outer and inner arcs as RL_LINES plus both end caps (showCapLines is always true), or DrawCircleSectorLines for a non-positive inner radius.",
+    "scope": "Raylib 6.2: swapped radii and angles, nothing for an outer radius <= 0, one turn at most; outer and inner arcs as RL_LINES plus both end caps (none for a whole turn), or DrawCircleSectorLines for a non-positive inner radius.",
     "gaps": [
       "Segment estimation (acosf of rshapes.c) only for M.Glibc239Libm; under other profiles, or above 4096 segments, the frame is marked undefined",
       "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
@@ -2980,6 +3044,20 @@
       "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
     ],
     "api_id": "raylib:function:DrawRingLines",
+    "milestone": "shapes"
+  },
+  "DrawRingLinesEx": {
+    "jonlib": "Draw.ring_lines_ex_for / Draw.ring_lines_ex",
+    "status": "profile-covered",
+    "scope": "Raylib 6.2: radii, angles and segments as DrawRingLines; both radii's outlines thick*outer/apothem thick, cap quads (inner and outer cap ends, crossing inner angles, crossing caps for a negative thickness); a filled ring draws DrawRing, a negative thickness without inner radius DrawCircleSectorLinesEx.",
+    "gaps": [
+      "Libm: sinf/cosf of computed angles, asinf and atan2f (src/checked_angle.bend) must be reproduced by the profile; AppleLibm covers none in practice, so the draw is refused there",
+      "Segments below ceil((end - start)/90) are estimated with acosf for M.Glibc239Libm only (other profiles mark the frame undefined); above 4096 the frame is marked undefined",
+      "Undefined native behavior: (int)NaN step counts (no inner radius and a zero thickness) and the other UB of the shapes mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
+    ],
+    "api_id": "raylib:function:DrawRingLinesEx",
     "milestone": "shapes"
   },
   "DrawSplineLinear": {

@@ -24,7 +24,8 @@ coordinates, partially and fully off-screen and degenerate geometry,
 clockwise (culled) and counter-clockwise triangles, translucent colors over
 opaque and translucent backgrounds, overlapping draws, spans longer than
 rlsw's 16-pixel blocks, lines in every octant, the per-primitive alpha
-flag of single-color strips, and sizes from 1x1 to 64x48.
+flag of single-color strips, flat (equal pushed colors) and interpolated
+primitives, and sizes from 1x1 to 64x48.
 
 Contracts (Jonlib must answer null, the reference is not run): C int
 conversions out of range, gradient extrapolations whose stored channel
@@ -93,16 +94,25 @@ def c_int(value):
     return int(value)
 
 
+def arc_order(start, end):
+    """raylib 6.2's ordered arc: start <= end, and an arc of 360 degrees or more ends at start + 360."""
+    if end < start:
+        start, end = end, start
+    if f32(end - start) >= 360.0:
+        end = f32(start + 360.0)
+    return start, end
+
+
 def sector_plan(start, end, segments, libm=None):
     """(start, step, segments) of DrawCircleSector(Lines)/DrawRing, [] for nothing, None when refused.
 
     Fewer segments than rshapes.c's minimum make it estimate them with acosf: Jonlib reproduces that under
     M.Glibc239Libm only ('estimated'; its arguments stay within the verified glibc sine/cosine range, and
-    tools/rlgl_probe.py checks the estimates), and refuses it elsewhere."""
+    tools/rlgl_probe.py checks the estimates), and refuses it elsewhere. A non-positive radius draws nothing
+    (the callers check it)."""
     if start == end:
         return []
-    if end < start:
-        start, end = end, start
+    start, end = arc_order(start, end)
     span = f32(end - start)
     minimum = math.ceil(f32(span / 90.0)) if math.isfinite(span) else None
     if minimum is None or c_int(float(minimum)) is None:
@@ -177,12 +187,18 @@ def trig_arguments(op, libm=None):
         return circle_args()
     if name == 'rect_pro':
         return [] if a[6] == 0.0 else [f32(a[6] * DEG2RAD)]
+    if name in ('ellipse_lines_ex', 'tri_grad', 'tri_lines_ex'):
+        return circle_args() if name == 'ellipse_lines_ex' else []
     if name == 'sector':
-        return sector_args(a[3], a[4], a[5], libm)
+        return [] if a[2] <= 0.0 else sector_args(a[3], a[4], a[5], libm)
     if name == 'sector_lines':
-        return stepped_args(a[3], a[4], a[5], libm)
-    if name == 'ring':
+        return [] if a[2] <= 0.0 else stepped_args(a[3], a[4], a[5], libm)
+    if name in ('ring', 'circle_lines_ex'):
+        if name == 'circle_lines_ex':
+            a = (a[0], a[1], f32(a[2] - a[3]), a[2], 0.0, 360.0, 36.0)
         inner, outer = (a[3], a[2]) if a[3] < a[2] else (a[2], a[3])
+        if outer <= 0.0:
+            return []
         return sector_args(a[4], a[5], a[6], libm) if inner <= 0.0 else stepped_args(a[4], a[5], a[6], libm)
     if name in ('poly', 'poly_lines'):
         return poly_args(a[2], a[4])
@@ -315,6 +331,16 @@ def scenes():
     add('gradient-ex-corner-overflow', 16, 12, [('grad_ex', 2.25, 1.75, 6.5, 4.5, C(255, 0, 0), C(0, 0, 0), C(255, 255, 255), C(255, 0, 0), 'undefined')])
     add('gradient-int-overflow', 16, 12, [('grad_v', 3e9, 0.0, 4.0, 4.0, red, blue)])
 
+    # raylib 6.2 fills a primitive flat when its pushed colors are all equal and interpolates otherwise (colors
+    # differing in alpha alone too): gradients given equal colors and nearly equal ones, a circle gradient with
+    # equal inner and outer colors, and a flat translucent triangle across them.
+    add('flat-or-gradient', 33, 17, [('begin',), ('clear', C(250, 250, 250)),
+                                     ('grad_ex', 1.5, 1.25, 12.0, 7.5, red, red, red, red),
+                                     ('grad_ex', 15.0, 1.0, 9.0, 6.0, C(10, 20, 30, 255), C(10, 20, 30, 254), C(10, 20, 30, 255), C(10, 20, 30, 255)),
+                                     ('grad_v', 25.0, 1.0, 7.0, 8.0, half[2], half[2]), ('grad_h', 2.0, 10.0, 10.0, 6.0, green, C(0, 228, 49)),
+                                     ('circle_gradient', 18.5, 11.5, 5.0, half[0], half[0]), ('circle_gradient', 27.0, 12.0, 4.5, white, C(255, 255, 255, 0)),
+                                     ('tri', 10.0, 3.0, 13.0, 15.0, 30.0, 9.0, half[2]), ('end',)], screen=True)
+
     # Rectangle outlines.
     for w, h in ((16, 12), (33, 17)):
         ops = [('begin',), ('clear', C(0, 0, 0)), ('rect_lines', 1.0, 1.0, 8.0, 6.0, red), ('rect_lines', 0.0, 0.0, float(w), float(h), green),
@@ -322,6 +348,11 @@ def scenes():
                ('rect_lines_ex', 2.0, 2.0, 10.0, 7.0, 2.0, half[2]), ('rect_lines_ex', 4.5, 3.5, 6.0, 3.0, 5.0, white),
                ('rect_lines_ex', 0.0, float(h - 4), 3.0, 4.0, 1.0, red), ('end',)]
         add(f'rect-lines-{w}x{h}', w, h, ops)
+    # raylib 6.2 DrawRectangleLinesEx: clamp to half the smaller side, zero and negative thicknesses outside.
+    add('rect-lines-ex-62', 33, 17, [('begin',), ('clear', C(10, 10, 10)), ('rect_lines_ex', 2.0, 2.0, 10.0, 7.0, 4.0, half[2]),
+                                      ('rect_lines_ex', 14.0, 2.0, 7.0, 10.0, 3.6, red), ('rect_lines_ex', 4.0, 11.0, 6.0, 3.0, -2.0, half[0]),
+                                      ('rect_lines_ex', 24.5, 4.5, 5.0, 6.0, -0.5, white), ('rect_lines_ex', 23.0, 13.0, 6.0, 2.0, 0.0, green),
+                                      ('rect_lines_ex', 14.0, 13.0, 0.0, 2.0, 3.0, blue), ('rect_lines_ex', 1.0, 1.0, -4.0, 3.0, 1.0, white), ('end',)])
 
     # Triangles: CCW drawn, CW culled, degenerate, clipped, tiny, long spans.
     for w, h in ((16, 12), (33, 17), (64, 48)):
@@ -338,6 +369,19 @@ def scenes():
             ops.append(('tri', *pts, rng.choice(half + [red, green, blue])))
         ops += [('tri_lines', 1.0, 1.0, 1.0, 8.0, 9.0, 8.0, white), ('tri_lines', 3.5, 2.5, 12.5, 4.5, 6.5, 10.5, half[0]), ('end',)]
         add(f'tri-random-{w}x{h}', w, h, ops)
+    # raylib 6.2: DrawTriangleGradient (a color per vertex) and DrawTriangleLinesEx (positive, negative, zero
+    # and covering thicknesses, a clockwise and a degenerate triangle with no inradius).
+    for w, h in ((33, 17), (64, 48)):
+        ops = [('begin',), ('clear', backgrounds[3]), ('tri_grad', 2.0, 2.0, 2.0, float(h - 2), float(w - 3), float(h - 2), red, green, blue),
+               ('tri_grad', 4.5, 1.5, 9.25, 12.75, 20.5, 3.0, half[0], C(255, 255, 255, 255), half[2]),
+               ('tri_grad', 20.0, 2.0, 30.0, 10.0, 20.0, 10.0, red, red, red), ('tri_grad', 1.0, 1.0, 5.0, 5.0, 9.0, 9.0, white, red, green), ('end',)]
+        add(f'tri-gradient-{w}x{h}', w, h, ops)
+        ops = [('begin',), ('clear', C(240, 240, 240)), ('tri_lines_ex', 3.0, 2.0, 3.0, float(h - 3), float(w // 2), float(h - 3), 2.0, red),
+               ('tri_lines_ex', f32(w / 2 + 1.5), 2.5, f32(w / 2 + 1.5), 12.75, float(w - 2), 12.75, 1.25, half[2]),
+               ('tri_lines_ex', 8.0, 4.0, 8.0, 12.0, 16.0, 12.0, -1.5, half[0]), ('tri_lines_ex', 5.0, 5.0, 5.0, 9.0, 9.0, 9.0, 20.0, green),
+               ('tri_lines_ex', 20.0, 3.0, 20.0, 9.0, 26.0, 9.0, 0.0, blue), ('tri_lines_ex', 2.0, 2.0, 12.0, 9.0, 2.0, 9.0, 1.0, red),
+               ('tri_lines_ex', 2.0, 2.0, 2.0, 8.0, 2.0, 5.0, 1.0, white), ('end',)]
+        add(f'tri-lines-ex-{w}x{h}', w, h, ops)
 
     # Fans, strips, line strips and thick lines (single color: only the
     # first primitive of untextured strips carries the alpha flag).
@@ -374,6 +418,22 @@ def scenes():
                ('poly', 8.0, 4.0, 5.0, 3.5, -120.0, half[0]),
                ('poly_lines', f32(w / 2), f32(h / 2), 6.0, 6.0, -180.0, white), ('poly_lines', 4.0, 4.0, 3.0, 3.0, -90.0, blue), ('end',)]
         add(f'arcs-{w}x{h}', w, h, ops, screen=(w == 33))
+    # raylib 6.2: a non-positive radius draws nothing, an arc of 360 degrees or more is limited to one turn
+    # (DrawCircleSectorLines then has no cap lines), DrawCircleLinesEx is DrawRing and DrawEllipseLinesEx draws
+    # quads between the radii and the radii - thick.
+    for w, h in ((33, 17), (64, 48)):
+        ops = [('begin',), ('clear', C(20, 20, 20)), ('sector', 6.0, 6.0, 0.0, 0.0, 90.0, 4.0, red), ('sector', 6.0, 6.0, -3.0, 0.0, 90.0, 4.0, red),
+               ('sector_lines', 9.0, 6.0, 0.0, 0.0, 90.0, 4.0, white), ('ring', 9.0, 7.0, -1.0, -2.0, 0.0, 90.0, 3.0, red),
+               ('ring', 9.0, 7.0, 0.0, 0.0, 0.0, 90.0, 3.0, red), ('sector', f32(w / 2), f32(h / 2), 6.0, 0.0, 400.0, 8.0, half[0]),
+               ('sector', f32(w / 4), f32(h / 2), 4.5, 300.0, -90.0, 12.0, half[2]), ('sector_lines', f32(w / 2), f32(h / 2), 7.0, -90.0, 270.0, 8.0, white),
+               ('sector_lines', 6.0, 6.0, 4.0, 0.0, 720.0, 12.0, green), ('ring', f32(w * 0.75), f32(h / 2), 2.0, 5.0, -10.0, 370.0, 12.0, half[1]),
+               ('ring', 5.0, 10.0, 0.0, 4.0, 0.0, 500.0, 6.0, blue),
+               ('circle_lines_ex', f32(w / 2), f32(h / 2), 6.0, 2.0, red), ('circle_lines_ex', 6.5, 6.5, 4.0, -1.5, half[2]),
+               ('circle_lines_ex', f32(w - 6), 6.0, 3.0, 5.0, green), ('circle_lines_ex', 4.0, float(h - 4), 3.0, 0.0, white),
+               ('circle_lines_ex', 4.0, 4.0, -2.0, 1.0, white),
+               ('ellipse_lines_ex', f32(w / 2), f32(h / 2), f32(w / 3), f32(h / 4), 1.5, half[0]), ('ellipse_lines_ex', 8.5, 6.5, 6.0, 3.0, -1.0, blue),
+               ('ellipse_lines_ex', f32(w - 7), f32(h - 5), 5.0, 2.0, 2.0, red), ('ellipse_lines_ex', 10.0, 10.0, 4.0, 4.0, 0.0, white), ('end',)]
+        add(f'arcs-62-{w}x{h}', w, h, ops)
     add('sector-too-few-segments', 16, 12, [('sector', 8.0, 6.0, 5.0, 0.0, 360.0, 3.0, red)])
     add('sector-too-many-segments', 16, 12, [('sector', 8.0, 6.0, 5.0, 0.0, 360.0, 5000.0, red)])
     add('sector-unverified-step', 16, 12, [('sector', 8.0, 6.0, 5.0, 0.0, 100.0, 3.0, red)])
@@ -554,6 +614,10 @@ def c_op(op, index):
         'rect_lines_ex': lambda: f'DrawRectangleLinesEx({crec(*a[:4])}, {cf(a[4])}, {cc(a[5])});',
         'tri': lambda: f'DrawTriangle({cv(a[0], a[1])}, {cv(a[2], a[3])}, {cv(a[4], a[5])}, {cc(a[6])});',
         'tri_lines': lambda: f'DrawTriangleLines({cv(a[0], a[1])}, {cv(a[2], a[3])}, {cv(a[4], a[5])}, {cc(a[6])});',
+        'tri_grad': lambda: f'DrawTriangleGradient({cv(a[0], a[1])}, {cv(a[2], a[3])}, {cv(a[4], a[5])}, {cc(a[6])}, {cc(a[7])}, {cc(a[8])});',
+        'tri_lines_ex': lambda: f'DrawTriangleLinesEx({cv(a[0], a[1])}, {cv(a[2], a[3])}, {cv(a[4], a[5])}, {cf(a[6])}, {cc(a[7])});',
+        'circle_lines_ex': lambda: f'DrawCircleLinesEx({cv(a[0], a[1])}, {cf(a[2])}, {cf(a[3])}, {cc(a[4])});',
+        'ellipse_lines_ex': lambda: f'DrawEllipseLinesEx({cv(a[0], a[1])}, {cf(a[2])}, {cf(a[3])}, {cf(a[4])}, {cc(a[5])});',
         'fan': lambda: f'{{ {cpoints(a[0], "p")} DrawTriangleFan(p, {len(a[0])}, {cc(a[1])}); }}',
         'strip': lambda: f'{{ {cpoints(a[0], "p")} DrawTriangleStrip(p, {len(a[0])}, {cc(a[1])}); }}',
         'circle': lambda: f'DrawCircle({ci(a[0])}, {ci(a[1])}, {cf(a[2])}, {cc(a[3])});',
@@ -704,6 +768,10 @@ def b_op(op, libm, frame):
         'rect_lines_ex': lambda: f'J.Draw.rectangle_lines_ex({frame}, {brec(*a[:4])}, {bf(a[4])}, {a[5]})',
         'tri': lambda: f'J.Draw.triangle({frame}, {bv(a[0], a[1])}, {bv(a[2], a[3])}, {bv(a[4], a[5])}, {a[6]})',
         'tri_lines': lambda: f'J.Draw.triangle_lines({frame}, {bv(a[0], a[1])}, {bv(a[2], a[3])}, {bv(a[4], a[5])}, {a[6]})',
+        'tri_grad': lambda: f'J.Draw.triangle_gradient({frame}, {bv(a[0], a[1])}, {bv(a[2], a[3])}, {bv(a[4], a[5])}, {a[6]}, {a[7]}, {a[8]})',
+        'tri_lines_ex': lambda: f'J.Draw.triangle_lines_ex({frame}, {bv(a[0], a[1])}, {bv(a[2], a[3])}, {bv(a[4], a[5])}, {bf(a[6])}, {a[7]})',
+        'circle_lines_ex': lambda: f'J.Draw.circle_lines_ex_for({lm}, {frame}, {bv(a[0], a[1])}, {bf(a[2])}, {bf(a[3])}, {a[4]})',
+        'ellipse_lines_ex': lambda: f'J.Draw.ellipse_lines_ex_for({lm}, {frame}, {bv(a[0], a[1])}, {bf(a[2])}, {bf(a[3])}, {bf(a[4])}, {a[5]})',
         'fan': lambda: f'J.Draw.triangle_fan({frame}, {bpoints(a[0])}, {a[1]})',
         'strip': lambda: f'J.Draw.triangle_strip({frame}, {bpoints(a[0])}, {a[1]})',
         'circle': lambda: f'J.Draw.circle_for({lm}, {frame}, {bf(a[0])}, {bf(a[1])}, {bf(a[2])}, {a[3]})',

@@ -30,15 +30,18 @@ Traced in the pinned sources and checked by the probe:
   `GL_CLAMP` (`Rlgl.texture_parameters`) clamps a texture: nearest sampling
   saturates the coordinate, so u = 1 reads texel `width` (the next row's
   first, past the texture on the last row: undefined), and bilinear sampling
-  clamps the indices from above only (a coordinate below -1 reads before the
-  texture: undefined).
+  clamps both indices to the texture (raylib 6.2; 6.0 clamped from above
+  only).
 - **Filters.** `TEXTURE_FILTER_POINT` sets NEAREST for minification and
   magnification, `BILINEAR` and `TRILINEAR` (a texture always has one level
   here) set LINEAR; the anisotropic modes change nothing under OpenGL 1.1.
-  `rlTextureParameters` sets either filter alone: rlsw samples with the
-  minification filter where a span's (or an axis-aligned quad's) texture
-  derivatives give L2 = max(dUdx² + dUdy², dVdx² + dVdy²) above 1, with the
-  magnification filter otherwise.
+  `rlTextureParameters` sets either filter alone: rlsw samples a whole
+  triangle (or axis-aligned quad) with the minification filter where its
+  texture derivatives give L2 = max(dUdx² + dUdy², dVdx² + dVdy²) above 1,
+  with the magnification filter otherwise. raylib 6.2 takes a triangle's
+  derivatives from its plane once (6.0 took each span's x derivatives and the
+  long edge's per-row step, so a triangle could switch filters between
+  rows); a quad's are its corner gradients, as before.
   Minification and magnification are always equal, so rlsw's derivative test
   never matters.
 - **Mipmaps.** `rlGenTextureMipmaps` only warns under OpenGL 1.1:
@@ -66,8 +69,10 @@ Traced in the pinned sources and checked by the probe:
   lands on the next row's first texel). Bilinear: `xf = u*width - 0.5`,
   weights `fract(xf)`, texels `(int)xf` (truncated toward zero, so
   coordinates just left of 0 blend texels 0 and 1) and the next, both wrapped
-  with `((x%w)+w)%w`, interpolated per channel as rlsw writes it. Textured
-  pixels multiply the interpolated tint by the texel.
+  with `((x%w)+w)%w`, interpolated per channel as rlsw writes it (raylib 6.2's
+  default `RLSW_SUPPORT_NPOT_TEXTURE` keeps these formulas for every size).
+  Textured pixels multiply the tint, interpolated or flat
+  ([FRAME.md](FRAME.md)), by the texel.
 - **Matrices.** rlgl's OpenGL 1.1 matrix calls go to rlsw's stacks: a
   projection stack (raylib only reloads its top) and a modelview stack of 8.
   `swTranslatef`/`swRotatef`/`swScalef`/`swMultMatrixf` replace the current

@@ -1,6 +1,6 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
 # Altered raylib ComputeSHA1/ComputeSHA256 adaptation; see LICENSES/raylib.txt.
-# Native SHA-256's four-byte padding-size rule is intentionally retained.
+# Standard padding for both (raylib 6.2 fixed SHA-256's dataSize + 4 sizing).
 import Base
 import ./checksum.bend as C
 
@@ -168,11 +168,16 @@ def initial(sha256: Bool) -> Digest:
     case False{}: Digest{1732584193, 4023233417, 2562383102, 271733878, 3285377520, 0, 0, 0}
     case True{}: Digest{1779033703, 3144134277, 1013904242, 2773480762, 1359893119, 2600822924, 528734635, 1541459225}
 
+# The padded message in 32-bit words: the data, 0x80 and the 8-byte bit length,
+# rounded up to 64-byte blocks.
+def padded_words(+length: U32) -> U32:
+  ((((length + 8) / 64) + 1) * 16 : U32)
+
 def checked(size: Maybe<&2, U32>, +sha256: Bool, bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
   match size:
     case None{}: None{}
     case Some{+length}:
-      +count = ((((length + Bool.pick(U32, sha256, 4, 8)) / 64) + 1) * 16 : U32)
+      +count = padded_words(length)
       depth = {1n+U32.log2((count - 1 : U32)) : Nat}
       input = message(bytes, 0, Array.new(U32, depth, 0))
       padded = Array.set(U32, Array.set(U32, input, (count - 2 : U32), 0), (count - 1 : U32), (length * 8 : U32))

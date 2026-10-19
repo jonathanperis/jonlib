@@ -7,17 +7,12 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 223 examples; 212 ported, 7 ready, 4 waiting.
+Totals: 223 examples; 212 ported, 11 ready, 0 waiting.
 
 ## APIs that unblock the most examples
 
 | API | Examples waiting on it |
 |---|---|
-| `DrawCircleLinesEx` | 4 |
-| `DrawTriangleLinesEx` | 2 |
-| `DrawCircleSectorLinesEx` | 1 |
-| `DrawEllipseLinesEx` | 1 |
-| `DrawRingLinesEx` | 1 |
 | `ImageDrawImagePro` | 1 |
 
 ## Examples
@@ -113,11 +108,11 @@ Totals: 223 examples; 212 ported, 7 ready, 4 waiting.
 | `shapes_penrose_tile` | shapes | ported |  |
 | `shapes_hilbert_curve` | shapes | ported |  |
 | `shapes_easings_testbed` | shapes | ported |  |
-| `shapes_drag_puzzle` | shapes | waiting | `DrawCircleLinesEx`, `DrawTriangleLinesEx` |
+| `shapes_drag_puzzle` | shapes | ready |  |
 | `shapes_ellipse_collision` | shapes | ready |  |
-| `shapes_outlines_testbed` | shapes | waiting | `DrawCircleLinesEx`, `DrawCircleSectorLinesEx`, `DrawEllipseLinesEx`, `DrawRingLinesEx`, `DrawTriangleLinesEx` |
-| `shapes_outlines_thickness` | shapes | waiting | `DrawCircleLinesEx` |
-| `shapes_polygon_lines` | shapes | waiting | `DrawCircleLinesEx` |
+| `shapes_outlines_testbed` | shapes | ready |  |
+| `shapes_outlines_thickness` | shapes | ready |  |
+| `shapes_polygon_lines` | shapes | ready |  |
 | `textures_clipboard_image` | textures | ported |  |
 | `textures_magnifying_glass` | textures | ported |  |
 | `textures_logo_raylib` | textures | ported |  |

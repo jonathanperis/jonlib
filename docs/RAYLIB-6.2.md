@@ -33,8 +33,8 @@ outlive it.
 | Upstream | Change | Jonlib |
 |---|---|---|
 | `rcore.c` (+264 −185) | files and paths: `IsPathDirectory`, `IsPathAbsolute`, `IsFileHidden` (new), `ChangeDirectory` returns `chdir`'s int, `GetPrevDirectoryPath` rewritten (it asks `IsPathFile`), `FileCopy`/`FileMove`/`FileTextReplace` results, `IsFileExtension` (15 bytes, 32 entries), path buffers of 4096 bytes; gamepad index checks; automation events | files and paths ported (gates `files`, `files-os`, `loaders`); the rest to check |
-| `external/rlsw.h` (+1120 −1064) | dispatch refactor, span and quad fixes, scissor Y fix, blend state fix, NPOT textures, texture format coercion | to port (`src/frame.bend`) |
-| `rshapes.c` (+2997 −924) | `*LinesEx` outlines (new and fixed), circle sectors, rounded rectangles, `DrawTriangleGradient` | to port |
+| `external/rlsw.h` (+1120 −1064) | dispatch refactor, span and quad fixes, scissor Y fix, blend state fix, NPOT textures, texture format coercion | ported in `src/frame.bend`: spans and boxes clamped to the color buffer, flat or interpolated colors, plane derivatives and one texture filter per triangle, the scissor's y, per-vertex alpha, the line step, bilinear clamping; NPOT support, the depth-format coercion and the dispatch refactor change no pixel ([FRAME.md](FRAME.md)) |
+| `rshapes.c` (+2997 −924) | `*LinesEx` outlines (new and fixed), circle sectors, rounded rectangles, `DrawTriangleGradient` | ported in `src/shapes.bend` ([FRAME.md](FRAME.md#state-and-api), [RLGL.md](RLGL.md)): radius `<= 0` and one-turn arcs, the new estimates, `DrawRectangleLinesEx`, `DrawPolyLinesEx`, the rounded outlines, `DrawTriangleGradient`, `DrawTriangleLinesEx`, `DrawCircleLinesEx`, `DrawEllipseLinesEx`, `DrawCircleSectorLinesEx`, `DrawRingLinesEx` (gates `frame`, `rlgl`; to run) |
 | `rtextures.c` (+727 −354) | `ImageDrawImage*`, `ImageDraw*` new forms, `LoadRenderTextureEx`, `ImageColorContrast`, `GetPixelColor` | to port |
 | `rtext.c` (+154 −95) | `ImageDrawTextPro`, text functions | to check |
 | `rmodels.c` (+357 −221) | billboards, cylinders and capsules (signatures), loaders | to check |

@@ -9931,6 +9931,9 @@ def Draw.rectangle_lines(frame: Frame, +x: F32, +y: F32, +width: F32, +height: F
   Frame.draw(frame, Shapes.Plan.require(Frame.ints(x, y, width, height),
     Shapes.rectangle.lines(Frame.int(x), Frame.int(y), Frame.int(width), Frame.int(height), color)))
 
+# DrawRectangleLinesEx (raylib 6.2): a thickness above half of either side
+# becomes half the smaller one; four bands inside the rectangle, or outside
+# it for a thickness <= 0.
 def Draw.rectangle_lines_ex(frame: Frame, rec: Rectangle, +thick: F32, +color: U32) -> Frame:
   Rectangle{x, y, w, h} = rec
   Frame.draw(frame, Shapes.rectangle.lines_ex(x, y, w, h, thick, color))
@@ -9941,6 +9944,17 @@ def Draw.triangle(frame: Frame, v1: M.Vector2, v2: M.Vector2, v3: M.Vector2, +co
 
 def Draw.triangle_lines(frame: Frame, v1: M.Vector2, v2: M.Vector2, v3: M.Vector2, +color: U32) -> Frame:
   Frame.draw(frame, Shapes.triangle.lines(Draw.point(v1), Draw.point(v2), Draw.point(v3), color))
+
+# DrawTriangleGradient (raylib 6.2): DrawTriangle's quad with a color per
+# vertex, interpolated by the rasterizer.
+def Draw.triangle_gradient(frame: Frame, v1: M.Vector2, v2: M.Vector2, v3: M.Vector2, +c1: U32, +c2: U32, +c3: U32) -> Frame:
+  Frame.draw(frame, Shapes.triangle.gradient(Draw.point(v1), Draw.point(v2), Draw.point(v3), c1, c2, c3))
+
+# DrawTriangleLinesEx (raylib 6.2): quads between the triangle and its copy
+# scaled toward the incenter by 1 - thick/inradius (outside it for a negative
+# thickness); a thickness reaching the inradius draws DrawTriangle.
+def Draw.triangle_lines_ex(frame: Frame, v1: M.Vector2, v2: M.Vector2, v3: M.Vector2, +thick: F32, +color: U32) -> Frame:
+  Frame.draw(frame, Shapes.triangle.lines_ex(Draw.point(v1), Draw.point(v2), Draw.point(v3), thick, color))
 
 def Draw.triangle_fan(frame: Frame, points: +List<M.Vector2>, +color: U32) -> Frame:
   Frame.draw(frame, Shapes.fan(Draw.points(points), color))
@@ -9963,6 +9977,18 @@ def Draw.circle_sector_lines_for(libm: M.Libm, frame: Frame, center: M.Vector2, 
 
 def Draw.circle_sector_lines(frame: Frame, center: M.Vector2, +radius: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Frame:
   Draw.circle_sector_lines_for(M.AppleLibm{}, frame, center, radius, start, end, segments, color)
+
+# DrawCircleSectorLinesEx (raylib 6.2): a band of quads radius*thick/apothem
+# thick (inward for a thickness >= 0) and cap quads; segments as for
+# DrawCircleSector. Its caps take asinf, atan2f and sinf/cosf of computed
+# angles: arguments the profile does not reproduce refuse the draw (in
+# practice it is reproduced under the glibc profiles only).
+def Draw.circle_sector_lines_ex_for(libm: M.Libm, frame: Frame, center: M.Vector2, +radius: F32, +start: F32, +end: F32, +segments: F32, +thick: F32, +color: U32) -> Frame:
+  M.Vector2{x, y} = center
+  Frame.draw(frame, Shapes.sector_lines_ex(M.Libm.angle(libm), x, y, radius, start, end, segments, thick, color))
+
+def Draw.circle_sector_lines_ex(frame: Frame, center: M.Vector2, +radius: F32, +start: F32, +end: F32, +segments: F32, +thick: F32, +color: U32) -> Frame:
+  Draw.circle_sector_lines_ex_for(M.AppleLibm{}, frame, center, radius, start, end, segments, thick, color)
 
 # DrawCircleV: DrawCircleSector(center, radius, 0, 360, 36).
 def Draw.circle_v_for(libm: M.Libm, frame: Frame, center: M.Vector2, +radius: F32, +color: U32) -> Frame:
@@ -10000,6 +10026,15 @@ def Draw.circle_lines_for(libm: M.Libm, frame: Frame, +x: F32, +y: F32, +radius:
 def Draw.circle_lines(frame: Frame, +x: F32, +y: F32, +radius: F32, +color: U32) -> Frame:
   Draw.circle_lines_for(M.AppleLibm{}, frame, x, y, radius, color)
 
+# DrawCircleLinesEx (raylib 6.2): DrawRing(center, radius - thick, radius,
+# 0, 360, 36).
+def Draw.circle_lines_ex_for(libm: M.Libm, frame: Frame, center: M.Vector2, +radius: F32, +thick: F32, +color: U32) -> Frame:
+  M.Vector2{x, y} = center
+  Frame.draw(frame, Shapes.circle_lines_ex(M.Libm.angle(libm), x, y, radius, thick, color))
+
+def Draw.circle_lines_ex(frame: Frame, center: M.Vector2, +radius: F32, +thick: F32, +color: U32) -> Frame:
+  Draw.circle_lines_ex_for(M.AppleLibm{}, frame, center, radius, thick, color)
+
 def Draw.ellipse_v_for(libm: M.Libm, frame: Frame, center: M.Vector2, +radius_h: F32, +radius_v: F32, +color: U32) -> Frame:
   M.Vector2{x, y} = center
   Frame.draw(frame, Shapes.ellipse(M.Libm.gnu(libm), x, y, radius_h, radius_v, color))
@@ -10027,6 +10062,16 @@ def Draw.ellipse_lines_for(libm: M.Libm, frame: Frame, +x: F32, +y: F32, +radius
 
 def Draw.ellipse_lines(frame: Frame, +x: F32, +y: F32, +radius_h: F32, +radius_v: F32, +color: U32) -> Frame:
   Draw.ellipse_lines_for(M.AppleLibm{}, frame, x, y, radius_h, radius_v, color)
+
+# DrawEllipseLinesEx (raylib 6.2): 36 quads between the radii and the radii
+# - thick (outside for a negative thickness); a thickness >= 0 reaching
+# either radius draws DrawEllipseV.
+def Draw.ellipse_lines_ex_for(libm: M.Libm, frame: Frame, center: M.Vector2, +radius_h: F32, +radius_v: F32, +thick: F32, +color: U32) -> Frame:
+  M.Vector2{x, y} = center
+  Frame.draw(frame, Shapes.ellipse_lines_ex(M.Libm.gnu(libm), x, y, radius_h, radius_v, thick, color))
+
+def Draw.ellipse_lines_ex(frame: Frame, center: M.Vector2, +radius_h: F32, +radius_v: F32, +thick: F32, +color: U32) -> Frame:
+  Draw.ellipse_lines_ex_for(M.AppleLibm{}, frame, center, radius_h, radius_v, thick, color)
 
 # DrawRing: a non-positive inner radius draws DrawCircleSector; segments as
 # for DrawCircleSector.
@@ -10432,7 +10477,7 @@ def Rlgl.texture.bound(bound: Bool, +param: U32, +value: U32, linear: FrameCore.
 # rlTextureParameters on a texture value (Jonlib's textures are values, not
 # ids): its filters and wraps as rlsw's texture object holds them; texture
 # id 0 binds nothing and changes nothing. rlsw picks the minification
-# filter where a span's or quad's texture derivatives minify (L2 > 1).
+# filter where a triangle's or quad's texture derivatives minify (L2 > 1).
 def Rlgl.texture_parameters(texture: Texture, +param: U32, +value: U32) -> Texture:
   Texture{+id, +width, +height, +format, linear, +alpha, texels} = texture
   Texture{id, width, height, format, Rlgl.texture.bound(U32.is_ne(id, 0), param, value, linear), alpha, texels}
@@ -11042,7 +11087,7 @@ def Rlgl.unload_texture(frame: Frame, texture: Texture) -> Frame:
 # Remaining shapes, shapes texture and splines --------------------------------
 #
 # Altered Bend adaptation of rshapes.c (DrawLineBezier, DrawLineDashed,
-# DrawRingLines, DrawPolyLinesEx, DrawRectangleRounded*, DrawSpline*,
+# DrawRingLines(Ex), DrawPolyLinesEx, DrawRectangleRounded*, DrawSpline*,
 # SetShapesTexture, GetShapesTexture*); see docs/FRAME.md and docs/RLGL.md.
 
 # DrawLineBezier: 24 cubic-eased steps as a DrawTriangleStrip ribbon.
@@ -11067,9 +11112,21 @@ def Draw.ring_lines_for(libm: M.Libm, frame: Frame, center: M.Vector2, +inner: F
 def Draw.ring_lines(frame: Frame, center: M.Vector2, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Frame:
   Draw.ring_lines_for(M.AppleLibm{}, frame, center, inner, outer, start, end, segments, color)
 
-# DrawPolyLinesEx: quads between the radius and radius - lineThick*cosf of a
-# small angle (accepted for every sides value in the Apple profile, see
-# docs/RLGL.md).
+# DrawRingLinesEx (raylib 6.2): the outlines of both radii, thick*outer/apothem
+# thick, and cap quads; a thickness >= 0 filling the ring draws DrawRing, a
+# negative one without an inner radius DrawCircleSectorLinesEx. Reproduced in
+# practice under the glibc profiles only (as DrawCircleSectorLinesEx).
+def Draw.ring_lines_ex_for(libm: M.Libm, frame: Frame, center: M.Vector2, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +thick: F32, +color: U32) -> Frame:
+  M.Vector2{x, y} = center
+  Frame.draw(frame, Shapes.ring_lines_ex(M.Libm.angle(libm), x, y, inner, outer, start, end, segments, thick, color))
+
+def Draw.ring_lines_ex(frame: Frame, center: M.Vector2, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +thick: F32, +color: U32) -> Frame:
+  Draw.ring_lines_ex_for(M.AppleLibm{}, frame, center, inner, outer, start, end, segments, thick, color)
+
+# DrawPolyLinesEx (raylib 6.2): quads between the radius and
+# radius - thick*radius/apothem (radius + that for a negative thickness), the
+# apothem radius*cosf(PI/sides) (accepted for every sides value in the Apple
+# profile, see docs/RLGL.md).
 def Draw.poly_lines_ex_for(libm: M.Libm, frame: Frame, center: M.Vector2, +sides: F32, +radius: F32, +rotation: F32, +thick: F32, +color: U32) -> Frame:
   M.Vector2{x, y} = center
   Frame.draw(frame, Shapes.poly_lines_ex(M.Libm.gnu(libm), x, y, sides, radius, rotation, thick, color))
@@ -11077,7 +11134,7 @@ def Draw.poly_lines_ex_for(libm: M.Libm, frame: Frame, center: M.Vector2, +sides
 def Draw.poly_lines_ex(frame: Frame, center: M.Vector2, +sides: F32, +radius: F32, +rotation: F32, +thick: F32, +color: U32) -> Frame:
   Draw.poly_lines_ex_for(M.AppleLibm{}, frame, center, sides, radius, rotation, thick, color)
 
-# DrawRectangleRounded(rec, roundness, int segments, color): segments below 4
+# DrawRectangleRounded(rec, roundness, int segments, color): segments below 1
 # are estimated (glibc 2.39 profile only).
 def Draw.rectangle_rounded_for(libm: M.Libm, frame: Frame, rec: Rectangle, +roundness: F32, +segments: F32, +color: U32) -> Frame:
   Rectangle{x, y, w, h} = rec
@@ -11086,6 +11143,9 @@ def Draw.rectangle_rounded_for(libm: M.Libm, frame: Frame, rec: Rectangle, +roun
 def Draw.rectangle_rounded(frame: Frame, rec: Rectangle, +roundness: F32, +segments: F32, +color: U32) -> Frame:
   Draw.rectangle_rounded_for(M.AppleLibm{}, frame, rec, roundness, segments, color)
 
+# DrawRectangleRoundedLinesEx (raylib 6.2): quads inside the rectangle for a
+# thickness >= 0 (beyond the corner radius the rest is DrawRectangleLinesEx
+# inside the rounded part), outside it for a negative one.
 def Draw.rectangle_rounded_lines_ex_for(libm: M.Libm, frame: Frame, rec: Rectangle, +roundness: F32, +segments: F32, +thick: F32, +color: U32) -> Frame:
   Rectangle{x, y, w, h} = rec
   Frame.draw(frame, Shapes.rounded_lines(M.Libm.angle(libm), x, y, w, h, roundness, segments, thick, color))
@@ -11093,12 +11153,15 @@ def Draw.rectangle_rounded_lines_ex_for(libm: M.Libm, frame: Frame, rec: Rectang
 def Draw.rectangle_rounded_lines_ex(frame: Frame, rec: Rectangle, +roundness: F32, +segments: F32, +thick: F32, +color: U32) -> Frame:
   Draw.rectangle_rounded_lines_ex_for(M.AppleLibm{}, frame, rec, roundness, segments, thick, color)
 
-# DrawRectangleRoundedLines: DrawRectangleRoundedLinesEx with thickness 1.
+# DrawRectangleRoundedLines (raylib 6.2): its own RL_LINES, the corner arcs
+# and four sides half a pixel inside; roundness <= 0 draws
+# DrawRectangleLines with the rectangle converted to ints.
 def Draw.rectangle_rounded_lines_for(libm: M.Libm, frame: Frame, rec: Rectangle, +roundness: F32, +segments: F32, +color: U32) -> Frame:
-  Draw.rectangle_rounded_lines_ex_for(libm, frame, rec, roundness, segments, 1.0, color)
+  Rectangle{x, y, w, h} = rec
+  Frame.draw(frame, Shapes.rounded_thin(M.Libm.angle(libm), x, y, w, h, roundness, segments, color))
 
 def Draw.rectangle_rounded_lines(frame: Frame, rec: Rectangle, +roundness: F32, +segments: F32, +color: U32) -> Frame:
-  Draw.rectangle_rounded_lines_ex_for(M.AppleLibm{}, frame, rec, roundness, segments, 1.0, color)
+  Draw.rectangle_rounded_lines_for(M.AppleLibm{}, frame, rec, roundness, segments, color)
 
 # DrawSplineLinear: one quad per point pair (no miters).
 def Draw.spline_linear(frame: Frame, points: +List<M.Vector2>, +thick: F32, +color: U32) -> Frame:

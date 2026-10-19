@@ -1,6 +1,8 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 rshapes.c (SUPPORT_QUADS_DRAW_MODE,
+# Altered Bend adaptation of raylib 6.2 rshapes.c (SUPPORT_QUADS_DRAW_MODE,
 # SPLINE_SEGMENT_DIVISIONS 24, no SUPPORT_SPLINE_MITERS); LICENSES/raylib.txt.
+# The 6.2 thick outlines (DrawTriangleLinesEx, DrawCircleSectorLinesEx,
+# DrawRingLinesEx and the rest) are adapted from rshapes.c's algorithms.
 # Each shape becomes the rlBegin/rlColor4ub/rlTexCoord2f/rlVertex2f/rlEnd
 # sequence rshapes.c issues (src/frame.bend renders it), with rshapes.c's F32
 # vertex arithmetic in its order. Textured shapes bind the shapes texture and
@@ -18,6 +20,8 @@ import ./trig.bend as Trig
 import ./checked_angle.bend as CheckedAngle
 import ./inverse_trig.bend as InverseTrig
 import ./power.bend as Power
+import ./asin.bend as Asin
+import ./lgpl/asin.bend as GlibcAsin
 
 type P2 is Data:
   P2{x: F32, y: F32}
@@ -116,6 +120,14 @@ def P2.point(+p: P2) -> F.Command:
   P2{x, y} = p
   F.Point{x, y}
 
+def P2.x(+p: P2) -> F32:
+  P2{x, _} = p
+  x
+
+def P2.y(+p: P2) -> F32:
+  P2{_, y} = p
+  y
+
 # -----------------------------------------------------------------------------
 # Pixels, lines and rectangles
 
@@ -185,25 +197,91 @@ def rectangle.lines_ex.with(+x: F32, +y: F32, +width: F32, +height: F32, +thick:
     Plan.join(rectangle(x, (y + thick : F32), thick, (height - thick * 2.0 : F32), color),
       rectangle(((x - thick : F32) + width : F32), (y + thick : F32), thick, (height - thick * 2.0 : F32), color))))
 
-# DrawRectangleLinesEx: a thickness above either side becomes half the
-# smaller side, then four DrawRectangleRec bands.
+# A thickness t (already made positive) grown outside the rectangle: top and
+# bottom bands 2t wider than it, left and right bands its height.
+def rectangle.lines_ex.out(+x: F32, +y: F32, +width: F32, +height: F32, +t: F32, +color: U32) -> Plan:
+  Plan.join(rectangle((x - t : F32), (y - t : F32), (width + (t * 2.0 : F32) : F32), t, color),
+    Plan.join(rectangle((x - t : F32), (y + height : F32), (width + (t * 2.0 : F32) : F32), t, color),
+      Plan.join(rectangle((x - t : F32), y, t, height, color), rectangle((x + width : F32), y, t, height, color))))
+
+def rectangle.lines_ex.side(inside: Bool, +x: F32, +y: F32, +width: F32, +height: F32, +thick: F32, +color: U32) -> Plan:
+  match inside:
+    case True{}: rectangle.lines_ex.with(x, y, width, height, thick, color)
+    case False{}: rectangle.lines_ex.out(x, y, width, height, (thick * F32.neg(1.0) : F32), color)
+
+# DrawRectangleLinesEx (raylib 6.2): a thickness above half of either side
+# becomes half the smaller side; a positive one draws four DrawRectangleRec
+# bands inside the rectangle, zero or a negative one four bands outside it.
 def rectangle.lines_ex(+x: F32, +y: F32, +width: F32, +height: F32, +thick: F32, +color: U32) -> Plan:
-  +over = (thick > width : F32) || (thick > height : F32)
+  +over = (thick > (width / 2.0 : F32) : F32) || (thick > (height / 2.0 : F32) : F32)
   +wide = (width >= height : F32)
   +narrow = (width <= height : F32)
   +clamped = Bool.pick(F32, over, Bool.pick(F32, wide, (height / 2.0 : F32), Bool.pick(F32, narrow, (width / 2.0 : F32), thick)), thick)
-  rectangle.lines_ex.with(x, y, width, height, clamped, color)
+  rectangle.lines_ex.side((clamped > 0.0 : F32), x, y, width, height, clamped, color)
 
 # -----------------------------------------------------------------------------
 # Triangles and point lists
 
-# DrawTriangle: the quad (v1, v2, v3, v3).
+# DrawTriangleGradient: the quad (v1, v2, v3, v3), each vertex with its
+# color (the third color twice).
+def triangle.gradient(+a: P2, +b: P2, +c: P2, +color_a: U32, +color_b: U32, +color_c: U32) -> Plan:
+  Plan.textured(4, Plan.only(True{}, [F.Color{color_a}, F.ShapeUV{0}, P2.point(a), F.Color{color_b}, F.ShapeUV{2}, P2.point(b),
+    F.Color{color_c}, F.ShapeUV{3}, P2.point(c), F.Color{color_c}, F.ShapeUV{1}, P2.point(c)]))
+
+# DrawTriangle: DrawTriangleGradient with one color.
 def triangle(+a: P2, +b: P2, +c: P2, +color: U32) -> Plan:
-  quad(True{}, color, a, b, c, c)
+  triangle.gradient(a, b, c, color, color, color)
 
 # DrawTriangleLines: three RL_LINES.
 def triangle.lines(+a: P2, +b: P2, +c: P2, +color: U32) -> Plan:
   Plan.plain(2, Plan.only(True{}, [F.Color{color}, P2.point(a), P2.point(b), P2.point(b), P2.point(c), P2.point(c), P2.point(a)]))
+
+def tri_ex.length(+x: F32, +y: F32) -> F32:
+  F32.sqrt((x * x + y * y : F32))
+
+# A vertex scaled toward the incenter: incenter + (v - incenter)*scale.
+def tri_ex.scaled(+ix: F32, +iy: F32, +scale: F32, +v: P2) -> P2:
+  P2{x, y} = v
+  P2{(ix + ((x - ix : F32) * scale : F32) : F32), (iy + ((y - iy : F32) * scale : F32) : F32)}
+
+# Three quads, one per edge: (v1, v2, v5, v4), (v2, v3, v6, v5), (v3, v1, v4, v6).
+def tri_ex.quads(+color: U32, +v1: P2, +v2: P2, +v3: P2, +v4: P2, +v5: P2, +v6: P2) -> Plan:
+  Plan.textured(4, Plan.only(True{}, [F.Color{color}, F.ShapeUV{0}, P2.point(v1), F.ShapeUV{2}, P2.point(v2), F.ShapeUV{3}, P2.point(v5),
+    F.ShapeUV{1}, P2.point(v4), F.ShapeUV{0}, P2.point(v2), F.ShapeUV{2}, P2.point(v3), F.ShapeUV{3}, P2.point(v6), F.ShapeUV{1}, P2.point(v5),
+    F.ShapeUV{0}, P2.point(v3), F.ShapeUV{2}, P2.point(v1), F.ShapeUV{3}, P2.point(v4), F.ShapeUV{1}, P2.point(v6)]))
+
+# A negative thickness swaps the outer and the scaled vertices (the winding).
+def tri_ex.wound(inward: Bool, +color: U32, +v1: P2, +v2: P2, +v3: P2, +v4: P2, +v5: P2, +v6: P2) -> Plan:
+  match inward:
+    case True{}: tri_ex.quads(color, v1, v2, v3, v4, v5, v6)
+    case False{}: tri_ex.quads(color, v4, v5, v6, v1, v2, v3)
+
+def tri_ex.filled(filled: Bool, +a: P2, +b: P2, +c: P2, +thick: F32, +ix: F32, +iy: F32, +scale: F32, +color: U32) -> Plan:
+  match filled:
+    case True{}: triangle(a, b, c, color)
+    case False{}:
+      tri_ex.wound(Bool.not((thick < 0.0 : F32)), color, a, b, c, tri_ex.scaled(ix, iy, scale, a), tri_ex.scaled(ix, iy, scale, b),
+        tri_ex.scaled(ix, iy, scale, c))
+
+# DrawTriangleLinesEx (raylib 6.2): the triangle scaled toward its incenter
+# by 1 - thick/inradius (incenter and inradius from the edge lengths, sqrtf,
+# in rshapes.c's order); a scale <= 0 draws DrawTriangle, otherwise quads
+# between the triangle and the scaled one (outside it for a negative
+# thickness).
+def triangle.lines_ex(+a: P2, +b: P2, +c: P2, +thick: F32, +color: U32) -> Plan:
+  P2{x1, y1} = a
+  P2{x2, y2} = b
+  P2{x3, y3} = c
+  +l1 = tri_ex.length((x2 - x3 : F32), (y2 - y3 : F32))
+  +l2 = tri_ex.length((x3 - x1 : F32), (y3 - y1 : F32))
+  +l3 = tri_ex.length((x1 - x2 : F32), (y1 - y2 : F32))
+  +perimeter = ((l1 + l2 : F32) + l3 : F32)
+  +semi = (perimeter / 2.0 : F32)
+  +ix = ((((l1 * x1 : F32) + (l2 * x2 : F32) : F32) + (l3 * x3 : F32) : F32) / perimeter : F32)
+  +iy = ((((l1 * y1 : F32) + (l2 * y2 : F32) : F32) + (l3 * y3 : F32) : F32) / perimeter : F32)
+  +inradius = F32.sqrt(((((semi - l1 : F32) * (semi - l2 : F32) : F32) * (semi - l3 : F32) : F32) / semi : F32))
+  +scale = (1.0 - (thick / inradius : F32) : F32)
+  tri_ex.filled((scale <= 0.0 : F32), P2{x1, y1}, P2{x2, y2}, P2{x3, y3}, thick, ix, iy, scale, color)
 
 def at_least(n: Nat, points: +List<P2>) -> Bool:
   match n points:
@@ -323,17 +401,17 @@ def estimate.th(+lm: U32, +radius: F32) -> Maybe<F32>:
   +x = (1.0 - (0.5 / radius : F32) : F32)
   Bool.pick(Maybe<F32>, U32.is_eq(lm, 1), InverseTrig.acos(((2.0 * (x * x : F32) : F32) - 1.0 : F32)), None{})
 
-# (int)((endAngle - startAngle)*ceilf(2*PI/th)/360)
+# (int)ceilf((endAngle - startAngle)*(2*PI/th)/360.0f) (raylib 6.2)
 def estimate.arc(th: Maybe<F32>, +span: F32) -> Maybe<F32>:
   match th:
     case None{}: None{}
-    case Some{+t}: int.maybe((((span * F32.ceil((two_pi() / t : F32)) : F32) / 360.0 : F32)))
+    case Some{+t}: int.maybe(F32.ceil(((span * (two_pi() / t : F32) : F32) / 360.0 : F32)))
 
-# (int)(ceilf(2*PI/th)/divisor) for the rounded rectangle corners.
-def estimate.corner(th: Maybe<F32>, +divisor: F32) -> Maybe<F32>:
+# (int)ceilf((2*PI/th)/4.0f) for the rounded rectangle corners (raylib 6.2).
+def estimate.corner(th: Maybe<F32>) -> Maybe<F32>:
   match th:
     case None{}: None{}
-    case Some{+t}: int.maybe((F32.ceil((two_pi() / t : F32)) / divisor : F32))
+    case Some{+t}: int.maybe(F32.ceil(((two_pi() / t : F32) / 4.0 : F32)))
 
 # An estimate of 0 or less takes the fallback; more than 4096 is refused.
 def estimate.floor(value: Maybe<F32>, +fallback: F32) -> Maybe<F32>:
@@ -396,17 +474,34 @@ def sector.drawn(count: Maybe<F32>, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +st
 def sector.ordered(+lm: U32, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Plan:
   sector.drawn(segments.resolve(lm, r, (end - start : F32), segments), gnu.of(lm), cx, cy, r, start, end, color)
 
-def sector.distinct(same: Bool, +lm: U32, +cx: F32, +cy: F32, +radius: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Plan:
-  match same:
+# Whether an ordered arc spans a whole turn or more (raylib 6.2).
+def arc.full(+start: F32, +end: F32) -> Bool:
+  ((end - start : F32) >= 360.0 : F32)
+
+# The end angle of an ordered arc limited to one turn: startAngle + 360.0f
+# when it spans 360 degrees or more (raylib 6.2).
+def arc.end(+start: F32, +end: F32) -> F32:
+  Bool.pick(F32, arc.full(start, end), (start + 360.0 : F32), end)
+
+# showCapLines (raylib 6.2): a whole turn drops the caps unless the outline
+# grows inward (a thickness >= 0 in the *LinesEx outlines).
+def arc.caps(full: Bool, inward: Bool) -> Bool:
+  match full:
+    case False{}: True{}
+    case True{}: inward
+
+def sector.distinct(skip: Bool, +lm: U32, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Plan:
+  match skip:
     case True{}: Plan.empty()
     case False{}:
-      +r = Bool.pick(F32, (radius <= 0.0 : F32), 0.1, radius)
       +swap = (end < start : F32)
-      sector.ordered(lm, cx, cy, r, Bool.pick(F32, swap, end, start), Bool.pick(F32, swap, start, end), segments, color)
+      +first = Bool.pick(F32, swap, end, start)
+      sector.ordered(lm, cx, cy, r, first, arc.end(first, Bool.pick(F32, swap, start, end)), segments, color)
 
-# DrawCircleSector (quads of two segments, then an odd last piece).
+# DrawCircleSector (quads of two segments, then an odd last piece). raylib
+# 6.2: a radius <= 0 draws nothing and the arc is limited to one turn.
 def sector(+lm: U32, +cx: F32, +cy: F32, +radius: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Plan:
-  sector.distinct(F32.is_eq(start, end), lm, cx, cy, radius, start, end, segments, color)
+  sector.distinct(F32.is_eq(start, end) || (radius <= 0.0 : F32), lm, cx, cy, radius, start, end, segments, color)
 
 # A profile with the given sinf/cosf kernel that never estimates (circles use
 # 36 segments, above every minimum).
@@ -458,6 +553,34 @@ def ellipse_lines.loop(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +rx: F32, +ry: F3
 def ellipse_lines(+gnu: Bool, +cx: F32, +cy: F32, +rx: F32, +ry: F32, +color: U32) -> Plan:
   Plan.plain(2, ellipse_lines.loop(36n, gnu, cx, cy, rx, ry, 0.0, color))
 
+def ellipse_ex.loop(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +ih: F32, +iv: F32, +oh: F32, +ov: F32, +degrees: F32) -> Plan:
+  match n:
+    case 0n: Plan.empty()
+    case 1n+k:
+      +here = (deg2rad() * degrees : F32)
+      +next = (deg2rad() * (degrees + 10.0 : F32) : F32)
+      +a = Pt.at(gnu, cx, cy, ih, iv, here)
+      +b = Pt.at(gnu, cx, cy, ih, iv, next)
+      +c = Pt.at(gnu, cx, cy, oh, ov, next)
+      +d = Pt.at(gnu, cx, cy, oh, ov, here)
+      Plan.with(Pt.ok(a) && Pt.ok(b) && Pt.ok(c) && Pt.ok(d), [F.ShapeUV{0}, Pt.point(a), F.ShapeUV{2}, Pt.point(b), F.ShapeUV{3}, Pt.point(c),
+        F.ShapeUV{1}, Pt.point(d)], ellipse_ex.loop(k, gnu, cx, cy, ih, iv, oh, ov, (degrees + 10.0 : F32)))
+
+def ellipse_ex.kind(filled: Bool, +gnu: Bool, +cx: F32, +cy: F32, +rx: F32, +ry: F32, +ih: F32, +iv: F32, +oh: F32, +ov: F32, +color: U32) -> Plan:
+  match filled:
+    case True{}: ellipse(gnu, cx, cy, rx, ry, color)
+    case False{}: Plan.textured(4, Plan.prefix(F.Color{color}, ellipse_ex.loop(36n, gnu, cx, cy, ih, iv, oh, ov, 0.0)))
+
+# DrawEllipseLinesEx (raylib 6.2): 36 quads every 10 degrees between the
+# radii and the radii - thick (swapped for a negative thickness), the color
+# set once; a thickness >= 0 reaching either radius draws DrawEllipseV.
+def ellipse_lines_ex(+gnu: Bool, +cx: F32, +cy: F32, +rx: F32, +ry: F32, +thick: F32, +color: U32) -> Plan:
+  +ih = (rx - thick : F32)
+  +iv = (ry - thick : F32)
+  +positive = (thick >= 0.0 : F32)
+  ellipse_ex.kind(positive && ((ih <= 0.0 : F32) || (iv <= 0.0 : F32)), gnu, cx, cy, rx, ry, Bool.pick(F32, positive, ih, rx),
+    Bool.pick(F32, positive, iv, ry), Bool.pick(F32, positive, rx, ih), Bool.pick(F32, positive, ry, iv), color)
+
 def gradient.loop(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +degrees: F32, +inner: U32, +outer: U32) -> Plan:
   match n:
     case 0n: Plan.empty()
@@ -471,38 +594,46 @@ def gradient.loop(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +degrees: F32
 def circle_gradient(+gnu: Bool, +cx: F32, +cy: F32, +radius: F32, +inner: U32, +outer: U32) -> Plan:
   Plan.plain(3, gradient.loop(36n, gnu, cx, cy, radius, 0.0, inner, outer))
 
-def sector_lines.loop(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +angle: F32, +step: F32, +color: U32) -> Plan:
-  match n:
-    case 0n:
+# A cap line from the center to the arc (none for a whole turn).
+def sector_lines.cap(caps: Bool, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +angle: F32, +color: U32) -> Plan:
+  match caps:
+    case False{}: Plan.empty()
+    case True{}:
       +p = Pt.at(gnu, cx, cy, r, r, (deg2rad() * angle : F32))
       Plan.only(Pt.ok(p), [F.Color{color}, F.Point{cx, cy}, Pt.point(p)])
+
+def sector_lines.loop(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +angle: F32, +step: F32, +color: U32, +caps: Bool) -> Plan:
+  match n:
+    case 0n: sector_lines.cap(caps, gnu, cx, cy, r, angle, color)
     case 1n+k:
       +a = Pt.at(gnu, cx, cy, r, r, (deg2rad() * angle : F32))
       +b = Pt.at(gnu, cx, cy, r, r, (deg2rad() * (angle + step : F32) : F32))
-      Plan.with(Pt.ok(a) && Pt.ok(b), [F.Color{color}, Pt.point(a), Pt.point(b)], sector_lines.loop(k, gnu, cx, cy, r, (angle + step : F32), step, color))
+      Plan.with(Pt.ok(a) && Pt.ok(b), [F.Color{color}, Pt.point(a), Pt.point(b)], sector_lines.loop(k, gnu, cx, cy, r, (angle + step : F32), step, color, caps))
 
-def sector_lines.drawn(count: Maybe<F32>, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +color: U32) -> Plan:
+def sector_lines.drawn(count: Maybe<F32>, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +caps: Bool, +color: U32) -> Plan:
   match count:
     case None{}: Plan.refused()
     case Some{+segments}:
-      +first = Pt.at(gnu, cx, cy, r, r, (deg2rad() * start : F32))
-      Plan.plain(2, Plan.with(Pt.ok(first), [F.Color{color}, F.Point{cx, cy}, Pt.point(first)],
-        sector_lines.loop(U32.to_nat(F32.to_u32(segments)), gnu, cx, cy, r, start, ((end - start : F32) / segments : F32), color)))
+      Plan.plain(2, Plan.join(sector_lines.cap(caps, gnu, cx, cy, r, start, color),
+        sector_lines.loop(U32.to_nat(F32.to_u32(segments)), gnu, cx, cy, r, start, ((end - start : F32) / segments : F32), color, caps)))
 
-def sector_lines.ordered(+lm: U32, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Plan:
-  sector_lines.drawn(segments.resolve(lm, r, (end - start : F32), segments), gnu.of(lm), cx, cy, r, start, end, color)
+def sector_lines.ordered(+lm: U32, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +segments: F32, +caps: Bool, +color: U32) -> Plan:
+  sector_lines.drawn(segments.resolve(lm, r, (end - start : F32), segments), gnu.of(lm), cx, cy, r, start, end, caps, color)
 
-def sector_lines.distinct(same: Bool, +lm: U32, +cx: F32, +cy: F32, +radius: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Plan:
-  match same:
+def sector_lines.distinct(skip: Bool, +lm: U32, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Plan:
+  match skip:
     case True{}: Plan.empty()
     case False{}:
-      +r = Bool.pick(F32, (radius <= 0.0 : F32), 0.1, radius)
       +swap = (end < start : F32)
-      sector_lines.ordered(lm, cx, cy, r, Bool.pick(F32, swap, end, start), Bool.pick(F32, swap, start, end), segments, color)
+      +first = Bool.pick(F32, swap, end, start)
+      +last = Bool.pick(F32, swap, start, end)
+      sector_lines.ordered(lm, cx, cy, r, first, arc.end(first, last), segments, arc.caps(arc.full(first, last), False{}), color)
 
 # DrawCircleSectorLines: cap lines from the center plus one line per segment.
+# raylib 6.2: a radius <= 0 draws nothing; a whole turn or more is limited to
+# one turn and drawn without the cap lines.
 def sector_lines(+lm: U32, +cx: F32, +cy: F32, +radius: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Plan:
-  sector_lines.distinct(F32.is_eq(start, end), lm, cx, cy, radius, start, end, segments, color)
+  sector_lines.distinct(F32.is_eq(start, end) || (radius <= 0.0 : F32), lm, cx, cy, radius, start, end, segments, color)
 
 def ring.loop(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +angle: F32, +step: F32, +color: U32) -> Plan:
   match n:
@@ -530,13 +661,19 @@ def ring.drawn(count: Maybe<F32>, +lm: U32, +cx: F32, +cy: F32, +inner: F32, +ou
 def ring.ordered(+lm: U32, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Plan:
   ring.drawn(segments.resolve(lm, outer, (end - start : F32), segments), lm, cx, cy, inner, outer, start, end, color)
 
-def ring_lines.loop(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +angle: F32, +step: F32, +color: U32) -> Plan:
-  match n:
-    case 0n:
+# The cap line between the radii at an angle (none for a whole turn).
+def ring_lines.cap(caps: Bool, +gnu: Bool, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +angle: F32, +color: U32) -> Plan:
+  match caps:
+    case False{}: Plan.empty()
+    case True{}:
       +here = (deg2rad() * angle : F32)
       +a = Pt.at(gnu, cx, cy, outer, outer, here)
       +b = Pt.at(gnu, cx, cy, inner, inner, here)
       Plan.only(Pt.ok(a) && Pt.ok(b), [F.Color{color}, Pt.point(a), Pt.point(b)])
+
+def ring_lines.loop(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +angle: F32, +step: F32, +color: U32, +caps: Bool) -> Plan:
+  match n:
+    case 0n: ring_lines.cap(caps, gnu, cx, cy, inner, outer, angle, color)
     case 1n+k:
       +next = (deg2rad() * (angle + step : F32) : F32)
       +here = (deg2rad() * angle : F32)
@@ -545,46 +682,57 @@ def ring_lines.loop(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +inner: F32, +outer:
       +c = Pt.at(gnu, cx, cy, inner, inner, here)
       +d = Pt.at(gnu, cx, cy, inner, inner, next)
       Plan.with(Pt.ok(a) && Pt.ok(b) && Pt.ok(c) && Pt.ok(d), [F.Color{color}, Pt.point(a), Pt.point(b), Pt.point(c), Pt.point(d)],
-        ring_lines.loop(k, gnu, cx, cy, inner, outer, (angle + step : F32), step, color))
+        ring_lines.loop(k, gnu, cx, cy, inner, outer, (angle + step : F32), step, color, caps))
 
-def ring_lines.caps(+gnu: Bool, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +step: F32, +segments: F32, +color: U32) -> Plan:
-  +here = (deg2rad() * start : F32)
-  +a = Pt.at(gnu, cx, cy, outer, outer, here)
-  +b = Pt.at(gnu, cx, cy, inner, inner, here)
-  Plan.plain(2, Plan.with(Pt.ok(a) && Pt.ok(b), [F.Color{color}, Pt.point(a), Pt.point(b)],
-    ring_lines.loop(U32.to_nat(F32.to_u32(segments)), gnu, cx, cy, inner, outer, start, step, color)))
+def ring_lines.caps(+gnu: Bool, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +step: F32, +segments: F32, +caps: Bool, +color: U32) -> Plan:
+  Plan.plain(2, Plan.join(ring_lines.cap(caps, gnu, cx, cy, inner, outer, start, color),
+    ring_lines.loop(U32.to_nat(F32.to_u32(segments)), gnu, cx, cy, inner, outer, start, step, color, caps)))
 
-def ring_lines.kind(full: Bool, +lm: U32, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Plan:
+def ring_lines.kind(full: Bool, +lm: U32, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +caps: Bool, +color: U32) -> Plan:
   match full:
     case True{}: sector_lines(lm, cx, cy, outer, start, end, segments, color)
-    case False{}: ring_lines.caps(gnu.of(lm), cx, cy, inner, outer, start, ((end - start : F32) / segments : F32), segments, color)
+    case False{}: ring_lines.caps(gnu.of(lm), cx, cy, inner, outer, start, ((end - start : F32) / segments : F32), segments, caps, color)
 
-def ring_lines.drawn(count: Maybe<F32>, +lm: U32, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +color: U32) -> Plan:
+def ring_lines.drawn(count: Maybe<F32>, +lm: U32, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +caps: Bool, +color: U32) -> Plan:
   match count:
     case None{}: Plan.refused()
-    case Some{+segments}: ring_lines.kind((inner <= 0.0 : F32), lm, cx, cy, inner, outer, start, end, segments, color)
+    case Some{+segments}: ring_lines.kind((inner <= 0.0 : F32), lm, cx, cy, inner, outer, start, end, segments, caps, color)
 
-def ring.select(lines: Bool, +lm: U32, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Plan:
+def ring.select(lines: Bool, +lm: U32, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +caps: Bool, +color: U32) -> Plan:
   match lines:
     case False{}: ring.ordered(lm, cx, cy, inner, outer, start, end, segments, color)
-    case True{}: ring_lines.drawn(segments.resolve(lm, outer, (end - start : F32), segments), lm, cx, cy, inner, outer, start, end, color)
+    case True{}: ring_lines.drawn(segments.resolve(lm, outer, (end - start : F32), segments), lm, cx, cy, inner, outer, start, end, caps, color)
 
-# DrawRing and DrawRingLines order their radii (outer below inner swaps them,
-# a non-positive outer becoming 0.1) and their angles.
+def ring.sized(empty: Bool, +lines: Bool, +lm: U32, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Plan:
+  match empty:
+    case True{}: Plan.empty()
+    case False{}:
+      +swap = (end < start : F32)
+      +first = Bool.pick(F32, swap, end, start)
+      +last = Bool.pick(F32, swap, start, end)
+      ring.select(lines, lm, cx, cy, inner, outer, first, arc.end(first, last), segments, arc.caps(arc.full(first, last), False{}), color)
+
+# DrawRing and DrawRingLines order their radii (outer below inner swaps
+# them) and their angles. raylib 6.2: an outer radius <= 0 draws nothing, a
+# whole turn or more is limited to one turn (DrawRingLines then draws no cap
+# lines).
 def ring.distinct(same: Bool, +lines: Bool, +lm: U32, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Plan:
   match same:
     case True{}: Plan.empty()
     case False{}:
       +flip = (outer < inner : F32)
       +big = Bool.pick(F32, flip, inner, outer)
-      +swap = (end < start : F32)
-      ring.select(lines, lm, cx, cy, Bool.pick(F32, flip, outer, inner), Bool.pick(F32, flip && (big <= 0.0 : F32), 0.1, big),
-        Bool.pick(F32, swap, end, start), Bool.pick(F32, swap, start, end), segments, color)
+      ring.sized((big <= 0.0 : F32), lines, lm, cx, cy, Bool.pick(F32, flip, outer, inner), big, start, end, segments, color)
 
 # DrawRing: quads between the radii; a non-positive inner radius draws
 # DrawCircleSector with the outer one.
 def ring(+lm: U32, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Plan:
   ring.distinct(F32.is_eq(start, end), False{}, lm, cx, cy, inner, outer, start, end, segments, color)
+
+# DrawCircleLinesEx (raylib 6.2): DrawRing(center, radius - thick, radius,
+# 0, 360, 36).
+def circle_lines_ex(+lm: U32, +cx: F32, +cy: F32, +radius: F32, +thick: F32, +color: U32) -> Plan:
+  ring(lm, cx, cy, (radius - thick : F32), radius, 0.0, 360.0, 36.0, color)
 
 # DrawRingLines: cap lines at both ends and the outer and inner arcs; a
 # non-positive inner radius draws DrawCircleSectorLines with the outer one.
@@ -653,25 +801,813 @@ def cosine(values: F32 & F32) -> F32:
   (c, _) = values
   c
 
-# The inner radius radius - lineThick*cosf(DEG2RAD*exteriorAngle/2) (the
-# exterior angle is already in radians, so the argument is small). Apple:
-# every argument of sides 3..4096 (tools/rlgl_probe.py checks them all
-# against the host cosf); glibc: normal arguments within one turn.
+# The radii (raylib 6.2) from the apothem radius*cosf(DEG2RAD*180.0f/sides)
+# (DEG2RAD*180.0f is PI in binary32): a thickness >= 0 keeps the outer
+# radius and moves the inner one to fmaxf(0, radius - thick*(radius/apothem))
+# (no signed zero reaches a vertex differently), a negative one keeps the
+# inner radius and moves the outer one to radius - thick*(radius/apothem).
+# cosf: Apple every argument of sides 3..4096 (tools/rlgl_probe.py checks
+# them all against the host cosf); glibc normal arguments.
 def poly_ex.drawn(valid: Bool, +gnu: Bool, +cx: F32, +cy: F32, +sides: F32, +r: F32, +rotation: F32, +thick: F32, +color: U32) -> Plan:
   match valid:
     case False{}: Plan.refused()
     case True{}:
       +exterior = ((360.0 / sides : F32) * deg2rad() : F32)
-      +arg = ((deg2rad() * exterior : F32) / 2.0 : F32)
-      +inner = (r - (thick * cosine(Trig.sincos_for(gnu, arg)) : F32) : F32)
-      Plan.textured(4, Plan.require(Bool.not(gnu) || trig.gnu(arg), poly_ex.loop(U32.to_nat(F32.to_u32(sides)), gnu, cx, cy, r, inner,
+      +arg = ((deg2rad() * 180.0 : F32) / sides : F32)
+      +ratio = (r / (r * cosine(Trig.sincos_for(gnu, arg)) : F32) : F32)
+      +positive = (thick >= 0.0 : F32)
+      +shrunk = (r - (thick * ratio : F32) : F32)
+      Plan.textured(4, Plan.require(Bool.not(gnu) || trig.gnu(arg), poly_ex.loop(U32.to_nat(F32.to_u32(sides)), gnu, cx, cy,
+        Bool.pick(F32, positive, r, (r + ((thick * F32.neg(1.0) : F32) * ratio : F32) : F32)), Bool.pick(F32, positive, Bool.pick(F32, (shrunk > 0.0 : F32), shrunk, 0.0), r),
         (rotation * deg2rad() : F32), exterior, color)))
 
-# DrawPolyLinesEx: sides < 3 become 3; quads between the radius and the inner
+# DrawPolyLinesEx: sides < 3 become 3; quads between the outer and the inner
 # radius per side.
 def poly_lines_ex(+gnu: Bool, +cx: F32, +cy: F32, +sides: F32, +radius: F32, +rotation: F32, +thick: F32, +color: U32) -> Plan:
   +count = poly.sides(int.of(sides))
   poly_ex.drawn(int.valid(sides) && (count <= 4096.0 : F32), gnu, cx, cy, count, radius, rotation, thick, color)
+
+# -----------------------------------------------------------------------------
+# DrawCircleSectorLinesEx and DrawRingLinesEx (raylib 6.2)
+#
+# Adapted from rshapes.c's algorithms: the outline is a band of quads between
+# two radii (the thickness scaled by radius/apothem for the polygon the
+# segments make), the caps are quads whose corners rshapes.c finds with
+# asinf, atan2f and sinf/cosf of computed angles. Every value keeps the F32
+# order of the C. A sinf/cosf, asinf or atan2f result the profile does not
+# reproduce refuses the draw: Apple accepts sinf/cosf only at fl(DEG2RAD*d)
+# for integral degrees and asinf only below 0x1.d12edp-12, so these outlines
+# are in practice reproduced under the glibc profiles.
+
+# RAD2DEG: (180.0f/PI).
+def rad2deg() -> F32:
+  F.float(1113927392)
+
+# sinf/cosf of an argument, with whether the profile reproduces it.
+type Turn is Data:
+  Turn{c: F32, s: F32, ok: Bool}
+
+def turn.with(ok: Bool, values: F32 & F32) -> Turn:
+  (+c, +s) = values
+  Turn{c, s, ok}
+
+def turn.at(+gnu: Bool, +arg: F32) -> Turn:
+  turn.with(trig.ok(gnu, arg), Trig.sincos_for(gnu, arg))
+
+def Turn.cos(+t: Turn) -> F32:
+  Turn{c, _, _} = t
+  c
+
+def Turn.sin(+t: Turn) -> F32:
+  Turn{_, s, _} = t
+  s
+
+def Turn.ok(+t: Turn) -> Bool:
+  Turn{_, _, ok} = t
+  ok
+
+# A scalar with whether the profile reproduces it.
+type Num is Data:
+  Num{v: F32, ok: Bool}
+
+def Num.v(+n: Num) -> F32:
+  Num{v, _} = n
+  v
+
+def Num.ok(+n: Num) -> Bool:
+  Num{_, ok} = n
+  ok
+
+# (p1.y - offset)/(p1.y - p2.y) for p = (cosf(a)*r, sinf(a)*r): where the
+# segment p1-p2 crosses the line y = offset.
+def Num.cut(+a: Turn, +b: Turn, +r: F32, +offset: F32) -> Num:
+  Turn{_, sa, oka} = a
+  Turn{_, sb, okb} = b
+  +ya = (sa * r : F32)
+  +yb = (sb * r : F32)
+  Num{((ya - offset : F32) / (ya - yb : F32) : F32), oka && okb}
+
+def arcsine.small(inside: Bool, +x: F32) -> Maybe<F32>:
+  match inside:
+    case True{}: Asin.asin(x)
+    case False{}: None{}
+
+# asinf under the profile (as M.Libm.asin): glibc 2.39's kernel, glibc 2.41's
+# correctly rounded one, Apple's below 0x1.d12edp-12 in magnitude only.
+def arcsine.of(+lm: U32, +x: F32) -> Maybe<F32>:
+  match lm:
+    case 0: arcsine.small(((F32.bits(x) .&. 2147483647) < 971544424 : U32), x)
+    case 1: GlibcAsin.asin(x)
+    case _: Asin.asin(x)
+
+def arctan2.checked(valid: Bool, +lm: U32, +y: F32, +x: F32) -> Maybe<F32>:
+  match valid:
+    case False{}: None{}
+    case True{}: CheckedAngle.maybe(CheckedAngle.scalar(lm, y, x))
+
+# atan2f under the profile (src/checked_angle.bend): None unless both
+# arguments and the result are zero or normal.
+def arctan2.of(+lm: U32, +y: F32, +x: F32) -> Maybe<F32>:
+  arctan2.checked(CheckedAngle.normal_or_zero(y) && CheckedAngle.normal_or_zero(x), lm, y, x)
+
+def Pt.x(+p: Pt) -> F32:
+  Pt{x, _, _} = p
+  x
+
+def Pt.y(+p: Pt) -> F32:
+  Pt{_, y, _} = p
+  y
+
+def Pt.center(+cx: F32, +cy: F32) -> Pt:
+  Pt{cx, cy, True{}}
+
+def Pt.also(+p: Pt, ok: Bool) -> Pt:
+  Pt{x, y, pok} = p
+  Pt{x, y, pok && ok}
+
+# center + (cosf, sinf)(DEG2RAD*degrees)*r
+def Pt.on(+gnu: Bool, +cx: F32, +cy: F32, +r: F32, +degrees: F32) -> Pt:
+  Pt.at(gnu, cx, cy, r, r, (deg2rad() * degrees : F32))
+
+# a + (b - a)*t
+def Pt.lerp(+a: Pt, +b: Pt, +t: F32, ok: Bool) -> Pt:
+  Pt{ax, ay, aok} = a
+  Pt{bx, by, bok} = b
+  Pt{(ax + ((bx - ax : F32) * t : F32) : F32), (ay + ((by - ay : F32) * t : F32) : F32), aok && bok && ok}
+
+# p - (cosf, sinf)*length
+def Pt.back(+p: Pt, +length: F32, +t: Turn) -> Pt:
+  Pt{x, y, ok} = p
+  Turn{c, s, tok} = t
+  Pt{(x - (c * length : F32) : F32), (y - (s * length : F32) : F32), ok && tok}
+
+def P2.minus(+a: P2, +b: P2) -> P2:
+  P2{ax, ay} = a
+  P2{bx, by} = b
+  P2{(ax - bx : F32), (ay - by : F32)}
+
+# raymath's Vector2Rotate with given cosf/sinf: (c*x - s*y, s*x + c*y).
+def P2.rotate(+v: P2, +t: Turn) -> P2:
+  P2{x, y} = v
+  Turn{c, s, _} = t
+  P2{((c * x : F32) - (s * y : F32) : F32), ((s * x : F32) + (c * y : F32) : F32)}
+
+# The quads of these outlines: texcoords (u0, v1), (u0, v0), (u1, v0), (u1, v1).
+def Pt.quad(+a: Pt, +b: Pt, +c: Pt, +d: Pt) -> Plan:
+  Plan.only(Pt.ok(a) && Pt.ok(b) && Pt.ok(c) && Pt.ok(d), [F.ShapeUV{2}, Pt.point(a), F.ShapeUV{0}, Pt.point(b),
+    F.ShapeUV{1}, Pt.point(c), F.ShapeUV{3}, Pt.point(d)])
+
+# C int arithmetic on integral F32 counts: n/2 (toward zero), n%2 == 1 and a
+# loop count (0 for a negative one).
+def tally.half(+n: F32) -> F32:
+  F32.trunc((n / 2.0 : F32))
+
+def tally.odd(+n: F32) -> Bool:
+  F32.is_eq((n - (tally.half(n) * 2.0 : F32) : F32), 1.0)
+
+def tally.nat(+n: F32) -> Nat:
+  U32.to_nat(F32.to_u32(Bool.pick(F32, (n > 0.0 : F32), n, 0.0)))
+
+# The angle after n F32 increments.
+def turned.after(n: Nat, +a: F32, +step: F32) -> F32:
+  match n:
+    case 0n: a
+    case 1n+k: turned.after(k, (a + step : F32), step)
+
+# The outline: a quad per segment between the outer and inner radii.
+def band.loop(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +outer: F32, +inner: F32, +angle: F32, +step: F32) -> Plan:
+  match n:
+    case 0n: Plan.empty()
+    case 1n+k:
+      Plan.join(Pt.quad(Pt.on(gnu, cx, cy, outer, angle), Pt.on(gnu, cx, cy, inner, angle), Pt.on(gnu, cx, cy, inner, (angle + step : F32)),
+        Pt.on(gnu, cx, cy, outer, (angle + step : F32))), band.loop(k, gnu, cx, cy, outer, inner, (angle + step : F32), step))
+
+# The cap vertices C0..C5 of the sketch in rshapes.c, the steps before C1,
+# whether S1 lies outside the circle and the steps before C0.
+type Cap is Data:
+  Cap{c0: Pt, c1: Pt, c2: Pt, c3: Pt, c4: Pt, c5: Pt, before: F32, outside: Bool, before0: F32}
+
+def Cap.none() -> Cap:
+  Cap{Pt{0.0, 0.0, True{}}, Pt{0.0, 0.0, True{}}, Pt{0.0, 0.0, True{}}, Pt{0.0, 0.0, True{}}, Pt{0.0, 0.0, True{}}, Pt{0.0, 0.0, True{}},
+    0.0, False{}, 0.0}
+
+# The gaps between the caps and the inner edge: pairs of steps from each end,
+# then an odd last one.
+def gap.odd(odd: Bool, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +c1: Pt, +c4: Pt, +angle: F32) -> Plan:
+  match odd:
+    case False{}: Plan.empty()
+    case True{}:
+      Plan.join(Pt.quad(c1, c1, Pt.on(gnu, cx, cy, r, (start + (angle + step : F32) : F32)), Pt.on(gnu, cx, cy, r, (start + angle : F32))),
+        Pt.quad(c4, c4, Pt.on(gnu, cx, cy, r, (end - angle : F32)), Pt.on(gnu, cx, cy, r, (end - (angle + step : F32) : F32))))
+
+def gap.pairs(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +c1: Pt, +c4: Pt, +odd: Bool, +angle: F32) -> Plan:
+  match n:
+    case 0n: gap.odd(odd, gnu, cx, cy, r, start, end, step, c1, c4, angle)
+    case 1n+k:
+      +twice = (step * 2.0 : F32)
+      Plan.join(Pt.quad(c1, Pt.on(gnu, cx, cy, r, (start + (angle + twice : F32) : F32)), Pt.on(gnu, cx, cy, r, (start + (angle + step : F32) : F32)),
+          Pt.on(gnu, cx, cy, r, (start + angle : F32))),
+        Plan.join(Pt.quad(c4, Pt.on(gnu, cx, cy, r, (end - angle : F32)), Pt.on(gnu, cx, cy, r, (end - (angle + step : F32) : F32)),
+          Pt.on(gnu, cx, cy, r, (end - (angle + twice : F32) : F32))), gap.pairs(k, gnu, cx, cy, r, start, end, step, c1, c4, odd, (angle + twice : F32))))
+
+# The wedges between C0, C3 and the inner edge when S1 lies outside the circle.
+def wedge.odd(odd: Bool, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +step: F32, +angle: F32) -> Plan:
+  match odd:
+    case False{}: Plan.empty()
+    case True{}: Pt.quad(Pt.center(cx, cy), Pt.center(cx, cy), Pt.on(gnu, cx, cy, r, (angle + step : F32)), Pt.on(gnu, cx, cy, r, angle))
+
+def wedge.pairs(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +step: F32, +odd: Bool, +angle: F32) -> Plan:
+  match n:
+    case 0n: wedge.odd(odd, gnu, cx, cy, r, step, angle)
+    case 1n+k:
+      +twice = (step * 2.0 : F32)
+      Plan.join(Pt.quad(Pt.center(cx, cy), Pt.on(gnu, cx, cy, r, (angle + twice : F32)), Pt.on(gnu, cx, cy, r, (angle + step : F32)), Pt.on(gnu, cx, cy, r, angle)),
+        wedge.pairs(k, gnu, cx, cy, r, step, odd, (angle + twice : F32)))
+
+def wedge.between(closed: Bool, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +before0: F32, +between: F32, +c0: Pt, +c3: Pt) -> Plan:
+  match closed:
+    case True{}: Pt.quad(Pt.center(cx, cy), Pt.center(cx, cy), c3, c0)
+    case False{}:
+      +first = (step * (before0 + 1.0 : F32) : F32)
+      +rest = (between - 1.0 : F32)
+      Plan.join(Pt.quad(Pt.center(cx, cy), Pt.center(cx, cy), Pt.on(gnu, cx, cy, r, (start + first : F32)), c0),
+        Plan.join(Pt.quad(Pt.center(cx, cy), Pt.center(cx, cy), c3, Pt.on(gnu, cx, cy, r, (end - first : F32))),
+          wedge.pairs(tally.nat(tally.half(rest)), gnu, cx, cy, r, step, tally.odd(rest), (start + first : F32))))
+
+def sector_ex.outside(outside: Bool, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +n: F32, +before0: F32, +c0: Pt, +c3: Pt) -> Plan:
+  match outside:
+    case False{}: Plan.empty()
+    case True{}:
+      +between = ((n - (before0 * 2.0 : F32) : F32) - 1.0 : F32)
+      wedge.between(F32.is_eq(between, 0.0), gnu, cx, cy, r, start, end, step, before0, between, c0, c3)
+
+def sector_ex.gap(gapped: Bool, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +before: F32, +c1: Pt, +c4: Pt) -> Plan:
+  match gapped:
+    case False{}: Plan.empty()
+    case True{}: gap.pairs(tally.nat(tally.half(before)), gnu, cx, cy, r, start, end, step, c1, c4, tally.odd(before), 0.0)
+
+def sector_ex.filled(positive: Bool, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +n: F32, +c0: Pt, +c1: Pt, +c3: Pt, +c4: Pt,
+    +before: F32, +outside: Bool, +before0: F32) -> Plan:
+  match positive:
+    case False{}: Plan.empty()
+    case True{}:
+      Plan.join(sector_ex.gap((before > 0.0 : F32), gnu, cx, cy, r, start, end, step, before, c1, c4),
+        sector_ex.outside(outside, gnu, cx, cy, r, start, end, step, n, before0, c0, c3))
+
+# The two cap quads (center, C0, C1, C2) and (center, C5, C4, C3), then for
+# a thickness >= 0 the gaps; r is the inner radius.
+def sector_ex.capped(cap: Cap, +positive: Bool, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +n: F32) -> Plan:
+  Cap{+c0, +c1, +c2, +c3, +c4, +c5, +before, +outside, +before0} = cap
+  Plan.join(Pt.quad(Pt.center(cx, cy), c0, c1, c2), Plan.join(Pt.quad(Pt.center(cx, cy), c5, c4, c3),
+    sector_ex.filled(positive, gnu, cx, cy, r, start, end, step, n, c0, c1, c3, c4, before, outside, before0)))
+
+def sector_ex.drawn(caps: Bool, +gnu: Bool, +cx: F32, +cy: F32, +outer: F32, +inner: F32, +start: F32, +end: F32, +step: F32, +n: F32, +positive: Bool,
+    +cap: Cap, +color: U32) -> Plan:
+  match caps:
+    case False{}: Plan.textured(4, Plan.prefix(F.Color{color}, band.loop(tally.nat(n), gnu, cx, cy, outer, inner, start, step)))
+    case True{}:
+      Plan.textured(4, Plan.prefix(F.Color{color}, Plan.join(band.loop(tally.nat(n), gnu, cx, cy, outer, inner, start, step),
+        sector_ex.capped(cap, positive, gnu, cx, cy, inner, start, end, step, n))))
+
+# A thickness >= 0: DrawCircleSector when the caps cover the sector, else the
+# outline with C2 and C5 on the inner radius at the ends.
+def sector_ex.fold(fill: Bool, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +n: F32, +inner: F32,
+    +c0: Pt, +c1: Pt, +c3: Pt, +c4: Pt, +before: F32, +outside: Bool, +before0: F32, +color: U32) -> Plan:
+  match fill:
+    case True{}: sector(lm, cx, cy, r, start, end, n, color)
+    case False{}:
+      sector_ex.drawn(True{}, gnu, cx, cy, r, inner, start, end, step, n, True{},
+        Cap{c0, c1, Pt.on(gnu, cx, cy, inner, start), c3, c4, Pt.on(gnu, cx, cy, inner, end), before, outside, before0}, color)
+
+# S1 outside the circle: C0 and C3 where the cap edges meet the inner edge,
+# stepsBeforeC0 = (int)((180 + RAD2DEG*asinf(thick/-inner))/stepLength).
+def sector_ex.c0.at(+lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +n: F32, +thick: F32, +inner: F32,
+    +before: F32, +c1: Pt, +c4: Pt, +before0: F32, +color: U32) -> Plan:
+  +vb = (step * before0 : F32)
+  +va = (step * (before0 + 1.0 : F32) : F32)
+  +t = Num.cut(turn.at(gnu, (deg2rad() * vb : F32)), turn.at(gnu, (deg2rad() * va : F32)), inner, thick)
+  sector_ex.fold(False{}, lm, gnu, cx, cy, r, start, end, step, n, inner,
+    Pt.lerp(Pt.on(gnu, cx, cy, inner, (start + vb : F32)), Pt.on(gnu, cx, cy, inner, (start + va : F32)), Num.v(t), Num.ok(t)), c1,
+    Pt.lerp(Pt.on(gnu, cx, cy, inner, (end - vb : F32)), Pt.on(gnu, cx, cy, inner, (end - va : F32)), Num.v(t), Num.ok(t)), c4, before, True{}, before0, color)
+
+def sector_ex.c0(angle: Maybe<F32>, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +n: F32, +thick: F32,
+    +inner: F32, +before: F32, +c1: Pt, +c4: Pt, +color: U32) -> Plan:
+  match angle:
+    case None{}: Plan.refused()
+    case Some{+a}:
+      +ratio = ((180.0 + (rad2deg() * a : F32) : F32) / step : F32)
+      Plan.require(int.valid(ratio), sector_ex.c0.at(lm, gnu, cx, cy, r, start, end, step, n, thick, inner, before, c1, c4,
+        int.of(Bool.pick(F32, int.valid(ratio), ratio, 0.0)), color))
+
+# S1 outside the circle: a span <= 180 degrees is covered (DrawCircleSector).
+def sector_ex.beyond(fill: Bool, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +n: F32, +thick: F32,
+    +inner: F32, +before: F32, +c1: Pt, +c4: Pt, +color: U32) -> Plan:
+  match fill:
+    case True{}: sector(lm, cx, cy, r, start, end, n, color)
+    case False{}: sector_ex.c0(arcsine.of(lm, (thick / F32.neg(inner) : F32)), lm, gnu, cx, cy, r, start, end, step, n, thick, inner, before, c1, c4, color)
+
+# atan2f(det, dot) of C1 - center against C0 - center (Vector2Angle).
+def sector_ex.turning(+c0: Pt, +c1: Pt, +cx: F32, +cy: F32, +lm: U32) -> Maybe<F32>:
+  Pt{x0, y0, _} = c0
+  Pt{x1, y1, _} = c1
+  +px = (x1 - cx : F32)
+  +py = (y1 - cy : F32)
+  +qx = (x0 - cx : F32)
+  +qy = (y0 - cy : F32)
+  arctan2.of(lm, ((px * qy : F32) - (py * qx : F32) : F32), ((px * qx : F32) + (py * qy : F32) : F32))
+
+# S1 inside the circle: C0 = C3 = S1; a negative angle from C1 to S1 means
+# the caps cover the sector.
+def sector_ex.s1in(angle: Maybe<F32>, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +n: F32, +inner: F32,
+    +before: F32, +c0: Pt, +c1: Pt, +c4: Pt, +color: U32) -> Plan:
+  match angle:
+    case None{}: Plan.refused()
+    case Some{+a}:
+      Plan.require(Pt.ok(c0) && Pt.ok(c1), sector_ex.fold((a < 0.0 : F32), lm, gnu, cx, cy, r, start, end, step, n, inner, c0, c1, c0, c4, before,
+        False{}, 0.0, color))
+
+def sector_ex.inside(inside: Bool, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +n: F32, +thick: F32,
+    +inner: F32, +before: F32, +s1: F32, +c1: Pt, +c4: Pt, +color: U32) -> Plan:
+  match inside:
+    case True{}:
+      +c0 = Pt.at(gnu, cx, cy, s1, s1, (deg2rad() * ((end + start : F32) / 2.0 : F32) : F32))
+      sector_ex.s1in(sector_ex.turning(c0, c1, cx, cy, lm), lm, gnu, cx, cy, r, start, end, step, n, inner, before, c0, c1, c4, color)
+    case False{}: sector_ex.beyond(((end - start : F32) <= 180.0 : F32), lm, gnu, cx, cy, r, start, end, step, n, thick, inner, before, c1, c4, color)
+
+# S1 (where the inner cap edges meet) is thick/cosf(DEG2RAD*a) from the
+# center, a = ((end - 90) - (start + 90))/2.
+def sector_ex.s1(t: Turn, +a: F32, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +n: F32, +thick: F32,
+    +inner: F32, +before: F32, +c1: Pt, +c4: Pt, +color: U32) -> Plan:
+  Turn{c, _, ok} = t
+  +s1 = (thick / c : F32)
+  Plan.require(ok, sector_ex.inside((a < 90.0 : F32) && (s1 <= inner : F32), lm, gnu, cx, cy, r, start, end, step, n, thick, inner, before, s1, c1, c4, color))
+
+# C1 and C4: thick away from the start and end edges on the inner edge, on
+# the segment after stepsBeforeC1 steps.
+def sector_ex.c1.at(+lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +n: F32, +thick: F32, +inner: F32,
+    +before: F32, +color: U32) -> Plan:
+  +vb = (step * before : F32)
+  +va = (step * (before + 1.0 : F32) : F32)
+  +t = Num.cut(turn.at(gnu, (deg2rad() * vb : F32)), turn.at(gnu, (deg2rad() * va : F32)), inner, thick)
+  +c1 = Pt.lerp(Pt.on(gnu, cx, cy, inner, (start + vb : F32)), Pt.on(gnu, cx, cy, inner, (start + va : F32)), Num.v(t), Num.ok(t))
+  +c4 = Pt.lerp(Pt.on(gnu, cx, cy, inner, (end - vb : F32)), Pt.on(gnu, cx, cy, inner, (end - va : F32)), Num.v(t), Num.ok(t))
+  +a = (((end - 90.0 : F32) - (start + 90.0 : F32) : F32) / 2.0 : F32)
+  sector_ex.s1(turn.at(gnu, (deg2rad() * a : F32)), a, lm, gnu, cx, cy, r, start, end, step, n, thick, inner, before, c1, c4, color)
+
+def sector_ex.steps(fill: Bool, +valid: Bool, +before: F32, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32,
+    +n: F32, +thick: F32, +inner: F32, +color: U32) -> Plan:
+  match fill:
+    case True{}: sector(lm, cx, cy, r, start, end, n, color)
+    case False{}: Plan.require(valid, sector_ex.c1.at(lm, gnu, cx, cy, r, start, end, step, n, thick, inner, before, color))
+
+# c1Angle = RAD2DEG*asinf(thick/inner); c1Angle/stepLength >= segments covers
+# the sector, otherwise stepsBeforeC1 = (int)(c1Angle/stepLength).
+def sector_ex.c1(angle: Maybe<F32>, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +n: F32, +thick: F32,
+    +inner: F32, +color: U32) -> Plan:
+  match angle:
+    case None{}: Plan.refused()
+    case Some{+a}:
+      +ratio = ((rad2deg() * a : F32) / step : F32)
+      sector_ex.steps((ratio >= n : F32), int.valid(ratio), int.of(Bool.pick(F32, int.valid(ratio), ratio, 0.0)), lm, gnu, cx, cy, r, start, end, step, n,
+        thick, inner, color)
+
+# A negative thickness, the caps crossing: C1 = C4 = C0 = C3 where the line
+# of the end cap meets cap 1, found in a frame rotated by the atan2f of the
+# first outer edge.
+def sector_ex.meet.at(theta: Maybe<F32>, +gnu: Bool, +u1: P2, +v3: P2, +v4: P2, +c1t: P2, +ok: Bool) -> Num:
+  match theta:
+    case None{}: Num{0.0, False{}}
+    case Some{+a}:
+      +spin = turn.at(gnu, F32.neg(a))
+      +r1 = P2.rotate(u1, spin)
+      +r3 = P2.rotate(v3, spin)
+      +r4 = P2.rotate(v4, spin)
+      +rc = P2.rotate(c1t, spin)
+      +target = (P2.x(r3) + ((F32.neg(P2.y(r3)) / (P2.y(r3) - P2.y(r4) : F32) : F32) * (P2.x(r3) - P2.x(r4) : F32) : F32) : F32)
+      Num{((P2.x(rc) - target : F32) / (P2.x(rc) - P2.x(r1) : F32) : F32), ok && Turn.ok(spin)}
+
+def sector_ex.meet(+lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +end: F32, +step: F32, +outer: F32, +c5: Pt, +c0t: P2, +v1: P2, +v2: P2, +dist: F32,
+    +back: Turn) -> Num:
+  +along = turn.at(gnu, (deg2rad() * (end - step : F32) : F32))
+  +v3 = P2.minus(P2.rotate(P2.of((Pt.x(c5) - cx : F32), (Pt.y(c5) - cy : F32)), back), v2)
+  +v4 = P2.minus(P2.rotate(P2.of((Turn.cos(along) * outer : F32), (Turn.sin(along) * outer : F32)), back), v2)
+  +u1 = P2.minus(v1, v2)
+  sector_ex.meet.at(arctan2.of(lm, P2.y(u1), P2.x(u1)), gnu, u1, v3, v4, P2.minus(P2.of((P2.x(c0t) + dist : F32), P2.y(c0t)), v2),
+    Turn.ok(along) && Pt.ok(c5))
+
+# A negative thickness: the caps (C0..C5 swapped for the winding) outside the
+# sector.
+def sector_ex.crossed(cross: Bool, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +step: F32, +n: F32, +outer: F32, +inner: F32,
+    +c0: Pt, +c1: Pt, +c2: Pt, +c4: Pt, +c5: Pt, +c0t: P2, +v1: P2, +v2: P2, +dist: F32, +back: Turn, +color: U32) -> Plan:
+  match cross:
+    case False{}: sector_ex.drawn(True{}, gnu, cx, cy, outer, inner, start, end, step, n, False{}, Cap{c2, c1, c0, c5, c4, c0, 0.0, False{}, 0.0}, color)
+    case True{}:
+      +t = sector_ex.meet(lm, gnu, cx, cy, end, step, outer, c5, c0t, v1, v2, dist, back)
+      +m = Pt.lerp(c1, c2, Num.v(t), Num.ok(t))
+      sector_ex.drawn(True{}, gnu, cx, cy, outer, inner, start, end, step, n, False{}, Cap{c2, m, m, c5, m, m, 0.0, False{}, 0.0}, color)
+
+# In the frame where the center is the origin and startAngle is 0 degrees,
+# C1 is c1DistanceFromC0 from C0 along the start edge, where the horizontal
+# line through C0 meets the first outer edge.
+def sector_ex.rotated(+c0: Pt, +c2: Pt, +c5: Pt, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +step: F32, +n: F32, +outer: F32,
+    +inner: F32, +color: U32) -> Plan:
+  +back = turn.at(gnu, (F32.neg(deg2rad()) * start : F32))
+  +along = turn.at(gnu, (deg2rad() * (start + step : F32) : F32))
+  +c0t = P2.rotate(P2.of((Pt.x(c0) - cx : F32), (Pt.y(c0) - cy : F32)), back)
+  +v1 = P2.rotate(P2.of((Pt.x(c2) - cx : F32), (Pt.y(c2) - cy : F32)), back)
+  +v2 = P2.rotate(P2.of((Turn.cos(along) * outer : F32), (Turn.sin(along) * outer : F32)), back)
+  +dist = ((P2.x(v1) + (((P2.y(c0t) - P2.y(v1) : F32) / (P2.y(v1) - P2.y(v2) : F32) : F32) * (P2.x(v1) - P2.x(v2) : F32) : F32) : F32) - P2.x(c0t) : F32)
+  +c1 = Pt.also(Pt.at(gnu, Pt.x(c0), Pt.y(c0), dist, dist, (deg2rad() * start : F32)), Pt.ok(c0))
+  +c4 = Pt.also(Pt.at(gnu, Pt.x(c0), Pt.y(c0), dist, dist, (deg2rad() * end : F32)), Pt.ok(c0))
+  Plan.require(Turn.ok(back) && Turn.ok(along) && Pt.ok(c0) && Pt.ok(c2), sector_ex.crossed((dist < 0.0 : F32), lm, gnu, cx, cy, start, end, step, n,
+    outer, inner, c0, c1, c2, c4, c5, c0t, v1, v2, dist, back, color))
+
+# S1 = C0 = C3 on the far side: thick/cosf(DEG2RAD*a) from the center at
+# 180 + (end + start)/2, a = ((end + 90) - (start - 90))/2.
+def sector_ex.negative.s1(t: Turn, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +step: F32, +n: F32, +thick: F32, +outer: F32,
+    +inner: F32, +color: U32) -> Plan:
+  Turn{c, _, ok} = t
+  +s1 = (thick / c : F32)
+  Plan.require(ok, sector_ex.rotated(Pt.at(gnu, cx, cy, s1, s1, (deg2rad() * (180.0 + ((end + start : F32) / 2.0 : F32) : F32) : F32)),
+    Pt.on(gnu, cx, cy, outer, start), Pt.on(gnu, cx, cy, outer, end), lm, gnu, cx, cy, start, end, step, n, outer, inner, color))
+
+def sector_ex.negative(+lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +step: F32, +n: F32, +thick: F32, +outer: F32, +inner: F32,
+    +color: U32) -> Plan:
+  +a = (((end + 90.0 : F32) - (start - 90.0 : F32) : F32) / 2.0 : F32)
+  sector_ex.negative.s1(turn.at(gnu, (deg2rad() * a : F32)), lm, gnu, cx, cy, start, end, step, n, thick, outer, inner, color)
+
+def sector_ex.sign(positive: Bool, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +n: F32, +thick: F32,
+    +outer: F32, +inner: F32, +color: U32) -> Plan:
+  match positive:
+    case True{}: sector_ex.c1(arcsine.of(lm, (thick / inner : F32)), lm, gnu, cx, cy, r, start, end, step, n, thick, inner, color)
+    case False{}: sector_ex.negative(lm, gnu, cx, cy, start, end, step, n, thick, outer, inner, color)
+
+def sector_ex.shown(caps: Bool, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +n: F32, +thick: F32,
+    +positive: Bool, +outer: F32, +inner: F32, +color: U32) -> Plan:
+  match caps:
+    case False{}: sector_ex.drawn(False{}, gnu, cx, cy, outer, inner, start, end, step, n, positive, Cap.none(), color)
+    case True{}: sector_ex.sign(positive, lm, gnu, cx, cy, r, start, end, step, n, thick, outer, inner, color)
+
+def sector_ex.sides(fill: Bool, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +n: F32, +thick: F32,
+    +caps: Bool, +positive: Bool, +outer: F32, +inner: F32, +color: U32) -> Plan:
+  match fill:
+    case True{}: sector(lm, cx, cy, r, start, end, n, color)
+    case False{}: sector_ex.shown(caps, lm, gnu, cx, cy, r, start, end, step, n, thick, positive, outer, inner, color)
+
+# radiusThick = thick*(radius/apothem), apothem =
+# radius*cosf(DEG2RAD*((end - start)/2)/segments); the inner radius is
+# radius - radiusThick (the outer one for a negative thickness). A thickness
+# >= 0 reaching the inner radius draws DrawCircleSector.
+def sector_ex.apothem(t: Turn, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +step: F32, +n: F32, +thick: F32,
+    +caps: Bool, +color: U32) -> Plan:
+  Turn{c, _, ok} = t
+  +inner = (r - (thick * (r / (r * c : F32) : F32) : F32) : F32)
+  +positive = (thick >= 0.0 : F32)
+  Plan.require(ok, sector_ex.sides(positive && (thick >= inner : F32), lm, gnu, cx, cy, r, start, end, step, n, thick, caps, positive,
+    Bool.pick(F32, positive, r, inner), Bool.pick(F32, positive, inner, r), color))
+
+def sector_ex.counted(count: Maybe<F32>, +lm: U32, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +thick: F32, +caps: Bool, +color: U32) -> Plan:
+  match count:
+    case None{}: Plan.refused()
+    case Some{+n}:
+      sector_ex.apothem(turn.at(gnu.of(lm), ((deg2rad() * ((end - start : F32) / 2.0 : F32) : F32) / n : F32)), lm, gnu.of(lm), cx, cy, r, start, end,
+        ((end - start : F32) / n : F32), n, thick, caps, color)
+
+def sector_ex.distinct(skip: Bool, +lm: U32, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +segments: F32, +thick: F32, +color: U32) -> Plan:
+  match skip:
+    case True{}: Plan.empty()
+    case False{}:
+      +swap = (end < start : F32)
+      +first = Bool.pick(F32, swap, end, start)
+      +last = Bool.pick(F32, swap, start, end)
+      +ending = arc.end(first, last)
+      sector_ex.counted(segments.resolve(lm, r, (ending - first : F32), segments), lm, cx, cy, r, first, ending, thick,
+        arc.caps(arc.full(first, last), (thick >= 0.0 : F32)), color)
+
+# DrawCircleSectorLinesEx (raylib 6.2): as DrawCircleSectorLines (nothing
+# for a radius <= 0, one turn at most, segments resolved alike), a band of
+# quads between the radius and radius - radiusThick, and cap quads unless a
+# negative thickness draws a whole turn. A thickness >= 0 covering the
+# sector draws DrawCircleSector instead.
+def sector_lines_ex(+lm: U32, +cx: F32, +cy: F32, +radius: F32, +start: F32, +end: F32, +segments: F32, +thick: F32, +color: U32) -> Plan:
+  sector_ex.distinct(F32.is_eq(start, end) || (radius <= 0.0 : F32), lm, cx, cy, radius, start, end, segments, thick, color)
+
+# DrawRingLinesEx's two outlines (the inner radius's band between ii and oi,
+# the outer radius's between io and oo), a pair of quads per segment.
+def rings.loop(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +ii: F32, +oi: F32, +io: F32, +oo: F32, +angle: F32, +step: F32) -> Plan:
+  match n:
+    case 0n: Plan.empty()
+    case 1n+k:
+      +next = (angle + step : F32)
+      Plan.join(Pt.quad(Pt.on(gnu, cx, cy, oi, angle), Pt.on(gnu, cx, cy, ii, angle), Pt.on(gnu, cx, cy, ii, next), Pt.on(gnu, cx, cy, oi, next)),
+        Plan.join(Pt.quad(Pt.on(gnu, cx, cy, oo, angle), Pt.on(gnu, cx, cy, io, angle), Pt.on(gnu, cx, cy, io, next), Pt.on(gnu, cx, cy, oo, next)),
+          rings.loop(k, gnu, cx, cy, ii, oi, io, oo, next, step)))
+
+def ring_ex.drawn(+gnu: Bool, +cx: F32, +cy: F32, +start: F32, +step: F32, +n: F32, +ii: F32, +oi: F32, +io: F32, +oo: F32, caps: Plan, +color: U32) -> Plan:
+  Plan.textured(4, Plan.prefix(F.Color{color}, Plan.join(rings.loop(tally.nat(n), gnu, cx, cy, ii, oi, io, oo, start, step), caps)))
+
+# A thickness >= 0: the steps from each end before the outer radius's cap
+# end, a quad between oi and io per step.
+def ring_ex.early(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +step: F32, +oi: F32, +io: F32, +angle: F32) -> Plan:
+  match n:
+    case 0n: Plan.empty()
+    case 1n+k:
+      +s0 = (start + angle : F32)
+      +e0 = (end - angle : F32)
+      Plan.join(Pt.quad(Pt.on(gnu, cx, cy, oi, s0), Pt.on(gnu, cx, cy, oi, (s0 + step : F32)), Pt.on(gnu, cx, cy, io, (s0 + step : F32)), Pt.on(gnu, cx, cy, io, s0)),
+        Plan.join(Pt.quad(Pt.on(gnu, cx, cy, oi, e0), Pt.on(gnu, cx, cy, io, e0), Pt.on(gnu, cx, cy, io, (e0 - step : F32)), Pt.on(gnu, cx, cy, oi, (e0 - step : F32))),
+          ring_ex.early(k, gnu, cx, cy, start, end, step, oi, io, (angle + step : F32))))
+
+# Each cap's vertices around its end: on the outer radius's inner edge (io)
+# the vertex before the end and the end, on the inner radius's outer edge
+# (oi) the end and the vertex before it.
+type Ends is Data:
+  Ends{ob1: Pt, ib1: Pt, ie1: Pt, oe1: Pt, ob2: Pt, ib2: Pt, ie2: Pt, oe2: Pt}
+
+def ring_ex.ends.of(+gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +step: F32, +oi: F32, +io: F32, +a1: F32, +left: F32, +tin: Num, +tout: Num) -> Ends:
+  +s0 = (start + a1 : F32)
+  +e0 = (end - a1 : F32)
+  +ob1 = Pt.on(gnu, cx, cy, io, s0)
+  +ib1 = Pt.on(gnu, cx, cy, oi, (s0 + (left * step : F32) : F32))
+  +ob2 = Pt.on(gnu, cx, cy, io, e0)
+  +ib2 = Pt.on(gnu, cx, cy, oi, (e0 - (left * step : F32) : F32))
+  Ends{ob1, ib1, Pt.lerp(ib1, Pt.on(gnu, cx, cy, oi, (s0 + ((left + 1.0 : F32) * step : F32) : F32)), Num.v(tin), Num.ok(tin)),
+    Pt.lerp(ob1, Pt.on(gnu, cx, cy, io, (s0 + step : F32)), Num.v(tout), Num.ok(tout)),
+    ob2, ib2, Pt.lerp(ib2, Pt.on(gnu, cx, cy, oi, (e0 - ((left + 1.0 : F32) * step : F32) : F32)), Num.v(tin), Num.ok(tin)),
+    Pt.lerp(ob2, Pt.on(gnu, cx, cy, io, (e0 - step : F32)), Num.v(tout), Num.ok(tout))}
+
+def ring_ex.odd(odd: Bool, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +step: F32, +oi: F32, +ob1: Pt, +ob2: Pt, +angle: F32) -> Plan:
+  match odd:
+    case False{}: Plan.empty()
+    case True{}:
+      Plan.join(Pt.quad(ob1, ob1, Pt.on(gnu, cx, cy, oi, (start + angle : F32)), Pt.on(gnu, cx, cy, oi, ((start + angle : F32) + step : F32))),
+        Pt.quad(ob2, ob2, Pt.on(gnu, cx, cy, oi, ((end - angle : F32) - step : F32)), Pt.on(gnu, cx, cy, oi, (end - angle : F32))))
+
+# Pairs of steps fanned from the vertex before each outer cap end, then an
+# odd last one.
+def ring_ex.pairs(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +step: F32, +oi: F32, +ob1: Pt, +ob2: Pt, +odd: Bool, +angle: F32) -> Plan:
+  match n:
+    case 0n: ring_ex.odd(odd, gnu, cx, cy, start, end, step, oi, ob1, ob2, angle)
+    case 1n+k:
+      +s0 = (start + angle : F32)
+      +e0 = (end - angle : F32)
+      +twice = (step * 2.0 : F32)
+      Plan.join(Pt.quad(ob1, Pt.on(gnu, cx, cy, oi, s0), Pt.on(gnu, cx, cy, oi, (s0 + step : F32)), Pt.on(gnu, cx, cy, oi, (s0 + twice : F32))),
+        Plan.join(Pt.quad(ob2, Pt.on(gnu, cx, cy, oi, (e0 - twice : F32)), Pt.on(gnu, cx, cy, oi, (e0 - step : F32)), Pt.on(gnu, cx, cy, oi, e0)),
+          ring_ex.pairs(k, gnu, cx, cy, start, end, step, oi, ob1, ob2, odd, (angle + twice : F32))))
+
+# sinf(rotateBy)*(p.x - o.x) + cosf(rotateBy)*(p.y - o.y)
+def ring_ex.lift(+t: Turn, +p: Pt, +o: Pt) -> F32:
+  Turn{c, s, _} = t
+  ((s * (Pt.x(p) - Pt.x(o) : F32) : F32) + (c * (Pt.y(p) - Pt.y(o) : F32) : F32) : F32)
+
+# The crossing inner angles: the caps meet at the intersection of their end
+# lines; an even segment count shares the middle vertex, an odd one adds a
+# quad between the two middle vertices.
+def ring_ex.middle(odd: Bool, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +oi: F32, +angle: F32, +hit: Pt, +ob1: Pt, +oe1: Pt, +ob2: Pt,
+    +oe2: Pt) -> Plan:
+  match odd:
+    case False{}:
+      +mid = Pt.on(gnu, cx, cy, oi, (start + angle : F32))
+      Plan.join(Pt.quad(hit, oe1, ob1, mid), Pt.quad(hit, mid, ob2, oe2))
+    case True{}:
+      +m1 = Pt.on(gnu, cx, cy, oi, (start + angle : F32))
+      +m2 = Pt.on(gnu, cx, cy, oi, (end - angle : F32))
+      Plan.join(Pt.quad(hit, oe1, ob1, m1), Plan.join(Pt.quad(hit, m2, ob2, oe2), Pt.quad(hit, hit, m1, m2)))
+
+def ring_ex.cross(theta: Maybe<F32>, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +n: F32, +oi: F32, +angle: F32, +ob1: Pt, +ie1: Pt,
+    +oe1: Pt, +ob2: Pt, +ie2: Pt, +oe2: Pt) -> Plan:
+  match theta:
+    case None{}: Plan.refused()
+    case Some{+a}:
+      +spin = turn.at(gnu, F32.neg(a))
+      +s = ring_ex.lift(spin, ie2, ie1)
+      +e = ring_ex.lift(spin, oe2, ie1)
+      ring_ex.middle(tally.odd(n), gnu, cx, cy, start, end, oi, angle,
+        Pt.lerp(ie2, oe2, (s / (s - e : F32) : F32), Turn.ok(spin) && Pt.ok(ie1) && Pt.ok(oe1)), ob1, oe1, ob2, oe2)
+
+def ring_ex.meet(cross: Bool, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +n: F32, +oi: F32, +angle: F32, +ob1: Pt, +ib1: Pt,
+    +ie1: Pt, +oe1: Pt, +ob2: Pt, +ib2: Pt, +ie2: Pt, +oe2: Pt) -> Plan:
+  match cross:
+    case False{}: Plan.join(Pt.quad(ob1, ib1, ie1, oe1), Pt.quad(ob2, oe2, ie2, ib2))
+    case True{}:
+      ring_ex.cross(arctan2.of(lm, (Pt.y(oe1) - Pt.y(ie1) : F32), (Pt.x(oe1) - Pt.x(ie1) : F32)), gnu, cx, cy, start, end, n, oi, angle, ob1, ie1, oe1,
+        ob2, ie2, oe2)
+
+def ring_ex.ends(e: Ends, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +step: F32, +n: F32, +oi: F32, +cross: Bool, +steps: F32,
+    +a1: F32) -> Plan:
+  Ends{+ob1, +ib1, +ie1, +oe1, +ob2, +ib2, +ie2, +oe2} = e
+  +a2 = turned.after(tally.nat(tally.half(steps)), a1, (step * 2.0 : F32))
+  +odd = tally.odd(steps)
+  Plan.join(ring_ex.pairs(tally.nat(tally.half(steps)), gnu, cx, cy, start, end, step, oi, ob1, ob2, odd, a1),
+    ring_ex.meet(cross, lm, gnu, cx, cy, start, end, n, oi, Bool.pick(F32, odd, (a2 + step : F32), a2), ob1, ib1, ie1, oe1, ob2, ib2, ie2, oe2))
+
+# A thickness >= 0 with caps: stepsBeforeInner and stepsBeforeOuter whole
+# steps fit in the caps' angles; where each cap end crosses its segment
+# (tInner, tOuter) comes from the frame where the cap angle is 0 degrees.
+def ring_ex.steps(+lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +step: F32, +n: F32, +ii: F32, +oi: F32, +io: F32, +oo: F32,
+    +ain: F32, +aout: F32, +cross: Bool, +sbi: F32, +sbo: F32, +color: U32) -> Plan:
+  +tin = Num.cut(turn.at(gnu, (deg2rad() * ((sbi * step : F32) - ain : F32) : F32)), turn.at(gnu, (deg2rad() * (((sbi + 1.0 : F32) * step : F32) - ain : F32) : F32)), oi, 0.0)
+  +tout = Num.cut(turn.at(gnu, (deg2rad() * ((sbo * step : F32) - aout : F32) : F32)), turn.at(gnu, (deg2rad() * (((sbo + 1.0 : F32) * step : F32) - aout : F32) : F32)), io, 0.0)
+  +a1 = turned.after(tally.nat(sbo), 0.0, step)
+  +left = (sbi - sbo : F32)
+  +steps = Bool.pick(F32, cross, tally.half((n - (sbo * 2.0 : F32) : F32)), left)
+  Plan.require((steps <= 4096.0 : F32), ring_ex.drawn(gnu, cx, cy, start, step, n, ii, oi, io, oo,
+    Plan.join(ring_ex.early(tally.nat(sbo), gnu, cx, cy, start, end, step, oi, io, 0.0),
+      ring_ex.ends(ring_ex.ends.of(gnu, cx, cy, start, end, step, oi, io, a1, left, tin, tout), lm, gnu, cx, cy, start, end, step, n, oi, cross, steps, a1)), color))
+
+# A span below twice the outer cap angle is covered (DrawRing); below twice
+# the inner one the inner angles cross each other.
+def ring_ex.thin(fill: Bool, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +step: F32, +n: F32, +ii: F32, +oi: F32, +io: F32,
+    +oo: F32, +ain: F32, +aout: F32, +color: U32) -> Plan:
+  match fill:
+    case True{}: ring(lm, cx, cy, ii, oo, start, end, n, color)
+    case False{}:
+      +ri = (ain / step : F32)
+      +ro = (aout / step : F32)
+      Plan.require(int.valid(ri) && int.valid(ro), ring_ex.steps(lm, gnu, cx, cy, start, end, step, n, ii, oi, io, oo, ain, aout,
+        ((end - start : F32) < (ain * 2.0 : F32) : F32), int.of(Bool.pick(F32, int.valid(ri), ri, 0.0)), int.of(Bool.pick(F32, int.valid(ro), ro, 0.0)), color))
+
+# x*cosres - y*sinres
+def ring_ex.xr(+x: F32, +y: F32, +t: Turn) -> F32:
+  Turn{c, s, _} = t
+  ((x * c : F32) - (y * s : F32) : F32)
+
+# (a - b)/divisor, or -1 for a zero divisor.
+def ring_ex.ratio(+a: F32, +b: F32, +divisor: F32) -> F32:
+  Bool.pick(F32, F32.is_eq(divisor, 0.0), F32.neg(1.0), ((a - b : F32) / divisor : F32))
+
+def ring_ex.outward.hit(inter: Bool, +si1: Pt, +so1: Pt, +si2: Pt, +so2: Pt, +hit: Pt) -> Plan:
+  match inter:
+    case False{}: Plan.empty()
+    case True{}: Plan.join(Pt.quad(si1, si1, so1, hit), Pt.quad(si2, hit, so2, si2))
+
+def ring_ex.outward.draw(inter: Bool, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +ii: F32, +oo: F32, +ok: Bool, +so1: Pt, +si1: Pt,
+    +so2: Pt, +si2: Pt, +hit: Pt) -> Plan:
+  Plan.require(ok, Plan.join(Pt.quad(Pt.on(gnu, cx, cy, ii, start), Pt.on(gnu, cx, cy, oo, start), so1, si1),
+    Plan.join(Pt.quad(Pt.on(gnu, cx, cy, ii, end), si2, so2, Pt.on(gnu, cx, cy, oo, end)), ring_ex.outward.hit(inter, si1, so1, si2, so2, hit))))
+
+# Without the long edges crossing, the outer edges crossing (tCrossOuter in
+# [0, 1]) joins both caps' second vertices.
+def ring_ex.outward.other(outer: Bool, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +ii: F32, +oo: F32, +ok: Bool, +so1: Pt, +si1: Pt,
+    +so2: Pt, +si2: Pt, +o0: Pt, +i0: Pt, +tci: F32, +tco: F32) -> Plan:
+  match outer:
+    case True{}:
+      +so = Pt.lerp(o0, so2, tco, True{})
+      +si = Pt.lerp(i0, si2, tci, True{})
+      ring_ex.outward.draw(False{}, gnu, cx, cy, start, end, ii, oo, ok, so, si, so, si, so)
+    case False{}: ring_ex.outward.draw(False{}, gnu, cx, cy, start, end, ii, oo, ok, so1, si1, so2, si2, so1)
+
+# The long edges crossing (capsIntersect): both caps end at the inner edges'
+# crossing and a quad pair fills to the long edges' crossing.
+def ring_ex.outward.pick(inter: Bool, +outer: Bool, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +ii: F32, +oo: F32, +ok: Bool, +so1: Pt,
+    +si1: Pt, +so2: Pt, +si2: Pt, +o0: Pt, +i0: Pt, +tlong: F32, +tci: F32, +tco: F32) -> Plan:
+  match inter:
+    case True{}:
+      +si = Pt.lerp(i0, si2, tci, True{})
+      ring_ex.outward.draw(True{}, gnu, cx, cy, start, end, ii, oo, ok, so1, si, so2, si, Pt.lerp(si2, so2, tlong, True{}))
+    case False{}: ring_ex.outward.other(outer, gnu, cx, cy, start, end, ii, oo, ok, so1, si1, so2, si2, o0, i0, tci, tco)
+
+# The caps at their place: O2 = O1 + (O0 - O1)*tOuter on the outer edge one
+# step in, I2 = O2 - (cosf, sinf)(end angle)*(oo - ii).
+def ring_ex.outward.caps(+gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +step: F32, +ii: F32, +oo: F32, +edge: F32, +tout: F32, +tlong: F32,
+    +tci: F32, +tco: F32, +ok: Bool) -> Plan:
+  +o1 = Pt.on(gnu, cx, cy, oo, start)
+  +so1 = Pt.lerp(Pt.on(gnu, cx, cy, oo, (start + step : F32)), o1, tout, True{})
+  +o2 = Pt.on(gnu, cx, cy, oo, end)
+  +so2 = Pt.lerp(Pt.on(gnu, cx, cy, oo, (end - step : F32)), o2, tout, True{})
+  ring_ex.outward.pick((tlong >= 0.0 : F32) && (tlong <= 1.0 : F32), (tco >= 0.0 : F32) && (tco <= 1.0 : F32), gnu, cx, cy, start, end, ii, oo, ok,
+    so1, Pt.back(so1, edge, turn.at(gnu, (deg2rad() * start : F32))), so2, Pt.back(so2, edge, turn.at(gnu, (deg2rad() * end : F32))), o2,
+    Pt.on(gnu, cx, cy, ii, end), tlong, tci, tco)
+
+# Cap 2 in the frame where the center is the origin and startAngle is 0
+# degrees, rotated by -DEG2RAD*stepLength/2 so cap 1's inner edge is
+# vertical: where the long edges (I2-O2), the inner edges and the outer edges
+# cross.
+def ring_ex.outward.far(far: Turn, near: Turn, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +step: F32, +thick: F32, +ii: F32, +oo: F32,
+    +tout: F32, +o2x: F32, +edge: F32, +ok: Bool) -> Plan:
+  Turn{+c, +s, okf} = far
+  Turn{+cn, +sn, okn} = near
+  +o0x = (c * oo : F32)
+  +o0y = (s * oo : F32)
+  +o1x = (cn * oo : F32)
+  +o1y = (sn * oo : F32)
+  +q2x = (o1x + ((o0x - o1x : F32) * tout : F32) : F32)
+  +q2y = (o1y + ((o0y - o1y : F32) * tout : F32) : F32)
+  +p2x = (q2x - (c * edge : F32) : F32)
+  +p2y = (q2y - (s * edge : F32) : F32)
+  +spin = turn.at(gnu, ((F32.neg(deg2rad()) * step : F32) / 2.0 : F32))
+  +ri2 = ring_ex.xr((o2x - edge : F32), thick, spin)
+  +ro2 = ring_ex.xr(o2x, thick, spin)
+  +rp0 = ring_ex.xr((c * ii : F32), (s * ii : F32), spin)
+  +rp2 = ring_ex.xr(p2x, p2y, spin)
+  +rq0 = ring_ex.xr(o0x, o0y, spin)
+  +rq2 = ring_ex.xr(q2x, q2y, spin)
+  ring_ex.outward.caps(gnu, cx, cy, start, end, step, ii, oo, edge, tout, ring_ex.ratio(p2y, thick, (p2y - q2y : F32)),
+    Bool.pick(F32, (ii <= 0.0 : F32), 0.0, ring_ex.ratio(rp0, ri2, (rp0 - rp2 : F32))), ring_ex.ratio(rq0, ro2, (rq0 - rq2 : F32)),
+    ok && okf && okn && Turn.ok(spin))
+
+# A negative thickness with caps: cap 1's outer edge O0-O2 runs thick from
+# the start edge (tOuter on the first outer segment), its long edge I2-O2 is
+# oo - ii long.
+def ring_ex.outward(+gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +step: F32, +thick: F32, +ii: F32, +oo: F32) -> Plan:
+  +first = turn.at(gnu, (deg2rad() * step : F32))
+  +o1x = (Turn.cos(first) * oo : F32)
+  +o1y = (Turn.sin(first) * oo : F32)
+  +tout = ((o1y - thick : F32) / o1y : F32)
+  +span = (end - start : F32)
+  ring_ex.outward.far(turn.at(gnu, (deg2rad() * span : F32)), turn.at(gnu, (deg2rad() * (span - step : F32) : F32)), gnu, cx, cy, start, end, step, thick, ii, oo,
+    tout, (o1x + ((oo - o1x : F32) * tout : F32) : F32), (oo - ii : F32), Turn.ok(first))
+
+def ring_ex.capsign(positive: Bool, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +step: F32, +n: F32, +thick: F32, +ii: F32,
+    +oi: F32, +io: F32, +oo: F32, +color: U32) -> Plan:
+  match positive:
+    case True{}:
+      +ain = (rad2deg() * (thick / oi : F32) : F32)
+      +aout = (rad2deg() * (thick / io : F32) : F32)
+      ring_ex.thin(((end - start : F32) < (aout * 2.0 : F32) : F32), lm, gnu, cx, cy, start, end, step, n, ii, oi, io, oo, ain, aout, color)
+    case False{}: ring_ex.drawn(gnu, cx, cy, start, step, n, ii, oi, io, oo, ring_ex.outward(gnu, cx, cy, start, end, step, thick, ii, oo), color)
+
+def ring_ex.shown(caps: Bool, +positive: Bool, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +start: F32, +end: F32, +step: F32, +n: F32, +thick: F32,
+    +ii: F32, +oi: F32, +io: F32, +oo: F32, +color: U32) -> Plan:
+  match caps:
+    case False{}: ring_ex.drawn(gnu, cx, cy, start, step, n, ii, oi, io, oo, Plan.empty(), color)
+    case True{}: ring_ex.capsign(positive, lm, gnu, cx, cy, start, end, step, n, thick, ii, oi, io, oo, color)
+
+# A negative thickness with an inner radius <= 0 draws
+# DrawCircleSectorLinesEx; otherwise ii = fmaxf(0, inner + radiusThick),
+# oi = inner, io = outer, oo = outer - radiusThick.
+def ring_ex.hollow(whole: Bool, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +step: F32, +n: F32,
+    +thick: F32, +rt: F32, +caps: Bool, +color: U32) -> Plan:
+  match whole:
+    case True{}: sector_lines_ex(lm, cx, cy, outer, start, end, n, thick, color)
+    case False{}:
+      +low = (inner + rt : F32)
+      ring_ex.shown(caps, False{}, lm, gnu, cx, cy, start, end, step, n, thick, Bool.pick(F32, (low > 0.0 : F32), low, 0.0), inner, outer,
+        (outer - rt : F32), color)
+
+# A thickness >= 0 over half the radii's distance draws DrawRing; otherwise
+# ii = fmaxf(0, inner), oi = ii + radiusThick, io = outer - radiusThick,
+# oo = outer.
+def ring_ex.filled(fill: Bool, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +step: F32, +n: F32,
+    +thick: F32, +rt: F32, +caps: Bool, +color: U32) -> Plan:
+  match fill:
+    case True{}: ring(lm, cx, cy, inner, outer, start, end, n, color)
+    case False{}: ring_ex.shown(caps, True{}, lm, gnu, cx, cy, start, end, step, n, thick, inner, (inner + rt : F32), (outer - rt : F32), outer, color)
+
+def ring_ex.sign(positive: Bool, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +step: F32, +n: F32,
+    +thick: F32, +rt: F32, +caps: Bool, +color: U32) -> Plan:
+  match positive:
+    case True{}:
+      +low = Bool.pick(F32, (inner > 0.0 : F32), inner, 0.0)
+      ring_ex.filled((rt > ((outer - low : F32) / 2.0 : F32) : F32), lm, gnu, cx, cy, low, outer, start, end, step, n, thick, rt, caps, color)
+    case False{}: ring_ex.hollow((inner <= 0.0 : F32), lm, gnu, cx, cy, inner, outer, start, end, step, n, thick, rt, caps, color)
+
+# radiusThick = thick*(outer/apothem), apothem = outer*cosf(DEG2RAD*((end -
+# start)/2)/segments).
+def ring_ex.apothem(t: Turn, +lm: U32, +gnu: Bool, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +step: F32, +n: F32,
+    +thick: F32, +caps: Bool, +color: U32) -> Plan:
+  Turn{c, _, ok} = t
+  Plan.require(ok, ring_ex.sign((thick >= 0.0 : F32), lm, gnu, cx, cy, inner, outer, start, end, step, n, thick,
+    (thick * (outer / (outer * c : F32) : F32) : F32), caps, color))
+
+def ring_ex.counted(count: Maybe<F32>, +lm: U32, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +thick: F32, +caps: Bool,
+    +color: U32) -> Plan:
+  match count:
+    case None{}: Plan.refused()
+    case Some{+n}:
+      ring_ex.apothem(turn.at(gnu.of(lm), ((deg2rad() * ((end - start : F32) / 2.0 : F32) : F32) / n : F32)), lm, gnu.of(lm), cx, cy, inner, outer, start,
+        end, ((end - start : F32) / n : F32), n, thick, caps, color)
+
+def ring_ex.sized(empty: Bool, +lm: U32, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +thick: F32,
+    +color: U32) -> Plan:
+  match empty:
+    case True{}: Plan.empty()
+    case False{}:
+      +swap = (end < start : F32)
+      +first = Bool.pick(F32, swap, end, start)
+      +last = Bool.pick(F32, swap, start, end)
+      +ending = arc.end(first, last)
+      ring_ex.counted(segments.resolve(lm, outer, (ending - first : F32), segments), lm, cx, cy, inner, outer, first, ending, thick,
+        arc.caps(arc.full(first, last), (thick >= 0.0 : F32)), color)
+
+def ring_ex.distinct(same: Bool, +lm: U32, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +thick: F32,
+    +color: U32) -> Plan:
+  match same:
+    case True{}: Plan.empty()
+    case False{}:
+      +flip = (outer < inner : F32)
+      +big = Bool.pick(F32, flip, inner, outer)
+      ring_ex.sized((big <= 0.0 : F32), lm, cx, cy, Bool.pick(F32, flip, outer, inner), big, start, end, segments, thick, color)
+
+# DrawRingLinesEx (raylib 6.2): radii and angles ordered and segments
+# resolved as DrawRingLines, then the outlines of both radii (radiusThick
+# thick, inward for a thickness >= 0, outward otherwise) and cap quads unless
+# a negative thickness draws a whole turn. A thickness >= 0 filling the ring
+# draws DrawRing; a negative one with no inner radius
+# DrawCircleSectorLinesEx.
+def ring_lines_ex(+lm: U32, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +thick: F32, +color: U32) -> Plan:
+  ring_ex.distinct(F32.is_eq(start, end), lm, cx, cy, inner, outer, start, end, segments, thick, color)
 
 # -----------------------------------------------------------------------------
 # Ribbons: DrawTriangleStrip around a polyline, the way DrawLineBezier and the
@@ -795,20 +1731,21 @@ def line_dashed(+sx: F32, +sy: F32, +ex: F32, +ey: F32, +dash: F32, +space: F32,
 def corner.radius(+width: F32, +height: F32, +roundness: F32) -> F32:
   Bool.pick(F32, (width > height : F32), ((height * roundness : F32) / 2.0 : F32), ((width * roundness : F32) / 2.0 : F32))
 
-# The corner segment count: the C int parameter when at least 4, else the
-# estimate (int)(ceilf(2*PI/th)/divisor) with 4 for a non-positive one.
-def corner.segments.pick(small: Bool, +lm: U32, +radius: F32, +divisor: F32, +segments: F32) -> Maybe<F32>:
+# The corner segment count (raylib 6.2): the C int parameter when at least
+# 1, else the estimate (int)ceilf((2*PI/th)/4.0f) with 4 for a non-positive
+# one.
+def corner.segments.pick(small: Bool, +lm: U32, +radius: F32, +segments: F32) -> Maybe<F32>:
   match small:
     case False{}: segments.bounded(segments)
-    case True{}: estimate.floor(estimate.corner(estimate.th(lm, radius), divisor), 4.0)
+    case True{}: estimate.floor(estimate.corner(estimate.th(lm, radius)), 4.0)
 
-def corner.segments.valid(valid: Bool, +lm: U32, +radius: F32, +divisor: F32, +segments: F32) -> Maybe<F32>:
+def corner.segments.valid(valid: Bool, +lm: U32, +radius: F32, +segments: F32) -> Maybe<F32>:
   match valid:
     case False{}: None{}
-    case True{}: corner.segments.pick((int.of(segments) < 4.0 : F32), lm, radius, divisor, int.of(segments))
+    case True{}: corner.segments.pick((int.of(segments) < 1.0 : F32), lm, radius, int.of(segments))
 
-def corner.segments(+lm: U32, +radius: F32, +divisor: F32, +segments: F32) -> Maybe<F32>:
-  corner.segments.valid(int.valid(segments), lm, radius, divisor, segments)
+def corner.segments(+lm: U32, +radius: F32, +segments: F32) -> Maybe<F32>:
+  corner.segments.valid(int.valid(segments), lm, radius, segments)
 
 def quad.at(+color: U32, +a: P2, +b: P2, +c: P2, +d: P2) -> +List<F.Command>:
   [F.Color{color}, F.ShapeUV{0}, P2.point(a), F.ShapeUV{2}, P2.point(b), F.ShapeUV{3}, P2.point(c), F.ShapeUV{1}, P2.point(d)]
@@ -848,7 +1785,7 @@ def rounded.drawn(count: Maybe<F32>, +gnu: Bool, +x: F32, +y: F32, +w: F32, +h: 
 def rounded.sized(empty: Bool, +lm: U32, +x: F32, +y: F32, +w: F32, +h: F32, +r: F32, +segments: F32, +color: U32) -> Plan:
   match empty:
     case True{}: Plan.empty()
-    case False{}: rounded.drawn(corner.segments(lm, r, 4.0, segments), gnu.of(lm), x, y, w, h, r, color)
+    case False{}: rounded.drawn(corner.segments(lm, r, segments), gnu.of(lm), x, y, w, h, r, color)
 
 def rounded.round(flat: Bool, +lm: U32, +x: F32, +y: F32, +w: F32, +h: F32, +roundness: F32, +segments: F32, +color: U32) -> Plan:
   match flat:
@@ -858,10 +1795,11 @@ def rounded.round(flat: Bool, +lm: U32, +x: F32, +y: F32, +w: F32, +h: F32, +rou
       rounded.sized((r <= 0.0 : F32), lm, x, y, w, h, r, segments, color)
 
 # DrawRectangleRounded: a roundness <= 0 draws DrawRectangleRec; corners as
-# sector quads (segments below 4 estimated), then five rectangles.
+# sector quads (segments below 1 estimated), then five rectangles.
 def rounded(+lm: U32, +x: F32, +y: F32, +w: F32, +h: F32, +roundness: F32, +segments: F32, +color: U32) -> Plan:
   rounded.round((roundness <= 0.0 : F32), lm, x, y, w, h, roundness, segments, color)
 
+# One corner's quads between the inner and outer radii, a segment each.
 def rounded_lines.arc(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +angle: F32, +step: F32, +color: U32) -> Plan:
   match n:
     case 0n: Plan.empty()
@@ -875,91 +1813,137 @@ def rounded_lines.arc(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +inner: F32, +oute
       Plan.with(Pt.ok(a) && Pt.ok(b) && Pt.ok(c) && Pt.ok(d), [F.Color{color}, F.ShapeUV{0}, Pt.point(a), F.ShapeUV{1}, Pt.point(b),
         F.ShapeUV{3}, Pt.point(c), F.ShapeUV{2}, Pt.point(d)], rounded_lines.arc(k, gnu, cx, cy, inner, outer, (angle + step : F32), step, color))
 
-def rounded_lines.outline(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +outer: F32, +angle: F32, +step: F32, +color: U32) -> Plan:
+# One corner's RL_LINES along the radius, a segment each.
+def rounded_lines.outline(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +angle: F32, +step: F32, +color: U32) -> Plan:
   match n:
     case 0n: Plan.empty()
     case 1n+k:
-      +a = Pt.at(gnu, cx, cy, outer, outer, (deg2rad() * angle : F32))
-      +b = Pt.at(gnu, cx, cy, outer, outer, (deg2rad() * (angle + step : F32) : F32))
-      Plan.with(Pt.ok(a) && Pt.ok(b), [F.Color{color}, Pt.point(a), Pt.point(b)], rounded_lines.outline(k, gnu, cx, cy, outer, (angle + step : F32), step, color))
+      +a = Pt.at(gnu, cx, cy, r, r, (deg2rad() * angle : F32))
+      +b = Pt.at(gnu, cx, cy, r, r, (deg2rad() * (angle + step : F32) : F32))
+      Plan.with(Pt.ok(a) && Pt.ok(b), [F.Color{color}, Pt.point(a), Pt.point(b)], rounded_lines.outline(k, gnu, cx, cy, r, (angle + step : F32), step, color))
 
-def rounded_lines.corner(thick: Bool, n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +inner: F32, +outer: F32, +angle: F32, +step: F32, +color: U32) -> Plan:
-  match thick:
-    case True{}: rounded_lines.arc(n, gnu, cx, cy, inner, outer, angle, step, color)
-    case False{}: rounded_lines.outline(n, gnu, cx, cy, outer, angle, step, color)
+# DrawRectangleRoundedLines (raylib 6.2, its own RL_LINES): the corner arcs
+# around P8..P11, half a pixel inside, then the four sides P0-P1, P2-P3, P4-P5
+# and P6-P7.
+def rounded_thin.drawn(count: Maybe<F32>, +gnu: Bool, +x: F32, +y: F32, +w: F32, +h: F32, +r: F32, +color: U32) -> Plan:
+  match count:
+    case None{}: Plan.refused()
+    case Some{+segments}:
+      +n = U32.to_nat(F32.to_u32(segments))
+      +step = (90.0 / segments : F32)
+      +x0 = ((x + r : F32) + 0.5 : F32)
+      +x1 = (((x + w : F32) - r : F32) - 0.5 : F32)
+      +x2 = ((x + w : F32) - 0.5 : F32)
+      +x3 = (x + 0.5 : F32)
+      +y0 = (y + 0.5 : F32)
+      +y1 = ((y + r : F32) + 0.5 : F32)
+      +y2 = (((y + h : F32) - r : F32) - 0.5 : F32)
+      +y3 = ((y + h : F32) - 0.5 : F32)
+      Plan.plain(2, Plan.join(rounded_lines.outline(n, gnu, x0, y1, r, 180.0, step, color), Plan.join(rounded_lines.outline(n, gnu, x1, y1, r, 270.0, step, color),
+        Plan.join(rounded_lines.outline(n, gnu, x1, y2, r, 0.0, step, color), Plan.join(rounded_lines.outline(n, gnu, x0, y2, r, 90.0, step, color),
+          Plan.only(True{}, [F.Color{color}, F.Point{x0, y0}, F.Point{x1, y0}, F.Color{color}, F.Point{x2, y1}, F.Point{x2, y2},
+            F.Color{color}, F.Point{x1, y3}, F.Point{x0, y3}, F.Color{color}, F.Point{x3, y2}, F.Point{x3, y1}]))))))
 
-# The corner centers P16..P19, half a pixel inside.
-def rounded_lines.corners(+thick: Bool, +gnu: Bool, +x: F32, +y: F32, +w: F32, +h: F32, +r: F32, +outer: F32, +step: F32, +segments: F32, +color: U32) -> Plan:
-  +n = U32.to_nat(F32.to_u32(segments))
-  +left = ((x + r : F32) + 0.5 : F32)
-  +top = ((y + r : F32) + 0.5 : F32)
-  +right = (((x + w : F32) - r : F32) - 0.5 : F32)
-  +bottom = (((y + h : F32) - r : F32) - 0.5 : F32)
-  Plan.join(rounded_lines.corner(thick, n, gnu, left, top, r, outer, 180.0, step, color), Plan.join(rounded_lines.corner(thick, n, gnu, right, top, r, outer, 270.0, step, color),
-    Plan.join(rounded_lines.corner(thick, n, gnu, right, bottom, r, outer, 0.0, step, color), rounded_lines.corner(thick, n, gnu, left, bottom, r, outer, 90.0, step, color))))
+def rounded_thin.sized(empty: Bool, +lm: U32, +x: F32, +y: F32, +w: F32, +h: F32, +r: F32, +segments: F32, +color: U32) -> Plan:
+  match empty:
+    case True{}: Plan.empty()
+    case False{}: rounded_thin.drawn(corner.segments(lm, r, segments), gnu.of(lm), x, y, w, h, r, color)
+
+def rounded_thin.round(flat: Bool, +lm: U32, +x: F32, +y: F32, +w: F32, +h: F32, +roundness: F32, +segments: F32, +color: U32) -> Plan:
+  match flat:
+    case True{}: Plan.require(int.valid(x) && int.valid(y) && int.valid(w) && int.valid(h), rectangle.lines(int.of(x), int.of(y), int.of(w), int.of(h), color))
+    case False{}:
+      +r = corner.radius(w, h, Bool.pick(F32, (roundness >= 1.0 : F32), 1.0, roundness))
+      rounded_thin.sized((r <= 0.0 : F32), lm, x, y, w, h, r, segments, color)
+
+# DrawRectangleRoundedLines (raylib 6.2): a roundness <= 0 draws
+# DrawRectangleLines((int)x, (int)y, (int)width, (int)height); corners with
+# segments below 1 estimated.
+def rounded_thin(+lm: U32, +x: F32, +y: F32, +w: F32, +h: F32, +roundness: F32, +segments: F32, +color: U32) -> Plan:
+  rounded_thin.round((roundness <= 0.0 : F32), lm, x, y, w, h, roundness, segments, color)
 
 type Outline is Data:
   Outline{p0: P2, p1: P2, p2: P2, p3: P2, p4: P2, p5: P2, p6: P2, p7: P2, p8: P2, p9: P2, p10: P2, p11: P2, p12: P2, p13: P2, p14: P2, p15: P2}
 
-# P0..P15 of rshapes.c's DrawRectangleRoundedLinesEx sketch.
+# P0..P15 of rshapes.c's DrawRectangleRoundedLinesEx sketch (raylib 6.2):
+# x0 = x + R, x1 = (x + w) - R, x2 = x + w, x3 = x, x4 = (x + w) - T,
+# x5 = x + T, and the same in y, for the outer radius R and the rounded
+# outline thickness T.
 def outline.points(+x: F32, +y: F32, +w: F32, +h: F32, +r: F32, +t: F32) -> Outline:
-  +xl = ((x + r : F32) + 0.5 : F32)
-  +xr = (((x + w : F32) - r : F32) - 0.5 : F32)
-  +yt = ((y + r : F32) + 0.5 : F32)
-  +yb = (((y + h : F32) - r : F32) - 0.5 : F32)
-  Outline{P2{xl, ((y - t : F32) + 0.5 : F32)}, P2{xr, ((y - t : F32) + 0.5 : F32)}, P2{(((x + w : F32) + t : F32) - 0.5 : F32), yt},
-    P2{(((x + w : F32) + t : F32) - 0.5 : F32), yb}, P2{xr, (((y + h : F32) + t : F32) - 0.5 : F32)}, P2{xl, (((y + h : F32) + t : F32) - 0.5 : F32)},
-    P2{((x - t : F32) + 0.5 : F32), yb}, P2{((x - t : F32) + 0.5 : F32), yt}, P2{xl, (y + 0.5 : F32)}, P2{xr, (y + 0.5 : F32)},
-    P2{((x + w : F32) - 0.5 : F32), yt}, P2{((x + w : F32) - 0.5 : F32), yb}, P2{xr, ((y + h : F32) - 0.5 : F32)}, P2{xl, ((y + h : F32) - 0.5 : F32)},
-    P2{(x + 0.5 : F32), yb}, P2{(x + 0.5 : F32), yt}}
+  +x0 = (x + r : F32)
+  +x1 = ((x + w : F32) - r : F32)
+  +x2 = (x + w : F32)
+  +x4 = ((x + w : F32) - t : F32)
+  +x5 = (x + t : F32)
+  +y1 = (y + r : F32)
+  +y2 = ((y + h : F32) - r : F32)
+  +y3 = (y + h : F32)
+  +y4 = (y + t : F32)
+  +y5 = ((y + h : F32) - t : F32)
+  Outline{P2{x0, y}, P2{x1, y}, P2{x2, y1}, P2{x2, y2}, P2{x1, y3}, P2{x0, y3}, P2{x, y2}, P2{x, y1},
+    P2{x0, y4}, P2{x1, y4}, P2{x4, y1}, P2{x4, y2}, P2{x1, y5}, P2{x0, y5}, P2{x5, y2}, P2{x5, y1}}
 
-# Thick (lineThick > 1): four quads between the outer and inner edges; thin:
-# four RL_LINES along the outer edge.
+# The four side quads between the outer and inner edges.
 def outline.quads(+color: U32, o: Outline) -> +List<F.Command>:
   Outline{+p0, +p1, +p2, +p3, +p4, +p5, +p6, +p7, +p8, +p9, +p10, +p11, +p12, +p13, +p14, +p15} = o
   List.append(&2, F.Command, quad.at(color, p0, p8, p9, p1), List.append(&2, F.Command, quad.at(color, p2, p10, p11, p3),
     List.append(&2, F.Command, quad.at(color, p13, p5, p4, p12), quad.at(color, p15, p7, p6, p14))))
 
-def outline.lines(+color: U32, o: Outline) -> +List<F.Command>:
-  Outline{+p0, +p1, +p2, +p3, +p4, +p5, +p6, +p7, _, _, _, _, _, _, _, _} = o
-  [F.Color{color}, P2.point(p0), P2.point(p1), F.Color{color}, P2.point(p2), P2.point(p3), F.Color{color}, P2.point(p4), P2.point(p5),
-    F.Color{color}, P2.point(p6), P2.point(p7)]
+# The corner quads around P16..P19 (the corners of P8..P11's rectangle).
+def rounded_lines.corners(+gnu: Bool, +x: F32, +y: F32, +w: F32, +h: F32, +inner: F32, +outer: F32, +step: F32, +segments: F32, +color: U32) -> Plan:
+  +n = U32.to_nat(F32.to_u32(segments))
+  +left = (x + outer : F32)
+  +top = (y + outer : F32)
+  +right = ((x + w : F32) - outer : F32)
+  +bottom = ((y + h : F32) - outer : F32)
+  Plan.join(rounded_lines.arc(n, gnu, left, top, inner, outer, 180.0, step, color), Plan.join(rounded_lines.arc(n, gnu, right, top, inner, outer, 270.0, step, color),
+    Plan.join(rounded_lines.arc(n, gnu, right, bottom, inner, outer, 0.0, step, color), rounded_lines.arc(n, gnu, left, bottom, inner, outer, 90.0, step, color))))
 
-def outline.sides(thick: Bool, +color: U32, o: Outline) -> +List<F.Command>:
-  match thick:
-    case True{}: outline.quads(color, o)
-    case False{}: outline.lines(color, o)
-
-def rounded_lines.wrap(thick: Bool, plan: Plan) -> Plan:
-  match thick:
-    case True{}: Plan.textured(4, plan)
-    case False{}: Plan.plain(2, plan)
-
-def rounded_lines.drawn(count: Maybe<F32>, +gnu: Bool, +x: F32, +y: F32, +w: F32, +h: F32, +r: F32, +t: F32, +color: U32) -> Plan:
+# Corners first, then the sides, as quads.
+def rounded_lines.drawn(count: Maybe<F32>, +gnu: Bool, +x: F32, +y: F32, +w: F32, +h: F32, +inner: F32, +outer: F32, +t: F32, +color: U32) -> Plan:
   match count:
     case None{}: Plan.refused()
     case Some{+segments}:
-      +thick = (t > 1.0 : F32)
-      rounded_lines.wrap(thick, Plan.join(rounded_lines.corners(thick, gnu, x, y, w, h, r, (r + t : F32), (90.0 / segments : F32), segments, color),
-        Plan.only(True{}, outline.sides(thick, color, outline.points(x, y, w, h, r, t)))))
+      Plan.textured(4, Plan.join(rounded_lines.corners(gnu, x, y, w, h, inner, outer, (90.0 / segments : F32), segments, color),
+        Plan.only(True{}, outline.quads(color, outline.points(x, y, w, h, outer, t)))))
 
-def rounded_lines.sized(empty: Bool, +lm: U32, +x: F32, +y: F32, +w: F32, +h: F32, +r: F32, +t: F32, +segments: F32, +color: U32) -> Plan:
+# A thickness inside the corner radius r: an inner radius r - thick, or, when
+# that is <= 0, an inner radius 0, the rounded part r thick and the rest
+# drawn first by DrawRectangleLinesEx inside the rounded outline.
+def rounded_lines.inward(deep: Bool, +lm: U32, +x: F32, +y: F32, +w: F32, +h: F32, +r: F32, +thick: F32, +segments: F32, +color: U32) -> Plan:
+  match deep:
+    case False{}: rounded_lines.drawn(corner.segments(lm, r, segments), gnu.of(lm), x, y, w, h, (r - thick : F32), r, thick, color)
+    case True{}:
+      Plan.join(rectangle.lines_ex((x + r : F32), (y + r : F32), (w - (r * 2.0 : F32) : F32), (h - (r * 2.0 : F32) : F32), (thick - r : F32), color),
+        rounded_lines.drawn(corner.segments(lm, r, segments), gnu.of(lm), x, y, w, h, 0.0, r, r, color))
+
+# A negative thickness grows the rectangle by -thick on each side: the inner
+# radius is r, the outer one r - thick.
+def rounded_lines.side(inward: Bool, +lm: U32, +x: F32, +y: F32, +w: F32, +h: F32, +r: F32, +thick: F32, +segments: F32, +color: U32) -> Plan:
+  match inward:
+    case True{}: rounded_lines.inward(((r - thick : F32) <= 0.0 : F32), lm, x, y, w, h, r, thick, segments, color)
+    case False{}:
+      rounded_lines.drawn(corner.segments(lm, r, segments), gnu.of(lm), (x + thick : F32), (y + thick : F32), (w - (thick * 2.0 : F32) : F32),
+        (h - (thick * 2.0 : F32) : F32), r, (r - thick : F32), F32.neg(thick), color)
+
+def rounded_lines.sized(empty: Bool, +lm: U32, +x: F32, +y: F32, +w: F32, +h: F32, +r: F32, +thick: F32, +segments: F32, +color: U32) -> Plan:
   match empty:
     case True{}: Plan.empty()
-    case False{}: rounded_lines.drawn(corner.segments(lm, r, 2.0, segments), gnu.of(lm), x, y, w, h, r, t, color)
+    case False{}: rounded_lines.side((thick >= 0.0 : F32), lm, x, y, w, h, r, thick, segments, color)
 
-def rounded_lines.round(flat: Bool, +lm: U32, +x: F32, +y: F32, +w: F32, +h: F32, +roundness: F32, +segments: F32, +t: F32, +color: U32) -> Plan:
+def rounded_lines.round(flat: Bool, +lm: U32, +x: F32, +y: F32, +w: F32, +h: F32, +roundness: F32, +segments: F32, +thick: F32, +color: U32) -> Plan:
   match flat:
-    case True{}: rectangle.lines_ex((x - t : F32), (y - t : F32), (w + (2.0 * t : F32) : F32), (h + (2.0 * t : F32) : F32), t, color)
+    case True{}: rectangle.lines_ex(x, y, w, h, thick, color)
     case False{}:
       +r = corner.radius(w, h, Bool.pick(F32, (roundness >= 1.0 : F32), 1.0, roundness))
-      rounded_lines.sized((r <= 0.0 : F32), lm, x, y, w, h, r, t, segments, color)
+      rounded_lines.sized((r <= 0.0 : F32), lm, x, y, w, h, r, thick, segments, color)
 
-# DrawRectangleRoundedLinesEx: a negative thickness becomes 0; roundness <= 0
-# draws DrawRectangleLinesEx around the rectangle; corners with segments below
-# 4 estimated; thickness above 1 draws quads, otherwise RL_LINES.
+# DrawRectangleRoundedLinesEx (raylib 6.2): roundness <= 0 draws
+# DrawRectangleLinesEx(rec, thick); corners (segments below 1 estimated) and
+# sides are quads between an outer and an inner edge, inside the rectangle
+# for a thickness >= 0 and outside it for a negative one.
 def rounded_lines(+lm: U32, +x: F32, +y: F32, +w: F32, +h: F32, +roundness: F32, +segments: F32, +thick: F32, +color: U32) -> Plan:
-  rounded_lines.round((roundness <= 0.0 : F32), lm, x, y, w, h, roundness, segments, Bool.pick(F32, (thick < 0.0 : F32), 0.0, thick), color)
+  rounded_lines.round((roundness <= 0.0 : F32), lm, x, y, w, h, roundness, segments, thick, color)
 
 # -----------------------------------------------------------------------------
 # Splines (SPLINE_SEGMENT_DIVISIONS 24)
@@ -1031,14 +2015,6 @@ def basis.points(n: Nat, +divided: Bool, +i: F32, +bx: Basis, +by: Basis) -> +Li
     case 1n+k:
       +t = spline.t(divided, i)
       Con{P2{basis.at(bx, t), basis.at(by, t)}, basis.points(k, divided, (i + 1.0 : F32), bx, by)}
-
-def P2.x(+p: P2) -> F32:
-  P2{x, _} = p
-  x
-
-def P2.y(+p: P2) -> F32:
-  P2{_, y} = p
-  y
 
 # DrawSplineSegmentBasis: the B-spline coefficients divided by 6; i = 0 moves
 # the current point to the curve start (its strip points are overwritten).

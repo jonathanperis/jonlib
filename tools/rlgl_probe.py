@@ -21,8 +21,11 @@ rlReadScreenPixels (smaller and larger than the screen), rlReadTexturePixels,
 the render batch functions (a zeroed batch,
 rlDrawRenderBatch, rlSetRenderBatchActive, rlUnloadRenderBatch),
 rlLoadExtensions and rlGetProcAddress, the matrix and state getters and the
-OpenGL 3.3-only calls that do nothing on the software renderer. Getter
-results (F32 bits, ids) are appended to the scene's row.
+OpenGL 3.3-only calls that do nothing on the software renderer, and
+raylib 6.2's rasterizer: flat and interpolated primitives, the texture
+filter picked per triangle, spans and quads clamped under a viewport larger
+than the screen. Getter results (F32 bits, ids) are appended to the scene's
+row.
 
 Three tables check the numerical profiles the shapes rely on: the host
 powf(x, 3) against Jonlib's glibc 2.39 powf on the 48 arguments
@@ -103,11 +106,11 @@ def corner_args(segments, quads):
 
 
 def arc_segments(start, end, segments, libm):
-    """(start, end, segments) of an arc, [] when empty, None when refused for this host."""
+    """(start, end, segments) of an arc (raylib 6.2: limited to one turn), [] when empty, None when refused
+    for this host."""
     if start == end:
         return []
-    if end < start:
-        start, end = end, start
+    start, end = fp.arc_order(start, end)
     span = f32(end - start)
     minimum = math.ceil(f32(span / 90.0)) if math.isfinite(span) else None
     if minimum is None or fp.c_int(segments) is None:
@@ -168,16 +171,22 @@ def op_refused(op, libm):
     """Whether Jonlib refuses this operation on this host (declared contracts and libm profile)."""
     name, a = op[0], op[1:]
     args = []
+    if name in ('sector_ex', 'ring_ex'):
+        return thick_refused(name, a, libm)
     if name == 'ring_lines':
         inner, outer, start, end, segments = a[2:7]
         if outer < inner:
-            inner, outer = outer, (0.1 if inner <= 0.0 else inner)
+            inner, outer = outer, inner
+        if outer <= 0.0:
+            return False
         plan = arc_segments(start, end, segments, libm)
         if plan is None:
             return True
         if plan and plan != 'estimated':
             args = fp.sector_args(*plan) if False else (stepped(*plan) if inner > 0.0 else fp.stepped_args(start, end, segments))
     elif name in ('sector2', 'sector_lines2', 'ring2'):
+        if (a[2] if name != 'ring2' else max(a[2], a[3])) <= 0.0:
+            return False
         start, end, segments = (a[3], a[4], a[5]) if name != 'ring2' else (a[4], a[5], a[6])
         plan = arc_segments(start, end, segments, libm)
         if plan is None:
@@ -197,9 +206,8 @@ def op_refused(op, libm):
         args = fp.poly_args(a[2], a[4])
     elif name in ('rounded', 'rounded_lines', 'rounded_lines_ex'):
         x, y, w, h, roundness, segments = a[:6]
-        thick = a[6] if name == 'rounded_lines_ex' else 1.0
         if roundness <= 0.0:
-            return False
+            return name == 'rounded_lines' and any(fp.c_int(v) is None for v in (x, y, w, h))
         roundness = 1.0 if roundness >= 1.0 else roundness
         radius = f32(f32(h * roundness) / 2.0) if w > h else f32(f32(w * roundness) / 2.0)
         if radius <= 0.0:
@@ -207,7 +215,7 @@ def op_refused(op, libm):
         n = fp.c_int(segments)
         if n is None:
             return True
-        if n < 4:
+        if n < 1:
             return libm != 'Glibc239Libm'
         if n > 4096:
             return True
@@ -232,6 +240,33 @@ def op_refused(op, libm):
     if args is None:
         return True
     return not all(fp.accepted(libm, x) for x in args)
+
+
+def thick_refused(name, a, libm):
+    """DrawCircleSectorLinesEx/DrawRingLinesEx: empty draws, segment counts and the (int)NaN step count of a ring
+    with no inner radius and a zero thickness decide on every host; then Apple refuses the apothem's cosf
+    argument (DEG2RAD*(span/2))/segments unless it is fl(DEG2RAD*d), which the scenes avoid (their caps take
+    asinf/atan2f/sinf/cosf of computed angles Apple's profile does not cover), and glibc reproduces the rest."""
+    if name == 'sector_ex':
+        radius, start, end, segments, thick = a[2:7]
+        inner = radius
+    else:
+        inner, radius, start, end, segments, thick = a[2:8]
+        inner, radius = (radius, inner) if radius < inner else (inner, radius)
+    if start == end or radius <= 0.0:
+        return False
+    plan = arc_segments(start, end, segments, libm)
+    if plan is None:
+        return True
+    if name == 'ring_ex' and thick == 0.0 and inner <= 0.0:
+        return True
+    if libm != 'AppleLibm' or plan == 'estimated':
+        return False
+    first, last, n = plan
+    arg = f32(f32(DEG2RAD * f32(f32(last - first) / 2.0)) / n)
+    if fp.accepted(libm, arg):
+        raise ProbeFailure(f'rlgl: {name}{a[:8]}: the Apple apothem argument is verified; choose another scene')
+    return True
 
 
 def refused(scene, libm):
@@ -275,20 +310,60 @@ def scenes():
                                   ('poly_ex', 30.0, 22.0, 4.0, 7.5, -90.0, 10.0, HALF[0]), ('poly_ex', 20.0, 15.0, 2.0, 4.0, -180.0, -1.0, WHITE),
                                   ('poly_ex', 20.0, 15.0, 6.0, 3.0, -360.0, 1.0, BLUE), ('end',)])
     add('poly-lines-ex-sides', 16, 12, [('poly_ex', 8.0, 6.0, 5000.0, 3.0, 0.0, 1.0, WHITE)])
+    # raylib 6.2: the apothem scales the thickness; zero, negative and inner-radius-clamping thicknesses.
+    add('poly-lines-ex-62', 40, 30, [('begin',), ('clear', C(30, 30, 30)), ('poly_ex', 10.0, 10.0, 6.0, 7.0, 0.0, 0.0, RED),
+                                     ('poly_ex', 28.0, 10.0, 3.0, 5.0, -90.0, -2.5, HALF[2]), ('poly_ex', 10.0, 22.0, 4.0, 5.0, 45.0, 9.0, GREEN),
+                                     ('poly_ex', 30.0, 22.0, 8.0, 6.0, 0.0, -0.75, HALF[0]), ('poly_ex', 20.0, 15.0, 5.0, 0.0, 0.0, 1.0, WHITE),
+                                     ('poly_ex', 20.0, 15.0, 12.0, 4.0, 30.0, 4.5, BLUE), ('end',)])
     add('arc-estimate', 40, 30, [('begin',), ('clear', BLACK), ('sector2', 12.0, 12.0, 8.0, 0.0, 300.0, 1.0, RED),
                                  ('sector_lines2', 28.0, 12.0, 7.0, 45.0, 315.0, 0.0, WHITE), ('ring2', 12.0, 24.0, 2.0, 5.0, 0.0, 360.0, 2.0, HALF[2]),
                                  ('ring_lines', 28.0, 24.0, 2.5, 5.5, 10.0, 350.0, -4.0, GREEN), ('sector2', 20.0, 15.0, 0.6, 0.0, 180.0, 1.0, BLUE),
                                  ('end',)])
-    add('arc-estimate-small-radius', 16, 12, [('sector2', 8.0, 6.0, -1.0, 0.0, 360.0, 0.0, RED)], contract=True)
+    add('arc-estimate-small-radius', 16, 12, [('sector2', 8.0, 6.0, 0.1, 0.0, 360.0, 0.0, RED)], contract=True)
+    # raylib 6.2: whole turns lose DrawRingLines' cap lines; outer radii <= 0 draw nothing.
+    add('ring-lines-62', 33, 25, [('begin',), ('clear', C(240, 240, 240)), ('ring_lines', 16.0, 12.0, 4.0, 9.0, -30.0, 400.0, 12.0, RED),
+                                  ('ring_lines', 8.0, 8.0, 0.0, 5.0, 90.0, -270.0, 12.0, HALF[2]), ('ring_lines', 24.0, 16.0, 3.0, 6.0, 360.0, 0.0, 8.0, BLUE),
+                                  ('ring_lines', 25.0, 6.0, 0.0, -1.0, 0.0, 90.0, 3.0, GREEN), ('sector_lines2', 6.0, 18.0, 0.0, 0.0, 90.0, 4.0, BLACK),
+                                  ('ring2', 26.0, 20.0, -3.0, -2.0, 0.0, 90.0, 4.0, BLACK), ('end',)])
+
+    # DrawCircleSectorLinesEx and DrawRingLinesEx (raylib 6.2): caps inside (S1 inside and outside the circle),
+    # covered sectors and rings, negative thicknesses (caps crossing or not), whole turns, zero thickness and
+    # radius, swapped radii and angles, an estimated segment count. Apple refuses them (computed angles).
+    add('sector-lines-ex', 40, 30, [('begin',), ('clear', C(20, 20, 30)), ('sector_ex', 20.0, 15.0, 10.0, 0.0, 90.0, 6.0, 2.0, RED),
+                                    ('sector_ex', 12.0, 12.0, 8.0, 30.0, 300.0, 12.0, 1.5, HALF[2]), ('sector_ex', 28.0, 20.0, 7.0, 200.0, 20.0, 9.0, -1.5, GREEN),
+                                    ('sector_ex', 20.0, 15.0, 6.0, 0.0, 360.0, 12.0, 1.0, WHITE), ('sector_ex', 20.0, 15.0, 6.0, -45.0, 400.0, 12.0, -1.0, HALF[0]),
+                                    ('sector_ex', 10.0, 20.0, 4.0, 0.0, 120.0, 4.0, 6.0, BLUE), ('sector_ex', 30.0, 8.0, 0.0, 0.0, 90.0, 4.0, 1.0, RED),
+                                    ('sector_ex', 30.0, 8.0, 5.0, 10.0, 10.0, 4.0, 1.0, RED), ('sector_ex', 30.0, 24.0, 5.0, 0.0, 60.0, 2.0, 0.0, WHITE),
+                                    ('end',)])
+    add('sector-lines-ex-caps', 40, 30, [('begin',), ('clear', BLACK), ('sector_ex', 12.0, 12.0, 10.0, 0.0, 41.0, 1.0, 4.0, RED),
+                                         ('sector_ex', 26.0, 14.0, 8.0, 15.0, 315.0, 10.0, 4.0, HALF[2]), ('sector_ex', 10.0, 22.0, 6.0, 0.0, 20.0, 2.0, -3.0, GREEN),
+                                         ('sector_ex', 30.0, 22.0, 6.0, 30.0, 90.0, 3.0, -2.0, WHITE), ('sector_ex', 20.0, 8.0, 5.0, 0.0, 200.0, 7.0, 2.5, HALF[1]),
+                                         ('end',)])
+    add('ring-lines-ex', 40, 30, [('begin',), ('clear', C(240, 240, 240)), ('ring_ex', 20.0, 15.0, 5.0, 10.0, 0.0, 90.0, 6.0, 1.5, RED),
+                                  ('ring_ex', 12.0, 12.0, 3.0, 8.0, 30.0, 300.0, 12.0, 1.0, HALF[2]), ('ring_ex', 28.0, 20.0, 4.0, 7.0, 200.0, 20.0, 9.0, -1.0, GREEN),
+                                  ('ring_ex', 20.0, 15.0, 4.0, 8.0, 0.0, 360.0, 12.0, 1.0, BLACK), ('ring_ex', 20.0, 15.0, 4.0, 8.0, -45.0, 400.0, 12.0, -1.0, HALF[0]),
+                                  ('ring_ex', 10.0, 20.0, 2.0, 4.0, 0.0, 120.0, 4.0, 3.0, BLUE), ('ring_ex', 30.0, 8.0, 0.0, 5.0, 0.0, 90.0, 4.0, -1.0, RED),
+                                  ('ring_ex', 30.0, 8.0, 0.0, 5.0, 0.0, 90.0, 4.0, 1.0, HALF[2]), ('ring_ex', 30.0, 24.0, 6.0, 3.0, 60.0, 0.0, 3.0, 0.5, BLACK),
+                                  ('ring_ex', 5.0, 5.0, -2.0, -1.0, 0.0, 90.0, 4.0, 1.0, RED), ('end',)])
+    add('ring-lines-ex-caps', 40, 30, [('begin',), ('clear', BLACK), ('ring_ex', 12.0, 12.0, 3.0, 12.0, 0.0, 30.0, 6.0, 2.0, RED),
+                                       ('ring_ex', 28.0, 12.0, 3.0, 12.0, 100.0, 130.0, 5.0, 2.0, HALF[2]), ('ring_ex', 12.0, 24.0, 2.0, 9.0, 0.0, 50.0, 4.0, -2.0, GREEN),
+                                       ('ring_ex', 30.0, 24.0, 4.0, 8.0, 0.0, 11.0, 1.0, -2.0, WHITE), ('ring_ex', 20.0, 15.0, 2.0, 14.0, 0.0, 80.0, 4.0, 0.0, BLUE),
+                                       ('end',)])
+    add('thick-lines-ex-estimate', 40, 30, [('begin',), ('clear', BLACK), ('sector_ex', 12.0, 14.0, 9.0, 0.0, 300.0, 1.0, 1.0, BLUE),
+                                            ('ring_ex', 28.0, 15.0, 6.0, 10.0, 0.0, 300.0, 1.0, 0.5, HALF[1]), ('end',)])
+    # (int)NaN steps: no inner radius and a zero thickness divide 0 by 0.
+    add('ring-lines-ex-nan-steps', 16, 12, [('ring_ex', 8.0, 6.0, 0.0, 5.0, 0.0, 90.0, 4.0, 0.0, RED)], contract=True)
 
     # Rounded rectangles.
-    for k, segs in enumerate((5.0, 6.0, 9.0, 10.0, 18.0, 2.0)):
+    for k, segs in enumerate((5.0, 6.0, 9.0, 10.0, 18.0, 2.0, 1.0, 0.0)):
         ops = [('begin',), ('clear', (C(250, 250, 250), TRANS_BG)[k % 2]),
                ('rounded', 2.0, 2.0, 20.0, 12.0, 0.5, segs, RED), ('rounded', 24.5, 2.5, 13.0, 18.0, 1.0, segs, HALF[2]),
                ('rounded', 3.0, 17.0, 16.0, 10.0, 0.0, segs, GREEN), ('rounded', 2.0, 30.0, 12.0, 6.0, 0.25, segs, HALF[0]),
                ('rounded_lines', 20.0, 24.0, 18.0, 12.0, 0.6, segs, BLUE), ('rounded_lines_ex', 4.0, 40.0, 30.0, 10.0, 0.8, segs, 3.0, HALF[1]),
                ('rounded_lines_ex', 26.0, 2.0, 12.0, 0.0, 0.5, segs, 2.0, WHITE), ('rounded_lines_ex', 6.0, 30.5, 8.0, 5.0, 0.0, segs, 1.5, RED),
-               ('rounded_lines_ex', 20.0, 40.0, 16.0, 9.0, 0.5, segs, -1.0, BLACK), ('end',)]
+               ('rounded_lines_ex', 20.0, 40.0, 16.0, 9.0, 0.5, segs, -1.0, BLACK), ('rounded_lines', 30.5, 30.5, 8.0, 6.0, 0.0, segs, GREEN),
+               ('rounded_lines_ex', 22.0, 13.0, 16.0, 10.0, 0.4, segs, 3.5, HALF[2]), ('rounded_lines_ex', 2.0, 46.0, 10.0, 4.0, 0.0, segs, -1.5, WHITE),
+               ('end',)]
         add(f'rounded-{int(segs)}', 40, 52, ops)
 
     # Splines.
@@ -418,6 +493,76 @@ def scenes():
                                ('rl_begin', 1), ('c4ub', 255, 255, 0, 255), ('v3f', -1.5, 0.0, -0.5), ('v3f', 1.5, 0.5, -10.0), ('rl_end',),
                                ('get', 'projection'), ('pop',), ('matrix_mode', 0x1701), ('pop',), ('matrix_mode', 0x1700), ('toggle', 'depth', False),
                                ('toggle', 'cull', True), ('rect', 1.0, 1.0, 3.0, 3.0, WHITE), ('end',)])
+    # raylib 6.2's rasterizer: a primitive whose pushed colors are all equal is flat colored (a triangle with its
+    # sorted top vertex's projected color times rcp(w), an axis-aligned quad with its top-left corner's color), one
+    # whose colors differ (in alpha alone too) interpolates; flat and gradient triangles, quads and fans, translucent
+    # and opaque, then the same under a perspective frustum (w differs per vertex) with a flat-tinted textured quad.
+    add('rl-color-interp', 32, 24, [('begin',), ('clear', C(30, 30, 40)), ('toggle', 'cull', False),
+                                    ('rl_begin', 4), ('c4ub', 200, 100, 50, 255), ('v2f', 1.0, 1.0), ('v2f', 1.5, 11.0), ('v2f', 12.5, 10.25), ('rl_end',),
+                                    ('rl_begin', 4), ('c4ub', 20, 200, 90, 130), ('v2f', 4.0, 2.0), ('v2f', 6.0, 14.0), ('v2f', 15.0, 5.0), ('rl_end',),
+                                    ('rl_begin', 4), ('c4ub', 255, 0, 0, 255), ('v2f', 14.0, 1.0), ('c4ub', 0, 255, 0, 255), ('v2f', 16.5, 12.0),
+                                    ('c4ub', 0, 0, 255, 255), ('v2f', 31.0, 3.5), ('rl_end',),
+                                    ('rl_begin', 4), ('c4ub', 255, 255, 255, 255), ('v2f', 18.0, 6.0), ('c4ub', 255, 255, 255, 120), ('v2f', 20.0, 16.0),
+                                    ('c4ub', 255, 255, 255, 255), ('v2f', 30.0, 12.0), ('rl_end',),
+                                    ('rl_begin', 7), ('c4ub', 90, 160, 200, 255), ('v2f', 2.0, 14.0), ('v2f', 2.0, 22.5), ('v2f', 10.5, 22.5), ('v2f', 10.5, 14.0),
+                                    ('rl_end',),
+                                    ('rl_begin', 7), ('c4ub', 200, 0, 0, 200), ('v2f', 12.0, 15.0), ('c4ub', 0, 200, 0, 200), ('v2f', 12.0, 23.0),
+                                    ('c4ub', 0, 200, 200, 200), ('v2f', 22.0, 23.0), ('c4ub', 200, 0, 200, 200), ('v2f', 22.0, 15.0), ('rl_end',),
+                                    ('rl_begin', 7), ('c4ub', 250, 250, 250, 160), ('v2f', 24.0, 15.0), ('v2f', 25.0, 23.0), ('v2f', 31.0, 22.0), ('v2f', 30.0, 16.0),
+                                    ('rl_end',), ('c4f', 0.25, 0.5, 0.75, 1.0), ('rl_begin', 4), ('v2f', 8.0, 16.0), ('v2f', 9.0, 21.0), ('v2f', 13.0, 18.5),
+                                    ('rl_end',), ('toggle', 'cull', True), ('end',)])
+    add('rl-color-interp-frustum', 32, 24, [('begin',), ('clear', BLACK), ('matrix_mode', 0x1701), ('push',), ('identity',),
+                                            ('frustum', -0.5, 0.5, -0.375, 0.375, 1.0, 16.0), ('matrix_mode', 0x1700), ('push',), ('identity',),
+                                            ('toggle', 'cull', False),
+                                            ('rl_begin', 4), ('c4ub', 200, 120, 40, 255), ('v3f', -2.0, -1.0, -3.0), ('v3f', 2.0, -1.0, -7.0), ('v3f', 0.0, 2.0, -4.0),
+                                            ('rl_end',),
+                                            ('rl_begin', 4), ('c4ub', 40, 220, 120, 160), ('v3f', -3.0, 1.5, -5.0), ('v3f', -0.5, -2.0, -2.5), ('v3f', 1.0, 1.0, -9.0),
+                                            ('rl_end',),
+                                            ('rl_begin', 4), ('c4ub', 255, 0, 0, 255), ('v3f', 1.0, -2.0, -3.0), ('c4ub', 0, 255, 0, 255), ('v3f', 4.0, -1.0, -6.0),
+                                            ('c4ub', 0, 0, 255, 255), ('v3f', 2.5, 2.0, -5.0), ('rl_end',),
+                                            ('load', 0, tex), ('set_texture', 0, NONE), ('rl_begin', 7), ('c4ub', 255, 200, 160, 255), ('tc', 0.0, 0.0),
+                                            ('v3f', -3.0, -2.0, -8.0), ('tc', 0.0, 1.0), ('v3f', -3.0, 2.0, -8.0), ('tc', 1.0, 1.0), ('v3f', 3.0, 2.0, -2.0),
+                                            ('tc', 1.0, 0.0), ('v3f', 3.0, -2.0, -2.0), ('rl_end',), ('set_texture_null', 0),
+                                            ('pop',), ('matrix_mode', 0x1701), ('pop',), ('matrix_mode', 0x1700), ('toggle', 'cull', True), ('end',)])
+    # An axis-aligned quad interpolates from three corners (top-left, top-right, bottom-left): colors that do not
+    # form a parallelogram extrapolate past 0..1 at the fourth, a byte conversion the hosts' SIMD paths store apart
+    # (x86-64 saturates, arm64 NEON wraps), so the gradient quads above keep their corners consistent and this is a contract.
+    add('rl-quad-extrapolated', 32, 24, [('begin',), ('clear', C(30, 30, 40)), ('toggle', 'cull', False), ('rl_begin', 7),
+                                         ('c4ub', 255, 0, 0, 255), ('v2f', 12.0, 15.0), ('c4ub', 0, 255, 0, 255), ('v2f', 12.0, 23.0),
+                                         ('c4ub', 0, 0, 255, 255), ('v2f', 22.0, 23.0), ('c4ub', 255, 255, 0, 255), ('v2f', 22.0, 15.0),
+                                         ('rl_end',), ('toggle', 'cull', True), ('end',)], contract=True)
+    # raylib 6.2 picks a triangle's texture filter once, from its plane derivatives (6.0 used each span's x
+    # derivatives and the long edge's per-row step): magnified, minified (texture coordinates past 1 per pixel) and
+    # anisotropic triangles whose long edge steps far but whose plane derivatives magnify, with the minification
+    # filter apart from the magnification one both ways round.
+    MAG, MIN, NEAREST, LINEAR = 0x2800, 0x2801, 0x2600, 0x2601
+    for k, (minf, magf) in enumerate(((LINEAR, NEAREST), (NEAREST, LINEAR))):
+        add(f'rl-texture-filter-pick-{k}', 32, 32, [('begin',), ('clear', C(20, 30, 40)), ('load', 0, tp.image(8, 8, 7, 440 + k)),
+                                                     ('params', 0, MIN, minf), ('params', 0, MAG, magf), ('set_texture', 0, NONE), ('toggle', 'cull', False),
+                                                     ('rl_begin', 4), ('c4ub', 255, 255, 255, 255), ('tc', 0.0, 0.0), ('v2f', 1.0, 1.0), ('tc', 0.0, 0.75),
+                                                     ('v2f', 1.5, 14.0), ('tc', 0.75, 0.5), ('v2f', 14.5, 9.0),
+                                                     ('tc', 0.0, 0.0), ('v2f', 16.0, 1.0), ('tc', 30.0, 2.0), ('v2f', 17.0, 14.0), ('tc', 40.0, 35.0), ('v2f', 31.0, 6.0),
+                                                     ('tc', 1.8, 0.25), ('v2f', 2.0, 18.0), ('tc', 3.6, 0.25), ('v2f', 4.0, 22.0), ('tc', 23.4, 0.25), ('v2f', 26.0, 30.0),
+                                                     ('tc', 0.5, 0.0), ('v2f', 20.0, 24.0), ('tc', 0.5, 1.2), ('v2f', 21.0, 25.0), ('tc', 1.4, 0.6), ('v2f', 30.5, 31.0),
+                                                     ('rl_end',), ('set_texture_null', 0), ('toggle', 'cull', True), ('end',)])
+    # raylib 6.2 clamps triangle spans and axis-aligned quads to the color buffer (rows outside it skipped, the
+    # interpolation started at the first pixel inside) where 6.0 wrote past it: a viewport larger than the screen
+    # puts shapes, gradients, textures and immediate-mode primitives across every edge.
+    add('rl-viewport-overscan', 32, 24, [('begin',), ('clear', C(10, 10, 10)), ('load', 0, tex), ('viewport', -8.0, -6.0, 48.0, 36.0),
+                                         ('rect', 0.0, 0.0, 32.0, 24.0, HALF[2]), ('tri', -3.0, 10.0, 6.0, 30.0, 14.0, 12.0, HALF[1]),
+                                         ('circle_v', 30.0, 2.0, 7.5, HALF[0]), ('circle_v', 16.0, 23.0, 5.0, GREEN), ('draw', 0, 29.0, -2.0, WHITE),
+                                         ('toggle', 'cull', False),
+                                         ('rl_begin', 7), ('c4ub', 230, 41, 55, 255), ('v2f', -2.0, 1.5), ('c4ub', 0, 228, 48, 255), ('v2f', -2.0, 11.0),
+                                         ('c4ub', 0, 121, 241, 255), ('v2f', 10.0, 11.0), ('c4ub', 255, 255, 255, 255), ('v2f', 10.0, 1.5), ('rl_end',),
+                                         ('rl_begin', 7), ('c4ub', 255, 0, 0, 128), ('v2f', 24.0, 18.0), ('v2f', 24.0, 26.0), ('c4ub', 0, 255, 255, 255),
+                                         ('v2f', 34.0, 26.0), ('v2f', 34.0, 18.0), ('rl_end',),
+                                         ('rl_begin', 4), ('c4ub', 200, 40, 40, 230), ('v2f', -4.0, 22.0),
+                                         ('c4ub', 40, 200, 40, 180), ('v2f', 12.0, 27.0), ('c4ub', 40, 40, 200, 230), ('v2f', 9.0, 14.0), ('rl_end',),
+                                         ('set_texture', 0, NONE), ('rl_begin', 4), ('c4ub', 255, 255, 255, 255), ('tc', 0.0, 0.0), ('v2f', 20.0, -3.0),
+                                         ('tc', 3.0, 0.5), ('v2f', 35.0, 4.0), ('tc', 1.0, 2.0), ('v2f', 22.0, 9.0), ('rl_end',), ('set_texture_null', 0),
+                                         ('toggle', 'depth', True), ('rl_begin', 7), ('c4ub', 255, 255, 0, 255), ('v3f', -6.0, -4.0, -0.1), ('v3f', -6.0, 6.0, -0.3),
+                                         ('v3f', 7.0, 6.0, -0.6), ('v3f', 7.0, -4.0, -0.2), ('rl_end',), ('toggle', 'depth', False), ('toggle', 'cull', True),
+                                         ('viewport', 0.0, 0.0, 32.0, 24.0), ('rect', 14.0, 9.0, 4.0, 4.0, WHITE), ('end',)], screen=True)
     add('rl-wire-point', 40, 30, [('begin',), ('clear', C(20, 20, 20)), ('toggle', 'wire', True), ('rect', 3.0, 3.0, 10.0, 8.0, RED),
                                   ('tri', 16.0, 3.0, 16.0, 12.0, 26.0, 12.0, GREEN), ('tri', 30.0, 3.0, 38.0, 12.0, 30.0, 12.0, WHITE),
                                   ('line', 2.0, 15.0, 20.0, 18.0, HALF[0]), ('circle_v', 30.0, 20.0, 5.0, BLUE), ('toggle', 'wire', False),
@@ -468,14 +613,14 @@ def scenes():
     add('rl-client-index-past', 32, 24, [('begin',), ('client', [('bind', VA, 'f', pos), ('elements', 2, 3, [0, 1, 2])]), ('end',)], contract=True)
     # rlResizeFramebuffer: the buffers come back zeroed (color 0, depth 0.0) at the new size, then drawn into; a smaller
     # buffer (the viewport stays 24x16 and rows are bottom-up, so its rows are the screen's lowest) and back. A draw past a
-    # smaller buffer (rlsw writes into its earlier, larger allocation) and a size of 0 are contracts.
+    # smaller buffer is clamped to it (raylib 6.2; 6.0's rlsw wrote into its earlier, larger allocation); a size of 0 is a contract.
     add('rl-resize', 24, 16, [('begin',), ('clear', C(10, 20, 30)), ('rect', 2.0, 1.0, 9.0, 6.0, RED), ('resize', 24, 16),
                               ('rect', 12.0, 8.0, 10.0, 7.0, C(40, 200, 90, 128)), ('end',)])
     add('rl-resize-back', 24, 16, [('begin',), ('clear', C(10, 20, 30)), ('resize', 12, 8), ('rect', 2.0, 10.0, 5.0, 3.0, RED),
                                    ('resize', 24, 16), ('rect', 10.0, 6.0, 5.0, 5.0, C(40, 200, 90, 255)), ('end',)])
     add('rl-resize-depth', 24, 16, [('begin',), ('clear', C(10, 20, 30)), ('toggle', 'depth', True), ('resize', 24, 16),
                                     ('rect', 2.0, 2.0, 8.0, 6.0, RED), ('toggle', 'depth', False), ('rect', 12.0, 2.0, 8.0, 6.0, RED), ('end',)])
-    add('rl-resize-past', 24, 16, [('begin',), ('resize', 12, 8), ('rect', 8.0, 4.0, 10.0, 8.0, RED), ('resize', 24, 16), ('end',)], contract=True)
+    add('rl-resize-past', 24, 16, [('begin',), ('resize', 12, 8), ('rect', 8.0, 4.0, 10.0, 8.0, RED), ('resize', 24, 16), ('end',)])
     add('rl-resize-zero', 24, 16, [('begin',), ('resize', 0, 8), ('resize', 24, 16), ('end',)], contract=True)
     add('rl-readback-past', 24, 16, [('begin',), ('clear', C(10, 20, 30)), ('end',), ('copy', 5, 0, 24, 16, 7)], contract=True)
 
@@ -645,7 +790,7 @@ def cpoints(points):
 def c_op(op):
     name, a = op[0], op[1:]
     if name in tp.SHAPE_OPS or name in ('mode2d', 'end2d', 'push', 'pop', 'identity', 'translate', 'scale', 'rotate', 'mult', 'load', 'unload',
-                                        'filter', 'load_rt', 'begin_rt', 'end_rt', 'draw_rt', 'draw', 'info', 'image'):
+                                        'filter', 'params', 'load_rt', 'begin_rt', 'end_rt', 'draw_rt', 'draw', 'info', 'image'):
         return tp.c_op(op)
     v = fp.cv
     calls = {
@@ -657,6 +802,8 @@ def c_op(op):
         'sector2': lambda: f'DrawCircleSector({v(a[0], a[1])}, {cf(a[2])}, {cf(a[3])}, {cf(a[4])}, {fp.ci(a[5])}, {cc(a[6])});',
         'sector_lines2': lambda: f'DrawCircleSectorLines({v(a[0], a[1])}, {cf(a[2])}, {cf(a[3])}, {cf(a[4])}, {fp.ci(a[5])}, {cc(a[6])});',
         'ring2': lambda: f'DrawRing({v(a[0], a[1])}, {cf(a[2])}, {cf(a[3])}, {cf(a[4])}, {cf(a[5])}, {fp.ci(a[6])}, {cc(a[7])});',
+        'sector_ex': lambda: f'DrawCircleSectorLinesEx({v(a[0], a[1])}, {cf(a[2])}, {cf(a[3])}, {cf(a[4])}, {fp.ci(a[5])}, {cf(a[6])}, {cc(a[7])});',
+        'ring_ex': lambda: f'DrawRingLinesEx({v(a[0], a[1])}, {cf(a[2])}, {cf(a[3])}, {cf(a[4])}, {cf(a[5])}, {fp.ci(a[6])}, {cf(a[7])}, {cc(a[8])});',
         'rounded': lambda: f'DrawRectangleRounded({fp.crec(*a[:4])}, {cf(a[4])}, {fp.ci(a[5])}, {cc(a[6])});',
         'rounded_lines': lambda: f'DrawRectangleRoundedLines({fp.crec(*a[:4])}, {cf(a[4])}, {fp.ci(a[5])}, {cc(a[6])});',
         'rounded_lines_ex': lambda: f'DrawRectangleRoundedLinesEx({fp.crec(*a[:4])}, {cf(a[4])}, {fp.ci(a[5])}, {cf(a[6])}, {cc(a[7])});',
@@ -704,27 +851,27 @@ def c_scene(scene):
 TABLES_C = r'''
 float sun239_acosf(float);
 #define SMOOTH_CIRCLE_ERROR_RATE 0.5f
-/* DrawCircleSector's segment count (pinned rshapes.c), acosf from glibc 2.39. */
+/* DrawCircleSector's segment count (pinned rshapes.c, raylib 6.2), acosf from glibc 2.39. */
 static void arc(float radius, float startAngle, float endAngle, int segments)
 {
     int minSegments = (int)ceilf((endAngle - startAngle)/90);
     if (segments < minSegments)
     {
         float th = sun239_acosf(2*powf(1 - SMOOTH_CIRCLE_ERROR_RATE/radius, 2) - 1);
-        float value = (endAngle - startAngle)*ceilf(2*PI/th)/360;
+        float value = ceilf((endAngle - startAngle)*(2*PI/th)/360.0f);
         if (!(value > -2147483648.0f && value < 2147483648.0f)) { printf(" ub"); return; }
         segments = (int)value;
         if (segments <= 0) segments = minSegments;
     }
     printf(" %d", segments);
 }
-/* DrawRectangleRounded (divisor 4) and DrawRectangleRoundedLinesEx (2). */
-static void corner(float radius, float divisor, int segments)
+/* The rounded rectangles' corner segment count (raylib 6.2: estimated below 1, divided by 4). */
+static void corner(float radius, int segments)
 {
-    if (segments < 4)
+    if (segments < 1)
     {
         float th = sun239_acosf(2*powf(1 - SMOOTH_CIRCLE_ERROR_RATE/radius, 2) - 1);
-        float value = ceilf(2*PI/th)/divisor;
+        float value = ceilf((2*PI/th)/4.0f);
         if (!(value > -2147483648.0f && value < 2147483648.0f)) { printf(" ub"); return; }
         segments = (int)value;
         if (segments <= 0) segments = 4;
@@ -743,22 +890,21 @@ def estimate_rows():
         for start, end in ARC_SPANS:
             for segments in (0, 1, -3):
                 rows.append(('arc', r, start, end, segments))
-        for divisor in (4.0, 2.0):
-            for segments in (0, 3, -1):
-                rows.append(('corner', r, divisor, segments))
+        for segments in (0, 3, -1, 1):
+            rows.append(('corner', r, segments))
     return rows
 
 
 def c_tables():
     lines = ['    { float (*volatile p)(float, float) = powf; float (*volatile c)(float) = cosf; const float step = 1.0f/24;',
              '      printf("P"); for (int i = 1; i <= 24; i++) { float t = step*(float)i; printf(" %u %u", fb(p(1.0f - t, 3)), fb(p(t, 3))); } printf("\\n");',
-             '      printf("Q"); for (int n = 3; n <= 4096; n++) { volatile float e = 360.0f/(float)n*DEG2RAD; volatile float a = DEG2RAD*e/2.0f; printf(" %u", fb(c(a))); } printf("\\n");',
+             '      printf("Q"); for (int n = 3; n <= 4096; n++) { volatile float a = DEG2RAD*180.0f/(float)n; printf(" %u", fb(c(a))); } printf("\\n");',
              '      printf("E");']
     for row in estimate_rows():
         if row[0] == 'arc':
             lines.append(f'      arc({cf(row[1])}, {cf(row[2])}, {cf(row[3])}, {row[4]});')
         else:
-            lines.append(f'      corner({cf(row[1])}, {cf(row[2])}, {row[3]});')
+            lines.append(f'      corner({cf(row[1])}, {row[2]});')
     lines.append('      printf("\\n"); }')
     return '\n'.join(lines)
 
@@ -842,6 +988,8 @@ def shape.draw(kind: U32, +w: +List<U32>, frame: J.Frame) -> J.Frame:
     case 209: J.Draw.rectangle_rounded_lines_for(libm(), frame, wrect(0n, w), wf(4n, w), wf(5n, w), wu(6n, w))
     case 210: J.Draw.rectangle_rounded_lines_ex_for(libm(), frame, wrect(0n, w), wf(4n, w), wf(5n, w), wf(6n, w), wu(7n, w))
     case 211: shape.spline(wu(0n, w), frame, wpoints(U32.to_nat(wu(3n, w)), word.drop(4n, w)), wf(1n, w), wu(2n, w))
+    case 213: J.Draw.circle_sector_lines_ex_for(libm(), frame, wv(0n, w), wf(2n, w), wf(3n, w), wf(4n, w), wf(5n, w), wf(6n, w), wu(7n, w))
+    case 214: J.Draw.ring_lines_ex_for(libm(), frame, wv(0n, w), wf(2n, w), wf(3n, w), wf(4n, w), wf(5n, w), wf(6n, w), wf(7n, w), wu(8n, w))
     case _: shape.segment(wu(0n, w), frame, wpoints(U32.to_nat(wu(3n, w)), word.drop(4n, w)), wf(1n, w), wu(2n, w))
 
 def toggle.blend(on: Bool, frame: J.Frame) -> J.Frame:
@@ -1329,8 +1477,7 @@ def table.pow(n: Nat, +i: F32) -> String:
       " " ++ bits.f(S.cube.value((1.0 - t : F32))) ++ " " ++ bits.f(S.cube.value(t)) ++ table.pow(k, (i + 1.0 : F32))
 
 def table.cos.one(+gnu: Bool, +n: F32) -> String:
-  +e = ((360.0 / n : F32) * S.deg2rad() : F32)
-  +a = ((S.deg2rad() * e : F32) / 2.0 : F32)
+  +a = ((S.deg2rad() * 180.0 : F32) / n : F32)
   Bool.pick(String, Bool.not(gnu) || S.trig.gnu(a), " " ++ bits.f(S.cosine(Trig.sincos_for(gnu, a))), " 0")
 
 def table.cos(n: Nat, +gnu: Bool, +sides: F32) -> String:
@@ -1346,11 +1493,11 @@ def table.count(count: Maybe<F32>) -> String:
 def table.arc(+radius: F32, +start: F32, +end: F32, +segments: F32) -> String:
   table.count(S.segments.resolve(1, radius, (end - start : F32), segments))
 
-def table.corner(+radius: F32, +divisor: F32, +segments: F32) -> String:
-  table.count(S.corner.segments(1, radius, divisor, segments))
+def table.corner(+radius: F32, +segments: F32) -> String:
+  table.count(S.corner.segments(1, radius, segments))
 
 # A segment-estimate row: kind 0 an arc (radius, start, end, segments), 1 a
-# corner (radius, divisor, segments). Rows are data walked by one def: a
+# corner (radius, segments). Rows are data walked by one def: a
 # generated chain of calls made a segment of the generated C too wide.
 type Est is Data:
   Est{kind: U32, a: F32, b: F32, c: F32, d: F32}
@@ -1359,7 +1506,7 @@ def table.row(+row: Est) -> String:
   Est{kind, a, b, c, d} = row
   match kind:
     case 0: table.arc(a, b, c, d)
-    case _: table.corner(a, b, c)
+    case _: table.corner(a, b)
 
 def table.rows(rows: +List<Est>) -> String:
   match rows:
@@ -1368,7 +1515,7 @@ def table.rows(rows: +List<Est>) -> String:
 '''
 
 SHAPE_KINDS = {'bezier': 200, 'dashed': 201, 'ring_lines': 202, 'poly_ex': 203, 'poly2': 204, 'sector2': 205, 'sector_lines2': 206, 'ring2': 207,
-               'rounded': 208, 'rounded_lines': 209, 'rounded_lines_ex': 210, 'spline': 211, 'segment': 212}
+               'rounded': 208, 'rounded_lines': 209, 'rounded_lines_ex': 210, 'spline': 211, 'segment': 212, 'sector_ex': 213, 'ring_ex': 214}
 CALL_KINDS = {'rl_begin': 220, 'rl_end': 221, 'v2i': 222, 'v2f': 223, 'v3f': 224, 'tc': 225, 'normal': 226, 'c4ub': 227, 'c3f': 228, 'c4f': 229,
               'matrix_mode': 230, 'ortho': 231, 'frustum': 232, 'viewport': 233, 'toggle': 234, 'cull_face': 235, 'scissor': 236,
               'line_width': 237, 'point_size': 238, 'clear_color': 239, 'clear_buffers': 240, 'noops': 241, 'resize': 242, 'client': 243}
@@ -1467,7 +1614,7 @@ def render(libm):
                     if row[0] == 'arc':
                         rows.append(f'Est{{0, {bf(row[1])}, {bf(row[2])}, {bf(row[3])}, {bf(float(row[4]))}}}')
                     else:
-                        rows.append(f'Est{{1, {bf(row[1])}, {bf(row[2])}, {bf(float(row[3]))}, 0.0}}')
+                        rows.append(f'Est{{1, {bf(row[1])}, {bf(float(row[2]))}, 0.0, 0.0}}')
                 body.append('def table.estimates() -> String:\n  table.rows([' + ',\n    '.join(rows) + '])')
                 prints.append('    IO.print("P" ++ table.pow(24n, 1.0))')
                 prints.append(f'    IO.print("Q" ++ table.cos(4094n, {gnu}, 3.0))')
@@ -1487,7 +1634,7 @@ def table_expected(p_line, q_line, e_line, libm):
     q = q_line.split()[1:]
     cos = []
     for n, value in zip(range(3, 4097), q):
-        arg = f32(f32(DEG2RAD * f32(f32(360.0 / n) * DEG2RAD)) / 2.0)
+        arg = f32(f32(DEG2RAD * 180.0) / n)
         cos.append(value if fp.accepted(libm, arg) or libm == 'AppleLibm' else '0')
     est = []
     for value in e_line.split()[1:]:
@@ -1495,7 +1642,8 @@ def table_expected(p_line, q_line, e_line, libm):
     return [p_line, 'Q ' + ' '.join(cos), 'E ' + ' '.join(est)]
 
 
-FOLDED = ('DrawCircleSector', 'DrawCircleSectorLines', 'DrawRing', 'DrawRingLines', 'DrawRectangleRounded', 'DrawRectangleRoundedLinesEx')
+FOLDED = ('DrawCircleSector', 'DrawCircleSectorLines', 'DrawCircleSectorLinesEx', 'DrawRing', 'DrawRingLines', 'DrawRingLinesEx',
+          'DrawRectangleRounded', 'DrawRectangleRoundedLines', 'DrawRectangleRoundedLinesEx')
 
 
 def folded_powf(library):

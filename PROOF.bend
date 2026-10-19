@@ -2162,6 +2162,21 @@ def Laws.frame_init_window_wide(height):
 def Laws.frame_plan_refused(commands):
   {==}
 
+def Laws.shapes_whole_turn_caps(inward):
+  {==}
+
+def Laws.shapes_partial_arc_caps(inward):
+  {==}
+
+def Laws.shapes_refused_join(commands):
+  {==}
+
+def Laws.shapes_outline_quad_unverified(x, y):
+  {==}
+
+def Laws.shapes_triangle_is_gradient(x, y, color):
+  {==}
+
 def Laws.input_queue_bounded():
   {==}
 
@@ -2995,6 +3010,33 @@ def Laws.convolution_edge_high():
   {==}
 
 def Laws.ray_sphere_miss_zero():
+  {==}
+
+def Laws.sha_padding_one_block():
+  {==}
+
+def Laws.sha_padding_length_spills():
+  {==}
+
+def Laws.frame_interp_flag_set():
+  {==}
+
+def Laws.frame_interp_flag_keeps_bits():
+  {==}
+
+def Laws.frame_flat_keeps_sampler():
+  {==}
+
+def Laws.frame_flat_not_interp():
+  {==}
+
+def Laws.frame_colors_single_vertex_flat(v):
+  {==}
+
+def Laws.frame_colors_empty_flat():
+  {==}
+
+def Laws.frame_interp_keeps_attributes(flat, at):
   {==}
 
 def Laws.gui_pick_hover_keeps_drag(gui, bounds):

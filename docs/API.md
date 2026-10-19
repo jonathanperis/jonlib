@@ -70,8 +70,7 @@ Native Base64 text, NUL-inclusive encoded sizes and bounded decoding are
 documented in [BASE64.md](BASE64.md).
 Bounded native CRC32 and four-word MD5 results are documented in
 [CHECKSUMS.md](CHECKSUMS.md).
-Native SHA-1/SHA-256 word lists, including the reference SHA-256 padding quirk,
-are documented in [SHA.md](SHA.md).
+Native SHA-1/SHA-256 word lists (standard digests since raylib 6.2) are documented in [SHA.md](SHA.md).
 Bounded quality-8 raw compression, including empty-input and native sequence-limit
 behavior, is documented in [COMPRESSION.md](COMPRESSION.md).
 Path utilities and file data/text/code IO (`Files.*`) are documented in

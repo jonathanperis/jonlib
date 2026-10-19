@@ -328,11 +328,11 @@ def MouseState.set_wheel(mouse: MouseState, wheel: Point) -> MouseState:
   MouseState{offset, scale, position, previous, hidden, on_screen, buttons, previous_buttons, _, previous_wheel} = mouse
   MouseState{offset, scale, position, previous, hidden, on_screen, buttons, previous_buttons, wheel, previous_wheel}
 
-# SetMousePosition (memory platform): current and previous position.
+# SetMousePosition (memory platform, raylib 6.2): the current position only;
+# the previous one stays, so GetMouseDelta sees the move.
 def MouseState.move_to(mouse: MouseState, +x: U32, +y: U32) -> MouseState:
-  MouseState{offset, scale, _, _, hidden, on_screen, buttons, previous_buttons, wheel, previous_wheel} = mouse
-  +position = vector.ints(x, y)
-  MouseState{offset, scale, position, position, hidden, on_screen, buttons, previous_buttons, wheel, previous_wheel}
+  MouseState{offset, scale, _, previous, hidden, on_screen, buttons, previous_buttons, wheel, previous_wheel} = mouse
+  MouseState{offset, scale, vector.ints(x, y), previous, hidden, on_screen, buttons, previous_buttons, wheel, previous_wheel}
 
 def MouseState.set_offset(mouse: MouseState, +x: U32, +y: U32) -> MouseState:
   MouseState{_, scale, position, previous, hidden, on_screen, buttons, previous_buttons, wheel, previous_wheel} = mouse

@@ -34,7 +34,15 @@ and `rlsw.h`, and checked by the probe:
   blend and depth-test states. **Read when a primitive completes:** face
   culling, the scissor, the polygon mode, line width, point radius and the
   viewport. A primitive blends when blending was latched and its texture has
-  alpha or a color with alpha below 1 was set since the previous primitive.
+  alpha or one of its vertices has alpha below 1 (raylib 6.2; 6.0 marked only
+  the first primitive after a translucent color was set). A triangle or quad
+  whose vertex colors are all equal is flat colored, one whose colors differ
+  interpolates them (raylib 6.2's `SW_STATE_COLOR_INTERP`,
+  [FRAME.md](FRAME.md)); lines and points come out the same either way.
+- **Viewports past the screen.** `rlViewport` may reach outside the color
+  buffer: triangle spans and axis-aligned quads are clamped to it, rows
+  outside skipped (raylib 6.2; 6.0 wrote past the buffer), and thin lines
+  clamp their ends as before.
 - **Matrix modes.** `rlMatrixMode` selects rlsw's modelview (8 entries),
   projection (2) or texture (2) stack; other values change nothing. Push,
   pop, identity, `rlMultMatrixf`, translate/rotate/scale, `rlOrtho` and
@@ -95,24 +103,56 @@ and `rlsw.h`, and checked by the probe:
 
 Remaining shapes (`rshapes.c`):
 
-- **Segment estimation.** `DrawCircleSector(Lines)`, `DrawRing(Lines)` and
-  the rounded rectangles estimate segments as
-  `th = acosf(2*powf(1 - 0.5f/r, 2) - 1)`, then `(int)(span*ceilf(2*PI/th)/360)`
-  for arcs (minimum when non-positive) and `(int)(ceilf(2*PI/th)/4)` or `/2`
-  for corners (4 when non-positive). Compilers fold `powf(x, 2)` to `x*x` (the
-  probe checks with `objdump` that the reference functions call `acosf` and no
-  `powf`). `acosf` is reproduced for `M.Glibc239Libm{}` (glibc 2.39's
+- **Segment estimation.** `DrawCircleSector(Lines)`, `DrawRing(Lines)`, the
+  `*LinesEx` arcs and the rounded rectangles estimate segments as
+  `th = acosf(2*powf(1 - 0.5f/r, 2) - 1)`, then (raylib 6.2)
+  `(int)ceilf(span*(2*PI/th)/360.0f)` for arcs below `ceil(span/90)` segments
+  (minimum when non-positive) and `(int)ceilf((2*PI/th)/4.0f)` for corners
+  below 1 segment (4 when non-positive). Compilers fold `powf(x, 2)` to `x*x`
+  (the probe checks with `objdump` that the reference functions call `acosf`
+  and no `powf`). `acosf` is reproduced for `M.Glibc239Libm{}` (glibc 2.39's
   `e_acosf.c`, [INVERSE-TRIG.md](INVERSE-TRIG.md)); an estimate under another
-  profile is refused, as is a count above 4096.
+  profile is refused, as is a count above 4096. The arcs count their span
+  after raylib 6.2 limits it to one turn, and draw nothing for a radius `<= 0`
+  ([FRAME.md](FRAME.md#state-and-api)).
 - **Shapes texture.** `SetShapesTexture(texture, source)` makes textured
   shapes sample it with `source/size` coordinates (F32, as `rshapes.c` divides
   by the int size). Id 0 or an empty source resets to
   `(Texture2D){ 1, 1, 1, 1, 7 }` and `(0, 0, 1, 1)`, which samples rlsw's
   texture 1, the whole default font atlas.
-- **`DrawPolyLinesEx`** evaluates `cosf(DEG2RAD*(360/sides*DEG2RAD)/2)`
-  (raylib's double `DEG2RAD`); the Apple host's `cosf` is correctly rounded on
-  every such argument for 3..4096 sides (checked by the probe), so this
-  profile accepts them all.
+- **`DrawPolyLinesEx`** (raylib 6.2) evaluates the apothem
+  `radius*cosf(DEG2RAD*180.0f/sides)` (`DEG2RAD*180.0f` is `PI` in binary32)
+  and scales the thickness by `radius/apothem`: a thickness `>= 0` keeps the
+  outer radius and moves the inner one to `fmaxf(0, radius - thick*ratio)`, a
+  negative one keeps the inner radius and moves the outer one out. The Apple
+  profile accepts the `cosf` of every such argument for 3..4096 sides; the
+  probe compares the host `cosf` with Jonlib's on all 4094 of them, so a
+  macOS run re-verifies the claim.
+- **Rounded rectangles** (raylib 6.2). `DrawRectangleRoundedLines` has its
+  own `RL_LINES`: the corner arcs of the corner radius around centers half a
+  pixel inside, then the four sides; roundness `<= 0` draws
+  `DrawRectangleLines` with the rectangle converted to C ints.
+  `DrawRectangleRoundedLinesEx` draws textured corner and side quads between
+  an outer and an inner edge: inside the rectangle for a thickness `>= 0`
+  (beyond the corner radius the inner rounded part is the radius and the rest
+  is drawn first with `DrawRectangleLinesEx` inside it), outside it for a
+  negative one; roundness `<= 0` draws `DrawRectangleLinesEx(rec, thick)`.
+- **`DrawCircleSectorLinesEx` and `DrawRingLinesEx`** (raylib 6.2,
+  algorithms adapted from `rshapes.c`) draw a band of textured quads per
+  outline, the thickness scaled by `radius/apothem` with the apothem
+  `radius*cosf(DEG2RAD*(span/2)/segments)`, and cap quads whose corners
+  `rshapes.c` builds with `asinf`, `atan2f`, rotations and `sinf`/`cosf` of
+  computed angles: the sector's S1 inside or outside the circle and the gap
+  fills, the ring's inner and outer cap ends, crossing inner angles and, for
+  a negative thickness, crossing caps. A thickness `>= 0` covering the shape
+  draws `DrawCircleSector`/`DrawRing`; a negative thickness on a whole turn
+  draws no caps; a ring with no inner radius and a negative thickness is
+  `DrawCircleSectorLinesEx`. Every value keeps the C's F32 order. `asinf` is
+  the profile's (`M.Libm.asin`), `atan2f` the checked one of
+  [ANGLES.md](ANGLES.md) (arguments and result zero or normal). Apple's
+  sine/cosine covers whole degrees only and its `asinf` tiny arguments only,
+  so these outlines are refused under `M.AppleLibm{}` and compared under the
+  glibc profiles.
 - **Splines.** `DrawSplineBezierCubic` and its segment use `powf(x, 3)` of the
   48 arguments `t = i/24`, `1 - t`; Jonlib's value equals the host's on all of
   them for Apple and glibc 2.39 (checked); glibc 2.41 is refused.
@@ -127,6 +167,7 @@ Remaining shapes (`rshapes.c`):
 |---|---|
 | `DrawLineBezier` / `DrawLineDashed` | `Draw.line_bezier(frame, start, end, thick, color)`, `Draw.line_dashed(frame, start, end, dash, space, color)` |
 | `DrawRingLines` / `DrawPolyLinesEx` | `Draw.ring_lines_for`/`ring_lines`, `Draw.poly_lines_ex_for`/`poly_lines_ex` |
+| `DrawCircleSectorLinesEx` / `DrawRingLinesEx` | `Draw.circle_sector_lines_ex_for(libm, frame, center, radius, start, end, segments, thick, color)`, `Draw.ring_lines_ex_for(libm, frame, center, inner, outer, start, end, segments, thick, color)` (and without `_for`) |
 | `DrawRectangleRounded` / `Lines` / `LinesEx` | `Draw.rectangle_rounded_for`, `rectangle_rounded_lines_for`, `rectangle_rounded_lines_ex_for` (and without `_for`) |
 | `DrawSplineLinear` / `Basis` / `CatmullRom` / `BezierQuadratic` / `BezierCubic` | `Draw.spline_linear`, `spline_basis_for`, `spline_catmull_rom_for`, `spline_bezier_quadratic`, `spline_bezier_cubic_for` (points as `+List<M.Vector2>`) |
 | `DrawSplineSegment*` | `Draw.spline_segment_linear`, `_basis`, `_catmull_rom`, `_bezier_quadratic`, `_bezier_cubic_for` |
@@ -182,13 +223,17 @@ A refused call marks the frame undefined (readbacks are `None`), as in
   widths above 4096, NaN point sizes or radii beyond 4096, `rlScissor` values
   beyond `2^22`, segment estimates under a profile other than glibc 2.39,
   `DrawSplineBezierCubic` under glibc 2.41, more than 4096 dashes, segments or
-  polygon sides.
+  polygon sides, and the `asinf`/`atan2f`/`sinf`/`cosf` results of
+  `DrawCircleSectorLinesEx` and `DrawRingLinesEx` the profile does not
+  reproduce (all of Apple's in practice); `(int)NaN` step counts of
+  `DrawRingLinesEx` (no inner radius and a zero thickness) are undefined in
+  the reference.
 
 ## Verification
 
 | Gate | Tool | Compares |
 |---|---|---|
-| `rlgl` | `tools/rlgl_probe.py` | 49 scenes (928 operations, sizes 16x12 to 40x52, 6 random immediate-mode scenes) byte for byte against the uncontracted memory-platform raylib on CPU-1, CPU-2 and JavaScript, with getter results; on macOS 14 of them are contracts that must be refused (the segment-estimate scenes are compared on glibc 2.39 hosts); tables of the host `powf(x, 3)` (48 arguments) and `cosf` (4094 `DrawPolyLinesEx` arguments), and 408 segment estimates (arcs and corners, radii 0.3 to 50000) against glibc 2.39's `e_acosf.c` compiled by the probe |
+| `rlgl` | `tools/rlgl_probe.py` | 79 scenes (1522 operations, sizes 16x12 to 40x52, 6 random immediate-mode scenes) byte for byte against the uncontracted memory-platform raylib on CPU-1, CPU-2 and JavaScript, with getter results; 25 of them are contracts that must be refused on macOS, 17 on glibc 2.39 and 22 on glibc 2.41 (the segment-estimate scenes are compared on glibc 2.39 hosts, `DrawCircleSectorLinesEx`/`DrawRingLinesEx` on glibc hosts); tables of the host `powf(x, 3)` (48 arguments) and `cosf` (the 4094 `DrawPolyLinesEx` apothem arguments `PI/sides`), and 374 segment estimates (arcs and corners, radii 0.3 to 50000) against glibc 2.39's `e_acosf.c` compiled by the probe |
 
 ```sh
 python3 tools/rlgl_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --jobs 3
@@ -200,7 +245,9 @@ huge parameters), the shapes texture set, reset and opaque, immediate
 lines/triangles/quads with per-vertex colors and textures, all three matrix
 modes, ortho and frustum projections, viewports, culling of both faces,
 blending toggled, depth-tested overlaps, wire and point modes, thick lines,
-clears and getters, and random immediate scenes.
+clears and getters, flat and interpolated primitives (also under a
+perspective frustum), triangles whose texture filter follows their plane
+derivatives, a viewport larger than the screen, and random immediate scenes.
 
 ## Framebuffer objects
 

@@ -712,8 +712,9 @@ helpers in the source's order, the `__tan_fma` build's FMA contraction made
 explicit, errno/flags/rounding modes out of contract). They are the only LGPL
 files of Jonlib: Jonmath imports them as separate modules for `M.Libm.tan`,
 `M.Libm.tanf`, `M.Libm.sin64`, `M.Libm.cos64`, `M.Libm.acos64` and the
-`Glibc239Libm` profile of `M.Libm.asin`, and the
-rest of Jonlib and Jonmath stays under the zlib license. A combined work must
+`Glibc239Libm` profile of `M.Libm.asin` (which `src/shapes.bend` also
+imports, as a separate module, for the `asinf` of `DrawCircleSectorLinesEx`),
+and the rest of Jonlib and Jonmath stays under the zlib license. A combined work must
 let its users replace or modify these modules as LGPL-2.1 section 6 requires;
 the Bend sources are the preferred form for modification.
 

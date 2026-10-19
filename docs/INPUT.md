@@ -125,8 +125,10 @@ previous touch states copied, and previous key states copied **for keys
 0..259 only** (its "Android supports up to 260 keys" loop). Keys 260..511
 (F1..F12, keypad, modifiers) therefore stay "pressed" while held, and mouse
 and gamepad button "previous" states, the previous mouse position and the
-wheel are never updated on this platform: a held mouse button stays pressed
-and `GetMouseDelta` measures from the last `SetMousePosition`. Its `kbhit()`
+wheel are never updated on this platform: a held mouse button stays pressed,
+and since raylib 6.2 `SetMousePosition` moves only the current position, so
+`GetMouseDelta` measures from the initial (or last played) previous position,
+and `EnableCursor`/`DisableCursor`'s recentering shows up as a delta. Its `kbhit()`
 check of the terminal's standard input for an ESC byte is not modeled. Desktop
 platforms poll differently (slice 5).
 

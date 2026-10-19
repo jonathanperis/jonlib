@@ -83,6 +83,7 @@ import ./src/shapes.bend as Shapes
 import ./src/frame.bend as FrameCore
 import ./src/fonts.bend as FontCore
 import ./src/input.bend as InputCore
+import ./src/sha.bend as ShaCore
 import ./src/gestures.bend as GestureCore
 import ./src/clock.bend as Clock
 import ./src/core_state.bend as CoreState
@@ -3001,6 +3002,39 @@ law frame_plan_refused:
   for commands: +List<FrameCore.Command>
   {Shapes.Plan.require(False{}, Shapes.Plan{True{}, commands}) == Shapes.Plan{False{}, commands} : Shapes.Plan}
 
+# raylib 6.2 shapes: a whole turn drops the cap lines of DrawCircleSectorLines
+# and DrawRingLines, and of the *LinesEx outlines unless they grow inward; a
+# partial arc keeps them.
+law shapes_whole_turn_caps:
+  for inward: Bool
+  {Shapes.arc.caps(True{}, inward) == inward : Bool}
+
+law shapes_partial_arc_caps:
+  for inward: Bool
+  {Shapes.arc.caps(False{}, inward) == True{} : Bool}
+
+# A refused piece (an unreproduced libm result) refuses the plan it joins.
+law shapes_refused_join:
+  for commands: +List<FrameCore.Command>
+  {Shapes.Plan.join(Shapes.Plan.refused(), Shapes.Plan{True{}, commands}) == Shapes.Plan{False{}, commands} : Shapes.Plan}
+
+# A *LinesEx outline quad with one vertex the profile does not reproduce is
+# refused, its texcoords (u0, v1), (u0, v0), (u1, v0), (u1, v1).
+law shapes_outline_quad_unverified:
+  for x: F32
+  for y: F32
+  {Shapes.Pt.quad(Shapes.Pt{x, y, True{}}, Shapes.Pt{x, y, True{}}, Shapes.Pt{x, y, False{}}, Shapes.Pt{x, y, True{}})
+    == Shapes.Plan{False{}, [FrameCore.ShapeUV{2}, FrameCore.Point{x, y}, FrameCore.ShapeUV{0}, FrameCore.Point{x, y},
+      FrameCore.ShapeUV{1}, FrameCore.Point{x, y}, FrameCore.ShapeUV{3}, FrameCore.Point{x, y}]} : Shapes.Plan}
+
+# DrawTriangle is DrawTriangleGradient with one color (raylib 6.2).
+law shapes_triangle_is_gradient:
+  for x: F32
+  for y: F32
+  for color: U32
+  {Shapes.triangle(Shapes.P2{x, y}, Shapes.P2{x, y}, Shapes.P2{x, y}, color)
+    == Shapes.triangle.gradient(Shapes.P2{x, y}, Shapes.P2{x, y}, Shapes.P2{x, y}, color, color, color) : Shapes.Plan}
+
 # Input (CORE.Input on the memory platform). The pressed-key and char queues
 # hold 16 entries (MAX_KEY_PRESSED_QUEUE, MAX_CHAR_PRESSED_QUEUE): a 17th is
 # dropped.
@@ -4206,6 +4240,41 @@ law convolution_edge_high:
 
 law ray_sphere_miss_zero:
   {J.Collision.ray.sphere.hit(M.Uncontracted{}, J.Ray{M.Vector3{0.0, 0.0, 0.0}, M.Vector3{0.0, 0.0, 1.0}}, M.Vector3{0.0, 0.0, 5.0}, False{}, False{}, 4.0) == J.RayCollision{False{}, 0.0, M.Vector3{0.0, 0.0, 0.0}, M.Vector3{0.0, 0.0, 0.0}} : J.RayCollision}
+
+law sha_padding_one_block:
+  {ShaCore.padded_words(55) == 16 : U32}
+
+law sha_padding_length_spills:
+  {ShaCore.padded_words(56) == 32 : U32}
+
+# rlsw 6.2's SW_STATE_COLOR_INTERP rides in bit 32 of a primitive's sampler
+# word: set only when its pushed colors differ, it leaves the texture kind
+# (bits 0..2), the depth test (8) and the minification mark (16) alone.
+law frame_interp_flag_set:
+  {FrameCore.tex.interp(FrameCore.tex.with_interp(True{}, 26)) == True{} : Bool}
+
+law frame_interp_flag_keeps_bits:
+  {FrameCore.tex.with_interp(True{}, 26) == 58 : U32}
+
+law frame_flat_keeps_sampler:
+  {FrameCore.tex.with_interp(False{}, 26) == 26 : U32}
+
+law frame_flat_not_interp:
+  {FrameCore.tex.interp(26) == False{} : Bool}
+
+# A primitive of one pushed vertex, or none, has no other color to differ from.
+law frame_colors_single_vertex_flat:
+  for v: FrameCore.Vertex
+  {FrameCore.colors.interp(Con{v, Nil{}}) == False{} : Bool}
+
+law frame_colors_empty_flat:
+  {FrameCore.colors.interp(Nil{}) == False{} : Bool}
+
+# Interpolated pixels keep their own colors.
+law frame_interp_keeps_attributes:
+  for flat: FrameCore.Attr
+  for at: FrameCore.Attr
+  {FrameCore.Attr.flat(True{}, flat, at) == at : FrameCore.Attr}
 
 law gui_pick_hover_keeps_drag:
   for gui: JG.Gui

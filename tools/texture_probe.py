@@ -223,9 +223,9 @@ def scenes(libm):
                    ('draw_pro', 0, (-7.0, 5.0, 4.0, 3.0), (17.25, 12.75, 6.5, 9.0), (1.0, 2.0), 0.0, C(255, 200, 100, 220)),
                    ('draw_rec', 0, (1.0, 1.0, -3.0, 2.0), 25.0, 13.0, white), ('draw_ex', 0, 26.0, 18.0, 0.0, 0.75, white), ('end',)]
             add(f'filter-{filt}-wrap-{wrap}', 32, 24, ops)
-    # rlTextureParameters: a minification filter apart from the magnification one (rlsw picks it where a span's or quad's
+    # rlTextureParameters: a minification filter apart from the magnification one (rlsw picks it where a triangle's or quad's
     # texture derivatives make L2 above 1), GL_CLAMP on either axis (rlsw clamps the nearest coordinate to [0, 1], so u = 1
-    # reads the next row's first texel, and the bilinear indices only from above), values rlsw rejects (GL_CLAMP_TO_EDGE,
+    # reads the next row's first texel, and both bilinear indices to the texture), values rlsw rejects (GL_CLAMP_TO_EDGE,
     # a mipmap filter), parameters OpenGL 1.1 skips, and SetTextureWrap(REPEAT) and SetTextureFilter after them.
     MAG, MIN, WRAP_S, WRAP_T = 0x2800, 0x2801, 0x2802, 0x2803
     NEAREST, LINEAR, REPEAT, CLAMP = 0x2600, 0x2601, 0x2901, 0x2900
