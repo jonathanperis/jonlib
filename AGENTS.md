@@ -1,9 +1,10 @@
 # Jonlib and Jonmath engineering
 
-- Name ported modules `jon<suffix>` for upstream `ray<suffix>` names. Jonlib
-  (`jonlib.bend`) owns the core port; Jonmath (`jonmath.bend`) owns math APIs
-  and shared vector/matrix types. Keep upstream names in reference IDs,
-  source includes/URLs and required notices. See `docs/MODULES.md` for imports.
+- Name modules `jon<suffix>` after their upstream `ray<suffix>` counterparts.
+  Jonlib (`jonlib.bend`) owns the core library; Jonmath (`jonmath.bend`) owns
+  math APIs and shared vector/matrix types. Keep upstream names in reference
+  IDs, source includes/URLs and required notices. See `docs/MODULES.md` for
+  imports.
 
 - Implement the library in Bend 2. Keep raylib in the reference tooling;
   compiler/code-generation changes belong in the separately declared Bend overlay.
@@ -18,7 +19,7 @@
 - Run `python3 -m unittest discover -s tests -v` for harness changes and
   `python3 tools/conformance.py` for affected library/fixture changes.
 - Run `python3 tools/check_project.py` for project metadata/documentation changes.
-- Select parity work by stable IDs in `docs/PROGRESS.md`. Update
+- Select API work by stable IDs in `docs/PROGRESS.md`. Update
   `api/progress.json` with scope, gaps and evidence, then regenerate with
   `python3 tools/api_plan.py build`. Base delivery updates on ledger deltas;
   proposed mappings and partial profiles never count as completed APIs.

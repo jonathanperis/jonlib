@@ -1,6 +1,6 @@
 # Verification
 
-Jonlib claims raylib parity only where a gate compares Jonlib's output with the
+Jonlib claims raylib's behavior only where a gate compares Jonlib's output with the
 pinned raylib reference and passes. This page states what verification means
 here, how to run it, and what it does and does not establish. Per-API contracts
 and gaps live in the topic pages and in [`api/progress.json`](../api/progress.json)

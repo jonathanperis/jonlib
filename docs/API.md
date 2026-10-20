@@ -2,7 +2,7 @@
 
 Import `jonlib.bend` as `J` for core operations and `jonmath.bend` as `M` for math
 operations and shared vector/matrix types. See [MODULES.md](MODULES.md) for the
-`ray*` → `jon*` naming convention and import migration.
+`ray*` → `jon*` naming convention and the module imports.
 This is a source library for the Bend 2.0.27 base plus the compiler overlay in
 `toolchain.json`. Helpers with further dotted suffixes
 are implementation details; only operations listed here form the public API.
@@ -94,9 +94,9 @@ with desktop input polling, `IO.now` timing and `Frame.present`;
 `Program.replay`: the same program headless against scripted automation
 events; `Core.end_drawing_desktop`, `Desktop.key`, `Frame.present`,
 `Frame.scan`, `Frame.refuse`, `Core.get_screen_width` and friends) and the
-ported raylib examples under `examples/` are documented in
-[DRIVER.md](DRIVER.md). Progress porting every upstream raylib example is
-tracked in [EXAMPLES.md](EXAMPLES.md) (`tools/examples_plan.py`).
+Bend versions of the raylib examples under `examples/` are documented in
+[DRIVER.md](DRIVER.md). Every upstream raylib example and its Bend version are
+listed in [EXAMPLES.md](EXAMPLES.md) (`tools/examples_plan.py`).
 Byte-string utilities and UTF-8 codepoints (`Text.*`, `Codepoint.*`, `UTF8.*`:
 rtext.c's text strings management functions) are documented in [TEXT.md](TEXT.md).
 The headless drawing frame and 2D shapes (`Frame.*`: InitWindow, Begin/EndDrawing,
@@ -142,7 +142,7 @@ against each header compiled in Jonlib's configuration (rlgl.h with
 Jonlib's `Color.*` and Jonmath's `M.Math.*`. rlgl.h's graphics API switches
 are Bools, True where Jonlib's configuration defines them:
 `Config.GRAPHICS_API_OPENGL_SOFTWARE()` and `Config.GRAPHICS_API_OPENGL_11()`
-(rlsw's OpenGL 1.1 path, the renderer Jonlib ports), False for the others.
+(rlsw's OpenGL 1.1 path, the renderer Jonlib adapts), False for the others.
 
 config.h's options are `Config.*` constants with the value raylib's default
 build gives them, checked by the same gate: config.h's own value, or for an
@@ -171,9 +171,9 @@ allocation under affine ownership; the type guards (`RL_COLOR_TYPE`,
 and standalone switches (`RLGL_IMPLEMENTATION`, `RCAMERA_STANDALONE`, ...)
 are the import itself (Jonmath's `M.Config.JONMATH_IMPLEMENTATION()` is True);
 `CLITERAL(Color){...}` is a record literal; and
-`GetMouseRay` is the function it aliases. Jonmath ports raymath's scalar
+`GetMouseRay` is the function it aliases. Jonmath follows raymath's scalar
 build: `RAYMATH_USE_SIMD_INTRINSICS` (off by default) and its SSE
-`MatrixMultiply` are not ported, and its C++ operators are the named
+`MatrixMultiply` are not adapted, and its C++ operators are the named
 functions. `TRACELOG(level, ...)` is `Log.trace`.
 
 ## Shared types

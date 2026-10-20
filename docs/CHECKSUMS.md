@@ -1,6 +1,6 @@
 # Native checksum values
 
-Jonlib ports raylib's `ComputeCRC32` and `ComputeMD5` as `Checksum.crc32` and
+Jonlib adapts raylib's `ComputeCRC32` and `ComputeMD5` as `Checksum.crc32` and
 `Checksum.md5`. Native SHA-1/SHA-256 values and the reference's SHA-256 padding
 quirk are documented separately in [SHA.md](SHA.md).
 

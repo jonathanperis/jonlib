@@ -1,7 +1,7 @@
 # Contributing to Jonlib
 
-Jonlib is working toward raylib parity with library algorithms written in Bend
-2. Read the [API](docs/API.md), [compatibility ledger](docs/COMPATIBILITY.md), and
+Jonlib is a Bend 2 library inspired by raylib's API, with its algorithms written
+in Bend and its behavior verified against a pinned raylib. Read the [API](docs/API.md), [compatibility ledger](docs/COMPATIBILITY.md), and
 [roadmap](docs/ROADMAP.md) before proposing a change.
 
 ## Local setup

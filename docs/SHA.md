@@ -1,6 +1,6 @@
 # Native SHA-1 and SHA-256 values
 
-Jonlib ports raylib's `ComputeSHA1` and `ComputeSHA256` as `Checksum.sha1` and
+Jonlib adapts raylib's `ComputeSHA1` and `ComputeSHA256` as `Checksum.sha1` and
 `Checksum.sha256`: standard SHA-1 and SHA-256 digests.
 
 ## API

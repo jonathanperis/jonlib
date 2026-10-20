@@ -8,7 +8,7 @@ every `rmodels.c` 3D shape, materials, `DrawMesh`/`DrawModel*`/billboards and
 OBJ (with MTL) loading, all reproducing pinned raylib 6.2 exactly.
 Altered Bend adaptations of `rmodels.c` and of `rcore.c`'s
 `BeginMode3D`/`EndMode3D` (zlib, [LICENSES/raylib.txt](../LICENSES/raylib.txt));
-3D drawing renders through the Bend port of `rlsw.h` 1.5 (MIT,
+3D drawing renders through the Bend adaptation of `rlsw.h` 1.5 (MIT,
 [LICENSES/rlsw.txt](../LICENSES/rlsw.txt)) described in [FRAME.md](FRAME.md)
 and [RLGL.md](RLGL.md). Code: the section "Models" of `jonlib.bend`,
 `src/mesh.bend` (attribute generation, tangents, bounding boxes, OBJ and

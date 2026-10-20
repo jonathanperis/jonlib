@@ -3,7 +3,7 @@
 Jonlib is an independent library written in Bend 2, inspired by raylib's design.
 It is not affiliated with or endorsed by raylib or Bend's maintainers.
 Jonmath is its separately importable mathematical module, adapting `raymath.h`.
-Project-owned port names use the `ray*` → `jon*` convention; upstream names here
+Project-owned module names use the `ray*` → `jon*` convention; upstream names here
 identify the original sources and their required attribution.
 
 ## raylib

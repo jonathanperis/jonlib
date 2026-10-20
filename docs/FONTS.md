@@ -6,7 +6,7 @@ glyph data and atlases, glyph queries, text measurement, text drawn into the
 [Frame](FRAME.md), image text and fonts exported as code. Altered
 Bend adaptations of `rtext.c` and of `rtextures.c`'s `ImageText*` functions
 (zlib, [LICENSES/raylib.txt](../LICENSES/raylib.txt)); drawing goes through
-the `rlsw.h` port of [FRAME.md](FRAME.md) and [TEXTURES.md](TEXTURES.md)
+the `rlsw.h` adaptation of [FRAME.md](FRAME.md) and [TEXTURES.md](TEXTURES.md)
 (MIT, [LICENSES/rlsw.txt](../LICENSES/rlsw.txt)). Code: the section "Fonts
 and text drawing" of `jonlib.bend` and `src/fonts.bend` (glyph table, atlas
 expansion, `GetGlyphIndex`, measurement, the `DrawTextEx` streams,

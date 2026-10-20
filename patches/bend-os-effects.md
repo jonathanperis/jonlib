@@ -7,7 +7,7 @@ whose body imports one C source and one JavaScript source from
 the patch applies alone to Bend `b7ebee92` (2.0.27) and adds two tests in
 `tests/io/` that pass on the checked, interpreted, C and JavaScript lanes.
 
-It was written for Jonlib, a Bend port of raylib, whose file-system API
+It was written for Jonlib, a Bend 2 library inspired by raylib, whose file-system API
 (`LoadDirectoryFiles`, `GetFileModTime`, `ChangeDirectory`, `OpenURL`, ...)
 needs what Base cannot do today: list a directory, look at a path, rename or
 remove one, make a directory, know and change the working directory, find the

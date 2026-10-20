@@ -1,7 +1,7 @@
 # Jongui: raygui controls
 
-`jongui.bend` ports raygui (v5.1-dev, `RAYGUI_VERSION` 5.1, as raylib 6.2
-ships it beside its examples) the way Jonlib ports raylib: the controls'
+`jongui.bend` adapts raygui (v5.1-dev, `RAYGUI_VERSION` 5.1, as raylib 6.2
+ships it beside its examples) the way Jonlib adapts raylib: the controls'
 update and drawing code in raygui's F32 and C `int` order, over Jonlib's
 frame and input. raygui's globals (`guiState`, `guiLocked`, `guiAlpha`, the
 slider drag and the style table) are one explicit `G.Gui` value.

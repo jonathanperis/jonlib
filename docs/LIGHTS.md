@@ -1,6 +1,6 @@
 # Jonlights: rlights.h
 
-`jonlights.bend` ports `rlights.h`, the lighting helper raylib 6.2's shader
+`jonlights.bend` adapts `rlights.h`, the lighting helper raylib 6.2's shader
 and model examples ship (`examples/shaders/rlights.h`, the same file as
 `examples/models/rlights.h`; notice in
 [LICENSES/rlights.txt](../LICENSES/rlights.txt)):

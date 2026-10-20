@@ -1,6 +1,6 @@
 # Native Base64 utilities
 
-Jonlib ports raylib's `EncodeDataBase64` and `DecodeDataBase64` as
+Jonlib adapts raylib's `EncodeDataBase64` and `DecodeDataBase64` as
 `Base64.encode` and `Base64.decode`, reproducing the native text, sizes and
 decoded bytes.
 
