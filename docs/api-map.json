@@ -675,7 +675,7 @@
     "status": "profile-covered",
     "scope": "Projection popped and modelview reset; the depth test stays enabled.",
     "gaps": [
-      "Popping the last projection (no matching BeginMode3D) is undefined in rlsw and marks the frame undefined",
+      "Undefined native behavior: popping the last projection (no matching BeginMode3D) is undefined in rlsw and marks the frame undefined",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:EndMode3D",
@@ -924,9 +924,9 @@
       "CAMERA_PERSPECTIVE is None under AppleLibm (the profile-free forms) and for a nonfinite fovy*DEG2RAD (docs/PERSPECTIVE.md)",
       "Orthographic fovy beyond the checked binary64 multiplier (about 2^97) and nonfinite fovy",
       "Cull distances set by rlSetClipPlanes",
-      "Other compilers' contraction and optimization choices",
-      "NaN sign and payload are not reproduced",
-      "Full target/performance coverage"
+      "Other compilers' contraction and optimization choices; naN sign and payload are not reproduced",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetScreenToWorldRayEx",
     "milestone": "camera"
@@ -950,9 +950,9 @@
       "CAMERA_PERSPECTIVE is None under AppleLibm (the profile-free forms) and for a nonfinite fovy*DEG2RAD (docs/PERSPECTIVE.md)",
       "Orthographic fovy beyond the checked binary64 multiplier (about 2^97) and nonfinite fovy",
       "Cull distances set by rlSetClipPlanes",
-      "Other compilers' contraction and optimization choices",
-      "NaN sign and payload are not reproduced",
-      "Full target/performance coverage"
+      "Other compilers' contraction and optimization choices; naN sign and payload are not reproduced",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetWorldToScreenEx",
     "milestone": "camera"
@@ -966,7 +966,8 @@
       "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
       "Other compilers' contraction and optimization choices",
       "NaN sign and payload are not reproduced",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetWorldToScreen2D",
     "milestone": "camera"
@@ -980,7 +981,8 @@
       "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
       "Other compilers' contraction and optimization choices",
       "NaN sign and payload are not reproduced",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetScreenToWorld2D",
     "milestone": "camera"
@@ -992,7 +994,8 @@
     "gaps": [
       "Other compilers' contraction and optimization choices",
       "NaN sign and payload are not reproduced",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetCameraMatrix",
     "milestone": "camera"
@@ -1006,7 +1009,8 @@
       "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
       "Other compilers' contraction and optimization choices",
       "NaN sign and payload are not reproduced",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetCameraMatrix2D",
     "milestone": "camera"
@@ -1096,7 +1100,9 @@
     "scope": "U32 seed initializes an owned stream using pinned rprand SplitMix64 extraction and Xoshiro128** state, without implicit global mutation.",
     "gaps": [
       "Implicit-global and libc fallback profiles",
-      "Complete integration/target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:SetRandomSeed",
     "milestone": "random"
@@ -1107,7 +1113,9 @@
     "scope": "Owned state plus integral F32 result for finite bounds -32767..32767, truncated toward zero like the C int parameters; inclusive/swapped bounds and exactly one draw for equal bounds match native rprand.",
     "gaps": [
       "Wider integer domains, implicit globals and libc fallback",
-      "Complete integration/target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:GetRandomValue",
     "milestone": "random"
@@ -1118,7 +1126,8 @@
     "scope": "Owned rprand duplicate-rejection sequence with exact acceptance order and following-stream position. Integral F32 bounds -32767..32767; reversed bounds preserve the reference's unswapped minimum offset. Explicit Nat draw budget returns partial values and advanced state on exhaustion; invalid requests preserve the original stream.",
     "gaps": [
       "Unbounded retry/global-state/allocator correspondence",
-      "Full integer domains and target/resource/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:LoadRandomSequence",
     "milestone": "random"
@@ -1128,7 +1137,9 @@
     "status": "profile-covered",
     "scope": "Consumes the owned sequence and returns Unit; Bend ownership adapts the explicit C allocation/free lifecycle.",
     "gaps": [
-      "Full integration/target/resource/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:UnloadRandomSequence",
     "milestone": "random"
@@ -1227,7 +1238,8 @@
     "status": "profile-covered",
     "scope": "Every byte of the file up to INT_MAX, closing the handle; typed IO errors; an existing empty file is an empty list (raylib: NULL with dataSize 0).",
     "gaps": [
-      "Complete target/resource coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:LoadFileData",
     "milestone": "files"
@@ -1237,7 +1249,8 @@
     "status": "profile-covered",
     "scope": "Consumes the byte list returned by Files.load_data.",
     "gaps": [
-      "Complete target/resource coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:UnloadFileData",
     "milestone": "files"
@@ -1247,7 +1260,8 @@
     "status": "profile-covered",
     "scope": "Creates/truncates the file and writes every byte, closing the handle; values above 255 are InvalidRequest before opening.",
     "gaps": [
-      "Complete target/resource coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:SaveFileData",
     "milestone": "files"
@@ -1258,7 +1272,8 @@
     "scope": "raylib's generated header (banner, NAME_DATA_SIZE, 20 lower-case hex bytes per line) for 1..1048576 bytes and an ASCII basename of 1..200 characters; the name drops its last extension, upper-cases a-z and maps '.-?!+' to '_'.",
     "gaps": [
       "Empty data (raylib reads data[-1]), larger payloads and longer/non-ASCII names",
-      "Complete target/resource coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ExportDataAsCode",
     "milestone": "files"
@@ -1268,7 +1283,8 @@
     "status": "profile-covered",
     "scope": "Every byte of the file as characters 0..255, NULs included (text and binary modes agree on the reference hosts).",
     "gaps": [
-      "Complete target/resource coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:LoadFileText",
     "milestone": "files"
@@ -1278,7 +1294,8 @@
     "status": "profile-covered",
     "scope": "Consumes the text returned by Files.load_text.",
     "gaps": [
-      "Complete target/resource coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:UnloadFileText",
     "milestone": "files"
@@ -1288,7 +1305,8 @@
     "status": "profile-covered",
     "scope": "Writes the text up to its first NUL as bytes; characters above 255 are InvalidRequest before opening.",
     "gaps": [
-      "Complete target/resource coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:SaveFileText",
     "milestone": "files"
@@ -1360,7 +1378,7 @@
     "status": "profile-covered",
     "scope": "LoadFileData, the target's directory made where DirectoryExists does not see it, then SaveFileData when there are bytes: 0 once the directory is there (whether the save succeeds or not, as raylib 6.2 has it), MakeDirectory's -1 otherwise.",
     "gaps": [
-      "GetDirectoryPath overflow is None",
+      "Undefined native behavior: getDirectoryPath overflow is None",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
     ],
     "api_id": "raylib:function:FileCopy",
@@ -1371,7 +1389,7 @@
     "status": "profile-covered",
     "scope": "-1 for a missing source; otherwise FileCopy's result, and when it is 0 and the target exists with the source's GetFileLength, FileRemove's result.",
     "gaps": [
-      "GetDirectoryPath overflow is None",
+      "Undefined native behavior: getDirectoryPath overflow is None",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
     ],
     "api_id": "raylib:function:FileMove",
@@ -1382,9 +1400,9 @@
     "status": "profile-covered",
     "scope": "-1 for a missing, empty or unreadable file and an empty search; otherwise LoadFileText, TextReplaceAlloc of the text up to its first NUL and SaveFileText of the result: 0 when saved, -1 when not.",
     "gaps": [
-      "Characters above 255 in the result and TextReplaceAlloc int overflows are None",
-      "Complete target/resource coverage",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+      "Undefined native behavior: characters above 255 in the result and TextReplaceAlloc int overflows are None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:FileTextReplace",
     "milestone": "files"
@@ -1394,7 +1412,8 @@
     "status": "profile-covered",
     "scope": "Byte index of the first occurrence of search in the file's text up to its first NUL; None (raylib's -1) when absent or the file is missing or empty.",
     "gaps": [
-      "Complete target/resource coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:FileTextFindIndex",
     "milestone": "files"
@@ -1404,7 +1423,8 @@
     "status": "profile-covered",
     "scope": "access(F_OK), as stat(2) answers it: a file that exists, readable or not, or a directory.",
     "gaps": [
-      "Complete target/resource coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:FileExists",
     "milestone": "files"
@@ -1446,7 +1466,8 @@
     "scope": "File size in bytes; 0 when the file does not open.",
     "gaps": [
       "Directories and sizes above INT_MAX",
-      "Complete target/resource coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetFileLength",
     "milestone": "files"
@@ -1669,7 +1690,7 @@
     "status": "profile-covered",
     "scope": "GetDirectoryFileCountEx with the *.* filter and without subdirectories.",
     "gaps": [
-      "IsFileExtension overflow is None",
+      "Undefined native behavior: isFileExtension overflow is None",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
     ],
     "api_id": "raylib:function:GetDirectoryFileCount",
@@ -1692,7 +1713,9 @@
     "gaps": [
       "Larger input domains and native sequence-overflow domains",
       "Public decompression of compressed results larger than 1 MiB",
-      "Complete integration/target/resource/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:CompressData",
     "milestone": "files"
@@ -1704,7 +1727,9 @@
     "gaps": [
       "Larger compressed inputs",
       "Other permissive malformed/partial-output recovery",
-      "Complete integration/target/resource/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:DecompressData",
     "milestone": "files"
@@ -1715,7 +1740,8 @@
     "scope": "Immutable byte lists of 0..1048576 bytes, including empty input. Exact native RFC 4648 text/alphabet/padding; Base64Encoded carries the native NUL-inclusive size while the Bend text excludes the terminator. Invalid bytes or oversized inputs return None.",
     "gaps": [
       "Larger input domains",
-      "Complete resource/platform/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:EncodeDataBase64",
     "milestone": "files"
@@ -1726,7 +1752,8 @@
     "scope": "Nonempty ASCII alphabet groups of four with zero/one/two final padding characters, first-NUL termination and ignored unused padding bits. Exact native logical bytes, capped at 1048576, as an immutable list. Malformed/empty/oversized requests return None; the native empty-input before-buffer read is not reproduced.",
     "gaps": [
       "Native permissive malformed recovery, empty-input undefined behavior and larger outputs",
-      "Complete resource/platform/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:DecodeDataBase64",
     "milestone": "files"
@@ -1737,7 +1764,8 @@
     "scope": "Immutable byte lists of 0..1048576 bytes; native CRC32 initial/final complements over the shared PNG CRC recurrence, equal to standard CRC32. Unsupported bytes/lengths return None.",
     "gaps": [
       "Larger domains",
-      "Complete resource/platform/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ComputeCRC32",
     "milestone": "files"
@@ -1748,7 +1776,8 @@
     "scope": "Immutable byte lists of 0..1048576 bytes, including empty input. Native little-endian padding/message words, modulo-U32 rounds and exactly four U32 words in native array order (standard MD5). Unsupported bytes/lengths return None before allocation.",
     "gaps": [
       "Larger domains",
-      "Complete resource/platform/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ComputeMD5",
     "milestone": "files"
@@ -1759,7 +1788,8 @@
     "scope": "Immutable byte lists of 0..1048576 bytes, including empty input. Native big-endian padding/message schedule, modulo-U32 rounds and exactly five native-order hash words (standard SHA-1); invalid inputs return None before allocation.",
     "gaps": [
       "Larger domains and other native compiler profiles",
-      "Complete resource/platform/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ComputeSHA1",
     "milestone": "files"
@@ -1770,7 +1800,8 @@
     "scope": "Immutable byte lists of 0..1048576 bytes; exactly eight native-order U32 hash words with native schedules/rounds and standard padding (raylib 6.2 sizes it with the 8-byte bit length; 6.0's dataSize+4 rule differed at 56..59 mod 64). Invalid inputs return None before allocation.",
     "gaps": [
       "Larger domains and other native integer-width/compiler profiles",
-      "Complete resource/platform/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ComputeSHA256",
     "milestone": "files"
@@ -2398,7 +2429,8 @@
       "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
       "Other compilers' contraction and optimization choices",
       "NaN sign and payload are not reproduced",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:UpdateCameraPro",
     "milestone": "camera"
@@ -2681,7 +2713,7 @@
     "status": "profile-covered",
     "scope": "Per-corner colors; the box rasterizer interpolates from the screen bottom-left, bottom-right and top-left corners only (the top-right color has no effect).",
     "gaps": [
-      "Extrapolated corner colors leaving (-1, 256) after scaling are undefined in C and mark the frame undefined",
+      "Undefined native behavior: extrapolated corner colors leaving (-1, 256) after scaling are undefined in C and mark the frame undefined",
       "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -3157,7 +3189,9 @@
     "scope": "Finite bounded point interpolation with the original start*(1-t)+end*t expression and explicit fused/uncontracted reference arithmetic; t in 0..1.",
     "gaps": [
       "Exceptional/subnormal, extrapolation and other contraction profiles",
-      "Full integration/target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:GetSplinePointLinear",
     "milestone": "shapes"
@@ -3168,7 +3202,9 @@
     "scope": "Reference B-spline coefficients, division by six and Horner order with explicit fused/uncontracted profiles and exact XY bits; t in 0..1.",
     "gaps": [
       "Exceptional/subnormal, extrapolation and other contraction profiles",
-      "Full integration/target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:GetSplinePointBasis",
     "milestone": "shapes"
@@ -3179,7 +3215,9 @@
     "scope": "Reference Catmull-Rom coefficient and weighted-point accumulation order with explicit fused/uncontracted profiles; t in 0..1.",
     "gaps": [
       "Exceptional/subnormal, extrapolation and other contraction profiles",
-      "Full integration/target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:GetSplinePointCatmullRom",
     "milestone": "shapes"
@@ -3190,7 +3228,9 @@
     "scope": "Reference quadratic Bezier weights and original product order with explicit fused/uncontracted profiles and exact endpoints/XY fields; t in 0..1.",
     "gaps": [
       "Exceptional/subnormal, extrapolation and other contraction profiles",
-      "Full integration/target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:GetSplinePointBezierQuadratic",
     "milestone": "shapes"
@@ -3213,7 +3253,8 @@
     "scope": "Finite bounded F32 rectangles; exact strict edge comparisons, including zero and signed extents.",
     "gaps": [
       "Exceptional/subnormal and contracted variants",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionRecs",
     "milestone": "collision"
@@ -3224,7 +3265,8 @@
     "scope": "Finite bounded F32 centers/radii, inclusive squared-distance tangency and reference signed-radius behavior. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
     "gaps": [
       "Exceptional/subnormal inputs and other contraction patterns",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionCircles",
     "milestone": "collision"
@@ -3235,7 +3277,8 @@
     "scope": "Finite bounded F32 circle/rectangle predicate preserving reference side and corner tests. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
     "gaps": [
       "Exceptional/subnormal inputs and other contraction patterns",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionCircleRec",
     "milestone": "collision"
@@ -3246,7 +3289,8 @@
     "scope": "Finite bounded F32 circle/segment closest-point predicate with reference epsilon-degenerate endpoint fallback. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
     "gaps": [
       "Exceptional/subnormal inputs and other contraction patterns",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionCircleLine",
     "milestone": "collision"
@@ -3257,7 +3301,8 @@
     "scope": "Finite bounded F32 point/rectangle predicate; inclusive left/top and exclusive right/bottom edges.",
     "gaps": [
       "Exceptional/subnormal inputs",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionPointRec",
     "milestone": "collision"
@@ -3268,7 +3313,8 @@
     "scope": "Finite bounded F32 point/circle squared-distance predicate with inclusive tangency. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
     "gaps": [
       "Exceptional/subnormal inputs and other contraction patterns",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionPointCircle",
     "milestone": "collision"
@@ -3279,7 +3325,8 @@
     "scope": "Finite bounded F32 point/triangle predicate; strict barycentric interior and false for tested degenerate triangles. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
     "gaps": [
       "Exceptional/subnormal inputs and other contraction patterns",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionPointTriangle",
     "milestone": "collision"
@@ -3290,7 +3337,8 @@
     "scope": "Finite bounded F32 point/segment predicate with the int threshold truncated toward zero, strict cross-product margin and inclusive dominant-axis interval. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
     "gaps": [
       "Exceptional/subnormal inputs and other contraction patterns",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionPointLine",
     "milestone": "collision"
@@ -3301,7 +3349,8 @@
     "scope": "Immutable Vector2-list polygon predicate with reference crossing order, boundary comparisons and fewer-than-three-vertices behavior.",
     "gaps": [
       "Exceptional/subnormal and contracted variants",
-      "Full target/resource/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionPointPoly",
     "milestone": "collision"
@@ -3312,7 +3361,8 @@
     "scope": "Finite bounded segment intersections; Maybe hit coordinates, inclusive endpoints and reference FLT_EPSILON determinant gate. Explicit uncontracted and Apple-clang FMA profiles with direct-rounding Bend arithmetic.",
     "gaps": [
       "Exceptional/subnormal/overflow and other contraction patterns",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionLines",
     "milestone": "collision"
@@ -3323,7 +3373,8 @@
     "scope": "Finite bounded F32 rectangle intersection; exact four-field result bits, signed-zero tie ordering and positive-zero empty results.",
     "gaps": [
       "Exceptional/subnormal behavior",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetCollisionRec",
     "milestone": "collision"
@@ -3336,8 +3387,9 @@
       "Larger files and decoder domains",
       "Original pixel-format metadata for the other normalized codec paths and additional native arithmetic profiles",
       "Concurrent/special-file semantics, OS-close failure reporting and native OOM behavior",
-      "Encoded-size caps do not bound decoded area, heap use or allocation success",
-      "GPU/Metal IO; complete integration/resource/performance coverage"
+      "Encoded-size caps do not bound decoded area, heap use or allocation success; gPU/Metal IO",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:LoadImage",
     "milestone": "image-codecs"
@@ -3348,7 +3400,9 @@
     "scope": "Ordinary unchanging files, dimensions 1..4096, formats 1..13: R32 and R16 finite [0,1] (both zero signs, positive subnormals) and non-NaN R32G32B32 words. Native fitting-header/fallback-to-zero selection, exact payload words and signed-int bounds; handles close before decoding. DataError{OutOfDomain} for unsupported samples follows closure; invalid requests fail before opening.",
     "gaps": [
       "Other formats, broader R32 domains, format-9 NaN payload parity, signed/out-of-range parameters and concurrent/special files",
-      "Complete target/integration/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:LoadImageRaw",
     "milestone": "image-codecs"
@@ -3360,7 +3414,9 @@
     "gaps": [
       "Disposal 3 and remaining image-codec/profile gaps",
       "Original pixel formats",
-      "Concurrent/special files, larger inputs and complete resource/target/performance coverage"
+      "Concurrent/special files, larger inputs",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:LoadImageAnim",
     "milestone": "image-codecs"
@@ -3372,7 +3428,9 @@
     "gaps": [
       "Disposal 3: pinned native two_back points before its allocated frame buffer",
       "Remaining image-codec/profile gaps",
-      "Permissive malformed recovery, original metadata and complete target/resource/performance coverage"
+      "Permissive malformed recovery, original metadata",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:LoadImageAnimFromMemory",
     "milestone": "image-codecs"
@@ -3385,9 +3443,9 @@
       "Multi-level KTX/PVR files; HDR in the shared dispatch",
       "Original pixel-format metadata for the remaining normalized codecs (PSD, GIF) and remaining dispatch families",
       "Nondefault external stb decoder flags, PSD out-of-range matte casts and permissive incomplete/excess raster recovery",
-      "Other permissive malformed-stream recovery, dimensions above 4096 and OOM parity",
-      "Other native arithmetic profiles; GPU/Metal targets",
-      "Maximum-area allocation, latency/throughput/memory budgets and complete target/integration coverage"
+      "Other permissive malformed-stream recovery, dimensions above 4096 and OOM parity; other native arithmetic profiles; GPU/Metal targets; maximum-area allocation, latency/throughput/memory budgets",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:LoadImageFromMemory",
     "milestone": "image-codecs"
@@ -3438,9 +3496,11 @@
     "scope": "Surface.write_image picks PNG/BMP/TGA/QOI/RAW by native ASCII-case-insensitive last-dot suffix. GRAYSCALE, GRAY_ALPHA, R8G8B8 and R8G8B8A8 write stored samples (24-bit/V4 BMP, 1..4-channel RLE TGA, default PNG); other formats use native LoadImageColors rules (R32 finite [0,1], R32G32B32 finite [0,1]); QOI only from R8G8B8/R8G8B8A8; RAW writes exact stored words. Rejected sources keep their owner before any file opens; accepted writes consume it, close the handle and return typed errors.",
     "gaps": [
       "JPEG/KTX and other formats/options; extension dispatch for non-Surface owners; NaN parity and native out-of-range auxiliary casts",
-      "Complete targets/integration/performance",
       "Failing-device, short-write and close-error equivalence; Base close has no error result",
-      "R32 samples outside finite [0,1] and complete target/contraction profiles"
+      "R32 samples outside finite [0,1]",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:ExportImage",
     "milestone": "image-codecs"
@@ -3452,8 +3512,10 @@
     "gaps": [
       "Packed/other float source formats, NaN parity, configured flags and generic dispatch",
       "Ownership correspondence",
-      "Complete integration/target/resource/performance coverage",
-      "R32 samples outside finite [0,1]"
+      "R32 samples outside finite [0,1]",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:ExportImageToMemory",
     "milestone": "image-codecs"
@@ -3465,8 +3527,10 @@
     "gaps": [
       "NaN payload parity, wider payload/path/Unicode/truncation domains, native long-name buffer overflow and other source formats",
       "Configured line widths",
-      "Complete target/resource/integration/performance coverage",
-      "R32 samples outside finite [0,1] and complete target/contraction profiles"
+      "R32 samples outside finite [0,1]",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:ExportImageAsCode",
     "milestone": "image-codecs"
@@ -3476,7 +3540,8 @@
     "status": "profile-covered",
     "scope": "R8G8B8A8 Surface filled with one packed color; dimensions 1..4096 per axis, otherwise None. Power-of-two storage padding is excluded from exports.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GenImageColor",
     "milestone": "images"
@@ -3489,8 +3554,9 @@
       "Wider-angle platform libm rounding differences",
       "Other libm/reference profiles",
       "Zero normalization extents",
-      "Full numerical/target/performance matrix",
-      "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
+      "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GenImageGradientLinear",
     "milestone": "images"
@@ -3501,7 +3567,8 @@
     "scope": "RGBA8; dimensions 1..4096; density 0..1 including the reference density-one behavior; balanced owned-array generation.",
     "gaps": [
       "Density values outside 0..1",
-      "Full numerical/target/performance matrix"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GenImageGradientRadial",
     "milestone": "images"
@@ -3512,7 +3579,8 @@
     "scope": "RGBA8; dimensions 1..4096; density 0..1 with exact reference interpolation and density-one behavior.",
     "gaps": [
       "Density values outside 0..1",
-      "Full size/platform/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GenImageGradientSquare",
     "milestone": "images"
@@ -3522,7 +3590,8 @@
     "status": "profile-covered",
     "scope": "RGBA8; Surface dimensions 1..4096; positive signed-int checker sizes; invalid dimensions/checker sizes return None.",
     "gaps": [
-      "Full size/domain and target/performance gates"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GenImageChecked",
     "milestone": "images"
@@ -3533,7 +3602,9 @@
     "scope": "Owned random stream and RGBA8 image generation for dimensions 1..4096 and factor 0..1; one draw per pixel, reference threshold truncation, retained stream on rejected requests.",
     "gaps": [
       "Implicit-global/libc random profiles and broader generation domains",
-      "Complete integration/target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:GenImageWhiteNoise",
     "milestone": "images"
@@ -3544,7 +3615,8 @@
     "scope": "RGBA8 six-octave stb_perlin generation with original tables, seeded octaves, aspect compensation and byte quantization. Explicit fused/uncontracted profiles; dimensions 1..4096, integral offsets -32767..32767, scale zero or magnitude 2^-16..256.",
     "gaps": [
       "Broader numerical/size domains and other compiler contraction patterns",
-      "Full target/resource/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GenImagePerlinNoise",
     "milestone": "images"
@@ -3555,7 +3627,9 @@
     "scope": "Owned-stream RGBA8 cellular generation with dimensions/tile size 1..4096; reference floor seed grids, Y-before-X draws, adjacent-tile clipping and opaque intensity order. Integer-distance reduction reproduces native hypot for every in-domain pair; invalid requests preserve the stream.",
     "gaps": [
       "Implicit-global/libc random profiles and broader generation domains",
-      "Full integration/target/resource/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:GenImageCellular",
     "milestone": "images"
@@ -3566,7 +3640,9 @@
     "scope": "Byte-list image data, stopping at the first NUL, truncating to dimensions and padding with zero grayscale. Returns opaque RGBA8 matching native GenImageText followed by format normalization; dimensions 1..4096 and byte values 0..255.",
     "gaps": [
       "Native grayscale storage, C-string/null/encoding ABI correspondence",
-      "Full integration/target/resource/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:GenImageText",
     "milestone": "fonts"
@@ -3576,7 +3652,8 @@
     "status": "contract-checked",
     "scope": "Every Surface format; returns the source and an independent clone with exact stored samples. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageCopy",
     "milestone": "images"
@@ -3587,7 +3664,8 @@
     "scope": "Every Surface format; raylib 6.2's validation (x, y >= 0, width, height > 0, (int)x + (int)width <= image width and likewise for y) with fractional fields truncated, otherwise None (raylib's empty image); original owner retained and extracted storage independent with exact samples. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "A width or height in (0, 1) passes raylib's check and yields a 0-sized image; Jonlib answers None (no 0-sized Surface)",
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageFromImage",
     "milestone": "resampling"
@@ -3598,8 +3676,9 @@
     "scope": "Retained sources and independent GRAYSCALE output for every format (R32 finite [0,1], R32G32B32 finite [0,1]). Bounded integral selectors keep native per-format redirection (R32 always its sole sample), packed reciprocal normalization and F32 byte truncation. Unsupported requests preserve original owners. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other selector/source domains, formats and mipmaps",
-      "Complete resource/target/performance coverage",
-      "R32 samples outside finite [0,1] and complete target/contraction profiles"
+      "R32 samples outside finite [0,1]",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageFromChannel",
     "milestone": "images"
@@ -3635,8 +3714,10 @@
     "gaps": [
       "Other float/half/compressed formats, mipmaps and other thresholds/endianness",
       "NaN payload interoperability, out-of-domain float casts and native allocation ABI",
-      "Complete integration/target/resource/performance coverage",
-      "R32 samples outside finite [0,1] and complete target/contraction profiles"
+      "R32 samples outside finite [0,1]",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:ImageFormat",
     "milestone": "pixels"
@@ -3647,7 +3728,8 @@
     "scope": "Every Surface format, dimensions 1..4096; canvas expansion to next power-of-two dimensions with SetPixelColor fill (R32 and R32G32B32 stay zero) and the native no-op for POT sizes. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other dimensions/formats/mipmaps and NaN payload parity",
-      "Full target/performance gates"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageToPOT",
     "milestone": "images"
@@ -3657,7 +3739,8 @@
     "status": "profile-covered",
     "scope": "Every Surface format; integral crops with positive clipped results or native strictly-outside-origin no-ops; exact samples and returned owners on rejection. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageCrop",
     "milestone": "resampling"
@@ -3667,7 +3750,9 @@
     "status": "profile-covered",
     "scope": "Every Surface format; reference alpha bounds then a byte-level crop for threshold 0..1; empty selections preserve the original image unchanged. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Mipmaps and complete platform/performance gates"
+      "Mipmaps",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageAlphaCrop",
     "milestone": "images"
@@ -3678,7 +3763,9 @@
     "scope": "Formats 1..13, finite threshold 0..1: raylib's per-format switch. GRAY_ALPHA, R5G5B5A1 and R4G4B4A4 compare alpha bytes/bits and store raylib's replacement words; R8G8B8A8 replaces all channels at or below the byte cutoff; R32G32B32A32/R16G16B16A16 compare float alpha and store channel/255 floats; formats without alpha are unchanged. R5G5B5A1/R4G4B4A4 colors whose unscaled round(c*31)/round(c*15) byte casts are undefined (channels above 8, or above 17) are InvalidRequest, as are other thresholds.",
     "gaps": [
       "Undefined native packed-color casts for brighter R5G5B5A1/R4G4B4A4 colors",
-      "Mipmaps and full target/performance gates"
+      "Mipmaps",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageAlphaClear",
     "milestone": "images"
@@ -3690,7 +3777,8 @@
     "gaps": [
       "Reference warning/no-op adaptation on mismatched sizes",
       "Pixel formats 10+",
-      "Full target/performance gates"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageAlphaMask",
     "milestone": "images"
@@ -3700,7 +3788,9 @@
     "status": "profile-covered",
     "scope": "RGBA8; reference F32 alpha division and RGB multiplication with byte truncation; alpha retained. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Mipmaps and full target/performance gates"
+      "Mipmaps",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageAlphaPremultiply",
     "milestone": "images"
@@ -3712,7 +3802,8 @@
     "gaps": [
       "Other source formats/mipmaps and configured iteration counts",
       "Negative/excessive native blur sizes",
-      "Complete resource/platform/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageBlurGaussian",
     "milestone": "images"
@@ -3724,7 +3815,8 @@
     "gaps": [
       "Wider kernels/coefficient domains (NaN/infinite sums stay undefined natively)",
       "Other source formats/mipmaps",
-      "Complete resource/platform/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageKernelConvolution",
     "milestone": "images"
@@ -3736,7 +3828,9 @@
     "gaps": [
       "Pixel formats 10+ and mipmap chains",
       "Dimensions beyond the initial Surface domain",
-      "Complete platform, application-integration and performance validation"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:ImageResize",
     "milestone": "resampling"
@@ -3746,7 +3840,8 @@
     "status": "profile-covered",
     "scope": "Any Surface format via LoadImageColors, the plus-one fixed-point mapping and ImageFormat back, dimensions 1..4096; unsafe mappings return the original owner. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageResizeNN",
     "milestone": "resampling"
@@ -3757,7 +3852,9 @@
     "scope": "Every Surface format, dimensions 1..4096; bounded integral offsets with positive overlap for changed sizes. Exact sample movement and same-size no-ops; the fill is stored with SetPixelColor, which leaves R32 and R32G32B32 canvases zero. Rejected requests retain original owners. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "No-overlap/unsafe reference copy domains",
-      "Mipmaps, NaN payload parity and complete platform/performance gates"
+      "Mipmaps, NaN payload parity",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageResizeCanvas",
     "milestone": "resampling"
@@ -3769,7 +3866,8 @@
     "gaps": [
       "Existing partial/full native chains and pixel formats 10+",
       "Texture integration",
-      "Complete resource/platform/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageMipmaps",
     "milestone": "resampling"
@@ -3780,7 +3878,9 @@
     "scope": "Any Surface format via LoadImageColors to Floyd-Steinberg R5G6B5 (5,6,5,0), R5G5B5A1 (5,5,5,1) or R4G4B4A4 (4,4,4,4). Preserves raster order, truncation, neighbor saturation and alpha handling; other bit counts (native format 0) return the original with InvalidDitherBits. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other source formats/mipmaps",
-      "Full integration/target/resource/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:ImageDither",
     "milestone": "images"
@@ -3790,7 +3890,8 @@
     "status": "profile-covered",
     "scope": "Every Surface format; vertical flipping with exact stored samples and preserved dimensions. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageFlipVertical",
     "milestone": "images"
@@ -3800,7 +3901,8 @@
     "status": "profile-covered",
     "scope": "Every Surface format; horizontal flipping with exact stored samples and preserved dimensions. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageFlipHorizontal",
     "milestone": "images"
@@ -3812,8 +3914,9 @@
     "gaps": [
       "Wider-angle reference behavior",
       "Pixel formats 10+ and mipmaps",
-      "Full target/performance gates",
-      "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
+      "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageRotate",
     "milestone": "images"
@@ -3823,7 +3926,9 @@
     "status": "profile-covered",
     "scope": "Every Surface format; 90-degree clockwise rotation with swapped dimensions and exact sample words. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Mipmaps, NaN payload parity and complete target/performance evidence"
+      "Mipmaps, NaN payload parity",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageRotateCW",
     "milestone": "images"
@@ -3833,7 +3938,9 @@
     "status": "profile-covered",
     "scope": "Every Surface format; 90-degree counterclockwise rotation with swapped dimensions and exact sample words. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Mipmaps, NaN payload parity and complete target/performance evidence"
+      "Mipmaps, NaN payload parity",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageRotateCCW",
     "milestone": "images"
@@ -3864,7 +3971,8 @@
     "scope": "ImageFormat to GRAYSCALE from any Surface format, with native F32 luminance order and truncation; R32G32B32 converts directly from finite [0,1] samples. Rejected requests return the original owner. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other source domains/mipmaps and remaining metadata",
-      "Full target/resource/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageColorGrayscale",
     "milestone": "images"
@@ -3884,7 +3992,8 @@
     "status": "profile-covered",
     "scope": "Any Surface format via LoadImageColors and ImageFormat back; finite amounts below 2^31 in magnitude truncated toward zero (C int) then clamped to -255..255, native underflow-to-one; other amounts are InvalidRequest. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full signed/source domain, Mipmaps and target/performance evidence"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageColorBrightness",
     "milestone": "images"
@@ -3904,8 +4013,9 @@
     "status": "profile-covered",
     "scope": "Every Surface format to complete row-major RGBA color lists: native packed integer expansion, red-only R32 and truncated R32G32B32 samples (finite [0,1], otherwise OutOfDomain with the owner). Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open.",
-      "R32 samples outside finite [0,1] and complete target/contraction profiles"
+      "R32 samples outside finite [0,1]",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:LoadImageColors",
     "milestone": "pixels"
@@ -3916,7 +4026,9 @@
     "scope": "Preserves the source owner and returns an owned RGBA palette for capacity 1..4096: first-occurrence order, alpha-zero exclusion, alpha-sensitive uniqueness, native count and BLANK padding to full capacity. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other image formats/mipmaps",
-      "Full integration/target/resource/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:LoadImagePalette",
     "milestone": "images"
@@ -3936,7 +4048,9 @@
     "status": "profile-covered",
     "scope": "Consumes the owned palette and returns Unit while the separately retained source surface remains usable.",
     "gaps": [
-      "Full integration/target/resource/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:UnloadImagePalette",
     "milestone": "images"
@@ -3946,7 +4060,9 @@
     "status": "profile-covered",
     "scope": "Every Surface format; threshold 0..1; strict comparison of the LoadImageColors alpha byte (255 for formats without alpha) and exact zero rectangle for empty selections; original owner returned. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Mipmaps and complete platform/performance gates"
+      "Mipmaps",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetImageAlphaBorder",
     "milestone": "images"
@@ -3956,8 +4072,9 @@
     "status": "contract-checked",
     "scope": "Every Surface format; U32 coordinates are checked before access; out-of-bounds pixels and out-of-domain R32G32B32 samples return None with the original owner. Native packed integer expansion and red-only R32 colors remain distinct from low-level GetPixelColor. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open.",
-      "R32 samples outside finite [0,1] and complete target/contraction profiles"
+      "R32 samples outside finite [0,1]",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetImageColor",
     "milestone": "images"
@@ -3967,7 +4084,8 @@
     "status": "profile-covered",
     "scope": "Consumes a Surface of any format and stores one color in every pixel with ImageDrawPixel's per-format encoding; dimensions preserved. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageClearBackground",
     "milestone": "images"
@@ -3977,7 +4095,8 @@
     "status": "profile-covered",
     "scope": "Every Surface format; stores one in-bounds pixel with ImageDrawPixel's per-format encoding (no blending); outside coordinates are clipped. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawPixel",
     "milestone": "images"
@@ -3987,7 +4106,9 @@
     "status": "profile-covered",
     "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite Vector2 coordinates truncated before pixel clipping. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Other formats and complete target/performance evidence"
+      "Other formats",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawPixelV",
     "milestone": "images"
@@ -3997,7 +4118,8 @@
     "status": "profile-covered",
     "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; integral coordinates; pinned 16.16 stepping from one half and both endpoints (raylib 6.2). Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawLine",
     "milestone": "images"
@@ -4007,7 +4129,8 @@
     "status": "profile-covered",
     "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite Vector2 inputs and raylib add-half/truncate rounding. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawLineV",
     "milestone": "images"
@@ -4017,7 +4140,9 @@
     "status": "profile-covered",
     "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite endpoints; add-half/truncate rounding; safe signed 16.16 deltas; thickness 0..32767. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Negative thickness, full formats/domains and target/performance evidence"
+      "Negative thickness",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawLineEx",
     "milestone": "images"
@@ -4027,7 +4152,8 @@
     "status": "profile-covered",
     "scope": "raylib 6.2: ImageDrawLineV between consecutive points of a List<Vector2>; fewer than two points draw nothing. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full format/numeric domain and target/performance evidence"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawLineStrip",
     "milestone": "images"
@@ -4037,7 +4163,8 @@
     "status": "profile-covered",
     "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices with raylib's (int) truncation of bounds and edge steps; defined reference signed-edge arithmetic. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawTriangle",
     "milestone": "images"
@@ -4048,8 +4175,10 @@
     "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices with (int)-truncated bounds/edge steps; defined signed arithmetic and nonzero reference weight sum; reference byte-quantized barycentric color interpolation. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Degenerate/undefined reference gradients",
-      "Other formats and full target/performance gates",
-      "Wider coordinate domains"
+      "Other formats",
+      "Wider coordinate domains",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawTriangleGradient",
     "milestone": "images"
@@ -4059,7 +4188,8 @@
     "status": "profile-covered",
     "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite vertices truncated before line rasterization. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawTriangleLines",
     "milestone": "images"
@@ -4069,7 +4199,8 @@
     "status": "profile-covered",
     "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; List<Vector2> with finite bounded vertices (each triangle as ImageDrawTriangle); reference fan order; fewer than three points is a no-op. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full formats/domains and target/performance evidence"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawTriangleFan",
     "milestone": "images"
@@ -4079,7 +4210,8 @@
     "status": "profile-covered",
     "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices (each triangle as ImageDrawTriangle); alternating reference winding; fewer than three points is a no-op. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full formats/domains and target/performance evidence"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawTriangleStrip",
     "milestone": "images"
@@ -4089,7 +4221,8 @@
     "status": "profile-covered",
     "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; integral-coordinate profile of the CPU ImageDrawRectangle, clipped to the image. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawRectangle",
     "milestone": "images"
@@ -4099,7 +4232,8 @@
     "status": "profile-covered",
     "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite position and size truncated before reference rectangle drawing. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full format/numeric domain and target/performance evidence"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawRectangleV",
     "milestone": "images"
@@ -4109,7 +4243,8 @@
     "status": "profile-covered",
     "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite rectangle; clipping precedes coordinate/extent truncation. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full format/numeric domain and target/performance evidence"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawRectangleRec",
     "milestone": "images"
@@ -4131,7 +4266,8 @@
     "status": "profile-covered",
     "scope": "raylib 6.2's ImageDrawRectangleLines(dst, int posX, int posY, int width, int height): ImageDrawRectangleLinesEx of that rectangle with thickness 1, each covered pixel stored with ImageDrawPixel's per-format encoding; integral coordinates in -32767..32767. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full format/numeric domain and target/performance evidence"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawRectangleLines",
     "milestone": "images"
@@ -4141,7 +4277,9 @@
     "status": "profile-covered",
     "scope": "raylib 6.0's ImageDrawRectangleLines renamed by 6.2: every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite rectangle; thickness 0..32767; reference four-edge truncation and degenerate behavior. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Negative thickness, full formats/domains and target/performance evidence"
+      "Negative thickness",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawRectangleLinesEx",
     "milestone": "images"
@@ -4162,7 +4300,8 @@
     "status": "profile-covered",
     "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; reference midpoint filled-circle coverage with U32 radius, clipped to the image. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawCircle",
     "milestone": "images"
@@ -4172,7 +4311,8 @@
     "status": "profile-covered",
     "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded center truncated to integers; radius 0..32767. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full format/numeric domain and target/performance evidence"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawCircleV",
     "milestone": "images"
@@ -4182,7 +4322,8 @@
     "status": "profile-covered",
     "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; integral bounded center; radius 0..32767; reference midpoint outline. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full format/numeric domain and target/performance evidence"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawCircleLines",
     "milestone": "images"
@@ -4192,7 +4333,8 @@
     "status": "profile-covered",
     "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite center truncated before midpoint outline; radius 0..32767. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Full format/numeric domain and target/performance evidence"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawCircleLinesV",
     "milestone": "images"
@@ -4213,8 +4355,10 @@
     "status": "profile-covered",
     "scope": "raylib 6.2 (6.0's ImageDraw of the full source): ImageDrawImagePro of the whole source at the integer position, integer ColorAlphaBlend through GetPixelColor/SetPixelColor into any format; both owners returned. Formats 1..13 are compared on the surface-format profile.",
     "gaps": [
-      "Mipmaps, empty/undefined rectangles and full platform/performance validation",
-      "A wide float source outside 0..1 is OutOfDomain"
+      "Mipmaps, empty/undefined rectangles",
+      "A wide float source outside 0..1 is OutOfDomain",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawImage",
     "milestone": "resampling"
@@ -4237,8 +4381,10 @@
     "status": "profile-covered",
     "scope": "raylib 6.2: ImageDrawImagePro of srcRec into {position, srcRec's width and height} (never scaled), with source and destination clipping as draw_image_rect. Formats 1..13 are compared on the surface-format profile.",
     "gaps": [
-      "Mipmaps, empty/undefined rectangles and full platform/performance validation",
-      "Bounded finite rectangles and positions (|v| <= 32767)"
+      "Mipmaps, empty/undefined rectangles",
+      "Bounded finite rectangles and positions (|v| <= 32767)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawImageRec",
     "milestone": "resampling"
@@ -4248,8 +4394,10 @@
     "status": "profile-covered",
     "scope": "raylib 6.2 (6.0's ImageDraw): origin and rotation are not implemented upstream and are ignored; source clipping, truncated-size scaling decision, ImageFromImage + ImageResize in the source format, destination clipping, GetPixelColor/ColorAlphaBlend/SetPixelColor and memcpy rows for unblended equal formats; both owners retained. Formats 1..13 are compared on the surface-format profile.",
     "gaps": [
-      "Mipmaps, empty or undefined source rectangles and full platform/performance validation",
-      "Bounded finite rectangles (|v| <= 32767)"
+      "Mipmaps, empty or undefined source rectangles",
+      "Bounded finite rectangles (|v| <= 32767)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawImagePro",
     "milestone": "resampling"
@@ -4512,7 +4660,9 @@
     "status": "profile-covered",
     "scope": "Exact packed RGBA equality, including alpha.",
     "gaps": [
-      "Complete platform/integration/performance gates"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:ColorIsEqual",
     "milestone": "pixels"
@@ -4522,7 +4672,9 @@
     "status": "profile-covered",
     "scope": "Same finite-factor alpha replacement as ColorAlpha (Color.with_alpha).",
     "gaps": [
-      "Complete platform/integration/performance gates"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:Fade",
     "milestone": "pixels"
@@ -4532,7 +4684,8 @@
     "status": "contract-checked",
     "scope": "Packs four channels as 0xRRGGBBAA keeping the low eight bits of each (C unsigned-byte conversion), the unsigned bit pattern of ColorToInt.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ColorToInt",
     "milestone": "pixels"
@@ -4542,7 +4695,9 @@
     "status": "profile-covered",
     "scope": "RGBA8 packed color to exact reference normalized RGBA Vector4 components.",
     "gaps": [
-      "Complete target/integration/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:ColorNormalize",
     "milestone": "pixels"
@@ -4553,7 +4708,9 @@
     "scope": "Finite normalized Vector4 components 0..1 converted with reference F32 multiplication and byte truncation.",
     "gaps": [
       "Out-of-profile/exceptional/subnormal inputs",
-      "Complete target/integration/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:ColorFromNormalized",
     "milestone": "pixels"
@@ -4563,7 +4720,9 @@
     "status": "profile-covered",
     "scope": "RGBA8 to HSV Vector3 with exact reference float bits, max-channel ties, achromatic results and ignored alpha.",
     "gaps": [
-      "Complete target/integration/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:ColorToHSV",
     "milestone": "pixels"
@@ -4585,7 +4744,9 @@
     "status": "profile-covered",
     "scope": "Integer RGBA channel multiplication divided by 255; distinct from alpha-blending's internal tint.",
     "gaps": [
-      "Complete platform/integration/performance gates"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:ColorTint",
     "milestone": "pixels"
@@ -4595,7 +4756,9 @@
     "status": "profile-covered",
     "scope": "Finite factor clamped to -1..1; reference darkening/lightening formulas and byte truncation; alpha retained.",
     "gaps": [
-      "Complete platform/integration/performance gates"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:ColorBrightness",
     "milestone": "pixels"
@@ -4605,7 +4768,9 @@
     "status": "profile-covered",
     "scope": "Finite factor clamped to -1..1; reference F32 arithmetic and byte truncation; alpha retained.",
     "gaps": [
-      "Complete platform/integration/performance gates"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:ColorContrast",
     "milestone": "pixels"
@@ -4615,7 +4780,9 @@
     "status": "profile-covered",
     "scope": "Packed RGBA; finite F32 alpha clamped to 0..1 and truncated after multiplying by 255.",
     "gaps": [
-      "Complete platform/integration/performance gates"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:ColorAlpha",
     "milestone": "pixels"
@@ -4625,7 +4792,8 @@
     "status": "profile-covered",
     "scope": "Integer ColorAlphaBlend on packed RGBA, including 256-based tint and alpha rounding.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ColorAlphaBlend",
     "milestone": "pixels"
@@ -4635,7 +4803,9 @@
     "status": "profile-covered",
     "scope": "Finite factor clamped to 0..1; independent straight RGBA interpolation and byte truncation.",
     "gaps": [
-      "Complete platform/integration/performance gates"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:ColorLerp",
     "milestone": "pixels"
@@ -4645,7 +4815,8 @@
     "status": "contract-checked",
     "scope": "Packed 0xRRGGBBAA U32 words in GetColor byte order; Color.red/green/blue/alpha extract 8-bit channels.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetColor",
     "milestone": "pixels"
@@ -4656,7 +4827,9 @@
     "scope": "Little-endian immutable byte lists for native formats 1..7; packed RGBA results preserve integer expansion, R5G5B5A1 blue from bits 1..5 (raylib 6.2). Unsupported formats, invalid bytes and truncated input produce typed failures.",
     "gaps": [
       "Float/half/compressed profiles",
-      "Complete integration/target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:GetPixelColor",
     "milestone": "pixels"
@@ -4667,7 +4840,9 @@
     "scope": "Formats 1..7 with exact grayscale and nearest packed-channel quantization, strict alpha>50 threshold and little-endian words. Functional byte-list result replaces only the pixel prefix and preserves trailing bytes.",
     "gaps": [
       "Other formats/configured alpha thresholds",
-      "Complete integration/target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:SetPixelColor",
     "milestone": "pixels"
@@ -4678,7 +4853,9 @@
     "scope": "U32 dimensions 0..4096 and nonnegative signed-int format codes; exact pinned bit rates and truncation, zero for an empty side (raylib 6.2), compressed minimum sizes below 4x4, including ASTC8x8 and unknown formats.",
     "gaps": [
       "Wider/signed dimension domains and native integer-overflow behavior",
-      "Full integration/target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib",
+      "Integration: not exercised beyond its gate"
     ],
     "api_id": "raylib:function:GetPixelDataSize",
     "milestone": "pixels"
@@ -4800,7 +4977,7 @@
     "status": "profile-covered",
     "scope": "The exact file text: banner, DEFLATE (CompressData) of LoadImageFromTexture's data (all zero bytes on rlsw), rectangles, GlyphInfo values and the LoadFont_<Name> function named by TextToPascal of the file name; export_as_code writes it with SaveFileText.",
     "gaps": [
-      "None when a rectangle is not integral or the text would overflow raylib's buffer",
+      "Undefined native behavior: none when a rectangle is not integral or the text would overflow raylib's buffer",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:ExportFontAsCode",
@@ -5967,7 +6144,7 @@
     "status": "profile-covered",
     "scope": "Stores the texture struct (TextureInfo) in the map; the previous one is not unloaded.",
     "gaps": [
-      "Map types of 12 or more (raylib writes past the maps) are None",
+      "Undefined native behavior: map types of 12 or more (raylib writes past the maps) are None",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:SetMaterialTexture",
@@ -6007,7 +6184,7 @@
       "Skinned normals (animNormals) are not modeled: no pixel reads them on the software renderer",
       "An IQM file without joints is outside the contract (raylib skins with an empty, non-NULL skeleton; Jonlib changes nothing)",
       "Frames of -1 and below, past the int range or not a number answer None (undefined natively)",
-      "An animation with fewer bones than the skeleton, or a weighted bone index past the skeleton, answers None (read past the end natively)",
+      "Undefined native behavior: an animation with fewer bones than the skeleton, or a weighted bone index past the skeleton, answers None (read past the end natively)",
       "Profiles without acosf (Apple, glibc 2.41) answer None for rotations more than about 36 degrees apart",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
@@ -6021,7 +6198,7 @@
     "gaps": [
       "Skinned normals (animNormals) are not modeled: no pixel reads them on the software renderer",
       "A frame outside an int or with a negative remainder by the keyframe count answers None (undefined natively)",
-      "An animation with fewer bones than the skeleton, or a weighted bone index past the skeleton, answers None (read past the end natively)",
+      "Undefined native behavior: an animation with fewer bones than the skeleton, or a weighted bone index past the skeleton, answers None (read past the end natively)",
       "Profiles without acosf (Apple, glibc 2.41) answer None for rotations more than about 36 degrees apart",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
@@ -6055,7 +6232,8 @@
     "scope": "Finite bounded sphere predicate using inclusive squared distance and the reference squared sum of signed radii. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
     "gaps": [
       "Exceptional/subnormal inputs and other contraction patterns",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionSpheres",
     "milestone": "collision"
@@ -6066,7 +6244,8 @@
     "scope": "Finite bounded axis-aligned box predicate; inclusive contacts on all axes and unchanged supplied bounds.",
     "gaps": [
       "Exceptional/subnormal domains",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionBoxes",
     "milestone": "collision"
@@ -6077,7 +6256,8 @@
     "scope": "Finite bounded box/sphere predicate with reference component Clamp ordering and inclusive closest-point distance test. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
     "gaps": [
       "Exceptional/subnormal inputs and other contraction patterns",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionBoxSphere",
     "milestone": "collision"
@@ -6088,8 +6268,9 @@
     "scope": "Every result field bit for bit, including inside rays; misses and hits behind the origin are raylib 6.2's zero collision. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
     "gaps": [
       "Exceptional/subnormal inputs and other contraction patterns",
-      "Full target/performance coverage",
-      "NaN sign and payload are not reproduced"
+      "NaN sign and payload are not reproduced",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetRayCollisionSphere",
     "milestone": "collision"
@@ -6099,9 +6280,10 @@
     "status": "profile-covered",
     "scope": "Slab intersection with raylib's inside-ray reversal, signed-zero fmin/fmax ties by libm profile and the truncated-int normal; every field bit for bit. Explicit uncontracted and Apple-clang FMA profiles.",
     "gaps": [
-      "NaN slab distances (raylib's arm64 build and C disagree) and normals outside the int cast (undefined in C) are None",
+      "Undefined native behavior: naN slab distances (raylib's arm64 build and C disagree) and normals outside the int cast (undefined in C) are None",
       "Exceptional/subnormal inputs and other contraction patterns",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetRayCollisionBox",
     "milestone": "collision"
@@ -6124,7 +6306,8 @@
     "scope": "Moller-Trumbore with raylib's 1e-6 epsilon, parallel/outside/behind misses as the zero result and hit fields bit for bit. Explicit uncontracted and Apple-clang FMA profiles.",
     "gaps": [
       "Exceptional/subnormal inputs and other contraction patterns",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetRayCollisionTriangle",
     "milestone": "collision"
@@ -6135,7 +6318,8 @@
     "scope": "Triangles (p1, p2, p4) then (p2, p3, p4), as raylib; planar and skewed quads bit for bit. Explicit uncontracted and Apple-clang FMA profiles.",
     "gaps": [
       "Exceptional/subnormal inputs and other contraction patterns",
-      "Full target/performance coverage"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetRayCollisionQuad",
     "milestone": "collision"
@@ -6209,7 +6393,7 @@
     "gaps": [
       "FLAC, XM and MOD data (UnsupportedWaveFormat)",
       "InvalidWaveData where dr_wav leaves samples unread, converts NaN or walks chunks forever",
-      "InvalidWaveData for MS ADPCM or AIFF int overflow, an AIFF rate negating INT64_MIN and 5-7 or 9+ byte samples in big-endian containers",
+      "Undefined native behavior: invalidWaveData for MS ADPCM or AIFF int overflow, an AIFF rate negating INT64_MIN and 5-7 or 9+ byte samples in big-endian containers",
       "InvalidWaveData for QOA frames decoding past the declared total, more than 8 channels or 2^24 samples",
       "InvalidWaveData for MP3 data dr_mp3 does not open or decodes by leaving an array, and for an Ogg Vorbis stream that gives fewer samples than its length says or that the decoder refuses (docs/AUDIO.md)",
       "UnsupportedWaveFormat for an Ogg Vorbis stream past the port's limits or whose transform tables the libm profile does not give (Glibc239Libm gives them all; Wave.decode uses AppleLibm)"
@@ -6278,8 +6462,8 @@
     "gaps": [
       "Requests raylib copies out of bounds for change nothing: more frames than the buffer, a negative count, a list that is not 2*frames long",
       "A freed block and a buffer without samples change nothing",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
-      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "Undefined native behavior: a buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
     ],
     "api_id": "raylib:function:UpdateSound",
     "milestone": "audio-device"
@@ -6297,8 +6481,8 @@
     "status": "profile-covered",
     "scope": "The buffer is untracked and its block freed, even a block other buffers still play; buffer 0 changes nothing.",
     "gaps": [
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
-      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "Undefined native behavior: a buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
     ],
     "api_id": "raylib:function:UnloadSound",
     "milestone": "audio-device"
@@ -6308,8 +6492,8 @@
     "status": "profile-covered",
     "scope": "The buffer is untracked and its block stays; buffer 0 changes nothing.",
     "gaps": [
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
-      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "Undefined native behavior: a buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
     ],
     "api_id": "raylib:function:UnloadSoundAlias",
     "milestone": "audio-device"
@@ -6331,7 +6515,7 @@
     "scope": "raylib's header text: uppercased file name, frame/rate/size/channel defines, 0x%x bytes for 8/16-bit and exact %.4f floats for 32-bit waves, 20 per line; compared with the files raylib writes.",
     "gaps": [
       "Empty waves (raylib reads before the data) and NaN samples are refused",
-      "Very long all-huge-negative 32-bit waves can overflow raylib's text buffer"
+      "Undefined native behavior: very long all-huge-negative 32-bit waves can overflow raylib's text buffer"
     ],
     "api_id": "raylib:function:ExportWaveAsCode",
     "milestone": "audio-codecs"
@@ -6342,8 +6526,8 @@
     "scope": "The buffer plays from its first frame, unpaused; AudioDevice.mix then mixes it as raudio's device callback does (its resampler one frame late, volume and pan levels, master volume, clip) until its end, every sample compared with raylib.",
     "gaps": [
       "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
-      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)",
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "Undefined native behavior: a buffer that was unloaded leaves the state as it is (raylib uses freed memory)",
       "The callback computes as on x86-64, where miniaudio disables denormals (a subnormal is a zero); the fused (FMA) profile and hosts that keep subnormals are not ported"
     ],
     "api_id": "raylib:function:PlaySound",
@@ -6355,8 +6539,8 @@
     "scope": "A playing buffer stops; a paused buffer stays as it is, as raylib only stops buffers that are playing and not paused.",
     "gaps": [
       "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
-      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "Undefined native behavior: a buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
     ],
     "api_id": "raylib:function:StopSound",
     "milestone": "audio-device"
@@ -6367,8 +6551,8 @@
     "scope": "The buffer is paused, playing or not.",
     "gaps": [
       "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
-      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "Undefined native behavior: a buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
     ],
     "api_id": "raylib:function:PauseSound",
     "milestone": "audio-device"
@@ -6379,8 +6563,8 @@
     "scope": "The buffer is not paused.",
     "gaps": [
       "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
-      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "Undefined native behavior: a buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
     ],
     "api_id": "raylib:function:ResumeSound",
     "milestone": "audio-device"
@@ -6402,8 +6586,8 @@
     "scope": "The buffer's volume: any float.",
     "gaps": [
       "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
-      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "Undefined native behavior: a buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
     ],
     "api_id": "raylib:function:SetSoundVolume",
     "milestone": "audio-device"
@@ -6415,8 +6599,8 @@
     "gaps": [
       "A pitch whose rate 48000/pitch does not fit an unsigned int changes nothing (the cast is undefined)",
       "A rate Jonlib does not resample makes AudioDevice.mix refuse: a reduced output rate from 2^31, an uncertified filter coefficient",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
-      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "Undefined native behavior: a buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
     ],
     "api_id": "raylib:function:SetSoundPitch",
     "milestone": "audio-device"
@@ -6427,8 +6611,8 @@
     "scope": "The buffer's pan, clamped to -1..1 (NaN stays).",
     "gaps": [
       "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
-      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "Undefined native behavior: a buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
     ],
     "api_id": "raylib:function:SetSoundPan",
     "milestone": "audio-device"
@@ -6523,7 +6707,7 @@
     "status": "profile-covered",
     "scope": "The stream's buffer is untracked and its halves freed; the decoder goes with the Music value.",
     "gaps": [
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:UnloadMusicStream",
     "milestone": "audio-stream"
@@ -6534,7 +6718,7 @@
     "scope": "The stream plays from its first frame, both halves processed and no frame given.",
     "gaps": [
       "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:PlayMusicStream",
     "milestone": "audio-stream"
@@ -6556,9 +6740,9 @@
     "gaps": [
       "FLAC music is not ported (raylib's default build leaves FLAC out: SUPPORT_FILEFORMAT_FLAC is 0)",
       "Nothing for a music without frames (raylib reads it for ever when it loops)",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
       "An XM player that meets what C leaves undefined, a NaN sample or 2^32 samples gives silence from there (Music.why says so)",
-      "A MOD player that reads past its file (a looping sample at its end) gives silence from there (Music.why is 1)"
+      "Undefined native behavior: a MOD player that reads past its file (a looping sample at its end) gives silence from there (Music.why is 1)"
     ],
     "api_id": "raylib:function:UpdateMusicStream",
     "milestone": "audio-stream"
@@ -6568,7 +6752,7 @@
     "status": "profile-covered",
     "scope": "The stream stops and the decoder goes back to its first frame, playing or not; an XM music's player is reset (jar_xm_reset), a MOD music's goes back to the song's start (jar_mod_seek_start), an Ogg Vorbis music's decoder goes back to its first frame (stb_vorbis_seek_start).",
     "gaps": [
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:StopMusicStream",
     "milestone": "audio-stream"
@@ -6579,7 +6763,7 @@
     "scope": "The stream is paused.",
     "gaps": [
       "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:PauseMusicStream",
     "milestone": "audio-stream"
@@ -6590,7 +6774,7 @@
     "scope": "The stream is not paused.",
     "gaps": [
       "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:ResumeMusicStream",
     "milestone": "audio-stream"
@@ -6612,7 +6796,7 @@
     "scope": "The stream's volume: any float.",
     "gaps": [
       "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:SetMusicVolume",
     "milestone": "audio-stream"
@@ -6623,7 +6807,7 @@
     "scope": "The stream's pitch and its converter's output rate against the file's rate.",
     "gaps": [
       "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:SetMusicPitch",
     "milestone": "audio-stream"
@@ -6634,7 +6818,7 @@
     "scope": "The stream's pan, clamped to -1..1.",
     "gaps": [
       "Heard only through device callbacks the program asks for (AudioDevice.mix, AudioClock.advance): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:SetMusicPan",
     "milestone": "audio-stream"
@@ -6684,7 +6868,7 @@
     "status": "profile-covered",
     "scope": "The buffer is untracked and its halves freed.",
     "gaps": [
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:UnloadAudioStream",
     "milestone": "audio-stream"
@@ -6695,7 +6879,7 @@
     "scope": "The first processed half takes the frames and zeros after them and is no longer processed; with both processed the cursor goes back to the first frame; nothing when no half is processed; too many frames (a negative int too) only move the cursor; every sample and flag compared with raylib for 8-, 16- and 32-bit streams.",
     "gaps": [
       "The state as it is for a sound's buffer (raylib writes it as a stream's) and for a data list that is not frames*channels long",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:UpdateAudioStream",
     "milestone": "audio-stream"
@@ -6717,7 +6901,7 @@
     "scope": "Playing from the first frame, unpaused, both halves processed; AudioDevice.mix then plays it as raudio's device callback does (the two halves read in turn and marked processed, silence where the program did not feed it, the data converter from the stream's format, channels and rate with miniaudio's passes and raudio's residual), every sample compared with raylib.",
     "gaps": [
       "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
       "A playing stream of more than 1024 channels makes AudioDevice.mix refuse (raudio's input buffer or miniaudio's temporary holds no frame of it)",
       "The callback computes as on x86-64, where miniaudio disables denormals (a subnormal is a zero); the fused (FMA) profile and hosts that keep subnormals are not ported"
     ],
@@ -6730,7 +6914,7 @@
     "scope": "The buffer is paused.",
     "gaps": [
       "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:PauseAudioStream",
     "milestone": "audio-stream"
@@ -6741,7 +6925,7 @@
     "scope": "The buffer is not paused.",
     "gaps": [
       "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:ResumeAudioStream",
     "milestone": "audio-stream"
@@ -6762,7 +6946,7 @@
     "scope": "A playing stream stops, back at its first frame with both halves processed; a paused one stays as it is.",
     "gaps": [
       "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:StopAudioStream",
     "milestone": "audio-stream"
@@ -6773,7 +6957,7 @@
     "scope": "The buffer's volume: any float.",
     "gaps": [
       "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:SetAudioStreamVolume",
     "milestone": "audio-stream"
@@ -6785,7 +6969,7 @@
     "gaps": [
       "A pitch whose rate does not fit an unsigned int changes nothing (the cast is undefined)",
       "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:SetAudioStreamPitch",
     "milestone": "audio-stream"
@@ -6796,7 +6980,7 @@
     "scope": "The buffer's pan, clamped to -1..1 (NaN stays).",
     "gaps": [
       "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:SetAudioStreamPan",
     "milestone": "audio-stream"
@@ -6817,7 +7001,7 @@
     "scope": "A stream with a callback takes its frames from the callback instead of its halves (the cursor and the halves stay), and gives them back to the halves without one (NULL); the frames each call is asked for (raudio's guess of the converter's input, at most what its 4096-byte buffer holds, and again while the converter wants more) are AudioDevice.asks, and AudioDevice.mix_answered mixes the answers; the asks and every sample compared with raylib.",
     "gaps": [
       "A sound's buffer takes no callback (raylib would call it for the sound's frames)",
-      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
       "AudioDevice.mix refuses a callback in which a stream's callback would be asked: its answers are needed"
     ],
     "api_id": "raylib:function:SetAudioStreamCallback",
@@ -6828,7 +7012,7 @@
     "status": "profile-covered",
     "scope": "The processor becomes the last of the stream's (or sound's) buffer: in a device callback it is called, after those attached before it, on each run of at most 512 frames the buffer gives (stereo f32, after the converter and before the volume and pan); the calls, their order and every sample compared with raylib.",
     "gaps": [
-      "An unready device leaves the list as it is (raylib locks a mutex that does not exist)",
+      "Undefined native behavior: an unready device leaves the list as it is (raylib locks a mutex that does not exist)",
       "A stream without a tracked buffer leaves the list as it is (raylib reads through the pointer)"
     ],
     "api_id": "raylib:function:AttachAudioStreamProcessor",
@@ -6839,7 +7023,7 @@
     "status": "profile-covered",
     "scope": "Every processor of the buffer with the tag goes; the others keep their order.",
     "gaps": [
-      "An unready device leaves the list as it is (raylib locks a mutex that does not exist)",
+      "Undefined native behavior: an unready device leaves the list as it is (raylib locks a mutex that does not exist)",
       "A stream without a tracked buffer leaves the list as it is (raylib reads through the pointer)"
     ],
     "api_id": "raylib:function:DetachAudioStreamProcessor",
@@ -6850,7 +7034,7 @@
     "status": "profile-covered",
     "scope": "The processor becomes the last of the mixed output's: it is called on the whole mix of every device callback, after every buffer and before the master volume and the clip; the list outlives CloseAudioDevice; calls and samples compared with raylib.",
     "gaps": [
-      "An unready device leaves the list as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the list as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:AttachAudioMixedProcessor",
     "milestone": "audio-stream"
@@ -6860,7 +7044,7 @@
     "status": "profile-covered",
     "scope": "Every mixed processor with the tag goes; the others keep their order.",
     "gaps": [
-      "An unready device leaves the list as it is (raylib locks a mutex that does not exist)"
+      "Undefined native behavior: an unready device leaves the list as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:DetachAudioMixedProcessor",
     "milestone": "audio-stream"
