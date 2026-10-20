@@ -708,7 +708,6 @@
     "status": "profile-covered",
     "scope": "rlSetShader does nothing on the software renderer: drawing continues with the fixed pipeline (the frame is unchanged).",
     "gaps": [
-      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:BeginShaderMode",
@@ -719,7 +718,6 @@
     "status": "profile-covered",
     "scope": "rlSetShader with the default (0) shader does nothing on the software renderer.",
     "gaps": [
-      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:EndShaderMode",
@@ -730,7 +728,6 @@
     "status": "profile-covered",
     "scope": "No effect on the software renderer: rlSetBlendMode is compiled for OpenGL 3.3/ES2 only, so every mode keeps SRC_ALPHA/ONE_MINUS_SRC_ALPHA (checked for all eight modes).",
     "gaps": [
-      "The OpenGL 3.3 blend equations are a separate (GPU) contract",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:BeginBlendMode",
@@ -813,7 +810,6 @@
     "status": "profile-covered",
     "scope": "Shader{0, 32 locations of -1}: rlLoadShaderProgram answers 0 on the software renderer, so LoadShaderFromMemory takes its failure branch; the file text is never compiled.",
     "gaps": [
-      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:LoadShader",
@@ -824,7 +820,6 @@
     "status": "profile-covered",
     "scope": "Shader{0, 32 locations of -1}, the software renderer's failure branch, for any code or NULL.",
     "gaps": [
-      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:LoadShaderFromMemory",
@@ -835,7 +830,6 @@
     "status": "profile-covered",
     "scope": "id > 0 with allocated locations: False for every shader the software renderer loads.",
     "gaps": [
-      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsShaderValid",
@@ -846,7 +840,6 @@
     "status": "profile-covered",
     "scope": "-1 (rlGetLocationUniform on the software renderer).",
     "gaps": [
-      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetShaderLocation",
@@ -857,7 +850,6 @@
     "status": "profile-covered",
     "scope": "-1 (rlGetLocationAttrib on the software renderer).",
     "gaps": [
-      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetShaderLocationAttrib",
@@ -868,7 +860,6 @@
     "status": "profile-covered",
     "scope": "A -1 location is skipped; any other reaches rlSetUniform, which does nothing on the software renderer.",
     "gaps": [
-      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:SetShaderValue",
@@ -879,7 +870,6 @@
     "status": "profile-covered",
     "scope": "As SetShaderValue for count values.",
     "gaps": [
-      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:SetShaderValueV",
@@ -890,7 +880,6 @@
     "status": "profile-covered",
     "scope": "A -1 location is skipped; rlSetUniformMatrix does nothing on the software renderer.",
     "gaps": [
-      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:SetShaderValueMatrix",
@@ -901,7 +890,6 @@
     "status": "profile-covered",
     "scope": "A -1 location is skipped; rlSetUniformSampler does nothing on the software renderer.",
     "gaps": [
-      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:SetShaderValueTexture",
@@ -912,7 +900,6 @@
     "status": "profile-covered",
     "scope": "Nothing to free: the id is 0, the default shader id on the software renderer.",
     "gaps": [
-      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:UnloadShader",
@@ -1194,8 +1181,7 @@
     "status": "profile-covered",
     "scope": "Prints the level prefix, at most 244 characters of preformatted text and a newline when the type is at or above the threshold; LOG_FATAL exits with status 1.",
     "gaps": [
-      "'%' prints literally where TraceLog would format it (TextFormat belongs to the text utilities)",
-      "Android log routing"
+      "'%' prints literally where TraceLog would format it (TextFormat belongs to the text utilities)"
     ],
     "api_id": "raylib:function:TraceLog",
     "milestone": "memory"
@@ -1282,7 +1268,6 @@
     "status": "profile-covered",
     "scope": "Every byte of the file as characters 0..255, NULs included (text and binary modes agree on the reference hosts).",
     "gaps": [
-      "Windows text-mode newline translation",
       "Complete target/resource coverage"
     ],
     "api_id": "raylib:function:LoadFileText",
@@ -1303,7 +1288,6 @@
     "status": "profile-covered",
     "scope": "Writes the text up to its first NUL as bytes; characters above 255 are InvalidRequest before opening.",
     "gaps": [
-      "Windows text-mode newline translation",
       "Complete target/resource coverage"
     ],
     "api_id": "raylib:function:SaveFileText",
@@ -1451,7 +1435,6 @@
     "status": "profile-covered",
     "scope": "The POSIX rule: the name after the last '/' starts with '.' and is neither '.' nor '..'.",
     "gaps": [
-      "Windows' FILE_ATTRIBUTE_HIDDEN is not read: Jonlib's targets are POSIX",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
     ],
     "api_id": "raylib:function:IsFileHidden",
@@ -1602,7 +1585,6 @@
     "status": "profile-covered",
     "scope": "The POSIX rule: the path starts with '/'.",
     "gaps": [
-      "The Windows rules (UNC and drive letters) are not taken: Jonlib's targets are POSIX",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
     ],
     "api_id": "raylib:function:IsPathAbsolute",
@@ -1708,7 +1690,7 @@
     "status": "profile-covered",
     "scope": "Immutable byte lists of 0..1048576 bytes with at most 87380 retained sequences per 262144-byte block. Native quality-8 little-endian hashing, chain/lazy parsing, Huffman/precode construction, dynamic/stored cost selection and exact raw-DEFLATE bytes; empty input yields zero bytes. Invalid requests or sequence-budget exhaustion return None. The public decoder accepts compressed results only up to its separate 1 MiB input cap.",
     "gaps": [
-      "Larger input domains, big-endian hash profiles and native sequence-overflow domains",
+      "Larger input domains and native sequence-overflow domains",
       "Public decompression of compressed results larger than 1 MiB",
       "Complete integration/target/resource/performance coverage"
     ],
@@ -1765,7 +1747,7 @@
     "status": "profile-covered",
     "scope": "Immutable byte lists of 0..1048576 bytes, including empty input. Native little-endian padding/message words, modulo-U32 rounds and exactly four U32 words in native array order (standard MD5). Unsupported bytes/lengths return None before allocation.",
     "gaps": [
-      "Larger domains and big-endian native behavior",
+      "Larger domains",
       "Complete resource/platform/performance coverage"
     ],
     "api_id": "raylib:function:ComputeMD5",
@@ -3355,7 +3337,7 @@
       "Original pixel-format metadata for the other normalized codec paths and additional native arithmetic profiles",
       "Concurrent/special-file semantics, OS-close failure reporting and native OOM behavior",
       "Encoded-size caps do not bound decoded area, heap use or allocation success",
-      "GPU/Metal IO, Windows/browser and big-endian targets; complete integration/resource/performance coverage"
+      "GPU/Metal IO; complete integration/resource/performance coverage"
     ],
     "api_id": "raylib:function:LoadImage",
     "milestone": "image-codecs"
@@ -3404,7 +3386,7 @@
       "Original pixel-format metadata for the remaining normalized codecs (PSD, GIF) and remaining dispatch families",
       "Nondefault external stb decoder flags, PSD out-of-range matte casts and permissive incomplete/excess raster recovery",
       "Other permissive malformed-stream recovery, dimensions above 4096 and OOM parity",
-      "Big-endian and other native arithmetic profiles; GPU/Metal, Windows and browser targets",
+      "Other native arithmetic profiles; GPU/Metal targets",
       "Maximum-area allocation, latency/throughput/memory budgets and complete target/integration coverage"
     ],
     "api_id": "raylib:function:LoadImageFromMemory",
@@ -4334,7 +4316,7 @@
     "status": "profile-covered",
     "scope": "rlLoadTextureCubemap is OpenGL 3.3/ES2 only: under the software renderer the cubemap keeps id 0, mipmaps 0 and format 0, width = height = the face size of the layout (auto-detected from the aspect, else 0). The image stays the caller's.",
     "gaps": [
-      "GPU (OpenGL 3.3) cubemaps are a separate contract; no Jonlib renderer samples cubemaps",
+      "No Jonlib renderer samples cubemaps",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:LoadTextureCubemap",
@@ -4450,7 +4432,6 @@
     "status": "profile-covered",
     "scope": "REPEAT sets GL_REPEAT on both axes; CLAMP and the mirror modes pass GL_CLAMP_TO_EDGE and mirror values, which rlsw's swTexParameteri rejects, so the texture keeps its wraps (checked with negative and repeating coordinates, and after rlTextureParameters' GL_CLAMP).",
     "gaps": [
-      "The OpenGL 3.3 wrap modes are a separate (GPU) contract",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:SetTextureWrap",
@@ -4674,7 +4655,7 @@
     "status": "profile-covered",
     "scope": "Little-endian immutable byte lists for native formats 1..7; packed RGBA results preserve integer expansion, R5G5B5A1 blue from bits 1..5 (raylib 6.2). Unsupported formats, invalid bytes and truncated input produce typed failures.",
     "gaps": [
-      "Float/half/compressed and big-endian profiles",
+      "Float/half/compressed profiles",
       "Complete integration/target/performance coverage"
     ],
     "api_id": "raylib:function:GetPixelColor",
@@ -4685,7 +4666,7 @@
     "status": "profile-covered",
     "scope": "Formats 1..7 with exact grayscale and nearest packed-channel quantization, strict alpha>50 threshold and little-endian words. Functional byte-list result replaces only the pixel prefix and preserves trailing bytes.",
     "gaps": [
-      "Other formats/configured alpha thresholds and big-endian profiles",
+      "Other formats/configured alpha thresholds",
       "Complete integration/target/performance coverage"
     ],
     "api_id": "raylib:function:SetPixelColor",
