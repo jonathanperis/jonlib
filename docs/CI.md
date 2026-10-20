@@ -8,9 +8,9 @@ Since 2026-10-10, **pushes and pull requests run on Linux only**; the nightly
 and the manual (`workflow_dispatch`) runs of both workflows still use every
 host. Hosted macOS runs five jobs at a time across the whole account, and a
 complete Conformance run needs about twenty runner-hours there: every merge
-waited hours for it while the Linux half had long finished. Jonathan's
-decision: finish the port first, then turn macOS back on and validate
-everything that was merged against it.
+waited hours for it while the Linux half had long finished. macOS returns
+to the merge path with the [macOS validation](MACOS-VALIDATION.md), which
+validates everything merged since against it.
 
 What this means until then:
 
@@ -24,7 +24,7 @@ What this means until then:
 - To turn macOS back on: add `('macos', 'macos-15')` to `MERGE_HOSTS` in
   [`tools/ci_scope.py`](../tools/ci_scope.py) and drop the event test from the
   `os:` line of `.github/workflows/checks.yml`. Then run both workflows
-  manually on `main` and fix what they find before calling the port done.
+  manually on `main` and fix what they find ([MACOS-VALIDATION.md](MACOS-VALIDATION.md)).
 
 **Checks** (Ubuntu; macOS in nightly and manual runs) runs the Python unit tests, byte-compiles the
 tools and runs `tools/check_project.py` (library source boundary, fixtures,

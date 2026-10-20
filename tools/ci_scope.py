@@ -31,8 +31,8 @@ a push or pull request changed and picks one of three scopes:
 - `none`: only files no gate reads (workflows, unit tests, this tool,
   documentation). The Checks workflow covers them.
 
-Hosts: while the port is being completed, pushes and pull requests run on
-Linux only (`MERGE_HOSTS`). Hosted macOS runs five jobs at a time and a
+Hosts: until the macOS validation (docs/MACOS-VALIDATION.md), pushes and pull
+requests run on Linux only (`MERGE_HOSTS`). Hosted macOS runs five jobs at a time and a
 complete run needs about twenty runner-hours there, which held every merge
 for hours. Scheduled (nightly) and manual runs still use every host
 (`ALL_HOSTS`), so macOS keeps being checked off the merge path; add macOS
@@ -69,7 +69,7 @@ EXAMPLE_FILES = (PROBE, 'api/examples.json')
 # What a library file that only gained definitions runs: the corpus with PROOF.bend, and the core examples.
 LIBRARY_GATES = ('conformance', 'examples-core')
 ALL_HOSTS = (('linux', 'ubuntu-24.04'), ('macos', 'macos-15'))
-# The hosts of pushes and pull requests. macOS is deferred until the port is complete (see the module text).
+# The hosts of pushes and pull requests. macOS is deferred until the macOS validation (see the module text).
 MERGE_HOSTS = (('linux', 'ubuntu-24.04'),)
 # Estimated minutes (the manifest's, measured on macOS) per scoped job, and the jobs per host before a run is full.
 PART_MINUTES, SMALL_MINUTES, MAX_PARTS = 50, 5, 6

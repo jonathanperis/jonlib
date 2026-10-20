@@ -11,8 +11,8 @@ name: Conformance
 # repository, so a branch created at a commit another ref already holds would
 # start no run at all. The Scope job answers in seconds instead.
 #
-# Pushes and pull requests run on Linux only while the port is being completed
-# (tools/ci_scope.py MERGE_HOSTS, docs/CI.md): hosted macOS runs five jobs at a
+# Pushes and pull requests run on Linux only until the macOS validation
+# (tools/ci_scope.py MERGE_HOSTS, docs/CI.md, docs/MACOS-VALIDATION.md): hosted macOS runs five jobs at a
 # time and held every merge for hours. Scheduled and manual runs use every host.
 #
 # The account's five hosted macOS runners are shared by every repository of the

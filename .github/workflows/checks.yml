@@ -1,7 +1,7 @@
 name: Checks
 
-# Pushes and pull requests run on Linux only while the port is being completed
-# (docs/CI.md); the nightly and manual runs also use macOS.
+# Pushes and pull requests run on Linux only until the macOS validation
+# (docs/CI.md, docs/MACOS-VALIDATION.md); the nightly and manual runs also use macOS.
 on:
   push:
     branches: [main, 'feature/**']
