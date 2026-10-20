@@ -5690,7 +5690,7 @@
       "Grids above 4097 lines mark the frame undefined",
       "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
-      "Performance: not measured"
+      "Performance: a models_loading_gltf frame (model, grid, text) is about 50x raylib's on native CPU-1, single-threaded (docs/PERFORMANCE.md)"
     ],
     "api_id": "raylib:function:DrawGrid",
     "milestone": "models"
@@ -5704,7 +5704,7 @@
       "Undefined reference behavior (asserts, int overflow, reads outside tinyobj's arrays, byte casts, table insertions that loop) and binary64 steps outside the checked helpers' domains are refused",
       "Texture files Jonlib's LoadImage does not decode are refused; paths and names must be printable ASCII (OBJ paths without backslashes)",
       "Refused: VOX's magic or version cut short, IQM/M3D reads past the file or arrays; not ported: M3D textures, generated normals, voxels, shapes, ASCII; profiles end at 2 MiB files (MODELS.md)",
-      "Performance: not measured",
+      "Performance: loading models_loading_gltf's .glb model and animations is about 60x raylib's on native CPU-1, single-threaded (docs/PERFORMANCE.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:LoadModel",
@@ -5774,7 +5774,7 @@
     "gaps": [
       "sinf/cosf arguments outside the profile's verified set and mesh material indices beyond the materials are refused",
       "Bone matrices and shaders are not modeled",
-      "Performance: not measured",
+      "Performance: a models_loading_gltf frame (model, grid, text) is about 50x raylib's on native CPU-1, single-threaded (docs/PERFORMANCE.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:DrawModelEx",
@@ -5888,7 +5888,7 @@
     "gaps": [
       "Inconsistent lists, indices not below the vertex count, color values above 255, a diffuse id missing from the textures and a primitive being recorded are refused",
       "Normals, tangents and texcoords2 are not used by the software renderer",
-      "Performance: not measured",
+      "Performance: a models_loading_gltf frame (model, grid, text) is about 50x raylib's on native CPU-1, single-threaded (docs/PERFORMANCE.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:DrawMesh",
