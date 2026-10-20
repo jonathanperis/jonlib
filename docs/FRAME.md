@@ -236,7 +236,8 @@ That is about 10 frames per second for this scene, short of interactive rates
 for heavier examples. The levers remain: rows
 or tiles rendered in parallel (balanced fork-join over independent row
 ranges), a flat row-major store per tile, and the Metal lane; none is
-assumed before it is measured.
+assumed before it is measured. Whole examples (frames, setup, memory, audio
+mixing) are compared with raylib in [PERFORMANCE.md](PERFORMANCE.md).
 
 ## Gaps
 

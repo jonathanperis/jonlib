@@ -55,7 +55,7 @@ of each results file) and fails if any parity gate fails.
 | Probe runtime | [`tools/probekit.py`](../tools/probekit.py), `tools/byte_probe.py` | Pinned-source checks, cached native raylib builds, lanes and batching; the shared byte-result protocol (`C_EMITTER`, `BEND_EMITTER`, `parse_results`) |
 | Native profile selection | `tools/native_profiles.py`, `tools/reference_environment.py`, `tools/runtime_image.py` | Host `atan2f`/`fminf`/`fmaxf` profile selection from frozen controls and loaded-runtime provenance ([ANGLES.md](ANGLES.md)) |
 | Exact oracles | `tools/binary64_*_oracle.py`, `tools/modern_angle_bounds.py` | Rational-arithmetic expectations for the private binary64 helpers and the modern `atan2f` coefficient bounds |
-| Benchmark | `tools/gradient_bench.py` | Serial versus balanced generation timing, checked against raylib first ([GRADIENTS.md](GRADIENTS.md)); not a gate |
+| Benchmark | `tools/gradient_bench.py`, `tools/perf_examples.py` | Serial versus balanced generation timing, checked against raylib first ([GRADIENTS.md](GRADIENTS.md)); examples' frame time, setup, peak memory and headless audio mixing against raylib, outputs compared first ([PERFORMANCE.md](PERFORMANCE.md)); not gates |
 | Resampling | `tools/resize_conformance.py` | Default-filter coefficients, kernels and whole-image resize outputs ([RESAMPLING.md](RESAMPLING.md)) |
 | API audit | `tools/api_plan.py check` | Pinned header catalog, generated ledger files and progress-record lint ([API-TRACKING.md](API-TRACKING.md)) |
 | Compiler overlay | `tools/verify_bend.py` | Selected upstream Bend regressions and the OS effects' tests (`io/path_dir`, `io/cwd_process`) under the declared overlay |

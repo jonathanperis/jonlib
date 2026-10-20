@@ -22,7 +22,8 @@ raylib, run it natively and compare Jonlib's results exactly, and all 223
 of raylib's examples have Bend versions replayed frame by frame against the
 native ones.
 
-The [roadmap](docs/ROADMAP.md) states the current coverage and what remains.
+The [roadmap](docs/ROADMAP.md) states the current coverage and what remains;
+[PERFORMANCE.md](docs/PERFORMANCE.md) measures examples against raylib.
 The [API dashboard](docs/PROGRESS.md) maps every public declaration of
 raylib 6.2's headers to its Bend counterpart, work package and verification
 status.

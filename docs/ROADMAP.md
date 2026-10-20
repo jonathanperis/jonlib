@@ -79,9 +79,16 @@ passing gate does and does not establish is in
    the affected Jonlib scenarios, as the declared compiler overlay's do
    ([METAL-INVESTIGATION.md](METAL-INVESTIGATION.md),
    [patches/README.md](../patches/README.md)).
-5. **Performance**: the renderer and decoders are correctness-first and
-   single-threaded in places; representative frame-time, memory and audio
-   latency measurements against raylib are still to be made.
+5. **Performance** ([PERFORMANCE.md](PERFORMANCE.md)): the renderer and
+   decoders are correctness-first and single-threaded. Eleven representative
+   examples, measured against raylib on native CPU (one thread), take 1.6-3x
+   raylib's frame time for simple shapes and text, 10-23x for textures,
+   sprite fonts and raygui, and 32-53x for 3D models. They use 50-690 MiB
+   against raylib's 5-12 MiB. Mixing a 10 ms MP3 music period costs about
+   5 ms (about 370x raylib's). Device audio latency cannot be measured
+   headless. No budget is set or met yet: the item stays open until budgets
+   are agreed and reached (for example by parallel rendering of rows or tiles,
+   flat stores, byte buffers in the decoders, or the Metal lane).
 
 ## Delivery phases
 
