@@ -4,28 +4,41 @@
 [![Conformance](https://github.com/jonathanperis/jonlib/actions/workflows/conformance.yml/badge.svg)](https://github.com/jonathanperis/jonlib/actions/workflows/conformance.yml)
 [![License: zlib](https://img.shields.io/badge/license-zlib-blue.svg)](LICENSE)
 
-**An independent graphics and game-programming library written in Bend 2,
-working toward 100% raylib 6.2 parity.**
+**A graphics and game-programming library for Bend 2, inspired by raylib.**
 
-The [roadmap](docs/ROADMAP.md) states the current coverage and what remains. The [API progression dashboard](docs/PROGRESS.md)
-maps every public release-header API and supporting declaration to a work
-package, Bend target, dependencies and verification status. Current limited
-profiles remain explicitly partial.
+Jonlib brings raylib's way of writing games and graphics programs (simple
+immediate-mode drawing, images, fonts, audio, 3D models, cameras and input,
+each a plain function call) to Bend 2. It is an independent library, not a
+clone or a binding: it is Bend source throughout, its API uses Bend's
+ownership and types with a documented mapping to each raylib function, and it
+runs headless, with windows, input, frames and audio as values a program
+threads through its loop.
 
-The library is Bend source throughout. It runs headless: windows, input,
-frames and audio are values a program threads through its loop, drawn by a
-port of raylib's software renderer. Pinned, unmodified raylib is the
-reference: each gate runs it natively and compares results exactly, and
-every ported upstream example is replayed frame by frame against the
-native one.
+Many of its algorithms are adapted from raylib 6.2 and the libraries raylib
+bundles (rlsw, stb, dr_libs, miniaudio, cgltf and others); each adaptation is
+marked and keeps its upstream notice ([THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
+Behavior is verified, not assumed: the gates build a pinned, unmodified
+raylib, run it natively and compare Jonlib's results exactly, and all 223
+of raylib's examples have Bend versions replayed frame by frame against the
+native ones.
+
+The [roadmap](docs/ROADMAP.md) states the current coverage and what remains.
+The [API dashboard](docs/PROGRESS.md) maps every public declaration of
+raylib 6.2's headers to its Bend counterpart, work package and verification
+status.
 
 ## Modules
 
-- **Jonlib** (`jonlib.bend`) ports raylib's core geometry/image/runtime surface.
-- **Jonmath** (`jonmath.bend`) ports raymath and owns shared vector/matrix types.
+- **Jonlib** (`jonlib.bend`): the core library (raylib.h's surface: shapes,
+  images, textures, text, models, audio, input and files), with rlgl, rcamera
+  and rgestures inside it.
+- **Jonmath** (`jonmath.bend`): the math library (raymath's surface) and the
+  shared vector/matrix types.
+- **Jongui**, **Joneasings**, **Jonlights**, **Jonlgl**, **Joncamera**,
+  **Jongestures**: the companion modules.
 
-Port names follow `ray<suffix>` → `jon<suffix>` (raygui's port is Jongui,
-`jongui.bend`). See [module names and import migration](docs/MODULES.md).
+Module names follow `ray<suffix>` → `jon<suffix>` (raygui's counterpart is
+Jongui, `jongui.bend`). See [module names and imports](docs/MODULES.md).
 
 ```bend
 import Base
@@ -37,13 +50,11 @@ import ./jonmath.bend as M
 
 Everything below is a **partial, scoped profile** compared exactly with pinned
 raylib; each API's domain and gaps are in [`api/progress.json`](api/progress.json)
-and the [progress dashboard](docs/PROGRESS.md). At the time of writing
-(2026-10-12) the ledger marks 582 of raylib.h's 600 functions, all 146 of
-raymath.h's, 142 of rlgl.h's 163 and all of rcamera.h's 12 and rgestures.h's
-10 as partial, and none as complete (no API is complete before the platform
-phase); the dashboard always has the current counts. 223 of raylib's 223
-examples are ported ([EXAMPLES.md](docs/EXAMPLES.md)); three of those ports
-refuse every frame, because the native example is undefined behavior in C.
+and the [API dashboard](docs/PROGRESS.md), which always has the current counts.
+Every function of raylib.h, raymath.h, rlgl.h, rcamera.h and rgestures.h is
+at least partial and none is complete: an API completes only once every
+target platform is verified ([ROADMAP.md](docs/ROADMAP.md)). All 223 raylib
+examples run as Bend programs ([EXAMPLES.md](docs/EXAMPLES.md)).
 
 - **Images** ([API](docs/API.md)): owned `Surface` creation in any raylib pixel format, pixel access and
   copies; clipped pixels, rectangles, circles, lines, triangles, fans/strips and
@@ -79,7 +90,7 @@ refuse every frame, because the native example is undefined behavior in C.
   automation events, and the frame loop on a memory platform.
 - **Drawing** ([RLGL.md](docs/RLGL.md), [TEXTURES.md](docs/TEXTURES.md),
   [FONTS.md](docs/FONTS.md), [TEXT.md](docs/TEXT.md)): rlgl's matrices and
-  immediate mode over a port of the software renderer; 2D shapes and
+  immediate mode over an adaptation of raylib's software renderer; 2D shapes and
   splines, textures and render textures, bitmap and TrueType fonts, text.
 - **3D** ([MODELS.md](docs/MODELS.md), [CAMERA.md](docs/CAMERA.md),
   [SHADERS.md](docs/SHADERS.md), [VR.md](docs/VR.md)): meshes and their
@@ -98,13 +109,14 @@ refuse every frame, because the native example is undefined behavior in C.
 - **Jonlights** ([LIGHTS.md](docs/LIGHTS.md)): rlights.h's lights.
 - **Jonlgl, Joncamera, Jongestures** ([MODULES.md](docs/MODULES.md)): rlgl.h's,
   rcamera.h's and rgestures.h's APIs as their own modules, generated over
-  Jonlib's port.
+  Jonlib.
 - **Execution**: native CPU, JavaScript and (with the declared compiler overlay)
   forced Metal; see [VERIFICATION.md](docs/VERIFICATION.md).
 
 Not yet there: music and waves from FLAC files (raylib's default build
 leaves FLAC out; WAV, QOA, MP3, XM, MOD and Ogg Vorbis music plays); a host window, input devices and audio output
-(everything runs headless); images beyond 4096 pixels on a side. macOS is off the merge path for now and owes a full validation
+(everything runs headless); images beyond 4096 pixels on a side. macOS is
+off the merge path for now and owes a full validation
 ([MACOS-VALIDATION.md](docs/MACOS-VALIDATION.md)).
 
 ## Requirements
@@ -114,11 +126,12 @@ The local verification commands below do not install tools or download dependenc
 GitHub Actions provisions its own pinned dependencies on hosted runners.
 
 The harness requires these base revisions. Bend additionally needs the exact
-[declared compiler overlay](patches/README.md); raylib remains unmodified:
+[declared compiler overlay](patches/README.md) (two patches); raylib remains
+unmodified:
 
 | Dependency | Revision |
 |---|---|
-| Bend 2.0.27 + Jonlib Metal overlay | `b7ebee9217c8813067e200b0c0c9153a3be31c5e` |
+| Bend 2.0.27 + Jonlib overlay | `b7ebee9217c8813067e200b0c0c9153a3be31c5e` |
 | raylib 6.2 | `02566453880e06bec97f5b8160fa6fe1e98397ca` |
 
 Keep the dependency checkouts wherever you prefer. From Jonlib's repository root,
@@ -130,12 +143,15 @@ export RAYLIB_SOURCE="/path/to/raylib"
 ```
 
 The commands below pass these paths explicitly. [`toolchain.json`](toolchain.json)
-records the base commits, patch hash and exact resulting compiler-file hashes.
-Apply the overlay once to a checkout already at the pinned Bend revision:
+records the base commits, patch hashes and exact resulting compiler-file hashes.
+Apply the overlay once, its patches in order, to a checkout already at the
+pinned Bend revision:
 
 ```sh
-git -C "$BEND_SOURCE" apply --check "$PWD/patches/bend-metal-dispatch.patch"
-git -C "$BEND_SOURCE" apply "$PWD/patches/bend-metal-dispatch.patch"
+for patch in bend-metal-dispatch bend-os-effects; do
+  git -C "$BEND_SOURCE" apply --check "$PWD/patches/$patch.patch"
+  git -C "$BEND_SOURCE" apply "$PWD/patches/$patch.patch"
+done
 ```
 
 Verification never patches or updates the checkout itself. An unmodified
@@ -164,10 +180,11 @@ how GitHub Actions shards the gates on Ubuntu and macOS, and
 
 Forced-GPU runs (`--gpu` on `tools/conformance.py`, `tools/verify_bend.py` and the
 probes) fail rather than fall back to CPU. They run locally on supported Apple
-hardware; hosted CI does not claim GPU validation. Stock Bend's failure and the
-compiler fix are documented in [the investigation](docs/METAL-INVESTIGATION.md).
+hardware; hosted CI does not claim GPU validation. Stock Bend's Metal failure and
+the compiler overlay that fixes it are documented in
+[METAL-INVESTIGATION.md](docs/METAL-INVESTIGATION.md).
 
-## Follow the full parity plan
+## Follow progress
 
 - [Progress dashboard and next steps](docs/PROGRESS.md)
 - [Every core API](docs/api/raylib.md), [raymath](docs/api/raymath.md),
@@ -232,7 +249,7 @@ file/decode error checks. See [CODECS.md](docs/CODECS.md) and [MATH.md](docs/MAT
 
 ## Run a raylib example in a window
 
-Ported raylib examples (`core_basic_window`, `core_input_keys`,
+Bend versions of raylib examples (`core_basic_window`, `core_input_keys`,
 `core_input_mouse`, `core_2d_camera`, `shapes_logo_raylib`,
 `textures_logo_raylib`) open a Base window from a desktop session:
 
@@ -241,7 +258,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" examples/core_input_keys.be
 ./.build/core_input_keys            # arrow keys move the ball; Escape or the close button quits
 ```
 
-The `examples` gate replays the same programs headless against the unmodified
+The `examples-*` gates replay the same programs headless against the unmodified
 raylib example sources, frame by frame and byte for byte. See
 [DRIVER.md](docs/DRIVER.md) for the driver, the key table and the gaps.
 
@@ -251,16 +268,18 @@ Drawing returns the updated `Surface`; the old value is consumed. Reads return
 the surface alongside an optional pixel. Images are up to 4096×4096 in pixel
 formats 1..13 (operations follow raylib per format) and bounded integral coordinates represented as F32. See the API
 document for the vector variants, exact domains, ownership returns and reference
-edge behavior. Full image drawing, formats and platform coverage remain open work.
+edge behavior. Wider domains, platforms and performance remain open work.
 
-Matching CPU `ImageDraw*` operations does not establish GPU `Draw*` behavior,
-performance parity, platform parity, or full raylib compatibility.
+Matching raylib's software renderer does not establish GPU `Draw*` behavior,
+performance, platform behavior, or full raylib compatibility.
 
 ## License and credits
 
-Jonlib's original code uses the [zlib license](LICENSE). Adapted raylib algorithms
-retain their notices in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and
-[LICENSES/raylib.txt](LICENSES/raylib.txt).
+Jonlib's original code uses the [zlib license](LICENSE). Algorithms adapted from
+raylib and the libraries it bundles retain their notices in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [LICENSES/](LICENSES/)
+(raylib's in [LICENSES/raylib.txt](LICENSES/raylib.txt)); glibc-derived code is
+isolated in `src/lgpl/` under LGPL-2.1+.
 The separately identified Bend compiler patch is Apache-2.0, with the original
 license retained in [LICENSES/bend.txt](LICENSES/bend.txt).
 
