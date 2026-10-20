@@ -103,9 +103,8 @@ Each gate is one command. Parity gates must pass on both hosts; entries marked
 `diagnostic` record evidence for open gaps (for example libm rounding) and are
 never parity claims. Every run uploads `.build/gates/<id>.json` (outcome,
 duration, toolchain, host and a hashed summary of each results file) plus the
-full probe results as artifacts kept for 30 days. The compact records of a
-full local run (`--record docs/evidence`) are committed in
-[`docs/evidence/`](evidence/); the full dumps are not.
+full probe results as artifacts kept for 30 days. `--record DIR` also writes
+the compact record of each passing gate into `DIR` (`<id>-<host>.json`).
 
 Probes compile and run independent batches concurrently, bounded by CPUs (at
 most four) and by 9 GB of memory per batch (physical memory, or a lower cgroup v2
