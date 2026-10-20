@@ -242,6 +242,8 @@ class ScopeTests(unittest.TestCase):
         paths = ['.github/workflows/conformance.yml', 'tests/test_ci_scope.py', 'tools/ci_scope.py', 'docs/CI.md', 'README.md', 'tools/example_tables.py']
         self.assertEqual(scope({path: 'x' for path in paths}), ci_scope.NONE)
         self.assertEqual(ci_scope.kind('tests/fixtures/README.md'), 'none')
+        # The performance measurement is not a gate: changing it runs none.
+        self.assertEqual(ci_scope.kind('tools/perf_examples.py'), 'none')
 
     def test_no_change_needs_nothing(self):
         self.assertEqual(scope({}), ci_scope.NONE)

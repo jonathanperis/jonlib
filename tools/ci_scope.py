@@ -64,7 +64,7 @@ MANIFEST = 'tools/gates.json'
 CANARIES = ('core_basic_window', 'core_2d_camera', 'textures_logo_raylib')
 HARNESS_MARKER = 'C_DRIVER = '
 # Files no conformance gate reads.
-HARNESS = ('tools/ci_scope.py', 'tools/example_tables.py', 'tools/examples_plan.py', 'tools/check_project.py')
+HARNESS = ('tools/ci_scope.py', 'tools/example_tables.py', 'tools/examples_plan.py', 'tools/check_project.py', 'tools/perf_examples.py')
 EXAMPLE_FILES = (PROBE, 'api/examples.json')
 # What a library file that only gained definitions runs: the corpus with PROOF.bend, and the core examples.
 LIBRARY_GATES = ('conformance', 'examples-core')
