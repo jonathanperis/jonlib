@@ -7,8 +7,7 @@
 **An independent graphics and game-programming library written in Bend 2,
 working toward 100% raylib 6.2 parity.**
 
-The [master plan](docs/MASTER-PLAN.md) defines the full target, implementation
-phases and completion gates. The [API progression dashboard](docs/PROGRESS.md)
+The [roadmap](docs/ROADMAP.md) states the current coverage and what remains. The [API progression dashboard](docs/PROGRESS.md)
 maps every public release-header API and supporting declaration to a work
 package, Bend target, dependencies and verification status. Current limited
 profiles remain explicitly partial.

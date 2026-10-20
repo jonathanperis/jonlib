@@ -69,7 +69,7 @@ host). Further examples: Apple `asinf(0x3abffffc)` is `3ac00000`, correct
 
 ## Glibc239Libm asinf: glibc 2.39's kernel (LGPL)
 
-Since the LGPL decision (2026-10-09, [MASTER-PLAN](MASTER-PLAN.md)),
+Under the LGPL isolation rule ([ROADMAP.md](ROADMAP.md#design-decisions)),
 `Libm.asin(Glibc239Libm{}, x)` is glibc 2.39's own `e_asinf.c` on all of
 [-1, 1] rather than the correctly rounded kernel below a bound.
 `src/lgpl/asin.bend` adapts it (Sun's `e_asin.c` with Stephen L. Moshier's

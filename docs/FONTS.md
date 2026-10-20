@@ -1,6 +1,6 @@
 # Fonts and text drawing
 
-Phase 3 ([MASTER-PLAN.md](MASTER-PLAN.md)): raylib 6.2's default font,
+raylib 6.2's default font,
 fonts loaded from XNA-style images, TrueType/BDF/BMFont files and memory,
 glyph data and atlases, glyph queries, text measurement, text drawn into the
 [Frame](FRAME.md), image text and fonts exported as code. Altered

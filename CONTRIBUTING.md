@@ -2,7 +2,7 @@
 
 Jonlib is working toward raylib parity with library algorithms written in Bend
 2. Read the [API](docs/API.md), [compatibility ledger](docs/COMPATIBILITY.md), and
-[master plan](docs/MASTER-PLAN.md) before proposing a change.
+[roadmap](docs/ROADMAP.md) before proposing a change.
 
 ## Local setup
 

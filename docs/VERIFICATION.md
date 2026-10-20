@@ -172,5 +172,5 @@ and check the build flags.
   page states a specific measured scope.
 - Reproduction of undefined C behavior, crashes or memory corruption in the
   reference; such domains are rejected with typed errors and listed as gaps.
-- Full raylib 6.2 compatibility. The [master plan](MASTER-PLAN.md) defines what
-  completion requires.
+- Full raylib 6.2 compatibility. [API-TRACKING.md](API-TRACKING.md) defines
+  what completion requires, and the [roadmap](ROADMAP.md) what remains.

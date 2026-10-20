@@ -12,7 +12,7 @@ the ledger described in [API-TRACKING.md](API-TRACKING.md). Every mapped
 capability below is **partial** (the legacy `profile-covered` and
 `contract-checked` labels both mean partial) and must not be reported as a fully
 completed raylib API. Mapped counts are an inventory, not a parity percentage.
-The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
+[API-TRACKING.md](API-TRACKING.md#status-and-completion) defines what completion requires.
 
 ## Upstream version
 

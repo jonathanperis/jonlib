@@ -150,6 +150,13 @@ inline Vec operator + (const Vec& lhs, const float& rhs) { return lhs; }
         self.assertEqual(plan.phase1_exit(rows), dict(total=5, implemented=4, behavior_ownership_verified=3,
                                                       only_allowed_gaps=3, meeting=2))
 
+    def test_dashboard_links_the_exit_measure_definition(self):
+        outputs, report = plan.generated(self.reference, self.policy, self.progress)
+        dashboard = outputs['docs/PROGRESS.md']
+        measure = report['phase1_exit']
+        self.assertIn(f'[Phase 1 exit measure](API-TRACKING.md#phase-1-exit-measure): **{measure["meeting"]} of {measure["total"]}**', dashboard)
+        self.assertIn('\n## Phase 1 exit measure\n', (plan.ROOT / 'docs/API-TRACKING.md').read_text())
+
     def test_progress_records_state_contracts_not_run_history(self):
         self.assertEqual(plan.lint_progress(self.progress), [])
         key = 'raylib:function:ImageResize'

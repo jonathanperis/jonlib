@@ -1,7 +1,7 @@
 # API inventory and progression policy
 
 Start with the [progress dashboard](PROGRESS.md) and its six per-header checklists.
-The [master plan](MASTER-PLAN.md) supplies the phase exit gates. The ledger is
+The [roadmap](ROADMAP.md) states what remains. The ledger is
 the source of API-level progress for every future implementation batch.
 
 ## Frozen scope
@@ -69,7 +69,7 @@ rlgl/shaders are required earlier by 2D/3D work.
 - `blocked`: a concrete blocker prevents the planned implementation.
 - `complete`: the entire reference contract meets every completion gate.
 
-Six gates make the master plan's criteria explicit: **availability, behavior,
+Six completion gates are tracked per entry: **availability, behavior,
 ownership, integration, targets, performance**. Ownership is tracked separately
 from behavior because Bend resource adaptations need their own review.
 `complete` requires all six verified, evidence for every gate, no gaps/blocker,
@@ -86,7 +86,8 @@ mean `partial` in the authoritative ledger.
 ## Phase 1 exit measure
 
 The strict status completes an item only with every target, which for most
-Phase 1 functions means Phase 7. The [master plan](MASTER-PLAN.md)'s Phase 1
+Phase 1 functions means Phase 7 (the phases of `api/milestones.json` are
+listed in [ROADMAP.md](ROADMAP.md#delivery-phases)). The Phase 1
 exit measure is reported alongside it by `tools/api_plan.py` (dashboard,
 `api/summary.json` `phase1_exit`): a Phase 1 function meets it when it is
 `partial` or `complete`, its `behavior` and `ownership` gates are `verified`

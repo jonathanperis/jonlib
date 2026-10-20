@@ -20,7 +20,7 @@ DELTA_FIELDS = ('status', 'jonlib', 'scope', 'gaps', 'gates', 'evidence', 'block
                 'gate_evidence', 'target_results', 'milestone', 'api_dependencies')
 # Progress records state contracts, not run history (see docs/API-TRACKING.md).
 MAX_SCOPE, MAX_GAPS, MAX_GAP, MAX_EVIDENCE = 600, 6, 200, 12
-# Phase 1 exit measure (docs/MASTER-PLAN.md): a gap may remain at exit only
+# Phase 1 exit measure (docs/API-TRACKING.md): a gap may remain at exit only
 # when it is tagged as one of these categories.
 EXIT_GAP_PREFIXES = ('Targets:', 'Integration:', 'Performance:', 'Undefined native behavior:')
 RUN_HISTORY = (re.compile(r'\b[0-9a-fA-F]{40}\b'), re.compile(r'(?<![\d.,])\d{9,}(?!\d)'))
@@ -376,7 +376,7 @@ def generated(reference, plan, progress):
                  f'- **{report["function_declarations"]["total"]} C function declarations**, representing **{report["unique_c_function_names"]} unique names**.',
                   f'- Jonlib (`raylib.h` reference): **{report["core_functions"]["total"]} functions**, **{report["core_functions"]["partial"]} partial**, **{report["core_functions"]["complete"]} complete**.',
                   f'- Jonmath (`raymath.h` reference): **{report["math_functions"]["total"]} functions**, **{report["math_functions"]["partial"]} partial**, **{report["math_functions"]["complete"]} complete**.',
-                 f'- Phase 1 exit measure ([master plan](MASTER-PLAN.md)): **{report["phase1_exit"]["meeting"]} of {report["phase1_exit"]["total"]}** Phase 1 functions meet it; {report["phase1_exit"]["implemented"]} are partial or complete, {report["phase1_exit"]["behavior_ownership_verified"]} have behavior and ownership verified, and {report["phase1_exit"]["only_allowed_gaps"]} have only exit-allowed gaps (see [API-TRACKING.md](API-TRACKING.md)).',
+                 f'- [Phase 1 exit measure](API-TRACKING.md#phase-1-exit-measure): **{report["phase1_exit"]["meeting"]} of {report["phase1_exit"]["total"]}** Phase 1 functions meet it; {report["phase1_exit"]["implemented"]} are partial or complete, {report["phase1_exit"]["behavior_ownership_verified"]} have behavior and ownership verified, and {report["phase1_exit"]["only_allowed_gaps"]} have only exit-allowed gaps.',
                  '- Catalog coverage is not implementation completeness. Operators, constants, types and configuration controls have separate rows.',
                  '- Conditional variants and duplicate declarations are retained. Related IDs can share work, but do not automatically inherit completion.', '',
                  '## Complete checklists', '', '| Header | Entries | Checklist |', '|---|---:|---|']

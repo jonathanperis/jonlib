@@ -357,8 +357,7 @@ conversion are sequential.
 
 The window functions answer as the memory platform does ([Window
 state](#window-state)); what a desktop platform would add needs Base
-facilities (runtime workstream,
-[MASTER-PLAN.md](MASTER-PLAN.md#compiler-and-runtime-workstream)): real window
+facilities ([runtime facilities](ROADMAP.md#what-remains)): real window
 state and flags (fullscreen, borderless, maximize/minimize/restore, resizable
 windows and `IsWindowResized`, focus, hidden, topmost), position, size limits,
 opacity, icons, monitors and DPI, clipboard, `OpenURL`, cursor shape and
