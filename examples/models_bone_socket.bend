@@ -7,10 +7,13 @@
 # its socket bone through the playing animation's keyframe pose
 # (anim.keyframePoses[frame][bone] against skeleton.bindPose[bone]), under a
 # third person camera. T/G switch the animation, F/H turn the character
-# and 1, 2, 3 hide a piece. The reference library is built with GPU
-# skinning and its software renderer runs no shader, so the character's
-# mesh stays in its bind pose; UpdateModelAnimation (called twice a frame
-# natively, with the same arguments) fills the pose kept in the State. The
+# and 1, 2, 3 hide a piece. UpdateModelAnimation (called twice a frame
+# natively, with the same arguments: the second call computes the same)
+# fills the pose kept in the State and, raylib 6.2 skinning on the CPU (no
+# shader of the software renderer takes the bones), the character's
+# meshes' animVertices, which DrawMesh of meshes[0] draws. Only meshes[0]
+# is kept, so it is skinned alone, in a model of its own (a mesh's
+# animVertices depend on nothing else). The
 # perspective needs the libm profile's binary64 tan (docs/PERSPECTIVE.md),
 # UpdateCamera and QuaternionFromAxisAngle its sinf/cosf (docs/SINCOSF.md)
 # and the animations' QuaternionSlerp its acosf and sinf. See docs/MODELS.md
@@ -109,16 +112,34 @@ def toggled(+core: J.Core, shown: Shown) -> Shown:
   Shown{+hat, +sword, +shield} = shown
   Shown{flipped(J.Input.is_key_pressed(core, 49), hat), flipped(J.Input.is_key_pressed(core, 50), sword), flipped(J.Input.is_key_pressed(core, 51), shield)}
 
-def update.posed(posed: Maybe<J.ModelPose>, +camera: J.Camera3D, textures: List<J.Texture>, +scene: Scene, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +previous: J.ModelPose, +index: U32,
+def body.mesh(meshes: +List<J.Mesh>, +fallback: J.Mesh) -> J.Mesh:
+  match meshes:
+    case Con{+mesh, _}: mesh
+    case Nil{}: fallback
+
+# The scene with the character's skinned meshes[0].
+def skinned(+scene: Scene, +model: J.Model) -> Scene:
+  Scene{+body, +hat, +sword, +shield} = scene
+  Part{+mesh, +material} = body
+  J.Model{_, +meshes, _, _} = model
+  Scene{Part{body.mesh(meshes, mesh), material}, hat, sword, shield}
+
+def update.posed(posed: Maybe<J.AnimatedModel>, +camera: J.Camera3D, textures: List<J.Texture>, +scene: Scene, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +previous: J.ModelPose, +index: U32,
     +current: U32, +shown: Shown, +angle: U32) -> State:
   match posed:
     case None{}: State{Some{camera}, textures, None{}, Play{skeleton, animations, previous, index, current}, shown, angle}
-    case Some{+pose}: State{Some{camera}, textures, Some{scene}, Play{skeleton, animations, pose, index, current}, shown, angle}
+    case Some{J.AnimatedModel{+model, +pose}}: State{Some{camera}, textures, Some{skinned(scene, model)}, Play{skeleton, animations, pose, index, current}, shown, angle}
+
+# The character's meshes[0] as a model.
+def body.model(+scene: Scene) -> J.Model:
+  Scene{+body, _, _, _} = scene
+  Part{+mesh, _} = body
+  J.Model.from_mesh(mesh)
 
 # animCurrentFrame = (animCurrentFrame + 1)%anim.keyframeCount; UpdateModelAnimation(characterModel, anim, (float)animCurrentFrame).
 def update.animated(+libm: M.Libm, +camera: J.Camera3D, textures: List<J.Texture>, +scene: Scene, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +pose: J.ModelPose, +index: U32, +current: U32,
     +shown: Shown, +angle: U32) -> State:
-  update.posed(J.Model.update_animation_for(libm, skeleton, pick(animations, index), U32.to_f32(current), pose), camera, textures, scene, skeleton, animations, pose, index, current, shown, angle)
+  update.posed(J.Model.update_animation_for(libm, body.model(scene), skeleton, pick(animations, index), U32.to_f32(current), pose), camera, textures, scene, skeleton, animations, pose, index, current, shown, angle)
 
 def update.keyed(+libm: M.Libm, +core: J.Core, +camera: J.Camera3D, textures: List<J.Texture>, +scene: Scene, play: Play, +shown: Shown, +angle: U32, +index: U32) -> State:
   Play{+skeleton, +animations, +pose, _, +current} = play

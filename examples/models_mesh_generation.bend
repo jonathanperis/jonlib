@@ -95,7 +95,7 @@ def program(+libm: M.Libm) -> J.Program<State>:
 
 # GenMeshCustom: one triangle with normals and texture coordinates, uploaded.
 def custom() -> J.Mesh:
-  J.Mesh.upload(J.Mesh{3, 1, Some{[0.0, 0.0, 0.0, 1.0, 0.0, 2.0, 2.0, 0.0, 0.0]}, Some{[0.0, 0.0, 0.5, 1.0, 1.0, 0.0]}, None{}, Some{[0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0]}, None{}, None{}, None{}}, False{})
+  J.Mesh.upload(J.Mesh{3, 1, Some{[0.0, 0.0, 0.0, 1.0, 0.0, 2.0, 2.0, 0.0, 0.0]}, Some{[0.0, 0.0, 0.5, 1.0, 1.0, 0.0]}, None{}, Some{[0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0]}, None{}, None{}, None{}, None{}}, False{})
 
 # models[i].materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture.
 def textured.material(+info: J.TextureInfo, materials: +List<J.Material>) -> +List<J.Material>:

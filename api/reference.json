@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "project": "raysan5/raylib",
-  "version": "6.0",
+  "version": "6.2",
   "revision": "02566453880e06bec97f5b8160fa6fe1e98397ca",
   "scope": [
     "raylib.h",

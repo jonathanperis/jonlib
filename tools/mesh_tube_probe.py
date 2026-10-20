@@ -116,7 +116,7 @@ def float(+bits: U32) -> F32:
 def shown(mesh: Maybe<J.Mesh>) -> String:
   match mesh:
     case None{}: "null"
-    case Some{J.Mesh{vertices, triangles, points, texcoords, _, normals, _, _, _}}: "M" ++ U32.show(vertices) ++ " " ++ U32.show(triangles) ++ " " ++ hash(points) ++ " " ++ hash(texcoords) ++ " " ++ hash(normals)
+    case Some{J.Mesh{vertices, triangles, points, texcoords, _, normals, _, _, _, _}}: "M" ++ U32.show(vertices) ++ " " ++ U32.show(triangles) ++ " " ++ hash(points) ++ " " ++ hash(texcoords) ++ " " ++ hash(normals)
 
 def main() -> IO(Unit):
   do IO<Unit>:

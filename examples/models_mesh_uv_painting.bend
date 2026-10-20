@@ -317,7 +317,7 @@ def geo.hit(vertices: Maybe<&2, +List<F32>>, texcoords: Maybe<&2, +List<F32>>, i
     case _ _ _: None{}
 
 def geo.mesh(+mesh: J.Mesh, +ray: J.Ray, +transform: M.Matrix) -> Maybe<Hit>:
-  J.Mesh{_, _, vertices, texcoords, _, _, _, _, indices} = mesh
+  J.Mesh{_, _, vertices, texcoords, _, _, _, _, indices, _} = mesh
   geo.hit(vertices, texcoords, indices, ray, transform)
 
 def geo.first(meshes: +List<J.Mesh>, +ray: J.Ray, +transform: M.Matrix) -> Maybe<Hit>:

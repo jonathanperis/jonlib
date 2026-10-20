@@ -5,22 +5,28 @@ A case is a model file and an animations file. Natively: LoadModel of the
 first, LoadModelAnimations of the second, then one sequence of
 UpdateModelAnimation and UpdateModelAnimationEx calls on the model (the
 animation indices wrap by the file's animation count; nothing is called for a
-file without animations). With Jonlib: Model.load_skeleton,
+file without animations). With Jonlib: Model.load_for, Model.load_skeleton,
 Model.load_animations_for, Model.pose and the same sequence of
 Model.update_animation_for and Model.update_animation_ex_for calls, each on
-the pose the one before left. A row has the bone count and, for the loaded
-model and after every call, an FNV-1a hash of model.currentPose (ten words a
-bone) and one of model.boneMatrices (sixteen words a bone), then
-IsModelAnimationValid of the first animation (Model.is_animation_valid).
+the model and pose the one before left. A row has the bone count and, for
+the loaded model and after every call, an FNV-1a hash of model.currentPose
+(ten words a bone), one of model.boneMatrices (sixteen words a bone) and one
+of every mesh's animVertices (whether there are any, then vertexCount*3
+words: raylib 6.2's CPU skinning), then IsModelAnimationValid of the first
+animation (Model.is_animation_valid).
 
 The sequence: whole and fractional frames, a frame past the keyframe count
 (wrapped), the last keyframe (the next one wraps to the first), a frame
 between -1 and 0, blends of two animations at 0, 1 and between, a blend
 above 1 (nothing changes), and a frame that is minus the keyframe count
-(its remainder is 0). The cases: greenman.glb, the generated two-bone files
-of the gltf-anim gate (LINEAR, STEP, a single key, rotations a few degrees
-apart, bones listed before their parents, no animations), a model without
-bones given another file's animations, and a two-bone model given
+(its remainder is 0). The cases: greenman.glb and robot.glb (nineteen
+skinned meshes, 7218 vertices), the generated two-bone files of the
+gltf-anim gate (LINEAR, STEP, a single key, rotations a few degrees apart,
+bones listed before their parents, no animations; a quad on the first
+bone), a quad whose vertices blend two bones (weights 0.25 and 0.75, a
+vertex on three slots, one whose weights are all 0 and goes to the origin),
+a quad without JOINTS_0 under a joint (attached to that bone), a model
+without bones given another file's animations, and a two-bone model given
 greenman's twelve-bone animations.
 
 The reference is the raylib built with -ffp-contract=off. QuaternionSlerp's
@@ -49,7 +55,9 @@ OPS = [('u', 0, '0.0'), ('u', 0, '0.5'), ('u', 0, '3.25'), ('u', 1, '7.75'), ('u
        ('x', 0, '-0.5', 1, '2.0', '0.25'), ('x', 0, 'N', 2, '5.5', '0.75'), ('x', 2, '59.5', 3, '150.0', '0.125')]
 UNCHANGED = 11
 MISMATCHED = ('boneless', 'more-bones')
-LIBM_FREE = ('constant', 'gentle', 'no-animations', 'boneless')
+LIBM_FREE = ('constant', 'gentle', 'no-animations', 'boneless', 'weighted', 'parented')
+# The cases whose meshes the first update skins (the reference must show animVertices change).
+SKINNED = ('greenman', 'robot', 'weighted', 'parented')
 CONTRACT = 'c null null null null null null null same'
 
 C_PREFIX = r'''#include "raylib.h"
@@ -73,7 +81,14 @@ static void show(Model m)
         memcpy(words, &m.boneMatrices[i], sizeof(words));
         for (int k = 0; k < 16; k++) matrices = mix(matrices, words[k]);
     }
-    printf(" %08x:%08x", pose, matrices);
+    unsigned anim = 2166136261u;
+    for (int i = 0; i < m.meshCount; i++)
+    {
+        float *v = m.meshes[i].animVertices;
+        anim = (anim ^ (v != NULL))*16777619u;
+        for (int k = 0; (v != NULL) && (k < m.meshes[i].vertexCount*3); k++) anim = mix(anim, v[k]);
+    }
+    printf(" %08x:%08x:%08x", pose, matrices, anim);
 }
 static void run(const char *model, const char *animations)
 {
@@ -105,21 +120,44 @@ def matrices.hash(items: +List<M.Matrix>, +h: U32) -> U32:
     case Nil{}: h
     case Con{m, rest}: matrices.hash(rest, matrix.hash(m, h))
 
-def shown.text(pose: J.ModelPose) -> String:
+def word.mix(+h: U32, +w: U32) -> U32:
+  ((h .^. w) * 16777619 : U32)
+
+def floats.hash(xs: +List<F32>, +h: U32) -> U32:
+  match xs:
+    case Nil{}: h
+    case Con{+x, rest}: floats.hash(rest, mix(h, x))
+
+# A mesh's animVertices: whether there are any, then their words.
+def mesh.anim(bones: Maybe<&2, J.MeshBones>, +h: U32) -> U32:
+  match bones:
+    case Some{J.MeshBones{_, _, Some{+vs}}}: floats.hash(vs, word.mix(h, 1))
+    case _: word.mix(h, 0)
+
+def meshes.hash(meshes: +List<J.Mesh>, +h: U32) -> U32:
+  match meshes:
+    case Nil{}: h
+    case Con{J.Mesh{_, _, _, _, _, _, _, _, _, bones}, rest}: meshes.hash(rest, mesh.anim(bones, h))
+
+def model.hash(model: J.Model) -> U32:
+  J.Model{_, +meshes, _, _} = model
+  meshes.hash(meshes, 2166136261)
+
+def shown.text(+model: J.Model, pose: J.ModelPose) -> String:
   J.ModelPose{current, matrices} = pose
-  hex.word(pose.hash(current, 2166136261)) ++ ":" ++ hex.word(matrices.hash(matrices, 2166136261))
+  hex.word(pose.hash(current, 2166136261)) ++ ":" ++ hex.word(matrices.hash(matrices, 2166136261)) ++ ":" ++ hex.word(model.hash(model))
 
 def pose.sum(pose: J.ModelPose) -> U32:
   J.ModelPose{current, matrices} = pose
   matrices.hash(matrices, pose.hash(current, 2166136261))
 
 type State is Data:
-  State{pose: J.ModelPose, text: String}
+  State{model: J.Model, pose: J.ModelPose, text: String}
 
-def shown(result: Maybe<J.ModelPose>, +previous: J.ModelPose, text: String) -> State:
+def shown(result: Maybe<J.AnimatedModel>, +model: J.Model, +previous: J.ModelPose, text: String) -> State:
   match result:
-    case None{}: State{previous, text ++ " null"}
-    case Some{+pose}: State{pose, text ++ " " ++ shown.text(pose)}
+    case None{}: State{model, previous, text ++ " null"}
+    case Some{J.AnimatedModel{+m, +pose}}: State{m, pose, text ++ " " ++ shown.text(m, pose)}
 
 def pick.go(items: +List<J.ModelAnimation>) -> J.ModelAnimation:
   match items:
@@ -134,16 +172,16 @@ def frames(animation: J.ModelAnimation) -> F32:
   U32.to_f32(count)
 
 def u(state: State, +skeleton: J.ModelSkeleton, +animation: J.ModelAnimation, +frame: F32) -> State:
-  State{+pose, text} = state
-  shown(J.Model.update_animation_for(libm(), skeleton, animation, frame, pose), pose, text)
+  State{+model, +pose, text} = state
+  shown(J.Model.update_animation_for(libm(), model, skeleton, animation, frame, pose), model, pose, text)
 
 def x(state: State, +skeleton: J.ModelSkeleton, +first: J.ModelAnimation, +first_frame: F32, +second: J.ModelAnimation, +second_frame: F32, +blend: F32) -> State:
-  State{+pose, text} = state
-  shown(J.Model.update_animation_ex_for(libm(), skeleton, first, first_frame, second, second_frame, blend, pose), pose, text)
+  State{+model, +pose, text} = state
+  shown(J.Model.update_animation_ex_for(libm(), model, skeleton, first, first_frame, second, second_frame, blend, pose), model, pose, text)
 
 def flagged(state: State, +skeleton: J.ModelSkeleton, +animation: J.ModelAnimation) -> State:
-  State{pose, text} = state
-  State{pose, text ++ Bool.pick(String, J.Model.is_animation_valid(skeleton, animation), " v1", " v0")}
+  State{model, pose, text} = state
+  State{model, pose, text ++ Bool.pick(String, J.Model.is_animation_valid(skeleton, animation), " v1", " v0")}
 
 def ops(valid: Bool, +skeleton: J.ModelSkeleton, +items: +List<J.ModelAnimation>, +count: U32, state: State) -> State:
   match valid:
@@ -166,23 +204,34 @@ def bone.count(skeleton: J.ModelSkeleton) -> U32:
   count.bones(items, 0)
 
 def text.of(state: State) -> String:
-  State{_, text} = state
+  State{_, _, text} = state
   text
 
-def run.loaded(r: Result<&1, &1, J.Surface.IOError, +List<J.ModelAnimation>>, +skeleton: J.ModelSkeleton) -> String:
+def run.loaded(r: Result<&1, &1, J.Surface.IOError, +List<J.ModelAnimation>>, +skeleton: J.ModelSkeleton, +model: J.Model) -> String:
   match r:
     case Fail{_}: "null"
     case Done{+items}:
-      text.of(ops((count.items(items, 0) > 0 : U32), skeleton, items, count.items(items, 0), State{J.Model.pose(skeleton), "p" ++ U32.show(bone.count(skeleton)) ++ " " ++ shown.text(J.Model.pose(skeleton))}))
+      text.of(ops((count.items(items, 0) > 0 : U32), skeleton, items, count.items(items, 0),
+        State{model, J.Model.pose(skeleton), "p" ++ U32.show(bone.count(skeleton)) ++ " " ++ shown.text(model, J.Model.pose(skeleton))}))
 
-def run.skeleton(r: Result<&1, &1, J.Surface.IOError, J.ModelSkeleton>, +animations: String) -> IO(String):
+def run.skeleton(r: Result<&1, &1, J.Surface.IOError, J.ModelSkeleton>, +animations: String, +model: J.Model) -> IO(String):
   match r:
     case Fail{_}: IO.pure(String, "null")
     case Done{+skeleton}:
-      IO.bind(Result<&1, &1, J.Surface.IOError, +List<J.ModelAnimation>>, String, J.Model.load_animations_for(libm(), animations), a => IO.pure(String, run.loaded(a, skeleton)))
+      IO.bind(Result<&1, &1, J.Surface.IOError, +List<J.ModelAnimation>>, String, J.Model.load_animations_for(libm(), animations), a => IO.pure(String, run.loaded(a, skeleton, model)))
+
+def run.model(r: J.Frame & Result<&1, &1, J.Surface.IOError, J.LoadedModel>, +path: String, +animations: String) -> IO(String):
+  match r:
+    case Tuple{_, Fail{_}}: IO.pure(String, "null")
+    case Tuple{_, Done{J.LoadedModel{+m, _}}}: IO.bind(Result<&1, &1, J.Surface.IOError, J.ModelSkeleton>, String, J.Model.load_skeleton(path), s => run.skeleton(s, animations, m))
+
+def run.framed(frame: Maybe<J.Frame>, +path: String, +animations: String) -> IO(String):
+  match frame:
+    case None{}: IO.pure(String, "no frame")
+    case Some{f}: IO.bind(J.Frame & Result<&1, &1, J.Surface.IOError, J.LoadedModel>, String, J.Model.load_for(M.Uncontracted{}, f, path), r => run.model(r, path, animations))
 
 def run(+model: String, +animations: String) -> IO(String):
-  IO.bind(Result<&1, &1, J.Surface.IOError, J.ModelSkeleton>, String, J.Model.load_skeleton(model), r => run.skeleton(r, animations))
+  run.framed(J.Frame.init_window(16, 16), model, animations)
 
 def nan() -> F32:
   (0.0 / 0.0 : F32)
@@ -202,15 +251,15 @@ def contract.from(start: Maybe<J.ModelPose>, +skeleton: J.ModelSkeleton, +nod: J
   match start:
     case None{}: "c bad"
     case Some{+pose}:
-      "c" ++ refused(J.Model.update_animation_for(libm(), skeleton, nod, F32.neg(1.0), pose)) ++ refused(J.Model.update_animation_for(libm(), skeleton, nod, 2147483648.0, pose))
-        ++ refused(J.Model.update_animation_for(libm(), skeleton, nod, nan(), pose)) ++ refused(J.Model.update_animation_ex_for(libm(), skeleton, nod, F32.neg(1.0), nod, 1.0, 0.5, pose))
-        ++ refused(J.Model.update_animation_ex_for(libm(), skeleton, nod, 1.0, nod, F32.neg(2147483904.0), 0.5, pose)) ++ refused(J.Model.update_animation_ex_for(libm(), skeleton, nod, 2.0, nod, nan(), 0.5, pose))
-        ++ refused(J.Model.update_animation_for(libm(), other, nod, 1.0, J.Model.pose(other))) ++ kept(J.Model.update_animation_ex_for(libm(), skeleton, nod, 1.0, nod, 1.0, nan(), pose), pose)
+      "c" ++ refused(J.Model.update_animation_bones_for(libm(), skeleton, nod, F32.neg(1.0), pose)) ++ refused(J.Model.update_animation_bones_for(libm(), skeleton, nod, 2147483648.0, pose))
+        ++ refused(J.Model.update_animation_bones_for(libm(), skeleton, nod, nan(), pose)) ++ refused(J.Model.update_animation_bones_ex_for(libm(), skeleton, nod, F32.neg(1.0), nod, 1.0, 0.5, pose))
+        ++ refused(J.Model.update_animation_bones_ex_for(libm(), skeleton, nod, 1.0, nod, F32.neg(2147483904.0), 0.5, pose)) ++ refused(J.Model.update_animation_bones_ex_for(libm(), skeleton, nod, 2.0, nod, nan(), 0.5, pose))
+        ++ refused(J.Model.update_animation_bones_for(libm(), other, nod, 1.0, J.Model.pose(other))) ++ kept(J.Model.update_animation_bones_ex_for(libm(), skeleton, nod, 1.0, nod, 1.0, nan(), pose), pose)
 
 def contract.other(r: Result<&1, &1, J.Surface.IOError, J.ModelSkeleton>, +skeleton: J.ModelSkeleton, +items: +List<J.ModelAnimation>) -> String:
   match r:
     case Fail{_}: "c unloaded"
-    case Done{+other}: contract.from(J.Model.update_animation_for(libm(), skeleton, pick(items, 0, 1), 2.5, J.Model.pose(skeleton)), skeleton, pick(items, 0, 1), other)
+    case Done{+other}: contract.from(J.Model.update_animation_bones_for(libm(), skeleton, pick(items, 0, 1), 2.5, J.Model.pose(skeleton)), skeleton, pick(items, 0, 1), other)
 
 def contract.animations(r: Result<&1, &1, J.Surface.IOError, +List<J.ModelAnimation>>, +skeleton: J.ModelSkeleton, +other: String) -> IO(String):
   match r:
@@ -265,11 +314,26 @@ def program(libm):
     return head.replace('M.LIBM{}', f'M.{libm}{{}}') + PROGRAM_TAIL.lstrip('\n').replace('OPS', bend_ops())
 
 
+def skinned_files():
+    """The quads that test the CPU skinning: blended weights (one vertex of all-zero weights) and a mesh without
+    JOINTS_0 under a joint."""
+    weights = [0.25, 0.75, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.5, 0.25, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0]
+    bones = [0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0]
+    nodes = [dict(name='armature', children=[1], translation=[0, anim.raw('0.5'), 0], scale=[2, 2, 2]),
+             dict(name='bone_a', children=[2], translation=[anim.raw('0.25'), 0, 0], rotation=[0, 0, anim.QUARTER[0], anim.QUARTER[1]]),
+             dict(name='bone_b', children=[3], translation=[0, 1, 0], scale=[1, anim.raw('0.5'), 1]), dict(name='body', mesh=0)]
+    return {'weighted': anim.armature(anim.gentle, weights=weights, bones=bones), 'parented': anim.armature(anim.gentle, nodes=nodes, bones=False)}
+
+
 def cases(work, raylib, libm):
     """The compared cases (model file, animations file) and the contract; the generated files are the gltf-anim gate's."""
     items, files = anim.cases(work, raylib, 'Glibc239Libm')
     paths = {item['id']: item['path'] for item in items}
-    pairs = [(name, name, name) for name in ('greenman', 'linear', 'steps', 'constant', 'gentle', 'no-animations', 'unsorted-bones')]
+    for name, data in skinned_files().items():
+        path = work / f'{name}.glb'
+        files[path] = data
+        paths[name] = str(path)
+    pairs = [(name, name, name) for name in ('greenman', 'robot', 'linear', 'steps', 'constant', 'gentle', 'no-animations', 'unsorted-bones', 'weighted', 'parented')]
     pairs += [('boneless', 'greenman_hat', 'gentle'), ('more-bones', 'linear', 'greenman')]
     out = [dict(id=name, model=paths[model], animations=paths[animations], contract=False) for name, model, animations in pairs
            if libm == 'Glibc239Libm' or name in LIBM_FREE]
@@ -309,7 +373,7 @@ def check_reference(rows, libm):
         entries = [entry for entry in row.split() if entry[:1] != 'v']
         flags = [entry for entry in row.split() if entry[:1] == 'v']
         bones = int(entries[0][1:])
-        if entries[1] != loaded(bones):
+        if entries[1].rsplit(':', 1)[0] != loaded(bones):
             raise ProbeFailure(f'model-pose: the reference did not load {name} with a zeroed pose and identity matrices')
         if name == 'no-animations':
             if len(entries) != 2 or flags:
@@ -326,7 +390,9 @@ def check_reference(rows, libm):
                 raise ProbeFailure('model-pose: the reference changed a model without bones')
         elif entries[2] == entries[1]:
             raise ProbeFailure(f'model-pose: the first update did not change the pose of {name} in the reference')
-    if libm == 'Glibc239Libm' and (rows['greenman'][:4] != 'p12 ' or rows['more-bones'][:3] != 'p2 '):
+        if name in SKINNED and entries[2].rsplit(':', 1)[1] == entries[1].rsplit(':', 1)[1]:
+            raise ProbeFailure(f'model-pose: the first update did not skin the meshes of {name} in the reference')
+    if libm == 'Glibc239Libm' and (rows['greenman'][:4] != 'p12 ' or rows['robot'][:4] != 'p43 ' or rows['more-bones'][:3] != 'p2 '):
         raise ProbeFailure('model-pose: the reference did not load the models as expected')
 
 

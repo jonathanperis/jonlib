@@ -7,9 +7,9 @@
 # a fractional frame speed (UpdateModelAnimation between two keyframes), P
 # pausing it. raygui controls (Jongui): a dropdown box with the animations'
 # names, a slider for the speed, a label and a progress bar for the current
-# frame, with a tick for every keyframe. The reference library is built
-# with GPU skinning and its software renderer runs no shader, so the model
-# is drawn in its bind pose; the update fills the State's ModelPose
+# frame, with a tick for every keyframe. raylib 6.2 skins the meshes on the
+# CPU (no shader of the software renderer takes the bones) and DrawModel
+# draws the skinned vertices; the pose is the Play's ModelPose
 # (docs/MODELS.md). The perspective needs the libm profile's binary64 tan
 # (docs/PERSPECTIVE.md), UpdateCamera its sinf/cosf (docs/SINCOSF.md) and
 # QuaternionSlerp its acosf and sinf. See docs/GUI.md and docs/DRIVER.md.
@@ -52,36 +52,44 @@ def name(animation: J.ModelAnimation) -> String:
   J.ModelAnimation{text, _, _, _} = animation
   text
 
-def update.posed(posed: Maybe<J.ModelPose>, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +names: String, +index: U32, +current: F32, +speed: F32, +edit: Bool) -> Maybe<Play>:
+# The skinned model and the play after an update.
+type Step is Data:
+  Step{model: J.Model, play: Play}
+
+def update.posed(posed: Maybe<J.AnimatedModel>, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +names: String, +index: U32, +current: F32, +speed: F32, +edit: Bool) -> Maybe<Step>:
   match posed:
     case None{}: None{}
-    case Some{+pose}: Some{Play{skeleton, animations, names, pose, index, current, speed, False{}, edit}}
+    case Some{J.AnimatedModel{+model, +pose}}: Some{Step{model, Play{skeleton, animations, names, pose, index, current, speed, False{}, edit}}}
 
 # animCurrentFrame += animFrameSpeed, back to 0 at the keyframe count; UpdateModelAnimation(model, anims[animIndex], animCurrentFrame).
-def update.stepped(halted: Bool, +libm: M.Libm, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +names: String, +pose: J.ModelPose, +index: U32, +current: F32, +speed: F32,
-    +edit: Bool) -> Maybe<Play>:
+def update.stepped(halted: Bool, +libm: M.Libm, +model: J.Model, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +names: String, +pose: J.ModelPose, +index: U32, +current: F32, +speed: F32,
+    +edit: Bool) -> Maybe<Step>:
   match halted:
-    case True{}: Some{Play{skeleton, animations, names, pose, index, current, speed, True{}, edit}}
+    case True{}: Some{Step{model, Play{skeleton, animations, names, pose, index, current, speed, True{}, edit}}}
     case False{}:
       +next = (current + speed : F32)
       +frame = Bool.pick(F32, (next >= U32.to_f32(keyframes(pick(animations, index))) : F32), 0.0, next)
-      update.posed(J.Model.update_animation_for(libm, skeleton, pick(animations, index), frame, pose), skeleton, animations, names, index, frame, speed, edit)
+      update.posed(J.Model.update_animation_for(libm, model, skeleton, pick(animations, index), frame, pose), skeleton, animations, names, index, frame, speed, edit)
 
 # P pauses; None when the pose is refused.
-def update.play(+libm: M.Libm, +core: J.Core, play: Play) -> Maybe<Play>:
+def update.play(+libm: M.Libm, +core: J.Core, +model: J.Model, play: Play) -> Maybe<Step>:
   Play{+skeleton, +animations, +names, +pose, +index, +current, +speed, +paused, +edit} = play
-  update.stepped(Bool.pick(Bool, J.Input.is_key_pressed(core, 80), Bool.not(paused), paused), libm, skeleton, animations, names, pose, index, current, speed, edit)
+  update.stepped(Bool.pick(Bool, J.Input.is_key_pressed(core, 80), Bool.not(paused), paused), libm, model, skeleton, animations, names, pose, index, current, speed, edit)
 
-def update.moved(updated: Maybe<J.Camera3D>, played: Maybe<Play>, +model: J.Model, textures: List<J.Texture>, +gui: G.Gui, +old: Play) -> State:
+def update.stepped.state(+camera: J.Camera3D, step: Step, textures: List<J.Texture>, +gui: G.Gui) -> State:
+  Step{+model, +play} = step
+  State{True{}, Some{camera}, model, textures, gui, play}
+
+def update.moved(updated: Maybe<J.Camera3D>, played: Maybe<Step>, +model: J.Model, textures: List<J.Texture>, +gui: G.Gui, +old: Play) -> State:
   match updated played:
-    case Some{+c} Some{+p}: State{True{}, Some{c}, model, textures, gui, p}
+    case Some{+c} Some{+s}: update.stepped.state(c, s, textures, gui)
     case Some{+c} None{}: State{False{}, Some{c}, model, textures, gui, old}
     case None{} _: State{False{}, None{}, model, textures, gui, old}
 
 # UpdateCamera(&camera, CAMERA_ORBITAL), then the animation.
 def update.live(valid: Bool, camera: +Maybe<J.Camera3D>, +libm: M.Libm, +core: J.Core, +model: J.Model, textures: List<J.Texture>, +gui: G.Gui, +play: Play) -> State:
   match valid camera:
-    case True{} Some{+c}: update.moved(J.Camera.update_for(M.Uncontracted{}, libm, core, c, J.CameraMode.CAMERA_ORBITAL()), update.play(libm, core, play), model, textures, gui, play)
+    case True{} Some{+c}: update.moved(J.Camera.update_for(M.Uncontracted{}, libm, core, c, J.CameraMode.CAMERA_ORBITAL()), update.play(libm, core, model, play), model, textures, gui, play)
     case _ None{}: State{False{}, None{}, model, textures, gui, play}
     case False{} Some{+c}: State{False{}, Some{c}, model, textures, gui, play}
 

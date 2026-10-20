@@ -96,7 +96,7 @@ def bytes.reversed(values: +List<U32>, acc: +List<U32>) -> +List<U32>:
 # GenMeshPoints(numPoints): vertexCount = numPoints, triangleCount = 1, vertices and colors; UploadMesh(&mesh, false).
 def generated.mesh(+count: U32, +camera: +Maybe<J.Camera3D>, +model_points: Bool, made: Points) -> State:
   Points{+rand, +ok, +vertices, +colors} = made
-  +mesh = J.Mesh.upload(J.Mesh{count, 1, Some{floats.reversed(vertices, Nil{})}, None{}, None{}, None{}, None{}, Some{bytes.reversed(colors, Nil{})}, None{}}, False{})
+  +mesh = J.Mesh.upload(J.Mesh{count, 1, Some{floats.reversed(vertices, Nil{})}, None{}, None{}, None{}, None{}, Some{bytes.reversed(colors, Nil{})}, None{}, None{}}, False{})
   State{camera, Some{rand}, Bool.pick(+Maybe<J.Mesh>, ok, Some{mesh}, None{}), count, model_points}
 
 def generated(rand: +Maybe<M.Libc.Rand>, +libm: M.Libm, +count: U32, +camera: +Maybe<J.Camera3D>, +model_points: Bool) -> State:
@@ -161,7 +161,7 @@ def draw.points(model_points: Bool, +mesh: J.Mesh, frame: J.Frame) -> J.Frame:
       f1 = J.Rlgl.disable_backface_culling(J.Rlgl.enable_point_mode(frame))
       J.Rlgl.disable_point_mode(J.Rlgl.enable_backface_culling(draw.kept(J.Draw.model(f1, Nil{}, J.Model.from_mesh(mesh), M.Vector3.zero(), 1.0, J.Color.WHITE()))))
     case False{}:
-      J.Mesh{_, _, vertices, _, _, _, _, colors, _} = mesh
+      J.Mesh{_, _, vertices, _, _, _, _, colors, _, _} = mesh
       draw.each(listed.f(vertices), listed.u(colors), frame)
 
 def draw.scene(mesh: +Maybe<J.Mesh>, +libm: M.Libm, +camera: J.Camera3D, +model_points: Bool, frame: J.Frame) -> J.Frame:

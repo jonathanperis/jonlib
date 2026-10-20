@@ -6669,7 +6669,7 @@ def Wave.ogg.unready(status: VorbisS.Status) -> Result<&1, &1, Wave.Error, Wave>
 def Wave.ogg.filled(over: Bool, +frames: U32, +rate: U32, +channels: U32, +count: U32, +samples: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
   match over:
     case True{}: Fail{UnsupportedWaveFormat{}}
-    case False{}: Done{Wave{frames, rate, 16, channels, List.append(&2, U32, samples, Memory.zeros(U32.to_nat(((frames - count) * channels : U32)), Nil{}))}}
+    case False{}: Done{Wave{frames, rate, 16, channels, Wav.zero_padded(U32.to_nat(((frames - count) * channels : U32)), samples)}}
 
 def Wave.ogg.whole(whole: Bool, +frames: U32, +rate: U32, +channels: U32, +count: U32, +samples: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
   match whole:
@@ -14177,15 +14177,25 @@ def Font.export_as_code(font: Font, +path: String) -> IO(Font & Result<&1, &1, S
 # LICENSES/raylib.txt): src/mesh.bend generates attribute lists,
 # src/shapes3d.bend builds each 3D shape's rlgl stream, which the Frame
 # renders as rlsw does. A Mesh holds raylib's CPU attribute arrays as F32
-# lists (None for NULL); GPU buffer ids, animation data and materials are not
-# modeled. Functions return None where raylib's behavior is undefined (an
+# lists (None for NULL) and its bone data and animVertices (MeshBones); GPU
+# buffer ids, animNormals and materials are not modeled. Functions return None where raylib's behavior is undefined (an
 # index or count reading outside an array, a printed NaN) or outside the
 # verified profile; see docs/MODELS.md.
+
+# The bone data a loader gives a mesh (raylib 6.2's boneIndices, four bytes
+# a vertex, and boneWeights, four floats a vertex) and its animVertices:
+# None until UpdateModelAnimation first skins the mesh on the CPU, then the
+# skinned positions DrawMesh draws instead of the vertices. raylib may hold
+# either array alone; only both together are ever read (skinning needs
+# both), so Jonlib keeps them together. animNormals are not modeled: on the
+# software renderer glNormalPointer does nothing, so they reach no pixel.
+type MeshBones is Data:
+  MeshBones{indices: +List<U32>, weights: +List<F32>, animated: Maybe<&2, +List<F32>>}
 
 type Mesh is Data:
   Mesh{vertex_count: U32, triangle_count: U32, vertices: Maybe<&2, +List<F32>>, texcoords: Maybe<&2, +List<F32>>,
     texcoords2: Maybe<&2, +List<F32>>, normals: Maybe<&2, +List<F32>>, tangents: Maybe<&2, +List<F32>>,
-    colors: Maybe<&2, +List<U32>>, indices: Maybe<&2, +List<U32>>}
+    colors: Maybe<&2, +List<U32>>, indices: Maybe<&2, +List<U32>>, bones: Maybe<&2, MeshBones>}
 
 # MaterialMap (raylib.h): the map's Texture2D struct (id 0 when no texture
 # is loaded; the texture itself stays with its owner, see Draw.mesh), its
@@ -14199,39 +14209,40 @@ type Material is Data:
   Material{maps: +List<MaterialMap>, params: +List<F32>}
 
 # A Model holds its transform, meshes, materials and the material index of
-# each mesh (meshMaterial); bones and animation state are not modeled.
+# each mesh (meshMaterial); the skeleton and the current pose are values
+# beside it (ModelSkeleton, ModelPose), the meshes' animVertices in it.
 type Model is Data:
   Model{transform: M.Matrix, meshes: +List<Mesh>, materials: +List<Material>, mesh_material: +List<U32>}
 
 def Mesh.vertex_count(+mesh: Mesh) -> U32:
-  Mesh{vc, _, _, _, _, _, _, _, _} = mesh
+  Mesh{vc, _, _, _, _, _, _, _, _, _} = mesh
   vc
 
 def Mesh.triangle_count(+mesh: Mesh) -> U32:
-  Mesh{_, tc, _, _, _, _, _, _, _} = mesh
+  Mesh{_, tc, _, _, _, _, _, _, _, _} = mesh
   tc
 
 def Mesh.vertices(+mesh: Mesh) -> Maybe<&2, +List<F32>>:
-  Mesh{_, _, vertices, _, _, _, _, _, _} = mesh
+  Mesh{_, _, vertices, _, _, _, _, _, _, _} = mesh
   vertices
 
 def Mesh.texcoords(+mesh: Mesh) -> Maybe<&2, +List<F32>>:
-  Mesh{_, _, _, texcoords, _, _, _, _, _} = mesh
+  Mesh{_, _, _, texcoords, _, _, _, _, _, _} = mesh
   texcoords
 
 def Mesh.normals(+mesh: Mesh) -> Maybe<&2, +List<F32>>:
-  Mesh{_, _, _, _, _, normals, _, _, _} = mesh
+  Mesh{_, _, _, _, _, normals, _, _, _, _} = mesh
   normals
 
 def Mesh.indices(+mesh: Mesh) -> Maybe<&2, +List<U32>>:
-  Mesh{_, _, _, _, _, _, _, _, indices} = mesh
+  Mesh{_, _, _, _, _, _, _, _, indices, _} = mesh
   indices
 
 def Mesh.empty() -> Mesh:
-  Mesh{0, 0, None{}, None{}, None{}, None{}, None{}, None{}, None{}}
+  Mesh{0, 0, None{}, None{}, None{}, None{}, None{}, None{}, None{}, None{}}
 
 def Mesh.basic(+vertex_count: U32, +triangle_count: U32, +vertices: +List<F32>, +texcoords: +List<F32>, +normals: +List<F32>, +indices: Maybe<&2, +List<U32>>) -> Mesh:
-  Mesh{vertex_count, triangle_count, Some{vertices}, Some{texcoords}, None{}, Some{normals}, None{}, None{}, indices}
+  Mesh{vertex_count, triangle_count, Some{vertices}, Some{texcoords}, None{}, Some{normals}, None{}, None{}, indices, None{}}
 
 def Mesh.fill(+count: U32, +values: +List<F32>) -> +List<F32>:
   MeshCore.constant(U32.to_nat(count), values)
@@ -14298,7 +14309,7 @@ def Mesh.heightmap.colors(+fused: Bool, +width: U32, +height: U32, size: M.Vecto
   +scale = MeshCore.hm.scale(width, height, size)
   +triangles = ((width - 1 : U32) * (height - 1 : U32) * 2 : U32)
   Mesh{(triangles * 3 : U32), triangles, Some{MeshCore.hm.part(lines, 0, fused, scale)}, Some{MeshCore.hm.part(lines, 1, fused, scale)},
-    None{}, Some{MeshCore.hm.part(lines, 2, fused, scale)}, None{}, None{}, None{}}
+    None{}, Some{MeshCore.hm.part(lines, 2, fused, scale)}, None{}, None{}, None{}, None{}}
 
 def Mesh.heightmap.loaded(colors: Result<&1, &1, Surface & Surface.Error, List<U32>>, +fused: Bool, +width: U32, +height: U32, size: M.Vector3) -> Result<&1, &1, Surface & Surface.Error, Mesh>:
   match colors:
@@ -14320,7 +14331,7 @@ def Mesh.gen_heightmap(heightmap: Surface, size: M.Vector3) -> Result<&1, &1, Su
 def Mesh.corners(+corners: +List<MeshCore.Corner>) -> Mesh:
   +count = MeshCore.corners.count(corners, 0)
   Mesh{count, (count / 3 : U32), Some{MeshCore.corners.vertices(corners, Nil{})}, Some{MeshCore.corners.texcoords(corners, Nil{})}, None{},
-    Some{MeshCore.corners.normals(corners, Nil{})}, None{}, None{}, None{}}
+    Some{MeshCore.corners.normals(corners, Nil{})}, None{}, None{}, None{}, None{}}
 
 def Mesh.cubes(size: M.Vector3) -> MeshCore.Cubes:
   M.Vector3{w, h2, h} = size
@@ -14344,7 +14355,7 @@ def Mesh.finite(+x: F32) -> Bool:
 
 def Mesh.par.out(o: ParShapes.Out) -> Maybe<Mesh>:
   ParShapes.Out{ok, +vertices, +texcoords, +normals, +triangles} = o
-  Bool.pick(Maybe<Mesh>, ok, Some{Mesh{(triangles * 3 : U32), triangles, Some{vertices}, Some{texcoords}, None{}, Some{normals}, None{}, None{}, None{}}}, None{})
+  Bool.pick(Maybe<Mesh>, ok, Some{Mesh{(triangles * 3 : U32), triangles, Some{vertices}, Some{texcoords}, None{}, Some{normals}, None{}, None{}, None{}, None{}}}, None{})
 
 def Mesh.par(small: Bool, valid: Bool, +kind: U32, +fused: Bool, +minor: F32, +slices: U32, +stacks: U32, +minimum: F32, +remove: Bool, +k: F32) -> Maybe<Mesh>:
   match small valid:
@@ -14482,13 +14493,30 @@ def Mesh.sized.u32(values: Maybe<&2, +List<U32>>, +count: U32, +size: U32) -> Bo
     case None{}: True{}
     case Some{+xs}: U32.is_eq(MeshCore.count.u32(xs, 0), (count * size : U32))
 
+def Mesh.bytes.go(values: +List<U32>, +ok: Bool) -> Bool:
+  match values:
+    case Nil{}: ok
+    case Con{+v, rest}: Mesh.bytes.go(rest, ok && (v < 256 : U32))
+
+# Bone indices are bytes (unsigned char). Tail-recursive: a mesh holds tens
+# of thousands of them, past the JavaScript lane's stack for `a && f(rest)`.
+def Mesh.bytes(values: +List<U32>) -> Bool:
+  Mesh.bytes.go(values, True{})
+
+# Four bone indices (bytes) and weights a vertex, three animated values a vertex.
+def Mesh.bones.sized(bones: Maybe<&2, MeshBones>, +count: U32) -> Bool:
+  match bones:
+    case None{}: True{}
+    case Some{MeshBones{+indices, +weights, +animated}}:
+      Mesh.sized.u32(Some{indices}, count, 4) && Mesh.bytes(indices) && Mesh.sized(Some{weights}, count, 4) && Mesh.sized(animated, count, 3)
+
 # Whether the lists hold what the counts say (vertex attributes vertex_count
 # elements, indices 3*triangle_count) within raylib's int arithmetic
 # (counts below 2^22).
 def Mesh.consistent(+mesh: Mesh) -> Bool:
-  Mesh{+vc, +tc, vertices, texcoords, texcoords2, normals, tangents, colors, indices} = mesh
+  Mesh{+vc, +tc, vertices, texcoords, texcoords2, normals, tangents, colors, indices, bones} = mesh
   (vc < 4194304 : U32) && (tc < 4194304 : U32) && Mesh.sized(vertices, vc, 3) && Mesh.sized(texcoords, vc, 2) && Mesh.sized(texcoords2, vc, 2)
-    && Mesh.sized(normals, vc, 3) && Mesh.sized(tangents, vc, 4) && Mesh.sized.u32(colors, vc, 4) && Mesh.sized.u32(indices, tc, 3)
+    && Mesh.sized(normals, vc, 3) && Mesh.sized(tangents, vc, 4) && Mesh.sized.u32(colors, vc, 4) && Mesh.sized.u32(indices, tc, 3) && Mesh.bones.sized(bones, vc)
 
 def Mesh.below.go(xs: +List<U32>, +limit: U32, +ok: Bool) -> Bool:
   match xs:
@@ -14541,9 +14569,19 @@ def Mesh.tangents.list(vertices: Maybe<&2, +List<F32>>, texcoords: Maybe<&2, +Li
     case Some{+v} Some{+t} Some{+n} Some{+ts}: Some{MeshCore.tangents(fused, vc, v, t, n, ts)}
     case _ _ _ _: None{}
 
+def Mesh.animated.set(bones: Maybe<&2, MeshBones>, +values: +List<F32>) -> Maybe<&2, MeshBones>:
+  match bones:
+    case None{}: None{}
+    case Some{MeshBones{+indices, +weights, _}}: Some{MeshBones{indices, weights, Some{values}}}
+
+# The mesh with these animVertices (a mesh with bone data).
+def Mesh.with_animated(mesh: Mesh, +values: +List<F32>) -> Mesh:
+  Mesh{vc, tc, vertices, texcoords, texcoords2, normals, tangents, colors, indices, bones} = mesh
+  Mesh{vc, tc, vertices, texcoords, texcoords2, normals, tangents, colors, indices, Mesh.animated.set(bones, values)}
+
 def Mesh.with_tangents(mesh: Mesh, +tangents: +List<F32>) -> Mesh:
-  Mesh{vc, tc, vertices, texcoords, texcoords2, normals, _, colors, indices} = mesh
-  Mesh{vc, tc, vertices, texcoords, texcoords2, normals, Some{tangents}, colors, indices}
+  Mesh{vc, tc, vertices, texcoords, texcoords2, normals, _, colors, indices, bones} = mesh
+  Mesh{vc, tc, vertices, texcoords, texcoords2, normals, Some{tangents}, colors, indices, bones}
 
 def Mesh.tangents.set(tangents: Maybe<&2, +List<F32>>, +mesh: Mesh) -> Maybe<Mesh>:
   match tangents:
@@ -14607,7 +14645,7 @@ def Mesh.export(+mesh: Mesh, +path: String) -> IO(Result<&1, &1, Surface.IOError
   Mesh.export.select(Files.has_extension(path, ".obj"), mesh, path)
 
 def Mesh.code.render(+name: String, mesh: Mesh) -> Maybe<String>:
-  Mesh{+vc, +tc, vertices, texcoords, texcoords2, normals, tangents, colors, indices} = mesh
+  Mesh{+vc, +tc, vertices, texcoords, texcoords2, normals, tangents, colors, indices, _} = mesh
   MeshCore.code(name, vc, tc, MeshCore.Arrays{vertices, texcoords, texcoords2, normals, tangents, colors, indices})
 
 def Mesh.code.checked(valid: Bool, +name: String, mesh: Mesh) -> Maybe<String>:
@@ -14761,9 +14799,9 @@ def Model.set_mesh_material(+model: Model, +mesh_id: U32, +material_id: U32) -> 
   Model.mesh_material.checked((mesh_id < 2147483648 : U32), model, mesh_id, material_id)
 
 def Mesh.bare(+mesh: Mesh) -> Bool:
-  Mesh{_, _, vertices, texcoords, texcoords2, normals, tangents, colors, indices} = mesh
+  Mesh{_, _, vertices, texcoords, texcoords2, normals, tangents, colors, indices, bones} = mesh
   Bool.not(Mesh.has(vertices) || Mesh.has(texcoords) || Mesh.has(texcoords2) || Mesh.has(normals) || Mesh.has(tangents)
-    || Maybe.is_some(&2, +List<U32>, colors) || Maybe.is_some(&2, +List<U32>, indices))
+    || Maybe.is_some(&2, +List<U32>, colors) || Maybe.is_some(&2, +List<U32>, indices) || Maybe.is_some(&2, MeshBones, bones))
 
 def Model.bare(meshes: +List<Mesh>, +ok: Bool) -> Bool:
   match meshes:
@@ -15252,6 +15290,18 @@ def Frame.active(frame: Frame) -> Frame & Bool:
   Frame{canvas, _} = frame
   Frame.active.with(FrameCore.Canvas.mode(canvas))
 
+# boneIndices and boneWeights as a loader leaves them: kept when both are there.
+def Mesh.bones.of(indices: Maybe<&2, +List<U32>>, weights: Maybe<&2, +List<F32>>) -> Maybe<&2, MeshBones>:
+  match indices weights:
+    case Some{+i} Some{+w}: Some{MeshBones{i, w, None{}}}
+    case _ _: None{}
+
+# DrawMesh's vertex array: mesh.animVertices when not NULL, else mesh.vertices.
+def Mesh.drawn(bones: Maybe<&2, MeshBones>, vertices: Maybe<&2, +List<F32>>) -> Maybe<&2, +List<F32>>:
+  match bones:
+    case Some{MeshBones{_, _, Some{+animated}}}: Some{animated}
+    case _: vertices
+
 def Mesh.colors.bytes(colors: Maybe<&2, +List<U32>>) -> Bool:
   match colors:
     case None{}: True{}
@@ -15260,12 +15310,12 @@ def Mesh.colors.bytes(colors: Maybe<&2, +List<U32>>) -> Bool:
 # What DrawMesh reads is defined: consistent lists and, for a mesh with
 # vertices, color bytes and indices below the vertex count.
 def Mesh.drawable(+mesh: Mesh) -> Bool:
-  Mesh{+vc, _, vertices, _, _, _, _, colors, indices} = mesh
-  Mesh.consistent(mesh) && Bool.not(Mesh.has(vertices) && Bool.not(Mesh.below.maybe(indices, vc) && Mesh.colors.bytes(colors)))
+  Mesh{+vc, _, vertices, _, _, _, _, colors, indices, bones} = mesh
+  Mesh.consistent(mesh) && Bool.not(Mesh.has(Mesh.drawn(bones, vertices)) && Bool.not(Mesh.below.maybe(indices, vc) && Mesh.colors.bytes(colors)))
 
 def Draw.mesh.plan(+kind: U32, +color: U32, +transform: M.Matrix, +mesh: Mesh) -> Shapes.Plan:
-  Mesh{+vc, _, vertices, texcoords, _, _, _, colors, indices} = mesh
-  MeshDraw.mesh(kind, color, Frame.matrix(transform), vertices, texcoords, colors, indices, vc)
+  Mesh{+vc, _, vertices, texcoords, _, _, _, colors, indices, bones} = mesh
+  MeshDraw.mesh(kind, color, Frame.matrix(transform), Mesh.drawn(bones, vertices), texcoords, colors, indices, vc)
 
 def Draw.mesh.with(frame: Frame, texture: Texture, +color: U32, +transform: M.Matrix, +mesh: Mesh) -> Frame & Texture:
   Texture{+id, +width, +height, +format, +linear, +alpha, texels} = texture
@@ -15671,7 +15721,7 @@ def Model.obj.materials(ms: +List<Obj.Mtl>, gots: +List<TexGot>) -> Maybe<+List<
 def Model.obj.mesh(+acc: Obj.MeshAcc, +texcoords: Bool) -> Mesh:
   Obj.MeshAcc{_, +count, +vs, +ns, +ts, _} = acc
   Mesh{count, (count / 3 : U32), Some{List.reverse(&2, F32, vs)}, Bool.pick(Maybe<&2, +List<F32>>, texcoords, Some{List.reverse(&2, F32, ts)}, None{}), None{},
-    Some{List.reverse(&2, F32, ns)}, None{}, None{}, None{}}
+    Some{List.reverse(&2, F32, ns)}, None{}, None{}, None{}, None{}}
 
 def Model.obj.meshes(ms: +List<Obj.MeshAcc>, +texcoords: Bool) -> +List<Mesh>:
   match ms:
@@ -15800,8 +15850,8 @@ def Model.obj.load(+arithmetic: M.Contraction, frame: Frame, +path: String, +dir
 
 # A glTF primitive as a Mesh (no colors), and its material's index.
 def Model.gltf.mesh(+prim: Gltf.Prim) -> Mesh:
-  Gltf.Prim{_, +vertex_count, +triangle_count, +vertices, +texcoords, +texcoords2, +normals, +tangents, +indices, _} = prim
-  Mesh{vertex_count, triangle_count, vertices, texcoords, texcoords2, normals, tangents, None{}, indices}
+  Gltf.Prim{_, +vertex_count, +triangle_count, +vertices, +texcoords, +texcoords2, +normals, +tangents, +indices, _, +joints, +weights} = prim
+  Mesh{vertex_count, triangle_count, vertices, texcoords, texcoords2, normals, tangents, None{}, indices, Mesh.bones.of(joints, weights)}
 
 def Model.gltf.meshes(prims: +List<Gltf.Prim>) -> +List<Mesh>:
   match prims:
@@ -15811,7 +15861,7 @@ def Model.gltf.meshes(prims: +List<Gltf.Prim>) -> +List<Mesh>:
 def Model.gltf.mesh_material(prims: +List<Gltf.Prim>) -> +List<U32>:
   match prims:
     case Nil{}: Nil{}
-    case Con{Gltf.Prim{_, _, _, _, _, _, _, _, _, +material}, rest}: Con{material, Model.gltf.mesh_material(rest)}
+    case Con{Gltf.Prim{_, _, _, _, _, _, _, _, _, +material, _, _}, rest}: Con{material, Model.gltf.mesh_material(rest)}
 
 def Model.gltf.colored(maps: +List<MaterialMap>, +color: U32) -> +List<MaterialMap>:
   match maps:
@@ -15906,7 +15956,7 @@ def Model.gltf.load(arithmetic: M.Contraction, frame: Frame, +path: String) -> I
 
 def Model.vox.mesh(+part: Vox.Part) -> Mesh:
   Vox.Part{+vertex_count, +triangle_count, +vertices, +normals, +colors, +indices} = part
-  Mesh{vertex_count, triangle_count, Some{vertices}, None{}, None{}, Some{normals}, None{}, Some{colors}, Some{indices}}
+  Mesh{vertex_count, triangle_count, Some{vertices}, None{}, None{}, Some{normals}, None{}, Some{colors}, Some{indices}, None{}}
 
 def Model.vox.meshes(parts: +List<Vox.Part>) -> +List<Mesh>:
   match parts:
@@ -15937,8 +15987,8 @@ def Model.vox.load(frame: Frame, +path: String) -> IO(Frame & Result<&1, &1, Sur
   IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Frame & Result<&1, &1, Surface.IOError, LoadedModel>, Files.load_data(path), loaded => Model.vox.bytes(loaded, frame))
 
 def Model.iqm.mesh(+part: Iqm.Part) -> Mesh:
-  Iqm.Part{_, +vertex_count, +triangle_count, +vertices, +normals, +texcoords, +colors, +indices} = part
-  Mesh{vertex_count, triangle_count, Some{vertices}, Some{texcoords}, None{}, Some{normals}, None{}, colors, Some{indices}}
+  Iqm.Part{_, +vertex_count, +triangle_count, +vertices, +normals, +texcoords, +colors, +indices, +joints, +weights} = part
+  Mesh{vertex_count, triangle_count, Some{vertices}, Some{texcoords}, None{}, Some{normals}, None{}, colors, Some{indices}, Some{MeshBones{joints, weights, None{}}}}
 
 def Model.iqm.meshes(parts: +List<Iqm.Part>) -> +List<Mesh>:
   match parts:
@@ -15956,7 +16006,7 @@ def Model.iqm.request(material: +List<U32>) -> Maybe<&2, +List<U32>>:
 def Model.iqm.requests(parts: +List<Iqm.Part>) -> +List<Maybe<&2, +List<U32>>>:
   match parts:
     case Nil{}: Nil{}
-    case Con{Iqm.Part{+material, _, _, _, _, _, _, _}, rest}: Con{Model.iqm.request(material), Model.iqm.requests(rest)}
+    case Con{Iqm.Part{+material, _, _, _, _, _, _, _, _, _}, rest}: Con{Model.iqm.request(material), Model.iqm.requests(rest)}
 
 # model.meshMaterial[i] = i.
 def Model.iqm.mesh_material(parts: +List<Iqm.Part>, +index: U32) -> +List<U32>:
@@ -16056,8 +16106,9 @@ def Model.m3d.colors(colored: Bool, +colors: +List<U32>) -> Maybe<&2, +List<U32>
     case True{}: Some{colors}
 
 def Model.m3d.mesh(+mesh: M3d.Mesh) -> Mesh:
-  M3d.Mesh{_, +faces, +vertices, +texcoords, +normals, +colored, +colors} = mesh
-  Mesh{(faces * 3 : U32), faces, Some{vertices}, Some{texcoords}, None{}, Some{normals}, None{}, Model.m3d.colors(colored, colors), None{}}
+  M3d.Mesh{_, +faces, +vertices, +texcoords, +normals, +colored, +colors, +joints, +weights} = mesh
+  Mesh{(faces * 3 : U32), faces, Some{vertices}, Some{texcoords}, None{}, Some{normals}, None{}, Model.m3d.colors(colored, colors), None{},
+    Bool.pick(Maybe<&2, MeshBones>, List.is_empty(&2, U32, joints), None{}, Some{MeshBones{joints, weights, None{}}})}
 
 # The meshes of the runs, then the empty ones the loader allocated for
 # materials no run uses (its arrays are cleared).
@@ -16071,7 +16122,7 @@ def Model.m3d.mesh_material(n: Nat, list: +List<M3d.Mesh>) -> +List<U32>:
   match n list:
     case 0n _: Nil{}
     case 1n+k Nil{}: Con{0, Model.m3d.mesh_material(k, Nil{})}
-    case 1n+k Con{M3d.Mesh{+material, _, _, _, _, _, _}, rest}: Con{material, Model.m3d.mesh_material(k, rest)}
+    case 1n+k Con{M3d.Mesh{+material, _, _, _, _, _, _, _, _}, rest}: Con{material, Model.m3d.mesh_material(k, rest)}
 
 def Model.m3d.made(loaded: M3d.Loaded, frame: Frame) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
   match loaded:
@@ -16402,25 +16453,24 @@ def Model.pose.boneless(bones: +List<BoneInfo>) -> Bool:
     case Nil{}: True{}
     case Con{_, _}: False{}
 
-# UpdateModelAnimation(model, anim, frame) for the model's skeleton and
-# pose: the animation's pose between keyframes (int)frame and the next one
-# (each wrapped by the keyframe count), blended by Clamp(frame - (int)frame,
-# 0, 1), and each bone's matrix inverse(bind pose)*pose. The reference is
-# built with GPU skinning, so this is all the function changes there: the
-# meshes keep their bind pose. The pose comes back as it is for a skeleton
-# without bones and an animation without keyframes, where the native
-# function returns. None for a frame of -1 and below, 2147483648 and above
-# or not a number (its int conversion or the keyframe it indexes is
-# undefined), an animation with fewer bones than the skeleton or fewer
-# poses than its count, and a rotation the libm profile's QuaternionSlerp
-# does not answer.
-def Model.update_animation_for(+libm: M.Libm, skeleton: ModelSkeleton, animation: ModelAnimation, +frame: F32, +pose: ModelPose) -> Maybe<ModelPose>:
+# UpdateModelAnimationBones(model, anim, frame) (raylib 6.2) for the
+# model's skeleton and pose: the animation's pose between keyframes
+# (int)frame and the next one (each wrapped by the keyframe count), blended
+# by Clamp(frame - (int)frame, 0, 1), and each bone's matrix
+# inverse(bind pose)*pose; the meshes are not touched. The pose comes back
+# as it is for a skeleton without bones and an animation without
+# keyframes, where the native function returns. None for a frame of -1 and
+# below, 2147483648 and above or not a number (its int conversion or the
+# keyframe it indexes is undefined), an animation with fewer bones than the
+# skeleton or fewer poses than its count, and a rotation the libm profile's
+# QuaternionSlerp does not answer.
+def Model.update_animation_bones_for(+libm: M.Libm, skeleton: ModelSkeleton, animation: ModelAnimation, +frame: F32, +pose: ModelPose) -> Maybe<ModelPose>:
   ModelSkeleton{+bones, +binds} = skeleton
   ModelAnimation{_, _, +count, +poses} = animation
   Model.pose.updated(Bool.pick(U32, Model.pose.boneless(bones) || U32.is_eq(count, 0), 0, Bool.pick(U32, (frame < 2147483648.0 : F32) && (frame > F32.neg(1.0) : F32), 2, 1)), libm, binds, poses, count, frame, pose)
 
-def Model.update_animation(skeleton: ModelSkeleton, animation: ModelAnimation, +frame: F32, +pose: ModelPose) -> Maybe<ModelPose>:
-  Model.update_animation_for(M.AppleLibm{}, skeleton, animation, frame, pose)
+def Model.update_animation_bones(skeleton: ModelSkeleton, animation: ModelAnimation, +frame: F32, +pose: ModelPose) -> Maybe<ModelPose>:
+  Model.update_animation_bones_for(M.AppleLibm{}, skeleton, animation, frame, pose)
 
 # (int)frame%keyframeCount for a count above 0, as an index: 4294967295 when
 # the conversion is undefined or the remainder negative (before the poses).
@@ -16451,24 +16501,185 @@ def Model.pose.blended(active: Bool, +libm: M.Libm, +binds: +List<Transform>, +p
       +index_b = Model.pose.start((frame_b >= F32.neg(2147483648.0) : F32) && (frame_b < 2147483648.0 : F32), frame_b, count_b)
       Model.pose.blended.at(U32.is_ne(index_a, 4294967295) && U32.is_ne(index_b, 4294967295), libm, binds, poses_a, count_a, index_a, frame_a, poses_b, count_b, index_b, frame_b, blend)
 
-# UpdateModelAnimationEx(model, animA, frameA, animB, frameB, blend): each
-# animation's pose at keyframe (int)frame%keyframeCount towards the next
-# one by Clamp(frame - that keyframe, 0, 1) (so a frame past the count
-# reads the next keyframe whole), then the two blended (Vector3Lerp,
-# QuaternionSlerp) and the bone matrices as in Model.update_animation_for.
-# The pose comes back as it is for a skeleton without bones, an animation
-# without keyframes and a blend outside 0 to 1 (not a number included).
-# None where a frame's int conversion is undefined or its remainder
-# negative (a frame of -1 and below that is not a multiple of the count),
-# and as in Model.update_animation_for.
-def Model.update_animation_ex_for(+libm: M.Libm, skeleton: ModelSkeleton, first: ModelAnimation, +first_frame: F32, second: ModelAnimation, +second_frame: F32, +blend: F32, +pose: ModelPose) -> Maybe<ModelPose>:
+# model.boneMatrices != NULL, both animations with keyframes, 0 <= blend <= 1.
+def Model.pose.blends(+bones: +List<BoneInfo>, +count_a: U32, +count_b: U32, +blend: F32) -> Bool:
+  Bool.not(Model.pose.boneless(bones)) && (count_a > 0 : U32) && (count_b > 0 : U32) && (blend >= 0.0 : F32) && (blend <= 1.0 : F32)
+
+# UpdateModelAnimationBonesEx(model, animA, frameA, animB, frameB, blend)
+# (raylib 6.2): each animation's pose at keyframe (int)frame%keyframeCount
+# towards the next one by Clamp(frame - that keyframe, 0, 1) (so a frame
+# past the count reads the next keyframe whole), then the two blended
+# (Vector3Lerp, QuaternionSlerp) and the bone matrices as in
+# Model.update_animation_bones_for; the meshes are not touched. The pose
+# comes back as it is for a skeleton without bones, an animation without
+# keyframes and a blend outside 0 to 1 (not a number included). None where
+# a frame's int conversion is undefined or its remainder negative (a frame
+# of -1 and below that is not a multiple of the count), and as in
+# Model.update_animation_bones_for.
+def Model.update_animation_bones_ex_for(+libm: M.Libm, skeleton: ModelSkeleton, first: ModelAnimation, +first_frame: F32, second: ModelAnimation, +second_frame: F32, +blend: F32, +pose: ModelPose) -> Maybe<ModelPose>:
   ModelSkeleton{+bones, +binds} = skeleton
   ModelAnimation{_, _, +count_a, +poses_a} = first
   ModelAnimation{_, _, +count_b, +poses_b} = second
-  Model.pose.blended(Bool.not(Model.pose.boneless(bones)) && (count_a > 0 : U32) && (count_b > 0 : U32) && (blend >= 0.0 : F32) && (blend <= 1.0 : F32), libm, binds, poses_a, count_a, first_frame, poses_b, count_b, second_frame, blend, pose)
+  Model.pose.blended(Model.pose.blends(bones, count_a, count_b, blend), libm, binds, poses_a, count_a, first_frame, poses_b, count_b, second_frame, blend, pose)
 
-def Model.update_animation_ex(skeleton: ModelSkeleton, first: ModelAnimation, +first_frame: F32, second: ModelAnimation, +second_frame: F32, +blend: F32, +pose: ModelPose) -> Maybe<ModelPose>:
-  Model.update_animation_ex_for(M.AppleLibm{}, skeleton, first, first_frame, second, second_frame, blend, pose)
+def Model.update_animation_bones_ex(skeleton: ModelSkeleton, first: ModelAnimation, +first_frame: F32, second: ModelAnimation, +second_frame: F32, +blend: F32, +pose: ModelPose) -> Maybe<ModelPose>:
+  Model.update_animation_bones_ex_for(M.AppleLibm{}, skeleton, first, first_frame, second, second_frame, blend, pose)
+
+# A model after UpdateModelAnimation: its meshes (with their animVertices)
+# and its currentPose and boneMatrices.
+type AnimatedModel is Data:
+  AnimatedModel{model: Model, pose: ModelPose}
+
+def ModelPose.matrices(+pose: ModelPose) -> +List<M.Matrix>:
+  ModelPose{_, matrices} = pose
+  matrices
+
+# boneMatrices[index]: None past the bones (read outside them natively).
+def Model.skin.matrix(+found: +List<M.Matrix>) -> Maybe<&2, M.Matrix>:
+  match found:
+    case Con{m, _}: Some{m}
+    case Nil{}: None{}
+
+def Model.skin.added(+acc: M.Vector3, +moved: M.Vector3, +weight: F32) -> M.Vector3:
+  M.Vector3{ax, ay, az} = acc
+  M.Vector3{mx, my, mz} = moved
+  M.Vector3{(ax + (mx * weight : F32) : F32), (ay + (my * weight : F32) : F32), (az + (mz * weight : F32) : F32)}
+
+def Model.skin.with(found: Maybe<&2, M.Matrix>, +acc: Maybe<&2, M.Vector3>, +vertex: M.Vector3, +weight: F32) -> Maybe<&2, M.Vector3>:
+  match found acc:
+    case Some{m} Some{+a}: Some{Model.skin.added(a, M.Vector3.transform(vertex, m), weight)}
+    case _ _: None{}
+
+# One of a vertex's four bones: a weight of 0.0f is skipped (its index is
+# not read); otherwise animVertices += Vector3Transform(vertex,
+# boneMatrices[index])*weight, component by component.
+def Model.skin.bone(skip: Bool, +acc: Maybe<&2, M.Vector3>, +vertex: M.Vector3, +matrices: +List<M.Matrix>, +index: U32, +weight: F32) -> Maybe<&2, M.Vector3>:
+  match skip:
+    case True{}: acc
+    case False{}: Model.skin.with(Model.skin.matrix(List.drop(&2, M.Matrix, matrices, U32.to_nat(index))), acc, vertex, weight)
+
+# A vertex skinned: from zero, its bones in order j = 0..3.
+def Model.skin.vertex(+vertex: M.Vector3, +matrices: +List<M.Matrix>, +i0: U32, +i1: U32, +i2: U32, +i3: U32, +w0: F32, +w1: F32, +w2: F32, +w3: F32) -> Maybe<&2, M.Vector3>:
+  Model.skin.bone(F32.is_eq(w3, 0.0), Model.skin.bone(F32.is_eq(w2, 0.0), Model.skin.bone(F32.is_eq(w1, 0.0),
+    Model.skin.bone(F32.is_eq(w0, 0.0), Some{M.Vector3{0.0, 0.0, 0.0}}, vertex, matrices, i0, w0), vertex, matrices, i1, w1), vertex, matrices, i2, w2), vertex, matrices, i3, w3)
+
+def Model.skin.ok(+v: Maybe<&2, M.Vector3>) -> Bool:
+  match v:
+    case Some{_}: True{}
+    case None{}: False{}
+
+# The skinned vertex pushed onto the reversed values (zeros once refused).
+def Model.skin.push(+v: Maybe<&2, M.Vector3>, +acc: +List<F32>) -> +List<F32>:
+  match v:
+    case Some{M.Vector3{x, y, z}}: Con{z, Con{y, Con{x, acc}}}
+    case None{}: acc
+
+def Model.skin.done(+ok: Bool, +acc: +List<F32>) -> Maybe<&2, +List<F32>>:
+  Bool.pick(Maybe<&2, +List<F32>>, ok, Some{List.reverse(&2, F32, acc)}, None{})
+
+# Every vertex of a mesh skinned, three values a vertex.
+def Model.skin.go(vertices: +List<F32>, indices: +List<U32>, weights: +List<F32>, +matrices: +List<M.Matrix>, +ok: Bool, +acc: +List<F32>) -> Maybe<&2, +List<F32>>:
+  match vertices indices weights:
+    case Con{+x, Con{+y, Con{+z, vs}}} Con{+i0, Con{+i1, Con{+i2, Con{+i3, ix}}}} Con{+w0, Con{+w1, Con{+w2, Con{+w3, ws}}}}:
+      +v = Model.skin.vertex(M.Vector3{x, y, z}, matrices, i0, i1, i2, i3, w0, w1, w2, w3)
+      Model.skin.go(vs, ix, ws, matrices, ok && Model.skin.ok(v), Model.skin.push(v, acc))
+    case _ _ _: Model.skin.done(ok, acc)
+
+# animVertices of a mesh without vertices: none to copy for an empty mesh
+# (memcpy of 0 bytes), a read of NULL otherwise.
+def Model.skin.list(vertices: Maybe<&2, +List<F32>>, +count: U32, +indices: +List<U32>, +weights: +List<F32>, +matrices: +List<M.Matrix>) -> Maybe<&2, +List<F32>>:
+  match vertices:
+    case None{}: Bool.pick(Maybe<&2, +List<F32>>, U32.is_eq(count, 0), Some{Nil{}}, None{})
+    case Some{+values}: Model.skin.go(values, indices, weights, matrices, True{}, Nil{})
+
+def Model.skin.set(skinned: Maybe<&2, +List<F32>>, mesh: Mesh) -> Maybe<Mesh>:
+  match skinned:
+    case None{}: None{}
+    case Some{+values}: Some{Mesh.with_animated(mesh, values)}
+
+def Model.skin.of(bones: Maybe<&2, MeshBones>, vertices: Maybe<&2, +List<F32>>, +count: U32, +matrices: +List<M.Matrix>, +mesh: Mesh) -> Maybe<Mesh>:
+  match bones:
+    case None{}: Some{mesh}
+    case Some{MeshBones{+indices, +weights, _}}: Model.skin.set(Model.skin.list(vertices, count, indices, weights, matrices), mesh)
+
+# One mesh in UpdateModelAnimationVertexBuffers: skipped without bone
+# indices and weights; otherwise its animVertices (allocated the first
+# time) computed from its vertices. Every material's shader on the
+# software renderer has no bone attribute (no locations, or all -1), so
+# the CPU path always runs. None for inconsistent lists or a weighted bone
+# past the skeleton.
+def Model.skin.mesh(+mesh: Mesh, +matrices: +List<M.Matrix>) -> Maybe<Mesh>:
+  Mesh{+vc, _, vertices, _, _, _, _, _, _, bones} = mesh
+  Bool.pick(Maybe<Mesh>, Mesh.consistent(mesh), Model.skin.of(bones, vertices, vc, matrices, mesh), None{})
+
+def Model.skin.cons(head: Maybe<Mesh>, rest: Maybe<+List<Mesh>>) -> Maybe<+List<Mesh>>:
+  match head rest:
+    case Some{+m} Some{+ms}: Some{Con{m, ms}}
+    case _ _: None{}
+
+def Model.skin.meshes(meshes: +List<Mesh>, +matrices: +List<M.Matrix>) -> Maybe<+List<Mesh>>:
+  match meshes:
+    case Nil{}: Some{Nil{}}
+    case Con{+mesh, rest}: Model.skin.cons(Model.skin.mesh(mesh, matrices), Model.skin.meshes(rest, matrices))
+
+def Model.skin.rebuilt(meshes: Maybe<+List<Mesh>>, +transform: M.Matrix, +materials: +List<Material>, +ids: +List<U32>, +pose: ModelPose) -> Maybe<AnimatedModel>:
+  match meshes:
+    case None{}: None{}
+    case Some{+ms}: Some{AnimatedModel{Model{transform, ms, materials, ids}, pose}}
+
+# UpdateModelAnimationVertexBuffers: every mesh with bone data skinned
+# with the pose's bone matrices.
+def Model.skinned(+model: Model, +pose: ModelPose) -> Maybe<AnimatedModel>:
+  Model{+transform, +meshes, +materials, +ids} = model
+  Model.skin.rebuilt(Model.skin.meshes(meshes, ModelPose.matrices(pose)), transform, materials, ids, pose)
+
+# After the bones: the vertex buffers when the call went that far.
+def Model.animated.skin(active: Bool, +model: Model, +pose: ModelPose) -> Maybe<AnimatedModel>:
+  match active:
+    case False{}: Some{AnimatedModel{model, pose}}
+    case True{}: Model.skinned(model, pose)
+
+def Model.animated(+active: Bool, +model: Model, bones: Maybe<ModelPose>) -> Maybe<AnimatedModel>:
+  match bones:
+    case None{}: None{}
+    case Some{+pose}: Model.animated.skin(active, model, pose)
+
+# keyframeCount > 0 and model.skeleton.bones != NULL.
+def Model.animation.active(skeleton: ModelSkeleton, animation: ModelAnimation) -> Bool:
+  ModelSkeleton{+bones, _} = skeleton
+  ModelAnimation{_, _, +count, _} = animation
+  Bool.not(Model.pose.boneless(bones)) && (count > 0 : U32)
+
+def Model.animation.blends(skeleton: ModelSkeleton, first: ModelAnimation, second: ModelAnimation, +blend: F32) -> Bool:
+  ModelSkeleton{+bones, _} = skeleton
+  ModelAnimation{_, _, +count_a, _} = first
+  ModelAnimation{_, _, +count_b, _} = second
+  Model.pose.blends(bones, count_a, count_b, blend)
+
+# UpdateModelAnimation(model, anim, frame) (raylib 6.2): the bones as
+# Model.update_animation_bones_for, then, when the animation has keyframes
+# and the skeleton bones, UpdateModelAnimationVertexBuffers: every mesh
+# with bone indices and weights gets its animVertices, each vertex from
+# zero plus, for each of its four bones whose weight is not 0.0f,
+# Vector3Transform(vertex, boneMatrices[index])*weight (F32, in raylib's
+# order). DrawMesh then draws those. The model comes back unchanged where
+# the native function returns early. None as for the bones, and for a
+# weighted bone index past the skeleton (read outside boneMatrices).
+def Model.update_animation_for(+libm: M.Libm, +model: Model, +skeleton: ModelSkeleton, +animation: ModelAnimation, +frame: F32, +pose: ModelPose) -> Maybe<AnimatedModel>:
+  Model.animated(Model.animation.active(skeleton, animation), model, Model.update_animation_bones_for(libm, skeleton, animation, frame, pose))
+
+def Model.update_animation(+model: Model, +skeleton: ModelSkeleton, +animation: ModelAnimation, +frame: F32, +pose: ModelPose) -> Maybe<AnimatedModel>:
+  Model.update_animation_for(M.AppleLibm{}, model, skeleton, animation, frame, pose)
+
+# UpdateModelAnimationEx(model, animA, frameA, animB, frameB, blend)
+# (raylib 6.2): the bones as Model.update_animation_bones_ex_for, then the
+# vertex buffers as in Model.update_animation_for when the skeleton has
+# bones, both animations keyframes and the blend is within 0 to 1.
+def Model.update_animation_ex_for(+libm: M.Libm, +model: Model, +skeleton: ModelSkeleton, +first: ModelAnimation, +first_frame: F32, +second: ModelAnimation, +second_frame: F32, +blend: F32, +pose: ModelPose) -> Maybe<AnimatedModel>:
+  Model.animated(Model.animation.blends(skeleton, first, second, blend), model, Model.update_animation_bones_ex_for(libm, skeleton, first, first_frame, second, second_frame, blend, pose))
+
+def Model.update_animation_ex(+model: Model, +skeleton: ModelSkeleton, +first: ModelAnimation, +first_frame: F32, +second: ModelAnimation, +second_frame: F32, +blend: F32, +pose: ModelPose) -> Maybe<AnimatedModel>:
+  Model.update_animation_ex_for(M.AppleLibm{}, model, skeleton, first, first_frame, second, second_frame, blend, pose)
 
 def Model.pose.count(bones: +List<BoneInfo>, +n: U32) -> U32:
   match bones:

@@ -10,10 +10,11 @@
 # docs/RLGL.md): rlsw finds it incomplete, so the first pass draws and
 # clears nothing, and no shader runs on the software renderer
 # (docs/SHADERS.md): the screen shows the scene in its tints, unshadowed,
-# whatever the arrow keys do to the light. The reference library is built
-# with GPU skinning, so the robot is drawn in its bind pose and
-# UpdateModelAnimation fills the State's ModelPose only (docs/MODELS.md);
-# Jonlib's materials have no shader to assign. F after a frame takes a
+# whatever the arrow keys do to the light. UpdateModelAnimation skins the
+# robot's meshes on the CPU (raylib 6.2; no shader of the software renderer
+# takes the bones), so it is drawn in the animation's pose; the pose is the
+# State's ModelPose (docs/MODELS.md). Jonlib's materials have no shader to
+# assign. F after a frame takes a
 # screenshot, an IO step of the loop (J.Effects, docs/DRIVER.md). The
 # perspective needs the libm profile's binary64 tan (docs/PERSPECTIVE.md),
 # UpdateCamera its sinf/cosf (docs/SINCOSF.md) and the animations'
@@ -90,15 +91,20 @@ def eye(camera: J.Camera3D) -> M.Vector3:
   J.Camera3D{at, _, _, _, _} = camera
   at
 
-def update.posed(posed: Maybe<J.ModelPose>, +camera: J.Camera3D, +assets: Assets, textures: List<J.Texture>, +previous: J.ModelPose, +counter: U32, +light: M.Vector3, shadow: Shadow) -> State:
+# The assets with the skinned robot.
+def with_robot(+assets: Assets, +robot: J.Model) -> Assets:
+  Assets{+cube, _, +skeleton, +animations, +shader} = assets
+  Assets{cube, robot, skeleton, animations, shader}
+
+def update.posed(posed: Maybe<J.AnimatedModel>, +camera: J.Camera3D, +assets: Assets, textures: List<J.Texture>, +previous: J.ModelPose, +counter: U32, +light: M.Vector3, shadow: Shadow) -> State:
   match posed:
     case None{}: State{False{}, Some{camera}, assets, textures, previous, counter, light, shadow}
-    case Some{+pose}: State{True{}, Some{camera}, assets, textures, pose, counter, light, shadow}
+    case Some{J.AnimatedModel{+robot, +pose}}: State{True{}, Some{camera}, with_robot(assets, robot), textures, pose, counter, light, shadow}
 
 # UpdateModelAnimation(robot, anims[0], (float)frameCounter).
 def update.animated(+libm: M.Libm, +camera: J.Camera3D, +assets: Assets, textures: List<J.Texture>, +pose: J.ModelPose, +counter: U32, +light: M.Vector3, shadow: Shadow) -> State:
-  Assets{_, _, +skeleton, +animations, _} = assets
-  update.posed(J.Model.update_animation_for(libm, skeleton, pick.first(animations), U32.to_f32(counter), pose), camera, assets, textures, pose, counter, light, shadow)
+  Assets{_, +robot, +skeleton, +animations, _} = assets
+  update.posed(J.Model.update_animation_for(libm, robot, skeleton, pick.first(animations), U32.to_f32(counter), pose), camera, assets, textures, pose, counter, light, shadow)
 
 # frameCounter++; frameCounter %= anims[0].keyframeCount.
 def advanced(+assets: Assets, +counter: U32) -> U32:

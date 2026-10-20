@@ -4,6 +4,7 @@ This is deliberately a bounded header extractor, not a general C preprocessor.
 It retains all conditional alternatives rather than selecting the host's build.
 """
 import hashlib
+from pathlib import Path
 import re
 import json
 import subprocess
@@ -293,7 +294,8 @@ def extract_catalog(source, revision):
         entries.extend(extract_header(raw, header))
     for entry in entries:
         entry['source'] = f'https://github.com/raysan5/raylib/blob/{revision}/src/{entry["header"]}#L{entry["line"]}'
-    return dict(schema=1, project='raysan5/raylib', version='6.0', revision=revision,
+    version = json.loads((Path(__file__).resolve().parent.parent / 'toolchain.json').read_text())['raylib']['version']
+    return dict(schema=1, project='raysan5/raylib', version=version, revision=revision,
                 scope=list(HEADERS), headers=headers, entries=entries)
 
 

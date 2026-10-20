@@ -562,6 +562,14 @@ def zeros(n: Nat, acc: +List<U32>) -> +List<U32>:
 
 # Zeros after the frames read past 2^24 samples are past this port's limits
 # (raylib 6.2's buffer for them is RL_CALLOC'd).
+# The samples, then n zeros: none added when nothing is missing, otherwise
+# through two tail-recursive reversals (List.append recurses over a whole
+# wave's samples on the way back, past the JavaScript lane's stack).
+def zero_padded(n: Nat, +samples: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: samples
+    case 1n+k: List.reverse(&2, U32, zeros(k, Con{0, List.reverse(&2, U32, samples)}))
+
 def zero_filled.over(+frames: U32, +got: U32, +channels: U32) -> Bool:
   (got < frames : U32) && (frames > (16777216 / U32.max(channels, 1)) : U32)
 
@@ -570,7 +578,7 @@ def zero_filled.over(+frames: U32, +got: U32, +channels: U32) -> Bool:
 def zero_filled(over: Bool, +rate: U32, +channels: U32, +frames: U32, +got: U32, +samples: +List<U32>) -> Outcome:
   match over:
     case True{}: Unsupported{}
-    case False{}: Decoded{rate, channels, frames, List.append(&2, U32, samples, zeros(U32.to_nat(((frames - got) * channels : U32)), Nil{}))}
+    case False{}: Decoded{rate, channels, frames, zero_padded(U32.to_nat(((frames - got) * channels : U32)), samples)}
 
 def decoded(+rate: U32, +channels: U32, +frames: U32, +got: U32, converted: Samples) -> Outcome:
   match converted:

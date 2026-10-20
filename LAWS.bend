@@ -1639,7 +1639,7 @@ law model_pose_boneless_unchanged:
   for poses: +List<+List<J.Transform>>
   for frame: F32
   for pose: J.ModelPose
-  {J.Model.update_animation_for(libm, J.ModelSkeleton{Nil{}, binds}, J.ModelAnimation{name, bones, count, poses}, frame, pose) == Some{pose} : Maybe<J.ModelPose>}
+  {J.Model.update_animation_bones_for(libm, J.ModelSkeleton{Nil{}, binds}, J.ModelAnimation{name, bones, count, poses}, frame, pose) == Some{pose} : Maybe<J.ModelPose>}
 
 law model_pose_no_keyframes_unchanged:
   for libm: M.Libm
@@ -1651,7 +1651,7 @@ law model_pose_no_keyframes_unchanged:
   for poses: +List<+List<J.Transform>>
   for frame: F32
   for pose: J.ModelPose
-  {J.Model.update_animation_for(libm, J.ModelSkeleton{Con{J.BoneInfo{bone, parent}, Nil{}}, binds}, J.ModelAnimation{name, bones, 0, poses}, frame, pose) == Some{pose} : Maybe<J.ModelPose>}
+  {J.Model.update_animation_bones_for(libm, J.ModelSkeleton{Con{J.BoneInfo{bone, parent}, Nil{}}, binds}, J.ModelAnimation{name, bones, 0, poses}, frame, pose) == Some{pose} : Maybe<J.ModelPose>}
 
 law model_pose_undefined_call_answers_nothing:
   for libm: M.Libm
@@ -1673,7 +1673,7 @@ law model_pose_blend_boneless_unchanged:
   for second: F32
   for blend: F32
   for pose: J.ModelPose
-  {J.Model.update_animation_ex_for(libm, J.ModelSkeleton{Nil{}, binds}, J.ModelAnimation{name, bones, count, poses}, first, J.ModelAnimation{name, bones, count, poses}, second, blend, pose) == Some{pose} : Maybe<J.ModelPose>}
+  {J.Model.update_animation_bones_ex_for(libm, J.ModelSkeleton{Nil{}, binds}, J.ModelAnimation{name, bones, count, poses}, first, J.ModelAnimation{name, bones, count, poses}, second, blend, pose) == Some{pose} : Maybe<J.ModelPose>}
 
 law model_pose_blend_no_keyframes_unchanged:
   for libm: M.Libm
@@ -1688,7 +1688,7 @@ law model_pose_blend_no_keyframes_unchanged:
   for second: F32
   for blend: F32
   for pose: J.ModelPose
-  {J.Model.update_animation_ex_for(libm, J.ModelSkeleton{Con{J.BoneInfo{bone, parent}, Nil{}}, binds}, J.ModelAnimation{name, bones, 0, poses}, first, J.ModelAnimation{name, bones, count, poses}, second, blend, pose) == Some{pose} : Maybe<J.ModelPose>}
+  {J.Model.update_animation_bones_ex_for(libm, J.ModelSkeleton{Con{J.BoneInfo{bone, parent}, Nil{}}, binds}, J.ModelAnimation{name, bones, 0, poses}, first, J.ModelAnimation{name, bones, count, poses}, second, blend, pose) == Some{pose} : Maybe<J.ModelPose>}
 
 law model_pose_blend_frame_outside_int_refused:
   for frame: F32
@@ -1713,6 +1713,84 @@ law model_animation_invalid_other_bone_count:
   for count: U32
   for poses: +List<+List<J.Transform>>
   {J.Model.is_animation_valid(J.ModelSkeleton{Con{J.BoneInfo{bone, parent}, Nil{}}, binds}, J.ModelAnimation{name, 2, count, poses}) == False{} : Bool}
+
+# raylib 6.2's CPU skinning (UpdateModelAnimationVertexBuffers, docs/MODELS.md).
+# DrawMesh draws animVertices once there are any, the vertices before.
+law mesh_drawn_animated_vertices:
+  {J.Mesh.drawn(Some{J.MeshBones{[0, 0, 0, 0], Nil{}, Some{Nil{}}}}, None{}) == Some{Nil{}} : Maybe<&2, +List<F32>>}
+
+law mesh_drawn_vertices_before_skinning:
+  {J.Mesh.drawn(Some{J.MeshBones{[0, 0, 0, 0], Nil{}, None{}}}, None{}) == None{} : Maybe<&2, +List<F32>>}
+
+# A mesh keeps bone data only with both boneIndices and boneWeights.
+law mesh_bones_need_weights:
+  {J.Mesh.bones.of(Some{[1, 2, 3, 4]}, None{}) == None{} : Maybe<&2, J.MeshBones>}
+
+law mesh_bones_need_indices:
+  {J.Mesh.bones.of(None{}, Some{Nil{}}) == None{} : Maybe<&2, J.MeshBones>}
+
+# Bone indices are unsigned chars.
+law mesh_bone_indices_bytes:
+  {(J.Mesh.bytes([0, 255]), J.Mesh.bytes([7, 256])) == (True{}, False{}) : Bool & Bool}
+
+law mesh_bones_four_indices_a_vertex:
+  {(J.Mesh.bones.sized(Some{J.MeshBones{Nil{}, Nil{}, None{}}}, 0), J.Mesh.bones.sized(Some{J.MeshBones{[1, 2, 3], Nil{}, None{}}}, 1)) == (True{}, False{}) : Bool & Bool}
+
+# A weight of 0.0f skips its bone (the index is not read); a weighted bone
+# past the skeleton reads outside boneMatrices: None.
+law skin_zero_weight_skipped:
+  {J.Model.skin.bone(True{}, None{}, M.Vector3{0.0, 0.0, 0.0}, Nil{}, 9, 0.0) == None{} : Maybe<&2, M.Vector3>}
+
+law skin_bone_past_skeleton_refused:
+  {J.Model.skin.bone(False{}, Some{M.Vector3{0.0, 0.0, 0.0}}, M.Vector3{0.0, 0.0, 0.0}, Nil{}, 0, 1.0) == None{} : Maybe<&2, M.Vector3>}
+
+# A mesh without vertices: animVertices empty for an empty mesh, a NULL read otherwise.
+law skin_empty_mesh_without_vertices:
+  {(J.Model.skin.list(None{}, 0, Nil{}, Nil{}, Nil{}), J.Model.skin.list(None{}, 1, Nil{}, Nil{}, Nil{})) == (Some{Nil{}}, None{}) : Maybe<&2, +List<F32>> & Maybe<&2, +List<F32>>}
+
+# A mesh without bone data is not skinned.
+law skin_mesh_without_bones_unchanged:
+  {J.Model.skin.mesh(J.Mesh.empty(), Nil{}) == Some{J.Mesh.empty()} : Maybe<J.Mesh>}
+
+# The vertex buffers are not touched for a skeleton without bones or an
+# animation without keyframes (UpdateModelAnimation returns first).
+law skin_needs_bones_and_keyframes:
+  {(J.Model.animation.active(J.ModelSkeleton{Nil{}, Nil{}}, J.ModelAnimation{"", 1, 1, Nil{}}),
+    (J.Model.animation.active(J.ModelSkeleton{[J.BoneInfo{"", 4294967295}], Nil{}}, J.ModelAnimation{"", 1, 0, Nil{}}),
+    J.Model.animation.active(J.ModelSkeleton{[J.BoneInfo{"", 4294967295}], Nil{}}, J.ModelAnimation{"", 1, 1, Nil{}}))) == (False{}, (False{}, True{})) : Bool & (Bool & Bool)}
+
+# A refused bone update refuses the whole call.
+law skin_refused_bones_refuse:
+  {J.Model.animated(True{}, J.Model.empty(), None{}) == None{} : Maybe<J.AnimatedModel>}
+
+# LoadGLTF: u16 joints kept as unsigned chars; a mesh under a joint gets
+# that bone with weight 1 in each vertex's first slot.
+law gltf_joint_bytes:
+  {Gltf.joint.bytes([256, 511, 7]) == [0, 255, 7] : +List<U32>}
+
+law gltf_parent_bone_indices:
+  {Gltf.bone.indices(2n, 5, Nil{}) == [5, 0, 0, 0, 5, 0, 0, 0] : +List<U32>}
+
+law gltf_component_sizes:
+  {(Gltf.component(1, [7, 9]), (Gltf.component(2, [1, 2]), Gltf.component(4, [1, 0, 0, 1]))) == (7, (513, 16777217)) : U32 & (U32 & U32)}
+
+law gltf_parent_bone_first_place:
+  {(Gltf.position([Json.JNumber{[53]}, Json.JNumber{[51]}, Json.JNumber{[51]}], 3, 0), Gltf.position([Json.JNumber{[51]}], 4, 0)) == (1, 4294967295) : U32 & U32}
+
+# LoadIQM: boneIndices of zeros without blend indexes.
+law iqm_blend_indexes_zero_without_array:
+  {Iqm.blended(None{}, 3, 2) == [0, 0, 0, 0, 0, 0, 0, 0] : +List<U32>}
+
+law iqm_blend_indexes_of_mesh:
+  {Iqm.blended(Some{[1, 2, 3, 4, 5, 6, 7, 8]}, 1, 1) == [5, 6, 7, 8] : +List<U32>}
+
+# LoadM3D: no bone data without bones and skins.
+law m3d_corner_ids_unskinned:
+  {M3d.corner.ids(M3d.SkinSet{False{}, 3, M3d.empty.store()}, 0, [9]) == [9] : +List<U32>}
+
+# A vertex without a skin goes to the no-bone bone (numbone).
+law m3d_corner_ids_no_bone:
+  {M3d.corner.ids(M3d.SkinSet{True{}, 259, M3d.empty.store()}, 4294967295, Nil{}) == [0, 0, 0, 3] : +List<U32>}
 
 # hypot(x, y) <= r for every faithful hypot (src/hypot.bend), from the order
 # of the rounded x*x + y*y and r*r (0 equal, 1 less, 2 greater, 3 unknown):
@@ -4592,6 +4670,14 @@ law wave_wav_ima_headers_fill_data:
 # RL_CALLOC'd wave ends in zeros (0x0102 big-endian is 258).
 law wave_aiff_unread_frames_are_zeros:
   {J.Wave.decode(".wav", [70, 79, 82, 77, 0, 0, 0, 48, 65, 73, 70, 70, 67, 79, 77, 77, 0, 0, 0, 18, 0, 1, 0, 0, 0, 3, 0, 16, 64, 14, 172, 68, 0, 0, 0, 0, 0, 0, 83, 83, 78, 68, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2]) == Done{J.Wave{3, 44100, 16, 1, [258, 0, 0]}} : Result<&1, &1, J.Wave.Error, J.Wave>}
+
+# Zero padding: nothing added when no frame is missing, otherwise the zeros
+# after the samples in order.
+law wav_zero_padded_none_missing:
+  {Wav.zero_padded(0n, [5, 7]) == [5, 7] : +List<U32>}
+
+law wav_zero_padded_after_samples:
+  {Wav.zero_padded(2n, [5, 7]) == [5, 7, 0, 0] : +List<U32>}
 
 # Zeros past 2^24 samples are past the port's limits; none to add never is.
 law wav_zeros_limit_past_2_24:

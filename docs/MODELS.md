@@ -22,10 +22,13 @@ code text), `src/par_shapes.bend` (the `par_shapes` adaptation, MIT,
 ## Mesh and Model
 
 ```
+type MeshBones is Data:
+  MeshBones{indices: +List<U32>, weights: +List<F32>, animated: Maybe<&2, +List<F32>>}
+
 type Mesh is Data:
   Mesh{vertex_count: U32, triangle_count: U32, vertices: Maybe<&2, +List<F32>>, texcoords: Maybe<&2, +List<F32>>,
     texcoords2: Maybe<&2, +List<F32>>, normals: Maybe<&2, +List<F32>>, tangents: Maybe<&2, +List<F32>>,
-    colors: Maybe<&2, +List<U32>>, indices: Maybe<&2, +List<U32>>}
+    colors: Maybe<&2, +List<U32>>, indices: Maybe<&2, +List<U32>>, bones: Maybe<&2, MeshBones>}
 
 type MaterialMap is Data:
   MaterialMap{texture: TextureInfo, color: U32, value: F32}
@@ -41,8 +44,15 @@ A `Mesh` holds raylib's CPU attribute arrays as F32 (or byte/index) lists in
 raylib's order, `None` where raylib's pointer is `NULL`. Indices are the
 unsigned short values (generators take them modulo 2^16, as C converts).
 Vertex arrays raylib allocates with zero elements (`malloc(0)`) are
-`Some{Nil}`. GPU buffer ids (`vaoId`, `vboId`, all 0 on the software
-renderer) and animation data (`animVertices`, bones) are not modeled;
+`Some{Nil}`. `bones` is raylib 6.2's bone data: `boneIndices` (four
+unsigned chars a vertex) and `boneWeights` (four floats a vertex) as a
+loader leaves them, kept together (raylib may hold one alone, but only the
+pair is ever read), and `animVertices` (`animated`), `None` until
+`UpdateModelAnimation` skins the mesh; `DrawMesh` then draws them instead of
+the vertices (see [Poses](#poses)). `animNormals` are not modeled: the
+software renderer's `glNormalPointer` does nothing, so they reach no pixel,
+and no API reads them back. GPU buffer ids (`vaoId`, `vboId`, all 0 on the
+software renderer) are not modeled;
 `UnloadMesh` and `UnloadModel` consume the value. A `Model` keeps its
 transform, meshes, materials and the material index of each mesh
 (`meshMaterial`, C ints as U32 words); `LoadModelFromMesh` is
@@ -484,13 +494,19 @@ reader `src/json.bend` and the decimal conversion `src/strtod.bend`):
   the model. A texture without a source and an image with neither a uri nor
   a buffer view give no texture, as in raylib. `meshMaterial` is the
   primitive's material index plus one, or 0.
-- **Skins**: a file with skins loads as its meshes (LoadGLTF does not move
-  the vertices of a skinned mesh differently). `JOINTS_n` (a `VEC4` of 8 or
-  16 bits) and `WEIGHTS_n` (also float) are checked as the accessors
-  LoadGLTF reads, and not kept: Jonlib's `Mesh` has no bone data and its
-  `Model` no skeleton, pose or bone matrices. The reference library is
-  built with GPU skinning ([VERIFICATION.md](VERIFICATION.md)), so it draws
-  such a model in its bind pose, as Jonlib does.
+- **Skins** (raylib 6.2): a skinned mesh's vertices are placed as any
+  other's, and its bone data comes from a second walk over the nodes, for
+  every triangle primitive, skins or not. `JOINTS_n` (a `VEC4` of 8 or 16
+  bits; 16-bit indices kept as `(unsigned char)`) becomes `boneIndices`,
+  `WEIGHTS_n` (a `VEC4` of 8 or 16 bits, divided by 255.0f or 65535.0f, or
+  of floats) `boneWeights`, read as `LOAD_ATTRIBUTE` reads them into
+  buffers of `vertexCount*4` elements (zeros past the accessor's); a later
+  attribute of a kind replaces an earlier one (`JOINTS_1` included). With
+  skins, a primitive without `JOINTS_n` of a node whose parent has no mesh
+  and is one of the first skin's joints (its first place there) has every
+  vertex attached to that bone: `boneIndices[4k]` the bone as an unsigned
+  char, `boneWeights[4k]` 1, zeros after. The skeleton and the animations
+  are [below](#skeletons-and-animations).
 - **Indices of other sections**: cgltf fails the parse when an index points
   past its array (a texture's source or sampler, an image's buffer view, a
   material's texture, a skin's joints, skeleton or inverse bind matrices, a
@@ -502,8 +518,9 @@ the other texture kinds (metallic-roughness, normal, occlusion, emissive),
 an image given by a uri, in another format than PNG (JPEG included), through
 a strided buffer view, without a mime type, or that does not decode; a
 texture with extensions; `COLOR_n` attributes; `JOINTS_n` or `WEIGHTS_n` of
-another layout (raylib only warns) or with more elements than the mesh has
-vertices (a write past the mesh's buffers natively); other component types,
+another layout (raylib only warns and keeps the earlier data) or with more
+elements than the mesh has vertices (a write past the mesh's buffers
+natively); other component types,
 sparse accessors, an accessor
 without a buffer view, primitive extensions and morph targets, required
 extensions, a buffer outside the file, an accessor that reaches past the
@@ -579,13 +596,17 @@ rule above with the native loader.
 ### Poses
 
 `model.currentPose` and `model.boneMatrices` are a value beside the model
-too: `ModelPose{current, matrices}`.
+too: `ModelPose{current, matrices}`. The meshes' `animVertices` are in the
+model, so the updates that skin take the model and give it back with the
+pose: `AnimatedModel{model, pose}`.
 
 | raylib | Jonlib | Result |
 |---|---|---|
 | the pose after `LoadModel` | `Model.pose(skeleton)` | `ModelPose`: zeroed transforms and an identity matrix for every bone |
-| `UpdateModelAnimation` | `Model.update_animation_for(libm, skeleton, animation, frame, pose)` / `Model.update_animation(...)` | `Maybe<ModelPose>` |
-| `UpdateModelAnimationEx` | `Model.update_animation_ex_for(libm, skeleton, first, first_frame, second, second_frame, blend, pose)` / `Model.update_animation_ex(...)` | `Maybe<ModelPose>` |
+| `UpdateModelAnimationBones` (6.2) | `Model.update_animation_bones_for(libm, skeleton, animation, frame, pose)` / `Model.update_animation_bones(...)` | `Maybe<ModelPose>` |
+| `UpdateModelAnimationBonesEx` (6.2) | `Model.update_animation_bones_ex_for(libm, skeleton, first, first_frame, second, second_frame, blend, pose)` / `Model.update_animation_bones_ex(...)` | `Maybe<ModelPose>` |
+| `UpdateModelAnimation` | `Model.update_animation_for(libm, model, skeleton, animation, frame, pose)` / `Model.update_animation(...)` | `Maybe<AnimatedModel>` |
+| `UpdateModelAnimationEx` | `Model.update_animation_ex_for(libm, model, skeleton, first, first_frame, second, second_frame, blend, pose)` / `Model.update_animation_ex(...)` | `Maybe<AnimatedModel>` |
 | `IsModelAnimationValid` | `Model.is_animation_valid(skeleton, animation)` | `Bool`: the bone counts are equal |
 
 - **`UpdateModelAnimation`**: keyframes `(int)frame` and the next one, each
@@ -599,26 +620,52 @@ too: `ModelPose{current, matrices}`.
   keyframe, 0, 1)`: the native function subtracts the wrapped keyframe, so
   a frame past the count takes the next keyframe whole. The two poses are
   then blended the same way.
-- **Nothing changes** (the pose comes back) for a skeleton without bones
-  (`model.boneMatrices` is NULL) and an animation without keyframes; for the
-  blend also when it is outside 0 to 1 or not a number.
-- **Nothing else changes**: the reference library is built with GPU
-  skinning, so the meshes keep their bind pose there, and `DrawModel` draws
-  them unposed on the software renderer (the bone matrices are a shader
-  uniform). A port draws the model as loaded and uses the pose where the
-  example reads it.
+- **Nothing changes** (the pose and the model come back) for a skeleton
+  without bones (`model.boneMatrices` is NULL) and an animation without
+  keyframes; for the blend also when it is outside 0 to 1 or not a number.
+- **CPU skinning** (raylib 6.2's `UpdateModelAnimationVertexBuffers`, after
+  the bones in `UpdateModelAnimation` and `UpdateModelAnimationEx`, never in
+  the `Bones` forms): every mesh with bone indices and weights is skinned
+  unless its material's shader has a bone-ids location. On the software
+  renderer none has: the default shader's locations are NULL
+  (`rlGetShaderLocsDefault` answers them only under OpenGL 3.3/ES2) and
+  `LoadShader` compiles nothing, so its locations are all -1; Jonlib's
+  materials hold no shader. The first time, `animVertices` is allocated;
+  each time, every vertex starts at zero and, for each of its four bones
+  in order whose weight is not `0.0f`, adds
+  `Vector3Transform(vertex, boneMatrices[index])` times the weight,
+  component by component (F32, in that order). A vertex whose weights are
+  all zero goes to the origin (IQM meshes without blend arrays do that
+  whole). The bind vertices are never changed; `GetMeshBoundingBox`,
+  `GetModelBoundingBox` and `GetRayCollisionMesh` read them, as raylib's
+  do. `DrawMesh` (and so `DrawModel`, `DrawModelEx`, the wires and points
+  forms) draws `animVertices` once there are any. The normals raylib skins
+  beside them reach no pixel on the software renderer and are not
+  modeled.
 - **None**: a frame whose `int` conversion or keyframe is undefined
   (`UpdateModelAnimation`: -1 and below; the blend: a negative remainder,
   that is -1 and below unless a multiple of the count; both: 2147483648 and
   above, or not a number), an animation with fewer bones than the skeleton
-  or fewer poses than its count (read past the end natively), and a rotation
-  the libm profile's `QuaternionSlerp` does not answer.
+  or fewer poses than its count (read past the end natively), a rotation
+  the libm profile's `QuaternionSlerp` does not answer, and, in the
+  skinning, a weighted bone index past the skeleton (a read outside
+  `boneMatrices`) or a mesh whose lists disagree with its counts.
 
 Gate `model-pose` (`tools/model_pose_probe.py`) runs one sequence of fifteen
-calls natively and with Jonlib on `greenman.glb` and on generated models,
-a model without bones and one with fewer bones than the animations
-included, and compares a hash of the pose and of the bone matrices after
-every call; the undefined calls are a contract.
+calls natively and with Jonlib on `greenman.glb`, `robot.glb` (nineteen
+skinned meshes, 7218 vertices) and on generated models (a quad blending two
+bones with one vertex of zero weights, a quad without `JOINTS_0` under a
+joint), a model without bones and one with fewer bones than the animations
+included, and compares a hash of the pose, of the bone matrices and of
+every mesh's `animVertices` after every call; the undefined calls are a
+contract.
+
+One case differs and is outside the contract: an IQM file without joints.
+`LoadIQM` allocates its skeleton with zero bones (`RL_CALLOC(0)`, not NULL)
+and bone data for every mesh, so `UpdateModelAnimation` skins the meshes
+there (to the origin without blend weights); Jonlib's `ModelSkeleton` has
+no bones either way, and a skeleton without bones changes nothing, as the
+NULL skeleton of a glTF or M3D file without one does.
 
 Gate `gltf` (`tools/gltf_probe.py`) loads generated files covering each of
 those rules, and the models the examples use (`plane.glb`,
@@ -689,8 +736,11 @@ and counts and offsets of its arrays.
   vertex) and texcoords (2) from the vertex arrays of those kinds, from the
   mesh's first vertex; zeros where the file has no such array (the loader
   allocates them cleared). Colors (4 bytes a vertex) only when the file has
-  a color array. Blend indexes and weights are read and not kept (Jonlib's
-  `Mesh` has no bone data); tangents and custom arrays are not read. Two
+  a color array. Bone data for every mesh (raylib 6.2 allocates it
+  cleared): the blend indexes as `boneIndices` (signed chars copied as
+  unsigned chars) and the blend weights over 255.0f as `boneWeights`, four
+  a vertex, zeros without those arrays; tangents and custom arrays are not
+  read. Two
   arrays of a kind: the last one counts. The array's own format and size
   are ignored, as upstream.
 - **Indices.** A triangle's corners reversed, each less the mesh's first
@@ -773,6 +823,16 @@ material more than the file's: the default one first. A material takes its
 its orientation normalized, composed with its parent's in the bones' order
 (a parent that comes later is still zeros, as the loader's cleared array
 is), then a bone named `NO BONE`.
+
+A file with bones and skins gives every mesh bone data, four a corner: the
+corner's skin (its four bone ids as unsigned chars, M3D_UNDEF giving 255
+with a weight of 0) or, for a vertex without a skin that exists, the
+no-bone bone (`numbone`) with weight 1 and zeros. A skin's weights are the
+importer's: each of its first four nonzero weight bytes over 255.0f, then
+all divided by their sum unless it is 0 or 1; then, unless the importer
+returned from its chunk loop, its post-processing divides the weights again
+by their sum (from the first, up to the first undefined bone or weight not
+above 0) once for every vertex that names the skin.
 
 `Model.load_animations_for` is `LoadModelAnimationsM3D`: an animation an
 action, `duration/17` keyframes, keyframe `i` being `m3d_pose` at `17*i`
@@ -917,15 +977,14 @@ attribute builders are tail-recursive.
   the Apple profile's `sinf`/`cosf` beyond the integral degrees (most curved
   shapes are verified only under the glibc profile).
 - Shaders (no shader is compiled under OpenGL 1.1), `UploadMesh`/GPU
-  buffers, `UpdateMeshBuffer`'s buffer contents and
-  `UpdateModelAnimation*` (the reference only fills a pose and bone
-  matrices Jonlib's `Model` does not have).
+  buffers, `UpdateMeshBuffer`'s buffer contents, the skinned normals
+  (`animNormals`, no pixel reads them) and an IQM file without joints
+  under `UpdateModelAnimation` (see [Poses](#poses)).
 - glTF as text: `LoadModel` answers `UnsupportedFileType` (raylib loads it;
   the text container is not ported). Model 3D: textures (inlined or
   looked up), generated normals, voxels, shapes, procedural surfaces and
-  the ASCII variant. Binary glTF is loaded for the slice above: a skinned
-  file's bone data and skeleton are not kept, model animations are not
-  loaded, and the other texture kinds and attribute formats are refused.
+  the ASCII variant. Binary glTF is loaded for the slice above: the other
+  texture kinds and attribute formats are refused.
 - OBJ: faces of 6 or 7 vertices (accepted by builds without asserts, refused
   here), numbers beyond the checked binary64 domains, non-ASCII names, and
   texture files Jonlib's `LoadImage` does not decode.

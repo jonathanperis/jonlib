@@ -8,7 +8,8 @@ checkout), natively (InitWindow on PLATFORM=Memory, then LoadModel) and with
 Jonlib (Model.load_for). Each row has the mesh and
 material counts, IsModelValid, every mesh's vertex and triangle counts, mesh
 material and every vertex, normal, tangent, texcoord and second texcoord
-word, every index, and every material map.
+word, every index, the bone data (raylib 6.2's boneIndices bytes and
+boneWeights words, when the mesh has both), and every material map.
 
 The files cover: a bare triangle; indices of 8, 16 and 32 bits (a value above
 65535 is kept as its low 16 bits); node translations, rotations and scales
@@ -21,8 +22,10 @@ that are not multiples of the component size (LOAD_ATTRIBUTE divides them);
 several primitives, a line primitive (skipped), materials with and without a
 base color factor or pbrMetallicRoughness, primitives without a material; a
 file without nodes; a missing file; skins (a bare one, joints of 8 and 16
-bits with float and 8-bit weights: the meshes load, the bone data is not
-part of the row); a base color texture as an embedded PNG (the texture's
+bits with float, 8-bit and 16-bit weights, 16-bit joints past a byte,
+fewer joints than vertices, JOINTS_1 after JOINTS_0, joints in a file
+without a skin, and a quad without joints under a joint, which LoadGLTF
+attaches to that bone); a base color texture as an embedded PNG (the texture's
 id, size, mipmaps and format are in the material's map), a texture without
 a source, an image nothing uses.
 
@@ -146,16 +149,28 @@ def textured(image=None, texture=None, material=None, stride=None, payload=CHECK
     return glb(None, b.data, text=text.replace('"image/png"', '"image\\/png"') if escaped else text)
 
 
-def skinned(joints_code='B', weights_code='f', joints_count=4, **extra):
-    """A quad under a two-joint skin, with JOINTS_0 and WEIGHTS_0."""
+def skinned(joints_code='B', weights_code='f', joints_count=4, joint_values=(0, 1, 0, 0), more=None, nodes=None, skins=True, **extra):
+    """A quad under a two-joint skin, with JOINTS_0 and WEIGHTS_0 (`more`: further attributes from the Builder;
+    `skins`: False for a file without the skin)."""
     b = Builder()
-    joints = b.accessor(b.view(struct.pack(f'<{4 * joints_count}{joints_code}', *([0, 1, 0, 0] * joints_count))), {'B': 5121, 'H': 5123}[joints_code], 'VEC4', joints_count)
+    joints = b.accessor(b.view(struct.pack(f'<{4 * joints_count}{joints_code}', *(list(joint_values) * joints_count))), {'B': 5121, 'H': 5123}[joints_code], 'VEC4', joints_count)
     scale = {'f': 1.0, 'B': 255, 'H': 65535}[weights_code]
     values = [type(scale)(v * scale) for v in [0.75, 0.25, 0.0, 0.0] * 4]
     weights = b.accessor(b.view(struct.pack(f'<16{weights_code}', *values)), {'f': 5126, 'B': 5121, 'H': 5123}[weights_code], 'VEC4', 4)
-    nodes = [dict(name='root', children=[1, 3], translation=[0, 1, 0]), dict(name='bone_a', children=[2], rotation=[0, raw('0.3826834261417389'), 0, raw('0.9238795042037964')]),
-             dict(name='bone_b', translation=[0, raw('0.5'), 0]), dict(mesh=0, skin=0)]
-    return glb(b.document(nodes=nodes, meshes=[dict(primitives=[quad(b, JOINTS_0=joints, WEIGHTS_0=weights)])], skins=[dict(joints=[1, 2])], **extra), b.data)
+    nodes = nodes or [dict(name='root', children=[1, 3], translation=[0, 1, 0]), dict(name='bone_a', children=[2], rotation=[0, raw('0.3826834261417389'), 0, raw('0.9238795042037964')]),
+                      dict(name='bone_b', translation=[0, raw('0.5'), 0]), dict(mesh=0, skin=0)]
+    attributes = dict(JOINTS_0=joints, WEIGHTS_0=weights, **(more(b) if more else {}))
+    if skins:
+        extra['skins'] = [dict(joints=[1, 2])]
+    return glb(b.document(nodes=nodes, meshes=[dict(primitives=[quad(b, **attributes)])], **extra), b.data)
+
+
+def parented_quad():
+    """A quad without JOINTS_n under a joint without a mesh: LoadGLTF attaches it to that bone."""
+    b = Builder()
+    nodes = [dict(name='root', children=[1], translation=[0, 1, 0]), dict(name='bone_a', children=[2], rotation=[0, raw('0.3826834261417389'), 0, raw('0.9238795042037964')]),
+             dict(name='bone_b', children=[3], translation=[0, raw('0.5'), 0]), dict(mesh=0)]
+    return glb(b.document(nodes=nodes, meshes=[dict(primitives=[quad(b)])], skins=[dict(joints=[1, 2])]), b.data)
 
 
 def cases(work, raylib):
@@ -225,6 +240,11 @@ def cases(work, raylib):
     add('skin', simple([dict(mesh=0)], skins=[dict(joints=[0])]))
     add('skinned', skinned())
     add('skinned-16', skinned(joints_code='H', weights_code='B'))
+    add('skinned-short-joints', skinned(joints_count=2))
+    add('skinned-16-past-a-byte', skinned(joints_code='H', joint_values=(257, 1, 511, 0)))
+    add('skinned-joints-twice', skinned(more=lambda b: dict(JOINTS_1=b.accessor(b.view(struct.pack('<16B', *([1, 0, 1, 0] * 4))), 5121, 'VEC4', 4))))
+    add('skinned-without-skin', skinned(skins=False, nodes=[dict(mesh=0)]))
+    add('parented-to-joint', parented_quad())
     add('skinned-animated', skinned(weights_code='H', animations=[dict(name='idle', samplers=[dict(input=0, output=1)], channels=[dict(sampler=0, target=dict(node=1, path='rotation'))])]))
     add('image-unused', simple([dict(mesh=0)], images=[dict(uri='a.png')]))
     add('textured', textured())
@@ -301,11 +321,18 @@ C_PREFIX = op.C_PREFIX.replace(
         printf(" i");
         if (!e->indices) printf("-");
         else for (int k = 0; k < e->triangleCount*3; k++) printf("%04x", e->indices[k]);
+        if (!e->boneIndices || !e->boneWeights) printf(" b- w-");
+        else
+        {
+            printf(" b");
+            for (int k = 0; k < e->vertexCount*4; k++) printf("%02x", e->boneIndices[k]);
+            words("w", e->boneWeights, e->vertexCount*4);
+        }
 ''')
 
 PROGRAM = op.PROGRAM.replace(
     '''def mesh.text(+mesh: J.Mesh, +material: U32) -> String:
-  J.Mesh{+vc, +tc, +vs, +ts, _, +ns, _, +cs, _} = mesh
+  J.Mesh{+vc, +tc, +vs, +ts, _, +ns, _, +cs, _, _} = mesh
   " m" ++ U32.show(vc) ++ "," ++ U32.show(tc) ++ "," ++ U32.show(material) ++ words("v", vs) ++ words("n", ns) ++ words("t", ts) ++ colors.flag(cs)
 ''', '''def hex.shorts(xs: +List<U32>, acc: String) -> String:
   match xs:
@@ -317,10 +344,21 @@ def indices.text(xs: Maybe<&2, +List<U32>>) -> String:
     case None{}: " i-"
     case Some{+v}: " i" ++ hex.shorts(v, "")
 
+def hex.bytes(xs: +List<U32>, acc: String) -> String:
+  match xs:
+    case Nil{}: acc
+    case Con{+x, rest}: hex.bytes(rest, acc ++ SCon{hex.digit(((x >> 4n) .&. 15 : U32)), SCon{hex.digit((x .&. 15 : U32)), SNil{}}})
+
+# boneIndices and boneWeights (raylib 6.2's bone data): both, or neither.
+def bones.text(bones: Maybe<&2, J.MeshBones>) -> String:
+  match bones:
+    case None{}: " b- w-"
+    case Some{J.MeshBones{+ix, +ws, _}}: " b" ++ hex.bytes(ix, "") ++ words("w", Some{ws})
+
 def mesh.text(+mesh: J.Mesh, +material: U32) -> String:
-  J.Mesh{+vc, +tc, +vs, +ts, +t2, +ns, +gs, +cs, +ix} = mesh
+  J.Mesh{+vc, +tc, +vs, +ts, +t2, +ns, +gs, +cs, +ix, +bones} = mesh
   " m" ++ U32.show(vc) ++ "," ++ U32.show(tc) ++ "," ++ U32.show(material) ++ words("v", vs) ++ words("n", ns) ++ words("t", ts) ++ colors.flag(cs)
-    ++ words("g", gs) ++ words("u", t2) ++ indices.text(ix)
+    ++ words("g", gs) ++ words("u", t2) ++ indices.text(ix) ++ bones.text(bones)
 ''')
 assert C_PREFIX != op.C_PREFIX and PROGRAM != op.PROGRAM
 

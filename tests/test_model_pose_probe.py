@@ -49,17 +49,31 @@ class ModelPoseProbeTests(unittest.TestCase):
         self.assertNotEqual(probe.loaded(1), probe.loaded(2))
 
     def test_the_reference_rows_are_checked(self):
-        entry = probe.loaded(2)
-        good = ' '.join(['p2', entry] + [f'{index:08x}:00000000' for index in range(probe.UNCHANGED)] + ['bbbbbbbb:00000000'] + ['aaaaaaaa:00000000'] * 3 + ['v1'])
+        entry = probe.loaded(2) + ':11111111'
+        good = ' '.join(['p2', entry] + [f'{index:08x}:00000000:2222222{index % 10}' for index in range(probe.UNCHANGED)] + ['bbbbbbbb:00000000:33333333']
+                        + ['aaaaaaaa:00000000:44444444'] * 3 + ['v1'])
         with self.assertRaises(probe.ProbeFailure):
             probe.check_reference({'linear': good}, 'AppleLibm')
         fixed = good.split()
         fixed[2 + probe.UNCHANGED] = fixed[1 + probe.UNCHANGED]
         probe.check_reference({'linear': ' '.join(fixed)}, 'AppleLibm')
+        probe.check_reference({'weighted': ' '.join(fixed)}, 'AppleLibm')
         with self.assertRaises(probe.ProbeFailure):
             probe.check_reference({'more-bones': ' '.join(fixed)}, 'AppleLibm')
         with self.assertRaises(probe.ProbeFailure):
             probe.check_reference({'no-animations': ' '.join(fixed)}, 'AppleLibm')
+        unskinned = list(fixed)
+        unskinned[2] = unskinned[2].rsplit(':', 1)[0] + ':11111111'
+        probe.check_reference({'linear': ' '.join(unskinned)}, 'AppleLibm')
+        with self.assertRaises(probe.ProbeFailure):
+            probe.check_reference({'weighted': ' '.join(unskinned)}, 'AppleLibm')
+
+    def test_the_skinning_cases_are_generated(self):
+        files = probe.skinned_files()
+        self.assertEqual(set(files), {'weighted', 'parented'})
+        self.assertIn(b'JOINTS_0', files['weighted'])
+        self.assertNotIn(b'JOINTS_0', files['parented'])
+        self.assertTrue(set(probe.SKINNED) <= {item['id'] for item in self.cases('Glibc239Libm')})
 
 
 if __name__ == '__main__':

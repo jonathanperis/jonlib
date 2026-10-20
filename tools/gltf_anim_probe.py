@@ -181,16 +181,20 @@ def run(+path: String) -> IO(String):
 QUARTER = [raw('0.7071067690849304'), raw('0.7071067690849304')]
 
 
-def armature(animations, joints=(1, 2), nodes=None, inverse=None, **extra):
+def armature(animations, joints=(1, 2), nodes=None, inverse=None, weights=None, bones=None, **extra):
     """A quad skinned to two bones under an armature node; `animations` builds the animations from the Builder, `inverse`
-    the skin's inverseBindMatrices accessor."""
+    the skin's inverseBindMatrices accessor, `weights` (sixteen floats) and `bones` (sixteen bytes) its WEIGHTS_0 and
+    JOINTS_0 (every vertex on the first bone by default; bones=False: neither attribute)."""
     b = Builder()
     skin = dict(joints=list(joints))
     if inverse:
         skin['inverseBindMatrices'] = inverse(b)
-    weights = b.accessor(b.view(struct.pack('<16f', *([1.0, 0.0, 0.0, 0.0] * 4))), 5126, 'VEC4', 4)
-    bones = b.accessor(b.view(struct.pack('<16B', *([0, 0, 0, 0] * 4))), 5121, 'VEC4', 4)
-    prim = quad(b, JOINTS_0=bones, WEIGHTS_0=weights)
+    if bones is False:
+        prim = quad(b)
+    else:
+        weighted = b.accessor(b.view(struct.pack('<16f', *(weights or [1.0, 0.0, 0.0, 0.0] * 4))), 5126, 'VEC4', 4)
+        indices = b.accessor(b.view(struct.pack('<16B', *(bones or [0, 0, 0, 0] * 4))), 5121, 'VEC4', 4)
+        prim = quad(b, JOINTS_0=indices, WEIGHTS_0=weighted)
     tree = nodes or [dict(name='armature', children=[1], translation=[0, raw('0.5'), 0], scale=[2, 2, 2]),
                      dict(name='bone_a', children=[2], translation=[raw('0.25'), 0, 0], rotation=[0, 0, QUARTER[0], QUARTER[1]]),
                      dict(name='bone_b', translation=[0, 1, 0], scale=[1, raw('0.5'), 1]), dict(name='body', mesh=0, skin=0)]

@@ -385,17 +385,37 @@ def skin.read(+w: Skinned, +bi: U32) -> Skinned:
   Skinned{+ok, +values, +rest} = w
   ids(values, 0, rest, bi, ok, Nil{})
 
-# The skins: each one's weights and bone ids, as rows of the four bone ids
-# (undefined without a weight). `n` skins, or those the chunk holds.
+# A weight byte as the importer reads it: weights[j]/255 (0 stays 0).
+def skin.weight(+b: U32) -> F32:
+  Bool.pick(F32, U32.is_eq(b, 0), 0.0, (U32.to_f32(b) / 255.0 : F32))
+
+def skin.divided(+ids: +List<U32>, +w0: F32, +w1: F32, +w2: F32, +w3: F32, +sum: F32) -> Row:
+  +scaled = Bool.not(F32.is_eq(sum, 1.0)) && Bool.not(F32.is_eq(sum, 0.0))
+  Row{nth(ids, 0, 4294967295), nth(ids, 1, 4294967295), nth(ids, 2, 4294967295), nth(ids, 3, 4294967295),
+    F32.bits(Bool.pick(F32, scaled, (w0 / sum : F32), w0)), F32.bits(Bool.pick(F32, scaled, (w1 / sum : F32), w1)),
+    F32.bits(Bool.pick(F32, scaled, (w2 / sum : F32), w2)), F32.bits(Bool.pick(F32, scaled, (w3 / sum : F32), w3))}
+
+# A skin as the BONE chunk leaves it: the four bone ids (M3D_UNDEF without a
+# weight) and the first four weights over 255, each divided by their sum
+# (added in order) unless that is 0 or 1; e..h hold the weights' bits.
+def skin.row(+ids: +List<U32>, +bytes: +List<U32>) -> Row:
+  +w0 = skin.weight(nth(bytes, 0, 0))
+  +w1 = skin.weight(nth(bytes, 1, 0))
+  +w2 = skin.weight(nth(bytes, 2, 0))
+  +w3 = skin.weight(nth(bytes, 3, 0))
+  skin.divided(ids, w0, w1, w2, w3, (((w0 + w1 : F32) + w2 : F32) + w3 : F32))
+
+# The skins: each one's bone ids and weights (skin.row). `n` skins, or
+# those the chunk holds.
 def skins(n: Nat, bytes: +List<U32>, +nb: U32, +bi: U32, +ok: Bool, +count: U32, +acc: +List<Row>) -> Boned:
   match n bytes:
     case 0n Nil{}: Boned{ok, rows.reversed(acc, Nil{}), count, Nil{}}
     case 0n Con{+b, +rest}: Boned{ok, rows.reversed(acc, Nil{}), count, Con{b, rest}}
     case 1n+_ Nil{}: Boned{ok, rows.reversed(acc, Nil{}), count, Nil{}}
     case 1n+k Con{+b, +rest}:
-      +read = skin.read(weights(nb, Con{b, rest}), bi)
-      skins(k, Skinned.rest(read), nb, bi, ok && Skinned.ok(read), (count + 1 : U32),
-        Con{Row{nth(Skinned.ids(read), 0, 4294967295), nth(Skinned.ids(read), 1, 4294967295), nth(Skinned.ids(read), 2, 4294967295), nth(Skinned.ids(read), 3, 4294967295), 0, 0, 0, 0}, acc})
+      +w = weights(nb, Con{b, rest})
+      +read = skin.read(w, bi)
+      skins(k, Skinned.rest(read), nb, bi, ok && Skinned.ok(read), (count + 1 : U32), Con{skin.row(Skinned.ids(read), Skinned.ids(w)), acc})
 
 # A string of the file: the bytes at raw + 16 + offset up to its NUL. ok:
 # the offset is not 0 (a NULL name) and the NUL is among the first 256 bytes
@@ -895,12 +915,19 @@ def parsed(+file: File) -> Got:
 # (the material's index + 1, 0 for none), three vertices a face, texcoords
 # (v turned over), normals, and colors when the run has no material or one
 # of its vertices has no color.
+# joints and weights: the boneIndices and boneWeights of a file with bones
+# and skins, four a vertex (none otherwise).
 type Mesh is Data:
-  Mesh{material: U32, faces: U32, vertices: +List<F32>, texcoords: +List<F32>, normals: +List<F32>, colored: Bool, colors: +List<U32>}
+  Mesh{material: U32, faces: U32, vertices: +List<F32>, texcoords: +List<F32>, normals: +List<F32>, colored: Bool, colors: +List<U32>, joints: +List<U32>, weights: +List<F32>}
 
 # The run being built: its values last first; vcolor: a vertex without a color was seen.
 type Run is Data:
-  Run{ok: Bool, started: Bool, material: U32, faces: U32, vcolor: Bool, vs: +List<F32>, ts: +List<F32>, ns: +List<F32>, cs: +List<U32>, done: +List<Mesh>}
+  Run{ok: Bool, started: Bool, material: U32, faces: U32, vcolor: Bool, vs: +List<F32>, ts: +List<F32>, ns: +List<F32>, cs: +List<U32>, done: +List<Mesh>, bs: +List<U32>, ws: +List<F32>}
+
+# What LoadM3D's skinning reads: whether the file has bones and skins
+# (m3d->numbone && m3d->numskin), the bone count and the skins.
+type SkinSet is Data:
+  SkinSet{skinned: Bool, count: U32, skins: Store}
 
 def floats.turned(xs: +List<F32>, acc: +List<F32>) -> +List<F32>:
   match xs:
@@ -914,8 +941,9 @@ def words.turned(xs: +List<U32>, acc: +List<U32>) -> +List<U32>:
 
 # The run closed: a mesh, added to those done (last first).
 def run.done(+run: Run) -> +List<Mesh>:
-  Run{_, +started, +material, +faces, +vcolor, +vs, +ts, +ns, +cs, +done} = run
-  Bool.pick(+List<Mesh>, started, Con{Mesh{(material + 1 : U32), faces, floats.turned(vs, Nil{}), floats.turned(ts, Nil{}), floats.turned(ns, Nil{}), U32.is_eq(material, 4294967295) || vcolor, words.turned(cs, Nil{})}, done}, done)
+  Run{_, +started, +material, +faces, +vcolor, +vs, +ts, +ns, +cs, +done, +bs, +ws} = run
+  Bool.pick(+List<Mesh>, started, Con{Mesh{(material + 1 : U32), faces, floats.turned(vs, Nil{}), floats.turned(ts, Nil{}), floats.turned(ns, Nil{}), U32.is_eq(material, 4294967295) || vcolor, words.turned(cs, Nil{}),
+    words.turned(bs, Nil{}), floats.turned(ws, Nil{})}, done}, done)
 
 # A corner's color bytes, last first onto the colors: the vertex color's
 # four bytes when its alpha is not 0, else the mesh's default (255 without
@@ -948,12 +976,36 @@ def Row.f(r: Row) -> U32:
   Row{_, _, _, _, _, f, _, _} = r
   f
 
+# A corner's boneIndices, last first onto the list: its skin's four bone
+# ids as unsigned chars, or the no-bone bone (numbone) and zeros for a
+# vertex without a skin that exists; nothing without bones and skins.
+def corner.ids(+set: SkinSet, +skinid: U32, +bs: +List<U32>) -> +List<U32>:
+  SkinSet{+skinned, +count, +skins} = set
+  +k = row(skins, skinid)
+  Bool.pick(+List<U32>, skinned, Bool.pick(+List<U32>, U32.is_ne(skinid, 4294967295) && (skinid < Store.count(skins) : U32),
+    Con{(Row.d(k) .&. 255 : U32), Con{(Row.c(k) .&. 255 : U32), Con{(Row.b(k) .&. 255 : U32), Con{(Row.a(k) .&. 255 : U32), bs}}}}, Con{0, Con{0, Con{0, Con{(count .&. 255 : U32), bs}}}}), bs)
+
+def Row.g(r: Row) -> U32:
+  Row{_, _, _, _, _, _, g, _} = r
+  g
+
+def Row.h(r: Row) -> U32:
+  Row{_, _, _, _, _, _, _, h} = r
+  h
+
+# A corner's boneWeights, as corner.ids: the skin's weights, or 1 and zeros.
+def corner.weights(+set: SkinSet, +skinid: U32, +ws: +List<F32>) -> +List<F32>:
+  SkinSet{+skinned, _, +skins} = set
+  +k = row(skins, skinid)
+  Bool.pick(+List<F32>, skinned, Bool.pick(+List<F32>, U32.is_ne(skinid, 4294967295) && (skinid < Store.count(skins) : U32),
+    Con{float(Row.h(k)), Con{float(Row.g(k)), Con{float(Row.f(k)), Con{float(Row.e(k)), ws}}}}, Con{0.0, Con{0.0, Con{0.0, Con{1.0, ws}}}}), ws)
+
 # A face added to the run: its vertices times the scale, its colors, its
 # texcoords (u and 1 - v; zeros without texture coordinates) and its normals
 # (zeros without). ok: every index it reads is inside its array.
-def face.added(+face: Face, +scale: F32, +vertices: Store, +tmap: Store, +run: Run) -> Run:
+def face.added(+face: Face, +scale: F32, +vertices: Store, +tmap: Store, +set: SkinSet, +run: Run) -> Run:
   Face{_, +v0, +v1, +v2, +n0, +n1, +n2, +t0, +t1, +t2} = face
-  Run{+ok, +started, +material, +faces, +vcolor, +vs, +ts, +ns, +cs, +done} = run
+  Run{+ok, +started, +material, +faces, +vcolor, +vs, +ts, +ns, +cs, +done, +bs, +ws} = run
   +a = row(vertices, v0)
   +b = row(vertices, v1)
   +c = row(vertices, v2)
@@ -970,30 +1022,31 @@ def face.added(+face: Face, +scale: F32, +vertices: Store, +tmap: Store, +run: R
       Con{float(Row.a(row(tmap, t0))), ts}}}}}}, Con{0.0, Con{0.0, Con{0.0, Con{0.0, Con{0.0, Con{0.0, ts}}}}}}),
     Bool.pick(+List<F32>, shaded, Con{float(Row.c(row(vertices, n2))), Con{float(Row.b(row(vertices, n2))), Con{float(Row.a(row(vertices, n2))), Con{float(Row.c(row(vertices, n1))), Con{float(Row.b(row(vertices, n1))), Con{float(Row.a(row(vertices, n1))),
       Con{float(Row.c(row(vertices, n0))), Con{float(Row.b(row(vertices, n0))), Con{float(Row.a(row(vertices, n0))), ns}}}}}}}}}, Con{0.0, Con{0.0, Con{0.0, Con{0.0, Con{0.0, Con{0.0, Con{0.0, Con{0.0, Con{0.0, ns}}}}}}}}}),
-    corner.color(Row.e(c), fill, corner.color(Row.e(b), fill, corner.color(Row.e(a), fill, cs))), done}
+    corner.color(Row.e(c), fill, corner.color(Row.e(b), fill, corner.color(Row.e(a), fill, cs))), done,
+    corner.ids(set, Row.f(c), corner.ids(set, Row.f(b), corner.ids(set, Row.f(a), bs))), corner.weights(set, Row.f(c), corner.weights(set, Row.f(b), corner.weights(set, Row.f(a), ws)))}
 
 def Run.material(run: Run) -> U32:
-  Run{_, _, material, _, _, _, _, _, _, _} = run
+  Run{_, _, material, _, _, _, _, _, _, _, _, _} = run
   material
 
 def Run.started(run: Run) -> Bool:
-  Run{_, started, _, _, _, _, _, _, _, _} = run
+  Run{_, started, _, _, _, _, _, _, _, _, _, _} = run
   started
 
 def Run.ok(run: Run) -> Bool:
-  Run{ok, _, _, _, _, _, _, _, _, _} = run
+  Run{ok, _, _, _, _, _, _, _, _, _, _, _} = run
   ok
 
 # A new run after the one that ends where the material changes.
 def run.next(+run: Run, +material: U32) -> Run:
-  Run{Run.ok(run), True{}, material, 0, False{}, Nil{}, Nil{}, Nil{}, Nil{}, run.done(run)}
+  Run{Run.ok(run), True{}, material, 0, False{}, Nil{}, Nil{}, Nil{}, Nil{}, run.done(run), Nil{}, Nil{}}
 
 # The faces in order: a mesh a run of one material.
-def runs(list: +List<Face>, +scale: F32, +vertices: Store, +tmap: Store, +run: Run) -> Run:
+def runs(list: +List<Face>, +scale: F32, +vertices: Store, +tmap: Store, +set: SkinSet, +run: Run) -> Run:
   match list:
     case Nil{}: run
     case Con{Face{+material, +v0, +v1, +v2, +n0, +n1, +n2, +t0, +t1, +t2}, rest}:
-      runs(rest, scale, vertices, tmap, face.added(Face{material, v0, v1, v2, n0, n1, n2, t0, t1, t2}, scale, vertices, tmap,
+      runs(rest, scale, vertices, tmap, set, face.added(Face{material, v0, v1, v2, n0, n1, n2, t0, t1, t2}, scale, vertices, tmap, set,
         Bool.pick(Run, Run.started(run) && U32.is_eq(Run.material(run), material), run, run.next(run, material))))
 
 def faces.turned(xs: +List<Face>, acc: +List<Face>) -> +List<Face>:
@@ -1012,12 +1065,68 @@ type Built is Data:
 def built.of(+run: Run) -> Built:
   Built{Run.ok(run), meshes.turned(run.done(run), Nil{})}
 
-# LoadM3D's meshes from what the chunks gave.
+def skin.bumped(r: Array<U32> & U32, +i: U32) -> Array<U32>:
+  (a, +n) = r
+  Array.set(U32, a, i, (n + 1 : U32))
+
+# How many of the ids name each skin (ids below the skin count only).
+def skin.counted(+ids: +List<U32>, a: Array<U32>) -> Array<U32>:
+  match ids:
+    case Nil{}: a
+    case Con{+i, rest}: skin.counted(rest, skin.bumped(Array.get(U32, a, i), i))
+
+# The vertices' skin ids below the skin count (vertex[i].skinid < numskin).
+def skin.ids(vertices: +List<Row>, +total: U32, +acc: +List<U32>) -> +List<U32>:
+  match vertices:
+    case Nil{}: acc
+    case Con{Row{_, _, _, _, _, +skinid, _, _}, rest}: skin.ids(rest, total, Bool.pick(+List<U32>, (skinid < total : U32), Con{skinid, acc}, acc))
+
+def skin.kept(+id: U32, +w: U32) -> Bool:
+  U32.is_ne(id, 4294967295) && (float(w) > 0.0 : F32)
+
+# The importer's post-processing for one vertex of a skin: the weights from
+# the first, up to the first undefined bone or weight that is not above 0,
+# each divided by their sum.
+def skin.again(+row: Row) -> Row:
+  Row{+a, +b, +c, +d, +e, +f, +g, +h} = row
+  +k0 = skin.kept(a, e)
+  +k1 = k0 && skin.kept(b, f)
+  +k2 = k1 && skin.kept(c, g)
+  +k3 = k2 && skin.kept(d, h)
+  +sum = ((((0.0 + Bool.pick(F32, k0, float(e), 0.0) : F32) + Bool.pick(F32, k1, float(f), 0.0) : F32) + Bool.pick(F32, k2, float(g), 0.0) : F32) + Bool.pick(F32, k3, float(h), 0.0) : F32)
+  Row{a, b, c, d, Bool.pick(U32, k0, F32.bits((float(e) / sum : F32)), e), Bool.pick(U32, k1, F32.bits((float(f) / sum : F32)), f),
+    Bool.pick(U32, k2, F32.bits((float(g) / sum : F32)), g), Bool.pick(U32, k3, F32.bits((float(h) / sum : F32)), h)}
+
+def skin.times(n: Nat, +row: Row) -> Row:
+  match n:
+    case 0n: row
+    case 1n+k: skin.times(k, skin.again(row))
+
+def skin.each(list: +List<Row>, counts: List<U32>, +acc: +List<Row>) -> +List<Row>:
+  match list counts:
+    case Con{+row, rest} Con{+n, more}: skin.each(rest, more, Con{skin.times(U32.to_nat(n), row), acc})
+    case _ _: rows.reversed(acc, Nil{})
+
+# m3d_load's "weight cross-reference": every vertex whose skin exists
+# normalizes that skin's weights again (skin.again), so a skin is
+# normalized once per vertex that names it.
+def skins.normalized(+list: +List<Row>, +vertices: +List<Row>) -> +List<Row>:
+  +total = rows.count(list, 0)
+  skin.each(list, Array.to_list(~U32, skin.counted(skin.ids(vertices, total, Nil{}), Array.new(U32, depth(total), 0))), Nil{})
+
+# LoadM3D's meshes from what the chunks gave: with bones and skins, each
+# corner's skin (its normalized weights, the importer's post-processing
+# applied unless it returned early) or the no-bone bone.
 def built(+got: Got, +scale: F32) -> Built:
-  Got{_, _, +maps, +shape, _, _, _} = got
+  Got{_, +stop, +maps, +shape, +rig, _, _} = got
   Maps{_, _, _, +tmap} = maps
   Shape{_, +vertices, _, +faces} = shape
-  built.of(runs(faces.turned(faces, Nil{}), scale, stored(vertices), tmap, Run{True{}, False{}, 0, 0, False{}, Nil{}, Nil{}, Nil{}, Nil{}, Nil{}}))
+  Rig{_, +rig_bones, +rig_skins} = rig
+  +numbone = rows.count(rig_bones, 0)
+  +skinned = U32.is_ne(numbone, 0) && Bool.not(List.is_empty(&2, Row, rig_skins))
+  +final = Bool.pick(+List<Row>, U32.is_ne(stop, 2) && skinned && Bool.not(List.is_empty(&2, Row, vertices)), skins.normalized(rig_skins, vertices), rig_skins)
+  built.of(runs(faces.turned(faces, Nil{}), scale, stored(vertices), tmap, SkinSet{skinned, numbone, stored(final)},
+    Run{True{}, False{}, 0, 0, False{}, Nil{}, Nil{}, Nil{}, Nil{}, Nil{}, Nil{}, Nil{}}))
 
 # A pose under its parent's, as LoadM3D composes the bind pose (and
 # LoadModelAnimationsM3D a keyframe): the rotation under the parent's, the

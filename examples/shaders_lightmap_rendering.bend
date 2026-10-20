@@ -86,12 +86,12 @@ def program(+libm: M.Libm) -> J.Program<State>:
 
 # GenMeshPlane(MAP_SIZE, MAP_SIZE, 1, 1) with mesh.texcoords2 = (0, 0), (1, 0), (0, 1), (1, 1).
 def plane.mapped(mesh: J.Mesh) -> J.Mesh:
-  J.Mesh{vertices, triangles, positions, texcoords, _, normals, tangents, colors, indices} = mesh
-  J.Mesh{vertices, triangles, positions, texcoords, Some{[0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0]}, normals, tangents, colors, indices}
+  J.Mesh{vertices, triangles, positions, texcoords, _, normals, tangents, colors, indices, bones} = mesh
+  J.Mesh{vertices, triangles, positions, texcoords, Some{[0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0]}, normals, tangents, colors, indices, bones}
 
 def plane(mesh: Maybe<J.Mesh>) -> J.Mesh:
   match mesh:
-    case None{}: J.Mesh{0, 0, None{}, None{}, None{}, None{}, None{}, None{}, None{}}
+    case None{}: J.Mesh{0, 0, None{}, None{}, None{}, None{}, None{}, None{}, None{}, None{}}
     case Some{m}: plane.mapped(m)
 
 # material.maps[MATERIAL_MAP_ALBEDO].texture = texture; material.maps[MATERIAL_MAP_METALNESS].texture = lightmap.texture.

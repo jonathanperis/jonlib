@@ -433,7 +433,7 @@ def attr.u(+tag: String, values: Maybe<&2, +List<U32>>) -> String:
     case Some{+xs}: words.text(tag, xs)
 
 def show(mesh: J.Mesh) -> String:
-  J.Mesh{vc, tc, vertices, texcoords, texcoords2, normals, tangents, colors, indices} = mesh
+  J.Mesh{vc, tc, vertices, texcoords, texcoords2, normals, tangents, colors, indices, _} = mesh
   "M " ++ U32.show(vc) ++ " " ++ U32.show(tc) ++ attr.f("V", vertices) ++ attr.f("T", texcoords) ++ attr.f("U", texcoords2)
     ++ attr.f("N", normals) ++ attr.f("G", tangents) ++ attr.u("C", colors) ++ attr.u("I", indices)
 
@@ -540,7 +540,7 @@ def custom(+w: +List<U32>, +fs: +List<F32>, +bs: +List<U32>) -> J.Mesh:
   +nc = wu(9n, w)
   J.Mesh{wu(0n, w), wu(1n, w), opt.f(wu(2n, w), U32.to_nat(nv), fs), opt.f(wu(4n, w), U32.to_nat(nt), List.drop(&2, F32, fs, U32.to_nat(nv))), None{},
     opt.f(wu(6n, w), U32.to_nat(nn), List.drop(&2, F32, fs, U32.to_nat((nv + nt : U32)))), None{},
-    opt.u(wu(8n, w), U32.to_nat(nc), bs), opt.u(wu(10n, w), U32.to_nat(wu(11n, w)), List.drop(&2, U32, bs, U32.to_nat(nc)))}
+    opt.u(wu(8n, w), U32.to_nat(nc), bs), opt.u(wu(10n, w), U32.to_nat(wu(11n, w)), List.drop(&2, U32, bs, U32.to_nat(nc))), None{}}
 
 def mesh.of(kind: U32, +w: +List<U32>, +fs: +List<F32>, +bs: +List<U32>) -> Maybe<J.Mesh>:
   match kind:

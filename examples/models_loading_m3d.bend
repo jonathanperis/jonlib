@@ -8,9 +8,9 @@
 # (UpdateModelAnimation) and switched with LEFT and RIGHT. While SPACE is
 # held the example draws the animated skeleton instead of the model: a cube
 # a bone at the keyframe's pose and a line to its parent (its
-# DrawModelSkeleton). The reference library is built with GPU skinning and
-# its software renderer runs no shader, so the model itself is drawn in its
-# bind pose whatever the pose is (docs/MODELS.md). The perspective needs
+# DrawModelSkeleton). raylib 6.2 skins the meshes on the CPU (no shader of
+# the software renderer takes the bones), so DrawModel draws the model in
+# the animation's pose (docs/MODELS.md). The perspective needs
 # the libm profile's binary64 tan (docs/PERSPECTIVE.md), UpdateCamera its
 # sinf/cosf (docs/SINCOSF.md) and the pose's QuaternionSlerp its acosf and
 # sinf. See docs/DRIVER.md.
@@ -58,16 +58,16 @@ def playable(items: +List<J.ModelAnimation>) -> Bool:
     case Nil{}: True{}
     case Con{item, rest}: (keyframes(item) > 0 : U32) && playable(rest)
 
-def update.posed(posed: Maybe<J.ModelPose>, +camera: J.Camera3D, +model: J.Model, textures: List<J.Texture>, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +previous: J.ModelPose,
+def update.posed(posed: Maybe<J.AnimatedModel>, +camera: J.Camera3D, +previous_model: J.Model, textures: List<J.Texture>, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +previous: J.ModelPose,
     +index: U32, +current: F32) -> State:
   match posed:
-    case None{}: State{False{}, Some{camera}, model, textures, skeleton, animations, previous, index, current}
-    case Some{+pose}: State{True{}, Some{camera}, model, textures, skeleton, animations, pose, index, current}
+    case None{}: State{False{}, Some{camera}, previous_model, textures, skeleton, animations, previous, index, current}
+    case Some{J.AnimatedModel{+model, +pose}}: State{True{}, Some{camera}, model, textures, skeleton, animations, pose, index, current}
 
 # UpdateModelAnimation(model, anims[animIndex], animCurrentFrame).
 def update.animated(+libm: M.Libm, +camera: J.Camera3D, +model: J.Model, textures: List<J.Texture>, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +pose: J.ModelPose, +index: U32,
     +current: F32) -> State:
-  update.posed(J.Model.update_animation_for(libm, skeleton, pick(animations, index), current, pose), camera, model, textures, skeleton, animations, pose, index, current)
+  update.posed(J.Model.update_animation_for(libm, model, skeleton, pick(animations, index), current, pose), camera, model, textures, skeleton, animations, pose, index, current)
 
 # RIGHT plays the next animation, else LEFT the one before.
 def switched(+core: J.Core, +index: U32, +total: U32) -> U32:

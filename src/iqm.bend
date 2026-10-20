@@ -5,8 +5,9 @@
 # loaders copy them. A mesh has its vertices, normals and texcoords (zeros
 # without the vertex array), its colors when the file has them, and its
 # triangles with their corners reversed, less the mesh's first vertex, as
-# unsigned shorts; the blend indexes and weights are read and not kept
-# (Jonlib's Mesh has no bone data). The skeleton is the joints with
+# unsigned shorts, and its bone data (raylib 6.2 allocates it for every
+# mesh): the blend indexes as boneIndices and the blend weights over 255 as
+# boneWeights, zeros without those arrays. The skeleton is the joints with
 # BuildPoseFromParentJoints (src/gltf_anim.bend). An animation's keyframes
 # are each pose's ten channels (the offset, plus the frame's next unsigned
 # short times the scale where the mask says so), the rotation normalized,
@@ -31,7 +32,7 @@ import ./gltf_anim.bend as GA
 # A mesh: its material's name (the texture LoadIQM asks for, none when
 # empty), vertexCount, triangleCount, the attributes and the indices.
 type Part is Data:
-  Part{material: +List<U32>, vertex_count: U32, triangle_count: U32, vertices: +List<F32>, normals: +List<F32>, texcoords: +List<F32>, colors: Maybe<&2, +List<U32>>, indices: +List<U32>}
+  Part{material: +List<U32>, vertex_count: U32, triangle_count: U32, vertices: +List<F32>, normals: +List<F32>, texcoords: +List<F32>, colors: Maybe<&2, +List<U32>>, indices: +List<U32>, joints: +List<U32>, weights: +List<F32>}
 
 # Unread: refused. Foreign: another magic or version (the empty model).
 type Loaded is Data:
@@ -54,7 +55,7 @@ type Head is Data:
 
 # The vertex arrays read: ok (each inside the file), any (one of the kinds the loader copies), and their words.
 type Arrays is Data:
-  Arrays{ok: Bool, any: Bool, positions: Maybe<&2, +List<U32>>, normals: Maybe<&2, +List<U32>>, texcoords: Maybe<&2, +List<U32>>, colors: Maybe<&2, +List<U32>>}
+  Arrays{ok: Bool, any: Bool, positions: Maybe<&2, +List<U32>>, normals: Maybe<&2, +List<U32>>, texcoords: Maybe<&2, +List<U32>>, colors: Maybe<&2, +List<U32>>, blend_indexes: Maybe<&2, +List<U32>>, blend_weights: Maybe<&2, +List<U32>>}
 
 type Named is Data:
   Named{ok: Bool, name: +List<U32>}
@@ -99,11 +100,11 @@ def Named.name(n: Named) -> +List<U32>:
   name
 
 def Arrays.ok(a: Arrays) -> Bool:
-  Arrays{ok, _, _, _, _, _} = a
+  Arrays{ok, _, _, _, _, _, _, _} = a
   ok
 
 def Arrays.any(a: Arrays) -> Bool:
-  Arrays{_, any, _, _, _, _} = a
+  Arrays{_, any, _, _, _, _, _, _} = a
   any
 
 def Meshed.ok(m: Meshed) -> Bool:
@@ -241,18 +242,18 @@ def kind(+bytes: +List<U32>, +size: U32) -> U32:
   Bool.pick(U32, U32.is_eq(size, 0), 1, kind.read(bytes, size))
 
 # One vertex array: positions (0), texcoords (1) and normals (2) as floats,
-# blend indexes (4) and weights (5) read and left, colors (6) as bytes; the
-# other kinds are not read.
+# blend indexes (4), blend weights (5) and colors (6) as bytes; the other
+# kinds are not read.
 def array(+offset: U32, +bytes: +List<U32>, +vertexes: U32, +size: U32, +acc: Arrays, kind: U32) -> Arrays:
-  Arrays{+ok, +any, +positions, +normals, +texcoords, +colors} = acc
+  Arrays{+ok, +any, +positions, +normals, +texcoords, +colors, +blendi, +blendw} = acc
   match kind:
-    case 0: Arrays{ok && inside(offset, (vertexes * 3 : U32), 4, size), True{}, Some{Words.values(words(U32.to_nat((vertexes * 3 : U32)), at(bytes, offset), Nil{}))}, normals, texcoords, colors}
-    case 1: Arrays{ok && inside(offset, (vertexes * 2 : U32), 4, size), True{}, positions, normals, Some{Words.values(words(U32.to_nat((vertexes * 2 : U32)), at(bytes, offset), Nil{}))}, colors}
-    case 2: Arrays{ok && inside(offset, (vertexes * 3 : U32), 4, size), True{}, positions, Some{Words.values(words(U32.to_nat((vertexes * 3 : U32)), at(bytes, offset), Nil{}))}, texcoords, colors}
-    case 4: Arrays{ok && inside(offset, (vertexes * 4 : U32), 1, size), True{}, positions, normals, texcoords, colors}
-    case 5: Arrays{ok && inside(offset, (vertexes * 4 : U32), 1, size), True{}, positions, normals, texcoords, colors}
-    case 6: Arrays{ok && inside(offset, (vertexes * 4 : U32), 1, size), True{}, positions, normals, texcoords, Some{taken(U32.to_nat((vertexes * 4 : U32)), at(bytes, offset), Nil{})}}
-    case _: Arrays{ok, any, positions, normals, texcoords, colors}
+    case 0: Arrays{ok && inside(offset, (vertexes * 3 : U32), 4, size), True{}, Some{Words.values(words(U32.to_nat((vertexes * 3 : U32)), at(bytes, offset), Nil{}))}, normals, texcoords, colors, blendi, blendw}
+    case 1: Arrays{ok && inside(offset, (vertexes * 2 : U32), 4, size), True{}, positions, normals, Some{Words.values(words(U32.to_nat((vertexes * 2 : U32)), at(bytes, offset), Nil{}))}, colors, blendi, blendw}
+    case 2: Arrays{ok && inside(offset, (vertexes * 3 : U32), 4, size), True{}, positions, Some{Words.values(words(U32.to_nat((vertexes * 3 : U32)), at(bytes, offset), Nil{}))}, texcoords, colors, blendi, blendw}
+    case 4: Arrays{ok && inside(offset, (vertexes * 4 : U32), 1, size), True{}, positions, normals, texcoords, colors, Some{taken(U32.to_nat((vertexes * 4 : U32)), at(bytes, offset), Nil{})}, blendw}
+    case 5: Arrays{ok && inside(offset, (vertexes * 4 : U32), 1, size), True{}, positions, normals, texcoords, colors, blendi, Some{taken(U32.to_nat((vertexes * 4 : U32)), at(bytes, offset), Nil{})}}
+    case 6: Arrays{ok && inside(offset, (vertexes * 4 : U32), 1, size), True{}, positions, normals, texcoords, Some{taken(U32.to_nat((vertexes * 4 : U32)), at(bytes, offset), Nil{})}, blendi, blendw}
+    case _: Arrays{ok, any, positions, normals, texcoords, colors, blendi, blendw}
 
 # The vertex arrays in the file's order (a later one of a kind replaces the earlier): type, flags, format, size, offset.
 def arrays(list: +List<U32>, +bytes: +List<U32>, +vertexes: U32, +size: U32, +acc: Arrays) -> Arrays:
@@ -270,6 +271,30 @@ def colored(values: Maybe<&2, +List<U32>>, +from: U32, +count: U32) -> Maybe<&2,
   match values:
     case None{}: None{}
     case Some{+v}: Some{taken(U32.to_nat((count * 4 : U32)), List.drop(&2, U32, v, U32.to_nat((from * 4 : U32))), Nil{})}
+
+def zeros.u(n: Nat, +acc: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: acc
+    case 1n+k: zeros.u(k, Con{0, acc})
+
+# A mesh's boneIndices: four bytes a vertex of the blend indexes from its
+# first vertex (signed chars copied to unsigned chars: the same bytes), or
+# the zeros RL_CALLOC leaves without the array.
+def blended(values: Maybe<&2, +List<U32>>, +from: U32, +count: U32) -> +List<U32>:
+  match values:
+    case None{}: zeros.u(U32.to_nat((count * 4 : U32)), Nil{})
+    case Some{+v}: taken(U32.to_nat((count * 4 : U32)), List.drop(&2, U32, v, U32.to_nat((from * 4 : U32))), Nil{})
+
+def weights.go(values: +List<U32>, +acc: +List<F32>) -> +List<F32>:
+  match values:
+    case Nil{}: turned.f(acc, Nil{})
+    case Con{+v, rest}: weights.go(rest, Con{(U32.to_f32(v) / 255.0 : F32), acc})
+
+# A mesh's boneWeights: blendw[i]/255.0f of its four bytes a vertex, or zeros.
+def weighted(values: Maybe<&2, +List<U32>>, +from: U32, +count: U32) -> +List<F32>:
+  match values:
+    case None{}: zeros(U32.to_nat((count * 4 : U32)), Nil{})
+    case Some{+v}: weights.go(taken(U32.to_nat((count * 4 : U32)), List.drop(&2, U32, v, U32.to_nat((from * 4 : U32))), Nil{}), Nil{})
 
 # indices[t + 2] = vertex[0] - first_vertex, indices[t + 1] = vertex[1] - first_vertex, indices[t] = vertex[2] - first_vertex, as unsigned shorts.
 def indices(n: Nat, list: +List<U32>, +base: U32, +acc: +List<U32>) -> +List<U32>:
@@ -296,10 +321,10 @@ def mesh.made(ok: Bool, +material: Named, +start: U32, +count: U32, +from: U32, 
     case False{}: Meshed{False{}, Nil{}}
     case True{}:
       Named{_, +name} = material
-      Arrays{_, _, +positions, +normals, +texcoords, +colors} = found
+      Arrays{_, _, +positions, +normals, +texcoords, +colors, +blendi, +blendw} = found
       Meshed{_, +parts} = rest
       Meshed{True{}, Con{Part{name, count, triangles, slice(positions, start, count, 3), slice(normals, start, count, 3), slice(texcoords, start, count, 2), colored(colors, start, count),
-        indices(U32.to_nat(triangles), List.drop(&2, U32, all, U32.to_nat((from * 3 : U32))), start, Nil{})}, parts}}
+        indices(U32.to_nat(triangles), List.drop(&2, U32, all, U32.to_nat((from * 3 : U32))), start, Nil{}), blended(blendi, start, count), weighted(blendw, start, count)}, parts}}
 
 def mesh.checked(+fits: Bool, +material: Named, +start: U32, +count: U32, +from: U32, +triangles: U32, +all: +List<U32>, +found: Arrays, +rest: Meshed) -> Meshed:
   mesh.made(fits && Named.ok(material) && texture.named(Named.name(material)) && Meshed.ok(rest), material, start, count, from, triangles, all, found, rest)
@@ -371,7 +396,7 @@ def model.checked(fits: Bool, +bytes: +List<U32>, +head: Head) -> Loaded:
     case False{}: Unread{}
     case True{}:
       Head{+size, _, _, _, +number, +vertexes, +at_arrays, _, _, _, _, _, _, _, _, _, _, _} = head
-      model.arrayed(bytes, head, arrays(Words.values(words(U32.to_nat((number * 5 : U32)), at(bytes, at_arrays), Nil{})), bytes, vertexes, size, Arrays{True{}, False{}, None{}, None{}, None{}, None{}}))
+      model.arrayed(bytes, head, arrays(Words.values(words(U32.to_nat((number * 5 : U32)), at(bytes, at_arrays), Nil{})), bytes, vertexes, size, Arrays{True{}, False{}, None{}, None{}, None{}, None{}, None{}, None{}}))
 
 # LoadIQM after the header: the meshes, the triangles, the vertex arrays and the joints, each inside the file.
 def model.read(+bytes: +List<U32>, +head: Head) -> Loaded:

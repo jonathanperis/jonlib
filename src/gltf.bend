@@ -11,8 +11,9 @@
 # vertices as LoadGLTF applies them, and each material's base color factor
 # and base color texture (a PNG image in a buffer view; the caller decodes
 # and uploads it). A file with skins loads too: its meshes are what LoadGLTF
-# makes of them, and the bone data it would add (JOINTS_n, WEIGHTS_n, the
-# skeleton) is checked and not kept, as Jonlib's Mesh and Model have none.
+# makes of them, with raylib 6.2's bone data (JOINTS_n as boneIndices bytes,
+# WEIGHTS_n as boneWeights, and a mesh of a node under a joint attached to
+# that bone); the skeleton is src/gltf_anim.bend's.
 # None (the loader refuses) for everything else the reference would read:
 # the other texture kinds, images given by a uri or in another format,
 # sparse or missing buffer views, COLOR attributes, other component types,
@@ -362,14 +363,14 @@ def transformed4(values: +List<U32>, +matrix: M.Matrix) -> +List<F32>:
 # A primitive as the Mesh it becomes; ok is False when something is refused.
 type Prim is Data:
   Prim{ok: Bool, vertex_count: U32, triangle_count: U32, vertices: Maybe<&2, +List<F32>>, texcoords: Maybe<&2, +List<F32>>, texcoords2: Maybe<&2, +List<F32>>,
-    normals: Maybe<&2, +List<F32>>, tangents: Maybe<&2, +List<F32>>, indices: Maybe<&2, +List<U32>>, material: U32}
+    normals: Maybe<&2, +List<F32>>, tangents: Maybe<&2, +List<F32>>, indices: Maybe<&2, +List<U32>>, material: U32, joints: Maybe<&2, +List<U32>>, weights: Maybe<&2, +List<F32>>}
 
 # An empty mesh; a primitive with compression or morph targets is refused.
 def fresh(+ok: Bool) -> Prim:
-  Prim{ok, 0, 0, None{}, None{}, None{}, None{}, None{}, None{}, 0}
+  Prim{ok, 0, 0, None{}, None{}, None{}, None{}, None{}, None{}, 0, None{}, None{}}
 
 def refused() -> Prim:
-  Prim{False{}, 0, 0, None{}, None{}, None{}, None{}, None{}, None{}, 0}
+  Prim{False{}, 0, 0, None{}, None{}, None{}, None{}, None{}, None{}, 0, None{}, None{}}
 
 # cgltf_parse_attribute_type: the name before its first underscore (0 other, 1 POSITION, 2 NORMAL, 3 TANGENT, 4 TEXCOORD, 5 COLOR, 6 JOINTS, 7 WEIGHTS).
 def before(name: +List<U32>) -> +List<U32>:
@@ -395,39 +396,101 @@ def attribute.index(text: +List<U32>, +acc: U32) -> U32:
     case Con{+c, rest}: Bool.pick(U32, (c >= 48 : U32) && (c <= 57 : U32) && (acc < 1000 : U32), attribute.index(rest, (acc * 10 + (c - 48) : U32)), acc)
 
 def with_positions(+prim: Prim, +s: Span, +bin: +List<U32>, +world: M.Matrix) -> Prim:
-  Prim{+ok, _, +tc, _, +texcoords, +texcoords2, +normals, +tangents, +indices, +material} = prim
+  Prim{+ok, _, +tc, _, +texcoords, +texcoords2, +normals, +tangents, +indices, +material, +joints, +weights} = prim
   Span{+valid, _, _, +count} = s
-  Prim{ok && valid, count, tc, Some{transformed3(read32(s, bin, 3), world)}, texcoords, texcoords2, normals, tangents, indices, material}
+  Prim{ok && valid, count, tc, Some{transformed3(read32(s, bin, 3), world)}, texcoords, texcoords2, normals, tangents, indices, material, joints, weights}
 
 def with_normals(+prim: Prim, +s: Span, +bin: +List<U32>, +normal: M.Matrix) -> Prim:
-  Prim{+ok, +vc, +tc, +vertices, +texcoords, +texcoords2, _, +tangents, +indices, +material} = prim
+  Prim{+ok, +vc, +tc, +vertices, +texcoords, +texcoords2, _, +tangents, +indices, +material, +joints, +weights} = prim
   Span{+valid, _, _, _} = s
-  Prim{ok && valid, vc, tc, vertices, texcoords, texcoords2, Some{transformed3(read32(s, bin, 3), normal)}, tangents, indices, material}
+  Prim{ok && valid, vc, tc, vertices, texcoords, texcoords2, Some{transformed3(read32(s, bin, 3), normal)}, tangents, indices, material, joints, weights}
 
 def with_tangents(+prim: Prim, +s: Span, +bin: +List<U32>, +world: M.Matrix) -> Prim:
-  Prim{+ok, +vc, +tc, +vertices, +texcoords, +texcoords2, +normals, _, +indices, +material} = prim
+  Prim{+ok, +vc, +tc, +vertices, +texcoords, +texcoords2, +normals, _, +indices, +material, +joints, +weights} = prim
   Span{+valid, _, _, _} = s
-  Prim{ok && valid, vc, tc, vertices, texcoords, texcoords2, normals, Some{transformed4(read32(s, bin, 4), world)}, indices, material}
+  Prim{ok && valid, vc, tc, vertices, texcoords, texcoords2, normals, Some{transformed4(read32(s, bin, 4), world)}, indices, material, joints, weights}
 
 # TEXCOORD_0 and TEXCOORD_1; a higher set is ignored.
 def with_texcoords(+prim: Prim, +s: Span, +bin: +List<U32>, +slot: U32) -> Prim:
-  Prim{+ok, +vc, +tc, +vertices, +texcoords, +texcoords2, +normals, +tangents, +indices, +material} = prim
+  Prim{+ok, +vc, +tc, +vertices, +texcoords, +texcoords2, +normals, +tangents, +indices, +material, +joints, +weights} = prim
   Span{+valid, _, _, _} = s
   +values = words.floats(read32(s, bin, 2))
   Prim{ok && valid, vc, tc, vertices, Bool.pick(Maybe<&2, +List<F32>>, U32.is_eq(slot, 0), Some{values}, texcoords),
-    Bool.pick(Maybe<&2, +List<F32>>, U32.is_eq(slot, 1), Some{values}, texcoords2), normals, tangents, indices, material}
+    Bool.pick(Maybe<&2, +List<F32>>, U32.is_eq(slot, 1), Some{values}, texcoords2), normals, tangents, indices, material, joints, weights}
 
 def span.ok(s: Span) -> Bool:
   Span{ok, _, _, _} = s
   ok
 
-# JOINTS_n (a VEC4 of u8 or u16) and WEIGHTS_n (also of float): LoadGLTF
-# reads them into the mesh's bone data, which Jonlib's Mesh does not have,
-# so the accessor is checked and its values are not kept. Another layout
-# only warns there; here it refuses.
-def with_bones(+prim: Prim, +root: JS.Json, +accessor: U32, +limit: U32, +weights: Bool) -> Prim:
-  +valid = span.ok(span(root, accessor, 5121, "VEC4", 1, 4, limit)) || span.ok(span(root, accessor, 5123, "VEC4", 2, 4, limit)) || (weights && span.ok(span(root, accessor, 5126, "VEC4", 4, 4, limit)))
-  Bool.pick(Prim, valid, prim, refused())
+# One component of `size` bytes: a byte, an unsigned short or a word.
+def component(+size: U32, +data: +List<U32>) -> U32:
+  Bool.pick(U32, U32.is_eq(size, 1), first(data), Bool.pick(U32, U32.is_eq(size, 2), u16(data), u32(data)))
+
+# One element's `comps` components, pushed onto the reversed list.
+def element(n: Nat, +data: +List<U32>, +size: U32, +acc: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: acc
+    case 1n+p: element(p, List.drop(&2, U32, data, U32.to_nat(size)), size, Con{component(size, data), acc})
+
+def components.go(n: Nat, +data: +List<U32>, +comps: Nat, +size: U32, +step: Nat, +acc: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: turned(acc, Nil{})
+    case 1n+p: components.go(p, List.drop(&2, U32, data, step), comps, size, step, element(comps, data, size, acc))
+
+# LOAD_ATTRIBUTE of `comps` components of `size` bytes a element (none for a refused span).
+def components(+s: Span, +bin: +List<U32>, +comps: U32, +size: U32) -> +List<U32>:
+  Span{+valid, +start, +step, +count} = s
+  components.go(U32.to_nat(Bool.pick(U32, valid, count, 0)), List.drop(&2, U32, bin, U32.to_nat(start)), U32.to_nat(comps), size, U32.to_nat(step), Nil{})
+
+def joint.bytes.go(values: +List<U32>, +acc: +List<U32>) -> +List<U32>:
+  match values:
+    case Nil{}: turned(acc, Nil{})
+    case Con{+v, rest}: joint.bytes.go(rest, Con{(v .&. 255 : U32), acc})
+
+# boneIndices are unsigned chars: (unsigned char) of each u16 index.
+def joint.bytes(values: +List<U32>) -> +List<U32>:
+  joint.bytes.go(values, Nil{})
+
+# (float)temp[b]/255.0f, (float)temp[b]/65535.0f, or the float itself.
+def weight.of(+size: U32, +v: U32) -> F32:
+  Bool.pick(F32, U32.is_eq(size, 1), (U32.to_f32(v) / 255.0 : F32), Bool.pick(F32, U32.is_eq(size, 2), (U32.to_f32(v) / 65535.0 : F32), float(v)))
+
+def weight.floats.go(values: +List<U32>, +size: U32, +acc: +List<F32>) -> +List<F32>:
+  match values:
+    case Nil{}: turned.f(acc, Nil{})
+    case Con{+v, rest}: weight.floats.go(rest, size, Con{weight.of(size, v), acc})
+
+def weight.floats(values: +List<U32>, +size: U32) -> +List<F32>:
+  weight.floats.go(values, size, Nil{})
+
+def with_joints.read(+prim: Prim, +s: Span, +bin: +List<U32>, +size: U32, +known: Bool) -> Prim:
+  Prim{+ok, +vc, +tc, +vertices, +texcoords, +texcoords2, +normals, +tangents, +indices, +material, _, +weights} = prim
+  Span{+valid, _, _, _} = s
+  Prim{ok && valid && known, vc, tc, vertices, texcoords, texcoords2, normals, tangents, indices, material, Some{joint.bytes(components(s, bin, 4, size))}, weights}
+
+def with_weights.read(+prim: Prim, +s: Span, +bin: +List<U32>, +size: U32, +known: Bool) -> Prim:
+  Prim{+ok, +vc, +tc, +vertices, +texcoords, +texcoords2, +normals, +tangents, +indices, +material, +joints, _} = prim
+  Span{+valid, _, _, _} = s
+  Prim{ok && valid && known, vc, tc, vertices, texcoords, texcoords2, normals, tangents, indices, material, joints, Some{weight.floats(components(s, bin, 4, size), size)}}
+
+# The bytes of a component type: 1 for u8, 2 for u16, 4 otherwise.
+def component.size(+component: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(component, 5121), 1, Bool.pick(U32, U32.is_eq(component, 5123), 2, 4))
+
+# JOINTS_n (a VEC4 of u8 or u16, kept as bytes) and WEIGHTS_n (a VEC4 of
+# u8 or u16, normalized as LoadGLTF divides them, or of float): the mesh's
+# boneIndices and boneWeights, a later attribute of a kind replacing an
+# earlier one as LoadGLTF's loop does (JOINTS_1 included). Another layout
+# only warns there (the earlier data stays); here it refuses.
+def with_joints(+component: U32, +prim: Prim, +root: JS.Json, +accessor: U32, +bin: +List<U32>, +limit: U32) -> Prim:
+  with_joints.read(prim, span(root, accessor, component, "VEC4", component.size(component), 4, limit), bin, component.size(component), U32.is_eq(component, 5121) || U32.is_eq(component, 5123))
+
+def with_weights(+component: U32, +prim: Prim, +root: JS.Json, +accessor: U32, +bin: +List<U32>, +limit: U32) -> Prim:
+  with_weights.read(prim, span(root, accessor, component, "VEC4", component.size(component), 4, limit), bin, component.size(component),
+    U32.is_eq(component, 5121) || U32.is_eq(component, 5123) || U32.is_eq(component, 5126))
+
+def accessor.component(+root: JS.Json, +accessor: U32) -> U32:
+  int(nth(list(root, "accessors"), accessor), "componentType", bad())
 
 def attribute(kind: U32, +slot: U32, +prim: Prim, +root: JS.Json, +accessor: U32, +bin: +List<U32>, +limit: U32, +world: M.Matrix, +normal: M.Matrix) -> Prim:
   match kind:
@@ -436,8 +499,8 @@ def attribute(kind: U32, +slot: U32, +prim: Prim, +root: JS.Json, +accessor: U32
     case 2: with_normals(prim, span(root, accessor, 5126, "VEC3", 4, 3, limit), bin, normal)
     case 3: with_tangents(prim, span(root, accessor, 5126, "VEC4", 4, 4, limit), bin, world)
     case 4: with_texcoords(prim, span(root, accessor, 5126, "VEC2", 4, 2, limit), bin, slot)
-    case 6: with_bones(prim, root, accessor, limit, False{})
-    case 7: with_bones(prim, root, accessor, limit, True{})
+    case 6: with_joints(accessor.component(root, accessor), prim, root, accessor, bin, limit)
+    case 7: with_weights(accessor.component(root, accessor), prim, root, accessor, bin, limit)
     case _: refused()
 
 def attributes(members: +List<JS.Json.Member>, +prim: Prim, +root: JS.Json, +bin: +List<U32>, +limit: U32, +world: M.Matrix, +normal: M.Matrix) -> Prim:
@@ -453,18 +516,18 @@ def members.of(value: JS.Json) -> +List<JS.Json.Member>:
 
 # The indices: unsigned bytes, shorts or ints (kept as shorts); triangleCount is count/3, or vertexCount/3 without indices.
 def with_indices(+prim: Prim, +s: Span, +bin: +List<U32>, +size: U32, +known: Bool) -> Prim:
-  Prim{+ok, +vc, _, +vertices, +texcoords, +texcoords2, +normals, +tangents, _, +material} = prim
+  Prim{+ok, +vc, _, +vertices, +texcoords, +texcoords2, +normals, +tangents, _, +material, +joints, +weights} = prim
   Span{+valid, +start, +step, +count} = s
   Prim{ok && valid && known, vc, (count / 3 : U32), vertices, texcoords, texcoords2, normals, tangents,
-    Some{indices(U32.to_nat(count), List.drop(&2, U32, bin, U32.to_nat(start)), size, U32.to_nat(step))}, material}
+    Some{indices(U32.to_nat(count), List.drop(&2, U32, bin, U32.to_nat(start)), size, U32.to_nat(step))}, material, joints, weights}
 
 def indexed.sized(+component: U32, +prim: Prim, +root: JS.Json, +accessor: U32, +bin: +List<U32>, +limit: U32) -> Prim:
   +size = Bool.pick(U32, U32.is_eq(component, 5121), 1, Bool.pick(U32, U32.is_eq(component, 5123), 2, 4))
   with_indices(prim, span(root, accessor, component, "SCALAR", size, 1, limit), bin, size, U32.is_eq(component, 5121) || U32.is_eq(component, 5123) || U32.is_eq(component, 5125))
 
 def unindexed(+prim: Prim) -> Prim:
-  Prim{+ok, +vc, _, +vertices, +texcoords, +texcoords2, +normals, +tangents, +indices, +material} = prim
-  Prim{ok, vc, (vc / 3 : U32), vertices, texcoords, texcoords2, normals, tangents, indices, material}
+  Prim{+ok, +vc, _, +vertices, +texcoords, +texcoords2, +normals, +tangents, +indices, +material, +joints, +weights} = prim
+  Prim{ok, vc, (vc / 3 : U32), vertices, texcoords, texcoords2, normals, tangents, indices, material, joints, weights}
 
 def indexed(present: Bool, +prim: Prim, +root: JS.Json, +primitive: JS.Json, +bin: +List<U32>, +limit: U32) -> Prim:
   match present:
@@ -475,9 +538,9 @@ def indexed(present: Bool, +prim: Prim, +root: JS.Json, +primitive: JS.Json, +bi
 
 # meshMaterial: the material's index + 1, or the default material 0.
 def with_material(+prim: Prim, +primitive: JS.Json, +materials: U32) -> Prim:
-  Prim{+ok, +vc, +tc, +vertices, +texcoords, +texcoords2, +normals, +tangents, +indices, _} = prim
+  Prim{+ok, +vc, +tc, +vertices, +texcoords, +texcoords2, +normals, +tangents, +indices, _, +joints, +weights} = prim
   +index = int(primitive, "material", materials)
-  Prim{ok && (index <= materials : U32), vc, tc, vertices, texcoords, texcoords2, normals, tangents, indices, Bool.pick(U32, (index < materials : U32), (index + 1 : U32), 0)}
+  Prim{ok && (index <= materials : U32), vc, tc, vertices, texcoords, texcoords2, normals, tangents, indices, Bool.pick(U32, (index < materials : U32), (index + 1 : U32), 0), joints, weights}
 
 # LoadGLTF copies every element of a JOINTS_n or WEIGHTS_n accessor into
 # buffers of vertexCount elements: an accessor with more would write past them.
@@ -487,34 +550,97 @@ def bones.fit(members: +List<JS.Json.Member>, +root: JS.Json, +vertices: U32) ->
     case Con{JS.JMember{+name, +value}, rest}:
       (Bool.not(U32.is_eq(attribute.kind(name), 6) || U32.is_eq(attribute.kind(name), 7)) || (int(nth(list(root, "accessors"), int.of(Some{value}, bad())), "count", bad()) <= vertices : U32)) && bones.fit(rest, root, vertices)
 
-def fitted(+prim: Prim, +members: +List<JS.Json.Member>, +root: JS.Json) -> Prim:
-  Prim{+ok, +vc, +tc, +vertices, +texcoords, +texcoords2, +normals, +tangents, +indices, +material} = prim
-  Prim{ok && bones.fit(members, root, vc), vc, tc, vertices, texcoords, texcoords2, normals, tangents, indices, material}
+def zeros.u(n: Nat, +acc: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: acc
+    case 1n+p: zeros.u(p, Con{0, acc})
 
-def primitive(+primitive: JS.Json, +root: JS.Json, +bin: +List<U32>, +limit: U32, +world: M.Matrix, +normal: M.Matrix, +materials: U32) -> Prim:
+def zeros.f(n: Nat, +acc: +List<F32>) -> +List<F32>:
+  match n:
+    case 0n: acc
+    case 1n+p: zeros.f(p, Con{0.0, acc})
+
+# The buffers are vertexCount*4 elements (RL_CALLOC): the accessor's values, then zeros.
+def padded.u(values: Maybe<&2, +List<U32>>, +total: U32) -> Maybe<&2, +List<U32>>:
+  match values:
+    case None{}: None{}
+    case Some{+v}: Some{List.append(&2, U32, v, zeros.u(U32.to_nat((total - U32.min(length(v, 0), total) : U32)), Nil{}))}
+
+def padded.f(values: Maybe<&2, +List<F32>>, +total: U32) -> Maybe<&2, +List<F32>>:
+  match values:
+    case None{}: None{}
+    case Some{+v}: Some{List.append(&2, F32, v, zeros.f(U32.to_nat((total - U32.min(U32.from_nat(List.length(&2, F32, v)), total) : U32)), Nil{}))}
+
+def fitted(+prim: Prim, +members: +List<JS.Json.Member>, +root: JS.Json) -> Prim:
+  Prim{+ok, +vc, +tc, +vertices, +texcoords, +texcoords2, +normals, +tangents, +indices, +material, +joints, +weights} = prim
+  +fits = ok && bones.fit(members, root, vc)
+  Prim{fits, vc, tc, vertices, texcoords, texcoords2, normals, tangents, indices, material, padded.u(joints, Bool.pick(U32, fits, (vc * 4 : U32), 0)), padded.f(weights, Bool.pick(U32, fits, (vc * 4 : U32), 0))}
+
+def bone.indices(n: Nat, +bone: U32, +acc: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: acc
+    case 1n+p: bone.indices(p, bone, Con{bone, Con{0, Con{0, Con{0, acc}}}})
+
+def bone.weights(n: Nat, +acc: +List<F32>) -> +List<F32>:
+  match n:
+    case 0n: acc
+    case 1n+p: bone.weights(p, Con{1.0, Con{0.0, Con{0.0, Con{0.0, acc}}}})
+
+def parented.set(attach: Bool, +prim: Prim, +bone: U32) -> Prim:
+  match attach:
+    case False{}: prim
+    case True{}:
+      Prim{+ok, +vc, +tc, +vertices, +texcoords, +texcoords2, +normals, +tangents, +indices, +material, _, _} = prim
+      Prim{ok, vc, tc, vertices, texcoords, texcoords2, normals, tangents, indices, material, Some{bone.indices(U32.to_nat(vc), (bone .&. 255 : U32), Nil{})}, Some{bone.weights(U32.to_nat(vc), Nil{})}}
+
+def joints.none(+prim: Prim) -> Bool:
+  Prim{+ok, _, _, _, _, _, _, _, _, _, +joints, _} = prim
+  ok && Bool.not(Maybe.is_some(&2, +List<U32>, joints))
+
+# A primitive without JOINTS_n of a node whose parent is a joint without a
+# mesh (bone: its index among the first skin's joints, bad() otherwise):
+# LoadGLTF attaches every vertex to that bone, boneIndices
+# (unsigned char)parentBoneId and boneWeights 1.0 in each vertex's first
+# slot, zeros after.
+def parented(+prim: Prim, +bone: U32) -> Prim:
+  parented.set(joints.none(prim) && good(bone), prim, bone)
+
+def primitive(+primitive: JS.Json, +root: JS.Json, +bin: +List<U32>, +limit: U32, +world: M.Matrix, +normal: M.Matrix, +materials: U32, +bone: U32) -> Prim:
   +start = fresh(Bool.not(has(primitive, "extensions")) && Bool.not(has(primitive, "targets")))
   +members = members.of(child(primitive, "attributes"))
-  with_material(indexed(has(primitive, "indices"), fitted(attributes(members, start, root, bin, limit, world, normal), members, root), root, primitive, bin, limit), primitive, materials)
+  with_material(indexed(has(primitive, "indices"), parented(fitted(attributes(members, start, root, bin, limit, world, normal), members, root), bone), root, primitive, bin, limit), primitive, materials)
 
 # Triangle primitives only (mode 4, the default): the others are skipped.
-def primitives(items: +List<JS.Json>, +root: JS.Json, +bin: +List<U32>, +limit: U32, +world: M.Matrix, +normal: M.Matrix, +materials: U32, +tail: +List<Prim>) -> +List<Prim>:
+def primitives(items: +List<JS.Json>, +root: JS.Json, +bin: +List<U32>, +limit: U32, +world: M.Matrix, +normal: M.Matrix, +materials: U32, +bone: U32, +tail: +List<Prim>) -> +List<Prim>:
   match items:
     case Nil{}: tail
     case Con{+item, rest}:
-      +more = primitives(rest, root, bin, limit, world, normal, materials, tail)
+      +more = primitives(rest, root, bin, limit, world, normal, materials, bone, tail)
       +mode = int(item, "mode", 4)
-      Bool.pick(+List<Prim>, U32.is_eq(mode, 4), Con{primitive(item, root, bin, limit, world, normal, materials), more}, Bool.pick(+List<Prim>, good(mode), more, Con{refused(), more}))
+      Bool.pick(+List<Prim>, U32.is_eq(mode, 4), Con{primitive(item, root, bin, limit, world, normal, materials, bone), more}, Bool.pick(+List<Prim>, good(mode), more, Con{refused(), more}))
 
-def node.placed(+lm: Lm, +node: JS.Json, +root: JS.Json, +bin: +List<U32>, +limit: U32, +materials: U32, +tail: +List<Prim>) -> +List<Prim>:
+def node.placed(+lm: Lm, +node: JS.Json, +root: JS.Json, +bin: +List<U32>, +limit: U32, +materials: U32, +bone: U32, +tail: +List<Prim>) -> +List<Prim>:
   Lm{+ok, +v} = lm
   +m = matrix(v)
   +mesh = nth(list(root, "meshes"), int(node, "mesh", bad()))
-  Bool.pick(+List<Prim>, ok && good(int(node, "mesh", bad())), primitives(list(mesh, "primitives"), root, bin, limit, m, M.Matrix.transpose(M.Matrix.invert(m)), materials, tail), Con{refused(), tail})
+  Bool.pick(+List<Prim>, ok && good(int(node, "mesh", bad())), primitives(list(mesh, "primitives"), root, bin, limit, m, M.Matrix.transpose(M.Matrix.invert(m)), materials, bone, tail), Con{refused(), tail})
+
+# The first place of a node among a skin's joints, bad() when it is not one.
+def position(items: +List<JS.Json>, +wanted: U32, +at: U32) -> U32:
+  match items:
+    case Nil{}: bad()
+    case Con{+item, rest}: Bool.pick(U32, U32.is_eq(int.of(Some{item}, bad()), wanted), at, position(rest, wanted, (at + 1 : U32)))
+
+# With skins, a node's parent (`up`; the node count for none) that has no
+# mesh, as its place among the first skin's joints; bad() otherwise.
+def parent.bone(+root: JS.Json, +nodes: +List<JS.Json>, +up: U32, +total: U32) -> U32:
+  Bool.pick(U32, good(up) && U32.is_ne(up, total) && Bool.not(has(nth(nodes, up), "mesh")) && (count(list(root, "skins"), 0) > 0 : U32),
+    position(list(nth(list(root, "skins"), 0), "joints"), up, 0), bad())
 
 def node.meshes(present: Bool, +node: JS.Json, +index: U32, +root: JS.Json, +nodes: +List<JS.Json>, +total: U32, +bin: +List<U32>, +limit: U32, +materials: U32, +tail: +List<Prim>) -> +List<Prim>:
   match present:
     case False{}: tail
-    case True{}: node.placed(world(U32.to_nat((total + 1 : U32)), nodes, total, index, local(node)), node, root, bin, limit, materials, tail)
+    case True{}: node.placed(world(U32.to_nat((total + 1 : U32)), nodes, total, index, local(node)), node, root, bin, limit, materials, parent.bone(root, nodes, parent(nodes, index, 0, total, total), total), tail)
 
 # Every node with a mesh, in node order.
 def scene(items: +List<JS.Json>, +index: U32, +root: JS.Json, +nodes: +List<JS.Json>, +total: U32, +bin: +List<U32>, +limit: U32, +materials: U32) -> +List<Prim>:
@@ -620,7 +746,7 @@ type Parts is Data:
 def prims.ok(prims: +List<Prim>) -> Bool:
   match prims:
     case Nil{}: True{}
-    case Con{Prim{+ok, _, _, _, _, _, _, _, _, _}, rest}: ok && prims.ok(rest)
+    case Con{Prim{+ok, _, _, _, _, _, _, _, _, _, _, _}, rest}: ok && prims.ok(rest)
 
 # One buffer, in the BIN chunk (no uri), at most as long as the chunk.
 def buffers.ok(items: +List<JS.Json>, +limit: U32) -> Bool:

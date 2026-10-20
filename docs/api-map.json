@@ -5609,9 +5609,9 @@
   "LoadModel": {
     "jonlib": "Model.load_for / Model.load",
     "status": "profile-covered",
-    "scope": "OBJ through tinyobj_loader_c (tryParseDouble in binary64, contraction profiled; the material table, LoadOBJ's mesh split, MTL materials and textures); binary glTF (.glb) through LoadGLTF (float attributes, 8/16/32-bit indices, node transforms, base colors, embedded PNG textures; uncontracted); MagicaVoxel (.vox) through LoadVOX (visible faces in 65532-vertex meshes); Inter-Quake (.iqm) through LoadIQM (meshes, colors, material textures); Model 3D (.m3d) through LoadM3D (binary variant: a mesh a material run, properties); other extensions and unopened files give the empty model.",
+    "scope": "OBJ through tinyobj_loader_c (binary64 tryParseDouble, contraction profiled; LoadOBJ's mesh split, MTL materials and textures); binary glTF (.glb) through LoadGLTF (float attributes, 8/16/32-bit indices, node transforms, base colors, embedded PNG textures, raylib 6.2's bone data; uncontracted); MagicaVoxel (.vox) through LoadVOX; Inter-Quake (.iqm) through LoadIQM (meshes, colors, bone data, material textures); Model 3D (.m3d) through LoadM3D (binary variant: a mesh a material run, properties, skins); other extensions and unopened files give the empty model.",
     "gaps": [
-      "glTF as text is UnsupportedFileType; binary glTF, IQM and M3D keep no bone data in the Mesh; other glTF texture kinds, non-PNG or uri images, sparse accessors and COLOR are refused",
+      "glTF as text is UnsupportedFileType; other glTF texture kinds, non-PNG or uri images, sparse accessors, COLOR and JOINTS_n/WEIGHTS_n of other layouts are refused",
       "Undefined reference behavior (asserts, int overflow, reads outside tinyobj's arrays, byte casts, table insertions that loop) and binary64 steps outside the checked helpers' domains are refused",
       "Texture files Jonlib's LoadImage does not decode are refused; paths and names must be printable ASCII (OBJ paths without backslashes)",
       "VOX, IQM, M3D: reads past the file or the loaders' arrays are refused; M3D textures, generated normals, voxels, shapes and its ASCII variant are not ported; profiles end at 2 MiB files (MODELS.md)",
@@ -5795,7 +5795,7 @@
   "DrawMesh": {
     "jonlib": "Draw.mesh",
     "status": "profile-covered",
-    "scope": "The OpenGL 1.1 branch through rlsw's swDrawArrays/swDrawElements: diffuse texture bound for meshes with texcoords and a positive id (from the given textures), push, rlMultMatrixf, diffuse color, per-vertex texcoord/color/position as GL_TRIANGLES, pop, texture disabled; byte for byte against the memory platform.",
+    "scope": "The OpenGL 1.1 branch through rlsw's swDrawArrays/swDrawElements: diffuse texture bound for meshes with texcoords and a positive id (from the given textures), push, rlMultMatrixf, diffuse color, per-vertex texcoord/color/position (the mesh's animVertices once UpdateModelAnimation has skinned it, as raylib 6.2 draws them) as GL_TRIANGLES, pop, texture disabled; byte for byte against the memory platform.",
     "gaps": [
       "Inconsistent lists, indices not below the vertex count, color values above 255, a diffuse id missing from the textures and a primitive being recorded are refused",
       "Normals, tangents and texcoords2 are not used by the software renderer",
@@ -6088,13 +6088,14 @@
     "milestone": "animation"
   },
   "UpdateModelAnimation": {
-    "jonlib": "Model.update_animation_for / Model.update_animation",
+    "jonlib": "Model.update_animation_for / Model.update_animation (bones alone: Model.update_animation_bones_for / Model.update_animation_bones, raylib 6.2's UpdateModelAnimationBones)",
     "status": "profile-covered",
-    "scope": "The model's current pose and bone matrices as a value (ModelPose) beside the skeleton: the two keyframes of (int)frame, wrapped by the keyframe count, blended by the frame's fraction (Vector3Lerp, QuaternionSlerp under the libm profile), and inverse(bind pose)*pose for every bone; unchanged without bones or keyframes.",
+    "scope": "raylib 6.2: the current pose and bone matrices (ModelPose, beside the skeleton) from the keyframes of (int)frame and the next, blended by its fraction (Vector3Lerp, QuaternionSlerp under the libm profile), inverse(bind pose)*pose a bone; then the CPU skinning (no software-renderer shader takes the bones): each mesh with bone data gets animVertices, each vertex from zero plus Vector3Transform(vertex, boneMatrices[index])*weight for each weight not 0.0f, in F32 order; the model comes back with the pose. Unchanged without bones or keyframes.",
     "gaps": [
-      "The meshes are not skinned: the reference is built with GPU skinning and leaves them in their bind pose",
+      "Skinned normals (animNormals) are not modeled: no pixel reads them on the software renderer",
+      "An IQM file without joints is outside the contract (raylib skins with an empty, non-NULL skeleton; Jonlib changes nothing)",
       "Frames of -1 and below, past the int range or not a number answer None (undefined natively)",
-      "An animation with fewer bones than the skeleton answers None (read past its end natively)",
+      "An animation with fewer bones than the skeleton, or a weighted bone index past the skeleton, answers None (read past the end natively)",
       "Profiles without acosf (Apple, glibc 2.41) answer None for rotations more than about 36 degrees apart",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
@@ -6102,13 +6103,13 @@
     "milestone": "animation"
   },
   "UpdateModelAnimationEx": {
-    "jonlib": "Model.update_animation_ex_for / Model.update_animation_ex",
+    "jonlib": "Model.update_animation_ex_for / Model.update_animation_ex (bones alone: Model.update_animation_bones_ex_for / Model.update_animation_bones_ex, raylib 6.2's UpdateModelAnimationBonesEx)",
     "status": "profile-covered",
-    "scope": "Two animations' poses, each at keyframe (int)frame%keyframeCount towards the next one by the clamped difference to that keyframe, blended by Vector3Lerp and QuaternionSlerp into the ModelPose, with the bone matrices; unchanged without bones or keyframes and for a blend outside 0 to 1.",
+    "scope": "raylib 6.2: two animations' poses, each at keyframe (int)frame%keyframeCount towards the next one by the clamped difference to that keyframe, blended by Vector3Lerp and QuaternionSlerp into the ModelPose, with the bone matrices; then the CPU skinning of UpdateModelAnimation; unchanged without bones or keyframes and for a blend outside 0 to 1.",
     "gaps": [
-      "The meshes are not skinned: the reference is built with GPU skinning and leaves them in their bind pose",
+      "Skinned normals (animNormals) are not modeled: no pixel reads them on the software renderer",
       "A frame outside an int or with a negative remainder by the keyframe count answers None (undefined natively)",
-      "An animation with fewer bones than the skeleton answers None (read past its end natively)",
+      "An animation with fewer bones than the skeleton, or a weighted bone index past the skeleton, answers None (read past the end natively)",
       "Profiles without acosf (Apple, glibc 2.41) answer None for rotations more than about 36 degrees apart",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],

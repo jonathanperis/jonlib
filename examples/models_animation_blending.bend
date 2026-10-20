@@ -9,9 +9,9 @@
 # for each animation, a progress bar for the blend (filled from the right
 # on the way back), raylib 6.2's centered "PRESS SPACE to START BLENDING"
 # label at twice the font's size, and a bar with a tick a keyframe for each
-# animation. The reference library is built with GPU skinning and its
-# software renderer runs no shader, so the model is drawn in its bind pose;
-# the updates fill the State's ModelPose (docs/MODELS.md). 6.2's example
+# animation. raylib 6.2 skins the meshes on the CPU (no shader of the
+# software renderer takes the bones) and DrawModel draws the skinned
+# vertices; the pose is the Play's ModelPose (docs/MODELS.md). 6.2's example
 # loads and assigns its skinning shader only under SUPPORT_GPU_SKINNING,
 # which raylib.h does not define for it (6.0 loaded it unused); its
 # animCount > 0 checks hold here, where both animations are required. The
@@ -104,25 +104,38 @@ def mix.started(go: Bool, +mix: Mix) -> Mix:
         Blend{playing, Bool.pick(U32, U32.is_eq(playing, 0), 1, 0), True{}, 0.0, 0.0, progress}}
 
 type Advance is Data:
-  Advance{mix: Mix, pose: J.ModelPose}
+  Advance{mix: Mix, model: J.Model, pose: J.ModelPose}
 
-def mix.posed(posed: Maybe<J.ModelPose>, +mix: Mix) -> Maybe<Advance>:
+def mix.posed(posed: Maybe<J.AnimatedModel>, +mix: Mix) -> Maybe<Advance>:
   match posed:
     case None{}: None{}
-    case Some{+pose}: Some{Advance{mix, pose}}
+    case Some{J.AnimatedModel{+model, +pose}}: Some{Advance{mix, model, pose}}
 
 # UpdateModelAnimationEx(model, anims[from], its frame, anims[to], its frame, animBlendFactor).
-def blended(+libm: M.Libm, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +from: Track, +to: Track, +factor: F32, +pose: J.ModelPose) -> Maybe<J.ModelPose>:
-  J.Model.update_animation_ex_for(libm, skeleton, pick(animations, track.index(from)), track.frame(from), pick(animations, track.index(to)), track.frame(to), factor, pose)
+def blended(+libm: M.Libm, +model: J.Model, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +from: Track, +to: Track, +factor: F32, +pose: J.ModelPose) -> Maybe<J.AnimatedModel>:
+  J.Model.update_animation_ex_for(libm, model, skeleton, pick(animations, track.index(from)), track.frame(from), pick(animations, track.index(to)), track.frame(to), factor, pose)
 
 # UpdateModelAnimation(model, anims[index], its frame).
-def played(+libm: M.Libm, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +track: Track, +pose: J.ModelPose) -> Maybe<J.ModelPose>:
-  J.Model.update_animation_for(libm, skeleton, pick(animations, track.index(track)), track.frame(track), pose)
+def played(+libm: M.Libm, +model: J.Model, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +track: Track, +pose: J.ModelPose) -> Maybe<J.AnimatedModel>:
+  J.Model.update_animation_for(libm, model, skeleton, pick(animations, track.index(track)), track.frame(track), pose)
+
+# The blend towards the next animation (the skinning runs for the chosen call only).
+def blended.toward(forward: Bool, +libm: M.Libm, +model: J.Model, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +a: Track, +b: Track, +factor: F32, +pose: J.ModelPose) -> Maybe<J.AnimatedModel>:
+  match forward:
+    case True{}: blended(libm, model, skeleton, animations, a, b, factor, pose)
+    case False{}: blended(libm, model, skeleton, animations, b, a, factor, pose)
+
+# The animation playing advanced alone (none for another index).
+def played.one(+libm: M.Libm, +model: J.Model, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +a: Track, +b: Track, +pose: J.ModelPose, playing: U32) -> Maybe<J.AnimatedModel>:
+  match playing:
+    case 0: played(libm, model, skeleton, animations, a, pose)
+    case 1: played(libm, model, skeleton, animations, b, pose)
+    case _: Some{J.AnimatedModel{model, pose}}
 
 # In a transition both animations advance and blend by animBlendTimeCounter/animBlendTime (2 seconds), the
 # counter grows by GetFrameTime(), and past a factor of 1 the next animation becomes the one playing.
 # Otherwise the one playing advances alone.
-def mix.moved(transition: Bool, +libm: M.Libm, +dt: F32, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +pose: J.ModelPose, +first: Track, +second: Track, +playing: U32, +next: U32,
+def mix.moved(transition: Bool, +libm: M.Libm, +dt: F32, +model: J.Model, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +pose: J.ModelPose, +first: Track, +second: Track, +playing: U32, +next: U32,
     +factor: F32, +counter: F32, +progress: F32) -> Maybe<Advance>:
   match transition:
     case True{}:
@@ -130,19 +143,19 @@ def mix.moved(transition: Bool, +libm: M.Libm, +dt: F32, +skeleton: J.ModelSkele
       +b = stepped(second, animations)
       +now = (counter / 2.0 : F32)
       +done = (now > 1.0 : F32)
-      mix.posed(Bool.pick(Maybe<J.ModelPose>, U32.is_eq(next, 1), blended(libm, skeleton, animations, a, b, now, pose), blended(libm, skeleton, animations, b, a, now, pose)),
+      mix.posed(blended.toward(U32.is_eq(next, 1), libm, model, skeleton, animations, a, b, now, pose),
         Mix{Bool.pick(Track, done && U32.is_eq(playing, 0), rewound(a), a), Bool.pick(Track, done && U32.is_eq(playing, 1), rewound(b), b),
           Blend{Bool.pick(U32, done, next, playing), next, Bool.not(done), Bool.pick(F32, done, 0.0, now), Bool.pick(F32, done, 0.0, (counter + dt : F32)), now}})
     case False{}:
       +a = stepped(first, animations)
       +b = stepped(second, animations)
-      mix.posed(Bool.pick(Maybe<J.ModelPose>, U32.is_eq(playing, 0), played(libm, skeleton, animations, a, pose), Bool.pick(Maybe<J.ModelPose>, U32.is_eq(playing, 1), played(libm, skeleton, animations, b, pose), Some{pose})),
+      mix.posed(played.one(libm, model, skeleton, animations, a, b, pose, playing),
         Mix{Bool.pick(Track, U32.is_eq(playing, 0), a, first), Bool.pick(Track, U32.is_eq(playing, 1), b, second), Blend{playing, next, False{}, factor, counter, progress}})
 
-def mix.advanced(+libm: M.Libm, +dt: F32, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +pose: J.ModelPose, mix: Mix) -> Maybe<Advance>:
+def mix.advanced(+libm: M.Libm, +dt: F32, +model: J.Model, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +pose: J.ModelPose, mix: Mix) -> Maybe<Advance>:
   Mix{+first, +second, blend} = mix
   Blend{+playing, +next, +transition, +factor, +counter, +progress} = blend
-  mix.moved(transition, libm, dt, skeleton, animations, pose, first, second, playing, next, factor, counter, progress)
+  mix.moved(transition, libm, dt, model, skeleton, animations, pose, first, second, playing, next, factor, counter, progress)
 
 def blend.transition(blend: Blend) -> Bool:
   Blend{_, _, transition, _, _, _} = blend
@@ -152,32 +165,40 @@ def mix.transition(mix: Mix) -> Bool:
   Mix{_, _, blend} = mix
   blend.transition(blend)
 
-def update.stepped(step: Maybe<Advance>, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +names: String) -> Maybe<Play>:
+# The skinned model and the play after an update.
+type Step is Data:
+  Step{model: J.Model, play: Play}
+
+def update.stepped(step: Maybe<Advance>, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +names: String) -> Maybe<Step>:
   match step:
     case None{}: None{}
-    case Some{Advance{+mix, +pose}}: Some{Play{skeleton, animations, names, pose, mix, False{}}}
+    case Some{Advance{+mix, +model, +pose}}: Some{Step{model, Play{skeleton, animations, names, pose, mix, False{}}}}
 
-def update.run(halted: Bool, +libm: M.Libm, +core: J.Core, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +names: String, +pose: J.ModelPose, +mix: Mix) -> Maybe<Play>:
+def update.run(halted: Bool, +libm: M.Libm, +core: J.Core, +model: J.Model, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +names: String, +pose: J.ModelPose, +mix: Mix) -> Maybe<Step>:
   match halted:
-    case True{}: Some{Play{skeleton, animations, names, pose, mix, True{}}}
-    case False{}: update.stepped(mix.advanced(libm, J.Core.get_frame_time(core), skeleton, animations, pose, mix.started(J.Input.is_key_pressed(core, 32) && Bool.not(mix.transition(mix)), mix)),
+    case True{}: Some{Step{model, Play{skeleton, animations, names, pose, mix, True{}}}}
+    case False{}: update.stepped(mix.advanced(libm, J.Core.get_frame_time(core), model, skeleton, animations, pose, mix.started(J.Input.is_key_pressed(core, 32) && Bool.not(mix.transition(mix)), mix)),
       skeleton, animations, names)
 
 # P pauses; None when a pose is refused.
-def update.play(+libm: M.Libm, +core: J.Core, play: Play) -> Maybe<Play>:
+def update.play(+libm: M.Libm, +core: J.Core, +model: J.Model, play: Play) -> Maybe<Step>:
   Play{+skeleton, +animations, +names, +pose, +mix, +paused} = play
-  update.run(Bool.pick(Bool, J.Input.is_key_pressed(core, 80), Bool.not(paused), paused), libm, core, skeleton, animations, names, pose, mix)
+  update.run(Bool.pick(Bool, J.Input.is_key_pressed(core, 80), Bool.not(paused), paused), libm, core, model, skeleton, animations, names, pose, mix)
 
-def update.moved(updated: Maybe<J.Camera3D>, played: Maybe<Play>, +model: J.Model, textures: List<J.Texture>, +gui: G.Gui, +old: Play) -> State:
+def update.stepped.state(+camera: J.Camera3D, step: Step, textures: List<J.Texture>, +gui: G.Gui) -> State:
+  Step{+model, +play} = step
+  State{True{}, Some{camera}, model, textures, gui, play}
+
+def update.moved(updated: Maybe<J.Camera3D>, played: Maybe<Step>, +model: J.Model, textures: List<J.Texture>, +gui: G.Gui, +old: Play) -> State:
   match updated played:
-    case Some{+c} Some{+p}: State{True{}, Some{c}, model, textures, gui, p}
+    case Some{+c} Some{+s}: update.stepped.state(c, s, textures, gui)
     case Some{+c} None{}: State{False{}, Some{c}, model, textures, gui, old}
     case None{} _: State{False{}, None{}, model, textures, gui, old}
 
 # UpdateCamera(&camera, CAMERA_ORBITAL), then the animations.
 def update.live(valid: Bool, camera: +Maybe<J.Camera3D>, +libm: M.Libm, +core: J.Core, +model: J.Model, textures: List<J.Texture>, +gui: G.Gui, +play: Play) -> State:
   match valid camera:
-    case True{} Some{+c}: update.moved(J.Camera.update_for(M.Uncontracted{}, libm, core, c, J.CameraMode.CAMERA_ORBITAL()), update.play(libm, core, play), model, textures, gui, play)
+    case True{} Some{+c}: update.moved(J.Camera.update_for(M.Uncontracted{}, libm, core, c, J.CameraMode.CAMERA_ORBITAL()), update.play(libm, core, model, play), model, textures, gui, play)
     case _ None{}: State{False{}, None{}, model, textures, gui, play}
     case False{} Some{+c}: State{False{}, Some{c}, model, textures, gui, play}
 

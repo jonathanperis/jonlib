@@ -1155,6 +1155,66 @@ def Laws.model_animation_valid_same_bone_count(bone, parent, binds, name, count,
 def Laws.model_animation_invalid_other_bone_count(bone, parent, binds, name, count, poses):
   {==}
 
+def Laws.mesh_drawn_animated_vertices():
+  {==}
+
+def Laws.mesh_drawn_vertices_before_skinning():
+  {==}
+
+def Laws.mesh_bones_need_weights():
+  {==}
+
+def Laws.mesh_bones_need_indices():
+  {==}
+
+def Laws.mesh_bone_indices_bytes():
+  {==}
+
+def Laws.mesh_bones_four_indices_a_vertex():
+  {==}
+
+def Laws.skin_zero_weight_skipped():
+  {==}
+
+def Laws.skin_bone_past_skeleton_refused():
+  {==}
+
+def Laws.skin_empty_mesh_without_vertices():
+  {==}
+
+def Laws.skin_mesh_without_bones_unchanged():
+  {==}
+
+def Laws.skin_needs_bones_and_keyframes():
+  {==}
+
+def Laws.skin_refused_bones_refuse():
+  {==}
+
+def Laws.gltf_joint_bytes():
+  {==}
+
+def Laws.gltf_parent_bone_indices():
+  {==}
+
+def Laws.gltf_component_sizes():
+  {==}
+
+def Laws.gltf_parent_bone_first_place():
+  {==}
+
+def Laws.iqm_blend_indexes_zero_without_array():
+  {==}
+
+def Laws.iqm_blend_indexes_of_mesh():
+  {==}
+
+def Laws.m3d_corner_ids_unskinned():
+  {==}
+
+def Laws.m3d_corner_ids_no_bone():
+  {==}
+
 def Laws.hypot_within_below_inside(error, limit):
   {==}
 
@@ -3268,6 +3328,12 @@ def Laws.wave_wav_ima_headers_fill_data():
   {==}
 
 def Laws.wave_aiff_unread_frames_are_zeros():
+  {==}
+
+def Laws.wav_zero_padded_none_missing():
+  {==}
+
+def Laws.wav_zero_padded_after_samples():
   {==}
 
 def Laws.wav_zeros_limit_past_2_24():

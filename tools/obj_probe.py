@@ -412,7 +412,7 @@ def colors.flag(cs: Maybe<&2, +List<U32>>) -> String:
     case Some{_}: " c1"
 
 def mesh.text(+mesh: J.Mesh, +material: U32) -> String:
-  J.Mesh{+vc, +tc, +vs, +ts, _, +ns, _, +cs, _} = mesh
+  J.Mesh{+vc, +tc, +vs, +ts, _, +ns, _, +cs, _, _} = mesh
   " m" ++ U32.show(vc) ++ "," ++ U32.show(tc) ++ "," ++ U32.show(material) ++ words("v", vs) ++ words("n", ns) ++ words("t", ts) ++ colors.flag(cs)
 
 def meshes.text(ms: +List<J.Mesh>, mm: +List<U32>) -> String:

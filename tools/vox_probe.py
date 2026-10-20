@@ -203,6 +203,16 @@ static void model(const char *path)
         h = 2166136261u;
         if (!e->indices) printf(" i-");
         else { for (int k = 0; k < e->triangleCount*3; k++) h = (h ^ e->indices[k])*16777619u; printf(" i%08x", h); }
+        if (!e->boneIndices || !e->boneWeights) printf(" b- w-");
+        else
+        {
+            h = 2166136261u;
+            for (int k = 0; k < e->vertexCount*4; k++) h = (h ^ e->boneIndices[k])*16777619u;
+            printf(" b%08x", h);
+            h = 2166136261u;
+            for (int k = 0; k < e->vertexCount*4; k++) { unsigned b; memcpy(&b, &e->boneWeights[k], 4); h = (h ^ b)*16777619u; }
+            printf(" w%08x", h);
+        }
     }
     for (int i = 0; i < m.materialCount; i++) material(m.materials[i]);
     printf("\n");
@@ -214,7 +224,7 @@ int main(void)
 
 PROGRAM = op.PROGRAM.replace(
     '''def mesh.text(+mesh: J.Mesh, +material: U32) -> String:
-  J.Mesh{+vc, +tc, +vs, +ts, _, +ns, _, +cs, _} = mesh
+  J.Mesh{+vc, +tc, +vs, +ts, _, +ns, _, +cs, _, _} = mesh
   " m" ++ U32.show(vc) ++ "," ++ U32.show(tc) ++ "," ++ U32.show(material) ++ words("v", vs) ++ words("n", ns) ++ words("t", ts) ++ colors.flag(cs)
 ''', '''def fnv(xs: +List<U32>, +h: U32) -> U32:
   match xs:
@@ -236,9 +246,16 @@ def hashed(tag: String, xs: Maybe<&2, +List<U32>>) -> String:
     case None{}: " " ++ tag ++ "-"
     case Some{+v}: " " ++ tag ++ hex.word(fnv(v, 2166136261))
 
+# boneIndices and boneWeights (raylib 6.2's bone data): both, or neither.
+def bones.hashed(bones: Maybe<&2, J.MeshBones>) -> String:
+  match bones:
+    case None{}: " b- w-"
+    case Some{J.MeshBones{+ix, +ws, _}}: " b" ++ hex.word(fnv(ix, 2166136261)) ++ " w" ++ hex.word(fnv.f32s(ws, 2166136261))
+
 def mesh.text(+mesh: J.Mesh, +material: U32) -> String:
-  J.Mesh{+vc, +tc, +vs, +ts, _, +ns, _, +cs, +ix} = mesh
+  J.Mesh{+vc, +tc, +vs, +ts, _, +ns, _, +cs, +ix, +bones} = mesh
   " m" ++ U32.show(vc) ++ "," ++ U32.show(tc) ++ "," ++ U32.show(material) ++ hashed.f32s("v", vs) ++ hashed.f32s("n", ns) ++ hashed.f32s("t", ts) ++ hashed("c", cs) ++ hashed("i", ix)
+    ++ bones.hashed(bones)
 ''')
 assert PROGRAM != op.PROGRAM
 

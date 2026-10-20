@@ -13,10 +13,10 @@
 # keys: RIGHT and LEFT choose the animation (from keyframe 0), UP and DOWN
 # change the speed by 0.1 within fminf(5, ..) and fmaxf(0, ..). The frame
 # counter is a float and reaches the keyframe count before it is reset, as
-# in the example. The reference library is built with GPU skinning and its
-# software renderer runs no shader, so the model is drawn in its bind pose
-# whatever the pose is: the update fills the pose and the bone matrices
-# only, here the State's ModelPose (docs/MODELS.md). The perspective needs
+# in the example. raylib 6.2 skins the mesh on the CPU (no shader of the
+# software renderer takes the bones) and DrawModelEx draws the skinned
+# vertices; the pose is the State's ModelPose beside the model
+# (docs/MODELS.md). The perspective needs
 # the libm profile's binary64 tan (docs/PERSPECTIVE.md), UpdateCamera and
 # DrawModelEx's rotation its sinf/cosf (docs/SINCOSF.md) and the pose's
 # QuaternionSlerp its acosf and sinf. See docs/DRIVER.md.
@@ -59,18 +59,18 @@ def name(animation: J.ModelAnimation) -> String:
 def wrapped(+frame: F32, +total: U32) -> F32:
   Bool.pick(F32, (frame >= U32.to_f32(total) : F32), 0.0, frame)
 
-def update.posed(posed: Maybe<J.ModelPose>, +camera: J.Camera3D, +model: J.Model, textures: List<J.Texture>, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +previous: J.ModelPose,
+def update.posed(posed: Maybe<J.AnimatedModel>, +camera: J.Camera3D, +previous_model: J.Model, textures: List<J.Texture>, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +previous: J.ModelPose,
     +frame: F32, +index: U32, +speed: F32) -> State:
   match posed:
-    case None{}: State{False{}, Some{camera}, model, textures, skeleton, animations, previous, frame, index, speed}
-    case Some{+pose}: State{True{}, Some{camera}, model, textures, skeleton, animations, pose, wrapped(frame, keyframes(chosen(animations, index))), index, speed}
+    case None{}: State{False{}, Some{camera}, previous_model, textures, skeleton, animations, previous, frame, index, speed}
+    case Some{J.AnimatedModel{+model, +pose}}: State{True{}, Some{camera}, model, textures, skeleton, animations, pose, wrapped(frame, keyframes(chosen(animations, index))), index, speed}
 
 # animCurrentFrame += animSpeed; UpdateModelAnimation(model, anims[animIndex], animCurrentFrame).
 def update.moved(updated: Maybe<J.Camera3D>, +libm: M.Libm, +model: J.Model, textures: List<J.Texture>, +skeleton: J.ModelSkeleton, +animations: +List<J.ModelAnimation>, +pose: J.ModelPose, +current: F32,
     +index: U32, +speed: F32) -> State:
   match updated:
     case None{}: State{False{}, None{}, model, textures, skeleton, animations, pose, current, index, speed}
-    case Some{+c}: update.posed(J.Model.update_animation_for(libm, skeleton, chosen(animations, index), (current + speed : F32), pose), c, model, textures, skeleton, animations, pose,
+    case Some{+c}: update.posed(J.Model.update_animation_for(libm, model, skeleton, chosen(animations, index), (current + speed : F32), pose), c, model, textures, skeleton, animations, pose,
       (current + speed : F32), index, speed)
 
 # RIGHT: the next animation (after the last, the first), LEFT the previous

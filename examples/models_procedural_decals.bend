@@ -203,7 +203,7 @@ def gather.mesh(vertices: Maybe<&2, +List<F32>>, indices: Maybe<&2, +List<U32>>,
 def gather.all(meshes: +List<J.Mesh>, +projection: M.Matrix, +size: F32, +acc: +List<Tri>) -> +List<Tri>:
   match meshes:
     case Nil{}: acc
-    case Con{J.Mesh{_, _, vertices, _, _, _, _, _, indices}, rest}: gather.all(rest, projection, size, gather.mesh(vertices, indices, projection, size, acc))
+    case Con{J.Mesh{_, _, vertices, _, _, _, _, _, indices, _}, rest}: gather.all(rest, projection, size, gather.mesh(vertices, indices, projection, size, acc))
 
 # ClipSegment(v0, v1, p, s): Vector3Lerp(v0, v1, d0/(d0 - d1)).
 def segment(+v0: M.Vector3, +v1: M.Vector3, +plane: M.Vector3, +s: F32) -> M.Vector3:
@@ -273,7 +273,7 @@ def count(list: +List<M.Vector3>, +n: U32) -> U32:
 
 # BuildMesh: the vertices and their texture coordinates; UploadMesh(&outMesh, false).
 def decal.built(+list: +List<M.Vector3>, +inverse: M.Matrix, +size: F32, +offset: F32) -> J.Mesh:
-  J.Mesh.upload(J.Mesh{count(list, 0), (count(list, 0) / 3 : U32), Some{placed(list, inverse, offset)}, Some{uvs(list, size)}, None{}, None{}, None{}, None{}, None{}}, False{})
+  J.Mesh.upload(J.Mesh{count(list, 0), (count(list, 0) / 3 : U32), Some{placed(list, inverse, offset)}, Some{uvs(list, size)}, None{}, None{}, None{}, None{}, None{}, None{}}, False{})
 
 # GenMeshDecal(model, projection, decalSize, decalOffset): a mesh without vertices when nothing is left.
 def decal(+model: J.Model, +projection: M.Matrix, +size: F32, +offset: F32) -> J.Mesh:

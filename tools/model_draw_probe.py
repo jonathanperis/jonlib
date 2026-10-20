@@ -508,7 +508,7 @@ def wcustom(+w: +List<U32>) -> J.Mesh:
   +c = word.drop(nt, b)
   +d = word.drop(nc, c)
   J.Mesh{vc, tc, wsome.f32(Bool.not(wflag(flags, 8)), wtake.f32(nv, a)), wsome.f32(wflag(flags, 1), wtake.f32(nt, b)), None{}, None{}, None{},
-    wsome.u32(wflag(flags, 2), wtake.u32(nc, c)), wsome.u32(wflag(flags, 4), wtake.u32(U32.to_nat((tc * 3 : U32)), d))}
+    wsome.u32(wflag(flags, 2), wtake.u32(nc, c)), wsome.u32(wflag(flags, 4), wtake.u32(U32.to_nat((tc * 3 : U32)), d)), None{}}
 
 def wmesh.kind(kind: U32, +w: +List<U32>) -> Maybe<J.Mesh>:
   match kind:
