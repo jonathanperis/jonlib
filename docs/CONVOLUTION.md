@@ -21,8 +21,7 @@ Surface.kernel_convolution(surface, kernel: +List<F32>) -> Result<&1, &1, Surfac
 - The anchor is `floor(kernelWidth/2)` on each axis; even kernels extend farther
   toward negative coordinates.
 - A neighbour outside the image is clamped to the nearest edge, row and column
-  separately: edge pixels repeat (raylib 6.2; 6.0 checked a flattened unsigned
-  index, wrapped across rows and read zero outside the image).
+  separately: edge pixels repeat.
 - Each RGBA byte is divided by 255 in F32 and multiplied by its coefficient.
   Products accumulate in row-major kernel order, starting from positive zero.
 - Every channel sum, alpha included, clamps to 0..1, then is multiplied by 255
@@ -42,10 +41,10 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 
 ## The raylib example
 
-`examples/textures_image_kernel.bend` ports `textures_image_kernel.c`. Under
-raylib 6.0 the native example was undefined (its sharpen and Sobel kernels
-pushed alpha to 510.0f and -510.0f before the byte cast); 6.2 clamps alpha, so
-the example is defined and compared.
+`examples/textures_image_kernel.bend` is the Bend version of
+`textures_image_kernel.c`. Its sharpen and Sobel kernels push alpha to 510.0f
+and -510.0f; raylib clamps alpha before the byte cast, so the example is
+defined and compared whole.
 
 ## Known gaps
 

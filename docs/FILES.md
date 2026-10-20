@@ -19,7 +19,7 @@ byte, on every lane.
 | `Files.directory_exists(path) -> IO(Bool)` | `DirectoryExists` | `opendir` succeeds (Base's `Dir.read`): a directory that cannot be read is not one. |
 | `Files.mod_time(path) -> IO(Nat)` | `GetFileModTime` | `st_mtime` in seconds, 0 where `stat` fails. A file modified before 1970 is 0 here, where raylib's `long` is negative. |
 | `Files.rename(source, target) -> IO(U32)`, `Files.remove(path) -> IO(U32)` | `FileRename`, `FileRemove` | `rename(2)`'s or `remove(3)`'s result (a file, or an empty directory), -1 (4294967295) for a path `FileExists` does not see. |
-| `Files.copy(source, target) -> IO(Maybe<U32>)` | `FileCopy` | The source's bytes, the target's directory (`GetDirectoryPath`) made where it is missing, then the bytes saved when there are any: 0 once the directory is there, whether the save succeeds or not (raylib 6.2), -1 when `MakeDirectory` fails; `None` where `GetDirectoryPath` overflows. |
+| `Files.copy(source, target) -> IO(Maybe<U32>)` | `FileCopy` | The source's bytes, the target's directory (`GetDirectoryPath`) made where it is missing, then the bytes saved when there are any: 0 once the directory is there, whether the save succeeds or not, -1 when `MakeDirectory` fails; `None` where `GetDirectoryPath` overflows. |
 | `Files.move(source, target) -> IO(Maybe<U32>)` | `FileMove` | -1 for a missing source; otherwise `FileCopy`'s result, and when it is 0 and the target exists with the source's `GetFileLength`, `FileRemove` of the source. |
 | `Files.make_directory(path) -> IO(U32)` | `MakeDirectory` | -1 for an empty path, 0 for an existing directory; otherwise every prefix before a `/` or `\` (a `:` passes the character after it) is made where it is missing, then the path with those separators turned into `/`, mode 0777 under the umask; 0 when the path given is a directory then, -1 otherwise. |
 | `Files.change_directory(path) -> IO(U32)`, `Files.working_directory() -> IO(Maybe<String>)` | `ChangeDirectory`, `GetWorkingDirectory` | `chdir(2)`'s result (0, or -1); `getcwd(3)` into raylib's 4096 bytes, `None` where it fails or the path does not fit. |
@@ -98,8 +98,7 @@ above it up to the script's own, every directory inside that), three levels
 inside the script's own so that no other program writes in them, and checks
 after the reference ran that they are still the same. A file without an
 extension below a directory with a dot in its name (the probe's `.build`)
-made 6.0's `IsFileExtension` read a 16-byte array as a string it did not
-end; 6.2 copies 15 bytes, and the script with such a file is compared.
+is compared: `IsFileExtension` copies at most 15 bytes of an extension.
 
 `core_screen_recording` saves its GIF in `GetApplicationDirectory()`: its
 port takes that directory as a setup argument (`--directory`), and the
@@ -123,8 +122,8 @@ subdirectories, renames, removals, directories made, copies and moves
 fake `explorer` that logs its arguments, and `ChangeDirectory` and
 `GetWorkingDirectory` last. `GetApplicationDirectory` is checked for its
 trailing `/` and for being a directory, the programs being different on each
-side. A 17-byte extension, which raylib 6.0's `IsFileExtension` overflowed, is compared:
-6.2 reads its first 15 bytes.
+side. A 17-byte extension is compared: `IsFileExtension` reads its first 15
+bytes.
 
 
 `tools/files_probe.py` (gate `files`) runs the pure functions over a corpus of

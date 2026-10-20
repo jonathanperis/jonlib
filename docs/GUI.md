@@ -319,7 +319,7 @@ a dropdown box of fourteen items opened over the scene, an item chosen and
 a slider dragged beside it. `models_animation_blending` adds an empty bar,
 one whose value passed its maximum (capped and full), one filling from the
 right (`PROGRESS_SIDE` 1), bars with both side texts, a slider disabled
-while its dropdown box is open, and (raylib 6.2) a label centered in
+while its dropdown box is open, and a label centered in
 `TEXT_SIZE` twice the font's base size, the styles set back after it. The bar's own disabled state is not
 compared with raygui yet. `LAWS.bend` states the default text size, the propagation of a DEFAULT
 property, the enable/disable rules, how an icon prefix is read and which

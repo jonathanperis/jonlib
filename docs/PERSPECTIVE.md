@@ -137,9 +137,9 @@ models probes below.
 - `libm-survey` (diagnostic) and `perspective` (diagnostic, native only)
   record the host `tan` against correct rounding.
 
-## History: why no other tangent
+## Why no other tangent
 
-Before the LGPL decision (2026-10-09) every perspective path was `None`.
+Without the LGPL `tan` module every perspective path would be `None`.
 `tools/libm_survey.py --stride 1` compared the native `tan` with CORE-MATH's
 correctly rounded `cr_tan` on both argument sets (smallest differing input of
 every exponent recomputed with the exact oracle `tools/cr_libm_oracle.py`):

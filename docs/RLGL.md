@@ -4,7 +4,7 @@ The public rlgl immediate-mode API on the software renderer, and the
 `rshapes.c` drawing functions slice 1 left out (rounded rectangles, ring
 outlines, thick polygon outlines, Bezier and dashed lines, splines, the
 shapes texture and segment estimation). Both render exactly as pinned raylib
-6.0 renders them on its memory platform. Altered Bend adaptations of
+6.2 renders them on its memory platform. Altered Bend adaptations of
 `rlgl.h`'s OpenGL 1.1 path, `rshapes.c` (zlib,
 [LICENSES/raylib.txt](../LICENSES/raylib.txt)) and `src/external/rlsw.h` 1.5
 (Copyright (c) 2025-2026 Le Juez Victor, MIT,
@@ -34,15 +34,13 @@ and `rlsw.h`, and checked by the probe:
   blend and depth-test states. **Read when a primitive completes:** face
   culling, the scissor, the polygon mode, line width, point radius and the
   viewport. A primitive blends when blending was latched and its texture has
-  alpha or one of its vertices has alpha below 1 (raylib 6.2; 6.0 marked only
-  the first primitive after a translucent color was set). A triangle or quad
+  alpha or one of its vertices has alpha below 1. A triangle or quad
   whose vertex colors are all equal is flat colored, one whose colors differ
   interpolates them (raylib 6.2's `SW_STATE_COLOR_INTERP`,
   [FRAME.md](FRAME.md)); lines and points come out the same either way.
 - **Viewports past the screen.** `rlViewport` may reach outside the color
   buffer: triangle spans and axis-aligned quads are clamped to it, rows
-  outside skipped (raylib 6.2; 6.0 wrote past the buffer), and thin lines
-  clamp their ends as before.
+  outside skipped, and thin lines clamp their ends.
 - **Matrix modes.** `rlMatrixMode` selects rlsw's modelview (8 entries),
   projection (2) or texture (2) stack; other values change nothing. Push,
   pop, identity, `rlMultMatrixf`, translate/rotate/scale, `rlOrtho` and
@@ -105,7 +103,7 @@ Remaining shapes (`rshapes.c`):
 
 - **Segment estimation.** `DrawCircleSector(Lines)`, `DrawRing(Lines)`, the
   `*LinesEx` arcs and the rounded rectangles estimate segments as
-  `th = acosf(2*powf(1 - 0.5f/r, 2) - 1)`, then (raylib 6.2)
+  `th = acosf(2*powf(1 - 0.5f/r, 2) - 1)`, then
   `(int)ceilf(span*(2*PI/th)/360.0f)` for arcs below `ceil(span/90)` segments
   (minimum when non-positive) and `(int)ceilf((2*PI/th)/4.0f)` for corners
   below 1 segment (4 when non-positive). Compilers fold `powf(x, 2)` to `x*x`
@@ -120,7 +118,7 @@ Remaining shapes (`rshapes.c`):
   by the int size). Id 0 or an empty source resets to
   `(Texture2D){ 1, 1, 1, 1, 7 }` and `(0, 0, 1, 1)`, which samples rlsw's
   texture 1, the whole default font atlas.
-- **`DrawPolyLinesEx`** (raylib 6.2) evaluates the apothem
+- **`DrawPolyLinesEx`** evaluates the apothem
   `radius*cosf(DEG2RAD*180.0f/sides)` (`DEG2RAD*180.0f` is `PI` in binary32)
   and scales the thickness by `radius/apothem`: a thickness `>= 0` keeps the
   outer radius and moves the inner one to `fmaxf(0, radius - thick*ratio)`, a
@@ -128,7 +126,7 @@ Remaining shapes (`rshapes.c`):
   profile accepts the `cosf` of every such argument for 3..4096 sides; the
   probe compares the host `cosf` with Jonlib's on all 4094 of them, so a
   macOS run re-verifies the claim.
-- **Rounded rectangles** (raylib 6.2). `DrawRectangleRoundedLines` has its
+- **Rounded rectangles**. `DrawRectangleRoundedLines` has its
   own `RL_LINES`: the corner arcs of the corner radius around centers half a
   pixel inside, then the four sides; roundness `<= 0` draws
   `DrawRectangleLines` with the rectangle converted to C ints.
@@ -137,8 +135,8 @@ Remaining shapes (`rshapes.c`):
   (beyond the corner radius the inner rounded part is the radius and the rest
   is drawn first with `DrawRectangleLinesEx` inside it), outside it for a
   negative one; roundness `<= 0` draws `DrawRectangleLinesEx(rec, thick)`.
-- **`DrawCircleSectorLinesEx` and `DrawRingLinesEx`** (raylib 6.2,
-  algorithms adapted from `rshapes.c`) draw a band of textured quads per
+- **`DrawCircleSectorLinesEx` and `DrawRingLinesEx`** (algorithms
+  adapted from `rshapes.c`) draw a band of textured quads per
   outline, the thickness scaled by `radius/apothem` with the apothem
   `radius*cosf(DEG2RAD*(span/2)/segments)`, and cap quads whose corners
   `rshapes.c` builds with `asinf`, `atan2f`, rotations and `sinf`/`cosf` of

@@ -352,10 +352,10 @@ returns the original owner.
 | `Surface.draw_circle(surface, cx, cy, radius, color)` / `_v` / `draw_circle_lines` / `_lines_v` | Midpoint coverage and outlines, radius U32; vector centers truncate. |
 | `Surface.draw_line(surface, x0, y0, x1, y1, color)` / `_v` / `_ex` | Fixed-point stepping including the final endpoint, short axis rounded; `_v` adds a half then truncates; `_ex` draws dominant-axis strips, thickness 0..32767. |
 | `Surface.draw_triangle(surface, v1, v2, v3, color)` / `draw_triangle_lines` / `draw_triangle_fan` / `draw_triangle_strip` | Truncated bounds and edge steps, both windings, inclusive edges; fans/strips with fewer than three points draw nothing. |
-| `Surface.draw_triangle_gradient(surface, v1, v2, v3, c1, c2, c3)` | `ImageDrawTriangleGradient` (6.0's `ImageDrawTriangleEx`): byte-quantized barycentric colors, each stored as `ImageDrawPixel` encodes it. |
-| `Surface.draw_rectangle_pro(surface, rectangle, origin, rotation, color)` / `draw_rectangle_pro_for(libm, ...)` | `ImageDrawRectanglePro` (raylib 6.2): every pixel of the turned rectangle's integer bounding box whose center, turned back about `rectangle + origin`, lies in `[-origin, size - origin)`. Bounded finite fields and a rotation whose `DEG2RAD` multiple the `M.Libm` profile verifies, otherwise `InvalidRequest`; nothing for a width or height `<= 0`. |
-| `Surface.draw_rectangle_gradient_ex(surface, rectangle, c1, c2, c3, c4)` | `ImageDrawRectangleGradientEx` (raylib 6.2): pixels `floorf(x)..ceilf(x + width)` (clipped), bilinear F32 weights of the clamped `tx`, `ty` on top-left, bottom-left, bottom-right and top-right colors, channels truncated. Bounded finite fields (`InvalidRequest`). |
-| `Surface.draw_circle_gradient(surface, center, radius, inner, outer)` | `ImageDrawCircleGradient` (raylib 6.2): pixels whose center lies within the radius, `inner + (outer - inner)*sqrtf(d²)/radius` per channel, truncated. Bounded finite center and radius (`InvalidRequest`); nothing for a radius `<= 0`. |
+| `Surface.draw_triangle_gradient(surface, v1, v2, v3, c1, c2, c3)` | `ImageDrawTriangleGradient`: byte-quantized barycentric colors, each stored as `ImageDrawPixel` encodes it. |
+| `Surface.draw_rectangle_pro(surface, rectangle, origin, rotation, color)` / `draw_rectangle_pro_for(libm, ...)` | `ImageDrawRectanglePro`: every pixel of the turned rectangle's integer bounding box whose center, turned back about `rectangle + origin`, lies in `[-origin, size - origin)`. Bounded finite fields and a rotation whose `DEG2RAD` multiple the `M.Libm` profile verifies, otherwise `InvalidRequest`; nothing for a width or height `<= 0`. |
+| `Surface.draw_rectangle_gradient_ex(surface, rectangle, c1, c2, c3, c4)` | `ImageDrawRectangleGradientEx`: pixels `floorf(x)..ceilf(x + width)` (clipped), bilinear F32 weights of the clamped `tx`, `ty` on top-left, bottom-left, bottom-right and top-right colors, channels truncated. Bounded finite fields (`InvalidRequest`). |
+| `Surface.draw_circle_gradient(surface, center, radius, inner, outer)` | `ImageDrawCircleGradient`: pixels whose center lies within the radius, `inner + (outer - inner)*sqrtf(d²)/radius` per channel, truncated. Bounded finite center and radius (`InvalidRequest`); nothing for a radius `<= 0`. |
 
 Every drawing call consumes the owner and returns the updated one (the 6.2
 kernels above inside a `Result`, whose failure hands it back).
@@ -366,10 +366,10 @@ kernels above inside a `Result`, whose failure hands it back).
 |---|---|
 | `Surface.draw_image(destination, source, x, y, tint)` | `ImageDrawImage` (integer position): full-source unscaled composition with integer `ColorAlphaBlend`, any formats; returns `Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>` with destination first and the unchanged source. A wide float source needs samples in 0..1 (`OutOfDomain`). |
 | `Surface.draw_image_rec(destination, source, rectangle, position, tint)` | `ImageDrawImageRec`: `draw_image_rect` into `{position, rectangle's size}`. |
-| `Surface.draw_image_pro(destination, source, source_rectangle, destination_rectangle, origin, rotation, tint)` | `ImageDrawImagePro` (6.0's `ImageDraw`): origin and rotation are not implemented upstream and are ignored; the rest is `draw_image_rect`. |
+| `Surface.draw_image_pro(destination, source, source_rectangle, destination_rectangle, origin, rotation, tint)` | `ImageDrawImagePro`: origin and rotation are not implemented upstream and are ignored; the rest is `draw_image_rect`. |
 | `Surface.draw_image_region(destination, source, rectangle, x, y, tint)` | Valid unscaled source subrectangles with integer placement (a strict `ImageDrawImageRec` profile). |
 | `Surface.draw_image_rect(destination, source, source_rectangle, destination_rectangle, tint)` | Bounded finite rectangles, including fractional fields; reference clipping and default filtered scaling in the source format. |
-| `Surface.draw_image_ex(destination, source, position, rotation, scale, tint)` / `draw_image_ex_for(libm, ...)` | `ImageDrawImageEx` (raylib 6.2): the source scaled and turned about its top-left corner at the position; each destination pixel of the turned box samples the nearest source pixel, skips alpha zero and stores `ColorAlphaBlend(GetImageColor(dst), GetImageColor(src), tint)` with `ImageDrawPixel`. Word formats (1..8, 11) for both images (`UnsupportedFormat` otherwise); bounded finite position, nonzero bounded scale and a verified rotation (`InvalidRequest`). |
+| `Surface.draw_image_ex(destination, source, position, rotation, scale, tint)` / `draw_image_ex_for(libm, ...)` | `ImageDrawImageEx`: the source scaled and turned about its top-left corner at the position; each destination pixel of the turned box samples the nearest source pixel, skips alpha zero and stores `ColorAlphaBlend(GetImageColor(dst), GetImageColor(src), tint)` with `ImageDrawPixel`. Word formats (1..8, 11) for both images (`UnsupportedFormat` otherwise); bounded finite position, nonzero bounded scale and a verified rotation (`InvalidRequest`). |
 | `Surface.alpha_mask(destination, mask)` | Same-size mask converted to GRAYSCALE becomes the alpha of a GRAY_ALPHA (from GRAYSCALE) or R8G8B8A8 destination; mismatched sizes are `InvalidSize`, conversion failures `OutOfDomain`. |
 | `Surface.alpha_clear(surface, color, threshold)` | Finite threshold 0..1: an inclusive alpha cutoff in GRAY_ALPHA, R5G5B5A1, R4G4B4A4, R8G8B8A8, R32G32B32A32 and R16G16B16A16 with raylib's per-format replacement words; other formats are unchanged. raylib packs R5G5B5A1/R4G4B4A4 colors from `round(channel*31)`/`round(channel*15)` byte casts, undefined above 255, so those formats require RGB channels up to 8 (and up to 17 with alpha for R4G4B4A4). Other requests are `InvalidRequest`. |
 | `Surface.mipmaps(surface) -> Image.Mipmaps` / `Image.Mipmaps.entries/unload` | Base-to-1x1 chain, each level `resize` of the previous one in the image's format. See [MIPMAPS.md](MIPMAPS.md). |
@@ -426,8 +426,7 @@ rectangle/circle definitions.
 ### Lines and triangles
 
 `draw_line` writes both endpoints and starts the short-axis accumulator at one
-half (rounding), as raylib 6.2 does; 6.0 omitted the final endpoint and
-truncated. Negative short-axis increments use
+half (rounding), as raylib does. Negative short-axis increments use
 arithmetic right-shift behavior, rather than truncating the interpolated position.
 The vector-line API's add-half/truncate rule also differs from ordinary rounding
 for negative values.

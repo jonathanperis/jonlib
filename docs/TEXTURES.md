@@ -29,18 +29,16 @@ Traced in the pinned sources and checked by the probe:
   `GL_CLAMP` (`Rlgl.texture_parameters`) clamps a texture: nearest sampling
   saturates the coordinate, so u = 1 reads texel `width` (the next row's
   first, past the texture on the last row: undefined), and bilinear sampling
-  clamps both indices to the texture (raylib 6.2; 6.0 clamped from above
-  only).
+  clamps both indices to the texture.
 - **Filters.** `TEXTURE_FILTER_POINT` sets NEAREST for minification and
   magnification, `BILINEAR` and `TRILINEAR` (a texture always has one level
   here) set LINEAR; the anisotropic modes change nothing under OpenGL 1.1.
   `rlTextureParameters` sets either filter alone: rlsw samples a whole
   triangle (or axis-aligned quad) with the minification filter where its
   texture derivatives give L2 = max(dUdx² + dUdy², dVdx² + dVdy²) above 1,
-  with the magnification filter otherwise. raylib 6.2 takes a triangle's
-  derivatives from its plane once (6.0 took each span's x derivatives and the
-  long edge's per-row step, so a triangle could switch filters between
-  rows); a quad's are its corner gradients, as before.
+  with the magnification filter otherwise. A triangle's derivatives come
+  from its plane once, so one filter applies to the whole triangle; a quad's
+  are its corner gradients.
   Minification and magnification are always equal, so rlsw's derivative test
   never matters.
 - **Mipmaps.** `rlGenTextureMipmaps` only warns under OpenGL 1.1:
@@ -124,7 +122,7 @@ Traced in the pinned sources and checked by the probe:
 | `DrawTexture` / `V` / `Ex` / `Rec` / `Pro` | `Draw.texture`, `Draw.texture_v`, `Draw.texture_ex_for`/`texture_ex`, `Draw.texture_rec`, `Draw.texture_pro_for`/`texture_pro` -> `Frame & Texture` |
 | `DrawTextureNPatch` | `Draw.texture_npatch_for(libm, frame, texture, NPatchInfo{source, left, top, right, bottom, layout}, dest, origin, rotation, tint)`, `Draw.texture_npatch` |
 | `LoadRenderTexture` / `UnloadRenderTexture` / `IsRenderTextureValid` | `RenderTexture.load(frame, width, height) -> Frame & Maybe<RenderTexture>`, `RenderTexture.unload(frame, target)`, `RenderTexture.is_valid` |
-| `LoadRenderTextureEx` (raylib 6.2) | `RenderTexture.load_ex(frame, width, height, format)`: format 7 (R8G8B8A8, what `LoadRenderTexture` passes) is `RenderTexture.load`; a compressed format (14 and above) is `None` with the frame unchanged, as raylib rejects it before taking an id; other color formats are refused (frame undefined) |
+| `LoadRenderTextureEx` | `RenderTexture.load_ex(frame, width, height, format)`: format 7 (R8G8B8A8, what `LoadRenderTexture` passes) is `RenderTexture.load`; a compressed format (14 and above) is `None` with the frame unchanged, as raylib rejects it before taking an id; other color formats are refused (frame undefined) |
 | `BeginTextureMode` / `EndTextureMode` | `Frame.begin_texture_mode(frame, target) -> Frame`, `Frame.end_texture_mode(frame) -> Frame & Maybe<RenderTexture>` |
 | `GetWorldToScreen2D` / `GetScreenToWorld2D` / `GetCameraMatrix2D` | `Camera.*_2d_for` ([CAMERA.md](CAMERA.md)) |
 

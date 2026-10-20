@@ -18,15 +18,15 @@ pointers to mutable native static buffers.
 ## Padding
 
 Both pad the message to whole 64-byte blocks with `0x80`, zeros and the 8-byte
-bit length (`Sha.padded_words`). raylib 6.0 sized the SHA-256 buffer with
-`dataSize + sizeof(int)` and so differed from standard SHA-256 at input lengths
-56..59 modulo 64; raylib 6.2 uses `sizeof(bitLen)` (8), and so does Jonlib.
+bit length (`Sha.padded_words`), as raylib sizes the buffer with
+`sizeof(bitLen)` (8); the results are standard at every length, including
+56..59 modulo 64.
 
 ## How it is verified
 
 `tools/sha_probe.py` (gate `sha`) compares every actual native word on CPU-1,
 CPU-2 and JavaScript (plus forced GPU with `--gpu`), including every
-length 0..127 (the old padding edges included) and invalid-input controls.
+length 0..127 (every padding edge included) and invalid-input controls.
 Independent standard SHA-1 and SHA-256 digests confirm the native oracle; the
 candidate comparison always uses the actual linked native output.
 

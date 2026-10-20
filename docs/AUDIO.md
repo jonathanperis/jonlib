@@ -431,8 +431,8 @@ Three things dr_mp3 does that follow from its bookkeeping and are kept:
   dr_mp3's chunks: `drmp3_read_pcm_frames_f32` (raylib's music and waves)
   makes raw reads of 2304 / channels frames (`Mp3S.read.f32.raw`), and
   `drmp3__full_read_and_close_f32` (`LoadWave`) asks for 2304 / channels
-  frames at a time until a read gives none (`Mp3S.read.f32.whole`): raylib
-  6.2's dr_mp3 holds 1152*2 samples in both buffers (8192 and 4096 before).
+  frames at a time until a read gives none (`Mp3S.read.f32.whole`): raylib's
+  dr_mp3 holds 1152*2 samples in both buffers.
 - A frame decoded without samples writes to `pcmFrames` too: a Layer I or
   II frame read past its end has written the granules it made, which a
   mono frame after it in a stereo stream reads.
@@ -1296,7 +1296,7 @@ path)` is `LoadWave`, and `Sound.load_with(profile, libm, device, path)`
   sound.
 - **A stream that gives fewer samples than its length says** ends in
   zeros. raylib does not look at how many samples the read gave: its
-  buffer is `RL_CALLOC`'d (raylib 6.2) for `frameCount*channels` shorts,
+  buffer is `RL_CALLOC`'d for `frameCount*channels` shorts,
   and the shorts the read did not reach stay 0. That count is an unsigned
   product taken as an int: one past an int reads nothing at all (a wave of
   zeros, past this port's limit of 2^24 zeros: `UnsupportedWaveFormat`),
@@ -2064,13 +2064,8 @@ miniaudio disables denormals around it).
 
 **`audio_stream_callback`.** The example keeps the last second its callback
 wrote in `static float buffer[SAMPLE_RATE]` and draws the last 10 ms as
-lines. raylib 6.0 drew 800, and the end of the last was `buffer[SAMPLE_RATE -
-SAMPLE_RATE/100 + 800*SAMPLE_RATE/100/screenWidth]`, `buffer[44100]`: one
-float past the array, in every frame (AddressSanitizer: a
-global-buffer-overflow read of 4 bytes, 0 bytes after `buffer`, in the first
-frame), so the port refused every frame and the reference was not run.
-raylib 6.2 draws `screenWidth - 1` lines, all inside the buffer, and its
-sine is `sinf` of a float (6.0: the double `sin`).
+lines: `screenWidth - 1` of them, all inside the buffer, and its sine is
+`sinf` of a float.
 `examples/audio_stream_callback.bend` runs the clock, the stream's callback
 as the `answer` of `AudioClock.advance_answering` (the four waves, the
 frequency taken at a wave's next period, the wavelength of each call fixed

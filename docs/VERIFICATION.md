@@ -103,9 +103,8 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 reference library also enables the features `config.h` disables by default:
 the TGA, JPG, PEP, PSD, HDR, PIC, PNM, KTX, ASTC, PKM, PVR, BDF and FLAC
 formats, `SUPPORT_BUSY_WAIT_LOOP` and `SUPPORT_CUSTOM_FRAME_CONTROL`
-(`SUPPORT_GPU_SKINNING` is on by default). That is the configuration raylib
-6.0's parser gave (it read every define as `ON`), plus the PEP loader, which
-Jonlib does not compare. A changed option set drops the stale
+(`SUPPORT_GPU_SKINNING` is on by default). The PEP loader it enables is not
+compared by Jonlib. A changed option set drops the stale
 `CMakeCache.txt`, whose cached options would otherwise outlive it. Every native expectation comes from that build, so
 the comparisons are consistent, and codec contracts describe raylib with those
 formats enabled (not which formats a default build accepts). Probes whose

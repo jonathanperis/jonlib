@@ -498,7 +498,7 @@ reader `src/json.bend` and the decimal conversion `src/strtod.bend`):
   the model. A texture without a source and an image with neither a uri nor
   a buffer view give no texture, as in raylib. `meshMaterial` is the
   primitive's material index plus one, or 0.
-- **Skins** (raylib 6.2): a skinned mesh's vertices are placed as any
+- **Skins**: a skinned mesh's vertices are placed as any
   other's, and its bone data comes from a second walk over the nodes, for
   every triangle primitive, skins or not. `JOINTS_n` (a `VEC4` of 8 or 16
   bits; 16-bit indices kept as `(unsigned char)`) becomes `boneIndices`,
@@ -551,7 +551,7 @@ accessor and node code):
   as `strncpy` keeps) and its parent bone: raylib 6.2 walks up from the
   joint's parent node past every node that is not a joint, to the first
   joint (its place among the joints) or the root (-1).
-- **Bind pose** (raylib 6.2): with inverse bind matrices for every joint
+- **Bind pose**: with inverse bind matrices for every joint
   (an accessor of at least `joints_count` elements),
   `MatrixDecompose(MatrixInvert(inverseBindMatrices[i]))`; without them, or
   with fewer, `MatrixDecompose` of each joint's world matrix.
@@ -562,7 +562,7 @@ accessor and node code):
   `keyframeCount = (int)(duration*60) + 1`, frame `j` at `j/60` seconds.
 - **Poses**: each bone starts from its node's translation, rotation and
   scale and takes its channels' values at the frame's time: the key `i`
-  with `times[i] <= time < times[i + 1]`; without one (raylib 6.2) the last
+  with `times[i] <= time < times[i + 1]`; without one the last
   pair (`count - 2`, so `t` clamps to 1 and STEP reads the key before the
   last), or the first pair when the time is before the first key (`t`
   clamps to 0); a sampler of one key is constant. `t = (time -
@@ -574,8 +574,8 @@ accessor and node code):
   joint, built the same way from its own translation, rotation and scale)
   and decomposed again (`MatrixDecompose`); every bone is then composed with
   its parent's (`BuildPoseFromParentJoints`: a bone listed before its
-  parent is left as it is). The 6.0 composition of the root bone with the
-  world transform of the first joint's parent node is gone.
+  parent is left as it is). The root bone is not composed with the world
+  transform of the first joint's parent node.
 - **libm**: `QuaternionSlerp` calls `acosf` and `sinf` unless the two
   rotations are within about 36 degrees of each other; `Model.load_animations_for` takes
   the profile and refuses where it does not answer (the Apple profile and
@@ -703,7 +703,7 @@ name, the size of its contents, the size of its children, its contents.
 - The reading also ends, keeping what was read, where fewer bytes are left
   than a chunk header (12), a SIZE (12), a voxel count (4) or a palette
   (1020) needs; a file that ends with its palette leaves four bytes, so it
-  ends there (raylib 6.2's checks; 6.0 read past the file).
+  ends there.
 
 The mesh has a quad for every face of a voxel whose neighbor is empty or
 outside the array, in the loader's order: `x`, then `z`, then `y`, and for a
@@ -742,7 +742,7 @@ and counts and offsets of its arrays.
   vertex) and texcoords (2) from the vertex arrays of those kinds, from the
   mesh's first vertex; zeros where the file has no such array (the loader
   allocates them cleared). Colors (4 bytes a vertex) only when the file has
-  a color array. Bone data for every mesh (raylib 6.2 allocates it
+  a color array. Bone data for every mesh (raylib allocates it
   cleared): the blend indexes as `boneIndices` (signed chars copied as
   unsigned chars) and the blend weights over 255.0f as `boneWeights`, four
   a vertex, zeros without those arrays; tangents and custom arrays are not
@@ -753,7 +753,7 @@ and counts and offsets of its arrays.
   vertex, as unsigned shorts (a corner below the first vertex wraps).
 - **Materials.** One a mesh, `meshMaterial[i] = i`: `LoadMaterialDefault`
   with its albedo texture replaced by `LoadTexture(directory/material)`,
-  the material's name in the file; an empty name (raylib 6.2:
+  the material's name in the file; an empty name (raylib checks
   `TextLength(material) > 0`) loads no texture and keeps the default one. A
   name that opens no file gives a texture of zeros (id 0), as `LoadTexture`
   returns; the loaded textures come back with the model. A file without
@@ -935,14 +935,11 @@ rlsw's per-primitive alpha flag ([FRAME.md](FRAME.md#the-rendering-path)).
   `DEG2RAD*(180/rings)` and `DEG2RAD*(360/slices)`; `DrawCylinder(Wires)` `(DEG2RAD*i)*(360/sides)`;
   the `Ex` cylinders and capsules `((2*PI)/slices)*i` and
   `(PI*0.5/rings)*i`. Every argument must be verified for the profile.
-- **raylib 6.2.** `DrawSphereEx` draws `rings` bands with the ring angle
-  `180/rings` (6.0: `rings + 1` bands of `180/(rings + 1)`), so nothing is
-  drawn below one ring. `DrawSphereWires` was rewritten on the same rotated
-  vertices: per face the longitude, latitude and diagonal lines `0-1`, `0-2`
-  and `0-3` (6.0 evaluated `sinf`/`cosf` per vertex at angles up to 450
-  degrees, which the Apple profile could not draw). `DrawCapsule(Wires)` take
-  `(start, end, radius, rings, slices)` (6.0: slices, then rings) and raise
-  rings below 1 to 1. The cylinders and billboards only renamed parameters.
+- **Rings and slices.** `DrawSphereEx` draws `rings` bands with the ring
+  angle `180/rings`, so nothing is drawn below one ring. `DrawSphereWires`
+  draws, on the same rotated vertices, per face the longitude, latitude and
+  diagonal lines `0-1`, `0-2` and `0-3`. `DrawCapsule(Wires)` take
+  `(start, end, radius, rings, slices)` and raise rings below 1 to 1.
 - **Loops.** rings, slices and sides above 4096 and grids above 4097 lines are
   refused, as are NaN or out-of-range C ints.
 

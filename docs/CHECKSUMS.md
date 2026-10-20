@@ -1,8 +1,8 @@
 # Native checksum values
 
 Jonlib adapts raylib's `ComputeCRC32` and `ComputeMD5` as `Checksum.crc32` and
-`Checksum.md5`. Native SHA-1/SHA-256 values and the reference's SHA-256 padding
-quirk are documented separately in [SHA.md](SHA.md).
+`Checksum.md5`. SHA-1 and SHA-256 are documented separately in
+[SHA.md](SHA.md).
 
 ## API
 

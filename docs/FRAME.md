@@ -78,7 +78,7 @@ the frame. The title and the window/platform/timing state are the `Core`'s
 raylib 6.2 changed these shapes, and Jonlib follows it:
 
 - `DrawCircleSector(Lines)` and `DrawRing(Lines)` draw nothing for a radius
-  (the outer one for rings) `<= 0` (6.0 drew 0.1), limit an ordered arc of
+  (the outer one for rings) `<= 0`, limit an ordered arc of
   360 degrees or more to `start + 360` before counting segments, and estimate
   missing segments as `(int)ceilf(span*(2*PI/th)/360)`. A whole turn drops
   the cap lines of `DrawCircleSectorLines` and `DrawRingLines`.
@@ -129,7 +129,7 @@ return `None` from then on (the frame is still returned and owned):
 - conservatively, rasterizer integers beyond `2^24`, which only arise from
   clipping round-off with huge inputs. (Triangle spans and axis-aligned quads
   reaching outside the color buffer, as under a viewport larger than the
-  screen, are clamped to it as raylib 6.2's rlsw does; 6.0 wrote past it.)
+  screen, are clamped to it as rlsw does.)
 
 ## The rendering path
 

@@ -96,7 +96,7 @@ reset.
 | `SetTextLineSpacing` | the `line_spacing` argument of the `_spaced` functions |
 | `ImageText` / `ImageTextEx` | `Font.image_text(text, size, color) -> Maybe<Surface>`, `Font.image_text_ex(font, ...) -> Font & Maybe<Surface>`, `_spaced` |
 | `ImageDrawText` / `ImageDrawTextEx` | `Font.image_draw_text(destination, text, x, y, size, color)`, `Font.image_draw_text_ex(destination, font, text, position, size, spacing, tint)`, `_spaced` |
-| `ImageDrawTextPro` (raylib 6.2) | `Font.image_draw_text_pro(destination, font, text, position, origin, rotation, size, spacing, tint) -> Surface & Font`: raylib's function is empty ("TODO: NEW: Implement ImageDrawTextPro()"), so both come back unchanged |
+| `ImageDrawTextPro` | `Font.image_draw_text_pro(destination, font, text, position, origin, rotation, size, spacing, tint) -> Surface & Font`: raylib's function is empty ("TODO: NEW: Implement ImageDrawTextPro()"), so both come back unchanged |
 
 Texts are raylib byte strings (`String`s of characters 0..255 read up to
 the first NUL) decoded with `GetCodepointNext` ([TEXT.md](TEXT.md)).
@@ -137,8 +137,8 @@ the first NUL) decoded with `GetCodepointNext` ([TEXT.md](TEXT.md)).
 ### Image text
 
 - `ImageTextEx`: `MeasureTextEx` at `baseSize` sizes a BLANK R8G8B8A8 image;
-  each glyph image (from the atlas) is drawn with `ImageDrawImagePro` (6.0:
-  `ImageDraw`; origin and rotation 0) with the tint at integer
+  each glyph image (from the atlas) is drawn with `ImageDrawImagePro`
+  (origin and rotation 0) with the tint at integer
   offsets, which advance by `(int)(recs.width + spacing)` (or `advanceX +
   (int)spacing`) and move down by `baseSize + baseSize/2` per `'\n'` (not by
   `textLineSpacing`, which only sizes the image, so later lines can fall
@@ -222,12 +222,11 @@ formats map nothing) gives a glyph:
   such as DotGothic16 and the generated box fonts) are reproduced either
   way. Only the profile's entry decides it: every program that loads font
   data compiles the solver (about 0.3 GB more to compile).
-- raylib 6.2's space codepoints always get an empty `advanceX x fontSize`
+- raylib's space codepoints always get an empty `advanceX x fontSize`
   image (data when advanceX > 0; a negative advance keeps its width and
   advanceX 0), whatever their outline: U+0020, U+00A0 (no-break space),
   U+1680 (Ogham space mark), U+2000..U+200A, U+202F (narrow no-break space),
-  U+205F (medium mathematical space) and U+3000 (6.0 had only U+0020 and
-  U+3000). FONT_SDF still computes the SDF of every one but U+0020 first
+  U+205F (medium mathematical space) and U+3000. FONT_SDF still computes the SDF of every one but U+0020 first
   (and refuses it where it would), and FONT_BITMAP thresholds
   `cpWidth*cpHeight` bytes of the space image (refused when that reads past
   it).
@@ -275,9 +274,7 @@ size 32, 95 codepoints; `.fnt`: `LoadBMFont`; otherwise `LoadImage` then
 `LoadFontFromImage(image, MAGENTA, 32)`, the default font when the image
 does not load) and sets the POINT filter.
 
-**BDF.** raylib 6.2's `LoadFontDataBDF` (6.0 reused the glyph array
-pointer for the glyph being read, so a font with characters gave the default
-font) returns `count` glyphs, one per requested codepoint, zeroed until a
+**BDF.** raylib's `LoadFontDataBDF` returns `count` glyphs, one per requested codepoint, zeroed until a
 character fills it. Lines come from `GetLine` (255 bytes or a newline, no
 terminator check, the byte after a 255-byte line skipped), so a file without
 `ENDFONT` reads past its data (refused); `COMMENT` lines are skipped, and the

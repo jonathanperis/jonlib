@@ -1,7 +1,7 @@
 # Cropping and resampling
 
 Jonlib adapts raylib 6.2's extraction, crop, nearest and default filtered
-resize, and the scaled `ImageDrawImagePro` path (6.0: `ImageDraw`), for `Surface` owners.
+resize, and the scaled `ImageDrawImagePro` path, for `Surface` owners.
 
 | API | raylib profile |
 |---|---|
