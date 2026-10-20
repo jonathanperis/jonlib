@@ -105,9 +105,8 @@ refuse every frame, because the native example is undefined behavior in C.
 
 Not yet there: music and waves from FLAC files (raylib's default build
 leaves FLAC out; WAV, QOA, MP3, XM, MOD and Ogg Vorbis music plays); a host window, input devices and audio output
-(everything runs headless); images beyond 4096 pixels on a side. macOS is off the merge path for now and owes a full validation. The
-[master plan](docs/MASTER-PLAN.md) and [HANDOFF.md](docs/HANDOFF.md) order
-that work.
+(everything runs headless); images beyond 4096 pixels on a side. macOS is off the merge path for now and owes a full validation
+([MACOS-VALIDATION.md](docs/MACOS-VALIDATION.md)).
 
 ## Requirements
 
