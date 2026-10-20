@@ -135,7 +135,7 @@ device/resource and wider-domain evidence remain Phase 1 work.
 
 ## Phase 2: status
 
-All five slices of [PHASE2-DESIGN.md](PHASE2-DESIGN.md) are delivered. Against
+All five slices of the Phase 2 design are delivered. Against
 the exit gate ("deterministic input replay plus real desktop integration;
 representative raylib 2D examples work"):
 
@@ -210,7 +210,7 @@ recommended option in each case, revisable on his review):
   Apple's libm is unpublished, so Apple profiles stay refused where they
   cannot be reproduced.
 - **Phase 2 entry:** a design note precedes any Phase 2 code:
-  [PHASE2-DESIGN.md](PHASE2-DESIGN.md) (raylib's memory platform with the
+  (raylib's memory platform with the
   scalar `rlsw` software renderer as the drawing reference, automation-event
   replay for input, time as an explicit input, an explicit `Core`/`Frame`
   state, and the slice order). Slice 1's first part, the headless `Frame`

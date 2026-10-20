@@ -1,6 +1,6 @@
 # rlgl immediate mode and the remaining shapes
 
-Phase 2: the public rlgl immediate-mode API on the software renderer, and the
+The public rlgl immediate-mode API on the software renderer, and the
 `rshapes.c` drawing functions slice 1 left out (rounded rectangles, ring
 outlines, thick polygon outlines, Bezier and dashed lines, splines, the
 shapes texture and segment estimation). Both render exactly as pinned raylib

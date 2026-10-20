@@ -1,6 +1,6 @@
 # Headless frame and shapes
 
-Phase 2, delivery slice 1 ([PHASE2-DESIGN.md](PHASE2-DESIGN.md)): a `Frame`
+A `Frame`
 owns a raylib screen's color buffer, and the `Draw.*` functions render
 `rshapes.c` shapes into it exactly as pinned raylib 6.2 renders them on its
 memory platform. Altered Bend adaptations of `rcore.c`, `rlgl.h` and

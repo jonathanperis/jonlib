@@ -1,6 +1,6 @@
 # Models: meshes, materials, BeginMode3D, 3D shapes and model files
 
-Phase 5: raylib's CPU mesh data, the mesh generators (the
+raylib's CPU mesh data, the mesh generators (the
 `par_shapes` sphere, hemisphere and torus included, under the glibc
 profiles), mesh utilities and export, mesh/model
 collision queries, `BeginMode3D`/`EndMode3D` for orthographic cameras,

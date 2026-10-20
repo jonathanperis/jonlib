@@ -1,7 +1,6 @@
 # 2D camera, render state, render textures and textures
 
-Phase 2, delivery slices 2 and 3 ([PHASE2-DESIGN.md](PHASE2-DESIGN.md)), on
-top of the headless frame of [FRAME.md](FRAME.md): `BeginMode2D`, rlgl's
+On top of the headless frame of [FRAME.md](FRAME.md): `BeginMode2D`, rlgl's
 matrix stack, scissor and blend modes, render textures, and textures drawn as
 pinned raylib 6.2 draws them on its memory platform. Same reference and
 profile as slice 1: `rlsw.h` scalar and uncontracted (the probe's raylib build

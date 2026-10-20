@@ -1,6 +1,6 @@
 # Input, automation events, gestures and timing
 
-Phase 2, delivery slice 4 ([PHASE2-DESIGN.md](PHASE2-DESIGN.md)): a `Core`
+A `Core`
 value holds the state raylib keeps in its `CORE` globals between frames
 (`CORE.Input`, `CORE.Time`, the window close request), plus rgestures.h's
 `GESTURES`, `GetFPS`'s averaging state, the screenshot counter and the

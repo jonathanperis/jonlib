@@ -1,7 +1,6 @@
 # Desktop driver and examples
 
-Phase 2, delivery slice 5 ([PHASE2-DESIGN.md](PHASE2-DESIGN.md#3-interactive-driver)):
-a `Core` ([INPUT.md](INPUT.md)) and a `Frame` ([FRAME.md](FRAME.md)) run in a
+A `Core` ([INPUT.md](INPUT.md)) and a `Frame` ([FRAME.md](FRAME.md)) run in a
 real window through Base's `Window` effects, and representative raylib
 examples are ported as Bend programs that run both interactively and headless
 against raylib. Altered Bend adaptations of pinned raylib 6.2

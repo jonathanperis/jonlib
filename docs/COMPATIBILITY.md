@@ -22,7 +22,8 @@ was first adapted from raylib 6.0 (`dbc56a87`). Where 6.2 renamed or removed
 an API the ledger follows 6.2: `GetSplinePointBezierQuadratic` (was
 `GetSplinePointBezierQuad`), `ImageDrawTriangleGradient` (was
 `ImageDrawTriangleEx`) and `ImageDrawImagePro` (was `ImageDraw`); the
-`GetMouseRay` alias and the `RL_BOOL_TYPE` switches are gone. The reference
+`GetMouseRay` alias is gone, and rlgl.h's and rgestures.h's `RL_BOOL_TYPE`
+are catalogued as macros rather than switches. The reference
 library is built with `INCLUDE_EVERYTHING=ON` ([VERIFICATION.md](VERIFICATION.md)).
 Moving to a later raylib release means re-pinning `toolchain.json`,
 re-syncing the API catalog (`tools/api_plan.py sync`) and running every gate.
