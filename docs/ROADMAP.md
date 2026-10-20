@@ -43,26 +43,24 @@ passing gate does and does not establish is in
 1. **The macOS validation** ([MACOS-VALIDATION.md](MACOS-VALIDATION.md)):
    turn macOS back on in CI and run every gate on a Mac against raylib 6.2.
 2. **Wider domains and gaps** recorded per API in
-   [`api/progress.json`](../api/progress.json): 2284 open gaps on 1309
+   [`api/progress.json`](../api/progress.json): 2733 open gap lines on 1303
    entries. C-to-Bend mappings with no observable difference (enums as U32
    constants, macros as functions, pointer ABI, explicit state) are recorded
    apart as [language adaptations](API-TRACKING.md#language-adaptations)
    and are not gaps. By theme (keyword-grouped, approximate):
 
-   | Theme | Gaps | Example |
+   | Theme | Gaps | Closed by |
    |---|---:|---|
-   | `Targets:` lanes not verified | 829 | the Metal lane; macOS for OS-effect functions |
-   | Libm and contraction profiles | 351 | AppleLibm `sinf`/`cosf` outside whole degrees; fused (FMA) builds |
-   | Untagged "full target/performance coverage" | 324 | `Full target/performance coverage` |
-   | `Undefined native behavior:` (documented contract) | 116 | NaN or out-of-range C int conversions mark the frame undefined |
-   | `Integration:` facilities missing from Base | 107 | window state, monitors, clipboard, cursor, gamepad, touch |
-   | `Performance:` | 96 | renderer about 23x slower than native rlsw; not measured |
-   | Refusals of raylib's out-of-bounds or freed-memory reads | 86 | an unready audio device leaves the state as it is |
-   | Renderer state not modeled | 79 | shaders, GPU buffers, bones, scissor slices |
-   | Audio device model | 70 | no device thread or host device |
-   | Exceptional/subnormal/NaN domains | 64 | NaN sign and payload are not reproduced |
-   | Formats and size limits | 96 | FLAC, glTF/M3D subsets, mipmaps, images beyond 4096 |
-   | Files, runtime wiring, trace log, other | 66 | non-ASCII byte paths; gestures from the driver |
+   | `Targets:` lanes not verified | 1128 | the macOS validation (macOS host, Metal lane) |
+   | `Performance:` | 396 | measurements against raylib and budgets |
+   | Libm and contraction profiles | 358 | more reproduced host libm and FMA profiles |
+   | `Integration:` | 186 | ported examples and Bend Base facilities |
+   | Files, runtime wiring, trace log, other | 186 | per-entry work |
+   | `Undefined native behavior:` | 179 | nothing: a documented contract, raylib's C is undefined there |
+   | Exceptional/subnormal/NaN domains | 105 | wider numeric domains |
+   | Formats and size limits | 103 | FLAC, glTF/M3D subsets, images beyond 4096 |
+   | Audio device model | 57 | a host audio device in Bend Base |
+   | Renderer state not modeled | 35 | per-entry work |
 
    Libm profiles that cannot be reproduced from published sources (Apple's
    `tan`, `asinf`, `acosf`) stay refusals.
