@@ -3,12 +3,12 @@
 On top of the headless frame of [FRAME.md](FRAME.md): `BeginMode2D`, rlgl's
 matrix stack, scissor and blend modes, render textures, and textures drawn as
 pinned raylib 6.2 draws them on its memory platform. Same reference and
-profile as slice 1: `rlsw.h` scalar and uncontracted (the probe's raylib build
+profile as [FRAME.md](FRAME.md): `rlsw.h` scalar and uncontracted (the probe's raylib build
 uses `-ffp-contract=off`), the host `M.Libm` profile for `sinf`/`cosf`.
 Altered Bend adaptations of `rcore.c`, `rtextures.c` and `rlgl.h` (zlib,
 [LICENSES/raylib.txt](../LICENSES/raylib.txt)) and of `rlsw.h` 1.5 (MIT,
 [LICENSES/rlsw.txt](../LICENSES/rlsw.txt)). Code: the "Frame and shapes"
-section of `jonlib.bend` (slice 2 and slice 3 parts), `src/frame.bend`
+section of `jonlib.bend` (cameras, render state and textures), `src/frame.bend`
 (matrices, scissor, samplers, targets, id pools) and `src/textures.bend`
 (the `DrawTexturePro`/`DrawTextureNPatch` vertex streams and rlgl's
 translate/rotate/scale matrices).
@@ -177,14 +177,14 @@ others use `M.AppleLibm{}`.
 
 ## Refusals and None
 
-As in slice 1, a draw Jonlib does not reproduce marks the frame undefined
+As in [FRAME.md](FRAME.md), a draw Jonlib does not reproduce marks the frame undefined
 (readbacks are `None`, the frame stays owned):
 
 - undefined behavior in the reference: popping the last modelview matrix; C
   int conversions out of range or of NaN (`DrawTexture` positions, the
   scissor, `(int)dest.width` in `DrawTextureNPatch`); NaN or out-of-range
   texture coordinates for the bilinear `(int)` and a nearest read past the last
-  texel (rlsw reads out of bounds); the slice 1 rules;
+  texel (rlsw reads out of bounds); the rules of [FRAME.md](FRAME.md);
 - a `sinf`/`cosf` argument outside the profile's verified set
   ([FRAME.md](FRAME.md#reference-and-profile)): the camera's
   `rotation*DEG2RAD` (always evaluated), `rlRotatef`'s angle,
@@ -216,7 +216,7 @@ conversions of the rectangle or sums that could reach 2^31.
 |---|---|---|
 | `window` | `tools/window_probe.py` | `LoadTexture` of PNG fixtures (RGBA with translucent texels, RGB) drawn into the frame and of a missing file, strips of 3x5000, 5000x2, 1x16384 and 16384x1 drawn where their far ends show (and, as contracts, a side of 16385 and 16384x1025), `LoadTextureCubemap`'s fields for every layout and auto-detected aspect, and `TakeScreenshot` to `.png`, `.BMP`, a name without suffix and one with a quote: Jonlib's file must equal raylib's flipped, swapped screenshot re-exported by raylib, byte for byte ([DRIVER.md](DRIVER.md#window-state)) |
 | `texture` | `tools/texture_probe.py` | 118 scenes (1410 operations, sizes 8x6 to 32x32, 10 random scenes) byte for byte against the uncontracted memory-platform raylib on CPU-1, CPU-2 and JavaScript, with texture ids, sizes, mipmaps, formats, validity and `LoadImageFromTexture` sums; 13 contract scenes (9 on glibc hosts) must be refused |
-| `frame` | `tools/frame_probe.py` | slice 1, unchanged |
+| `frame` | `tools/frame_probe.py` | the shapes of [FRAME.md](FRAME.md) |
 
 ```sh
 python3 tools/texture_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --jobs 3
@@ -253,5 +253,5 @@ generated C ([VERIFICATION.md](VERIFICATION.md#known-toolchain-defects)).
   the software renderer (`Rlgl.set_blend_factors` and the shader calls are
   documented no-ops, [RLGL.md](RLGL.md)); the GPU (OpenGL 3.3) behavior of
   blend and wrap modes is a separate contract.
-- Text drawing with the default font (`DrawText*`) is the first Phase 3 slice.
-- Performance is not measured beyond slice 1's benchmark.
+- Text drawing with the default font (`DrawText*`) is in [FONTS.md](FONTS.md).
+- Performance is not measured beyond the benchmark of [FRAME.md](FRAME.md).

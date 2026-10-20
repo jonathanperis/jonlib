@@ -131,7 +131,7 @@ and since raylib 6.2 `SetMousePosition` moves only the current position, so
 `GetMouseDelta` measures from the initial (or last played) previous position,
 and `EnableCursor`/`DisableCursor`'s recentering shows up as a delta. Its `kbhit()`
 check of the terminal's standard input for an ESC byte is not modeled. Desktop
-platforms poll differently (slice 5).
+platforms poll differently ([DRIVER.md](DRIVER.md)).
 
 **PlayAutomationEvent** (ignored while recording): key, mouse button, mouse
 position/wheel (`(float)` of the ints), gamepad connect/disconnect, buttons,
@@ -287,7 +287,7 @@ description and skipped lines past the capacity.
 ## Gaps
 
 - Desktop input: the key and char callbacks and desktop `PollInputEvents`
-  (slice 5, [DRIVER.md](DRIVER.md): previous mouse states, wheel reset, mouse
+  ([DRIVER.md](DRIVER.md): previous mouse states, wheel reset, mouse
   gestures, the Base event table) follow `rcore_desktop_glfw.c` but are
   checked by laws, not against a native GLFW build.
 - `GetTime` answers the last timing step's clock, not a live reading; the

@@ -107,10 +107,10 @@ profile. Colors are `0xRRGGBBAA` words, points `M.Vector2`, rectangles
 `DrawEllipse` and `DrawEllipseLines`, segment and side counts) are F32
 values converted as C converts them (truncation toward zero).
 
-The frame state is explicit, as the design note's state model asks: the
+The frame state is explicit: the
 color buffer, the MVP matrix and the immediate-mode state (current color and
 texture coordinate, the pending primitive, the bound texture, and rlsw's
-per-primitive alpha flag), and since slices 2 and 3 the projection and
+per-primitive alpha flag), and the projection and
 modelview stacks, the scissor, the render target and the texture and
 framebuffer id pools ([TEXTURES.md](TEXTURES.md)). Drawing never fails; instead a
 draw Jonlib does not reproduce marks the frame undefined, and both readbacks
@@ -233,7 +233,7 @@ The Bend renderer is about 23 times slower than rlsw and single-threaded
 (two CPU threads gain nothing): every pixel is an `Array` read and write on a
 balanced tree of depth 19, and the rasterizers are sequential recursions.
 That is about 10 frames per second for this scene, short of interactive rates
-for the Phase 2 examples. The levers named by the design note remain: rows
+for heavier examples. The levers remain: rows
 or tiles rendered in parallel (balanced fork-join over independent row
 ranges), a flat row-major store per tile, and the Metal lane; none is
 assumed before it is measured.
@@ -243,7 +243,7 @@ assumed before it is measured.
 - The remaining `rshapes.c` shapes, segment estimation (glibc 2.39 `acosf`
   only), the shapes texture, line widths, depth and the rlgl immediate-mode
   API are in [RLGL.md](RLGL.md). Cameras, the matrix stack, scissor and blend
-  modes, render textures and textures (slices 2 and 3) are in
+  modes, render textures and textures are in
   [TEXTURES.md](TEXTURES.md); shapes drawn there go through the same path,
   with the modelview, scissor and target described in that page.
 - `M.Libm` arguments outside the verified sets above are refused rather than
