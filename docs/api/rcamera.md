@@ -43,4 +43,31 @@ Each row inherits its milestone verification recipe and the six completion gates
 | [`rcamera:function:GetCameraProjectionMatrix`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rcamera.h#L157) | function | `RLAPI Matrix GetCameraProjectionMatrix(Camera *camera, float aspect)` | `Camera.projection_matrix_for / Camera.projection_matrix` (implemented) | partial | `camera` |
 | [`rcamera:switch:RCAMERA_IMPLEMENTATION`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rcamera.h#L171) | switch | `#if defined(RCAMERA_IMPLEMENTATION)` | `import ./jonlib.bend` (implemented) | partial | `configuration` |
 
+## Language adaptations
+
+C-to-Bend mappings with no behavior difference reachable through the API ([policy](../API-TRACKING.md#language-adaptations)). They are not gaps and do not complete an item.
+
+- `rcamera:macro:RCAMERA_H`: An include guard has no Bend counterpart (language adaptation)
+- `rcamera:switch:BUILD_LIBTYPE_SHARED`: Shared-library linkage has no Bend counterpart (language adaptation)
+- `rcamera:macro:__declspec`: Shared-library linkage has no Bend counterpart (language adaptation)
+- `rcamera:macro:RLAPI`: Shared-library linkage has no Bend counterpart (language adaptation)
+- `rcamera:switch:USE_LIBTYPE_SHARED`: Shared-library linkage has no Bend counterpart (language adaptation)
+- `rcamera:switch:RCAMERA_STANDALONE`: A standalone build with private type copies is not separate (language adaptation)
+- `rcamera:macro:CAMERA_CULL_DISTANCE_NEAR`: C preprocessor macros have no Bend counterpart (a zero-argument function)
+- `rcamera:macro:CAMERA_CULL_DISTANCE_FAR`: C preprocessor macros have no Bend counterpart (a zero-argument function)
+- `rcamera:type:Vector3`: Preprocessor type guards have no Bend counterpart
+- `rcamera:type:Matrix`: Preprocessor type guards have no Bend counterpart
+- `rcamera:type:Camera3D`: Preprocessor type guards have no Bend counterpart
+- `rcamera:alias:Camera`: No type alias declarations: the aliased type is used directly (language adaptation)
+- `rcamera:enum:CameraProjection`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rcamera:enumerator:CAMERA_PERSPECTIVE`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rcamera:enumerator:CAMERA_ORTHOGRAPHIC`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rcamera:enum:CameraMode`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rcamera:enumerator:CAMERA_CUSTOM`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rcamera:enumerator:CAMERA_FREE`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rcamera:enumerator:CAMERA_ORBITAL`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rcamera:enumerator:CAMERA_FIRST_PERSON`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rcamera:enumerator:CAMERA_THIRD_PERSON`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rcamera:switch:RCAMERA_IMPLEMENTATION`: A single-header implementation switch has no Bend counterpart (language adaptation)
+
 Full conditional variants, source lines, type/API dependencies, evidence and next actions are retained in [`api/ledger.json`](../../api/ledger.json).

@@ -47,4 +47,35 @@ Each row inherits its milestone verification recipe and the six completion gates
 | [`rgestures:function:GetGesturePinchAngle`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rgestures.h#L137) | function | `float GetGesturePinchAngle(void)` | `Gestures.get_pinch_angle` (implemented) | partial | `input` |
 | [`rgestures:switch:RGESTURES_IMPLEMENTATION`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rgestures.h#L152) | switch | `#if defined(RGESTURES_IMPLEMENTATION)` | `import ./jonlib.bend` (implemented) | partial | `configuration` |
 
+## Language adaptations
+
+C-to-Bend mappings with no behavior difference reachable through the API ([policy](../API-TRACKING.md#language-adaptations)). They are not gaps and do not complete an item.
+
+- `rgestures:macro:RGESTURES_H`: An include guard has no Bend counterpart (language adaptation)
+- `rgestures:macro:PI`: C preprocessor macros have no Bend counterpart (a zero-argument function)
+- `rgestures:macro:MAX_TOUCH_POINTS`: C preprocessor macros have no Bend counterpart (a zero-argument function)
+- `rgestures:enum:bool`: C int-compatible bool conversions
+- `rgestures:enumerator:false`: C int-compatible bool conversions
+- `rgestures:enumerator:true`: C int-compatible bool conversions
+- `rgestures:switch:RL_VECTOR2_TYPE`: A type-definition guard has no Bend counterpart (language adaptation)
+- `rgestures:switch:RGESTURES_STANDALONE`: A standalone build with private type copies is not separate (language adaptation)
+- `rgestures:enum:Gesture`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rgestures:enumerator:GESTURE_NONE`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rgestures:enumerator:GESTURE_TAP`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rgestures:enumerator:GESTURE_DOUBLETAP`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rgestures:enumerator:GESTURE_HOLD`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rgestures:enumerator:GESTURE_DRAG`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rgestures:enumerator:GESTURE_SWIPE_RIGHT`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rgestures:enumerator:GESTURE_SWIPE_LEFT`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rgestures:enumerator:GESTURE_SWIPE_UP`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rgestures:enumerator:GESTURE_SWIPE_DOWN`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rgestures:enumerator:GESTURE_PINCH_IN`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rgestures:enumerator:GESTURE_PINCH_OUT`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rgestures:enum:TouchAction`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rgestures:enumerator:TOUCH_ACTION_UP`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rgestures:enumerator:TOUCH_ACTION_DOWN`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rgestures:enumerator:TOUCH_ACTION_MOVE`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rgestures:enumerator:TOUCH_ACTION_CANCEL`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)
+- `rgestures:switch:RGESTURES_IMPLEMENTATION`: A single-header implementation switch has no Bend counterpart (language adaptation)
+
 Full conditional variants, source lines, type/API dependencies, evidence and next actions are retained in [`api/ledger.json`](../../api/ledger.json).

@@ -265,4 +265,99 @@ Each row inherits its milestone verification recipe and the six completion gates
 | [`raymath:operator:operator*(const Matrix&,const float)`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/raymath.h#L3182) | operator | `inline Matrix operator * (const Matrix& lhs, const float value)` | `M.Matrix.multiply_value(a, b)` (implemented) | partial | `jonmath` |
 | [`raymath:operator:operator*=(Matrix&,const float)`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/raymath.h#L3187) | operator | `inline const Matrix& operator *= (Matrix& lhs, const float value)` | `M.Matrix.multiply_value(a, b)` (implemented) | partial | `jonmath` |
 
+## Language adaptations
+
+C-to-Bend mappings with no behavior difference reachable through the API ([policy](../API-TRACKING.md#language-adaptations)). They are not gaps and do not complete an item.
+
+- `raymath:macro:RAYMATH_H`: An include guard has no Bend counterpart (language adaptation)
+- `raymath:switch:RAYMATH_IMPLEMENTATION`: A single-header implementation switch has no Bend counterpart (language adaptation)
+- `raymath:switch:RAYMATH_STATIC_INLINE`: Shared-library linkage has no Bend counterpart (language adaptation)
+- `raymath:switch:BUILD_LIBTYPE_SHARED`: Shared-library linkage has no Bend counterpart (language adaptation)
+- `raymath:macro:RMAPI`: Shared-library linkage has no Bend counterpart (language adaptation)
+- `raymath:switch:USE_LIBTYPE_SHARED`: Shared-library linkage has no Bend counterpart (language adaptation)
+- `raymath:macro:PI`: Preprocessor redefinition guards have no Bend counterpart
+- `raymath:macro:EPSILON`: Preprocessor redefinition guards have no Bend counterpart
+- `raymath:macro:DEG2RAD`: Preprocessor redefinition guards have no Bend counterpart
+- `raymath:macro:RAD2DEG`: Preprocessor redefinition guards have no Bend counterpart
+- `raymath:macro:MatrixToFloat`: C array-member access syntax
+- `raymath:macro:Vector3ToFloat`: C array-member access syntax
+- `raymath:macro:RL_VECTOR2_TYPE`: A type-definition guard has no Bend counterpart (language adaptation)
+- `raymath:macro:RL_VECTOR3_TYPE`: A type-definition guard has no Bend counterpart (language adaptation)
+- `raymath:macro:RL_VECTOR4_TYPE`: A type-definition guard has no Bend counterpart (language adaptation)
+- `raymath:macro:RL_QUATERNION_TYPE`: A type-definition guard has no Bend counterpart (language adaptation)
+- `raymath:macro:RL_MATRIX_TYPE`: A type-definition guard has no Bend counterpart (language adaptation)
+- `raymath:type:float3`: Native contiguous-array ABI/mutability and static fixed-length type correspondence
+- `raymath:macro:RL_FLOAT3_TYPE`: A type-definition guard has no Bend counterpart (language adaptation)
+- `raymath:type:float16`: Native contiguous-array ABI/mutability and static fixed-length type correspondence
+- `raymath:macro:RL_FLOAT16_TYPE`: A type-definition guard has no Bend counterpart (language adaptation)
+- `raymath:function:Vector3OrthoNormalize`: Pointer aliasing: arguments are values, so an output cannot alias an input (language adaptation)
+- `raymath:function:Vector3ToFloatV`: Native array ABI/mutability correspondence
+- `raymath:function:MatrixToFloatV`: Native array ABI/mutability correspondence
+- `raymath:function:MatrixDecompose`: Pointer aliasing: arguments are values, so an output cannot alias an input (language adaptation)
+- `raymath:switch:RAYMATH_DISABLE_CPP_OPERATORS`: C++ operator overloads have no Bend counterpart (language adaptation)
+- `raymath:constant:Vector2Zeros`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:constant:Vector2Ones`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:constant:Vector2UnitX`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:constant:Vector2UnitY`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:operator:operator+=(Vector2&,const Vector2&)`: Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator-=(Vector2&,const Vector2&)`: Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator*(const Vector2&,const float&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:operator:operator*=(Vector2&,const float&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation); Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator*=(Vector2&,const Vector2&)`: Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator*(const Vector2&,const Matrix&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:operator:operator*=(Vector2&,const Matrix&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation); Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator/(const Vector2&,const float&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:operator:operator/=(Vector2&,const float&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation); Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator/=(Vector2&,const Vector2&)`: Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator==(const Vector2&,const Vector2&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:operator:operator!=(const Vector2&,const Vector2&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:constant:Vector3Zeros`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:constant:Vector3Ones`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:constant:Vector3UnitX`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:constant:Vector3UnitY`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:constant:Vector3UnitZ`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:operator:operator+=(Vector3&,const Vector3&)`: Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator-=(Vector3&,const Vector3&)`: Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator*(const Vector3&,const float&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:operator:operator*=(Vector3&,const float&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation); Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator*=(Vector3&,const Vector3&)`: Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator*(const Vector3&,const Matrix&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:operator:operator*=(Vector3&,const Matrix&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation); Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator/(const Vector3&,const float&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:operator:operator/=(Vector3&,const float&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation); Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator/=(Vector3&,const Vector3&)`: Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator==(const Vector3&,const Vector3&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:operator:operator!=(const Vector3&,const Vector3&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:constant:Vector4Zeros`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:constant:Vector4Ones`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:constant:Vector4UnitX`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:constant:Vector4UnitY`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:constant:Vector4UnitZ`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:constant:Vector4UnitW`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:operator:operator+=(Vector4&,const Vector4&)`: Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator-=(Vector4&,const Vector4&)`: Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator*(const Vector4&,const float&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:operator:operator*=(Vector4&,const float&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation); Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator*=(Vector4&,const Vector4&)`: Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator/(const Vector4&,const float&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:operator:operator/=(Vector4&,const float&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation); Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator/=(Vector4&,const Vector4&)`: Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator==(const Vector4&,const Vector4&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:operator:operator!=(const Vector4&,const Vector4&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:constant:QuaternionZeros`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:constant:QuaternionOnes`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:constant:QuaternionUnitX`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:operator:operator+(const Quaternion&,const float&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:operator:operator+=(Quaternion&,const float&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation); Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator-(const Quaternion&,const float&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:operator:operator-=(Quaternion&,const float&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation); Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator*(const Quaternion&,const Matrix&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:operator:operator*=(Quaternion&,const Matrix&)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation); Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:constant:MatrixUnit`: C++ static constexpr object identity has no Bend counterpart (a zero-argument function)
+- `raymath:operator:operator+=(Matrix&,const Matrix&)`: Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator-=(Matrix&,const Matrix&)`: Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator*=(Matrix&,const Matrix&)`: Immutable values: the compound assignment returns a new value instead of updating its operand
+- `raymath:operator:operator*(const Matrix&,const float)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)
+- `raymath:operator:operator*=(Matrix&,const float)`: No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation); Immutable values: the compound assignment returns a new value instead of updating its operand
+
 Full conditional variants, source lines, type/API dependencies, evidence and next actions are retained in [`api/ledger.json`](../../api/ledger.json).

@@ -804,9 +804,7 @@
     "jonlib": "Vr.unload_stereo_config",
     "status": "profile-covered",
     "scope": "Consumes the configuration; raylib frees nothing either.",
-    "gaps": [
-      "No native allocation ABI"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:UnloadVrStereoConfig",
     "milestone": "vr"
   },
@@ -1143,7 +1141,6 @@
     "status": "profile-covered",
     "scope": "Consumes the owned sequence and returns Unit; Bend ownership adapts the explicit C allocation/free lifecycle.",
     "gaps": [
-      "Native pointer/allocator/null behavior",
       "Full integration/target/resource/performance coverage"
     ],
     "api_id": "raylib:function:UnloadRandomSequence",
@@ -1188,9 +1185,7 @@
     "jonlib": "Log.level / Log.default",
     "status": "profile-covered",
     "scope": "A Log.Logger value carries the threshold (default LOG_INFO) instead of process-wide state.",
-    "gaps": [
-      "Process-wide state replaced by explicit values (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:SetTraceLogLevel",
     "milestone": "memory"
   },
@@ -1199,7 +1194,7 @@
     "status": "profile-covered",
     "scope": "Prints the level prefix, at most 244 characters of preformatted text and a newline when the type is at or above the threshold; LOG_FATAL exits with status 1.",
     "gaps": [
-      "No variadic formatting: '%' prints literally (TextFormat belongs to the text utilities)",
+      "'%' prints literally where TraceLog would format it (TextFormat belongs to the text utilities)",
       "Android log routing"
     ],
     "api_id": "raylib:function:TraceLog",
@@ -1209,10 +1204,7 @@
     "jonlib": "Log.trace_with",
     "status": "profile-covered",
     "scope": "The handler receives the log type and text of messages at or above the threshold instead of standard output.",
-    "gaps": [
-      "Process-wide state replaced by explicit values (language adaptation)",
-      "No va_list argument"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:SetTraceLogCallback",
     "milestone": "memory"
   },
@@ -1221,7 +1213,7 @@
     "status": "profile-covered",
     "scope": "An owned list of size zero bytes (RL_CALLOC).",
     "gaps": [
-      "Raw pointers/allocator ABI and allocation failure"
+      "Allocation failure (out-of-memory) behavior"
     ],
     "api_id": "raylib:function:MemAlloc",
     "milestone": "memory"
@@ -1231,7 +1223,7 @@
     "status": "profile-covered",
     "scope": "Keeps the first size bytes; growth is zero-filled (C leaves it uninitialized).",
     "gaps": [
-      "Raw pointers/allocator ABI and allocation failure"
+      "Allocation failure (out-of-memory) behavior"
     ],
     "api_id": "raylib:function:MemRealloc",
     "milestone": "memory"
@@ -1240,9 +1232,7 @@
     "jonlib": "Memory.free",
     "status": "profile-covered",
     "scope": "Consumes the owned bytes.",
-    "gaps": [
-      "Raw pointers/allocator ABI"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:MemFree",
     "milestone": "memory"
   },
@@ -1251,7 +1241,7 @@
     "status": "profile-covered",
     "scope": "Every byte of the file up to INT_MAX, closing the handle; typed IO errors; an existing empty file is an empty list (raylib: NULL with dataSize 0).",
     "gaps": [
-      "Pointer/allocator ABI and complete target/resource coverage"
+      "Complete target/resource coverage"
     ],
     "api_id": "raylib:function:LoadFileData",
     "milestone": "files"
@@ -1261,7 +1251,7 @@
     "status": "profile-covered",
     "scope": "Consumes the byte list returned by Files.load_data.",
     "gaps": [
-      "Pointer/allocator ABI and complete target/resource coverage"
+      "Complete target/resource coverage"
     ],
     "api_id": "raylib:function:UnloadFileData",
     "milestone": "files"
@@ -1271,7 +1261,7 @@
     "status": "profile-covered",
     "scope": "Creates/truncates the file and writes every byte, closing the handle; values above 255 are InvalidRequest before opening.",
     "gaps": [
-      "Pointer/allocator ABI and complete target/resource coverage"
+      "Complete target/resource coverage"
     ],
     "api_id": "raylib:function:SaveFileData",
     "milestone": "files"
@@ -1282,7 +1272,7 @@
     "scope": "raylib's generated header (banner, NAME_DATA_SIZE, 20 lower-case hex bytes per line) for 1..1048576 bytes and an ASCII basename of 1..200 characters; the name drops its last extension, upper-cases a-z and maps '.-?!+' to '_'.",
     "gaps": [
       "Empty data (raylib reads data[-1]), larger payloads and longer/non-ASCII names",
-      "Pointer/allocator ABI and complete target/resource coverage"
+      "Complete target/resource coverage"
     ],
     "api_id": "raylib:function:ExportDataAsCode",
     "milestone": "files"
@@ -1293,7 +1283,7 @@
     "scope": "Every byte of the file as characters 0..255, NULs included (text and binary modes agree on the reference hosts).",
     "gaps": [
       "Windows text-mode newline translation",
-      "Pointer/allocator ABI and complete target/resource coverage"
+      "Complete target/resource coverage"
     ],
     "api_id": "raylib:function:LoadFileText",
     "milestone": "files"
@@ -1303,7 +1293,7 @@
     "status": "profile-covered",
     "scope": "Consumes the text returned by Files.load_text.",
     "gaps": [
-      "Pointer/allocator ABI and complete target/resource coverage"
+      "Complete target/resource coverage"
     ],
     "api_id": "raylib:function:UnloadFileText",
     "milestone": "files"
@@ -1314,7 +1304,7 @@
     "scope": "Writes the text up to its first NUL as bytes; characters above 255 are InvalidRequest before opening.",
     "gaps": [
       "Windows text-mode newline translation",
-      "Pointer/allocator ABI and complete target/resource coverage"
+      "Complete target/resource coverage"
     ],
     "api_id": "raylib:function:SaveFileText",
     "milestone": "files"
@@ -1324,7 +1314,6 @@
     "status": "profile-covered",
     "scope": "The callback raylib would install is passed to the _with forms, which read through it exactly where raylib does: LoadFileData, LoadImage, LoadImageRaw and LoadImageAnim.",
     "gaps": [
-      "Process-wide state replaced by explicit values (language adaptation)",
       "Font, audio, model and shader loaders arrive with their modules"
     ],
     "api_id": "raylib:function:SetLoadFileDataCallback",
@@ -1335,7 +1324,6 @@
     "status": "profile-covered",
     "scope": "SaveFileData and ExportImage's PNG and raw branches write through the callback; BMP, TGA and QOI exports open the file themselves, as in raylib.",
     "gaps": [
-      "Process-wide state replaced by explicit values (language adaptation)",
       "Font, audio, model and shader loaders arrive with their modules"
     ],
     "api_id": "raylib:function:SetSaveFileDataCallback",
@@ -1346,7 +1334,6 @@
     "status": "profile-covered",
     "scope": "LoadFileText reads through the callback; FileTextFindIndex first checks that the file exists on disk, as raylib's FileExists does.",
     "gaps": [
-      "Process-wide state replaced by explicit values (language adaptation)",
       "Font, audio, model and shader loaders arrive with their modules"
     ],
     "api_id": "raylib:function:SetLoadFileTextCallback",
@@ -1357,7 +1344,6 @@
     "status": "profile-covered",
     "scope": "SaveFileText (text up to its first NUL), ExportImageAsCode and ExportDataAsCode write through the callback.",
     "gaps": [
-      "Process-wide state replaced by explicit values (language adaptation)",
       "Font, audio, model and shader loaders arrive with their modules"
     ],
     "api_id": "raylib:function:SetSaveFileTextCallback",
@@ -1413,7 +1399,7 @@
     "scope": "-1 for a missing, empty or unreadable file and an empty search; otherwise LoadFileText, TextReplaceAlloc of the text up to its first NUL and SaveFileText of the result: 0 when saved, -1 when not.",
     "gaps": [
       "Characters above 255 in the result and TextReplaceAlloc int overflows are None",
-      "Pointer/allocator ABI and complete target/resource coverage",
+      "Complete target/resource coverage",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:FileTextReplace",
@@ -1424,7 +1410,7 @@
     "status": "profile-covered",
     "scope": "Byte index of the first occurrence of search in the file's text up to its first NUL; None (raylib's -1) when absent or the file is missing or empty.",
     "gaps": [
-      "Pointer/allocator ABI and complete target/resource coverage"
+      "Complete target/resource coverage"
     ],
     "api_id": "raylib:function:FileTextFindIndex",
     "milestone": "files"
@@ -1434,7 +1420,7 @@
     "status": "profile-covered",
     "scope": "access(F_OK), as stat(2) answers it: a file that exists, readable or not, or a directory.",
     "gaps": [
-      "Pointer/allocator ABI and complete target/resource coverage"
+      "Complete target/resource coverage"
     ],
     "api_id": "raylib:function:FileExists",
     "milestone": "files"
@@ -1477,7 +1463,7 @@
     "scope": "File size in bytes; 0 when the file does not open.",
     "gaps": [
       "Directories and sizes above INT_MAX",
-      "Pointer/allocator ABI and complete target/resource coverage"
+      "Complete target/resource coverage"
     ],
     "api_id": "raylib:function:GetFileLength",
     "milestone": "files"
@@ -1658,7 +1644,6 @@
     "status": "profile-covered",
     "scope": "Consuming the list frees it.",
     "gaps": [
-      "Pointer/allocator ABI",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
     ],
     "api_id": "raylib:function:UnloadDirectoryFiles",
@@ -1725,7 +1710,7 @@
     "gaps": [
       "Larger input domains, big-endian hash profiles and native sequence-overflow domains",
       "Public decompression of compressed results larger than 1 MiB",
-      "Native pointer/allocator/output-parameter ABI and complete integration/target/resource/performance coverage"
+      "Complete integration/target/resource/performance coverage"
     ],
     "api_id": "raylib:function:CompressData",
     "milestone": "files"
@@ -1735,7 +1720,7 @@
     "status": "profile-covered",
     "scope": "Bounded raw DEFLATE with stored/fixed/dynamic blocks, code-length repeats and overlapping copies. Input at most 1 MiB, caller output capacity 0..64 MiB; returns Maybe of owned bytes. Preserves native early completion on empty stored blocks.",
     "gaps": [
-      "Larger compressed inputs and native pointer/allocation ABI",
+      "Larger compressed inputs",
       "Other permissive malformed/partial-output recovery",
       "Complete integration/target/resource/performance coverage"
     ],
@@ -1747,7 +1732,7 @@
     "status": "profile-covered",
     "scope": "Immutable byte lists of 0..1048576 bytes, including empty input. Exact native RFC 4648 text/alphabet/padding; Base64Encoded carries the native NUL-inclusive size while the Bend text excludes the terminator. Invalid bytes or oversized inputs return None.",
     "gaps": [
-      "Larger input domains and native pointer/allocator/output-parameter ABI",
+      "Larger input domains",
       "Complete resource/platform/performance coverage"
     ],
     "api_id": "raylib:function:EncodeDataBase64",
@@ -1759,7 +1744,7 @@
     "scope": "Nonempty ASCII alphabet groups of four with zero/one/two final padding characters, first-NUL termination and ignored unused padding bits. Exact native logical bytes, capped at 1048576, as an immutable list. Malformed/empty/oversized requests return None; the native empty-input before-buffer read is not reproduced.",
     "gaps": [
       "Native permissive malformed recovery, empty-input undefined behavior and larger outputs",
-      "Native pointer/allocator/output-parameter ABI and complete resource/platform/performance coverage"
+      "Complete resource/platform/performance coverage"
     ],
     "api_id": "raylib:function:DecodeDataBase64",
     "milestone": "files"
@@ -1769,7 +1754,7 @@
     "status": "profile-covered",
     "scope": "Immutable byte lists of 0..1048576 bytes; native CRC32 initial/final complements over the shared PNG CRC recurrence, equal to standard CRC32. Unsupported bytes/lengths return None.",
     "gaps": [
-      "Larger domains and native pointer/data-size ABI",
+      "Larger domains",
       "Complete resource/platform/performance coverage"
     ],
     "api_id": "raylib:function:ComputeCRC32",
@@ -1781,7 +1766,6 @@
     "scope": "Immutable byte lists of 0..1048576 bytes, including empty input. Native little-endian padding/message words, modulo-U32 rounds and exactly four U32 words in native array order (standard MD5). Unsupported bytes/lengths return None before allocation.",
     "gaps": [
       "Larger domains and big-endian native behavior",
-      "Native mutable static-buffer/pointer/allocation ABI",
       "Complete resource/platform/performance coverage"
     ],
     "api_id": "raylib:function:ComputeMD5",
@@ -1793,7 +1777,6 @@
     "scope": "Immutable byte lists of 0..1048576 bytes, including empty input. Native big-endian padding/message schedule, modulo-U32 rounds and exactly five native-order hash words (standard SHA-1); invalid inputs return None before allocation.",
     "gaps": [
       "Larger domains and other native compiler profiles",
-      "Native mutable static-pointer/output-buffer ABI",
       "Complete resource/platform/performance coverage"
     ],
     "api_id": "raylib:function:ComputeSHA1",
@@ -1805,7 +1788,6 @@
     "scope": "Immutable byte lists of 0..1048576 bytes; exactly eight native-order U32 hash words with native schedules/rounds and standard padding (raylib 6.2 sizes it with the 8-byte bit length; 6.0's dataSize+4 rule differed at 56..59 mod 64). Invalid inputs return None before allocation.",
     "gaps": [
       "Larger domains and other native integer-width/compiler profiles",
-      "Native mutable static-pointer/output-buffer ABI",
       "Complete resource/platform/performance coverage"
     ],
     "api_id": "raylib:function:ComputeSHA256",
@@ -3384,7 +3366,7 @@
     "scope": "Ordinary unchanging files, dimensions 1..4096, formats 1..13: R32 and R16 finite [0,1] (both zero signs, positive subnormals) and non-NaN R32G32B32 words. Native fitting-header/fallback-to-zero selection, exact payload words and signed-int bounds; handles close before decoding. DataError{OutOfDomain} for unsupported samples follows closure; invalid requests fail before opening.",
     "gaps": [
       "Other formats, broader R32 domains, format-9 NaN payload parity, signed/out-of-range parameters and concurrent/special files",
-      "Native allocation ABI and complete target/integration/performance coverage"
+      "Complete target/integration/performance coverage"
     ],
     "api_id": "raylib:function:LoadImageRaw",
     "milestone": "image-codecs"
@@ -3395,7 +3377,7 @@
     "scope": "Bounded ordinary-file owned animation loading: case-insensitive GIF suffixes select the supported sequence profile; other supported suffixes yield one profiled static frame. Shared complete-read and handle-closure boundary, raster/QOI byte caps, caller frame/pixel budgets and typed file/decode errors. Explicit PSD arithmetic or uncontracted convenience defaults.",
     "gaps": [
       "Disposal 3 and remaining image-codec/profile gaps",
-      "Original pixel formats and the native contiguous-buffer ABI",
+      "Original pixel formats",
       "Concurrent/special files, larger inputs and complete resource/target/performance coverage"
     ],
     "api_id": "raylib:function:LoadImageAnim",
@@ -3407,7 +3389,7 @@
     "scope": "Exact .gif/.GIF tokens decode owned GIF RGBA8 frame sequences; other supported tokens use profiled single-image fallback and return one owned frame. GIF preserves canvas dimensions, frame order/count, offsets/interlacing, palette/control persistence and disposal 0/1 retain or 2 restoration. Explicit frame/pixel budgets bound retained output, entries/unload consume ownership, and convenience arithmetic is uncontracted. Native delays are discarded.",
     "gaps": [
       "Disposal 3: pinned native two_back points before its allocated frame buffer",
-      "Native contiguous-buffer ABI and remaining image-codec/profile gaps",
+      "Remaining image-codec/profile gaps",
       "Permissive malformed recovery, original metadata and complete target/resource/performance coverage"
     ],
     "api_id": "raylib:function:LoadImageAnimFromMemory",
@@ -3421,7 +3403,7 @@
       "Multi-level KTX/PVR files; HDR in the shared dispatch",
       "Original pixel-format metadata for the remaining normalized codecs (PSD, GIF) and remaining dispatch families",
       "Nondefault external stb decoder flags, PSD out-of-range matte casts and permissive incomplete/excess raster recovery",
-      "Other permissive malformed-stream recovery, dimensions above 4096, native pointer/allocation ABI and OOM parity",
+      "Other permissive malformed-stream recovery, dimensions above 4096 and OOM parity",
       "Big-endian and other native arithmetic profiles; GPU/Metal, Windows and browser targets",
       "Maximum-area allocation, latency/throughput/memory budgets and complete target/integration coverage"
     ],
@@ -3454,9 +3436,7 @@
     "jonlib": "Surface.is_valid / Image.Stored.is_valid",
     "status": "profile-covered",
     "scope": "Returns the owner and raylib's validity verdict: positive dimensions and a format. Factory, decoder and loader owners always pass; hand-built records additionally need dimensions 1..4096, a format 1..13 and that format's storage variant (Words or Quads).",
-    "gaps": [
-      "Native pointer/NULL-data ABI"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:IsImageValid",
     "milestone": "images"
   },
@@ -3465,7 +3445,7 @@
     "status": "profile-covered",
     "scope": "Consumes the Surface owner, releasing its storage; affine ownership rules out double unloads and use after unload.",
     "gaps": [
-      "Native pointer/allocator ABI and resource accounting"
+      "Resource accounting"
     ],
     "api_id": "raylib:function:UnloadImage",
     "milestone": "images"
@@ -3476,7 +3456,7 @@
     "scope": "Surface.write_image picks PNG/BMP/TGA/QOI/RAW by native ASCII-case-insensitive last-dot suffix. GRAYSCALE, GRAY_ALPHA, R8G8B8 and R8G8B8A8 write stored samples (24-bit/V4 BMP, 1..4-channel RLE TGA, default PNG); other formats use native LoadImageColors rules (R32 finite [0,1], R32G32B32 finite [0,1]); QOI only from R8G8B8/R8G8B8A8; RAW writes exact stored words. Rejected sources keep their owner before any file opens; accepted writes consume it, close the handle and return typed errors.",
     "gaps": [
       "JPEG/KTX and other formats/options; extension dispatch for non-Surface owners; NaN parity and native out-of-range auxiliary casts",
-      "Native allocation ABI and complete targets/integration/performance",
+      "Complete targets/integration/performance",
       "Failing-device, short-write and close-error equivalence; Base close has no error result",
       "R32 samples outside finite [0,1] and complete target/contraction profiles"
     ],
@@ -3489,7 +3469,7 @@
     "scope": "Exact default PNG (filtering, compression, checksums) from byte formats 1/2/4/7, finite [0,1] R32 and R32G32B32. Float and R32 sources use the native raw little-endian storage-prefix interpretation (R32: all four sample bytes as RGBA), distinct from file export. Packed formats 3/5/6 and other file types are rejected with the original owner.",
     "gaps": [
       "Packed/other float source formats, NaN parity, configured flags and generic dispatch",
-      "Native pointer/output-size/allocator ABI and ownership correspondence",
+      "Ownership correspondence",
       "Complete integration/target/resource/performance coverage",
       "R32 samples outside finite [0,1]"
     ],
@@ -3502,7 +3482,7 @@
     "scope": "Every Surface format (R32 finite [0,1]); payload at most 65536 bytes; non-NUL ASCII paths with 1..200-character basenames. Exact native banner/credits, uppercase basename/last-extension rules, dimensions/format/count, raw little-endian sample bytes, unpadded hex and default line breaks. Rejected requests keep their owner (InvalidRequest) before any file is opened; typed Base errors and handle closure.",
     "gaps": [
       "NaN payload parity, wider payload/path/Unicode/truncation domains, native long-name buffer overflow and other source formats",
-      "Configured line widths and native allocation/ownership ABI",
+      "Configured line widths",
       "Complete target/resource/integration/performance coverage",
       "R32 samples outside finite [0,1] and complete target/contraction profiles"
     ],
@@ -3636,7 +3616,7 @@
     "scope": "Retained sources and independent GRAYSCALE output for every format (R32 finite [0,1], R32G32B32 finite [0,1]). Bounded integral selectors keep native per-format redirection (R32 always its sole sample), packed reciprocal normalization and F32 byte truncation. Unsupported requests preserve original owners. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other selector/source domains, formats and mipmaps",
-      "Complete native ABI/resource/target/performance coverage",
+      "Complete resource/target/performance coverage",
       "R32 samples outside finite [0,1] and complete target/contraction profiles"
     ],
     "api_id": "raylib:function:ImageFromChannel",
@@ -3749,7 +3729,7 @@
     "scope": "Any Surface format: ImageAlphaPremultiply back to the source format, then LoadImageColors, the RGBA8 blur and ImageFormat. U32 size 0..min(width,height); four sliding-window iterations, remove-before-add sums, edge divisors, per-vertical-pass byte truncation and reverse premultiplication. Excessive sizes return the original with InvalidSize. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other source formats/mipmaps and configured iteration counts",
-      "Negative/excessive native blur sizes and native allocation ABI",
+      "Negative/excessive native blur sizes",
       "Complete resource/platform/performance coverage"
     ],
     "api_id": "raylib:function:ImageBlurGaussian",
@@ -3761,7 +3741,7 @@
     "scope": "Any Surface format via LoadImageColors, the RGBA8 kernel and ImageFormat back; immutable square F32 kernels of 0..225 entries, coefficients zero or finite magnitude 2^-16..16. raylib 6.2 semantics: neighbours clamped to the image edges per axis, odd/even anchoring, normalized channel multiplication, ordered accumulation, every channel (alpha included) clamped to 0..1. Unsupported kernels return the unchanged original with InvalidKernel. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Wider kernels/coefficient domains (NaN/infinite sums stay undefined natively)",
-      "Other source formats/mipmaps and native allocation ABI",
+      "Other source formats/mipmaps",
       "Complete resource/platform/performance coverage"
     ],
     "api_id": "raylib:function:ImageKernelConvolution",
@@ -3806,7 +3786,7 @@
     "scope": "Formats 1..13, dimensions 1..4096: complete owned base-to-1x1 levels, preserving the base and applying ImageResize to each preceding level in the image's format (1..3-channel filters for GRAYSCALE/GRAY_ALPHA/R8G8B8, RGBA8 round trips with per-level requantization for the others); levels are independent owners. Total: Surface.mipmaps returns Image.Mipmaps.",
     "gaps": [
       "Existing partial/full native chains and pixel formats 10+",
-      "Contiguous C allocation/pointer ABI and texture integration",
+      "Texture integration",
       "Complete resource/platform/performance coverage"
     ],
     "api_id": "raylib:function:ImageMipmaps",
@@ -3817,7 +3797,7 @@
     "status": "profile-covered",
     "scope": "Any Surface format via LoadImageColors to Floyd-Steinberg R5G6B5 (5,6,5,0), R5G5B5A1 (5,5,5,1) or R4G4B4A4 (4,4,4,4). Preserves raster order, truncation, neighbor saturation and alpha handling; other bit counts (native format 0) return the original with InvalidDitherBits. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Other source formats/mipmaps and native 16-bit memory/allocator ABI",
+      "Other source formats/mipmaps",
       "Full integration/target/resource/performance coverage"
     ],
     "api_id": "raylib:function:ImageDither",
@@ -3901,7 +3881,7 @@
     "status": "profile-covered",
     "scope": "ImageFormat to GRAYSCALE from any Surface format, with native F32 luminance order and truncation; R32G32B32 converts directly from finite [0,1] samples. Rejected requests return the original owner. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Other source domains/mipmaps and remaining metadata/native ABI",
+      "Other source domains/mipmaps and remaining metadata",
       "Full target/resource/performance coverage"
     ],
     "api_id": "raylib:function:ImageColorGrayscale",
@@ -3953,7 +3933,7 @@
     "status": "profile-covered",
     "scope": "Preserves the source owner and returns an owned RGBA palette for capacity 1..4096: first-occurrence order, alpha-zero exclusion, alpha-sensitive uniqueness, native count and BLANK padding to full capacity. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "Native pointers/allocators and other image formats/mipmaps",
+      "Other image formats/mipmaps",
       "Full integration/target/resource/performance coverage"
     ],
     "api_id": "raylib:function:LoadImagePalette",
@@ -3964,7 +3944,7 @@
     "status": "profile-covered",
     "scope": "Consumes the color list returned by Surface.colors (LoadImageColors), releasing it; affine ownership rules out double unloads.",
     "gaps": [
-      "Native pointer/allocator ABI and resource accounting"
+      "Resource accounting"
     ],
     "api_id": "raylib:function:UnloadImageColors",
     "milestone": "pixels"
@@ -3974,7 +3954,6 @@
     "status": "profile-covered",
     "scope": "Consumes the owned palette and returns Unit while the separately retained source surface remains usable.",
     "gaps": [
-      "Native pointer/allocator/null correspondence",
       "Full integration/target/resource/performance coverage"
     ],
     "api_id": "raylib:function:UnloadImagePalette",
@@ -4696,7 +4675,7 @@
     "scope": "Little-endian immutable byte lists for native formats 1..7; packed RGBA results preserve integer expansion, R5G5B5A1 blue from bits 1..5 (raylib 6.2). Unsupported formats, invalid bytes and truncated input produce typed failures.",
     "gaps": [
       "Float/half/compressed and big-endian profiles",
-      "Native pointers and complete integration/target/performance coverage"
+      "Complete integration/target/performance coverage"
     ],
     "api_id": "raylib:function:GetPixelColor",
     "milestone": "pixels"
@@ -4707,7 +4686,7 @@
     "scope": "Formats 1..7 with exact grayscale and nearest packed-channel quantization, strict alpha>50 threshold and little-endian words. Functional byte-list result replaces only the pixel prefix and preserves trailing bytes.",
     "gaps": [
       "Other formats/configured alpha thresholds and big-endian profiles",
-      "Native pointer mutation and complete integration/target/performance coverage"
+      "Complete integration/target/performance coverage"
     ],
     "api_id": "raylib:function:SetPixelColor",
     "milestone": "pixels"
@@ -4920,7 +4899,6 @@
     "status": "profile-covered",
     "scope": "raylib's global textLineSpacing (initially 2) is the explicit line_spacing C int of every _spaced drawing, measurement and image-text function; the others use 2.",
     "gaps": [
-      "No global state: the spacing is passed per call (language adaptation)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:SetTextLineSpacing",
@@ -4993,9 +4971,7 @@
     "jonlib": "UTF8.load",
     "status": "profile-covered",
     "scope": "Concatenated CodepointToUTF8 bytes of every codepoint (\"\" for none, raylib NULL); codepoint 0 encodes a NUL byte.",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:LoadUTF8",
     "milestone": "text-utils"
   },
@@ -5003,9 +4979,7 @@
     "jonlib": "UTF8.unload",
     "status": "profile-covered",
     "scope": "Consumes the owned text.",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:UnloadUTF8",
     "milestone": "text-utils"
   },
@@ -5013,9 +4987,7 @@
     "jonlib": "Codepoint.load",
     "status": "profile-covered",
     "scope": "GetCodepointNext codepoints up to the NUL as an owned U32 list (its length is the count).",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:LoadCodepoints",
     "milestone": "text-utils"
   },
@@ -5023,9 +4995,7 @@
     "jonlib": "Codepoint.unload",
     "status": "profile-covered",
     "scope": "Consumes the owned codepoint list.",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:UnloadCodepoints",
     "milestone": "text-utils"
   },
@@ -5067,9 +5037,7 @@
     "jonlib": "Codepoint.to_utf8",
     "status": "profile-covered",
     "scope": "1..4 UTF-8 bytes; negative codepoints one byte (the low byte), none above 0x10FFFF.",
-    "gaps": [
-      "Static 6-byte buffer becomes a returned String (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:CodepointToUTF8",
     "milestone": "text-utils"
   },
@@ -5077,9 +5045,7 @@
     "jonlib": "Text.load_lines",
     "status": "profile-covered",
     "scope": "The text up to its NUL cut at every newline into newlines + 1 owned lines (carriage returns kept).",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:LoadTextLines",
     "milestone": "text-utils"
   },
@@ -5087,9 +5053,7 @@
     "jonlib": "Text.unload_lines",
     "status": "profile-covered",
     "scope": "Consumes the owned line list.",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:UnloadTextLines",
     "milestone": "text-utils"
   },
@@ -5098,8 +5062,7 @@
     "status": "profile-covered",
     "scope": "The text and its NUL written at the start of a buffer String of fixed size, returned with the bytes copied; other buffer bytes kept.",
     "gaps": [
-      "Undefined native behavior: a text and NUL that do not fit the buffer are None",
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+      "Undefined native behavior: a text and NUL that do not fit the buffer are None"
     ],
     "api_id": "raylib:function:TextCopy",
     "milestone": "text-utils"
@@ -5127,8 +5090,7 @@
     "gaps": [
       "Undefined native behavior: missing/mismatched arguments and C-undefined flag combinations are None",
       "Conversions e, g, a, p, length modifiers, * widths and %f precisions above 9 are outside the subset",
-      "NaN arguments (C library spellings differ)",
-      "Four rotating static buffers become returned values (language adaptation)"
+      "NaN arguments (C library spellings differ)"
     ],
     "api_id": "raylib:function:TextFormat",
     "milestone": "text-utils"
@@ -5137,9 +5099,7 @@
     "jonlib": "Text.subtext",
     "status": "profile-covered",
     "scope": "raylib 6.2: length bytes from position, clamped to the text and to 1023 bytes; \"\" for a negative position, a length below 1 or a position at or past the end.",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:TextSubtext",
     "milestone": "text-utils"
   },
@@ -5147,9 +5107,7 @@
     "jonlib": "Text.remove_spaces",
     "status": "profile-covered",
     "scope": "raylib 6.2: the bytes other than ' ' among the first 1023.",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:TextRemoveSpaces",
     "milestone": "text-utils"
   },
@@ -5157,9 +5115,7 @@
     "jonlib": "Text.between",
     "status": "profile-covered",
     "scope": "The bytes (at most 1023) between the first begin and the first end after it; \"\" when either is missing.",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:GetTextBetween",
     "milestone": "text-utils"
   },
@@ -5168,8 +5124,7 @@
     "status": "profile-covered",
     "scope": "Non-overlapping left-to-right replacement; \"\" for an empty search or a result of 1023+ bytes.",
     "gaps": [
-      "Undefined native behavior: int overflow of the result size is None",
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+      "Undefined native behavior: int overflow of the result size is None"
     ],
     "api_id": "raylib:function:TextReplace",
     "milestone": "text-utils"
@@ -5179,8 +5134,7 @@
     "status": "profile-covered",
     "scope": "Non-overlapping left-to-right replacement without a size limit; None (NULL) for an empty search.",
     "gaps": [
-      "Undefined native behavior: int overflow of the allocation size is None",
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+      "Undefined native behavior: int overflow of the allocation size is None"
     ],
     "api_id": "raylib:function:TextReplaceAlloc",
     "milestone": "text-utils"
@@ -5189,9 +5143,7 @@
     "jonlib": "Text.replace_between",
     "status": "profile-covered",
     "scope": "The text through begin, the replacement and the text from end; \"\" when a marker is missing or (raylib 6.2) the result needs 1023 or more bytes.",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:TextReplaceBetween",
     "milestone": "text-utils"
   },
@@ -5199,9 +5151,7 @@
     "jonlib": "Text.replace_between_alloc",
     "status": "profile-covered",
     "scope": "The text through begin, the replacement and the text from end without a limit; None (NULL) when a marker is missing.",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:TextReplaceBetweenAlloc",
     "milestone": "text-utils"
   },
@@ -5209,9 +5159,7 @@
     "jonlib": "Text.insert",
     "status": "profile-covered",
     "scope": "raylib 6.2: insert placed before the byte at position (past the end appends); \"\" for a negative position or when text and insert need 1023 or more bytes.",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:TextInsert",
     "milestone": "text-utils"
   },
@@ -5219,9 +5167,7 @@
     "jonlib": "Text.insert_alloc",
     "status": "profile-covered",
     "scope": "raylib 6.2: TextInsert without the size limit; None (NULL) for a negative position.",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:TextInsertAlloc",
     "milestone": "text-utils"
   },
@@ -5229,9 +5175,7 @@
     "jonlib": "Text.join",
     "status": "profile-covered",
     "scope": "raylib 6.2: each text that fits the 1024-byte buffer with its delimiter (total + length + delimiter < 1024), the delimiter after each copied text but the last item.",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:TextJoin",
     "milestone": "text-utils"
   },
@@ -5239,9 +5183,7 @@
     "jonlib": "Text.split",
     "status": "profile-covered",
     "scope": "raylib 6.2: substrings between delimiter bytes among the first 1023; at the 127th delimiter raylib stops and the 128th substring is empty; NUL never splits.",
-    "gaps": [
-      "Static pointer array becomes a returned list (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:TextSplit",
     "milestone": "text-utils"
   },
@@ -5250,8 +5192,7 @@
     "status": "profile-covered",
     "scope": "The text and its NUL written at a position in a fixed-size buffer String, returned with the advanced position.",
     "gaps": [
-      "Undefined native behavior: writes past the buffer or at negative positions are None",
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+      "Undefined native behavior: writes past the buffer or at negative positions are None"
     ],
     "api_id": "raylib:function:TextAppend",
     "milestone": "text-utils"
@@ -5268,9 +5209,7 @@
     "jonlib": "Text.to_upper",
     "status": "profile-covered",
     "scope": "ASCII a-z upper-cased, other bytes kept, at most 1023 bytes.",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:TextToUpper",
     "milestone": "text-utils"
   },
@@ -5278,9 +5217,7 @@
     "jonlib": "Text.to_lower",
     "status": "profile-covered",
     "scope": "ASCII A-Z lower-cased, other bytes kept, at most 1023 bytes.",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:TextToLower",
     "milestone": "text-utils"
   },
@@ -5288,9 +5225,7 @@
     "jonlib": "Text.to_pascal",
     "status": "profile-covered",
     "scope": "raylib 6.2: first byte upper-cased; a run of '_' and the byte after it become that byte, upper-cased (a-z) or copied; a final run is dropped; \"\" for an empty text; at most 1023 bytes.",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:TextToPascal",
     "milestone": "text-utils"
   },
@@ -5298,9 +5233,7 @@
     "jonlib": "Text.to_snake",
     "status": "profile-covered",
     "scope": "raylib 6.2: ' ' as '_', '_' before an upper-case letter starting a word (never doubled, never at output byte 1022), letters lower-cased, at most 1023 bytes.",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:TextToSnake",
     "milestone": "text-utils"
   },
@@ -5308,9 +5241,7 @@
     "jonlib": "Text.to_camel",
     "status": "profile-covered",
     "scope": "raylib 6.2: TextToPascal with the first byte lower-cased.",
-    "gaps": [
-      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:TextToCamel",
     "milestone": "text-utils"
   },
@@ -6309,9 +6240,7 @@
     "jonlib": "Wave.is_valid",
     "status": "profile-covered",
     "scope": "Positive frames, sample rate, sample size and channels.",
-    "gaps": [
-      "Native NULL-data ABI"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:IsWaveValid",
     "milestone": "audio-codecs"
   },
@@ -6357,9 +6286,7 @@
     "jonlib": "Sound.is_valid",
     "status": "profile-covered",
     "scope": "Frames, buffer, sample rate, sample size and channels all nonzero.",
-    "gaps": [
-      "A buffer is a number (0 is NULL), not a pointer"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:IsSoundValid",
     "milestone": "audio-device"
   },
@@ -6380,9 +6307,7 @@
     "jonlib": "Wave.unload",
     "status": "profile-covered",
     "scope": "Consumes the wave.",
-    "gaps": [
-      "Native allocator ABI"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:UnloadWave",
     "milestone": "audio-codecs"
   },
@@ -6573,9 +6498,7 @@
     "jonlib": "List<F32> (dropped)",
     "status": "profile-covered",
     "scope": "The sample list is an owned value; no unload step is needed.",
-    "gaps": [
-      "No native pointer ABI (language adaptation)"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:UnloadWaveSamples",
     "milestone": "audio-codecs"
   },
@@ -6610,9 +6533,7 @@
     "jonlib": "Music.is_valid",
     "status": "profile-covered",
     "scope": "A decoder, frames, and a rate, sample size and channels that are not 0.",
-    "gaps": [
-      "The decoder is a value (MusicNone is NULL), not a pointer"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:IsMusicValid",
     "milestone": "audio-stream"
   },
@@ -6652,7 +6573,6 @@
     "status": "profile-covered",
     "scope": "Each processed half of a playing music's stream takes the decoder's next frames, the first half then the second: a whole half while the music loops (the file again from its first frame; an MP3's or Ogg Vorbis's stream from its start whenever a read comes short; an XM or MOD player just goes on) or has as many left, else what is left; with none left and both halves processed the music stops, its decoder at the first frame; halves, counts and decoder position compared with raylib.",
     "gaps": [
-      "The decoder's state is in the Music value, which the function gives back: no shared ctxData pointer",
       "FLAC music is not ported (raylib's default build leaves FLAC out: SUPPORT_FILEFORMAT_FLAC is 0)",
       "Nothing for a music without frames (raylib reads it for ever when it loops)",
       "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
@@ -6667,7 +6587,6 @@
     "status": "profile-covered",
     "scope": "The stream stops and the decoder goes back to its first frame, playing or not; an XM music's player is reset (jar_xm_reset), a MOD music's goes back to the song's start (jar_mod_seek_start), an Ogg Vorbis music's decoder goes back to its first frame (stb_vorbis_seek_start).",
     "gaps": [
-      "The decoder's state is in the Music value, which the function gives back: no shared ctxData pointer",
       "An unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:StopMusicStream",
@@ -6700,7 +6619,6 @@
     "status": "profile-covered",
     "scope": "The decoder goes to frame (unsigned int)(position*sampleRate), at most the file's last; the stream's framesProcessed is that frame, not clamped, and both halves are processed. A QOA music goes to the start of the QOA frame (5120 samples) the position is in, which is also its framesProcessed. An MP3 music seeks as drmp3_seek_to_pcm_frame does without a seek table: by dr_mp3's count of frames, which has the LAME delay in it, reading up to the frame. Nothing for an XM or MOD music, as in raylib. Compared with raylib.",
     "gaps": [
-      "The decoder's state is in the Music value, which the function gives back: no shared ctxData pointer",
       "Nothing for a position whose frame is not an unsigned int, a stream without a tracked buffer (raylib writes through the pointer) and an unready device",
       "An Ogg Vorbis music is not sought (stb_vorbis_seek_frame): it gives silence from there and Music.why is 6"
     ],
@@ -6776,9 +6694,7 @@
     "jonlib": "AudioStream.is_valid",
     "status": "profile-covered",
     "scope": "A buffer and a sample rate, sample size and channels that are not 0.",
-    "gaps": [
-      "A buffer is a number (0 is NULL), not a pointer"
-    ],
+    "gaps": [],
     "api_id": "raylib:function:IsAudioStreamValid",
     "milestone": "audio-stream"
   },
@@ -6919,7 +6835,6 @@
     "status": "profile-covered",
     "scope": "A stream with a callback takes its frames from the callback instead of its halves (the cursor and the halves stay), and gives them back to the halves without one (NULL); the frames each call is asked for (raudio's guess of the converter's input, at most what its 4096-byte buffer holds, and again while the converter wants more) are AudioDevice.asks, and AudioDevice.mix_answered mixes the answers; the asks and every sample compared with raylib.",
     "gaps": [
-      "No function is kept: the program answers each device callback's asks (AudioDevice.asks, AudioDevice.mix_answered) or gives AudioClock.advance_answering a function of its own state",
       "A sound's buffer takes no callback (raylib would call it for the sound's frames)",
       "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
       "AudioDevice.mix refuses a callback in which a stream's callback would be asked: its answers are needed"
@@ -6932,8 +6847,6 @@
     "status": "profile-covered",
     "scope": "The processor becomes the last of the stream's (or sound's) buffer: in a device callback it is called, after those attached before it, on each run of at most 512 frames the buffer gives (stereo f32, after the converter and before the volume and pan); the calls, their order and every sample compared with raylib.",
     "gaps": [
-      "No function is kept: a processor is a number (tag) in an AudioProcessors value, and AudioDevice.mix_processed or AudioClock.advance_processing calls the program's one function with it",
-      "The processor returns the samples it wrote instead of writing in place, and must give back as many as it was given",
       "An unready device leaves the list as it is (raylib locks a mutex that does not exist)",
       "A stream without a tracked buffer leaves the list as it is (raylib reads through the pointer)"
     ],
@@ -6945,7 +6858,6 @@
     "status": "profile-covered",
     "scope": "Every processor of the buffer with the tag goes; the others keep their order.",
     "gaps": [
-      "No function is kept: a processor is a number (tag) in an AudioProcessors value, and AudioDevice.mix_processed or AudioClock.advance_processing calls the program's one function with it",
       "An unready device leaves the list as it is (raylib locks a mutex that does not exist)",
       "A stream without a tracked buffer leaves the list as it is (raylib reads through the pointer)"
     ],
@@ -6957,8 +6869,6 @@
     "status": "profile-covered",
     "scope": "The processor becomes the last of the mixed output's: it is called on the whole mix of every device callback, after every buffer and before the master volume and the clip; the list outlives CloseAudioDevice; calls and samples compared with raylib.",
     "gaps": [
-      "No function is kept: a processor is a number (tag) in an AudioProcessors value, and AudioDevice.mix_processed or AudioClock.advance_processing calls the program's one function with it",
-      "The processor returns the samples it wrote instead of writing in place, and must give back as many as it was given",
       "An unready device leaves the list as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:AttachAudioMixedProcessor",
@@ -6969,7 +6879,6 @@
     "status": "profile-covered",
     "scope": "Every mixed processor with the tag goes; the others keep their order.",
     "gaps": [
-      "No function is kept: a processor is a number (tag) in an AudioProcessors value, and AudioDevice.mix_processed or AudioClock.advance_processing calls the program's one function with it",
       "An unready device leaves the list as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:DetachAudioMixedProcessor",
