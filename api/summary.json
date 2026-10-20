@@ -576,6 +576,11 @@
     "only_allowed_gaps": 6,
     "meeting": 0
   },
+  "open_gaps": 3301,
+  "language_adaptations": {
+    "entries": 0,
+    "items": 0
+  },
   "next_work": [
     {
       "id": "raylib:function:LoadImageFromMemory",

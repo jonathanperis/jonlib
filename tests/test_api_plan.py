@@ -192,6 +192,63 @@ inline Vec operator + (const Vec& lhs, const float& rhs) { return lhs; }
             with patch('sys.argv', ['api_plan.py', 'check']), self.assertRaisesRegex(ValueError, 'must state contracts'):
                 plan.main()
 
+    def test_language_adaptations_are_linted_rendered_and_never_gaps(self):
+        key = 'raylib:function:ImageResize'
+        cases = {
+            'too many adaptations': dict(adaptations=[f'adaptation {i}' for i in range(plan.MAX_ADAPTATIONS + 1)]),
+            'long adaptation': dict(adaptations=['x' * (plan.MAX_ADAPTATION + 1)]),
+            'duplicate adaptation': dict(adaptations=['Lists instead of counted pointers'] * 2),
+            'adaptation also a gap': dict(adaptations=['Lists instead of counted pointers'], gaps=['Lists instead of counted pointers']),
+            'run ID in adaptation': dict(adaptations=['Hosted run 37202964890']),
+        }
+        for name, change in cases.items():
+            with self.subTest(name=name):
+                progress = copy.deepcopy(self.progress)
+                progress['entries'][key].update(change)
+                problems = plan.lint_progress(progress)
+                self.assertEqual(len(problems), 1, problems)
+                self.assertTrue(problems[0].startswith(key))
+        for bad in ('Lists instead of counted pointers', [''], [3]):
+            with self.subTest(malformed=bad):
+                progress = copy.deepcopy(self.progress)
+                progress['entries'][key]['adaptations'] = bad
+                with self.assertRaisesRegex(ValueError, 'adaptations must be'):
+                    plan.make_ledger(self.reference, self.policy, progress)
+        progress = copy.deepcopy(self.progress)
+        adaptation = 'Synthetic adaptation: a list instead of a counted pointer'
+        progress['entries'][key]['adaptations'] = [adaptation]
+        outputs, report = plan.generated(self.reference, self.policy, progress)
+        base_outputs, base = plan.generated(self.reference, self.policy, self.progress)
+        row = next(r for r in json.loads(outputs['api/ledger.json'])['entries'] if r['id'] == key)
+        self.assertEqual(row['adaptations'], [adaptation])
+        self.assertNotIn(adaptation, row['gaps'])
+        self.assertEqual(report['open_gaps'], base['open_gaps'])
+        self.assertEqual(report['language_adaptations']['items'], base['language_adaptations']['items'] + 1)
+        self.assertIn(f'- `{key}`: {adaptation}', outputs['docs/api/raylib.md'])
+        self.assertIn('\n## Language adaptations\n', outputs['docs/api/raylib.md'])
+        self.assertIn(f'separately, {report["language_adaptations"]["entries"]} entries record', outputs['docs/PROGRESS.md'])
+        self.assertIn('\n## Language adaptations\n', (plan.ROOT / 'docs/API-TRACKING.md').read_text())
+        # Adaptations neither block nor satisfy the Phase 1 exit measure's gap rule.
+        rows = [dict(status='partial', phase=1, kind='function', gaps=gaps, adaptations=['Lists instead of pointers'],
+                     gates=dict(behavior='verified', ownership='verified')) for gaps in ([], ['Exceptional inputs'])]
+        self.assertEqual(plan.phase1_exit(rows)['meeting'], 1)
+        # Adaptations alone never complete an item: every gate, target and gap rule still applies.
+        evidence = ['tests/test_api_plan.py']
+        claim = dict(status='complete', jonlib='Surface.draw_image', symbols=['Surface.draw_image'], gaps=[], adaptations=[adaptation],
+                     evidence=evidence, gates={g:'verified' for g in plan.GATES}, gate_evidence={g:evidence for g in plan.GATES},
+                     target_results={t['id']:dict(status='verified', evidence=evidence) for t in self.policy['targets']})
+        progress = copy.deepcopy(self.progress)
+        progress['entries'][key] = claim
+        plan.make_ledger(self.reference, self.policy, progress)
+        for name, change in {'unverified gate': dict(gates={**claim['gates'], 'targets':'partial'}),
+                             'remaining gap': dict(gaps=['Exceptional inputs']),
+                             'missing target': dict(target_results={})}.items():
+            with self.subTest(completion=name):
+                progress = copy.deepcopy(self.progress)
+                progress['entries'][key] = {**claim, **change}
+                with self.assertRaises(ValueError):
+                    plan.make_ledger(self.reference, self.policy, progress)
+
     def test_check_rejects_stale_outputs_and_source_drift(self):
         BUILD.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=BUILD, prefix='api-plan-') as directory:

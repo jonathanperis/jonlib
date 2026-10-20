@@ -16,10 +16,13 @@ ROOT = Path(__file__).resolve().parents[1]
 API = ROOT / 'api'
 STATUSES = {'not-started', 'in-progress', 'partial', 'blocked', 'complete'}
 GATES = ('availability', 'behavior', 'ownership', 'integration', 'targets', 'performance')
-DELTA_FIELDS = ('status', 'jonlib', 'scope', 'gaps', 'gates', 'evidence', 'blocker',
+DELTA_FIELDS = ('status', 'jonlib', 'scope', 'gaps', 'adaptations', 'gates', 'evidence', 'blocker',
                 'gate_evidence', 'target_results', 'milestone', 'api_dependencies')
 # Progress records state contracts, not run history (see docs/API-TRACKING.md).
 MAX_SCOPE, MAX_GAPS, MAX_GAP, MAX_EVIDENCE = 600, 6, 200, 12
+# Language adaptations (docs/API-TRACKING.md): C-to-Bend mappings with no
+# behavior difference reachable through the API. Never gaps, never completion.
+MAX_ADAPTATIONS, MAX_ADAPTATION = 6, 200
 # Phase 1 exit measure (docs/API-TRACKING.md): a gap may remain at exit only
 # when it is tagged as one of these categories.
 EXIT_GAP_PREFIXES = ('Targets:', 'Integration:', 'Performance:', 'Undefined native behavior:')
@@ -173,11 +176,18 @@ def lint_progress(progress):
         if len(gaps) > MAX_GAPS:
             problems.append(f'{key}: {len(gaps)} gaps (limit {MAX_GAPS})')
         problems += [f'{key}: gap has {len(gap)} characters (limit {MAX_GAP})' for gap in gaps if len(gap) > MAX_GAP]
+        adaptations = update.get('adaptations', [])
+        if len(adaptations) > MAX_ADAPTATIONS:
+            problems.append(f'{key}: {len(adaptations)} adaptations (limit {MAX_ADAPTATIONS})')
+        problems += [f'{key}: adaptation has {len(item)} characters (limit {MAX_ADAPTATION})' for item in adaptations if len(item) > MAX_ADAPTATION]
+        if len(set(adaptations)) != len(adaptations):
+            problems.append(f'{key}: duplicate adaptation')
+        problems += [f'{key}: adaptation also recorded as a gap: {item[:80]}' for item in adaptations if item in gaps]
         if len(evidence) > MAX_EVIDENCE:
             problems.append(f'{key}: {len(evidence)} evidence paths (limit {MAX_EVIDENCE})')
-        for text in [scope, *gaps, update.get('blocker') or '']:
+        for text in [scope, *gaps, *adaptations, update.get('blocker') or '']:
             if any(pattern.search(text) for pattern in RUN_HISTORY):
-                problems.append(f'{key}: commit hash or CI run ID in scope/gaps/blocker: {text[:80]}')
+                problems.append(f'{key}: commit hash or CI run ID in scope/gaps/adaptations/blocker: {text[:80]}')
     return problems
 
 
@@ -253,6 +263,9 @@ def make_ledger(reference, plan, progress):
         evidence = update.get('evidence', [])
         if any(not local_evidence(item) for item in evidence):
             raise ValueError(f'{entry["id"]}: missing evidence reference')
+        adaptations = update.get('adaptations', [])
+        if not isinstance(adaptations, list) or not all(isinstance(item, str) and item.strip() for item in adaptations):
+            raise ValueError(f'{entry["id"]}: adaptations must be a list of nonempty strings')
         if set(update.get('gates', {})) - set(GATES):
             raise ValueError(f'{entry["id"]}: unknown completion gate')
         gates = {gate: update.get('gates', {}).get(gate, 'unverified') for gate in GATES}
@@ -300,6 +313,7 @@ def make_ledger(reference, plan, progress):
                          mapping_state='implemented' if update.get('jonlib') and status in ('partial', 'complete') else 'proposed',
                          scope=update.get('scope', 'Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.'),
                          gaps=update.get('gaps', ['Implementation and full contract/platform verification pending.'] if status != 'complete' else []),
+                         adaptations=adaptations,
                          blocker=update.get('blocker'), gates=gates, evidence=evidence,
                          gate_evidence=update.get('gate_evidence', {}), target_results=update.get('target_results', {}),
                          symbols=update.get('symbols', []),
@@ -351,6 +365,8 @@ def summary(ledger, plan):
                 kinds=dict(sorted(Counter(r['kind'] for r in rows).items())),
                 headers={header: counts([r for r in rows if r['header'] == header]) for header in HEADERS},
                 milestones=groups, phase1_exit=phase1_exit(rows),
+                open_gaps=sum(len(r['gaps']) for r in rows),
+                language_adaptations=dict(entries=sum(bool(r['adaptations']) for r in rows), items=sum(len(r['adaptations']) for r in rows)),
                 next_work=[{key:r[key] for key in ('id','name','milestone','status','jonlib','next_step','milestone_dependencies','api_dependencies')} for r in queue[:20]])
 
 
@@ -377,6 +393,7 @@ def generated(reference, plan, progress):
                   f'- Jonlib (`raylib.h` reference): **{report["core_functions"]["total"]} functions**, **{report["core_functions"]["partial"]} partial**, **{report["core_functions"]["complete"]} complete**.',
                   f'- Jonmath (`raymath.h` reference): **{report["math_functions"]["total"]} functions**, **{report["math_functions"]["partial"]} partial**, **{report["math_functions"]["complete"]} complete**.',
                  f'- [Phase 1 exit measure](API-TRACKING.md#phase-1-exit-measure): **{report["phase1_exit"]["meeting"]} of {report["phase1_exit"]["total"]}** Phase 1 functions meet it; {report["phase1_exit"]["implemented"]} are partial or complete, {report["phase1_exit"]["behavior_ownership_verified"]} have behavior and ownership verified, and {report["phase1_exit"]["only_allowed_gaps"]} have only exit-allowed gaps.',
+                 f'- **{report["open_gaps"]} open gaps** are recorded; separately, {report["language_adaptations"]["entries"]} entries record {report["language_adaptations"]["items"]} [language adaptations](API-TRACKING.md#language-adaptations), which are not gaps and never complete an item on their own.',
                  '- Catalog coverage is not implementation completeness. Operators, constants, types and configuration controls have separate rows.',
                  '- Conditional variants and duplicate declarations are retained. Related IDs can share work, but do not automatically inherit completion.', '',
                  '## Complete checklists', '', '| Header | Entries | Checklist |', '|---|---:|---|']
@@ -391,7 +408,7 @@ def generated(reference, plan, progress):
     for row in report['next_work']:
         dashboard.append(f'- **`{row["id"]}`** ({row["status"]}, `{row["milestone"]}`): {row["next_step"]}')
     dashboard += ['', '## Closing an item', '',
-                  'Mark `complete` only with all six gates verified, no remaining gaps, per-gate evidence and every target accounted for. A `reference-not-supported` target requires source evidence; it is not a way to discard difficult work.',
+                  'Mark `complete` only with all six gates verified, no remaining gaps, per-gate evidence and every target accounted for; recorded language adaptations do not replace any of these. A `reference-not-supported` target requires source evidence; it is not a way to discard difficult work.',
                   'Use `python3 tools/api_plan.py show API_ID` for an item and `python3 tools/api_plan.py report --since GIT_REF` for the actual progression delta.', '',
                   '## Target matrix', '',
                   'Each complete item needs results for these target configurations. Split hardware/OS/backend combinations in the linked evidence; build-only results are insufficient.', '',
@@ -415,6 +432,11 @@ def generated(reference, plan, progress):
             if row['kind'] in ('type', 'enum'):
                 signature = row['name'] + ' — ' + '; '.join(row['variants'][0].get('members', []))
             lines.append(f'| [`{escape(row["id"])}`]({row["source"]}) | {row["kind"]} | `{escape(signature)}` | `{escape(row["jonlib"])}` ({row["mapping_state"]}) | {row["status"]} | `{row["milestone"]}` |')
+        adapted = [row for row in rows if row['adaptations']]
+        if adapted:
+            lines += ['', '## Language adaptations', '',
+                      'C-to-Bend mappings with no behavior difference reachable through the API ([policy](../API-TRACKING.md#language-adaptations)). They are not gaps and do not complete an item.', '']
+            lines += [f'- `{escape(row["id"])}`: ' + '; '.join(escape(item) for item in row['adaptations']) for row in adapted]
         lines += ['', 'Full conditional variants, source lines, type/API dependencies, evidence and next actions are retained in [`api/ledger.json`](../../api/ledger.json).', '']
         outputs[f'docs/api/{header[:-2]}.md'] = '\n'.join(lines)
     return outputs, report

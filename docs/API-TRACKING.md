@@ -45,7 +45,7 @@ graphics-pipeline or audio-device behavior on those platforms.
 |---|---|
 | `api/reference.json` | Generated source catalog, immutable revision, per-header SHA-256 and source links |
 | `api/milestones.json` | Editable work packages, prerequisites, verification recipes, target policy and priority overrides |
-| `api/progress.json` | Editable item-level implementation, status, scope, gaps and evidence; omitted entries mean `not-started` |
+| `api/progress.json` | Editable item-level implementation, status, scope, gaps, language adaptations and evidence; omitted entries mean `not-started` |
 | `api/ledger.json` | Generated join: one complete planning record per catalog ID |
 | `api/summary.json` | Generated counts, milestone progress and next-work queue |
 | `docs/PROGRESS.md`, `docs/api/*.md` | Generated human-readable dashboard and complete checklists |
@@ -76,6 +76,37 @@ from behavior because Bend resource adaptations need their own review.
 actual Bend symbols for functions/operators, and a result for every target ID.
 A `reference-not-supported` target requires a reason and reference evidence.
 Language adaptations still need behavior/ownership/integration justification.
+
+## Language adaptations
+
+Some differences from the C declaration are permanent consequences of porting C
+to Bend, not missing work. An entry records them in `adaptations`, separately
+from `gaps`. Only a language-level mapping with **no behavior difference
+reachable through the API** qualifies:
+
+- C macros, compound literals and `constexpr` objects as zero-argument functions;
+  enums as U32 constants; C int-compatible bool conversions.
+- Include, type and redefinition guards, export/linkage macros, implementation
+  switches and build options that Jonlib, a Bend package, is not configured by.
+- Pointer, allocator, output-parameter and struct-layout ABI: owned values,
+  lists that carry their length and Base strings instead of pointers,
+  counted buffers and NUL-terminated `char` arrays; no pointer aliasing.
+- Implicit globals as explicit state values; mutation in place as a returned
+  value; static buffers as returned values; consuming a value to release it.
+- Operator overloading by operand type as named calls; varargs as preformatted
+  text; callbacks as tags or functions the program supplies.
+
+Anything with an observable difference stays a gap: a value Jonlib refuses or
+answers differently, a lost or truncated input, a capability or target that is
+missing, a different error, a domain, precision or resource limit. A record
+that mixes the two is split: the adaptation goes to `adaptations`, the
+remainder stays a gap. When in doubt, it is a gap.
+
+Adaptations are shown as "Language adaptations" in the generated ledger,
+dashboard and per-header checklists. They are not counted as gaps, do not
+affect the Phase 1 exit measure, and are never sufficient for completion:
+`complete` still needs all six gates verified (including targets on Linux and
+macOS), every target result, per-gate evidence and no gaps.
 
 Validation checks structure, references and evidence presence; reviewers must
 check that the evidence actually proves the claim. A URL or existing document
@@ -143,13 +174,16 @@ was verified:
   "pending" qualification claims. Aim for 250 characters, at most 500.
 - `gaps`: at most six items naming missing contract domains or target areas
   (formats, numeric domains, ABI, platforms, performance), about 160 characters each.
+- `adaptations`: at most six [language adaptations](#language-adaptations),
+  about 120 characters each.
 - `evidence`: at most twelve repository paths, led by the probe(s) and the
   topic page; no historical pages or run records.
 
 `python3 tools/api_plan.py check` (also run by `tools/check_project.py`) rejects a
 scope over 600 characters, more than six gaps, a gap over 200 characters, more than
-twelve evidence paths, and any 40-hex commit hash or 9+-digit run ID in a scope,
-gap or blocker.
+six adaptations, an adaptation over 200 characters or repeated (in the list or
+as a gap), more than twelve evidence paths, and any 40-hex commit hash or
+9+-digit run ID in a scope, gap, adaptation or blocker.
 
 ## Drift and extraction verification
 
