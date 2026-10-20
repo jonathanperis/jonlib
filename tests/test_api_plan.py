@@ -157,6 +157,15 @@ inline Vec operator + (const Vec& lhs, const float& rhs) { return lhs; }
         self.assertIn(f'[Phase 1 exit measure](API-TRACKING.md#phase-1-exit-measure): **{measure["meeting"]} of {measure["total"]}**', dashboard)
         self.assertIn('\n## Phase 1 exit measure\n', (plan.ROOT / 'docs/API-TRACKING.md').read_text())
 
+    def test_targets_are_linux_and_macos_with_the_rest_recorded_out_of_scope(self):
+        milestones = json.loads((plan.ROOT / 'api/milestones.json').read_text())
+        self.assertEqual([t['id'] for t in milestones['targets']], ['memory-software', 'linux', 'macos'])
+        dropped = {t['id'] for t in milestones['out_of_scope_targets']['targets']}
+        self.assertFalse(dropped & {t['id'] for t in milestones['targets']})
+        self.assertTrue({'windows-native', 'android', 'web'} <= dropped)
+        outputs, _ = plan.generated(self.reference, self.policy, self.progress)
+        self.assertIn('No item needs results for: `windows-native`', outputs['docs/PROGRESS.md'])
+
     def test_progress_records_state_contracts_not_run_history(self):
         self.assertEqual(plan.lint_progress(self.progress), [])
         key = 'raylib:function:ImageResize'

@@ -97,29 +97,10 @@ Each complete item needs results for these target configurations. Split hardware
 
 | Target ID | Required scope |
 |---|---|
-| `windows-native` | Native Windows desktop |
-| `linux-x11` | Linux desktop X11 |
-| `linux-wayland` | Linux desktop Wayland |
-| `macos` | Native macOS desktop |
-| `freebsd` | FreeBSD reference variant |
-| `openbsd` | OpenBSD reference variant |
-| `netbsd` | NetBSD reference variant |
-| `dragonfly` | DragonFly reference variant |
-| `raspberry-pi` | Raspberry Pi desktop/native variants |
-| `linux-drm` | Linux native DRM |
-| `android` | Android lifecycle/input/audio/graphics |
-| `web` | WebAssembly/browser lifecycle and devices |
-| `haiku` | Haiku reference platform |
-| `memory-software` | Headless Memory/software renderer |
-| `gl-1.1` | OpenGL 1.1 supported configurations |
-| `gl-2.1` | OpenGL 2.1 supported configurations |
-| `gl-3.3` | OpenGL 3.3 supported configurations |
-| `gl-4.3` | OpenGL 4.3 supported configurations |
-| `gles-2` | OpenGL ES 2.0 supported configurations |
-| `gles-3` | OpenGL ES 3.0 supported configurations |
-| `sdl` | SDL alternative platform configurations |
-| `rgfw` | RGFW alternative platform configurations |
-| `web-rgfw` | WebRGFW alternative platform configuration |
-| `win32` | Win32 alternative platform configuration (PLATFORM=Win32, rcore_desktop_win32.c) |
+| `memory-software` | Headless memory platform and software renderer on Linux x86_64 and macOS arm64 (CPU-1, CPU-2 and JavaScript lanes; Metal on macOS) |
+| `linux` | Linux x86_64 desktop through Bend Base windows, input and audio (X11 or Wayland, whichever Base uses) |
+| `macos` | macOS arm64 desktop through Bend Base windows, input and audio |
+
+Out of scope since 2026-10-21 (Jonathan Peris): Jonlib targets Linux and macOS; raylib's other platforms and graphics backends are not planned. No item needs results for: `windows-native`, `freebsd`, `openbsd`, `netbsd`, `dragonfly`, `raspberry-pi`, `linux-drm`, `android`, `web`, `haiku`, `gl-1.1`, `gl-2.1`, `gl-3.3`, `gl-4.3`, `gles-2`, `gles-3`, `sdl`, `rgfw`, `web-rgfw`, `win32`.
 
 [Tracking policy and update procedure](API-TRACKING.md)

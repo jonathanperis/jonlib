@@ -4,9 +4,9 @@ Every gate passes on Linux against the pinned raylib 6.2. macOS (arm64,
 `macos-15`) has been off the merge path since 2026-10-10 ([CI.md](CI.md)), so
 nothing on `main` is verified there yet. Both CI hosts are part of every
 entry's verification ([API-TRACKING.md](API-TRACKING.md)), so this is the
-remaining project work before the other platforms of
-[`api/milestones.json`](../api/milestones.json). It is run by the maintainer on
-a Mac.
+validation of the second of Jonlib's two target platforms
+([`api/milestones.json`](../api/milestones.json)). It is run by the maintainer
+on a Mac.
 
 ## 1. Turn macOS back on in CI
 

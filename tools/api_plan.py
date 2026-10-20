@@ -397,6 +397,10 @@ def generated(reference, plan, progress):
                   'Each complete item needs results for these target configurations. Split hardware/OS/backend combinations in the linked evidence; build-only results are insufficient.', '',
                   '| Target ID | Required scope |', '|---|---|']
     dashboard += [f'| `{target["id"]}` | {target["scope"]} |' for target in plan['targets']]
+    dropped = plan.get('out_of_scope_targets')
+    if dropped:
+        dashboard += ['', f'Out of scope since {dropped["decided"]} ({dropped["by"]}): {dropped["reason"]} '
+                      'No item needs results for: ' + ', '.join(f'`{target["id"]}`' for target in dropped['targets']) + '.']
     dashboard += ['', '[Tracking policy and update procedure](API-TRACKING.md)', '']
     outputs['docs/PROGRESS.md'] = '\n'.join(dashboard)
     for header in HEADERS:

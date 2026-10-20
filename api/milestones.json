@@ -35,10 +35,12 @@
     {"id":"platforms","order":30,"phase":7,"title":"Complete platform/backend validation","namespace":"Platform","depends_on":["window","input","frame","audio-stream","rlgl-advanced"],"verify":"Run actual lifecycle/device/graphics/audio/packaging and resource/performance tests on each applicable supported target."}
   ],
   "targets": [
+    {"id":"memory-software","scope":"Headless memory platform and software renderer on Linux x86_64 and macOS arm64 (CPU-1, CPU-2 and JavaScript lanes; Metal on macOS)"},
+    {"id":"linux","scope":"Linux x86_64 desktop through Bend Base windows, input and audio (X11 or Wayland, whichever Base uses)"},
+    {"id":"macos","scope":"macOS arm64 desktop through Bend Base windows, input and audio"}
+  ],
+  "out_of_scope_targets": {"decided":"2026-10-21","by":"Jonathan Peris","reason":"Jonlib targets Linux and macOS; raylib's other platforms and graphics backends are not planned.","targets":[
     {"id":"windows-native","scope":"Native Windows desktop"},
-    {"id":"linux-x11","scope":"Linux desktop X11"},
-    {"id":"linux-wayland","scope":"Linux desktop Wayland"},
-    {"id":"macos","scope":"Native macOS desktop"},
     {"id":"freebsd","scope":"FreeBSD reference variant"},
     {"id":"openbsd","scope":"OpenBSD reference variant"},
     {"id":"netbsd","scope":"NetBSD reference variant"},
@@ -48,7 +50,6 @@
     {"id":"android","scope":"Android lifecycle/input/audio/graphics"},
     {"id":"web","scope":"WebAssembly/browser lifecycle and devices"},
     {"id":"haiku","scope":"Haiku reference platform"},
-    {"id":"memory-software","scope":"Headless Memory/software renderer"},
     {"id":"gl-1.1","scope":"OpenGL 1.1 supported configurations"},
     {"id":"gl-2.1","scope":"OpenGL 2.1 supported configurations"},
     {"id":"gl-3.3","scope":"OpenGL 3.3 supported configurations"},
@@ -59,7 +60,7 @@
     {"id":"rgfw","scope":"RGFW alternative platform configurations"},
     {"id":"web-rgfw","scope":"WebRGFW alternative platform configuration"},
     {"id":"win32","scope":"Win32 alternative platform configuration (PLATFORM=Win32, rcore_desktop_win32.c)"}
-  ],
+  ]},
   "scope_sources": ["https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/FAQ.md", "https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/CMakeOptions.txt"],
   "priority_overrides": {"raylib:function:LoadImageFromMemory":0, "raylib:function:ExportImage":1, "raylib:function:ImageFormat":2, "raylib:function:GetSplinePointBezierCubic":3, "raymath:function:QuaternionSlerp":4, "raymath:function:QuaternionToAxisAngle":5, "raymath:function:QuaternionToEuler":6, "raymath:function:MatrixPerspective":7},
   "api_dependencies": {

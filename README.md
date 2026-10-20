@@ -52,8 +52,8 @@ Everything below is a **partial, scoped profile** compared exactly with pinned
 raylib; each API's domain and gaps are in [`api/progress.json`](api/progress.json)
 and the [API dashboard](docs/PROGRESS.md), which always has the current counts.
 Every function of raylib.h, raymath.h, rlgl.h, rcamera.h and rgestures.h is
-at least partial and none is complete: an API completes only once every
-target platform is verified ([ROADMAP.md](docs/ROADMAP.md)). All 223 raylib
+at least partial and none is complete: an API completes only once both
+target platforms, Linux and macOS, are verified ([ROADMAP.md](docs/ROADMAP.md)). All 223 raylib
 examples run as Bend programs ([EXAMPLES.md](docs/EXAMPLES.md)).
 
 - **Images** ([API](docs/API.md)): owned `Surface` creation in any raylib pixel format, pixel access and
@@ -268,7 +268,7 @@ Drawing returns the updated `Surface`; the old value is consumed. Reads return
 the surface alongside an optional pixel. Images are up to 4096×4096 in pixel
 formats 1..13 (operations follow raylib per format) and bounded integral coordinates represented as F32. See the API
 document for the vector variants, exact domains, ownership returns and reference
-edge behavior. Wider domains, platforms and performance remain open work.
+edge behavior. Wider domains and performance remain open work; Jonlib targets Linux and macOS.
 
 Matching raylib's software renderer does not establish GPU `Draw*` behavior,
 performance, platform behavior, or full raylib compatibility.

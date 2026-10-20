@@ -48,11 +48,12 @@ passing gate does and does not establish is in
    M3D and text-format gaps in [MODELS.md](MODELS.md), and libm profiles
    that cannot be reproduced from published sources (Apple's `tan`,
    `asinf`, `acosf`).
-3. **Platforms** (phase 7 of the milestones): the targets of
-   [`api/milestones.json`](../api/milestones.json) beyond Linux and macOS:
-   native Windows, the BSDs, Raspberry Pi and DRM, Android, the browser and
-   each graphics backend. Each needs lifecycle, input, audio, graphics and
-   packaging evidence; compilation alone is not enough.
+3. **Platforms**: Jonlib targets Linux and macOS (decided 2026-10-21): the
+   headless memory platform with the software renderer on both, and their
+   desktops through Bend Base ([`api/milestones.json`](../api/milestones.json)
+   `targets`). raylib's other platforms (Windows, the BSDs, Raspberry Pi and
+   DRM, Android, the browser, Haiku, SDL/RGFW) and its OpenGL/GLES backends
+   are out of scope and recorded as such (`out_of_scope_targets`).
 4. **Runtime facilities** that Bend's Base lacks today, added to Bend's
    platform boundary rather than to Jonlib: window state, resize,
    fullscreen and DPI, monitors, clipboard and cursor modes, text input,
