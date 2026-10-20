@@ -48,6 +48,7 @@ music's GetMusicTimePlayed must be the same on both sides.
 Results: .build/perf/results.json and .build/perf/results.md.
 """
 import contextlib
+import hashlib
 import json
 import os
 import platform
@@ -74,6 +75,11 @@ AUDIO_C = r'''#include "raylib.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+// The reference library is the examples probe's clock-injected one; nothing here reads its clock.
+double JonlibProbeTime(void) { return 0.0; }
+int JonlibProbeNanosleep(const struct timespec *req, struct timespec *rem) { (void)req; (void)rem; return 0; }
+int JonlibProbeUsleep(unsigned int us) { (void)us; return 0; }
 void JonlibAudioClockStop(void);
 void JonlibAudioClockPump(unsigned periods);
 int main(int argc, char **argv)
@@ -184,17 +190,19 @@ def steady_script(script, extra):
 
 def split_candidate(line_times, wall, extra):
     """Jonlib's program prints base, steady and base again; from the times of its three lines (seconds since start)
-    and its wall time: startup (process start to the first script's setup), the base script (setup and frames), the time per
-    extra frame ((steady - base)/extra) and the exit. None for the parts the lines cannot give (fewer than three lines, or
-    lines that came out together because the output was not flushed per line)."""
+    and its wall time: `first`, the process's start to the first script's line (runtime start, one-time work, the
+    setup and the base frames), `base`, the base script run again (setup and frames), the time per extra frame
+    ((steady - base)/extra) and the exit. `first - base` is not a startup time: a later script can be slower than the
+    first one (a larger heap). None for the parts the lines cannot give (fewer than three lines, or lines that came out
+    together because the output was not flushed per line)."""
+    nothing = dict(first=None, base=None, per_frame=None, exit=None, line_timing=False)
     if len(line_times) != 3 or extra < 1:
-        return dict(startup=None, base=None, per_frame=None, exit=None, line_timing=False)
+        return nothing
     first, second, third = line_times
     steady, base = second - first, third - second
-    together = steady <= 0 or base <= 0 or (third - first) < 0.01 * wall
-    if together:
-        return dict(startup=None, base=None, per_frame=None, exit=None, line_timing=False)
-    return dict(startup=first - base, base=base, per_frame=(steady - base) / extra, exit=wall - third, line_timing=True)
+    if steady <= 0 or base <= 0 or (third - first) < 0.01 * wall:
+        return nothing
+    return dict(first=first, base=base, per_frame=(steady - base) / extra, exit=wall - third, line_timing=True)
 
 
 def per_frame_from_walls(base_wall, steady_wall, extra):
@@ -263,9 +271,73 @@ def pct(per_period):
 # -----------------------------------------------------------------------------
 # Processes
 
+# ru_maxrss survives exec on Linux: a child forked from this Python process starts with Python's high-water mark (a few
+# hundred MiB once results are held). The measured program is started by this small launcher instead, whose own child
+# begins from the launcher's page or two, and the launcher reports that child's peak.
+LAUNCHER_C = r'''#include <stdio.h>
+#include <sys/resource.h>
+#include <sys/wait.h>
+#include <unistd.h>
+int main(int argc, char **argv)
+{
+    if (argc < 2) return 125;
+    pid_t pid = fork();
+    if (pid == 0) { execvp(argv[1], argv + 1); _exit(127); }
+    int status; struct rusage usage;
+    if (pid < 0 || wait4(pid, &status, 0, &usage) < 0) return 126;
+    fprintf(stderr, "\n%s %ld\n", "JONLIB_PERF_MAXRSS", usage.ru_maxrss);
+    return WIFEXITED(status) ? WEXITSTATUS(status) : 128 + WTERMSIG(status);
+}
+'''
+MAXRSS = 'JONLIB_PERF_MAXRSS'
+
+
+def launcher():
+    """The launcher binary, built once per work directory."""
+    source, binary = WORK / 'launcher.c', WORK / 'launcher'
+    if not binary.is_file() or not source.is_file() or source.read_text() != LAUNCHER_C:
+        WORK.mkdir(parents=True, exist_ok=True)
+        source.write_text(LAUNCHER_C)
+        probekit.run(['clang', '-O2', source, '-o', binary])
+    return binary
+
+
+def peak_rss(stderr):
+    """The launcher's report (KiB) and the program's own stderr without it; None when it is missing."""
+    lines, peak = [], None
+    for line in stderr.splitlines():
+        if line.startswith(MAXRSS + ' '):
+            peak = int(line.split()[1])
+        else:
+            lines.append(line)
+    return peak, '\n'.join(lines).rstrip('\n')
+
+
+def source_key(source, extra=''):
+    """What a compiled candidate depends on: its source, every Bend file of the repository it may import, the compiler."""
+    digest = hashlib.sha256(source.read_bytes())
+    for path in sorted(ROOT.glob('*.bend')) + sorted((ROOT / 'src').rglob('*.bend')) + sorted((ROOT / 'examples').glob('*.bend')) \
+            + sorted((ROOT / 'tests/gui').glob('*.bend')):
+        digest.update(path.relative_to(ROOT).as_posix().encode() + b'\0' + path.read_bytes())
+    digest.update(extra.encode())
+    return digest.hexdigest()
+
+
+def compile_cached(cli, source, *outputs, extra=''):
+    """probekit.compile_outputs, skipped for an output already compiled from the same key (a .key file beside it)."""
+    key = source_key(source, extra)
+    for output in outputs:
+        stamp = output.with_name(output.name + '.key')
+        if output.is_file() and stamp.is_file() and stamp.read_text() == key:
+            continue
+        stamp.unlink(missing_ok=True)
+        probekit.compile_outputs(cli, source, output)
+        stamp.write_text(key)
+
 def measure(command, *, cwd, env=None, stdin=subprocess.DEVNULL, timeout=ep.LANE_TIMEOUT):
     """Run a command; return its wall time, the time (since start) and text of each stdout line, its peak RSS (KiB) and
     stderr's tail. Raises ProbeFailure on a nonzero exit."""
+    command = [launcher(), *command]
     started = time.perf_counter()
     process = subprocess.Popen([str(part) for part in command], cwd=cwd, env=env or probekit.ENV, stdin=stdin,
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -276,13 +348,13 @@ def measure(command, *, cwd, env=None, stdin=subprocess.DEVNULL, timeout=ep.LANE
         lines.append(raw.decode().rstrip('\n'))
         if time.perf_counter() > deadline:
             process.kill()
-    stderr = process.stderr.read().decode(errors='replace')
-    _, status, usage = os.wait4(process.pid, 0)
+    peak, stderr = peak_rss(process.stderr.read().decode(errors='replace'))
+    _, status, _ = os.wait4(process.pid, 0)
     wall = time.perf_counter() - started
     process.returncode = os.waitstatus_to_exitcode(status)
     if process.returncode:
         raise ProbeFailure(f'perf: {" ".join(map(str, command))} failed ({process.returncode}): {stderr[-2000:]}')
-    return dict(wall=wall, lines=lines, times=times, peak_rss_kib=usage.ru_maxrss, stderr=stderr[-2000:])
+    return dict(wall=wall, lines=lines, times=times, peak_rss_kib=peak, stderr=stderr[-2000:])
 
 
 class Context:
@@ -365,7 +437,7 @@ def measure_example(ctx, example, script, libm, extra, runs, js):
     cli = ['bun', ctx.args.bend_source / 'bend2/main.ts']
     print(f'{example}: compiling the candidate', flush=True)
     started = time.perf_counter()
-    probekit.compile_outputs(cli, source, binary, *([javascript] if js else []))
+    compile_cached(cli, source, binary, *([javascript] if js else []), extra=json.dumps(ctx.lock['bend']))
     entry['compile_seconds'] = time.perf_counter() - started
     reference = ep.build_reference(ctx, example)
 
@@ -407,7 +479,7 @@ def measure_example(ctx, example, script, libm, extra, runs, js):
                            frame_lines=summary([t for r in native_runs for t in r['frame_intervals']]), runs=native_runs)
     for lane, measured in lane_runs.items():
         entry[lane] = dict(per_frame=median_of(measured, 'per_frame'), wall=median_of(measured, 'wall'),
-                           startup=median_of(measured, 'startup'), base=median_of(measured, 'base'),
+                           first=median_of(measured, 'first'), base=median_of(measured, 'base'),
                            peak_rss_kib=max(r['peak_rss_kib'] for r in measured), runs=measured)
     entry['output_equal'] = all(entry['lane_output_equal'].values())
     entry['ratio'] = ratio(entry['cpu-1']['per_frame'], entry['native']['per_frame'])
@@ -426,7 +498,7 @@ def measure_audio(ctx, periods, runs):
     bend, candidate = ctx.work / 'audio.bend', ctx.work / 'audio-candidate'
     bend.write_text(AUDIO_BEND)
     print('audio: compiling the candidate', flush=True)
-    probekit.compile_outputs(['bun', ctx.args.bend_source / 'bend2/main.ts'], bend, candidate)
+    compile_cached(['bun', ctx.args.bend_source / 'bend2/main.ts'], bend, candidate, extra=json.dumps(ctx.lock['bend']))
     sides = {'native': [binary], 'cpu-1': [candidate, '--gpu', 'off', '--threads', '1']}
     out = dict(file=AUDIO_FILE, periods=periods)
     outputs = {}
@@ -465,6 +537,9 @@ def configure(parser):
     parser.add_argument('--js', action='store_true', help='also measure the JavaScript lane (50-90x slower than native)')
     parser.add_argument('--audio-periods', type=int, default=300, help='10 ms periods mixed by the audio measurement (default 300)')
     parser.add_argument('--no-audio', action='store_true', help='skip the audio measurement')
+    parser.add_argument('--audio-only', action='store_true', help='only the audio measurement (with --merge, keeps the examples)')
+    parser.add_argument('--merge', action='store_true',
+                        help='keep the other examples (and the audio) of an earlier results.json, replacing only what this run measures')
 
 
 def selected(args):
@@ -486,13 +561,18 @@ def main():
     results = dict(tool='tools/perf_examples.py', toolchain=ctx.lock, machine=machine(), libm=libm, runs=args.runs,
                    extra_frames=args.extra_frames, examples={})
     report = WORK / 'results.json'
+    if args.merge and report.is_file():
+        earlier = json.loads(report.read_text())
+        results['examples'] = earlier.get('examples', {})
+        if 'audio' in earlier:
+            results['audio'] = earlier['audio']
     scripts = raw_scripts()
 
     def save():
         report.write_text(json.dumps(results, indent=2) + '\n')
         (WORK / 'results.md').write_text(render_table(results))
 
-    for example in selected(args):
+    for example in ([] if args.audio_only else selected(args)):
         reason = unsupported(example)
         script = None if reason else choose_script(example, scripts, libm, args.script)
         if script is None:

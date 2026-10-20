@@ -1,7 +1,9 @@
 """The performance tool's pure helpers: statistics, the frame-time split, script selection and the tables."""
 from pathlib import Path
 import sys
+import tempfile
 import unittest
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import examples_probe as ep
@@ -44,7 +46,7 @@ class SplitTests(unittest.TestCase):
         # startup 0.1, base 0.5 (setup + frames), steady 0.5 + 10 * 0.2 = 2.5, base again 0.5, exit 0.05
         split = pe.split_candidate([0.6, 3.1, 3.6], 3.65, 10)
         self.assertTrue(split['line_timing'])
-        self.assertAlmostEqual(split['startup'], 0.1)
+        self.assertAlmostEqual(split['first'], 0.6)
         self.assertAlmostEqual(split['base'], 0.5)
         self.assertAlmostEqual(split['per_frame'], 0.2)
         self.assertAlmostEqual(split['exit'], 0.05)
@@ -60,6 +62,42 @@ class SplitTests(unittest.TestCase):
     def test_differential_from_walls(self):
         self.assertAlmostEqual(pe.per_frame_from_walls(0.2, 0.5, 30), 0.01)
         self.assertIsNone(pe.per_frame_from_walls(0.2, 0.5, 0))
+
+
+class ProcessTests(unittest.TestCase):
+    def test_peak_rss_report_is_taken_out_of_stderr(self):
+        self.assertEqual(pe.peak_rss('warning\n\nJONLIB_PERF_MAXRSS 2048\n'), (2048, 'warning'))
+        self.assertEqual(pe.peak_rss('nothing'), (None, 'nothing'))
+
+    def test_launcher_reports_the_child_not_this_process(self):
+        held = bytearray(64 << 20)  # this process's high-water mark must not reach the child's
+        measured = pe.measure([sys.executable, '-c', 'import sys; print("a"); sys.stdout.flush(); print("b")'], cwd=pe.ROOT)
+        self.assertEqual(measured['lines'], ['a', 'b'])
+        self.assertLess(measured['peak_rss_kib'], 48 << 10)
+        self.assertGreater(measured['peak_rss_kib'], 0)
+        del held
+
+    def test_failed_program_raises(self):
+        with self.assertRaises(pe.ProbeFailure):
+            pe.measure([sys.executable, '-c', 'import sys; sys.exit(3)'], cwd=pe.ROOT)
+
+    def test_compile_cache_skips_an_unchanged_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source, output = Path(directory) / 'a.bend', Path(directory) / 'a'
+            source.write_text('def main() -> IO(Unit): IO.print("a")\n')
+            compiled = []
+            def compile_outputs(cli, src, out):
+                compiled.append(out)
+                out.write_text('binary')
+            with mock.patch.object(pe.probekit, 'compile_outputs', compile_outputs):
+                pe.compile_cached(['bun'], source, output, extra='x')
+                pe.compile_cached(['bun'], source, output, extra='x')
+                self.assertEqual(len(compiled), 1)
+                pe.compile_cached(['bun'], source, output, extra='other compiler')
+                self.assertEqual(len(compiled), 2)
+                source.write_text('changed\n')
+                pe.compile_cached(['bun'], source, output, extra='other compiler')
+                self.assertEqual(len(compiled), 3)
 
 
 class ScriptTests(unittest.TestCase):
