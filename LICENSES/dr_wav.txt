@@ -1,4 +1,4 @@
-dr_wav (David Reid), as vendored by pinned raylib 6.0 in src/external/dr_wav.h.
+dr_wav (David Reid), as vendored by pinned raylib 6.2 in src/external/dr_wav.h.
 Jonlib adapts it under ALTERNATIVE 2 (MIT No Attribution).
 
 This software is available as a choice of the following licenses. Choose

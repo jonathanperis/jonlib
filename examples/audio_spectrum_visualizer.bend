@@ -1,5 +1,5 @@
 # raylib [audio] example - spectrum visualizer, ported to Jonlib.
-# Adapted from raylib 6.0 examples/audio/audio_spectrum_visualizer.c
+# Adapted from raylib 6.2 examples/audio/audio_spectrum_visualizer.c
 # (zlib/libpng, Copyright (c) 2025 Seth Archambault (@AnAxaholic)); see
 # LICENSES/raylib.txt.
 #

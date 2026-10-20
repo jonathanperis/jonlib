@@ -1,5 +1,5 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Binary64 orthographic spans of the screen-space queries in raylib 6.0 rcore.c
+# Binary64 orthographic spans of the screen-space queries in raylib 6.2 rcore.c
 # (GetWorldToScreenEx, GetScreenToWorldRayEx): aspect = (double)width/(double)height,
 # right = (fovy/2.0)*aspect, then MatrixOrtho's (float)(right - left) and
 # (float)right. Altered Bend adaptation; see LICENSES/raylib.txt.

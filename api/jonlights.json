@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "source": "rlights.h as shipped in raylib 6.0 examples/shaders/rlights.h (and examples/models/rlights.h)",
+ "source": "rlights.h as shipped in raylib 6.2 examples/shaders/rlights.h (and examples/models/rlights.h; unchanged since 6.0)",
  "functions": {
   "CreateLight": {
    "status": "partial",

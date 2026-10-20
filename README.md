@@ -5,7 +5,7 @@
 [![License: zlib](https://img.shields.io/badge/license-zlib-blue.svg)](LICENSE)
 
 **An independent graphics and game-programming library written in Bend 2,
-working toward 100% raylib 6.0 parity.**
+working toward 100% raylib 6.2 parity.**
 
 The [master plan](docs/MASTER-PLAN.md) defines the full target, implementation
 phases and completion gates. The [API progression dashboard](docs/PROGRESS.md)
@@ -121,7 +121,7 @@ The harness requires these base revisions. Bend additionally needs the exact
 | Dependency | Revision |
 |---|---|
 | Bend 2.0.27 + Jonlib Metal overlay | `b7ebee9217c8813067e200b0c0c9153a3be31c5e` |
-| raylib 6.0 | `dbc56a87da87d973a9c5baa4e7438a9d20121d28` |
+| raylib 6.2 | `02566453880e06bec97f5b8160fa6fe1e98397ca` |
 
 Keep the dependency checkouts wherever you prefer. From Jonlib's repository root,
 set these variables to their absolute paths (replace the example values):

@@ -1,5 +1,5 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of stb_image/stb_image_write BMP paths in raylib 6.0.
+# Altered Bend adaptation of stb_image/stb_image_write BMP paths in raylib 6.2.
 # MIT notice: LICENSES/stb-image.txt. See THIRD_PARTY_NOTICES.md.
 import Base
 import ./codec.bend as C

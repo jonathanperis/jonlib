@@ -1,5 +1,5 @@
 # raylib [shapes] example - rlgl triangle, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_rlgl_triangle.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_rlgl_triangle.c (zlib/libpng,
 # Copyright (c) 2025 Robin (@RobinsAviary)); see LICENSES/raylib.txt.
 #
 # A triangle drawn with rlBegin/rlVertex; drag its vertices, SPACE toggles

@@ -1,5 +1,5 @@
 # raylib [core] example - world screen, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_world_screen.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_world_screen.c (zlib/libpng,
 # Copyright (c) 2015-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # A third-person camera around a cube whose label follows its projection

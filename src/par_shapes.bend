@@ -1,7 +1,7 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of par_shapes (https://github.com/prideout/par,
 # Copyright (c) 2019 Philip Rideout, MIT; LICENSES/par_shapes.txt) as raylib
-# 6.0 vendors it in src/external/par_shapes.h, for GenMeshSphere,
+# 6.2 vendors it in src/external/par_shapes.h, for GenMeshSphere,
 # GenMeshHemiSphere and GenMeshTorus (rmodels.c, zlib; LICENSES/raylib.txt):
 # par_shapes_create_parametric with the sphere, hemisphere and torus
 # functions, par_shapes__compute_welded_normals (par_shapes_weld's grid sort,

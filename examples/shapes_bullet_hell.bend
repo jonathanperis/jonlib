@@ -1,5 +1,5 @@
 # raylib [shapes] example - bullet hell, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_bullet_hell.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_bullet_hell.c (zlib/libpng,
 # Copyright (c) 2025 Zero (@zerohorsepower)); see LICENSES/raylib.txt.
 #
 # A spawner fires rows of bullets around the screen center every few frames,

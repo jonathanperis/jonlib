@@ -90,6 +90,7 @@ import ./src/gestures.bend as GestureCore
 import ./src/clock.bend as Clock
 import ./src/core_state.bend as CoreState
 import ./src/automation.bend as AutomationCore
+import ./src/obj.bend as Obj
 
 law clear_dimensions:
   for +width: U32
@@ -1299,14 +1300,34 @@ law gltf_other_texture_kind_refused:
 law gltf_base_color_image_kept:
   {Gltf.look.with(255, False{}, Gltf.Words{True{}, [137, 80]}) == Gltf.Look{True{}, 255, [137, 80]} : Gltf.Look}
 
+# Wavefront OBJ files (src/obj.bend, docs/MODELS.md), raylib 6.2's bounds:
+# parseLine takes lines of up to 4095 bytes; LoadOBJ copies a vertex, normal
+# or texcoord only from a valid fixIndex below its array's count.
+law obj_line_of_4095_bytes_parsed:
+  {Obj.line.fits(4095) == True{} : Bool}
+
+law obj_line_of_4096_bytes_refused:
+  {Obj.line.fits(4096) == False{} : Bool}
+
+law obj_index_inside_copied:
+  {Obj.corner.inside(Obj.Fix{True{}, 2}, 3) == True{} : Bool}
+
+law obj_index_past_the_end_skipped:
+  {Obj.corner.inside(Obj.Fix{True{}, 3}, 3) == False{} : Bool}
+
+law obj_index_negative_skipped:
+  for n: U32
+  {Obj.corner.inside(Obj.Fix{False{}, 0}, n) == False{} : Bool}
+
 # MagicaVoxel files (src/vox.bend, docs/MODELS.md): LoadModel routes ".vox"
 # to LoadVOX whatever the last test says; the array's sizes are padded to
 # chunks of 16; a voxel's cell is (x*sizeZ + (sizeZ - y - 1))*sizeY + z with
-# its id in the low byte, and a voxel outside the sizes fails the file; a
-# quad's indices are 0 2 1 and 0 3 2; 189232 vertices make meshes of 65532,
-# 65532 and 58168. An empty file and another magic or version are the empty
-# model (Foreign); a magic or a header cut short, and a file without a
-# voxel, are refused (Unread).
+# its id in the low byte, and (raylib 6.2) a voxel outside the sizes or cut
+# short is not set; a quad's indices are 0 2 1 and 0 3 2; 189232 vertices
+# make meshes of 65532, 65532 and 58168. An empty file and another magic or
+# version are the empty model (Foreign); a magic cut short, and a file
+# without a voxel (a header cut short before any SIZE among them), are
+# refused (Unread).
 law vox_extension_routed:
   for iqm: Maybe<Bool>
   for m3d: Maybe<Bool>
@@ -1323,13 +1344,16 @@ law vox_chunk_names:
   {(Vox.kind(1163544915), (Vox.kind(1230657880), (Vox.kind(1094862674), Vox.kind(1313423693)))) == (1, (2, (3, 0))) : U32 & (U32 & (U32 & U32))}
 
 law vox_voxel_cell:
-  {Vox.voxels(1n, [1, 2, 3, 7], 16, 16, 16, True{}, Nil{}) == Vox.Sets{True{}, [119559], Nil{}} : Vox.Sets}
+  {Vox.voxels(1n, [1, 2, 3, 7], 16, 16, 16, Nil{}) == Vox.Sets{[119559], Nil{}} : Vox.Sets}
 
-law vox_voxel_outside_fails:
-  {Vox.voxels(1n, [16, 2, 3, 7], 16, 16, 16, True{}, Nil{}) == Vox.Sets{False{}, [1102599], Nil{}} : Vox.Sets}
+law vox_voxel_outside_skipped:
+  {Vox.voxels(2n, [16, 2, 3, 7, 1, 2, 3, 7], 16, 16, 16, Nil{}) == Vox.Sets{[119559], Nil{}} : Vox.Sets}
 
-law vox_voxel_cut_short_fails:
-  {Vox.voxels(1n, [1, 2, 3], 16, 16, 16, True{}, Nil{}) == Vox.Sets{False{}, Nil{}, Nil{}} : Vox.Sets}
+law vox_voxel_before_size_skipped:
+  {Vox.voxels(1n, [0, 0, 0, 1], 0, 0, 0, Nil{}) == Vox.Sets{Nil{}, Nil{}} : Vox.Sets}
+
+law vox_voxel_count_cut_to_the_file:
+  {Vox.voxels(2n, [1, 2, 3, 7, 1, 2], 16, 16, 16, Nil{}) == Vox.Sets{[119559], Nil{}} : Vox.Sets}
 
 law vox_quad_indices:
   {Vox.indices(2n, 2, Nil{}) == [0, 2, 1, 0, 3, 2, 4, 6, 5, 4, 7, 6] : List<&2, U32>}
@@ -1358,12 +1382,22 @@ law vox_chunk_header_cut_short_unread:
 law vox_without_voxels_unread:
   {Vox.load([86, 79, 88, 32, 200, 0, 0, 0]) == Vox.Unread{} : Vox.Loaded}
 
-# The four bytes a palette leaves before the end of a file that ends with it
-# are a chunk header cut short; a chunk whose size passes the end of the
-# file ends the reading with what was read.
-law vox_four_bytes_left_halt:
+# raylib 6.2: the four bytes a palette leaves before the end of a file that
+# ends with it are a chunk header cut short, which ends the reading with what
+# was read; so do a SIZE, a voxel count and a palette cut short, and a chunk
+# whose size passes the end of the file.
+law vox_four_bytes_left_end:
   for read: Vox.Read
-  {Vox.chunk([1, 2, 3, 4], read) == Vox.Halt{} : Vox.Step}
+  {Vox.chunk([1, 2, 3, 4], read) == Vox.Next{Nil{}, read} : Vox.Step}
+
+law vox_size_cut_short_ends:
+  {Vox.chunk([83, 73, 90, 69, 12, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 4], Vox.Read{16, 16, 16, [7], [0]}) == Vox.Next{Nil{}, Vox.Read{16, 16, 16, [7], [0]}} : Vox.Step}
+
+law vox_count_cut_short_ends:
+  {Vox.chunk([88, 89, 90, 73, 4, 0, 0, 0, 0, 0, 0, 0, 1, 0], Vox.Read{16, 16, 16, [7], [0]}) == Vox.Next{Nil{}, Vox.Read{16, 16, 16, [7], [0]}} : Vox.Step}
+
+law vox_palette_cut_short_ends:
+  {Vox.chunk([82, 71, 66, 65, 0, 4, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4], Vox.Read{16, 16, 16, [7], [0]}) == Vox.Next{Nil{}, Vox.Read{16, 16, 16, [7], [0]}} : Vox.Step}
 
 law vox_chunk_past_the_end_ends:
   {Vox.chunk([77, 65, 84, 76, 160, 15, 0, 0, 0, 0, 0, 0, 1, 2], Vox.Read{16, 16, 16, [7], [0]}) == Vox.Next{Nil{}, Vox.Read{16, 16, 16, [7], [0]}} : Vox.Step}
@@ -3865,13 +3899,13 @@ law mesh_upload_unchanged:
   for dynamic: Bool
   {J.Mesh.upload(mesh, dynamic) == mesh : J.Mesh}
 
-# UpdateMeshBuffer reaches vboId[index]: UploadMesh allocates 7 of them in
-# raylib's build; index 7 and an int index of -1 are outside.
+# UpdateMeshBuffer reaches vboId[index]: UploadMesh allocates 9 of them in
+# the reference build (GPU skinning); index 9 and an int index of -1 are outside.
 law mesh_buffer_last_exists:
-  {J.Mesh.buffer_exists(6) == True{} : Bool}
+  {J.Mesh.buffer_exists(8) == True{} : Bool}
 
 law mesh_buffer_past_the_last:
-  {J.Mesh.buffer_exists(7) == False{} : Bool}
+  {J.Mesh.buffer_exists(9) == False{} : Bool}
 
 law mesh_buffer_negative_index:
   {J.Mesh.buffer_exists(4294967295) == False{} : Bool}

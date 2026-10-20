@@ -1,5 +1,5 @@
 # raylib [shapes] example - top down lights, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_top_down_lights.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_top_down_lights.c (zlib/libpng,
 # Copyright (c) 2022-2025 Jeffery Myers (@JeffM2501)); see LICENSES/raylib.txt.
 #
 # Lights over a checkerboard with boxes that cast shadow volumes: each light

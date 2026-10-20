@@ -1,5 +1,5 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 ImageFormat/LoadImageDataNormalized;
+# Altered Bend adaptation of raylib 6.2 ImageFormat/LoadImageDataNormalized;
 # notice retained in LICENSES/raylib.txt. Byte/integer, R32 and R16 word formats
 # plus the F32/half-float sample codecs the wide formats use.
 import Base

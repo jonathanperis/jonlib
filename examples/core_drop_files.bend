@@ -1,5 +1,5 @@
 # raylib [core] example - drop files, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_drop_files.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_drop_files.c (zlib/libpng,
 # Copyright (c) 2015-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # Lists the paths of files dropped on the window. Neither the memory platform

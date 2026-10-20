@@ -1,5 +1,5 @@
 # raylib [shaders] example - basic pbr, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_basic_pbr.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shaders/shaders_basic_pbr.c (zlib/libpng,
 # Copyright (c) 2023-2025 Afan OLOVCIC (@_DevDad)); see LICENSES/raylib.txt.
 #
 # An old car and a floor (LoadModel of two .glb files) under four point

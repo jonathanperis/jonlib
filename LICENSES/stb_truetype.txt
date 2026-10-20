@@ -1,6 +1,6 @@
 stb_truetype.h v1.26 and stb_rect_pack.h v1.01 (Sean Barrett and contributors),
-as vendored by pinned raylib 6.0 (commit dbc56a87da87d973a9c5baa4e7438a9d20121d28)
-in src/external/. Jonlib adapts them under ALTERNATIVE A (MIT). Both headers carry
+as vendored by pinned raylib 6.2 (commit 02566453880e06bec97f5b8160fa6fe1e98397ca;
+the same files as raylib 6.0) in src/external/. Jonlib adapts them under ALTERNATIVE A (MIT). Both headers carry
 the same dual-license notice, reproduced verbatim from stb_truetype.h:
 
 This software is available under 2 licenses -- choose whichever you prefer.

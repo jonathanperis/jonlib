@@ -1,6 +1,6 @@
 # Compatibility ledger
 
-Reference: raylib **6.0** at `dbc56a87da87d973a9c5baa4e7438a9d20121d28`.
+Reference: raylib **6.2** at `02566453880e06bec97f5b8160fa6fe1e98397ca`.
 Candidate: Bend **2.0.27+jonlib-metal.1**, base
 `b7ebee9217c8813067e200b0c0c9153a3be31c5e` plus the exact
 [compiler overlay](../patches/README.md) declared in `toolchain.json`.

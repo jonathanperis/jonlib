@@ -1,5 +1,5 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of stb_truetype.h v1.26 as pinned raylib 6.0 vendors
+# Altered Bend adaptation of stb_truetype.h v1.26 as pinned raylib 6.2 vendors
 # it (src/external/stb_truetype.h, Sean Barrett, public domain / MIT;
 # LICENSES/stb_truetype.txt): stbtt_InitFont (TrueType `glyf` fonts),
 # stbtt_FindGlyphIndex (cmap formats 0, 4, 6, 12 and 13), stbtt_GetFontVMetrics,

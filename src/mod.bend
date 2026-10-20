@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of jar_mod.h v0.01 (Joshua Reisenauer's adaptation
-# of Jean-Francois DEL NERO's HxCMOD; WTFPL), as raylib 6.0 vendors it in
+# of Jean-Francois DEL NERO's HxCMOD; WTFPL), as raylib 6.2 vendors it in
 # src/external/jar_mod.h: jar_mod_init's period table, jar_mod_load,
 # getnote, worknote, workeffect, jar_mod_fillbuffer (no tracker state) and
 # jar_mod_max_samples, at raylib's settings (48000 Hz, stereo, 16 bits, the

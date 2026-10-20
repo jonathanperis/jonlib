@@ -1,5 +1,5 @@
 # raylib [models] example - box collisions, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_box_collisions.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/models/models_box_collisions.c (zlib/libpng,
 # Copyright (c) 2015-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # The arrow keys move a player box (one key a frame, as raylib's else-if); it

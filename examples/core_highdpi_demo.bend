@@ -1,5 +1,5 @@
 # raylib [core] example - highdpi demo, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_highdpi_demo.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_highdpi_demo.c (zlib/libpng,
 # Copyright (c) 2025 Jonathan Marler (@marler8997)); see LICENSES/raylib.txt.
 #
 # Two rulers, one in logical points and one in physical pixels, with the DPI

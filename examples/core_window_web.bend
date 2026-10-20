@@ -1,5 +1,5 @@
 # raylib [core] example - window web, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_window_web.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_window_web.c (zlib/libpng,
 # Copyright (c) 2015-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # The example's point is its structure for the web (one UpdateDrawFrame

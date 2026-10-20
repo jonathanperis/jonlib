@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of dr_mp3 v0.7.4 (David Reid; public domain or MIT
-# No Attribution; its decoder is minimp3, by lieff, CC0), as raylib 6.0
+# No Attribution; its decoder is minimp3, by lieff, CC0), as raylib 6.2
 # vendors it in src/external/dr_mp3.h: Layer III's scalefactors
 # (drmp3_L3_read_scalefactors, drmp3_L3_ldexp_q2,
 # drmp3_L3_decode_scalefactors), its Huffman-coded values (drmp3_L3_pow_43,

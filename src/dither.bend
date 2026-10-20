@@ -1,5 +1,5 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 ImageDither; LICENSES/raylib.txt.
+# Altered Bend adaptation of raylib 6.2 ImageDither; LICENSES/raylib.txt.
 import Base
 
 type Bits is Data:

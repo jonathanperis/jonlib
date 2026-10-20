@@ -1,6 +1,6 @@
 # Cameras
 
-Jonlib's camera queries are adapted from pinned raylib 6.0 `rcamera.h` and the
+Jonlib's camera queries are adapted from pinned raylib 6.2 `rcamera.h` and the
 camera/screen-space part of `rcore.c` (altered Bend adaptations; zlib,
 [LICENSES/raylib.txt](../LICENSES/raylib.txt)). They operate on
 `J.Camera3D{position, target, up, fovy, projection}` (raylib's `Camera`) and

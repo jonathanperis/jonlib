@@ -1,5 +1,5 @@
 # raylib [textures] example - gif player, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_gif_player.c
+# Adapted from raylib 6.2 examples/textures/textures_gif_player.c
 # (zlib/libpng, Copyright (c) 2021-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

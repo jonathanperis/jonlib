@@ -1,5 +1,5 @@
 # raylib [textures] example - to image, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_to_image.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/textures/textures_to_image.c (zlib/libpng,
 # Copyright (c) 2015-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # An image uploaded as a texture, read back with LoadImageFromTexture and

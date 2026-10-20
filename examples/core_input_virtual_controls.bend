@@ -1,5 +1,5 @@
 # raylib [core] example - input virtual controls, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_input_virtual_controls.c
+# Adapted from raylib 6.2 examples/core/core_input_virtual_controls.c
 # (zlib/libpng, Copyright (c) 2024-2025 GreenSnakeLinux (@GreenSnakeLinux)
 # and Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #

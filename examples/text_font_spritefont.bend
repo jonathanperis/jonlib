@@ -1,5 +1,5 @@
 # raylib [text] example - font spritefont, ported to Jonlib.
-# Adapted from raylib 6.0 examples/text/text_font_spritefont.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/text/text_font_spritefont.c (zlib/libpng,
 # Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # Three messages in three sprite fonts, centered with MeasureTextEx. LoadFont

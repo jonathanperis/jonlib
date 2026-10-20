@@ -1,6 +1,6 @@
 # TGA decoding and default RLE export
 
-Jonlib reproduces the TGA paths of raylib 6.0's pinned stb_image /
+Jonlib reproduces the TGA paths of raylib 6.2's pinned stb_image /
 stb_image_write: a decoder that keeps raylib's native output format and the
 exporter's exact default RLE bytes.
 

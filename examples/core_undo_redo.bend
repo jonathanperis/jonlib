@@ -1,5 +1,5 @@
 # raylib [core] example - undo redo, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_undo_redo.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_undo_redo.c (zlib/libpng,
 # Copyright (c) 2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # A player moved on a grid by the arrows and recolored by SPACE, its states

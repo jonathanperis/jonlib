@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of stb_vorbis v1.22 (Sean Barrett; MIT or public
-# domain), as raylib 6.0 vendors it in src/external/stb_vorbis.c: what the
+# domain), as raylib 6.2 vendors it in src/external/stb_vorbis.c: what the
 # setup makes of a codebook's code lengths (compute_codewords,
 # compute_sorted_huffman, compute_accelerated_huffman), with ilog,
 # bit_reverse, float32_unpack and lookup1_values. See

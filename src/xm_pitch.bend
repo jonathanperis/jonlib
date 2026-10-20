@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of jar_xm (Joshua Reisenauer's port of libxm by
-# Romain "Artefact2" Dalmaso; WTFPL), as raylib 6.0 vendors it in
+# Romain "Artefact2" Dalmaso; WTFPL), as raylib 6.2 vendors it in
 # src/external/jar_xm.h: a channel's periods and frequencies, linear and
 # Amiga (jar_xm_linear_period, jar_xm_linear_frequency, jar_xm_amiga_period,
 # jar_xm_amiga_frequency, jar_xm_period, jar_xm_frequency), the waveforms

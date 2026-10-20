@@ -1,5 +1,5 @@
 # raylib [core] example - screen recording, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_screen_recording.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_screen_recording.c (zlib/libpng,
 # Copyright (c) 2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # A circle rides a sine wave. Ctrl+R starts a recording and ends it: while it

@@ -4,7 +4,7 @@ Phase 2, delivery slice 5 ([PHASE2-DESIGN.md](PHASE2-DESIGN.md#3-interactive-dri
 a `Core` ([INPUT.md](INPUT.md)) and a `Frame` ([FRAME.md](FRAME.md)) run in a
 real window through Base's `Window` effects, and representative raylib
 examples are ported as Bend programs that run both interactively and headless
-against raylib. Altered Bend adaptations of pinned raylib 6.0
+against raylib. Altered Bend adaptations of pinned raylib 6.2
 `src/platforms/rcore_desktop_glfw.c` (`PollInputEvents` and the key, mouse
 button and cursor position callbacks) and `rcore.c`'s `EndDrawing` (zlib,
 [LICENSES/raylib.txt](../LICENSES/raylib.txt)). Code: the "Desktop driver"

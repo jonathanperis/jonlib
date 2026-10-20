@@ -1,5 +1,5 @@
 # raylib [text] example - rectangle bounds, ported to Jonlib.
-# Adapted from raylib 6.0 examples/text/text_rectangle_bounds.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/text/text_rectangle_bounds.c (zlib/libpng,
 # Copyright (c) 2018-2025 Vlad Adrian (@demizdor) and Ramon Santamaria (@raysan5));
 # see LICENSES/raylib.txt.
 #

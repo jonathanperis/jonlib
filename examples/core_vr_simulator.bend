@@ -1,5 +1,5 @@
 # raylib [core] example - vr simulator, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_vr_simulator.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_vr_simulator.c (zlib/libpng,
 # Copyright (c) 2017-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # A cube on a grid under a first-person camera, drawn into a render texture of

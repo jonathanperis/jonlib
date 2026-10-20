@@ -1,11 +1,11 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of how raylib 6.0's raudio.c reads an audio buffer
+# Altered Bend adaptation of how raylib 6.2's raudio.c reads an audio buffer
 # for the device (ReadAudioBufferFramesInInternalFormat,
 # ReadAudioBufferFramesInMixingFormat and the buffer loop of
 # OnSendAudioDataToDevice, SetAudioBufferPitch's rate change and
 # UpdateAudioStreamInLockedState; raylib: zlib/libpng, Copyright (c)
 # 2013-2025 Ramon Santamaria (@raysan5), see LICENSES/raylib.txt) through
-# miniaudio v0.11.24's data converter: its linear resampler as a stream with
+# miniaudio v0.11.25's data converter: its linear resampler as a stream with
 # its first-order low-pass filter, and for an audio stream its sample and
 # channel conversions and its passes (ma_data_converter_process_pcm_frames,
 # ma_linear_resampler_process_pcm_frames_f32, ma_linear_resampler_set_rate,

@@ -1,5 +1,5 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 rtextures.c (DrawTexturePro and
+# Altered Bend adaptation of raylib 6.2 rtextures.c (DrawTexturePro and
 # DrawTextureNPatch) and of rlgl.h's OpenGL 1.1 matrix calls as rlsw.h
 # (src/external/rlsw.h, MIT, LICENSES/rlsw.txt) computes them
 # (swTranslatef, swRotatef, swScalef); LICENSES/raylib.txt. Each draw is the

@@ -120,5 +120,6 @@ Each complete item needs results for these target configurations. Split hardware
 | `sdl` | SDL alternative platform configurations |
 | `rgfw` | RGFW alternative platform configurations |
 | `web-rgfw` | WebRGFW alternative platform configuration |
+| `win32` | Win32 alternative platform configuration (PLATFORM=Win32, rcore_desktop_win32.c) |
 
 [Tracking policy and update procedure](API-TRACKING.md)

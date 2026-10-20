@@ -1,6 +1,6 @@
 # Cropping and resampling
 
-Jonlib adapts raylib 6.0's extraction, crop, nearest and default filtered
+Jonlib adapts raylib 6.2's extraction, crop, nearest and default filtered
 resize, and the scaled `ImageDrawImagePro` path (6.0: `ImageDraw`), for `Surface` owners.
 
 | API | raylib profile |
@@ -130,7 +130,7 @@ integration.
 ## Provenance
 
 `src/resample.bend` is an altered Bend adaptation of
-[stb_image_resize2](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/external/stb_image_resize2.h)
+[stb_image_resize2](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/external/stb_image_resize2.h)
 as vendored by pinned raylib (MIT alternative selected; complete notice in
 [LICENSES/stb_image_resize2.txt](../LICENSES/stb_image_resize2.txt), details in
 [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md)). No stb implementation is

@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of stb_vorbis v1.22 (Sean Barrett; MIT or public
-# domain), as raylib 6.0 vendors it in src/external/stb_vorbis.c:
+# domain), as raylib 6.2 vendors it in src/external/stb_vorbis.c:
 # inverse_mdct with its loops (imdct_step3_iter0_loop,
 # imdct_step3_inner_r_loop, imdct_step3_inner_s_loop, iter_54,
 # imdct_step3_inner_s_loop_ld654). See THIRD_PARTY_NOTICES.md and

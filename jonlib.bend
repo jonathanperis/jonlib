@@ -1,5 +1,6 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Image/color algorithms adapted from raylib 6.0 rtextures.c; shared math in Jonmath.
+# Image/color algorithms adapted from raylib 6.2 rtextures.c (first adapted from
+# 6.0, followed to 6.2 where it changed); shared math in Jonmath.
 # Collision queries adapted from the same release's rshapes.c; file and path
 # utilities from rcore.c.
 # 3D collision queries adapted from rmodels.c; cameras from rcamera.h and rcore.c;
@@ -678,7 +679,7 @@ def Collision.point_poly(point: M.Vector2, +points: +List<M.Vector2>) -> Bool:
 # -----------------------------------------------------------------------------
 # Cameras: rcamera.h and the rcore.c camera/screen-space queries
 #
-# Altered Bend adaptation of raylib 6.0 rcamera.h / rcore.c; LICENSES/raylib.txt.
+# Altered Bend adaptation of raylib 6.2 rcamera.h / rcore.c; LICENSES/raylib.txt.
 # A C function updating *camera returns the updated Camera3D. Each query has a
 # _for variant taking the arithmetic profile: the arm64 Apple-clang build
 # contracts the raymath helpers inlined into rcore.c exactly as written below
@@ -2980,7 +2981,7 @@ def Image.memory.selected(qoi: Bool, dds: Bool, raster: Bool) -> Image.FileKind:
     case False{} False{} True{}: RasterFile{}
     case False{} False{} False{}: UnsupportedImageFile{}
 
-# raylib 6.0's default file formats: stb_image signatures for the raster
+# raylib 6.2's default file formats: stb_image signatures for the raster
 # suffixes, QOI and DDS (rltexgpu.h).
 def Image.memory.kind(+file_type: String) -> Image.FileKind:
   Image.memory.selected(String.eq(file_type, ".qoi") || String.eq(file_type, ".QOI"),
@@ -3019,7 +3020,7 @@ def Image.file.kind(path: String) -> Image.FileKind:
   Image.file.kind.of(Image.file.token(path))
 
 # ExportImage uses ASCII-insensitive suffixes, unlike LoadImageFromMemory.
-# Adapted from raylib 6.0 rtextures.c / rcore.c; retain the native last-dot rule.
+# Adapted from raylib 6.2 rtextures.c / rcore.c; retain the native last-dot rule.
 def Image.export.selected(png: Bool, bmp: Bool, tga: Bool, qoi: Bool, raw: Bool) -> U32:
   match png bmp tga qoi raw:
     case True{} _ _ _ _: 1
@@ -3155,7 +3156,7 @@ def Image.raw.bytes(path: String, +header: U32, +needed: U32) -> IO(Result<&1, &
 # Surface: the public image API, dispatching on pixel format
 
 # Surface: the one owned image. The RGBA8 kernels above run on Rgba; this layer
-# dispatches on the pixel format the way raylib 6.0 rtextures.c does: byte-level
+# dispatches on the pixel format the way raylib 6.2 rtextures.c does: byte-level
 # operations move stored pixels intact, color operations run LoadImageColors, the
 # RGBA8 step and ImageFormat back, and drawing encodes colors like ImageDrawPixel.
 def Surface.rgba.wrap(image: Rgba) -> Surface:
@@ -7296,9 +7297,10 @@ def Sound.alias.source(found: Maybe<&2, AudioDevice.Buffer>, +audio: AudioDevice
 
 # LoadSoundAlias: a new tracked buffer with its own volume, pitch, pan and
 # playing state over the source's block, and the source's frame count. A
-# source without a block gives the zero sound; so do an unready device and a
-# source that is buffer 0, untracked or whose block was unloaded (raylib
-# reads NULL or freed memory).
+# source without a block gives the zero sound; so does a source that is
+# buffer 0 (raylib 6.2 checks the NULL buffer); an unready device and a
+# source that is untracked or whose block was unloaded give it too (raylib
+# reads freed memory there).
 def Sound.load_alias(+audio: AudioDevice, +source: Sound) -> AudioDevice & Sound:
   Sound.alias.source(AudioDevice.buffer.tracked(audio, Sound.buffer(source)), audio, Sound.frames(source))
 
@@ -9228,7 +9230,7 @@ def Codepoint.to_utf8(codepoint: U32) -> String:
 # Input, gestures and timing: rcore.c CORE.Input, automation events and frame
 # timing on the memory platform, and rgestures.h
 #
-# Altered Bend adaptation of raylib 6.0 rcore.c, src/platforms/rcore_memory.c
+# Altered Bend adaptation of raylib 6.2 rcore.c, src/platforms/rcore_memory.c
 # and src/rgestures.h (zlib, LICENSES/raylib.txt): src/input.bend (keyboard,
 # mouse, touch and gamepad state), src/gestures.bend (the GESTURES state
 # machine), src/automation.bend (event lists, their text export and loader)
@@ -9392,7 +9394,7 @@ def Core.get_fps(+core: Core, +now: M.Float64) -> Maybe<(Core & U32)>:
 # -----------------------------------------------------------------------------
 # Window state, monitors, clipboard, dropped files and the clock
 #
-# Altered Bend adaptation of raylib 6.0 rcore.c (SetConfigFlags, IsWindow*,
+# Altered Bend adaptation of raylib 6.2 rcore.c (SetConfigFlags, IsWindow*,
 # GetTime, WaitTime, IsFileDropped/LoadDroppedFiles/UnloadDroppedFiles) and of
 # src/platforms/rcore_memory.c (zlib, LICENSES/raylib.txt), the reference
 # platform: there SetWindowState, ClearWindowState, the fullscreen/borderless
@@ -9904,7 +9906,7 @@ def Input.set_gamepad_vibration(core: Core, +gamepad: U32, +left: F32, +right: F
 # -----------------------------------------------------------------------------
 # UpdateCamera (rcamera.h), driven by the Core's input state and frame time
 #
-# Altered Bend adaptation of raylib 6.0 rcamera.h UpdateCamera (zlib,
+# Altered Bend adaptation of raylib 6.2 rcamera.h UpdateCamera (zlib,
 # LICENSES/raylib.txt) over the camera steps of the "Cameras" section: every
 # step raylib takes is applied in its order, and the result is None as soon as
 # a rotation leaves the M.Libm profile (see docs/CAMERA.md).
@@ -10150,9 +10152,9 @@ def Gestures.get_pinch_angle(+core: Core) -> F32:
 # Frame and shapes: the headless rcore.c frame, rlgl.h immediate path and
 # rlsw.h software rasterizer, and rshapes.c drawing
 #
-# Altered Bend adaptation of raylib 6.0 rcore.c (InitWindow, BeginDrawing,
+# Altered Bend adaptation of raylib 6.2 rcore.c (InitWindow, BeginDrawing,
 # EndDrawing, ClearBackground, LoadImageFromScreen), rlgl.h and rshapes.c
-# (zlib, LICENSES/raylib.txt) and of rlsw.h 1.5 (MIT, LICENSES/rlsw.txt) as
+# (zlib, LICENSES/raylib.txt) and of rlsw.h 1.6 (MIT, LICENSES/rlsw.txt) as
 # PLATFORM=Memory renders them: src/frame.bend rasterizes, src/shapes.bend
 # builds each shape's vertex stream. Results equal the reference framebuffer
 # byte for byte (scalar rlsw, uncontracted F32). A Frame owns the color
@@ -12824,7 +12826,7 @@ def Rlgl.get_pixel_format_name(format: U32) -> String:
 # Fonts and text drawing: rtext.c fonts, glyphs, measurement and DrawText*,
 # rtextures.c ImageText*
 #
-# Altered Bend adaptation of raylib 6.0 rtext.c (LoadFontDefault,
+# Altered Bend adaptation of raylib 6.2 rtext.c (LoadFontDefault,
 # GetFontDefault, LoadFontFromImage, IsFontValid, UnloadFont, GetGlyphIndex,
 # GetGlyphInfo, GetGlyphAtlasRec, MeasureText, MeasureTextEx,
 # MeasureTextCodepoints, DrawText, DrawTextEx, DrawTextPro,
@@ -14171,7 +14173,7 @@ def Font.export_as_code(font: Font, +path: String) -> IO(Font & Result<&1, &1, S
 # -----------------------------------------------------------------------------
 # Models: rmodels.c meshes, BeginMode3D and 3D shapes, mesh collision
 #
-# Altered Bend adaptation of raylib 6.0 rmodels.c (mesh generation, mesh
+# Altered Bend adaptation of raylib 6.2 rmodels.c (mesh generation, mesh
 # utilities, OBJ/code export, 3D shapes, GetRayCollisionMesh,
 # GetModelBoundingBox) and rcore.c BeginMode3D/EndMode3D (zlib,
 # LICENSES/raylib.txt): src/mesh.bend generates attribute lists,
@@ -14465,10 +14467,10 @@ def Mesh.upload(+mesh: Mesh, +dynamic: Bool) -> Mesh:
   mesh
 
 # Whether vboId[index] is one of the MAX_MESH_VERTEX_BUFFERS ids UploadMesh
-# allocates: 7 in raylib's build, without GPU skinning (an int index below
-# 0 is above them as a U32).
+# allocates: 9 in the reference build, which has GPU skinning (the bone ids
+# and weights buffers); an int index below 0 is above them as a U32.
 def Mesh.buffer_exists(+index: U32) -> Bool:
-  (index < 7 : U32)
+  (index < 9 : U32)
 
 def Mesh.update_buffer.of(exists: Bool, +mesh: Mesh) -> Maybe<Mesh>:
   match exists:
@@ -16750,7 +16752,7 @@ def Material.load_materials(frame: Frame, +path: String) -> IO(Frame & Result<&1
 # -----------------------------------------------------------------------------
 # Desktop driver: a Core and a Frame in a Base window
 #
-# Altered Bend adaptation of raylib 6.0 src/platforms/rcore_desktop_glfw.c
+# Altered Bend adaptation of raylib 6.2 src/platforms/rcore_desktop_glfw.c
 # (PollInputEvents and the GLFW key, mouse button and cursor callbacks) and of
 # rcore.c's EndDrawing (zlib, LICENSES/raylib.txt), on Base's Window effects:
 # Window.frame presents the framebuffer as a quadtree Image (src/present.bend)

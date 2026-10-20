@@ -1,5 +1,5 @@
 # raylib [shaders] example - hot reloading, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_hot_reloading.c
+# Adapted from raylib 6.2 examples/shaders/shaders_hot_reloading.c
 # (zlib/libpng, Copyright (c) 2020-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

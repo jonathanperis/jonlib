@@ -1,5 +1,5 @@
 # raylib [shapes] example - clock of clocks, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_clock_of_clocks.c
+# Adapted from raylib 6.2 examples/shapes/shapes_clock_of_clocks.c
 # (zlib/libpng, Copyright (c) 2025 JP Mortiboys (@themushroompirates)); see
 # LICENSES/raylib.txt.
 #

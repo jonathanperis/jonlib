@@ -1,5 +1,5 @@
 # raylib [core] example - 3d camera mode, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_3d_camera_mode.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_3d_camera_mode.c (zlib/libpng,
 # Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # A cube and a grid seen through a perspective camera. BeginMode3D's

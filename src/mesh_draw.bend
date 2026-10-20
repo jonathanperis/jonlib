@@ -1,5 +1,5 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 rmodels.c DrawMesh and DrawBillboardPro
+# Altered Bend adaptation of raylib 6.2 rmodels.c DrawMesh and DrawBillboardPro
 # (zlib, LICENSES/raylib.txt) as the software renderer runs them: DrawMesh's
 # OpenGL 1.1 branch (rlEnableStatePointer, rlDrawVertexArray or
 # rlDrawVertexArrayElements) reaches rlsw.h's swDrawArrays/swDrawElements

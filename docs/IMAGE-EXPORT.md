@@ -1,6 +1,6 @@
 # Image export
 
-Jonlib adapts raylib 6.0 `ExportImage` and `ExportImageToMemory` for every
+Jonlib adapts raylib 6.2 `ExportImage` and `ExportImageToMemory` for every
 `Surface` pixel format. Every encoder is pure Bend and reproduces the complete
 native file bytes, not just the decoded pixels. `ExportImage` remains a
 **partial** mapping: only the slices below are covered.

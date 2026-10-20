@@ -1,5 +1,5 @@
 # raylib [shapes] example - starfield effect, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_starfield_effect.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_starfield_effect.c (zlib/libpng,
 # Copyright (c) 2025 JP Mortiboys (@themushroompirates)); see LICENSES/raylib.txt.
 #
 # 420 stars flying toward the viewer; the wheel changes the speed, SPACE

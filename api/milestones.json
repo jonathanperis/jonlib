@@ -57,9 +57,10 @@
     {"id":"gles-3","scope":"OpenGL ES 3.0 supported configurations"},
     {"id":"sdl","scope":"SDL alternative platform configurations"},
     {"id":"rgfw","scope":"RGFW alternative platform configurations"},
-    {"id":"web-rgfw","scope":"WebRGFW alternative platform configuration"}
+    {"id":"web-rgfw","scope":"WebRGFW alternative platform configuration"},
+    {"id":"win32","scope":"Win32 alternative platform configuration (PLATFORM=Win32, rcore_desktop_win32.c)"}
   ],
-  "scope_sources": ["https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/FAQ.md", "https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/CMakeOptions.txt"],
+  "scope_sources": ["https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/FAQ.md", "https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/CMakeOptions.txt"],
   "priority_overrides": {"raylib:function:LoadImageFromMemory":0, "raylib:function:ExportImage":1, "raylib:function:ImageFormat":2, "raylib:function:GetSplinePointBezierCubic":3, "raymath:function:QuaternionSlerp":4, "raymath:function:QuaternionToAxisAngle":5, "raymath:function:QuaternionToEuler":6, "raymath:function:MatrixPerspective":7},
   "api_dependencies": {
     "raylib:function:ImageDrawImagePro":["raylib:function:ImageFromImage","raylib:function:ImageResize","raylib:function:ColorAlphaBlend"],

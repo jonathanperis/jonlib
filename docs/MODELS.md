@@ -5,7 +5,7 @@ Phase 5: raylib's CPU mesh data, the mesh generators (the
 profiles), mesh utilities and export, mesh/model
 collision queries, `BeginMode3D`/`EndMode3D` for orthographic cameras,
 every `rmodels.c` 3D shape, materials, `DrawMesh`/`DrawModel*`/billboards and
-OBJ (with MTL) loading, all reproducing pinned raylib 6.0 exactly.
+OBJ (with MTL) loading, all reproducing pinned raylib 6.2 exactly.
 Altered Bend adaptations of `rmodels.c` and of `rcore.c`'s
 `BeginMode3D`/`EndMode3D` (zlib, [LICENSES/raylib.txt](../LICENSES/raylib.txt));
 3D drawing renders through the Bend port of `rlsw.h` 1.5 (MIT,
@@ -95,7 +95,7 @@ answers `None`.
 | `ExportMeshAsCode` | `Mesh.code_text(mesh, path) -> Maybe<String>`, `Mesh.export_as_code(mesh, path)` | text / `IO(Result<...>)` |
 | `UnloadMesh` | `Mesh.unload(mesh) -> Unit` | |
 | `UploadMesh` | `Mesh.upload(mesh, dynamic) -> Mesh` | the mesh given: vertex buffers are OpenGL 3.3/ES2's |
-| `UpdateMeshBuffer` | `Mesh.update_buffer(mesh, index, size, offset) -> Maybe<Mesh>` | the mesh given: `vboId[index]` is 0 on the software renderer and `rlUpdateVertexBuffer` does nothing, the data is not read; `None` for an index outside the 7 vertex buffers `UploadMesh` allocates (`vboId` read past its end) |
+| `UpdateMeshBuffer` | `Mesh.update_buffer(mesh, index, size, offset) -> Maybe<Mesh>` | the mesh given: `vboId[index]` is 0 on the software renderer and `rlUpdateVertexBuffer` does nothing, the data is not read; `None` for an index outside the 9 vertex buffers `UploadMesh` allocates in the reference build (GPU skinning adds the bone ids and weights) (`vboId` read past its end) |
 | `LoadModelFromMesh` / `UnloadModel` | `Model.from_mesh(mesh)`, `Model.unload(model)` | |
 | `IsModelValid` | `Model.is_valid(model)` | `Bool` |
 | `SetModelMeshMaterial` | `Model.set_mesh_material(model, mesh_id, material_id)` | `Maybe<Model>` |
@@ -349,7 +349,7 @@ probe:
   `DrawModelEx` about (0, 1, 0) by 0 degrees with a uniform scale. The
   `Wires` forms wrap them in `rlEnableWireMode`/`rlDisableWireMode` (polygons
   are filled afterwards, whatever the mode was). `DrawModelPoints(Ex)` is not
-  part of raylib 6.0.
+  part of raylib 6.2.
 - **DrawBillboardPro** takes the first row of `MatrixLookAt(camera)` as the
   right vector (scaled by `size.x`) and `up*size.y`; a negative size flips the
   source, the vector and the origin; the corners 0, right, up + right and up,
@@ -393,12 +393,15 @@ the software renderer. The contraction profile is the reference's for
   another byte than `\n`; a line's `\r` before its `\n` is dropped. The last
   line runs to the end of the text, except that when the text has no
   terminator at all tinyobj drops its last byte. An empty line after a lone
-  `\r` underflows its length, and lines of 4095 bytes or more fail
-  `assert(p_len < 4095)`: refused.
+  `\r` underflows its length: refused. A line of up to 4095 bytes is parsed;
+  a longer one makes raylib 6.2's `parseLine` return before it sets the
+  command's type, which `tinyobj_parse_obj` then reads from `malloc`'d
+  memory: refused.
 - **Commands** (`parseLine`). `v`, `vn`, `vt` (`parseFloat`: spaces, then the
   token up to NUL, space, tab or `\r`), `f` (`i`, `i/j`, `i//k`, `i/j/k` with
-  `my_atoi`; more than 5 vertices fail tinyobj's `assert(3*num_f < 16)`:
-  refused), `usemtl` (the rest of the line, trailing spaces included; an empty
+  `my_atoi`; more than 5 vertices make raylib 6.2's tinyobj return after
+  setting the command's type but not its counts, which are then read
+  uninitialized, and more than 16 overflow its array: refused), `usemtl` (the rest of the line, trailing spaces included; an empty
   name keeps the material), `mtllib` (the last one is loaded), `g` and `o`
   (shapes). `mtllib`, `g` or `o` with nothing after their space make tinyobj
   read past the line, and an int overflow in an index or exponent is
@@ -428,9 +431,10 @@ the software renderer. The contraction profile is the reference's for
   per triangle: positions, normals ((0, 1, 0) without a valid index) and,
   when the file has texcoords, texcoords with v flipped as `1 - v` (0 without
   a valid index); colors are NULL under OpenGL 1.1. Its material is that of
-  its last face (0 when that is not an MTL index). A vertex index that is
-  negative or beyond the vertices, or a valid normal or texcoord index beyond
-  its array, makes `LoadOBJ` read outside tinyobj's arrays: refused.
+  its last face (0 when that is not an MTL index). An index outside its
+  array (negative after `fixIndex` or past the end) is skipped, as raylib
+  6.2's `LoadOBJ` does: the vertex stays (0, 0, 0), the normal is (0, 1, 0)
+  and the texcoord stays (0, 0).
 - **MTL files** (`tinyobj_parse_and_index_mtl_file`) open relative to the
   OBJ's directory: `LoadOBJ` changes the working directory to
   `GetDirectoryPath(fileName)`, and Jonlib prefixes relative names with it
@@ -685,7 +689,9 @@ name, the size of its contents, the size of its children, its contents.
   multiples of 16, its Y and Z changed over (`Vox_AllocArray(x, z, y)`). A
   second SIZE starts an empty array again.
 - **XYZI** sets `numVoxels` voxels, `Vox_SetVoxel(x, z, sizeZ - y - 1, id)`:
-  a voxel set twice keeps its last id, and id 0 empties it.
+  a voxel set twice keeps its last id, and id 0 empties it. A voxel outside
+  the padded sizes (or before any SIZE, whose sizes are 0) is not set, and a
+  count is cut to the voxels the file holds (raylib 6.2's range checks).
 - **RGBA** gives `palette[1..255]` from its first 255 colors
   (`palette[0]` and a file without the chunk are all zeros, alpha included).
   The loader then stands four bytes before the chunk's end: what follows is
@@ -693,8 +699,11 @@ name, the size of its contents, the size of its children, its contents.
   chunk's name, which skips the rest of the file in every MagicaVoxel file
   (chunks after a palette are not seen). That quirk is kept.
 - Any other chunk is skipped by its size; a size that passes the end of the
-  file ends the reading (the pointer comparison of the 64-bit reference
-  hosts).
+  file ends the reading.
+- The reading also ends, keeping what was read, where fewer bytes are left
+  than a chunk header (12), a SIZE (12), a voxel count (4) or a palette
+  (1020) needs; a file that ends with its palette leaves four bytes, so it
+  ends there (raylib 6.2's checks; 6.0 read past the file).
 
 The mesh has a quad for every face of a voxel whose neighbor is empty or
 outside the array, in the loader's order: `x`, then `z`, then `y`, and for a
@@ -710,13 +719,10 @@ the whole index array into each mesh; the rest is never read).
 `UnsupportedFileType` is not an answer here: a file that is not `VOX ` or
 has another version, an empty file and one that does not open are the empty
 model, as in raylib. `OutOfDomain` for what the reference leaves undefined
-or the profile leaves out: a magic, a version, a chunk header, a SIZE, a
-voxel count, voxels or a palette cut short, and a file that ends with its
-palette (the loader reads a chunk header in its last four bytes: reads past
-the file; MagicaVoxel writes chunks after the palette); a voxel
-before any SIZE or outside the padded sizes (writes outside the loader's
-chunks); a file without a visible voxel (`LoadVOX` allocates zero bytes for
-its mesh and `GetModelBoundingBox` would read them); a file over 2 MiB, a
+or the profile leaves out: a magic or a version cut short (reads past the
+file); a file without a visible voxel (`LoadVOX` allocates zero bytes for
+its mesh and `GetModelBoundingBox` would read them), which a file whose
+voxels are all outside the sizes or after a cut is; a file over 2 MiB, a
 size over 1024 and an array over 2^21 cells (a 256x256x256 file among
 them: the profile's limit, not the format's).
 

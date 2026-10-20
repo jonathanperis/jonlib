@@ -1,6 +1,6 @@
 # Joneasings - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of reasings.h as raylib 6.0's examples ship it
-# (examples/shapes/reasings.h; zlib/libpng, Copyright (c) 2015-2024 Ramon
+# Altered Bend adaptation of reasings.h as raylib 6.2's examples ship it
+# (examples/shapes/reasings.h, unchanged since raylib 6.0; zlib/libpng, Copyright (c) 2015-2024 Ramon
 # Santamaria (@raysan5), after Robert Penner's easing equations, BSD,
 # Copyright (c) 2001 Robert Penner); see LICENSES/reasings.txt. Joneasings is
 # to reasings.h what Jonlib is to raylib.h.

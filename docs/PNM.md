@@ -1,6 +1,6 @@
 # Binary PGM/PPM decoding
 
-Jonlib reproduces the binary PNM reader of raylib 6.0's pinned stb_image for
+Jonlib reproduces the binary PNM reader of raylib 6.2's pinned stb_image for
 P5 grayscale and P6 RGB input.
 
 | API | Contract |

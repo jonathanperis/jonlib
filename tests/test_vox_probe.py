@@ -12,30 +12,41 @@ def padded(size):
 
 
 def faces(data):
-    """The visible faces vox_loader builds from a file every read of which stays inside it (the RGBA chunk's
-    255 colors included: the reading goes on four bytes before the chunk's end)."""
+    """The visible faces raylib 6.2's vox_loader builds from a file (the RGBA chunk's 255 colors included: the
+    reading goes on four bytes before the chunk's end). The reading ends where fewer bytes are left than a chunk
+    header, a SIZE, a voxel count or a palette needs; a count is cut to the voxels left and a voxel outside the
+    padded sizes is not set."""
     assert data[:4] == b'VOX ' and struct.unpack_from('<I', data, 4)[0] in (150, 200)
     at, sizes, voxels = 8, (0, 0, 0), {}
     while at < len(data):
+        if len(data) - at < 12:
+            break
         name = data[at:at + 4]
         length = struct.unpack_from('<I', data, at + 4)[0]
         at += 12
         if name == b'SIZE':
+            if len(data) - at < 12:
+                break
             x, y, z = struct.unpack_from('<III', data, at)
             at += 12
             sizes, voxels = (padded(x), padded(z), padded(y)), {}
         elif name == b'XYZI':
+            if len(data) - at < 4:
+                break
             count = struct.unpack_from('<I', data, at)[0]
             at += 4
-            for _ in range(count):
+            for _ in range(min(count, (len(data) - at) // 4)):
                 x, y, z, index = data[at:at + 4]
                 at += 4
-                assert x < sizes[0] and z < sizes[1] and y < sizes[2]
-                voxels[(x, z, sizes[2] - y - 1)] = index
+                if x < sizes[0] and z < sizes[1] and y < sizes[2]:
+                    voxels[(x, z, sizes[2] - y - 1)] = index
         elif name == b'RGBA':
-            assert at + 1020 <= len(data)
+            if len(data) - at < 1020:
+                break
             at += 1020
         else:
+            if length > len(data) - at:
+                break
             at += length
     return sum(1 for (x, y, z), index in voxels.items() if index
                for dx, dy, dz in ((-1, 0, 0), (1, 0, 0), (0, -1, 0), (0, 1, 0), (0, 0, -1), (0, 0, 1)) if not voxels.get((x + dx, y + dy, z + dz), 0))
@@ -52,10 +63,10 @@ class VoxCasesTests(unittest.TestCase):
         for name in vox_probe.EXAMPLE_MODELS:
             self.assertIn(f'/raylib/examples/models/resources/models/vox/{name}.vox', [item['path'] for item in self.items])
         self.assertEqual({item['id'] for item in self.items if item['contract']},
-                         {'magic-cut', 'version-cut', 'header-cut', 'size-cut', 'count-cut', 'voxels-cut', 'palette-cut', 'palette-last', 'palette-first', 'voxel-before-size', 'voxel-past-x',
+                         {'magic-cut', 'version-cut', 'size-cut', 'count-cut', 'palette-cut-first', 'palette-first', 'voxel-before-size', 'voxel-past-x',
                           'voxel-past-y', 'voxel-past-z', 'no-voxels', 'header-only', 'zero-ids', 'zero-size', 'size-over-1024', 'array-over-2-21', 'over-2-mib'})
         self.assertEqual(set(self.data), set(ids) - set(vox_probe.EXAMPLE_MODELS) - {'missing'})
-        self.assertEqual(sum(1 for item in self.items if not item['contract']), 33)
+        self.assertEqual(sum(1 for item in self.items if not item['contract']), 45)
 
     def test_the_faces_the_cases_are_built_for(self):
         expected = {'one': 6, 'pair-x': 10, 'pair-y': 10, 'pair-z': 10, 'block': 54, 'corners': 48, 'padding': 24, 'twice': 6, 'erased': 6, 'two-lists': 16, 'no-palette': 12,
@@ -78,12 +89,15 @@ class VoxCasesTests(unittest.TestCase):
                 continue
             self.assertGreater(faces(self.data[name]), 0, name)
 
-    def test_a_file_that_ends_with_its_palette_is_read_past_its_end(self):
-        with self.assertRaises(struct.error):
-            faces(self.data['palette-last'])
+    def test_the_cut_files_keep_what_they_read_before_the_cut(self):
+        expected = {'palette-last': 12, 'header-cut': 6, 'header-cut-eleven': 6, 'size-cut-after': 6, 'count-cut-after': 6, 'voxels-cut': 6, 'voxels-cut-odd': 6,
+                    'palette-cut': 12, 'voxel-before-size-kept': 6, 'voxel-past-x-kept': 6, 'voxel-past-y-kept': 6, 'voxel-past-z-kept': 6}
+        for name, count in expected.items():
+            self.assertEqual(faces(self.data[name]), count, name)
 
     def test_the_voxels_without_a_visible_face_are_refusals(self):
-        for name in ('no-voxels', 'zero-ids', 'palette-first'):
+        for name in ('no-voxels', 'zero-ids', 'palette-first', 'size-cut', 'count-cut', 'palette-cut-first', 'voxel-before-size', 'voxel-past-x', 'voxel-past-y',
+                     'voxel-past-z'):
             self.assertEqual(faces(self.data[name]), 0, name)
 
     def test_the_profile_limits_are_crossed_by_their_cases(self):

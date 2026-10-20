@@ -1,5 +1,5 @@
 # raylib [models] example - orthographic projection, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_orthographic_projection.c
+# Adapted from raylib 6.2 examples/models/models_orthographic_projection.c
 # (zlib/libpng, Copyright (c) 2018-2025 Max Danielsson (@autious) and Ramon
 # Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #

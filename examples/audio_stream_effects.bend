@@ -1,5 +1,5 @@
 # raylib [audio] example - stream effects, ported to Jonlib.
-# Adapted from raylib 6.0 examples/audio/audio_stream_effects.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/audio/audio_stream_effects.c (zlib/libpng,
 # Copyright (c) 2022-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # resources/country.mp3 plays as a music stream; F puts a low-pass filter on

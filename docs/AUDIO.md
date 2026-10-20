@@ -1,6 +1,6 @@
 # Audio waves and sounds
 
-Jonlib adapts raylib 6.0's `raudio.c` Wave functions as `Wave.*` in
+Jonlib adapts raylib 6.2's `raudio.c` Wave functions as `Wave.*` in
 `jonlib.bend`, and its device and Sound functions as `AudioDevice.*` and `Sound.*`
 ([below](#audio-device-and-sounds)). A `Wave{frames, rate, size, channels, data}` holds raylib's
 fields and its interleaved samples, one per element: unsigned 8-bit, signed
@@ -1753,7 +1753,7 @@ modules C leaves undefined or never finishes counting.
 
 ## WaveFormat
 
-`Wave.format_for` follows the miniaudio v0.11.24 code raylib's `WaveFormat`
+`Wave.format_for` follows the miniaudio v0.11.25 code (unchanged there since v0.11.24) raylib's `WaveFormat`
 reaches (`src/convert.bend`, `src/resampler.bend`, `src/lowpass.bend`):
 `ma_convert_frames` with no dither, linear resampling with a low-pass filter
 of order 4, NULL (default) channel maps and the default rectangular mixing.
@@ -1929,7 +1929,7 @@ volume, a pitch, a pan, its playing and paused flags and a block of samples
 | `AudioDevice.set_master_volume(device, volume)` / `master_volume` | `SetMasterVolume` / `GetMasterVolume` | Any volume that is not below 0 is kept (NaN included), ready device or not. |
 | `Sound.load_from_wave_for(profile, device, wave)` / `load_from_wave` | `LoadSoundFromWave` | The wave converted as `WaveFormat(wave, 48000, 32, 2)` converts it (the same `ma_convert_frames` calls) in a new tracked buffer. `load_from_wave` uses `M.Uncontracted{}`. |
 | `Sound.load_with(profile, libm, device, path)` / `load_for(profile, device, path)` / `load` | `LoadSound` | `Wave.load_for` then the above. `load_for` uses `M.AppleLibm{}`. |
-| `Sound.load_alias(device, source)` | `LoadSoundAlias` | A new tracked buffer with its own volume, pitch, pan and state over the source's block, and the source handle's frame count. |
+| `Sound.load_alias(device, source)` | `LoadSoundAlias` | A new tracked buffer with its own volume, pitch, pan and state over the source's block, and the source handle's frame count; the zero sound for the zero sound (raylib 6.2 checks its NULL buffer). |
 | `Sound.is_valid(sound)` | `IsSoundValid` | Frames, buffer, sample rate, sample size and channels all nonzero. |
 | `Sound.unload(device, sound)` | `UnloadSound` | The buffer is untracked and its block freed, even a block other buffers still play. |
 | `Sound.unload_alias(device, alias)` | `UnloadSoundAlias` | The buffer is untracked; its block stays. |
@@ -1958,8 +1958,7 @@ volume, a pitch, a pan, its playing and paused flags and a block of samples
 Steps raylib has no defined answer for leave the `AudioDevice` as it is, and
 `Sound.load_alias` then gives the zero sound: every buffer operation on an
 unready device (raylib locks a mutex that does not exist); a handle whose
-buffer is 0 where raylib dereferences it (`LoadSoundAlias`) or whose buffer
-was unloaded (freed memory); an alias of a buffer whose block was freed;
+buffer was unloaded (freed memory); an alias of a buffer whose block was freed;
 `UpdateSound` past the buffer, with a negative count, from a list that is not
 `2*frames` long, on a freed block or on a buffer without samples; and a pitch
 whose output rate `48000/pitch` does not fit an unsigned int (raylib's cast is

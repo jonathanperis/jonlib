@@ -1,5 +1,5 @@
 # raylib [models] example - textured cube, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_textured_cube.c
+# Adapted from raylib 6.2 examples/models/models_textured_cube.c
 # (zlib/libpng, Copyright (c) 2022-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

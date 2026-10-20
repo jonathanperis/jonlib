@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of dr_wav (David Reid; public domain or MIT-0, as
-# pinned raylib 6.0 vendors it in src/external/dr_wav.h):
+# pinned raylib 6.2 vendors it in src/external/dr_wav.h):
 # drwav_read_pcm_frames_s16__msadpcm and drwav_read_pcm_frames_s16__ima, with
 # their adaptation, coefficient, index and step tables. C ints are U32
 # two's-complement words. See THIRD_PARTY_NOTICES.md.

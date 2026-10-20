@@ -1,5 +1,5 @@
 # raylib [shapes] example - rounded rectangle drawing, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_rounded_rectangle_drawing.c
+# Adapted from raylib 6.2 examples/shapes/shapes_rounded_rectangle_drawing.c
 # (zlib/libpng, Copyright (c) 2018-2025 Vlad Adrian (@demizdor) and Ramon
 # Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #

@@ -1,5 +1,5 @@
 # raylib [models] example - directional billboard, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_directional_billboard.c
+# Adapted from raylib 6.2 examples/models/models_directional_billboard.c
 # (zlib/libpng, Copyright (c) 2025 Robin (@RobinsAviary)); see
 # LICENSES/raylib.txt.
 #

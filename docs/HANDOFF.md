@@ -1302,10 +1302,11 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 ## Toolchain
 
 Pinned in `toolchain.json`: Bend at `b7ebee9…` with the declared overlay
-(`patches/`), raylib 6.0 at `dbc56a87…`, Bun 1.3.12 (probes refuse another
+(`patches/`), raylib 6.2 at `02566453…`, Bun 1.3.12 (probes refuse another
 version: put the pinned one first in `PATH`). Local layout used so far: Bend
 at `~/Projetos/bendlang/bend` (CLI `bun ~/Projetos/bendlang/bend/bend2/main.ts`),
-raylib at `~/Projetos/raysan5/raylib`. Checks:
+raylib 6.2 at `~/Projetos/raysan5/raylib-6.2` (6.0, `dbc56a87…`, at
+`~/Projetos/raysan5/raylib`). Checks:
 
 ```sh
 python3 -m unittest discover -s tests

@@ -1,5 +1,5 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# uint8 linear resampling adapted from stb_image_resize2.h in raylib 6.0:
+# uint8 linear resampling adapted from stb_image_resize2.h in raylib 6.2:
 # STBIR_1CHANNEL, STBIR_2CHANNEL, STBIR_RGB and alpha-weighted STBIR_RGBA.
 # Altered Bend implementation; see THIRD_PARTY_NOTICES.md and LICENSES/stb_image_resize2.txt.
 import Base

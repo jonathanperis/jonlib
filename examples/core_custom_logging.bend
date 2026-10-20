@@ -1,5 +1,5 @@
 # raylib [core] example - custom logging, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_custom_logging.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_custom_logging.c (zlib/libpng,
 # Copyright (c) 2018-2025 Pablo Marcos Oltra (@pamarcos) and Ramon
 # Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #

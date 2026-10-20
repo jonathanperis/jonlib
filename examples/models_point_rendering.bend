@@ -1,5 +1,5 @@
 # raylib [models] example - point rendering, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_point_rendering.c
+# Adapted from raylib 6.2 examples/models/models_point_rendering.c
 # (zlib/libpng, Copyright (c) 2024-2025 Reese Gallagher (@satchelfrost)); see
 # LICENSES/raylib.txt.
 #

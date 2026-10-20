@@ -43,8 +43,8 @@ finds the steps raylib has no defined answer for. Cases with such a step are
 contracts (the reference does not run them): sounds loaded on an unready
 device; waves WaveFormat refuses (a 24-bit size, a short sample list, a NaN
 sample, a rate that does not reduce below 2^31); a handle used after its
-buffer was unloaded; an alias of a buffer whose samples were freed, of the
-zero sound; InitAudioDevice on a ready device; buffer operations and
+buffer was unloaded; an alias of a buffer whose samples were freed (raylib 6.2
+defines an alias of the zero sound: the zero sound); InitAudioDevice on a ready device; buffer operations and
 StopSound on an unready device; UpdateSound past the buffer, from a short
 list, on freed samples and on a buffer without samples; a pitch whose rate
 does not fit an unsigned int. IsSoundPlaying is only asked of the reference
@@ -586,7 +586,7 @@ def cases():
         ('unload', 0), ('unalias', 0), ('update', 0, 1, floats([1.0, 1.0])), ('pause', 0), ('close',))
     add('refused-freed-samples', ('init',), ('load', 0, 'mono16'), ('alias', 1, 0), ('unload', 0), ('alias', 2, 1), ('update', 1, 1, floats([1.0, 1.0])),
         ('play', 1), ('unalias', 1), ('close',))
-    add('refused-alias-of-zero', ('init',), ('alias', 1, 0), ('load', 0, 'zero'), ('alias', 2, 0), ('close',))
+    add('alias-of-zero', ('init',), ('alias', 1, 0), ('load', 0, 'zero'), ('alias', 2, 0), ('close',))
     add('refused-second-init', ('init',), ('master', bits(0.5)), ('load', 0, 'mono16'), ('init',), ('close',))
     add('refused-unready-buffers', ('init',), ('load', 0, 'mono16'), ('load', 1, 'stereo16'), ('play', 1), ('close',), ('play', 0), ('stop', 1), ('pause', 0),
         ('resume', 0), ('volume', 0, bits(0.5)), ('pitch', 0, bits(2.0)), ('pan', 0, bits(1.0)), ('alias', 2, 0), ('update', 0, 1, floats([1.0, 1.0])),
@@ -935,7 +935,8 @@ class Model:
             else:
                 tag = self.loaded(step[1], entry)
         elif kind == 'alias':
-            slot, source, frames = step[1], self.used(step[2], zero_fine=False), self.sounds[step[2]][1]
+            # raylib 6.2 checks the source's NULL buffer: an alias of the zero sound is the zero sound.
+            slot, source, frames = step[1], self.used(step[2]), self.sounds[step[2]][1]
             self.sounds[slot] = ZERO
             if source is not None and source['block']:
                 if source['block'] in self.blocks:

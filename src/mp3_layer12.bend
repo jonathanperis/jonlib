@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of dr_mp3 v0.7.4 (David Reid; public domain or MIT
-# No Attribution; its decoder is minimp3, by lieff, CC0), as raylib 6.0
+# No Attribution; its decoder is minimp3, by lieff, CC0), as raylib 6.2
 # vendors it in src/external/dr_mp3.h: a Layer I or II frame's subband
 # samples (drmp3_L12_subband_alloc_table, drmp3_L12_read_scale_info,
 # drmp3_L12_read_scalefactors, drmp3_L12_dequantize_granule and

@@ -1,5 +1,5 @@
 # raylib [shaders] example - julia set, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_julia_set.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shaders/shaders_julia_set.c (zlib/libpng,
 # Copyright (c) 2019-2025 Josh Colclough (@joshcol9232) and Ramon Santamaria
 # (@raysan5)); see LICENSES/raylib.txt.
 #

@@ -1,5 +1,5 @@
 # raylib [shaders] example - palette switch, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_palette_switch.c
+# Adapted from raylib 6.2 examples/shaders/shaders_palette_switch.c
 # (zlib/libpng, Copyright (c) 2019-2025 Marco Lizza (@MarcoLizza) and Ramon
 # Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #

@@ -5609,12 +5609,12 @@
   "LoadModel": {
     "jonlib": "Model.load_for / Model.load",
     "status": "profile-covered",
-    "scope": "OBJ through tinyobj_loader_c (binary64 tryParseDouble, contraction profiled; LoadOBJ's mesh split, MTL materials and textures); binary glTF (.glb) through LoadGLTF (float attributes, 8/16/32-bit indices, node transforms, base colors, embedded PNG textures, raylib 6.2's bone data; uncontracted); MagicaVoxel (.vox) through LoadVOX; Inter-Quake (.iqm) through LoadIQM (meshes, colors, bone data, material textures); Model 3D (.m3d) through LoadM3D (binary variant: a mesh a material run, properties, skins); other extensions and unopened files give the empty model.",
+    "scope": "OBJ through tinyobj_loader_c (binary64 tryParseDouble, contraction profiled; LoadOBJ's mesh split and 6.2 index checks, MTL materials and textures); binary glTF (.glb) through LoadGLTF (float attributes, 8/16/32-bit indices, node transforms, base colors, embedded PNG textures, raylib 6.2's bone data; uncontracted); MagicaVoxel (.vox) through LoadVOX (6.2's bounds); Inter-Quake (.iqm) through LoadIQM (meshes, colors, bone data, material textures); Model 3D (.m3d) through LoadM3D (binary variant: a mesh a material run, properties, skins); other extensions and unopened files give the empty model.",
     "gaps": [
       "glTF as text is UnsupportedFileType; other glTF texture kinds, non-PNG or uri images, sparse accessors, COLOR and JOINTS_n/WEIGHTS_n of other layouts are refused",
       "Undefined reference behavior (asserts, int overflow, reads outside tinyobj's arrays, byte casts, table insertions that loop) and binary64 steps outside the checked helpers' domains are refused",
       "Texture files Jonlib's LoadImage does not decode are refused; paths and names must be printable ASCII (OBJ paths without backslashes)",
-      "VOX, IQM, M3D: reads past the file or the loaders' arrays are refused; M3D textures, generated normals, voxels, shapes and its ASCII variant are not ported; profiles end at 2 MiB files (MODELS.md)",
+      "Refused: VOX's magic or version cut short, IQM/M3D reads past the file or arrays; not ported: M3D textures, generated normals, voxels, shapes, ASCII; profiles end at 2 MiB files (MODELS.md)",
       "Performance: not measured",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
@@ -6344,9 +6344,9 @@
   "LoadSoundAlias": {
     "jonlib": "Sound.load_alias",
     "status": "profile-covered",
-    "scope": "A new tracked buffer with its own volume, pitch, pan and playing state over the source's block of samples, with the source handle's frame count; the zero sound for a source without samples.",
+    "scope": "A new tracked buffer with its own volume, pitch, pan and playing state over the source's block of samples, with the source handle's frame count; the zero sound for a source without samples and for the zero sound (raylib 6.2 checks the NULL buffer).",
     "gaps": [
-      "The zero sound where raylib reads NULL or freed memory: buffer 0, an unloaded buffer, a freed block",
+      "The zero sound where raylib reads freed memory: an unloaded buffer, a freed block",
       "The zero sound on an unready device",
       "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
     ],

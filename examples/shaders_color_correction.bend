@@ -1,5 +1,5 @@
 # raylib [shaders] example - color correction, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_color_correction.c
+# Adapted from raylib 6.2 examples/shaders/shaders_color_correction.c
 # (zlib/libpng, Copyright (c) 2025 Jordi Santonja (@JordSant)); see
 # LICENSES/raylib.txt.
 #

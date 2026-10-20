@@ -1,5 +1,5 @@
 # raylib [core] example - scissor test, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_scissor_test.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_scissor_test.c (zlib/libpng,
 # Copyright (c) 2019-2025 Chris Dill (@MysteriousSpace) and Ramon Santamaria
 # (@raysan5)); see LICENSES/raylib.txt.
 #

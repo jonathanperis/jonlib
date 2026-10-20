@@ -1,5 +1,5 @@
 # raylib [shaders] example - texture outline, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_texture_outline.c
+# Adapted from raylib 6.2 examples/shaders/shaders_texture_outline.c
 # (zlib/libpng, Copyright (c) 2021-2025 Serenity Skiff (@GoldenThumbs) and
 # Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #

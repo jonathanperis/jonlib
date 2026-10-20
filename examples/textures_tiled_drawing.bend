@@ -1,5 +1,5 @@
 # raylib [textures] example - tiled drawing, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_tiled_drawing.c
+# Adapted from raylib 6.2 examples/textures/textures_tiled_drawing.c
 # (zlib/libpng, Copyright (c) 2020-2025 Vlad Adrian (@demizdor) and Ramon
 # Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #

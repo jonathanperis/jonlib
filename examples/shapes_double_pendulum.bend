@@ -1,5 +1,5 @@
 # raylib [shapes] example - double pendulum, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_double_pendulum.c
+# Adapted from raylib 6.2 examples/shapes/shapes_double_pendulum.c
 # (zlib/libpng, Copyright (c) 2025 JoeCheong (@Joecheong2006)); see
 # LICENSES/raylib.txt.
 #

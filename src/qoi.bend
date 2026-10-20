@@ -1,5 +1,5 @@
 # Jonlib - original additions zlib, Copyright (c) 2026 Jonathan Peris.
-# QOI decoding/encoding adapted from Dominic Szablewski's MIT-licensed qoi.h in raylib 6.0.
+# QOI decoding/encoding adapted from Dominic Szablewski's MIT-licensed qoi.h in raylib 6.2.
 # Altered owned Bend implementation; see LICENSES/qoi.txt and THIRD_PARTY_NOTICES.md.
 import Base
 import ./codec.bend as C

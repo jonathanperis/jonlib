@@ -10,8 +10,8 @@ rcore_memory.c's GetTime returns 0.0, so neither frame timing nor rgestures.h
 timeouts could otherwise be exercised, and SetTargetFPS would hang in
 WaitTime), and WaitTime's usleep/nanosleep record the request and advance the
 clock to the script's end-of-wait time. The two SUPPORT_* options restore
-config.h's defaults: probekit's CUSTOMIZE_BUILD=ON parses every
-"#define SUPPORT_X 0" in config.h as ON, which would compile EndDrawing without
+config.h's defaults: probekit's INCLUDE_EVERYTHING=ON turns every
+"#define SUPPORT_X 0" in config.h ON, which would compile EndDrawing without
 timing or PollInputEvents. The probe checks the variant's compile definitions.
 On macOS it also runs every script whose clock stays 0 (and that never waits)
 against the same variant without the shim, where GetTime() is the platform's

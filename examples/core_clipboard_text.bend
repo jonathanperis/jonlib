@@ -1,5 +1,5 @@
 # raylib [core] example - clipboard text, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_clipboard_text.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_clipboard_text.c (zlib/libpng,
 # Copyright (c) 2025 Ananth S (@Ananth1839)); see LICENSES/raylib.txt.
 #
 # A raygui text box (Jongui) with cut, copy, paste, clear and random-text

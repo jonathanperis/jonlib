@@ -1,5 +1,5 @@
 # raylib [models] example - waving cubes, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_waving_cubes.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/models/models_waving_cubes.c (zlib/libpng,
 # Copyright (c) 2019-2025 Codecat (@codecat) and Ramon Santamaria (@raysan5));
 # see LICENSES/raylib.txt.
 #

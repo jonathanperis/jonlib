@@ -6,7 +6,7 @@ the source of API-level progress for every future implementation batch.
 
 ## Frozen scope
 
-The target is raylib 6.0 at the revision in `toolchain.json`. The catalog retains:
+The target is raylib 6.2 at the revision in `toolchain.json`. The catalog retains:
 
 - Every public C function in `raylib.h`, `raymath.h`, `rlgl.h`, `rcamera.h` and
   `rgestures.h`, including standalone and conditional declarations.
@@ -33,8 +33,8 @@ stb and miniaudio are used to derive raylib behavior; their private APIs are not
 additional Jonlib public APIs. Separate projects such as raygui and third-party
 bindings/homebrew ports are not public headers of this pinned raylib release.
 
-The target matrix comes from the pinned [FAQ](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/FAQ.md)
-and [CMake options](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/CMakeOptions.txt).
+The target matrix comes from the pinned [FAQ](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/FAQ.md)
+and [CMake options](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/CMakeOptions.txt).
 Each target's evidence must enumerate applicable OS/device/backend combinations.
 CPU/JS/Metal execution of headless algorithms does not verify window, browser,
 graphics-pipeline or audio-device behavior on those platforms.

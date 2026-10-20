@@ -23,15 +23,18 @@ chunks (the array starts again); version 200; unknown chunks and a MAIN
 chunk with children; a chunk whose size passes the end of the file; an
 upper-case extension; more than 65536 vertices (seven meshes), and a count
 whose last mesh loses four vertices; a missing file, an empty one, another
-magic and another version (the empty model).
+magic and another version (the empty model). raylib 6.2's bounds checks: a
+chunk header, a SIZE, a voxel count, the voxels or a palette cut short, and
+a file that ends with its palette (four bytes left for a chunk header) end
+the reading with what was read; a voxel before any SIZE or outside the
+padded sizes on each axis is not set (beside one that is).
 
-Contracts (Jonlib must answer null, and the reference is not run): a magic,
-a version, a chunk header, a SIZE, a voxel count, the voxels or a palette
-cut short, and a file that ends with its palette (the loader reads a chunk
-header four bytes before the end); a voxel before any SIZE and one outside the padded sizes on each
-axis; a file without a visible voxel; a palette before the voxels (they are
-not seen); a size over 1024, an array over 2^21 cells and a file over
-2 MiB. CPU-1, CPU-2 and JavaScript lanes.
+Contracts (Jonlib must answer null, and the reference is not run): a magic
+or a version cut short; a file without a visible voxel (only voxels before
+any SIZE or outside the padded sizes, a palette before the voxels, which
+are not seen, a cut SIZE, count or palette that leaves none); a size over
+1024, an array over 2^21 cells and a file over 2 MiB. CPU-1, CPU-2 and
+JavaScript lanes.
 """
 import hashlib
 import json
@@ -140,15 +143,25 @@ def cases(work, raylib):
     add('short-other-magic', b'VA')
     add('other-version', vox(size(1, 1, 1), xyzi([(0, 0, 0, 1)]), version=151))
 
+    # raylib 6.2: what a cut file holds before the cut is kept.
     whole = vox(size(4, 4, 4), xyzi([(1, 1, 1, 9), (2, 2, 2, 10)]), palette())
-    add('palette-last', whole, contract=True)
+    add('palette-last', whole)
+    add('header-cut', vox(size(2, 2, 2), xyzi([(1, 0, 1, 33)]), b'MATL\x00'))
+    add('header-cut-eleven', vox(size(2, 2, 2), xyzi([(1, 0, 1, 33)]), b'MATL' + bytes(7)))
+    add('size-cut-after', vox(size(4, 4, 4), xyzi([(1, 1, 1, 9)]), size(8, 8, 8)[:-3]))
+    add('count-cut-after', vox(size(4, 4, 4), xyzi([(1, 1, 1, 9)]), xyzi([])[:-2]))
+    add('voxels-cut', vox(size(4, 4, 4), xyzi([(1, 1, 1, 9)], count=3)))
+    add('voxels-cut-odd', vox(size(4, 4, 4), xyzi([(1, 1, 1, 9), (2, 1, 1, 10)], count=9)[:-2]))
+    add('palette-cut', whole[:-40])
+    add('voxel-before-size-kept', vox(xyzi([(0, 0, 0, 1)]), size(4, 4, 4), xyzi([(1, 1, 1, 5)]), palette(), end()))
+    add('voxel-past-x-kept', vox(size(20, 4, 4), xyzi([(32, 1, 1, 9), (31, 1, 1, 10)]), palette(), end()))
+    add('voxel-past-y-kept', vox(size(4, 20, 4), xyzi([(1, 32, 1, 9), (1, 31, 1, 10)]), palette(), end()))
+    add('voxel-past-z-kept', vox(size(4, 4, 20), xyzi([(1, 1, 32, 9), (1, 1, 31, 10)]), palette(), end()))
     add('magic-cut', b'VOX', contract=True)
     add('version-cut', b'VOX \x96\x00', contract=True)
-    add('header-cut', vox(size(2, 2, 2), xyzi([(1, 0, 1, 33)]), b'MATL\x00'), contract=True)
     add('size-cut', vox(size(4, 4, 4)[:-3]), contract=True)
     add('count-cut', vox(size(4, 4, 4), xyzi([])[:-2]), contract=True)
-    add('voxels-cut', vox(size(4, 4, 4), xyzi([(1, 1, 1, 9)], count=3)), contract=True)
-    add('palette-cut', whole[:-40], contract=True)
+    add('palette-cut-first', vox(palette()[:-40]), contract=True)
     add('palette-first', vox(palette(), size(4, 4, 4), xyzi([(1, 1, 1, 9)])), contract=True)
     add('voxel-before-size', vox(xyzi([(0, 0, 0, 1)]), size(4, 4, 4), palette(), end()), contract=True)
     add('voxel-past-x', vox(size(20, 4, 4), xyzi([(32, 1, 1, 9)]), palette(), end()), contract=True)
@@ -289,7 +302,7 @@ def main():
         path.write_bytes(data)
     native = [c for c in items if not c['contract']]
     contracts = [c for c in items if c['contract']]
-    if len(native) < 30 or len(contracts) < 15:
+    if len(native) < 42 or len(contracts) < 17:
         raise ProbeFailure(f'vox: {len(native)} compared and {len(contracts)} refused cases; the corpus lost coverage')
     source = C_PREFIX + '\n'.join(op.c_case(c) for c in native) + '\n    return 0;\n}\n'
     output = [line for line in probe.native(source, 'reference').splitlines() if line[:1] == 'n']

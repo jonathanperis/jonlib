@@ -1,5 +1,5 @@
 # raylib [models] example - mesh picking, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_mesh_picking.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/models/models_mesh_picking.c (zlib/libpng,
 # Copyright (c) 2017-2025 Joel Davis (@joeld42) and Ramon Santamaria (@raysan5));
 # see LICENSES/raylib.txt.
 #

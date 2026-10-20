@@ -1,5 +1,5 @@
 # raylib [shaders] example - ascii rendering, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_ascii_rendering.c
+# Adapted from raylib 6.2 examples/shaders/shaders_ascii_rendering.c
 # (zlib/libpng, Copyright (c) 2025 Maicon Santana (@maiconpintoabreu)); see
 # LICENSES/raylib.txt.
 #

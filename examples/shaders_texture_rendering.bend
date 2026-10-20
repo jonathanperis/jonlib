@@ -1,5 +1,5 @@
 # raylib [shaders] example - texture rendering, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_texture_rendering.c
+# Adapted from raylib 6.2 examples/shaders/shaders_texture_rendering.c
 # (zlib/libpng, Copyright (c) 2019-2025 Michał Ciesielski (@ciessielski) and
 # Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #

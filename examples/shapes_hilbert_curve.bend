@@ -1,5 +1,5 @@
 # raylib [shapes] example - hilbert curve, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_hilbert_curve.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_hilbert_curve.c (zlib/libpng,
 # Copyright (c) 2025 Hamza RAHAL (@hmz-rhl)); see LICENSES/raylib.txt.
 #
 # The Hilbert curve of an order, drawn a stroke a frame after every change

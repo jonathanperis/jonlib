@@ -1,5 +1,5 @@
 # raylib [text] example - words alignment, ported to Jonlib.
-# Adapted from raylib 6.0 examples/text/text_words_alignment.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/text/text_words_alignment.c (zlib/libpng,
 # Copyright (c) 2025 JP Mortiboys (@themushroompirates)); see
 # LICENSES/raylib.txt.
 #

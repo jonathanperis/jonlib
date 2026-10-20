@@ -2,14 +2,17 @@
 
 Jonlib is an independent library written in Bend 2, inspired by raylib's design.
 It is not affiliated with or endorsed by raylib or Bend's maintainers.
-Jonmath is its separately importable mathematical module, porting `raymath.h`.
+Jonmath is its separately importable mathematical module, adapting `raymath.h`.
 Project-owned port names use the `ray*` → `jon*` convention; upstream names here
 identify the original sources and their required attribution.
 
 ## raylib
 
 - Author: Ramon Santamaria (@raysan5) and contributors.
-- Version: 6.0, commit `dbc56a87da87d973a9c5baa4e7438a9d20121d28`.
+- Version: 6.2, commit `02566453880e06bec97f5b8160fa6fe1e98397ca` (the pin).
+  Jonlib was first adapted from 6.0 (commit
+  `dbc56a87da87d973a9c5baa4e7438a9d20121d28`) and follows 6.2 since; code
+  that 6.2 left unchanged is the same in both releases.
 - Source: <https://github.com/raysan5/raylib>.
 - License: zlib; retained verbatim in [LICENSES/raylib.txt](LICENSES/raylib.txt).
 - Adaptations: the rectangle clipping/degenerate behavior, midpoint-circle,
@@ -191,6 +194,29 @@ marked as such; the `gui-icons` gate compares it with every copy of raygui.h
 there. No raygui file is redistributed: the probes compile the pinned
 checkout's copy with each example.
 
+## reasings
+
+`joneasings.bend` is an altered Bend adaptation of `reasings.h` by Ramon
+Santamaria (@raysan5), after Robert Penner's easing equations, as pinned
+raylib 6.2 ships it beside its examples (`examples/shapes/reasings.h`, the
+same file as `examples/text/reasings.h` and as raylib 6.0's). reasings.h is
+zlib/libpng, Copyright (c) 2015-2024 Ramon Santamaria; Robert Penner's
+equations are under the BSD License, Copyright (c) 2001 Robert Penner. Both
+notices are retained verbatim in [LICENSES/reasings.txt](LICENSES/reasings.txt).
+No reasings file is redistributed: the probes compile the pinned checkout's
+copy.
+
+## rlights
+
+`jonlights.bend` is an altered Bend adaptation of `rlights.h` by Victor Fisac
+(@victorfisac) and Ramon Santamaria (@raysan5), as pinned raylib 6.2 ships it
+beside its examples (`examples/shaders/rlights.h` and
+`examples/models/rlights.h`, the same file, unchanged since raylib 6.0).
+zlib/libpng, Copyright (c) 2017-2024 Victor Fisac and Ramon Santamaria; the
+notice is retained verbatim in [LICENSES/rlights.txt](LICENSES/rlights.txt).
+No rlights file is redistributed: the probes compile the pinned checkout's
+copy.
+
 ## Example assets
 
 `examples/textures_logo_raylib.bend` and the `examples` gate read
@@ -348,7 +374,7 @@ Jonlib uses the MIT-0 alternative, retained with minimp3's CC0 notice in
 `src/convert.bend`, `src/resampler.bend` and `src/lowpass.bend` are altered
 Bend adaptations of the paths raylib's `WaveFormat` reaches through
 `ma_convert_frames` in pinned raylib's `src/external/miniaudio.h` (miniaudio
-v0.11.24 by David Reid): `ma_data_converter` path selection, the u8/s16/f32
+v0.11.25 by David Reid; these paths are unchanged since v0.11.24, raylib 6.0's): `ma_data_converter` path selection, the u8/s16/f32
 `ma_pcm_*` conversions, `ma_channel_converter` with the default channel maps
 and rectangular weights, and `ma_linear_resampler` with its order-4
 `ma_lpf`/`ma_biquad` low-pass filter. The filter coefficients use Jonlib's own
@@ -479,7 +505,7 @@ MIT notice and license are retained in [LICENSES/qoa.txt](LICENSES/qoa.txt).
 ## rlsw
 
 `src/frame.bend` is an altered Bend adaptation of pinned raylib's
-`src/external/rlsw.h` 1.5, the OpenGL 1.1-style software renderer by Le Juez
+`src/external/rlsw.h` 1.6, the OpenGL 1.1-style software renderer by Le Juez
 Victor (reviewed by Ramon Santamaria): its matrix stacks and products, vertex
 transform, face culling, polygon and line clipping (with the scissor),
 projection, axis-aligned quad, triangle and line rasterizers, texel readers,
@@ -544,7 +570,7 @@ license are retained in [LICENSES/rlsw.txt](LICENSES/rlsw.txt).
   pinned raylib commit in `src/external/vox_loader.h`.
 - License: MIT; the notice is retained in [LICENSES/vox_loader.txt](LICENSES/vox_loader.txt).
 - `src/vox.bend` is an altered Bend adaptation of `Vox_LoadFromMemory` (the
-  MagicaVoxel chunks it reads, the voxel array as one array instead of
+  MagicaVoxel chunks it reads, with raylib 6.2's bounds checks, the voxel array as one array instead of
   16x16x16 chunks, and `Vox_Build_Voxel`'s faces in its order), used with
   `rmodels.c`'s `LoadVOX` by `LoadModel` for `.vox` files.
 
@@ -748,7 +774,8 @@ are packed into U32 words; arithmetic uses explicit reference profiles.
 ## rprand
 
 `src/random.bend` is an altered Bend adaptation of pinned raylib's
-`src/external/rprand.h` (rprand 1.0), Copyright (c) 2023 Ramon Santamaria.
+`src/external/rprand.h` (rprand 1.1; 1.1 only adds `rprand_get_value_raw`,
+which raylib does not call), Copyright (c) 2023 Ramon Santamaria.
 Its SplitMix64 initialization and Xoshiro128** stepping preserve the reference
 sequence. The zlib/libpng notice and David Blackman/Sebastiano Vigna algorithm
 dedications are retained in [LICENSES/rprand.txt](LICENSES/rprand.txt).

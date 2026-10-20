@@ -1,5 +1,5 @@
 # raylib [shaders] example - deferred rendering, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_deferred_rendering.c and
+# Adapted from raylib 6.2 examples/shaders/shaders_deferred_rendering.c and
 # the CreateLight/UpdateLightValues of examples/shaders/rlights.h (zlib/libpng,
 # Copyright (c) 2023-2025 Justin Andreas Lacoste (@27justin), 2017-2025
 # Victor Fisac (@victorfisac) and Ramon Santamaria (@raysan5)); see

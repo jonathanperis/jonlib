@@ -1,5 +1,5 @@
 # raylib [shapes] example - math angle rotation, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_math_angle_rotation.c
+# Adapted from raylib 6.2 examples/shapes/shapes_math_angle_rotation.c
 # (zlib/libpng, Copyright (c) 2025 Kris (@krispy-snacc)); see
 # LICENSES/raylib.txt.
 #

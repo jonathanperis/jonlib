@@ -1,5 +1,5 @@
-stb_vorbis v1.22 (Sean Barrett and contributors), as vendored by pinned raylib 6.0
-(commit dbc56a87da87d973a9c5baa4e7438a9d20121d28) in src/external/stb_vorbis.c.
+stb_vorbis v1.22 (Sean Barrett and contributors), as vendored by pinned raylib 6.2
+(commit 02566453880e06bec97f5b8160fa6fe1e98397ca; the same file as raylib 6.0) in src/external/stb_vorbis.c.
 Jonlib adapts it under ALTERNATIVE A (MIT). The dual-license notice, reproduced
 verbatim from the end of the file:
 

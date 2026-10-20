@@ -1,5 +1,5 @@
 # raylib [textures] example - particles blending, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_particles_blending.c
+# Adapted from raylib 6.2 examples/textures/textures_particles_blending.c
 # (zlib/libpng, Copyright (c) 2017-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

@@ -1,5 +1,5 @@
 # raylib [core] example - random sequence, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_random_sequence.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_random_sequence.c (zlib/libpng,
 # Copyright (c) 2023-2025 Dalton Overmyer (@REDl3east)); see
 # LICENSES/raylib.txt.
 #

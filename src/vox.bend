@@ -1,6 +1,7 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 rmodels.c LoadVOX (zlib,
-# LICENSES/raylib.txt) and of vox_loader 1.04 (src/external/vox_loader.h,
+# Altered Bend adaptation of raylib 6.2 rmodels.c LoadVOX (zlib,
+# LICENSES/raylib.txt) and of vox_loader 1.04 as raylib 6.2 vendors it
+# (src/external/vox_loader.h, with raylib 6.2's bounds checks,
 # Copyright (c) 2021 Johann Nadalutti, MIT; LICENSES/vox_loader.txt):
 # Vox_LoadFromMemory's reading of a MagicaVoxel file (the "VOX " magic,
 # versions 150 and 200, the SIZE, XYZI and RGBA chunks, every other chunk
@@ -10,16 +11,16 @@
 # The loader's quirks are kept: an RGBA chunk gives 255 colors (palette 1 to
 # 255) and leaves the reading four bytes before the chunk's end, so what
 # follows a palette is read as a chunk named by its last color and sized by
-# the next chunk's name; a SIZE chunk starts an empty array again; a chunk
-# whose size passes the end of the file ends the reading (the pointer
-# comparison of the 64-bit reference hosts). The voxel array is one array
-# here (the loader's 16x16x16 chunks only store it). Refused: a read past
-# the file (a header or a chunk cut short; a file that ends with its
-# palette, whose last four bytes are read as a chunk's name), a voxel outside the padded
-# sizes (the loader writes outside its chunks), a file over 2 MiB, a size
-# over 1024 or an array over 2^21 cells (the profile), and a file without
-# a visible voxel (LoadVOX allocates zero bytes for its mesh). See
-# docs/MODELS.md.
+# the next chunk's name; a SIZE chunk starts an empty array again. Since
+# raylib 6.2 the reading ends (what was read is kept) where fewer than 12
+# bytes are left for a chunk header or a SIZE, 4 for a voxel count or 1020
+# for a palette, or where a skipped chunk's size passes the end; a voxel
+# count is cut to the voxels the file holds, and a voxel outside the padded
+# sizes is not set. The voxel array is one array here (the loader's
+# 16x16x16 chunks only store it). Refused: a magic or a version cut short
+# (a read past the file), a file over 2 MiB, a size over 1024 or an array
+# over 2^21 cells (the profile), and a file without a visible voxel
+# (LoadVOX allocates zero bytes for its mesh). See docs/MODELS.md.
 import Base
 
 # A mesh LoadVOX builds: vertexCount, triangleCount, the vertices and the
@@ -50,7 +51,7 @@ type Step is Data:
   Next{bytes: +List<U32>, read: Read}
 
 type Sets is Data:
-  Sets{ok: Bool, sets: +List<U32>, rest: +List<U32>}
+  Sets{sets: +List<U32>, rest: +List<U32>}
 
 # The quads built so far, their values last first.
 type Out is Data:
@@ -86,6 +87,10 @@ def padded(+size: U32) -> U32:
   (size + ((16 - size % 16) % 16) : U32)
 
 # Vox_AllocArray(sizeX, sizeZ, sizeY): the file's Y and Z change places.
+# The reading's end (raylib 6.2's `break`): what was read is kept.
+def stop(+read: Read) -> Step:
+  Next{Nil{}, read}
+
 def size.set(valid: Bool, +x: U32, +y: U32, +z: U32, +rest: +List<U32>, +read: Read) -> Step:
   match valid:
     case False{}: Halt{}
@@ -95,45 +100,48 @@ def size.set(valid: Bool, +x: U32, +y: U32, +z: U32, +rest: +List<U32>, +read: R
 
 def size.z(z: Maybe<&2, Word>, +x: U32, +y: U32, +read: Read) -> Step:
   match z:
-    case None{}: Halt{}
+    case None{}: stop(read)
     case Some{Word{+v, +rest}}:
       size.set((x <= 1024 : U32) && (y <= 1024 : U32) && (v <= 1024 : U32) && ((padded(x) * padded(y) * padded(v)) <= 2097152 : U32), x, y, v, rest, read)
 
 def size.y(y: Maybe<&2, Word>, +x: U32, +read: Read) -> Step:
   match y:
-    case None{}: Halt{}
+    case None{}: stop(read)
     case Some{Word{+v, +rest}}: size.z(word(rest), x, v, read)
 
-# A SIZE chunk: sizeX, sizeY, sizeZ.
+# A SIZE chunk: sizeX, sizeY, sizeZ; fewer than 12 bytes end the reading.
 def size(x: Maybe<&2, Word>, +read: Read) -> Step:
   match x:
-    case None{}: Halt{}
+    case None{}: stop(read)
     case Some{Word{+v, +rest}}: size.y(word(rest), v, read)
 
 # Vox_SetVoxel(x, z, sizeZ - y - 1, id) for each voxel: the cell is
 # (x*sizeZ + z)*sizeY + y in the array's coordinates, the order the mesh is
-# built in.
-def voxels(n: Nat, bytes: +List<U32>, +sx: U32, +sy: U32, +sz: U32, +ok: Bool, +sets: +List<U32>) -> Sets:
+# built in. A voxel outside the (padded) sizes is not set (raylib 6.2's
+# range checks; a voxel before any SIZE is outside sizes of 0).
+def voxels(n: Nat, bytes: +List<U32>, +sx: U32, +sy: U32, +sz: U32, +sets: +List<U32>) -> Sets:
   match n bytes:
     case 1n+k Con{+vx, Con{+vy, Con{+vz, Con{+vi, +more}}}}:
-      voxels(k, more, sx, sy, sz, ok && (vx < sx : U32) && (vz < sy : U32) && (vy < sz : U32), Con{((((vx * sz + ((sz - vy) - 1)) * sy + vz) << 8n) .|. vi : U32), sets})
-    case 0n Nil{}: Sets{ok, sets, Nil{}}
-    case 0n Con{+b, +more}: Sets{ok, sets, Con{b, more}}
-    case _ _: Sets{False{}, sets, Nil{}}
+      voxels(k, more, sx, sy, sz, Bool.pick(+List<U32>, (vx < sx : U32) && (vz < sy : U32) && (vy < sz : U32), Con{((((vx * sz + ((sz - vy) - 1)) * sy + vz) << 8n) .|. vi : U32), sets}, sets))
+    case 0n Nil{}: Sets{sets, Nil{}}
+    case 0n Con{+b, +more}: Sets{sets, Con{b, more}}
+    case _ _: Sets{sets, Nil{}}
 
 def xyzi.set(+done: Sets, +read: Read) -> Step:
-  Sets{+ok, +sets, +rest} = done
+  Sets{+sets, +rest} = done
   Read{+sx, +sy, +sz, _, +palette} = read
-  Bool.pick(Step, ok, Next{rest, Read{sx, sy, sz, sets, palette}}, Halt{})
+  Next{rest, Read{sx, sy, sz, sets, palette}}
 
-# An XYZI chunk: numVoxels, then x, y, z and the color index of each. More
-# voxels than a 2 MiB file holds end the bytes first.
+# An XYZI chunk: numVoxels, then x, y, z and the color index of each. A count
+# past the voxels the file holds is cut to them (raylib 6.2): the voxels run
+# out, and the fewer than 4 bytes left end the reading; fewer than 4 bytes
+# for the count end it too.
 def xyzi(count: Maybe<&2, Word>, +read: Read) -> Step:
   match count:
-    case None{}: Halt{}
+    case None{}: stop(read)
     case Some{Word{+n, +rest}}:
       Read{+sx, +sy, +sz, +sets, _} = read
-      xyzi.set(voxels(U32.to_nat(U32.min(n, 524289)), rest, sx, sy, sz, True{}, sets), read)
+      xyzi.set(voxels(U32.to_nat(U32.min(n, 524289)), rest, sx, sy, sz, sets), read)
 
 type Colors is Data:
   Colors{ok: Bool, colors: +List<U32>, rest: +List<U32>}
@@ -145,11 +153,18 @@ def colors(n: Nat, bytes: +List<U32>, +acc: +List<U32>) -> Colors:
     case 0n Con{+b, +more}: Colors{True{}, acc, Con{b, more}}
     case _ _: Colors{False{}, acc, Nil{}}
 
-# An RGBA chunk: palette[i + 1] for the 255 colors read (palette[0] keeps its zero).
+def rgba.read(ok: Bool, +colors: +List<U32>, +rest: +List<U32>, +read: Read) -> Step:
+  match ok:
+    case False{}: stop(read)
+    case True{}:
+      Read{+sx, +sy, +sz, +sets, _} = read
+      Next{rest, Read{sx, sy, sz, sets, Con{0, turned(colors, Nil{})}}}
+
+# An RGBA chunk: palette[i + 1] for the 255 colors read (palette[0] keeps its
+# zero); fewer than 1020 bytes end the reading, the palette as it was.
 def rgba(+done: Colors, +read: Read) -> Step:
   Colors{+ok, +colors, +rest} = done
-  Read{+sx, +sy, +sz, +sets, _} = read
-  Bool.pick(Step, ok, Next{rest, Read{sx, sy, sz, sets, Con{0, turned(colors, Nil{})}}}, Halt{})
+  rgba.read(ok, colors, rest, read)
 
 # 1 SIZE, 2 XYZI, 3 RGBA, 0 any other name.
 def kind(+name: U32) -> U32:
@@ -164,18 +179,24 @@ def chunk.body(kind: U32, +n: U32, +body: +List<U32>, +read: Read) -> Step:
     case 3: rgba(colors(255n, body, Nil{}), read)
     case _: Next{List.drop(&2, U32, body, U32.to_nat(U32.min(n, 2097152))), read}
 
+def chunk.children(children: Maybe<&2, Word>, +name: U32, +n: U32, +read: Read) -> Step:
+  match children:
+    case None{}: stop(read)
+    case Some{Word{_, +rest}}: chunk.body(kind(name), n, rest, read)
+
 def chunk.sized(size: Maybe<&2, Word>, +name: U32, +read: Read) -> Step:
   match size:
-    case None{}: Halt{}
-    case Some{Word{+n, +rest}}: chunk.body(kind(name), n, List.drop(&2, U32, rest, 4n), read)
+    case None{}: stop(read)
+    case Some{Word{+n, +rest}}: chunk.children(word(rest), name, n, read)
 
 def chunk.named(name: Maybe<&2, Word>, +read: Read) -> Step:
   match name:
-    case None{}: Halt{}
+    case None{}: stop(read)
     case Some{Word{+id, +rest}}: chunk.sized(word(rest), id, read)
 
 # A chunk: its name, the size of its contents, the size of its children
-# (not read), then its contents.
+# (not read), then its contents. Fewer than the header's 12 bytes end the
+# reading (raylib 6.2).
 def chunk(+bytes: +List<U32>, +read: Read) -> Step:
   chunk.named(word(bytes), read)
 

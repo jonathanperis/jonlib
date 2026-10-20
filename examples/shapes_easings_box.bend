@@ -1,5 +1,5 @@
 # raylib [shapes] example - easings box, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_easings_box.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_easings_box.c (zlib/libpng,
 # Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt. EaseElasticOut, EaseBounceOut, EaseQuadOut, EaseCircOut
 # and EaseSineOut are Joneasings' (docs/EASINGS.md).

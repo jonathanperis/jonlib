@@ -1,5 +1,5 @@
 # raylib [shaders] example - simple mask, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_simple_mask.c
+# Adapted from raylib 6.2 examples/shaders/shaders_simple_mask.c
 # (zlib/libpng, Copyright (c) 2019-2025 Chris Camacho (@chriscamacho) and
 # Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #

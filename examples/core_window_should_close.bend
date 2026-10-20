@@ -1,5 +1,5 @@
 # raylib [core] example - window should close, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_window_should_close.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_window_should_close.c (zlib/libpng,
 # Copyright (c) 2013-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # The window's close button or ESC (the exit key is disabled) only asks for

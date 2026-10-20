@@ -1,5 +1,5 @@
 # raylib [core] example - input actions, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_input_actions.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_input_actions.c (zlib/libpng,
 # Copyright (c) 2025 Jett (@JettMonstersGoBoom)); see LICENSES/raylib.txt.
 #
 # A rectangle moved by actions, each bound to a key and a gamepad button of

@@ -1,5 +1,5 @@
 # raylib [audio] example - sound loading, ported to Jonlib.
-# Adapted from raylib 6.0 examples/audio/audio_sound_loading.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/audio/audio_sound_loading.c (zlib/libpng,
 # Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # SPACE plays a sound loaded from a WAV file and ENTER one loaded from an

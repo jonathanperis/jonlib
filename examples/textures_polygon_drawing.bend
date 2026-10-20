@@ -1,5 +1,5 @@
 # raylib [textures] example - polygon drawing, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_polygon_drawing.c
+# Adapted from raylib 6.2 examples/textures/textures_polygon_drawing.c
 # (zlib/libpng, Copyright (c) 2021-2025 Chris Camacho (@chriscamacho) and
 # Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #

@@ -1,6 +1,6 @@
 # VR stereo
 
-Jonlib adapts raylib 6.0's VR simulator functions of `rcore.c` as `Vr.*` and
+Jonlib adapts raylib 6.2's VR simulator functions of `rcore.c` as `Vr.*` and
 two `Frame` functions in `jonlib.bend`.
 
 | Function | raylib | Contract |

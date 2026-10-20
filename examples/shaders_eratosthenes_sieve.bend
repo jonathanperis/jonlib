@@ -1,5 +1,5 @@
 # raylib [shaders] example - eratosthenes sieve, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_eratosthenes_sieve.c
+# Adapted from raylib 6.2 examples/shaders/shaders_eratosthenes_sieve.c
 # (zlib/libpng, Copyright (c) 2019-2025 ProfJski (@ProfJski) and Ramon Santamaria
 # (@raysan5)); see LICENSES/raylib.txt.
 #

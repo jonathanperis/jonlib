@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of jar_xm (Joshua Reisenauer's port of libxm by
-# Romain "Artefact2" Dalmaso; WTFPL), as raylib 6.0 vendors it in
+# Romain "Artefact2" Dalmaso; WTFPL), as raylib 6.2 vendors it in
 # src/external/jar_xm.h: the player's rows and ticks (jar_xm_row,
 # jar_xm_tick, jar_xm_handle_note_and_instrument, jar_xm_trigger_note, the
 # effects and the envelopes of a channel), jar_xm_reset and

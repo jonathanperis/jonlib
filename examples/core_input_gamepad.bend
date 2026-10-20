@@ -1,5 +1,5 @@
 # raylib [core] example - input gamepad, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_input_gamepad.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_input_gamepad.c (zlib/libpng,
 # Copyright (c) 2013-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # The gamepad chosen with LEFT and RIGHT drawn by its name's layout (Xbox,

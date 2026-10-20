@@ -1,6 +1,6 @@
 # Image-as-code export
 
-Jonlib adapts raylib 6.0 `ExportImageAsCode`, which renders an image as a C
+Jonlib adapts raylib 6.2 `ExportImageAsCode`, which renders an image as a C
 header containing its metadata and every storage byte.
 
 ```bend

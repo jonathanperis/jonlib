@@ -1,5 +1,5 @@
 # raylib [shaders] example - raymarching rendering, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_raymarching_rendering.c
+# Adapted from raylib 6.2 examples/shaders/shaders_raymarching_rendering.c
 # (zlib/libpng, Copyright (c) 2018-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

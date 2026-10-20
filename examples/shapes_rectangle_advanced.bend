@@ -1,5 +1,5 @@
 # raylib [shapes] example - rectangle advanced, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_rectangle_advanced.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_rectangle_advanced.c (zlib/libpng,
 # Copyright (c) 2024-2025 Everton Jr. (@evertonse) and Ramon Santamaria (@raysan5));
 # see LICENSES/raylib.txt.
 #

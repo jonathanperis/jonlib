@@ -1,5 +1,5 @@
 # raylib [text] example - unicode ranges, ported to Jonlib.
-# Adapted from raylib 6.0 examples/text/text_unicode_ranges.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/text/text_unicode_ranges.c (zlib/libpng,
 # Copyright (c) 2025 Vadim Gunko (@GuvaCode) and Ramon Santamaria
 # (@raysan5)); see LICENSES/raylib.txt.
 #

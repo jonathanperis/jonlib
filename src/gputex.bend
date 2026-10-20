@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of rl_load_ktx_from_memory, rl_load_pkm_from_memory,
-# rl_load_pvr_from_memory and rl_load_astc_from_memory from raylib 6.0's
+# rl_load_pvr_from_memory and rl_load_astc_from_memory from raylib 6.2's
 # rltexgpu.h (single-level files); notice retained in LICENSES/raylib.txt. See
 # THIRD_PARTY_NOTICES.md.
 import Base

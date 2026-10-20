@@ -1,5 +1,5 @@
 # raylib [text] example - strings management, ported to Jonlib.
-# Adapted from raylib 6.0 examples/text/text_strings_management.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/text/text_strings_management.c (zlib/libpng,
 # Copyright (c) 2025 David Buzatto (@davidbuzatto)); see LICENSES/raylib.txt.
 #
 # Text particles that bounce around the screen: grabbed and thrown with the

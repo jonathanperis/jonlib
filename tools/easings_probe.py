@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compare Joneasings with reasings.h.
 
-The native reference compiles raylib 6.0's examples/shapes/reasings.h with
+The native reference compiles raylib's examples/shapes/reasings.h with
 -ffp-contract=off against the host libm and prints the 28 Ease* functions'
 words for each (t, b, c, d) of the corpus: durations from 0.001 to 1000,
 times at, inside and outside [0, d] (the edges the functions test, t == 0,

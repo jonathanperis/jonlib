@@ -1,5 +1,5 @@
 # raylib [core] example - storage values, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_storage_values.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_storage_values.c (zlib/libpng,
 # Copyright (c) 2015-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # R draws a score and a high score, ENTER saves them in storage.data and

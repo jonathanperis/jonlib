@@ -1,6 +1,6 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of stb_truetype.h v1.26's stbtt__solve_cubic and
-# stbtt__cuberoot as pinned raylib 6.0 vendors it (src/external/stb_truetype.h,
+# stbtt__cuberoot as pinned raylib 6.2 vendors it (src/external/stb_truetype.h,
 # Sean Barrett, public domain / MIT; LICENSES/stb_truetype.txt): the roots of
 # x^3 + a*x^2 + b*x + c = 0 that stbtt_GetGlyphSDF takes for the point of a
 # curve nearest to a pixel. F32 arithmetic follows the C source order,

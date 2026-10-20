@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of stb_vorbis v1.22 (Sean Barrett; MIT or public
-# domain), as raylib 6.0 vendors it in src/external/stb_vorbis.c: the rest
+# domain), as raylib 6.2 vendors it in src/external/stb_vorbis.c: the rest
 # of start_decoder's reading of the setup header, after the codebooks: the
 # floors (type 1, with the order of their points and each point's
 # neighbours), the residues, the mappings and the modes. See

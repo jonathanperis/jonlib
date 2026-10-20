@@ -1,5 +1,5 @@
 # raylib [textures] example - logo raylib, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_logo_raylib.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/textures/textures_logo_raylib.c (zlib/libpng,
 # Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # Loads raylib_logo.png from raylib's examples/textures/resources (not copied

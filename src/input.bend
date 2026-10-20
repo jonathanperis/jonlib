@@ -1,8 +1,8 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 rcore.c (CORE.Input, PlayAutomationEvent's
+# Altered Bend adaptation of raylib 6.2 rcore.c (CORE.Input, PlayAutomationEvent's
 # input events, the keyboard/mouse/touch/gamepad queries) and of
 # src/platforms/rcore_memory.c (PollInputEvents, SetMousePosition and the cursor
-# functions) as pinned raylib 6.0 runs them on PLATFORM=Memory (zlib,
+# functions) as pinned raylib 6.2 runs them on PLATFORM=Memory (zlib,
 # LICENSES/raylib.txt); the key and char callbacks follow
 # src/platforms/rcore_desktop_glfw.c.
 #

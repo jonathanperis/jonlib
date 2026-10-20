@@ -1,5 +1,5 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 rcore.c's automation event lists
+# Altered Bend adaptation of raylib 6.2 rcore.c's automation event lists
 # (zlib, LICENSES/raylib.txt): AutomationEvent and AutomationEventList,
 # LoadAutomationEventList's text reader and ExportAutomationEventList's text
 # writer. The binary .rae reader and writer are commented out in the pinned

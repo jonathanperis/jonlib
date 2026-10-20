@@ -1,5 +1,5 @@
 # raylib [core] example - custom frame control, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_custom_frame_control.c
+# Adapted from raylib 6.2 examples/core/core_custom_frame_control.c
 # (zlib/libpng, Copyright (c) 2021-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

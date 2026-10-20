@@ -1,4 +1,4 @@
-rprand v1.0 - zlib/libpng license
+rprand v1.1 - zlib/libpng license
 
 Copyright (c) 2023 Ramon Santamaria (@raysan5)
 
@@ -32,4 +32,5 @@ worldwide. This software is distributed without any warranty.
 See http://creativecommons.org/publicdomain/zero/1.0/.
 
 Retained from raylib src/external/rprand.h at
-dbc56a87da87d973a9c5baa4e7438a9d20121d28.
+02566453880e06bec97f5b8160fa6fe1e98397ca (rprand 1.1; the notice is unchanged since
+raylib 6.0, dbc56a87).

@@ -1,5 +1,5 @@
 # raylib [shapes] example - splines drawing, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_splines_drawing.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_splines_drawing.c (zlib/libpng,
 # Copyright (c) 2023-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # A spline through up to 32 points, as a linear, basis, Catmull-Rom or cubic

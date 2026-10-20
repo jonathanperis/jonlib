@@ -1,5 +1,5 @@
 # raylib [text] example - font sdf, ported to Jonlib.
-# Adapted from raylib 6.0 examples/text/text_font_sdf.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/text/text_font_sdf.c (zlib/libpng,
 # Copyright (c) 2015-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # "Signed Distance Fields" in a font made by hand from LoadFontData's glyphs

@@ -1,5 +1,5 @@
 # raylib [shapes] example - dashed line, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_dashed_line.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_dashed_line.c (zlib/libpng,
 # Copyright (c) 2025 Luís Almeida (@luis605)); see LICENSES/raylib.txt.
 #
 # A dashed line to the mouse; arrows change the dash and space lengths, C

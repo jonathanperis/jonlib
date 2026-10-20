@@ -1,5 +1,5 @@
 # raylib [core] example - input keys, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_input_keys.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_input_keys.c (zlib/libpng,
 # Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # Move the ball with the arrow keys. Build and run as

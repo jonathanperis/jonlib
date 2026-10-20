@@ -1,5 +1,5 @@
 # raylib [core] example - compute hash, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_compute_hash.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_compute_hash.c (zlib/libpng,
 # Copyright (c) 2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # A raygui text box (Jongui) edits a text of up to 94 bytes; a button

@@ -1,5 +1,5 @@
 # raylib [text] example - sprite fonts, ported to Jonlib.
-# Adapted from raylib 6.0 examples/text/text_sprite_fonts.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/text/text_sprite_fonts.c (zlib/libpng,
 # Copyright (c) 2017-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # Eight sprite fonts, each drawing its credit line at twice its base size,

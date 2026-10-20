@@ -1,5 +1,5 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 rmodels.c LoadM3D and
+# Altered Bend adaptation of raylib 6.2 rmodels.c LoadM3D and
 # LoadModelAnimationsM3D (zlib, LICENSES/raylib.txt) and of the binary
 # importer of Model 3D (src/external/m3d.h, Copyright (C) 2020 bzt
 # (bztsrc@gitlab), MIT; LICENSES/m3d.txt): m3d_load's container (the 3DMO

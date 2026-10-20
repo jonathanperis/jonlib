@@ -2,7 +2,7 @@
 
 ## Destination and completion rule
 
-The goal is **100% raylib 6.0 capability and observable-behavior parity in Bend
+The goal is **100% raylib 6.2 capability and observable-behavior parity in Bend
 2**, including the platform support and public companion-header capabilities
 that form that release. The version is frozen so the destination is measurable;
 later raylib releases become separately tracked targets.
@@ -229,7 +229,7 @@ recommended option in each case, revisable on his review):
 ## Near-term sequence
 
 The current milestone is a headless image foundation: owned images, drawing,
-composition, transforms, codecs and math, verified against raylib 6.0 CPU image
+composition, transforms, codecs and math, verified against raylib 6.2 CPU image
 operations. Next, in dependency order:
 
 1. **2D library growth.** Complete the remaining primitive families, math and

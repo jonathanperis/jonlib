@@ -1,5 +1,5 @@
 # raylib [textures] example - cellular automata, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_cellular_automata.c
+# Adapted from raylib 6.2 examples/textures/textures_cellular_automata.c
 # (zlib/libpng, Copyright (c) 2025 Jordi Santonja (@JordSant)); see
 # LICENSES/raylib.txt.
 #

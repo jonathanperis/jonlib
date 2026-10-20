@@ -1,5 +1,5 @@
 # raylib [text] example - input box, ported to Jonlib.
-# Adapted from raylib 6.0 examples/text/text_input_box.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/text/text_input_box.c (zlib/libpng,
 # Copyright (c) 2017-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # Type up to 9 characters while the mouse is over the box; BACKSPACE

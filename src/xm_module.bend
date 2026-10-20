@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of jar_xm (Joshua Reisenauer's port of libxm by
-# Romain "Artefact2" Dalmaso; WTFPL), as raylib 6.0 vendors it in
+# Romain "Artefact2" Dalmaso; WTFPL), as raylib 6.2 vendors it in
 # src/external/jar_xm.h: a module read from its file
 # (jar_xm_create_context_safe: jar_xm_check_sanity_preload,
 # jar_xm_get_memory_needed_for_context, jar_xm_load_module and

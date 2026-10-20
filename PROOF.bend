@@ -915,6 +915,21 @@ def Laws.gltf_other_texture_kind_refused():
 def Laws.gltf_base_color_image_kept():
   {==}
 
+def Laws.obj_line_of_4095_bytes_parsed():
+  {==}
+
+def Laws.obj_line_of_4096_bytes_refused():
+  {==}
+
+def Laws.obj_index_inside_copied():
+  {==}
+
+def Laws.obj_index_past_the_end_skipped():
+  {==}
+
+def Laws.obj_index_negative_skipped(n):
+  {==}
+
 def Laws.vox_extension_routed(iqm, m3d, other):
   {==}
 
@@ -930,10 +945,13 @@ def Laws.vox_chunk_names():
 def Laws.vox_voxel_cell():
   {==}
 
-def Laws.vox_voxel_outside_fails():
+def Laws.vox_voxel_outside_skipped():
   {==}
 
-def Laws.vox_voxel_cut_short_fails():
+def Laws.vox_voxel_before_size_skipped():
+  {==}
+
+def Laws.vox_voxel_count_cut_to_the_file():
   {==}
 
 def Laws.vox_quad_indices():
@@ -963,7 +981,16 @@ def Laws.vox_chunk_header_cut_short_unread():
 def Laws.vox_without_voxels_unread():
   {==}
 
-def Laws.vox_four_bytes_left_halt(read):
+def Laws.vox_four_bytes_left_end(read):
+  {==}
+
+def Laws.vox_size_cut_short_ends():
+  {==}
+
+def Laws.vox_count_cut_short_ends():
+  {==}
+
+def Laws.vox_palette_cut_short_ends():
   {==}
 
 def Laws.vox_chunk_past_the_end_ends():

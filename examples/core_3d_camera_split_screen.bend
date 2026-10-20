@@ -1,5 +1,5 @@
 # raylib [core] example - 3d camera split screen, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_3d_camera_split_screen.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_3d_camera_split_screen.c (zlib/libpng,
 # Copyright (c) 2021-2025 Jeffery Myers (@JeffM2501)); see LICENSES/raylib.txt.
 #
 # Two perspective cameras render a field of cubes into two 400x450 render

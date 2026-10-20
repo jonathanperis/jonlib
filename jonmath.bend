@@ -1,5 +1,5 @@
 # Jonmath - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raymath.h from pinned raylib 6.0.
+# Altered Bend adaptation of raymath.h from pinned raylib 6.2.
 # See THIRD_PARTY_NOTICES.md and LICENSES/raylib.txt.
 #
 # Sections, in order (each starts with a "# ----" banner):

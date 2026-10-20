@@ -1,5 +1,5 @@
-rlights.h (raylib 6.0 examples/shaders/rlights.h and examples/models/rlights.h,
-the same file), the header jonlights.bend adapts. Its notice, verbatim:
+rlights.h (raylib 6.2 examples/shaders/rlights.h and examples/models/rlights.h,
+the same file, unchanged since raylib 6.0), the header jonlights.bend adapts. Its notice, verbatim:
 
 raylib.lights - Some useful functions to deal with lights data
 

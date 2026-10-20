@@ -1,6 +1,6 @@
 # Joneasings: reasings.h
 
-`joneasings.bend` ports `reasings.h`, the easing header raylib 6.0's examples
+`joneasings.bend` ports `reasings.h`, the easing header raylib 6.2's examples
 ship (`examples/shapes/reasings.h`, Robert Penner's equations; notice in
 [LICENSES/reasings.txt](../LICENSES/reasings.txt)). It imports Jonmath only:
 

@@ -1,5 +1,5 @@
 # raylib [core] example - window flags, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_window_flags.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_window_flags.c (zlib/libpng,
 # Copyright (c) 2020-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # A bouncing ball under a list of the window's state flags, each toggled by

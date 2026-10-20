@@ -1,5 +1,5 @@
 # raylib [core] example - text file loading, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_text_file_loading.c
+# Adapted from raylib 6.2 examples/core/core_text_file_loading.c
 # (zlib/libpng, Copyright (c) 0 Aanjishnu Bhattacharyya (@NimComPoo-04));
 # see LICENSES/raylib.txt.
 #

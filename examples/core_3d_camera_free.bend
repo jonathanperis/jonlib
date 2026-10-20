@@ -1,5 +1,5 @@
 # raylib [core] example - 3d camera free, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_3d_camera_free.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_3d_camera_free.c (zlib/libpng,
 # Copyright (c) 2015-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # UpdateCamera(CAMERA_FREE): the mouse turns the camera, the wheel zooms, the

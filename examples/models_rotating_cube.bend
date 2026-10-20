@@ -1,5 +1,5 @@
 # raylib [models] example - rotating cube, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_rotating_cube.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/models/models_rotating_cube.c (zlib/libpng,
 # Copyright (c) 2025 Jopestpe (@jopestpe)); see LICENSES/raylib.txt.
 #
 # A cube model textured with a quarter of the cubicmap atlas, turning one

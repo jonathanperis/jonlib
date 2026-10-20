@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of stb_vorbis v1.22 (Sean Barrett; MIT or public
-# domain), as raylib 6.0 vendors it in src/external/stb_vorbis.c: the
+# domain), as raylib 6.2 vendors it in src/external/stb_vorbis.c: the
 # residues of a packet (decode_residue, residue_decode) and the vectors
 # laid over the channels (codebook_decode_deinterleave_repeat). See
 # THIRD_PARTY_NOTICES.md and LICENSES/stb_vorbis.txt.

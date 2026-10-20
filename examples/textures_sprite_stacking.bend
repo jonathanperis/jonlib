@@ -1,5 +1,5 @@
 # raylib [textures] example - sprite stacking, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_sprite_stacking.c
+# Adapted from raylib 6.2 examples/textures/textures_sprite_stacking.c
 # (zlib/libpng, Copyright (c) 2025 Robin (@RobinsAviary)); see
 # LICENSES/raylib.txt.
 #

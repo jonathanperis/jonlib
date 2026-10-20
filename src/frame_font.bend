@@ -1,5 +1,5 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# The default font bitmap of raylib 6.0 rtext.c LoadFontDefault (defaultFontData,
+# The default font bitmap of raylib 6.2 rtext.c LoadFontDefault (defaultFontData,
 # Copyright (c) 2013-2026 Ramon Santamaria; zlib, LICENSES/raylib.txt): 512 words,
 # bit j of word n set when atlas pixel 32n + j (row-major 128x128) is opaque.
 # rcore.c InitWindow samples shapes from this atlas; see docs/FRAME.md.

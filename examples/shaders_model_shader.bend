@@ -1,5 +1,5 @@
 # raylib [shaders] example - model shader, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_model_shader.c
+# Adapted from raylib 6.2 examples/shaders/shaders_model_shader.c
 # (zlib/libpng, Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

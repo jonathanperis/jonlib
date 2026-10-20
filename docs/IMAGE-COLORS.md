@@ -1,6 +1,6 @@
 # Bulk and point image colors
 
-Jonlib adapts raylib 6.0 `LoadImageColors` (bulk) and `GetImageColor` (point)
+Jonlib adapts raylib 6.2 `LoadImageColors` (bulk) and `GetImageColor` (point)
 for every pixel format.
 
 ```bend

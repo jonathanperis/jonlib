@@ -1,5 +1,5 @@
 # raylib [text] example - inline styling, ported to Jonlib.
-# Adapted from raylib 6.0 examples/text/text_inline_styling.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/text/text_inline_styling.c (zlib/libpng,
 # Copyright (c) 2025 Wagner Barongello (@SultansOfCode) and Ramon Santamaria (@raysan5));
 # see LICENSES/raylib.txt.
 #

@@ -15,7 +15,7 @@ raylib 2D examples work.
 ## 1. References
 
 **Drawing: raylib's memory platform with its software renderer.** Pinned
-raylib 6.0 ships `PLATFORM=Memory` (`src/platforms/rcore_memory.c`), which
+raylib (6.0 when this was designed, 6.2 now) ships `PLATFORM=Memory` (`src/platforms/rcore_memory.c`), which
 renders every draw call through `rlgl` into `src/external/rlsw.h`, a CPU
 rasterizer, and copies the result to a memory framebuffer in
 `SwapScreenBuffer`. The probes already build that platform. GPU (OpenGL)

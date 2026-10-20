@@ -1,5 +1,5 @@
 # raylib [shapes] example - basic shapes, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_basic_shapes.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_basic_shapes.c (zlib/libpng,
 # Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # The hexagons turn by 0.2 degrees a frame, so DrawPoly, DrawPolyLines and

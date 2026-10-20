@@ -1,5 +1,5 @@
 # raylib [models] example - yaw pitch roll, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_yaw_pitch_roll.c
+# Adapted from raylib 6.2 examples/models/models_yaw_pitch_roll.c
 # (zlib/libpng, Copyright (c) 2017-2025 Berni (@Berni8k) and Ramon
 # Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #

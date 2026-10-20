@@ -1,5 +1,5 @@
 # raylib [shaders] example - vertex displacement, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_vertex_displacement.c
+# Adapted from raylib 6.2 examples/shaders/shaders_vertex_displacement.c
 # (zlib/libpng, Copyright (c) 2023-2025 Alex ZH (@ZzzhHe)); see
 # LICENSES/raylib.txt.
 #

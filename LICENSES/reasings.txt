@@ -1,5 +1,5 @@
-reasings.h (raylib 6.0 examples/shapes/reasings.h), the header joneasings.bend
-adapts. Its notice, verbatim:
+reasings.h (raylib 6.2 examples/shapes/reasings.h, unchanged since raylib 6.0;
+examples/text/reasings.h is the same file), the header joneasings.bend adapts. Its notice, verbatim:
 
 reasings - raylib easings library, based on Robert Penner library
 

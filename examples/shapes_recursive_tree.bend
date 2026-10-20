@@ -1,5 +1,5 @@
 # raylib [shapes] example - recursive tree, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_recursive_tree.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_recursive_tree.c (zlib/libpng,
 # Copyright (c) 2025 Jopestpe (@jopestpe)); see LICENSES/raylib.txt.
 #
 # A binary tree of branches grown breadth first (each branch two shorter

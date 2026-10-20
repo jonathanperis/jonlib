@@ -20,5 +20,5 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Selected MIT alternative from stb_perlin.h v0.5, pinned raylib revision
-dbc56a87da87d973a9c5baa4e7438a9d20121d28. Contributors include Jack Mott and
+02566453880e06bec97f5b8160fa6fe1e98397ca (the same file as raylib 6.0). Contributors include Jack Mott and
 Jordan Peck. Jonlib's Bend implementation is an altered adaptation.

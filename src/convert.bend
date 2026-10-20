@@ -1,5 +1,5 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of the miniaudio v0.11.24 paths raylib 6.0's
+# Altered Bend adaptation of the miniaudio v0.11.25 paths raylib 6.2's
 # WaveFormat reaches through ma_convert_frames: ma_data_converter (mid format
 # and execution path selection), the u8/s16/f32 sample conversions
 # (ma_pcm_*_to_*, no dither), ma_channel_converter with the default

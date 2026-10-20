@@ -1,6 +1,6 @@
 # Files and paths
 
-Jonlib adapts raylib 6.0's `rcore.c` path and file-data utilities as `Files.*`
+Jonlib adapts raylib 6.2's `rcore.c` path and file-data utilities as `Files.*`
 in `jonlib.bend`. Paths and text are raylib byte strings: ASCII paths compare
 byte for byte, and file text is read and written as characters 0..255, one per
 byte, on every lane.

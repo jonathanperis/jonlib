@@ -1,5 +1,5 @@
 # raylib [textures] example - image loading, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_image_loading.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/textures/textures_image_loading.c (zlib/libpng,
 # Copyright (c) 2015-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # A PNG loaded as an image, uploaded as a texture and drawn centered. See

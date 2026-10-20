@@ -1,5 +1,5 @@
 # raylib [shapes] example - math sine cosine, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_math_sine_cosine.c
+# Adapted from raylib 6.2 examples/shapes/shapes_math_sine_cosine.c
 # (zlib/libpng, Copyright (c) 2025 Jopestpe (@jopestpe)); see
 # LICENSES/raylib.txt.
 #

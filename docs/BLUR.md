@@ -1,6 +1,6 @@
 # RGBA8 Gaussian blur
 
-Jonlib adapts raylib 6.0's default `ImageBlurGaussian` for RGBA8 `Surface` owners.
+Jonlib adapts raylib 6.2's default `ImageBlurGaussian` for RGBA8 `Surface` owners.
 
 ```bend
 Surface.blur_gaussian(surface, size: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>

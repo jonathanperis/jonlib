@@ -1,5 +1,5 @@
 # raylib [models] example - geometric shapes, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_geometric_shapes.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/models/models_geometric_shapes.c (zlib/libpng,
 # Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # Cubes, spheres, cylinders, cones and capsules (solid and wires) and a grid

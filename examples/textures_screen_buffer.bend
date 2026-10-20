@@ -1,5 +1,5 @@
 # raylib [textures] example - screen buffer, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_screen_buffer.c
+# Adapted from raylib 6.2 examples/textures/textures_screen_buffer.c
 # (zlib/libpng, Copyright (c) 2025 Agnis Aldiņš (@nezvers)); see
 # LICENSES/raylib.txt.
 #

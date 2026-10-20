@@ -1,5 +1,5 @@
 # raylib [shaders] example - game of life, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_game_of_life.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shaders/shaders_game_of_life.c (zlib/libpng,
 # Copyright (c) 2025 Jordi Santonja (@JordSant)); see LICENSES/raylib.txt.
 #
 # Two 2048x2048 worlds: each step draws the previous one into the current one

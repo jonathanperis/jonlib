@@ -1,5 +1,5 @@
 # raylib [textures] example - npatch drawing, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_npatch_drawing.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/textures/textures_npatch_drawing.c (zlib/libpng,
 # Copyright (c) 2018-2025 Jorge A. Gomes (@overdev) and Ramon Santamaria
 # (@raysan5)); see LICENSES/raylib.txt.
 #

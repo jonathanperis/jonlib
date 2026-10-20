@@ -1,5 +1,5 @@
 # raylib [shapes] example - penrose tile, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_penrose_tile.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_penrose_tile.c (zlib/libpng,
 # Copyright (c) 2025 David Buzatto (@davidbuzatto)); see LICENSES/raylib.txt.
 #
 # A Penrose tiling drawn by a turtle walking an L-system's production,

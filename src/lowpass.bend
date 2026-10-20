@@ -1,8 +1,8 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of the low-pass filter coefficients of miniaudio
-# v0.11.24's linear resampler (ma_linear_resampler_set_rate_internal,
+# v0.11.25's linear resampler (ma_linear_resampler_set_rate_internal,
 # ma_lpf_reinit__internal with order 4, ma_lpf2__get_biquad_config and
-# ma_biquad_reinit), as raylib 6.0 vendors it in src/external/miniaudio.h.
+# ma_biquad_reinit), as raylib 6.2 vendors it in src/external/miniaudio.h.
 # miniaudio: David Reid, public domain or MIT No Attribution; see
 # THIRD_PARTY_NOTICES.md and LICENSES/miniaudio.txt.
 #

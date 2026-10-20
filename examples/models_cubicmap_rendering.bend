@@ -1,5 +1,5 @@
 # raylib [models] example - cubicmap rendering, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_cubicmap_rendering.c
+# Adapted from raylib 6.2 examples/models/models_cubicmap_rendering.c
 # (zlib/libpng, Copyright (c) 2015-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

@@ -1,5 +1,5 @@
 # raylib [models] example - animation timing, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_animation_timing.c
+# Adapted from raylib 6.2 examples/models/models_animation_timing.c
 # (zlib/libpng, Copyright (c) 2026 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

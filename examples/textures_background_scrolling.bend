@@ -1,5 +1,5 @@
 # raylib [textures] example - background scrolling, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_background_scrolling.c
+# Adapted from raylib 6.2 examples/textures/textures_background_scrolling.c
 # (zlib/libpng, Copyright (c) 2019-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

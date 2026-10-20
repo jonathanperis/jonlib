@@ -22,15 +22,17 @@ textures that load, do not exist or have empty names, absolute texture
 paths, properties before the first newmtl, a last line without '\\n'
 (dynamic_fgets never returns it), duplicate names, 24 materials (the name
 table grows twice), missing MTL files, empty and missing OBJ files and other
-extensions.
+extensions; raylib 6.2's bounds: a line of 4095 bytes, and vertex, normal
+and texcoord indices outside their arrays (skipped: a zero vertex, the
+(0, 1, 0) normal, a zero texcoord).
 
 The default run links the raylib built with the host contraction
 (conformance.contraction: the fused fraction digits of tryParseDouble);
 --uncontracted-control links the -ffp-contract=off build with
 M.Uncontracted{}. Contracts (Jonlib must answer null): faces of 6 vertices
-(tinyobj's assert), int overflow in an index or exponent, lines of 4095
-bytes, 'g', 'o' and 'mtllib' with nothing after their space, vertex and
-normal indices outside the arrays, Kd beyond the unsigned char cast, a
+(tinyobj's early return leaves the counts unset), int overflow in an index
+or exponent, lines of 4096 bytes (the command's type unset), 'g', 'o' and
+'mtllib' with nothing after their space, Kd beyond the unsigned char cast, a
 newmtl without a name, a CR CR line underflow, an OBJ whose first byte is
 NUL (LoadOBJ returns without restoring the working directory), and IQM,
 glTF, VOX and M3D files (not reproduced). CPU-1, CPU-2 and JavaScript lanes.
@@ -275,6 +277,13 @@ def cases(work):
     add('load-materials-missing', 'materials', work / 'nowhere.mtl')
     add('load-materials-other', 'materials', work / 'tex_a.png')
 
+    # raylib 6.2: a line of 4095 bytes is parsed; indices outside their arrays are skipped.
+    obj('line-4095', 'v 0.5 0 0' + ' ' * 4086 + '\nv 1 0 0\nv 0 1 0\nf 1 2 3\n')
+    obj('vertex-range', 'v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 4\n')
+    obj('vertex-negative', 'v 0.5 0 0\nv 1 0 0\nv 0 1 0\nf -4 1 2\nf 0 2 3\n')
+    obj('normal-range', 'v 0 0 0\nv 1 0 0\nv 0 1 0\nvn 0 0 1\nf 1//1 2//2 3//-3\n')
+    obj('texcoord-range', 'v 0 0 0\nv 1 0 0\nv 0 1 0\nvt 0.25 0.75\nf 1/1 2/2 3/-2\n')
+
     # Contracts.
     obj('hexagon', 'v 0 0 0\nv 1 0 0\nv 1 1 0\nv 0 1 0\nv -1 1 0\nv -1 0 0\nf 1 2 3 4 5 6\n', contract=True)
     obj('index-overflow', 'v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 99999999999\n', contract=True)
@@ -282,8 +291,7 @@ def cases(work):
     obj('long-line', 'v 0 0 0\nv 1 0 0\nv 0 1 0\n# ' + 'x' * 4100 + '\nf 1 2 3\n', contract=True)
     obj('empty-group', 'v 0 0 0\nv 1 0 0\nv 0 1 0\ng \nf 1 2 3\n', contract=True)
     obj('empty-mtllib', 'mtllib \nv 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n', contract=True)
-    obj('vertex-range', 'v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 4\n', contract=True)
-    obj('normal-range', 'v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1//1 2//1 3//1\n', contract=True)
+    obj('line-4096', 'v 0.5 0 0' + ' ' * 4087 + '\nv 1 0 0\nv 0 1 0\nf 1 2 3\n', contract=True)
     obj('color-cast', 'mtllib color-cast.mtl\nv 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl hot\nf 1 2 3\n', 'newmtl hot\nKd 2.0 0 0\n', contract=True)
     obj('newmtl-unnamed', 'mtllib newmtl-unnamed.mtl\nv 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n', 'newmtl  \nKd 1 1 1\n', contract=True)
     obj('cr-underflow', '', raw=b'v 0 0 0\r\rv 1 0 0\nv 0 1 0\nf 1 2 3\n', contract=True)

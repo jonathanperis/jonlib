@@ -1,5 +1,5 @@
 # raylib [shapes] example - easings testbed, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_easings_testbed.c
+# Adapted from raylib 6.2 examples/shapes/shapes_easings_testbed.c
 # (zlib/libpng, Copyright (c) 2019-2025 Juan Miguel López (@flashback-fx) and
 # Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt. The 28 easings are
 # Joneasings' (docs/EASINGS.md).

@@ -1,5 +1,5 @@
 # raylib [shapes] example - lines drawing, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_lines_drawing.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_lines_drawing.c (zlib/libpng,
 # Copyright (c) 2025 Robin (@RobinsAviary)); see LICENSES/raylib.txt.
 #
 # Paint with the left button (the hue follows the distance drawn), erase

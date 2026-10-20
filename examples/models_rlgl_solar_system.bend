@@ -1,5 +1,5 @@
 # raylib [models] example - rlgl solar system, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_rlgl_solar_system.c
+# Adapted from raylib 6.2 examples/models/models_rlgl_solar_system.c
 # (zlib/libpng, Copyright (c) 2018-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

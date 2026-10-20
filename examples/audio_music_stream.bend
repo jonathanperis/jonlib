@@ -1,5 +1,5 @@
 # raylib [audio] example - music stream, ported to Jonlib.
-# Adapted from raylib 6.0 examples/audio/audio_music_stream.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/audio/audio_music_stream.c (zlib/libpng,
 # Copyright (c) 2015-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

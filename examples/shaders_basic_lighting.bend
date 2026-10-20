@@ -1,5 +1,5 @@
 # raylib [shaders] example - basic lighting, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_basic_lighting.c
+# Adapted from raylib 6.2 examples/shaders/shaders_basic_lighting.c
 # (zlib/libpng, Copyright (c) 2019-2025 Chris Camacho (@chriscamacho) and
 # Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt. CreateLight and
 # UpdateLightValues are Jonlights' (docs/LIGHTS.md).

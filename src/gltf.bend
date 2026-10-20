@@ -1,5 +1,5 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 rmodels.c LoadGLTF (zlib,
+# Altered Bend adaptation of raylib 6.2 rmodels.c LoadGLTF (zlib,
 # LICENSES/raylib.txt) and of what it uses from cgltf 1.15
 # (src/external/cgltf.h, MIT, LICENSES/cgltf.txt): the binary container
 # (cgltf_parse), the node transforms (cgltf_node_transform_local and

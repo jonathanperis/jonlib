@@ -1,5 +1,5 @@
 # raylib [core] example - random values, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_random_values.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_random_values.c (zlib/libpng,
 # Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # A new GetRandomValue(-8, 5) every 120 frames. raylib seeds the generator

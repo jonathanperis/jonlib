@@ -1,5 +1,5 @@
 # raylib [models] example - tesseract view, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_tesseract_view.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/models/models_tesseract_view.c (zlib/libpng,
 # Copyright (c) 2024-2025 Timothy van der Valk (@arceryz) and Ramon Santamaria
 # (@raysan5)); see LICENSES/raylib.txt.
 #

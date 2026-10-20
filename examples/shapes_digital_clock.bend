@@ -1,5 +1,5 @@
 # raylib [shapes] example - digital clock, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_digital_clock.c
+# Adapted from raylib 6.2 examples/shapes/shapes_digital_clock.c
 # (zlib/libpng, Copyright (c) 2025 Hamza RAHAL (@hmz-rhl) and Ramon
 # Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #

@@ -1,5 +1,5 @@
 # raylib [shapes] example - simple particles, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_simple_particles.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_simple_particles.c (zlib/libpng,
 # Copyright (c) 2025 Jordi Santonja (@JordSant)); see LICENSES/raylib.txt.
 #
 # Water, smoke and fire particles from an emitter (the left button moves

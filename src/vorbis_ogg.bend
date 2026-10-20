@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of stb_vorbis v1.22 (Sean Barrett; MIT or public
-# domain), as raylib 6.0 vendors it in src/external/stb_vorbis.c: how the
+# domain), as raylib 6.2 vendors it in src/external/stb_vorbis.c: how the
 # decoder reads its data, as bytes (get8, get32, getn, skip), as Ogg pages
 # (capture_pattern, start_page_no_capturepattern, start_page), as the
 # packets laid over the pages' segments (start_packet, maybe_start_packet,

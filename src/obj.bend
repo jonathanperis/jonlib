@@ -1,7 +1,7 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of tinyobj_loader_c.h (Copyright (c) 2016 - 2019
 # Syoyo Fujita and many contributors, MIT, LICENSES/tinyobj_loader_c.txt) as
-# raylib 6.0 vendors it (src/external/tinyobj_loader_c.h), and of rmodels.c's
+# raylib 6.2 vendors it (src/external/tinyobj_loader_c.h), and of rmodels.c's
 # LoadOBJ mesh assembly (zlib, LICENSES/raylib.txt). Text is a list of bytes
 # (0..255) ending where C's string ends. The parser reproduces tinyobj's line
 # splitting, commands, tryParseDouble (binary64 through the checked helpers of
@@ -453,8 +453,9 @@ def face.go(fuel: Nat, done: Bool, +bs: +List<U32>, +acc: +List<Corner>, +count:
       +rest = skip_space_cr(triple.rest(t))
       face.go(k, is_new_line(head(rest)), rest, Con{triple.corner(t), acc}, (count + 1 : U32), overflow || triple.over(t))
 
-# More than 5 vertices fail tinyobj's assert(3*num_f < 16) (or, without
-# asserts, overflow its arrays from 8): refused.
+# More than 5 vertices: raylib 6.2's tinyobj returns when 3*num_f > 16 after
+# setting the command's type but not its counts (malloc'd, then read), and
+# from 17 overflows its array first: refused.
 def cmd.f.done(+f: Face) -> Cmd:
   Face{+corners, +count, +overflow} = f
   Bool.pick(Cmd, overflow || (count > 5 : U32), CBad{}, CF{corners, count})
@@ -513,10 +514,15 @@ def line.kind(+t: +List<U32>) -> U32:
     Bool.pick(U32, prefix([109, 116, 108, 108, 105, 98], t) && is_space(at(6n, t)), 6,
     Bool.pick(U32, (U32.is_eq(c0, 103) || U32.is_eq(c0, 111)) && is_space(c1), 7, 0)))))))
 
-# parseLine: lines of 4095 bytes or more fail its assert(p_len < 4095).
+# parseLine (raylib 6.2): a line longer than 4095 bytes returns before its
+# command's type is set (tinyobj_parse_obj reads that malloc'd field):
+# refused; one of 4095 bytes fits the 4096-byte line buffer and is parsed.
+def line.fits(+n: U32) -> Bool:
+  (n <= 4095 : U32)
+
 def parse.line(+fused: Bool, +line: +List<U32>) -> Cmd:
   +t = skip_space(line)
-  Bool.pick(Cmd, (length(line, 0) >= 4095 : U32), CBad{}, line.cmd(line.kind(t), fused, t))
+  Bool.pick(Cmd, Bool.not(line.fits(length(line, 0))), CBad{}, line.cmd(line.kind(t), fused, t))
 
 def commands(ls: +List<+List<U32>>, +fused: Bool, +acc: +List<Cmd>) -> +List<Cmd>:
   match ls:
@@ -1003,9 +1009,10 @@ def shapes(+cmds: +List<Cmd>) -> +List<U32>:
 # material; each mesh gets its corners' vertices, normals ((0, 1, 0) without
 # a valid index) and texcoords (when the file has any; v flipped as 1 - v,
 # zero without a valid index), and the material of its last face (0 when
-# that is not an index of the MTL materials). A vertex index that is
-# negative or beyond the vertices, or a valid texcoord or normal index beyond
-# its array, makes rmodels.c read outside tinyobj's arrays: refused.
+# that is not an index of the MTL materials). Since raylib 6.2 an index
+# outside its array (negative after fixIndex, missing or past the end) is
+# skipped: the vertex stays (0, 0, 0), the texcoord (0, 0) and the normal is
+# (0, 1, 0).
 
 type Item is Data:
   Item{a: Parsed, b: Parsed, c: Parsed}
@@ -1141,6 +1148,12 @@ def arrays.nt(+arr: Arrays) -> U32:
   Arrays{_, _, _, _, _, _, _, _, +nt} = arr
   nt
 
+# LoadOBJ's range check (raylib 6.2): index >= 0 (a valid fixIndex) and below
+# the array's count.
+def corner.inside(+f: Fix, +n: U32) -> Bool:
+  Fix{+ok, +i} = f
+  ok && (i < n : U32)
+
 def corner.add.with(+arr: Arrays, +v: Fix, +vt: Fix, +vn: Fix, +m: MeshAcc) -> MeshAcc:
   MeshAcc{+ok, +count, +vs, +ns, +ts, +material} = m
   +nv = arrays.nv(arr)
@@ -1149,12 +1162,13 @@ def corner.add.with(+arr: Arrays, +v: Fix, +vt: Fix, +vn: Fix, +m: MeshAcc) -> M
   +vertex = arrays.vertex(arr, fix.index(v))
   +normal = arrays.normal(arr, fix.index(vn))
   +texcoord = arrays.texcoord(arr, fix.index(vt))
-  +has_normal = fix.ok(vn)
-  +has_texcoord = fix.ok(vt) && (nt > 0 : U32)
-  +valid = fix.ok(v) && (fix.index(v) < nv : U32) && item.has3(vertex)
-    && Bool.not(has_normal && Bool.not((fix.index(vn) < nn : U32) && item.has3(normal)))
-    && Bool.not(has_texcoord && Bool.not((fix.index(vt) < nt : U32) && item.has2(texcoord)))
-  MeshAcc{ok && valid, (count + 1 : U32), item.push3(vertex, vs),
+  +has_vertex = corner.inside(v, nv)
+  +has_normal = corner.inside(vn, nn)
+  +has_texcoord = corner.inside(vt, nt)
+  +valid = Bool.not(has_vertex && Bool.not(item.has3(vertex)))
+    && Bool.not(has_normal && Bool.not(item.has3(normal)))
+    && Bool.not(has_texcoord && Bool.not(item.has2(texcoord)))
+  MeshAcc{ok && valid, (count + 1 : U32), Bool.pick(+List<F32>, has_vertex, item.push3(vertex, vs), Con{0.0, Con{0.0, Con{0.0, vs}}}),
     Bool.pick(+List<F32>, has_normal, item.push3(normal, ns), Con{0.0, Con{1.0, Con{0.0, ns}}}),
     Bool.pick(+List<F32>, (nt > 0 : U32), Bool.pick(+List<F32>, has_texcoord, item.uv(texcoord, ts), Con{0.0, Con{0.0, ts}}), ts), material}
 

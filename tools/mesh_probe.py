@@ -168,7 +168,8 @@ def cases(libm, gnu):
     add('update-custom-positions', custom, 'update', [0, 48, 0])
     add('update-cube-last', ('cube', 1.0, 2.0, 3.0), 'update', [6, 16, 8])
     add('update-plane-texcoords', ('plane', 2.0, 3.0, 2, 3), 'update', [1, 8, 4])
-    add('update-index-past', custom, 'update', [7, 48, 0], contract=True)
+    add('update-bone-weights', custom, 'update', [8, 48, 0])
+    add('update-index-past', custom, 'update', [9, 48, 0], contract=True)
     add('update-index-negative', custom, 'update', [0xFFFFFFFF, 48, 0], contract=True)
     # Tangents.
     for name, mesh in (('plane', ('plane', 2.0, 3.0, 2, 3)), ('cube', ('cube', 1.0, 2.0, 3.0)), ('poly', ('poly', 6, 1.0)),

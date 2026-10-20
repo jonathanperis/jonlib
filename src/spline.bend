@@ -1,5 +1,5 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 rshapes.c spline formulas; LICENSES/raylib.txt.
+# Altered Bend adaptation of raylib 6.2 rshapes.c spline formulas; LICENSES/raylib.txt.
 import Base
 import ./fused.bend as F
 

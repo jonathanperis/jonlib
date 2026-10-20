@@ -1,5 +1,5 @@
 # raylib [textures] example - image channel, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_image_channel.c
+# Adapted from raylib 6.2 examples/textures/textures_image_channel.c
 # (zlib/libpng, Copyright (c) 2024-2025 Bruno Cabral (@brccabral) and Ramon
 # Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #

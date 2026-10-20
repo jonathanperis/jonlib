@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of stb_vorbis v1.22 (Sean Barrett; MIT or public
-# domain), as raylib 6.0 vendors it in src/external/stb_vorbis.c: a floor's
+# domain), as raylib 6.2 vendors it in src/external/stb_vorbis.c: a floor's
 # curve multiplied into the spectrum (do_floor and draw_line, in the
 # deferred-floor build raylib compiles). See THIRD_PARTY_NOTICES.md and
 # LICENSES/stb_vorbis.txt.

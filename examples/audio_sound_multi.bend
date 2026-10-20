@@ -1,5 +1,5 @@
 # raylib [audio] example - sound multi, ported to Jonlib.
-# Adapted from raylib 6.0 examples/audio/audio_sound_multi.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/audio/audio_sound_multi.c (zlib/libpng,
 # Copyright (c) 2023-2025 Jeffery Myers (@JeffM2501)); see LICENSES/raylib.txt.
 #
 # SPACE plays the next of ten sounds: one loaded sound and nine aliases over

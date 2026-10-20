@@ -1,5 +1,5 @@
 # raylib [shaders] example - mandelbrot set, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_mandelbrot_set.c
+# Adapted from raylib 6.2 examples/shaders/shaders_mandelbrot_set.c
 # (zlib/libpng, Copyright (c) 2025 Jordi Santonja (@JordSant)); see
 # LICENSES/raylib.txt.
 #

@@ -1,5 +1,5 @@
 # raylib [textures] example - raw data, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_raw_data.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/textures/textures_raw_data.c (zlib/libpng,
 # Copyright (c) 2015-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 # The Fudesumi sprite is raylib's example resource by Eiden Marsal, read in
 # place from the pinned raylib checkout.

@@ -100,10 +100,12 @@ class SoundModelTests(unittest.TestCase):
     def test_what_raylib_has_no_answer_for(self):
         for steps, tags in (((('load', 0, 'mono16'),), ['device']), ((('init',), ('load', 0, 'size24')), ['-', 'request']),
                             ((('init',), ('load', 0, 'nan')), ['-', 'data']), ((('init',), ('load', 0, 'hugerate')), ['-', 'unsupported']),
-                            ((('init',), ('load', 0, 'mono16'), ('unload', 0), ('play', 0)), ['-'] * 4), ((('init',), ('alias', 1, 0)), ['-'] * 2),
+                            ((('init',), ('load', 0, 'mono16'), ('unload', 0), ('play', 0)), ['-'] * 4),
                             ((('stop', 0),), ['-']), ((('init',), ('load', 0, 'mono16'), ('close',), ('pause', 0)), ['-'] * 4)):
             model, got = run(*steps)
             self.assertEqual((got, model.undefined), (tags, True), steps)
+        model, got = run(('init',), ('alias', 1, 0))           # raylib 6.2 checks the NULL buffer: the zero sound
+        self.assertEqual((got, model.undefined, model.sounds[1]), (['-', '-'], False, sp.ZERO))
         model, got = run(('init',), ('file', 0, 'missing'), ('file', 1, 'text'), ('file', 2, 'other'), ('file', 3, 'tiny'), ('play', 0), ('unload', 1))
         self.assertEqual((got, model.undefined, model.sounds[:3]), (['-', 'file', 'header', 'unsupported', '-', '-', '-'], False, [sp.ZERO] * 3))
         with self.assertRaises(ValueError):
@@ -419,7 +421,7 @@ class SoundCasesTests(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
         rows = [sp.expected(item, catalog()) for item in items]
         self.assertEqual([item['id'] for item, row in zip(items, rows) if item['id'].startswith('refused-') == row[2]], [])
-        self.assertEqual((len(items), sum(row[2] for row in rows), sum(len(item['steps']) for item in items)), (126, 85, 1363))
+        self.assertEqual((len(items), sum(row[2] for row in rows), sum(len(item['steps']) for item in items)), (126, 86, 1363))
         for tagged, plain, _ in rows:
             self.assertEqual(';'.join(part.split(' ', 1)[1] for part in tagged.split(';')), plain)
         used = {step[2] for item in items for step in item['steps'] if step[0] == 'load'}

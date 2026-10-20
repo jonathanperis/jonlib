@@ -42,7 +42,7 @@ python3 tools/spline_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAY
 
 `Spline.bezier_cubic_for(contraction, libm, start, start_control, end_control,
 end, t) -> Maybe<Vector2>` follows the pinned
-[cubic Bezier implementation](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/rshapes.c#L2232):
+[cubic Bezier implementation](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rshapes.c#L4302):
 weights `powf(1-t, 3)`, `3*powf(1-t, 2)*t`, `3*(1-t)*powf(t, 2)` and
 `powf(t, 3)`, then the four-term accumulation under the given contraction.
 C compilers fold `powf(x, 2)` into `x*x` (the linked arm64 object calls `powf`

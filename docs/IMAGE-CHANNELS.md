@@ -1,6 +1,6 @@
 # Grayscale channel extraction
 
-Jonlib adapts raylib 6.0 `ImageFromChannel`, which extracts one channel of an
+Jonlib adapts raylib 6.2 `ImageFromChannel`, which extracts one channel of an
 image into a new grayscale image.
 
 ```bend

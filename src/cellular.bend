@@ -1,5 +1,5 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 GenImageCellular; LICENSES/raylib.txt.
+# Altered Bend adaptation of raylib 6.2 GenImageCellular; LICENSES/raylib.txt.
 import Base
 import ./random.bend as R
 

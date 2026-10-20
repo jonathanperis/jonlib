@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of msf_gif.h 2.2 (Miles Fogle; MIT or public
-# domain), as raylib 6.0 ships it beside its examples
+# domain), as raylib 6.2 ships it beside its examples
 # (examples/core/msf_gif.h): msf_gif_begin, msf_gif_frame and msf_gif_end
 # with the library's defaults (msf_gif_alpha_threshold 0, so no pixel is
 # transparent by its alpha, and msf_gif_bgra_flag 0). See

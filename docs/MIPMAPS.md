@@ -1,6 +1,6 @@
 # Mipmaps
 
-Jonlib adapts raylib 6.0 `ImageMipmaps` for single-level `Surface` input in
+Jonlib adapts raylib 6.2 `ImageMipmaps` for single-level `Surface` input in
 pixel formats 1..13.
 
 ```bend

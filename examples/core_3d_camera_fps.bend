@@ -1,5 +1,5 @@
 # raylib [core] example - 3d camera fps, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_3d_camera_fps.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_3d_camera_fps.c (zlib/libpng,
 # Copyright (c) 2025 Agnis Aldiņš (@nezvers)); see LICENSES/raylib.txt.
 #
 # A first-person body with strafing physics (W, A, S, D, SPACE to jump,

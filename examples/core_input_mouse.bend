@@ -1,5 +1,5 @@
 # raylib [core] example - input mouse, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_input_mouse.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_input_mouse.c (zlib/libpng,
 # Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # The ball follows the mouse; a mouse button press changes its color, H

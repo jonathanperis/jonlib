@@ -1,5 +1,5 @@
 # raylib [core] example - input gestures, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_input_gestures.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_input_gestures.c (zlib/libpng,
 # Copyright (c) 2016-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # Each new gesture detected inside the test area is logged by name (twenty

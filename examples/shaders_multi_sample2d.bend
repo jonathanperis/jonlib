@@ -1,5 +1,5 @@
 # raylib [shaders] example - multi sample2d, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_multi_sample2d.c
+# Adapted from raylib 6.2 examples/shaders/shaders_multi_sample2d.c
 # (zlib/libpng, Copyright (c) 2020-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

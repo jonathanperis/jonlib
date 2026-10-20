@@ -1,5 +1,5 @@
 # raylib [core] example - keyboard testbed, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_keyboard_testbed.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_keyboard_testbed.c (zlib/libpng,
 # Copyright (c) 2026 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # A US keyboard of six lines of keys, each outlined in MAROON with its text

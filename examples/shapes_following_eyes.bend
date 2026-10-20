@@ -1,5 +1,5 @@
 # raylib [shapes] example - following eyes, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_following_eyes.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_following_eyes.c (zlib/libpng,
 # Copyright (c) 2013-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # Two eyes whose irises follow the mouse, held inside the scleras: outside

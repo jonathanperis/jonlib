@@ -1,5 +1,5 @@
 # raylib [shapes] example - collision area, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_collision_area.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_collision_area.c (zlib/libpng,
 # Copyright (c) 2013-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # A bouncing box and a mouse-driven box; their overlap is drawn with its

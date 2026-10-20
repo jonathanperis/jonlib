@@ -1,5 +1,5 @@
 # raylib [core] example - 3d camera first person, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_3d_camera_first_person.c
+# Adapted from raylib 6.2 examples/core/core_3d_camera_first_person.c
 # (zlib/libpng, Copyright (c) 2015-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

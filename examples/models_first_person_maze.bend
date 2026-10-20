@@ -1,5 +1,5 @@
 # raylib [models] example - first person maze, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_first_person_maze.c
+# Adapted from raylib 6.2 examples/models/models_first_person_maze.c
 # (zlib/libpng, Copyright (c) 2019-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

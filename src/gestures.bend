@@ -1,5 +1,5 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 src/rgestures.h (Copyright (c)
+# Altered Bend adaptation of raylib 6.2 src/rgestures.h (Copyright (c)
 # 2014-2026 Ramon Santamaria and contributors, zlib, LICENSES/raylib.txt): the
 # GESTURES state machine as an explicit value, with rgGetCurrentTime() replaced
 # by an explicit binary64 clock argument (the time raylib's GetTime() would

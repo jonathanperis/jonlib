@@ -1,5 +1,5 @@
 # raylib [textures] example - srcrec dstrec, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_srcrec_dstrec.c
+# Adapted from raylib 6.2 examples/textures/textures_srcrec_dstrec.c
 # (zlib/libpng, Copyright (c) 2015-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

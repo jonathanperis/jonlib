@@ -14,7 +14,7 @@ float arithmetic) returns exactly what was stored:
 | 13 | R16G16B16A16 | `Quads`, half-float bits in `a..d` | any half |
 
 Format 9 is described in detail in [RGB float images](FLOAT-RGB.md); R32 in
-[R32.md](R32.md). Formats 10..13 follow the same raylib 6.0 rules:
+[R32.md](R32.md). Formats 10..13 follow the same raylib 6.2 rules:
 
 - **Half floats** use raylib's own `HalfToFloat` and `FloatToHalf` bit
   arithmetic (`src/formats.bend`), checked against the C code on all 65536

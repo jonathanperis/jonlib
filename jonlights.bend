@@ -1,6 +1,7 @@
 # Jonlights - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of rlights.h as raylib 6.0's examples ship it
-# (examples/shaders/rlights.h and examples/models/rlights.h, the same file;
+# Altered Bend adaptation of rlights.h as raylib 6.2's examples ship it
+# (examples/shaders/rlights.h and examples/models/rlights.h, the same file,
+# unchanged since raylib 6.0;
 # zlib/libpng, Copyright (c) 2017-2024 Victor Fisac (@victorfisac) and Ramon
 # Santamaria (@raysan5)); see LICENSES/rlights.txt. Jonlights is to rlights.h
 # what Jonlib is to raylib.h: rlights' static lightsCount is a Lights value

@@ -1,5 +1,5 @@
 # raylib [text] example - format text, ported to Jonlib.
-# Adapted from raylib 6.0 examples/text/text_format_text.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/text/text_format_text.c (zlib/libpng,
 # Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # TextFormat with zero-padded integers and the frame time. See docs/DRIVER.md.

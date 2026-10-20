@@ -1,5 +1,5 @@
 # raylib [shaders] example - normalmap rendering, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_normalmap_rendering.c
+# Adapted from raylib 6.2 examples/shaders/shaders_normalmap_rendering.c
 # (zlib/libpng, Copyright (c) 2025 Jeremy Montgomery (@Sir_Irk) and Ramon
 # Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #

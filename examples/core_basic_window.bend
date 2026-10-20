@@ -1,5 +1,5 @@
 # raylib [core] example - basic window, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_basic_window.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_basic_window.c (zlib/libpng,
 # Copyright (c) 2013-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # Build: bun main.ts examples/core_basic_window.bend -o core_basic_window, then

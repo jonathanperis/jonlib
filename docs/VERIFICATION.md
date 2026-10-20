@@ -8,7 +8,7 @@ and gaps live in the topic pages and in [`api/progress.json`](../api/progress.js
 
 ## What a passing gate means
 
-- **Pinned toolchain.** [`toolchain.json`](../toolchain.json) fixes the raylib 6.0
+- **Pinned toolchain.** [`toolchain.json`](../toolchain.json) fixes the raylib 6.2
   and Bend revisions, the Bun version and the hash-checked Bend compiler overlay
   ([patches/README.md](../patches/README.md)). Every harness checks both checkouts
   against it (including the exact overlay file hashes) and fails on any mismatch;
@@ -96,13 +96,17 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 
 ## Reference build configuration
 
-`tools/probekit.py` builds raylib with `CUSTOMIZE_BUILD=ON`. raylib 6.0's
-`cmake/ParseConfigHeader.cmake` turns every uncommented `#define SUPPORT_X`
-in `config.h` into `SUPPORT_X=ON`, whatever its value, so the reference
-library also enables the features `config.h` disables by default: the TGA,
-JPG, PSD, HDR, PIC, PNM, KTX, ASTC, PKM, PVR, BDF and FLAC formats,
-`SUPPORT_BUSY_WAIT_LOOP`, `SUPPORT_CUSTOM_FRAME_CONTROL` and
-`SUPPORT_GPU_SKINNING`. Every native expectation comes from that build, so
+`tools/probekit.py` (and `tools/conformance.py`) build raylib with
+`CUSTOMIZE_BUILD=ON` and `INCLUDE_EVERYTHING=ON`. raylib 6.2's
+`cmake/ParseConfigHeader.cmake` reads `#define SUPPORT_X 0` in `config.h` as
+`OFF`, and `INCLUDE_EVERYTHING` turns every such default back `ON`, so the
+reference library also enables the features `config.h` disables by default:
+the TGA, JPG, PEP, PSD, HDR, PIC, PNM, KTX, ASTC, PKM, PVR, BDF and FLAC
+formats, `SUPPORT_BUSY_WAIT_LOOP` and `SUPPORT_CUSTOM_FRAME_CONTROL`
+(`SUPPORT_GPU_SKINNING` is on by default). That is the configuration raylib
+6.0's parser gave (it read every define as `ON`), plus the PEP loader, which
+Jonlib does not compare. A changed option set drops the stale
+`CMakeCache.txt`, whose cached options would otherwise outlive it. Every native expectation comes from that build, so
 the comparisons are consistent, and codec contracts describe raylib with those
 formats enabled (not which formats a default build accepts). Probes whose
 results depend on frame control (`input`) set those options back explicitly
@@ -168,5 +172,5 @@ and check the build flags.
   page states a specific measured scope.
 - Reproduction of undefined C behavior, crashes or memory corruption in the
   reference; such domains are rejected with typed errors and listed as gaps.
-- Full raylib 6.0 compatibility. The [master plan](MASTER-PLAN.md) defines what
+- Full raylib 6.2 compatibility. The [master plan](MASTER-PLAN.md) defines what
   completion requires.

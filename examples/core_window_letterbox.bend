@@ -1,5 +1,5 @@
 # raylib [core] example - window letterbox, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_window_letterbox.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_window_letterbox.c (zlib/libpng,
 # Copyright (c) 2019-2025 Anata (@anatagawa) and Ramon Santamaria (@raysan5));
 # see LICENSES/raylib.txt.
 #

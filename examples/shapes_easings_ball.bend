@@ -1,5 +1,5 @@
 # raylib [shapes] example - easings ball, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_easings_ball.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_easings_ball.c (zlib/libpng,
 # Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt. EaseElasticOut, EaseElasticIn and EaseCubicOut are
 # Joneasings' (docs/EASINGS.md).

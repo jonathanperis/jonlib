@@ -93,7 +93,7 @@ def fma32(a, b, c):
 
 
 # -----------------------------------------------------------------------------
-# Model of ma_convert_frames as WaveFormat calls it (miniaudio v0.11.24)
+# Model of ma_convert_frames as WaveFormat calls it (miniaudio v0.11.25)
 
 K_U8 = from_bits(1006665857)  # 0.00784313725490196078f
 

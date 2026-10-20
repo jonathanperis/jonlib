@@ -1,5 +1,5 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 rmodels.c mesh generation and mesh
+# Altered Bend adaptation of raylib 6.2 rmodels.c mesh generation and mesh
 # utilities (zlib, LICENSES/raylib.txt): GenMeshPoly, GenMeshPlane (its
 # CUSTOM_MESH_GEN_PLANE path), GenMeshCube (CUSTOM_MESH_GEN_CUBE),
 # GenMeshHeightmap, GenMeshCubicmap, GenMeshTangents, GetMeshBoundingBox and

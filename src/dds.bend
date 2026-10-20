@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of rl_load_dds_from_memory and get_pixel_data_size
-# from raylib 6.0's rltexgpu.h; notice retained in LICENSES/raylib.txt. See
+# from raylib 6.2's rltexgpu.h; notice retained in LICENSES/raylib.txt. See
 # THIRD_PARTY_NOTICES.md.
 import Base
 import ./codec.bend as C

@@ -501,6 +501,11 @@ IO_SETUP.add('text_unicode_ranges'); EFFECTS.add('text_unicode_ranges')
 IO_SETUP.add('text_codepoints_loading')
 UNDEFINED_FROM['text_codepoints_loading-before'] = 1
 IO_SETUP.add('textures_sprite_stacking')
+# raylib 6.2's rlsw starts a span's texture coordinates from the triangle's plane at the first pixel center, which can
+# sit just outside it: in the spin script's frame 2 the top slice samples v = -9.9e-9, fract gives 1.0 and
+# sw_texture_sample_nearest reads row 11468 of an 112x11468 texture, past its pixels (found with a bounds check added
+# to a copy of rlsw.h). Jonlib refuses that read; the frames before it are compared.
+UNDEFINED_FROM['textures_sprite_stacking-spin'] = 2
 # core_directory_files lists its working directory, after its back button the directory above and, after a click on a
 # directory of the list (raylib 6.2), that directory. Base has no directory listing: the port is handed the listings
 # (LISTED: its setup takes them, read here with readdir's order from the very directories the reference may list, every

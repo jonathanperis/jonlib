@@ -1,6 +1,6 @@
 jar_mod.h v0.01 (Jean-Francois DEL NERO's HxCMOD player, adapted as jar_mod.h
-by Joshua Adam Reisenauer), as vendored by pinned raylib 6.0 (commit
-dbc56a87da87d973a9c5baa4e7438a9d20121d28) in src/external/jar_mod.h. The notice
+by Joshua Adam Reisenauer), as vendored by pinned raylib 6.2 (commit
+02566453880e06bec97f5b8160fa6fe1e98397ca) in src/external/jar_mod.h. The notice
 in the file, reproduced verbatim:
 
 ------------------------------------------------------------------------------

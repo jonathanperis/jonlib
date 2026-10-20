@@ -1,5 +1,5 @@
 # raylib [shapes] example - triangle strip, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_triangle_strip.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_triangle_strip.c (zlib/libpng,
 # Copyright (c) 2025 Jopestpe (@jopestpe)); see LICENSES/raylib.txt.
 #
 # A star-shaped ring of triangles between an inner and an outer circle, each

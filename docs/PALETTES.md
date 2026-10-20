@@ -1,6 +1,6 @@
 # Text-byte images, grayscale and palettes
 
-Jonlib adapts raylib 6.0 `GenImageText` (data-image form), `ImageColorGrayscale`
+Jonlib adapts raylib 6.2 `GenImageText` (data-image form), `ImageColorGrayscale`
 and `LoadImagePalette` / `UnloadImagePalette` for RGBA8 `Surface` owners.
 
 ```bend

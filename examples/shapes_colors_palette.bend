@@ -1,5 +1,5 @@
 # raylib [shapes] example - colors palette, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_colors_palette.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_colors_palette.c (zlib/libpng,
 # Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # Hovering a color fades it and shows its name; SPACE shows every name. See

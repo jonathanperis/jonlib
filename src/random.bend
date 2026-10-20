@@ -1,5 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib's rprand 1.0 (Ramon Santamaria, 2023).
+# Altered Bend adaptation of raylib 6.2's rprand 1.1 (Ramon Santamaria, 2023;
+# 1.1 only adds rprand_get_value_raw, which raylib does not call).
 # SplitMix64 / Xoshiro128** credits and notices are retained in LICENSES/rprand.txt.
 import Base
 import ./resize_numeric.bend as N

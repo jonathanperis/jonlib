@@ -1,5 +1,5 @@
 # raylib [shaders] example - hybrid rendering, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_hybrid_rendering.c
+# Adapted from raylib 6.2 examples/shaders/shaders_hybrid_rendering.c
 # (zlib/libpng, Copyright (c) 2022-2025 Buğra Alptekin Sarı
 # (@BugraAlptekinSari)); see LICENSES/raylib.txt.
 #

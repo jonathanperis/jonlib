@@ -1,5 +1,5 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 rtext.c (Copyright (c) 2013-2026
+# Altered Bend adaptation of raylib 6.2 rtext.c (Copyright (c) 2013-2026
 # Ramon Santamaria; zlib, LICENSES/raylib.txt): LoadFontDefault's glyph table
 # (charsWidth, the rectangle walk) and the expansion of its 1-bit atlas
 # (src/frame_font.bend), GetGlyphIndex, MeasureTextEx/MeasureTextCodepoints,

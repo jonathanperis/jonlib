@@ -1,6 +1,6 @@
 # Image codecs
 
-Every codec is implemented in Bend and compared against the pinned raylib 6.0
+Every codec is implemented in Bend and compared against the pinned raylib 6.2
 reference (stb_image/stb_image_write, sinfl/sdefl, QOI). Suffix/content
 selection and the shared bounded file boundary are documented in
 [IMAGE-FILES.md](IMAGE-FILES.md); the owned original-format image type in

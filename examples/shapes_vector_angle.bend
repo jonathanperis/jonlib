@@ -1,5 +1,5 @@
 # raylib [shapes] example - vector angle, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_vector_angle.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_vector_angle.c (zlib/libpng,
 # Copyright (c) 2023-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # The angle between two vectors from the screen center (mode 0: V1 moves with

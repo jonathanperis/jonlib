@@ -1,5 +1,5 @@
 # raylib [text] example - writing anim, ported to Jonlib.
-# Adapted from raylib 6.0 examples/text/text_writing_anim.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/text/text_writing_anim.c (zlib/libpng,
 # Copyright (c) 2016-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # The message appears one character every 10 frames; SPACE speeds it up 8

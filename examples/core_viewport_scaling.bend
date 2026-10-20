@@ -1,5 +1,5 @@
 # raylib [core] example - viewport scaling, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_viewport_scaling.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_viewport_scaling.c (zlib/libpng,
 # Copyright (c) 2025 Agnis Aldiņš (@nezvers)); see LICENSES/raylib.txt.
 #
 # A game drawn at a small resolution into a render texture and scaled to the

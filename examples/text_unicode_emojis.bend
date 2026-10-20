@@ -1,5 +1,5 @@
 # raylib [text] example - unicode emojis, ported to Jonlib.
-# Adapted from raylib 6.0 examples/text/text_unicode_emojis.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/text/text_unicode_emojis.c (zlib/libpng,
 # Copyright (c) 2019-2025 Vlad Adrian (@demizdor) and Ramon Santamaria
 # (@raysan5)); see LICENSES/raylib.txt.
 #

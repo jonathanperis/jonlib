@@ -1,5 +1,5 @@
 # raylib [shapes] example - lines bezier, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shapes/shapes_lines_bezier.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/shapes/shapes_lines_bezier.c (zlib/libpng,
 # Copyright (c) 2013-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # Drag the line's start and end points with the left mouse button.

@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of stb_vorbis v1.22 (Sean Barrett; MIT or public
-# domain), as raylib 6.0 vendors it in src/external/stb_vorbis.c: the
+# domain), as raylib 6.2 vendors it in src/external/stb_vorbis.c: the
 # decoding of a codebook's symbols from a packet's bits (the DECODE_RAW and
 # DECODE macros of the inline build, codebook_decode_scalar_raw) and of its
 # vectors of values (codebook_decode_start, codebook_decode,

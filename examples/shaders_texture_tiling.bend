@@ -1,5 +1,5 @@
 # raylib [shaders] example - texture tiling, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_texture_tiling.c
+# Adapted from raylib 6.2 examples/shaders/shaders_texture_tiling.c
 # (zlib/libpng, Copyright (c) 2023-2025 Luis Almeida (@luis605)); see
 # LICENSES/raylib.txt.
 #

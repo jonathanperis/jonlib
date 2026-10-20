@@ -1,5 +1,5 @@
 # raylib [shaders] example - rounded rectangle, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_rounded_rectangle.c
+# Adapted from raylib 6.2 examples/shaders/shaders_rounded_rectangle.c
 # (zlib/libpng, Copyright (c) 2025 Anstro Pleuton (@anstropleuton)); see
 # LICENSES/raylib.txt.
 #

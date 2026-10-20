@@ -1,5 +1,5 @@
 # raylib [core] example - input mouse wheel, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_input_mouse_wheel.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_input_mouse_wheel.c (zlib/libpng,
 # Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
 # The mouse wheel moves the box up and down. See docs/DRIVER.md.

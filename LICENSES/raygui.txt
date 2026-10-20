@@ -1,4 +1,4 @@
-raygui v5.0-dev (RAYGUI_VERSION 4.5.0), as shipped in raylib 6.0 examples/*/raygui.h
+raygui v5.1-dev (RAYGUI_VERSION 5.1), as shipped in raylib 6.2 examples/*/raygui.h
 https://github.com/raysan5/raygui
 
 LICENSE: zlib/libpng

@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of stb_vorbis v1.22 (Sean Barrett; MIT or public
-# domain), as raylib 6.0 vendors it in src/external/stb_vorbis.c: frames and
+# domain), as raylib 6.2 vendors it in src/external/stb_vorbis.c: frames and
 # samples (get_window, vorbis_finish_frame, vorbis_pump_first_frame,
 # stb_vorbis_open_memory, stb_vorbis_get_frame_float, and
 # stb_vorbis_get_samples_short_interleaved for as many channels as the

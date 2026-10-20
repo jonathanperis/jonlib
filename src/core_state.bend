@@ -1,5 +1,5 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of raylib 6.0 rcore.c (zlib, LICENSES/raylib.txt) as
+# Altered Bend adaptation of raylib 6.2 rcore.c (zlib, LICENSES/raylib.txt) as
 # pinned raylib runs it on PLATFORM=Memory: the CORE state an application
 # observes between frames (window close and screenshot requests, input,
 # gestures, frame timing and the frame counter, GetFPS's averaging state,

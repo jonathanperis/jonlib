@@ -1,5 +1,5 @@
 # raylib [core] example - monitor detector, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_monitor_detector.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_monitor_detector.c (zlib/libpng,
 # Copyright (c) 2025 Maicon Santana (@maiconpintoabreu)); see
 # LICENSES/raylib.txt.
 #

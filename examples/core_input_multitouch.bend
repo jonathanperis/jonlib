@@ -1,5 +1,5 @@
 # raylib [core] example - input multitouch, ported to Jonlib.
-# Adapted from raylib 6.0 examples/core/core_input_multitouch.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/core/core_input_multitouch.c (zlib/libpng,
 # Copyright (c) 2019-2025 Berni (@Berni8k) and Ramon Santamaria (@raysan5));
 # see LICENSES/raylib.txt.
 #

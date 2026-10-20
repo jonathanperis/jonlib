@@ -1,6 +1,6 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of the OpenGL 1.1 rlgl.h functions (zlib;
-# LICENSES/raylib.txt) as rlsw.h 1.5 implements them (src/external/rlsw.h,
+# LICENSES/raylib.txt) as rlsw.h 1.6 implements them (src/external/rlsw.h,
 # Copyright (c) 2025-2026 Le Juez Victor, MIT; LICENSES/rlsw.txt): swOrtho and
 # swFrustum (rlOrtho, rlFrustum), swLineWidth's roundf and swPointSize's
 # floorf. src/frame.bend renders.

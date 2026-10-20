@@ -1,5 +1,5 @@
 # raylib [models] example - mesh generation, ported to Jonlib.
-# Adapted from raylib 6.0 examples/models/models_mesh_generation.c
+# Adapted from raylib 6.2 examples/models/models_mesh_generation.c
 # (zlib/libpng, Copyright (c) 2017-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

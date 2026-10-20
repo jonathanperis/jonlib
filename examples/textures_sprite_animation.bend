@@ -1,5 +1,5 @@
 # raylib [textures] example - sprite animation, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_sprite_animation.c
+# Adapted from raylib 6.2 examples/textures/textures_sprite_animation.c
 # (zlib/libpng, Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see
 # LICENSES/raylib.txt.
 #

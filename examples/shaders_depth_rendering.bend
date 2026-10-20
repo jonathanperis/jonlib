@@ -1,5 +1,5 @@
 # raylib [shaders] example - depth rendering, ported to Jonlib.
-# Adapted from raylib 6.0 examples/shaders/shaders_depth_rendering.c
+# Adapted from raylib 6.2 examples/shaders/shaders_depth_rendering.c
 # (zlib/libpng, Copyright (c) 2025 Luís Almeida (@luis605)); see
 # LICENSES/raylib.txt.
 #

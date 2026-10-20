@@ -1,5 +1,5 @@
 # raylib [textures] example - blend modes, ported to Jonlib.
-# Adapted from raylib 6.0 examples/textures/textures_blend_modes.c (zlib/libpng,
+# Adapted from raylib 6.2 examples/textures/textures_blend_modes.c (zlib/libpng,
 # Copyright (c) 2020-2025 Karlo Licudine (@accidentalrebel)); see LICENSES/raylib.txt.
 # The cyberpunk street images are raylib's example resources by Luis Zuno
 # (@ansimuz), read in place from the pinned raylib checkout.

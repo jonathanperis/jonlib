@@ -4,7 +4,7 @@ Phase 2, delivery slice 4 ([PHASE2-DESIGN.md](PHASE2-DESIGN.md)): a `Core`
 value holds the state raylib keeps in its `CORE` globals between frames
 (`CORE.Input`, `CORE.Time`, the window close request), plus rgestures.h's
 `GESTURES`, `GetFPS`'s averaging state, the screenshot counter and the
-automation event recorder. Altered Bend adaptations of pinned raylib 6.0
+automation event recorder. Altered Bend adaptations of pinned raylib 6.2
 `src/rcore.c`, `src/platforms/rcore_memory.c` and `src/rgestures.h` (zlib,
 [LICENSES/raylib.txt](../LICENSES/raylib.txt)); the key and char callbacks
 follow `src/platforms/rcore_desktop_glfw.c`. Code: the public section
@@ -43,10 +43,11 @@ script's end-of-wait time. No raylib source is changed. The same pinned code
 paths run (`PlayAutomationEvent`, `PollInputEvents`, `EndDrawing`, `GetFPS`,
 `WaitTime`, rgestures.h inside rcore.c), so this is not a standalone control.
 
-**Build configuration.** probekit's raylib builds use `CUSTOMIZE_BUILD=ON`,
-and raylib 6.0's `cmake/ParseConfigHeader.cmake` turns every
-`#define SUPPORT_X <value>` of `config.h` into an ON option, including the
-ones defined as 0. Such builds compile `SUPPORT_CUSTOM_FRAME_CONTROL` (so
+**Build configuration.** probekit's raylib builds use `CUSTOMIZE_BUILD=ON`
+and `INCLUDE_EVERYTHING=ON`, which turns every `#define SUPPORT_X 0` of
+raylib 6.2's `config.h` into an ON option
+([VERIFICATION.md](VERIFICATION.md#reference-build-configuration)). Such
+builds compile `SUPPORT_CUSTOM_FRAME_CONTROL` (so
 `EndDrawing` neither times frames nor polls input, and `GetFPS` returns 0),
 `SUPPORT_BUSY_WAIT_LOOP` and the file formats `config.h` disables (TGA, JPG,
 PSD, HDR, PIC, PNM, KTX, ASTC, PKM, PVR, BDF, FLAC, GPU skinning). The input
