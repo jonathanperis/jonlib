@@ -1,7 +1,7 @@
 # Compatibility ledger
 
 Reference: raylib **6.2** at `02566453880e06bec97f5b8160fa6fe1e98397ca`.
-Candidate: Bend **2.0.27+jonlib-metal.1**, base
+Candidate: Bend **2.0.27+jonlib-metal.1.os-effects.1**, base
 `b7ebee9217c8813067e200b0c0c9153a3be31c5e` plus the exact
 [compiler overlay](../patches/README.md) declared in `toolchain.json`.
 Profile: **rgba8-cpu-images-v1**, with domains defined in [API.md](API.md).
@@ -181,7 +181,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | GPU execution of image operations | Same Bend API | All corpus pixels and export bytes on forced Metal with the overlay | local `tools/conformance.py --gpu` |
 | GPU graphics-pipeline `Draw*` APIs | Future GPU presentation | Not a reference: `Draw.*` renders as raylib's software renderer does; driver-dependent OpenGL output and CPU `ImageDraw*` matches are other contracts | — |
 | TTF/OTF/BDF/BMFont fonts, further codecs, meshes, models, animation | Future modules | Not implemented | — |
-| Desktop driver and ported examples | `Desktop.run`, `Program.replay`, `Core.end_drawing_desktop`, `Frame.present` (rcore_desktop_glfw.c polling, Base `Window`) | Seven raylib examples replayed headless against their unmodified sources: every framebuffer byte and the presented quadtree per frame; desktop polling and the key table by laws; interactive runs on macOS are diagnostics ([DRIVER.md](DRIVER.md)) | `examples` |
+| Desktop driver and examples | `Desktop.run`, `Program.replay`, `Core.end_drawing_desktop`, `Frame.present` (rcore_desktop_glfw.c polling, Base `Window`) | All 223 raylib examples replayed headless against their unmodified sources: every framebuffer byte and the presented quadtree per frame; desktop polling and the key table by laws; interactive runs on macOS are diagnostics ([DRIVER.md](DRIVER.md), [EXAMPLES.md](EXAMPLES.md)) | `examples-*` |
 | Window state, monitors, clipboard, cursor shape, wheel/text/gamepad/touch input on the desktop, audio devices, native Windows/browser/Android | Future library and runtime work | Not implemented (no Base facility) | — |
 
 ## Known divergences and gaps
