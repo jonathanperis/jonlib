@@ -14,6 +14,19 @@ capability below is **partial** (the legacy `profile-covered` and
 completed raylib API. Mapped counts are an inventory, not a parity percentage.
 The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 
+## Upstream version
+
+Jonlib follows raylib **6.2** (tag `6.2`, commit `02566453`, 2026-10-15) and
+the libraries it bundles at that commit; the examples' raygui is 5.1-dev. It
+was first adapted from raylib 6.0 (`dbc56a87`). Where 6.2 renamed or removed
+an API the ledger follows 6.2: `GetSplinePointBezierQuadratic` (was
+`GetSplinePointBezierQuad`), `ImageDrawTriangleGradient` (was
+`ImageDrawTriangleEx`) and `ImageDrawImagePro` (was `ImageDraw`); the
+`GetMouseRay` alias and the `RL_BOOL_TYPE` switches are gone. The reference
+library is built with `INCLUDE_EVERYTHING=ON` ([VERIFICATION.md](VERIFICATION.md)).
+Moving to a later raylib release means re-pinning `toolchain.json`,
+re-syncing the API catalog (`tools/api_plan.py sync`) and running every gate.
+
 ## Lanes and host profiles
 
 - Every gate compares Jonlib on CPU one-thread, CPU two-thread and JavaScript

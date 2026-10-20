@@ -132,8 +132,9 @@ named as the API ledger proposes for their work package (docs/MODULES.md):
 `Rlgl.RL_TEXTURE_WRAP_S()` (U32), `Rlgl.RL_CULL_DISTANCE_NEAR()` (M.Float64,
 a C double), `Config.MOUSE_LEFT_BUTTON()` (a macro naming an enumerator has
 the enumerator's value), `Config.JONLIB_VERSION()` (raylib's
-`RAYLIB_VERSION`, the release Jonlib ports, branded as project configuration
-is) and `Math.PI()` (rgestures.h's double). They are generated into the
+`RAYLIB_VERSION`, the release Jonlib follows, branded as project configuration
+is; `Config.RLGL_VERSION()` is `"6.0"`, as rlgl.h still says in raylib 6.2)
+and `Math.PI()` (rgestures.h's double). They are generated into the
 section before the enumerations by `tools/macros_probe.py --write` and checked
 against each header compiled in Jonlib's configuration (rlgl.h with
 `GRAPHICS_API_OPENGL_SOFTWARE`, rcamera.h and rgestures.h standalone; gate
