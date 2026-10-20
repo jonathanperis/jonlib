@@ -43,11 +43,29 @@ passing gate does and does not establish is in
 1. **The macOS validation** ([MACOS-VALIDATION.md](MACOS-VALIDATION.md)):
    turn macOS back on in CI and run every gate on a Mac against raylib 6.2.
 2. **Wider domains and gaps** recorded per API in
-   [`api/progress.json`](../api/progress.json): for example images beyond
-   4096 pixels on a side, FLAC (left out of raylib's default build), the glTF,
-   M3D and text-format gaps in [MODELS.md](MODELS.md), and libm profiles
-   that cannot be reproduced from published sources (Apple's `tan`,
-   `asinf`, `acosf`).
+   [`api/progress.json`](../api/progress.json): 2284 open gaps on 1309
+   entries. C-to-Bend mappings with no observable difference (enums as U32
+   constants, macros as functions, pointer ABI, explicit state) are recorded
+   apart as [language adaptations](API-TRACKING.md#language-adaptations)
+   and are not gaps. By theme (keyword-grouped, approximate):
+
+   | Theme | Gaps | Example |
+   |---|---:|---|
+   | `Targets:` lanes not verified | 829 | the Metal lane; macOS for OS-effect functions |
+   | Libm and contraction profiles | 351 | AppleLibm `sinf`/`cosf` outside whole degrees; fused (FMA) builds |
+   | Untagged "full target/performance coverage" | 324 | `Full target/performance coverage` |
+   | `Undefined native behavior:` (documented contract) | 116 | NaN or out-of-range C int conversions mark the frame undefined |
+   | `Integration:` facilities missing from Base | 107 | window state, monitors, clipboard, cursor, gamepad, touch |
+   | `Performance:` | 96 | renderer about 23x slower than native rlsw; not measured |
+   | Refusals of raylib's out-of-bounds or freed-memory reads | 86 | an unready audio device leaves the state as it is |
+   | Renderer state not modeled | 79 | shaders, GPU buffers, bones, scissor slices |
+   | Audio device model | 70 | no device thread or host device |
+   | Exceptional/subnormal/NaN domains | 64 | NaN sign and payload are not reproduced |
+   | Formats and size limits | 96 | FLAC, glTF/M3D subsets, mipmaps, images beyond 4096 |
+   | Files, runtime wiring, trace log, other | 66 | non-ASCII byte paths; gestures from the driver |
+
+   Libm profiles that cannot be reproduced from published sources (Apple's
+   `tan`, `asinf`, `acosf`) stay refusals.
 3. **Platforms**: Jonlib targets Linux and macOS (decided 2026-10-21): the
    headless memory platform with the software renderer on both, and their
    desktops through Bend Base ([`api/milestones.json`](../api/milestones.json)
