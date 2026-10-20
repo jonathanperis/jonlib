@@ -2866,14 +2866,6 @@ def Rgba.palette.checked(valid: Bool, surface: Rgba, +maximum: U32) -> Rgba & Ma
 def Rgba.load_palette(surface: Rgba, +maximum: U32) -> Rgba & Maybe<Image.Palette>:
   Rgba.palette.checked(((maximum > 0) && (maximum <= 4096) : U32), surface, maximum)
 
-def Rgba.copy.result(+w: U32, +h: U32, pair: Array<U32> & Array<U32>) -> Rgba & Rgba:
-  (a, b) = pair
-  (Rgba{w, h, a}, Rgba{w, h, b})
-
-def Rgba.copy(surface: Rgba) -> Rgba & Rgba:
-  Rgba{w, h, pixels} = surface
-  Rgba.copy.result(w, h, Array.clone(U32, pixels))
-
 def Image.channel.index(format: U32, +selected: U32) -> U32:
   match format:
     case 1: 0
@@ -6302,11 +6294,6 @@ def Files.scan.file(filter: Files.Filter, +path: String) -> Maybe<Bool>:
 # 4096-byte buffer); 2 looked at.
 type Files.Entry is Data:
   Files.Entry{path: String, class: U32}
-
-def Files.ascii(text: String) -> Bool:
-  match text:
-    case SNil{}: True{}
-    case SCon{+character, rest}: (Char.to_u32(character) < 128 : U32) && Files.ascii(rest)
 
 def Files.entry(+base: String, +name: String) -> Files.Entry:
   +path = base ++ "/" ++ name
@@ -11469,11 +11456,6 @@ def Rlgl.Bound.attach(bound: Rlgl.Bound, fb: Rlgl.Framebuffer, texture: Texture,
   RlglBound{frame} = bound
   Rlgl.framebuffer.attach(frame, fb, texture, attach_type, tex_type)
 
-# rlFramebufferComplete while a framebuffer is bound: the frame comes back.
-def Rlgl.Bound.complete(bound: Rlgl.Bound, fb: Rlgl.Framebuffer) -> Frame & Bool:
-  RlglBound{frame} = bound
-  (frame, Rlgl.Framebuffer.complete(fb))
-
 # rlDisableFramebuffer(): the frame comes back.
 def Rlgl.Bound.disable(bound: Rlgl.Bound) -> Frame:
   RlglBound{frame} = bound
@@ -14685,10 +14667,6 @@ def MaterialMap.repeat(n: Nat) -> +List<MaterialMap>:
   match n:
     case 0n: Nil{}
     case 1n+k: Con{MaterialMap.none(), MaterialMap.repeat(k)}
-
-# MAX_MATERIAL_MAPS
-def Material.map_count() -> U32:
-  12
 
 # LoadMaterialDefault: 12 zeroed maps; the diffuse map holds (Texture2D){
 # rlGetTextureIdDefault(), 1, 1, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 } with id

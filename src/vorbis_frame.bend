@@ -67,10 +67,6 @@ def Got.frames(got: Got) -> Frames:
   Got{frames, _} = got
   frames
 
-def Got.value(got: Got) -> U32:
-  Got{_, value} = got
-  value
-
 # -----------------------------------------------------------------------------
 # vorbis_finish_frame
 

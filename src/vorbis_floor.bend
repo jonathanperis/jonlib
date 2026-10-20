@@ -98,14 +98,6 @@ def fill(n: Nat, +x: U32, +factor: F32, +row: R.Row) -> R.Row:
     case 0n: row
     case 1n+k: fill(k, (x + 1 : U32), factor, R.Row.set(row, x, (R.Row.get(row, x) * factor : F32)))
 
-def Curve.row(curve: Curve) -> R.Row:
-  Curve{row, _} = curve
-  row
-
-def Curve.fine(curve: Curve) -> Bool:
-  Curve{_, fine} = curve
-  fine
-
 # Whether the level end of a curve is read past the table: the last point
 # is before the half block's end and its height, as an int, is not 0 to
 # 255.

@@ -2145,10 +2145,6 @@ def basis.current(pair: Basis & Basis) -> P2:
   (+bx, +by) = pair
   P2{basis.start(bx), basis.start(by)}
 
-def basis.nexts(pair: Basis & Basis) -> +List<P2>:
-  (+bx, +by) = pair
-  basis.points(24n, True{}, 1.0, bx, by)
-
 # DrawSplineBasis: per four consecutive points a B-spline strip (t = j/24)
 # starting at the segment's own start point; the first strip's first side is
 # its own, later strips carry the previous strip's last side; circle caps at

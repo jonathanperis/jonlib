@@ -495,10 +495,6 @@ def K.channels(+k: K) -> U32:
   K{_, _, _, _, _, _, _, _, channels, _, _} = k
   channels
 
-def K.bits(+k: K) -> U32:
-  K{_, _, _, _, _, _, _, bits, _, _, _} = k
-  bits
-
 def converted.mixed(many: Bool, +frames: +List<+List<U32>>, +channels: U32) -> +List<+List<U32>>:
   match many:
     case True{}: mixdown(frames, C.weights(2n, channels, 2, 0), Nil{})

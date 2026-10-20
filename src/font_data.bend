@@ -292,10 +292,6 @@ def blit(+gs: +List<Glyph>, +ps: +List<Place>, +width: U32, a: Array<U32>) -> Ar
 type Rect is Data:
   Rect{id: U32, w: U32, h: U32}
 
-def Rect.id(+r: Rect) -> U32:
-  Rect{id, _, _} = r
-  id
-
 # rect_height_compare as a C int (-1, 0, 1).
 def rect.cmp(+p: Rect, +q: Rect) -> U32:
   Rect{_, pw, ph} = p
@@ -307,9 +303,6 @@ def rect.le(+p: Rect, +q: Rect) -> Bool:
 
 def rect.zero() -> Rect:
   Rect{0, 0, 0}
-
-def rget(a: Array<Rect>, +i: U32) -> Array<Rect> & Rect:
-  Array.get(Rect, a, i)
 
 def rswap.set(+j: U32, +x: Rect, +i: U32, r: Array<Rect> & Rect) -> Array<Rect>:
   (a, +y) = r

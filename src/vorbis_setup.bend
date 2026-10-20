@@ -319,14 +319,6 @@ def book.lead(+reader: O.Reader) -> Lead:
 type Lengths is Data:
   Lengths{reader: O.Reader, status: Status, lengths: +List<U32>, total: U32}
 
-def Lengths.status(read: Lengths) -> Status:
-  Lengths{_, status, _, _} = read
-  status
-
-def Lengths.lengths(read: Lengths) -> +List<U32>:
-  Lengths{_, _, lengths, _} = read
-  lengths
-
 def length.plus(+reader: O.Reader) -> O.Reader:
   O.Reader.answer(reader, (O.Reader.value(reader) + 1 : U32))
 

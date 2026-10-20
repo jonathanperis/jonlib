@@ -3492,9 +3492,6 @@ def Gui.rgs.path(+dir: String, +name: +List<U32>) -> Maybe<String>:
   +path = TextCore.glue(TextCore.bytes(dir), Con{47, name})
   Bool.pick(Maybe<String>, (TextCore.len(path) < 1024 : U32), Some{TextCore.string(path)}, None{})
 
-def Gui.rgs.state.put(+gui: Gui, frame: J.Frame, +control: U32, +property: U32, +value: U32, +fine: Bool) -> Gui.Loading:
-  GuiLoading{gui, frame, control, property, value, fine}
-
 def Gui.rgs.undefined(state: Gui.Loading) -> Gui.Loading:
   GuiLoading{+gui, frame, +control, +property, +value, _} = state
   GuiLoading{gui, frame, control, property, value, False{}}

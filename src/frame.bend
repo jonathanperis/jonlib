@@ -486,18 +486,6 @@ def texel.got(valid: Bool, read: Array<U32> & U32) -> Array<U32> & (Texel & Bool
   (texels, +word) = read
   (texels, (Texel.of(word), valid))
 
-# sw_texture_sample_nearest with REPEAT: (int)(fract(u)*width) and likewise v,
-# read at y*width + x. fract of a tiny negative coordinate rounds to 1.0, so x
-# (or y) can equal the size: the read lands on the next row, and past the last
-# texel it is out of bounds (refused), as are NaN and infinite coordinates.
-def nearest(+u: F32, +v: F32, +width: U32, +height: U32, texels: Array<U32>) -> Array<U32> & (Texel & Bool):
-  +x = F32.trunc((fract(u) * U32.to_f32(width) : F32))
-  +y = F32.trunc((fract(v) * U32.to_f32(height) : F32))
-  +inside = (x >= 0.0 : F32) && (x <= U32.to_f32(width) : F32) && (y >= 0.0 : F32) && (y <= U32.to_f32(height) : F32)
-  +index = (F32.to_u32(Bool.pick(F32, inside, y, 0.0)) * width + F32.to_u32(Bool.pick(F32, inside, x, 0.0)) : U32)
-  +valid = inside && (index < (width * height : U32) : U32)
-  texel.got(valid, Array.get(U32, texels, Bool.pick(U32, valid, index, 0)))
-
 # C's (int) of a coordinate: defined for [-2^31, 2^31).
 def int.range(+x: F32) -> Bool:
   (x >= F32.neg(2147483648.0) : F32) && (x < 2147483648.0 : F32)
@@ -538,17 +526,6 @@ def bilinear.c00(+fx: F32, +fy: F32, valid: Bool, +i10: U32, +i01: U32, +i11: U3
 
 def bilinear.at(+fx: F32, +fy: F32, valid: Bool, +width: U32, +x0: U32, +y0: U32, +x1: U32, +y1: U32, texels: Array<U32>) -> Array<U32> & (Texel & Bool):
   bilinear.c00(fx, fy, valid, (y0 * width + x1 : U32), (y1 * width + x0 : U32), (y1 * width + x1 : U32), Array.get(U32, texels, (y0 * width + x0 : U32)))
-
-# sw_texture_sample_linear with REPEAT: xf = u*width - 0.5, weights fract(xf),
-# texels (int)xf (truncated toward zero) and the next one, both wrapped; the
-# same on v. A coordinate whose (int) conversion is undefined is refused.
-def bilinear(+u: F32, +v: F32, +width: U32, +height: U32, texels: Array<U32>) -> Array<U32> & (Texel & Bool):
-  +xf = ((u * U32.to_f32(width) : F32) - 0.5 : F32)
-  +yf = ((v * U32.to_f32(height) : F32) - 0.5 : F32)
-  +valid = int.range(xf) && int.range(yf)
-  +x0 = wrap.mod(F32.trunc(Bool.pick(F32, valid, xf, 0.0)), width)
-  +y0 = wrap.mod(F32.trunc(Bool.pick(F32, valid, yf, 0.0)), height)
-  bilinear.at(fract(xf), fract(yf), valid, width, x0, y0, ((x0 + 1) % width : U32), ((y0 + 1) % height : U32), texels)
 
 # sw_saturate: a set sign bit (-0, negatives, negative NaNs) is 0; bits above
 # 1.0f's (+infinity and positive NaNs too) are 1.
@@ -1854,9 +1831,6 @@ def Gl.initial.with(+width: U32, +height: U32, shapes: Shapes) -> Gl:
   Gl{True{}, False{}, True{}, False{}, 0, 0.0, 0.0, False{}, 255, 0, 0.0, 0.0, U32.to_f32(width), U32.to_f32(height), Nil{}, [Matrix4.identity()],
     shapes, Meta.none()}
 
-def Gl.initial(+width: U32, +height: U32) -> Gl:
-  Gl.initial.with(width, height, Shapes.initial())
-
 def Gl.mode(+gl: Gl) -> U32:
   Gl{_, _, _, _, _, _, _, _, _, mode, _, _, _, _, _, _, _, _} = gl
   mode
@@ -3065,9 +3039,6 @@ def Canvas.release.read(read: Canvas & Bool) -> Canvas & Maybe<(Meta & Sampler)>
 # refused then).
 def Canvas.release(canvas: Canvas) -> Canvas & Maybe<(Meta & Sampler)>:
   Canvas.release.read(Canvas.active(canvas))
-
-def Canvas.shapes.swapped(result: Canvas & Maybe<(Meta & Sampler)>) -> Canvas & Maybe<(Meta & Sampler)>:
-  result
 
 def Canvas.set_shapes.with(sampler: Sampler, result: Canvas & Meta) -> Canvas & Maybe<(Meta & Sampler)>:
   (canvas, +old) = result

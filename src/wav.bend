@@ -82,9 +82,6 @@ def W.lo(+w: W) -> U32:
   W{_, lo} = w
   lo
 
-def W.small(+x: U32) -> W:
-  W{0, x}
-
 def W.add(+a: W, +b: W) -> W:
   +lo = (W.lo(a) + W.lo(b) : U32)
   W{(W.hi(a) + W.hi(b) + Bool.to_u32((lo < W.lo(a) : U32)) : U32), lo}

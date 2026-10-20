@@ -352,10 +352,6 @@ def frequency.update(+around: Around, +channel: Channel, +song: Song) -> Turn:
   frequency.set(P.frequency.of(Around.libm(around), kind.of(around), Pitch.period(Channel.pitch(channel)),
     Bool.pick(F32, (Wobble.arp_offset(Channel.wobble(channel)) > 0 : U32), U32.to_f32(Wobble.arp_offset(Channel.wobble(channel))), Wobble.offsets(Channel.wobble(channel)))), around, channel, song)
 
-def turn.updated(+around: Around, turn: Turn) -> Turn:
-  Turn{+channel, +song} = turn
-  frequency.update(around, channel, song)
-
 # -----------------------------------------------------------------------------
 # Notes
 
@@ -509,14 +505,6 @@ def envelopes(+around: Around, +channel: Channel, +song: Song) -> Turn:
 def Wave.value(wave: P.Wave) -> F32:
   P.Wave{value, _, _} = wave
   value
-
-def Wave.fine(wave: P.Wave) -> Bool:
-  P.Wave{_, fine, _} = wave
-  fine
-
-def Wave.random(wave: P.Wave) -> U32:
-  P.Wave{_, _, random} = wave
-  random
 
 # The song after a waveform is asked for: the random state moved on, and
 # stopped where the libm profile does not give the sine.

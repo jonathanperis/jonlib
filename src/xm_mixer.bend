@@ -8,10 +8,6 @@ import Base
 import ./xm_sample.bend as Sm
 import ./xm_player.bend as Pl
 
-# The frame's two sums so far.
-type Sums is Data:
-  Sums{left: F32, right: F32}
-
 # The channels after a frame, the sums, and whether every step was fine.
 type Mixed is Data:
   Mixed{channels: +List<Pl.Channel>, left: F32, right: F32, fine: Bool}

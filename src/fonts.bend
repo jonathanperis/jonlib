@@ -40,10 +40,6 @@ def add.ok(+a: U32, +b: U32) -> Bool:
   +s = (a + b : U32)
   Bool.not(U32.is_eq(Bool.pick(U32, negative(a), 1, 0), Bool.pick(U32, negative(b), 1, 0))) || U32.is_eq(Bool.pick(U32, negative(a), 1, 0), Bool.pick(U32, negative(s), 1, 0))
 
-# a < b as C ints.
-def less(+a: U32, +b: U32) -> Bool:
-  ((a + 2147483648 : U32) < (b + 2147483648 : U32) : U32)
-
 # -----------------------------------------------------------------------------
 # Glyphs: GlyphInfo's value, offsets and advance with the glyph's atlas
 # rectangle (Font.recs).

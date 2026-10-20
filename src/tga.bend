@@ -243,7 +243,3 @@ def encode.channels(+width: U32, +height: U32, +channels: U32, pixels: Array<U32
   kind = Bool.pick(U32, U32.is_lt(channels, 3), 11, 10)
   header = {[alpha,(channels * 8 : U32),(height >> 8n : U32),(height .&. 255 : U32),(width >> 8n : U32),(width .&. 255 : U32),0,0,0,0,0,0,0,0,0,kind,0,0] : +List<U32>}
   encode.rows(U32.to_nat(height), channels, (height - 1 : U32), width, (pixels, header))
-
-# Preserve the existing Surface/FloatRGB four-channel encoding exactly.
-def encode(width: U32, height: U32, pixels: Array<U32>) -> +List<U32>:
-  encode.channels(width, height, 4, pixels)

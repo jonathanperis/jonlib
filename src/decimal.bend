@@ -45,9 +45,6 @@ def W.half(+w: W, +k: U32) -> U32:
   +lo = W.lo(w)
   Bool.pick(U32, U32.is_eq(hi, th) && U32.is_eq(lo, tl), 1, Bool.pick(U32, (hi > th : U32) || (U32.is_eq(hi, th) && (lo > tl : U32)), 2, 0))
 
-def digits.show(+n: U32) -> String:
-  U32.show(n)
-
 def zeros(n: Nat) -> String:
   match n:
     case 0n: ""

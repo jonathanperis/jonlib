@@ -804,9 +804,6 @@ def fill.array(es: +List<Edge>, +i: U32, a: Array<Edge>) -> Array<Edge>:
 def edge.zero() -> Edge:
   Edge{0.0, 0.0, 0.0, 0.0, False{}}
 
-def read.edge(a: Array<Edge>, +i: U32) -> Array<Edge> & Edge:
-  Array.get(Edge, a, i)
-
 def swap.set(+j: U32, +x: Edge, +i: U32, r: Array<Edge> & Edge) -> Array<Edge>:
   (a, +y) = r
   Array.set(Edge, Array.set(Edge, a, i, y), j, x)
@@ -1175,11 +1172,6 @@ def row(+w: U32, +ok: Bool, +out: +List<U32>, lines: Lines) -> Row:
 
 type Raster is Data:
   Raster{ok: Bool, pixels: +List<U32>}
-
-def nonempty.active(+zs: +List<Active>) -> Bool:
-  match zs:
-    case Nil{}: False{}
-    case Con{_, _}: True{}
 
 def scan.row(+w: U32, +top: F32, +zs: +List<Active>, +ok: Bool, +out: +List<U32>) -> Row:
   +wd = Blob.depth(w)

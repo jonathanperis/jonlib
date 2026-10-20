@@ -216,8 +216,3 @@ def get(value: Json, +key: +List<U32>) -> Maybe<Json>:
   match value:
     case JObject{+members}: member(members, key)
     case _: None{}
-
-def items(value: Json) -> Maybe<+List<Json>>:
-  match value:
-    case JArray{+items}: Some{items}
-    case _: None{}

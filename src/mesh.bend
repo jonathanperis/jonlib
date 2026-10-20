@@ -23,14 +23,6 @@ def Built.with(ok: Bool, values: +List<F32>, rest: Built) -> Built:
   Built{rest_ok, more} = rest
   Built{ok && rest_ok, List.append(&2, F32, values, more)}
 
-def Built.ok(+b: Built) -> Bool:
-  Built{ok, _} = b
-  ok
-
-def Built.values(+b: Built) -> +List<F32>:
-  Built{_, values} = b
-  values
-
 # Lists scale with the mesh: builders that reach vertex-count depth are
 # tail-recursive (accumulated, reversed where order matters), so the
 # JavaScript lane's stack stays shallow.

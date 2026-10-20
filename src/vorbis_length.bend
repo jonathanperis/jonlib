@@ -176,10 +176,6 @@ def Found.found(found: Found) -> Bool:
   Found{found, _, _, _} = found
   found
 
-def Found.at(found: Found) -> U32:
-  Found{_, at, _, _} = found
-  at
-
 def Found.end(found: Found) -> U32:
   Found{_, _, end, _} = found
   end

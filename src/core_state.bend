@@ -133,10 +133,6 @@ def Time.frame(+t: Time) -> W.Words:
   Time{_, _, _, _, frame, _, _} = t
   frame
 
-def Time.target(+t: Time) -> W.Words:
-  Time{_, _, _, _, _, target, _} = t
-  target
-
 def Time.with_target(t: Time, target: W.Words) -> Time:
   Time{current, previous, update, draw, frame, _, counter} = t
   Time{current, previous, update, draw, frame, target, counter}

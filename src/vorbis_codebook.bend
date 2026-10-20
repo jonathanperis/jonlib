@@ -374,22 +374,10 @@ def Book.sparse(book: Book) -> Bool:
   Book{sparse, _, _, _, _, _, _, _} = book
   sparse
 
-def Book.lengths(book: Book) -> +List<U32>:
-  Book{_, _, lengths, _, _, _, _, _} = book
-  lengths
-
-def Book.codewords(book: Book) -> +List<U32>:
-  Book{_, _, _, codewords, _, _, _, _} = book
-  codewords
-
 # sorted_entries: how many codes the sorted table has.
 def Book.count(book: Book) -> U32:
   Book{_, _, _, _, sorted, _, _, _} = book
   sorted
-
-def Book.sorted_codewords(book: Book) -> +List<U32>:
-  Book{_, _, _, _, _, sorted_codewords, _, _} = book
-  sorted_codewords
 
 def Book.sorted_values(book: Book) -> +List<U32>:
   Book{_, _, _, _, _, _, sorted_values, _} = book

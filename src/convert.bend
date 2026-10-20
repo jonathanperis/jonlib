@@ -321,10 +321,6 @@ def resample.channels(+stream: Stream, +plan: Plan) -> Stream:
   Stream{frames, ok, complete} = stream
   Stream{channels.if(True{}, frames, plan), ok, complete}
 
-def Stream.frames(+stream: Stream) -> +List<+List<U32>>:
-  Stream{frames, _, _} = stream
-  frames
-
 # ma_data_converter_process_pcm_frames__channels_first / __resample_first:
 # the resampler runs where the channel count is lowest.
 def stages(first: Bool, +k: +List<U32>, +frames: +List<+List<U32>>, +plan: Plan) -> Stream:

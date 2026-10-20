@@ -593,11 +593,6 @@ def Player.samples(+player: Player) -> U32:
   Clock{_, _, _, _, _, _, _, _, _, +samples, _} = clock
   samples
 
-def Player.loops(+player: Player) -> U32:
-  Player{_, +clock, _, _, _, _} = player
-  Clock{_, _, _, _, _, _, _, _, _, _, +loops} = clock
-  loops
-
 # The channels' notes, from the note at byte `at`, each four bytes on; why 1
 # for a note past the file.
 type Row is Data:
@@ -773,10 +768,6 @@ def Player.counted(+player: Player, +count: U32) -> Player:
   Player{+m, +clock, +channels, +ll, +lr, +why} = player
   Clock{+tablepos, +patternpos, +delay, +jump, +speed, +bpm, +ticks, +tickse, +aim, +samples, +loops} = clock
   Player{m, Clock{tablepos, patternpos, delay, jump, speed, bpm, ticks, tickse, aim, (samples + count : U32), loops}, channels, ll, lr, why}
-
-def Player.stopped(+player: Player, +why: U32) -> Player:
-  Player{+m, +clock, +channels, +ll, +lr, _} = player
-  Player{m, clock, channels, ll, lr, why}
 
 # jar_mod_fillbuffer(count): `count` stereo samples, left then right, as
 # 16-bit words; the player after them.

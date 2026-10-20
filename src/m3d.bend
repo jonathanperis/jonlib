@@ -1216,11 +1216,6 @@ def materials.count(xs: +List<Material>, +acc: U32) -> U32:
     case Nil{}: acc
     case Con{_, rest}: materials.count(rest, (acc + 1 : U32))
 
-def faces.count(xs: +List<Face>, +acc: U32) -> U32:
-  match xs:
-    case Nil{}: acc
-    case Con{_, rest}: faces.count(rest, (acc + 1 : U32))
-
 # Every skin's bones exist, and every bone's parent is undefined or a bone:
 # what the importer's cross-reference and bone matrices index when the file
 # has bones, skins and vertices.

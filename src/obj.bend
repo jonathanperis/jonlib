@@ -1090,10 +1090,6 @@ def meshacc.material(+m: MeshAcc, +material: U32) -> MeshAcc:
   MeshAcc{+ok, +count, +vs, +ns, +ts, _} = m
   MeshAcc{ok, count, vs, ns, ts, material}
 
-def fix.ok(+f: Fix) -> Bool:
-  Fix{+ok, _} = f
-  ok
-
 def fix.index(+f: Fix) -> U32:
   Fix{_, +i} = f
   i
