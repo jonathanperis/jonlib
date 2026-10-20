@@ -1,15 +1,13 @@
 """Compiler-free routing, domain staging and fatal-angle harness regression."""
 from contextlib import ExitStack
 import json
-import hashlib
 from pathlib import Path
 import re
-import runpy
 import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from tools import conformance as c
 
@@ -256,37 +254,6 @@ class AngleQualificationRoutingTests(unittest.TestCase):
             self.run_main_until_candidate(gate_result=result)
         for error in ('Ambiguous native profile', 'Unsupported or mixed native profile', 'Frozen angle derivation mismatches'):
             self.run_main_until_candidate(gate_error=ValueError(error))
-
-    def test_metal_probe_qualifies_before_each_run_and_passes_selection(self):
-        with patch.object(sys, 'path', [str(c.ROOT/'tools'), *sys.path]):
-            probe = runpy.run_path(str(c.ROOT/'tools/metal_probe.py'))
-        main = probe['main']; env = main.__globals__
-        cases = scene(); rows = [dict(id='checked-angle',width=4,height=2,pixels=[0]*8)]
-        for fail in (False, True):
-            with tempfile.TemporaryDirectory() as temp, ExitStack() as stack:
-                work = Path(temp)
-                (work/'scenarios.json').write_text(json.dumps(cases))
-                (work/'reference.jsonl').write_text(json.dumps(rows[0])+'\n')
-                for name in ('reference.c','reference'): (work/name).write_text('native fixture')
-                # Prefix diagnosis remains available after a failed candidate lane.
-                (work/'conformance.json').write_text(json.dumps(dict(passed=False,
-                    reference_environment=c.reference_environment.ReferenceEnvironment().receipt(),
-                    reference_artifacts={name:hashlib.sha256((work/name).read_bytes()).hexdigest()
-                        for name in ('reference.c','reference','reference.jsonl')})))
-                generator = Mock(side_effect=StopAfterCandidates())
-                qualifier = Mock(side_effect=ValueError('unqualified') if fail else None, return_value=receipt())
-                stack.enter_context(patch.dict(env, BUILD=work, checkout=Mock(), cases_from=Mock(return_value=cases),
-                                               source_gate=Mock(return_value={}), qualify_angles=qualifier, bend_source=generator,
-                                               run=Mock(return_value=(work/'reference.jsonl').read_text())))
-                stack.enter_context(patch.object(env['platform'], 'system', return_value='Darwin'))
-                stack.enter_context(patch.object(sys, 'argv', ['metal-probe', '--counts', '1']))
-                with self.assertRaises(ValueError if fail else StopAfterCandidates): main()
-                qualifier.assert_called_once()
-                if fail: generator.assert_not_called()
-                else:
-                    self.assertEqual(generator.call_args.kwargs,
-                                     dict(gpu=True,extrema_reference=None,angle_reference='Glibc241AngleRn'))
-                    self.assertEqual(json.loads((work/'metal-probe.json').read_text())['angle_reference'], receipt())
 
 
 if __name__ == '__main__':

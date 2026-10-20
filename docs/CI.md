@@ -124,5 +124,6 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --shard 1/1
 ```
 
-Hosted runners have no GPU; forced-Metal evidence (`--gpu` on the probes and
-`tools/metal_probe.py`) comes from local runs on Apple hardware.
+Hosted runners have no GPU; forced-Metal evidence (`--gpu` on
+`tools/conformance.py`, `tools/verify_bend.py` and the probes) comes from local
+runs on Apple hardware.

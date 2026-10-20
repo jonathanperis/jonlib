@@ -89,10 +89,6 @@ authored for Jonathan Peris's Jonlib project. Retain
 - Forced-Metal correctness of the Jonlib corpus comes from
   `python3 tools/conformance.py --gpu` and the probes' `--gpu` lane, run locally
   (hosted runners have no GPU; see [CI.md](CI.md)).
-- `tools/metal_probe.py` is a diagnostic only: it runs unmodified scenario
-  prefixes (`--counts`) and, with `--outline-circle`, the one-qualifier
-  experiment. It exits nonzero whenever the unmodified baseline fails, even if
-  the outlined variant passes, and never changes the conformance gate.
 
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only bend-overlay

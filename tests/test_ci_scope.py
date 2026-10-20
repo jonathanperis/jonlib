@@ -120,7 +120,7 @@ TREE = {
     'tools/probekit.py': 'import os\n', 'tools/api_plan.py': 'import json\n', 'tools/examples_probe.py': PROBE,
     'tools/rand_probe.py': "import probekit\nMODEL = ROOT / 'tools/reference/glibc_rand/model.c'\n",
     'tools/png_file_probe.py': FORMAT, 'tools/bmp_file_probe.py': FORMAT, 'tools/pic_file_probe.py': FORMAT, 'tools/tga_format_probe.py': FORMAT,
-    'tools/metal_probe.py': 'import probekit\n', 'jonmath.bend': JONMATH, 'jonlib.bend': 'import ./jonmath.bend as M\n\ndef one() -> U32:\n  1\n',
+    'tools/orphan_probe.py': 'import probekit\n', 'jonmath.bend': JONMATH, 'jonlib.bend': 'import ./jonmath.bend as M\n\ndef one() -> U32:\n  1\n',
 }
 
 
@@ -234,7 +234,7 @@ class ScopeTests(unittest.TestCase):
             self.assertEqual((result['mode'], result['reason']), ('full', f'no rule places {path}'))
 
     def test_a_tool_no_gate_reaches_runs_everything_unless_it_is_new(self):
-        self.assertEqual(scope({'tools/metal_probe.py': 'import probekit\n# changed\n'})['mode'], 'full')
+        self.assertEqual(scope({'tools/orphan_probe.py': 'import probekit\n# changed\n'})['mode'], 'full')
         self.assertEqual(scope({'tools/png_file_probe.py': None})['mode'], 'full')
         self.assertEqual(scope({'tools/new_helper.py': 'import os\n'})['mode'], 'none')
 

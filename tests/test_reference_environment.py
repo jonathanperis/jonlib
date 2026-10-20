@@ -1,7 +1,6 @@
 """Explicit native-child loader policy, with no parent or candidate mutation."""
 import contextlib
 import io
-import runpy
 import json
 import os
 from pathlib import Path
@@ -57,9 +56,7 @@ class ReferenceEnvironmentTests(unittest.TestCase):
             self.assertEqual(os.environ['LD_LIBRARY_PATH'],directory)
 
     def test_unknown_policy_invalidates_fixed_destination_reports(self):
-        metal=runpy.run_path(str(conformance.ROOT/'tools/metal_probe.py'))
-        cases=[(conformance.main,conformance.__dict__,'conformance.json',['conformance']),
-               (metal['main'],metal['main'].__globals__,'metal-probe.json',['metal'])]
+        cases=[(conformance.main,conformance.__dict__,'conformance.json',['conformance'])]
         for main,namespace,destination,argv in cases:
             with self.subTest(destination=destination),tempfile.TemporaryDirectory() as directory:
                 work=Path(directory);report=work/destination;report.parent.mkdir(parents=True,exist_ok=True)

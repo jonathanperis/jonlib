@@ -20,7 +20,6 @@ import run_gates
 # Probe-like tools deliberately outside CI, with the reason.
 EXEMPT = {
     'byte_probe.py': 'shared Bend emitter helpers used by other probes',
-    'metal_probe.py': 'forced-GPU check; hosted runners have no Metal device',
 }
 WORKFLOW = ROOT / '.github/workflows/conformance.yml'
 
