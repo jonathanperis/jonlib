@@ -134,19 +134,20 @@ class ScriptTests(unittest.TestCase):
 class TableTests(unittest.TestCase):
     def results(self):
         entry = dict(script='a-b', base_frames=4, extra_frames=30, output_equal=True, ratio=25.0,
-                     native=dict(per_frame=0.002, steady_wall=0.15, peak_rss_kib=20480,
+                     native=dict(per_frame=0.002, steady_wall=0.15, base_wall=0.03, peak_rss_kib=20480,
                                  frame_lines=dict(median=0.0018, p95=0.0031)),
-                     **{'cpu-1': dict(per_frame=0.05, wall=2.5, peak_rss_kib=512000)})
+                     **{'cpu-1': dict(per_frame=0.05, wall=2.5, first=1.2, base=0.4, peak_rss_kib=512000)})
         audio = dict(periods=300, output_equal=True, ratio=12.5, native=dict(per_period=0.0004, peak_rss_kib=10240),
                      **{'cpu-1': dict(per_period=0.005, peak_rss_kib=307200)})
         return dict(examples={'shapes_x': entry, 'core_y': dict(skipped='its setup takes directory listings')}, audio=audio)
 
     def test_table_rows(self):
         text = pe.render_table(self.results())
-        self.assertIn('| shapes_x | 4 + 30 | 1.80, 3.10 | 2.00 | 50.00 | 25x | 150 | 2500 | 20 | 500 | yes |', text)
+        self.assertIn('| shapes_x | 4 + 30 | 1.80, 3.10 | 2.00 | 50.00 | 25x | 30.00 | 1200, 400 | 20 | 500 | yes |', text)
         self.assertIn('| core_y | its setup takes directory listings |', text)
-        self.assertIn('| ms per 10 ms period (callback + UpdateMusicStream) | 0.40 | 5.00 | 12x |', text)
+        self.assertIn('| ms per 10 ms period (callback + UpdateMusicStream) | 0.4000 | 5.00 | 12x |', text)
         self.assertIn('| share of real time | 4.0% | 50.0% | |', text)
+        self.assertIn('| peak MiB (300 / 300 periods) | 10 | 300 | |', text)
         self.assertNotIn('JavaScript', text)
 
     def test_javascript_table_only_with_the_lane(self):
@@ -159,6 +160,7 @@ class TableTests(unittest.TestCase):
         self.assertEqual(pe.ms(None), '-')
         self.assertEqual(pe.ms(0.0123), '12.30')
         self.assertEqual(pe.ms(1.5), '1500')
+        self.assertEqual(pe.ms(0.0000138), '0.0138')
         self.assertEqual(pe.times_text(3.25), '3.2x')
         self.assertEqual(pe.mib(None), '-')
 

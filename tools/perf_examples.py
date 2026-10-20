@@ -220,7 +220,9 @@ def median_of(runs, key):
 
 
 def ms(value):
-    return '-' if value is None else f'{value * 1000:.2f}' if value < 0.1 else f'{value * 1000:.0f}'
+    if value is None:
+        return '-'
+    return f'{value * 1000:.4f}' if abs(value) < 0.001 else f'{value * 1000:.2f}' if value < 0.1 else f'{value * 1000:.0f}'
 
 
 def mib(kib):
@@ -234,7 +236,8 @@ def times_text(value):
 def render_table(results):
     """The Markdown tables of a results document."""
     lines = ['| Example | Frames (base + extra) | raylib ms/frame (median, p95) | raylib ms/frame (diff) | Jonlib ms/frame (diff) | '
-             'Ratio | raylib wall ms (steady) | Jonlib wall ms (3 scripts) | raylib peak MiB | Jonlib peak MiB | Output equal |',
+             'Ratio | raylib base script ms (process) | Jonlib base script ms (first, repeated) | raylib peak MiB | Jonlib peak MiB | '
+             'Output equal |',
              '|---|---|---|---|---|---|---|---|---|---|---|']
     for name, entry in results.get('examples', {}).items():
         if entry.get('skipped'):
@@ -244,7 +247,8 @@ def render_table(results):
         direct = native.get('frame_lines') or {}
         lines.append(f'| {name} | {entry["base_frames"]} + {entry["extra_frames"]} | {ms(direct.get("median"))}, {ms(direct.get("p95"))} | '
                      f'{ms(native["per_frame"])} | {ms(jonlib["per_frame"])} | {times_text(entry.get("ratio"))} | '
-                     f'{ms(native["steady_wall"])} | {ms(jonlib["wall"])} | {mib(native["peak_rss_kib"])} | {mib(jonlib["peak_rss_kib"])} | '
+                     f'{ms(native["base_wall"])} | {ms(jonlib.get("first"))}, {ms(jonlib.get("base"))} | {mib(native["peak_rss_kib"])} | '
+                     f'{mib(jonlib["peak_rss_kib"])} | '
                      f'{"yes" if entry.get("output_equal") else "NO"} |')
     if any('javascript' in entry for entry in results.get('examples', {}).values()):
         lines += ['', '| Example | JavaScript ms/frame (diff) | Ratio to raylib | JavaScript wall ms | JavaScript peak MiB |', '|---|---|---|---|---|']
@@ -259,7 +263,8 @@ def render_table(results):
                   f'| ms per 10 ms period (callback + UpdateMusicStream) | {ms(audio["native"]["per_period"])} | '
                   f'{ms(audio["cpu-1"]["per_period"])} | {times_text(audio.get("ratio"))} |',
                   f'| share of real time | {pct(audio["native"]["per_period"])} | {pct(audio["cpu-1"]["per_period"])} | |',
-                  f'| peak MiB ({audio["periods"]} periods) | {mib(audio["native"]["peak_rss_kib"])} | {mib(audio["cpu-1"]["peak_rss_kib"])} | |',
+                  f'| peak MiB ({audio["native"].get("periods", audio["periods"])} / {audio["periods"]} periods) | '
+                  f'{mib(audio["native"]["peak_rss_kib"])} | {mib(audio["cpu-1"]["peak_rss_kib"])} | |',
                   f'| time played equal | {"yes" if audio.get("output_equal") else "NO"} | | |']
     return '\n'.join(lines) + '\n'
 
@@ -486,7 +491,7 @@ def measure_example(ctx, example, script, libm, extra, runs, js):
     return entry
 
 
-def measure_audio(ctx, periods, runs):
+def measure_audio(ctx, periods, runs, native_periods):
     path = ctx.args.raylib_source / AUDIO_FILE
     include = '-I' + str(ctx.args.raylib_source / 'src')
     source, binary = ctx.work / 'audio.c', ctx.work / 'audio-reference'
@@ -500,17 +505,19 @@ def measure_audio(ctx, periods, runs):
     print('audio: compiling the candidate', flush=True)
     compile_cached(['bun', ctx.args.bend_source / 'bend2/main.ts'], bend, candidate, extra=json.dumps(ctx.lock['bend']))
     sides = {'native': [binary], 'cpu-1': [candidate, '--gpu', 'off', '--threads', '1']}
-    out = dict(file=AUDIO_FILE, periods=periods)
-    outputs = {}
+    # raylib's period is too cheap to resolve from a few hundred: it is timed over native_periods (the music loops), and
+    # both sides' GetMusicTimePlayed are compared after the same `periods`.
+    counts = {'native': native_periods, 'cpu-1': periods}
+    out = dict(file=AUDIO_FILE, periods=periods, native_periods=native_periods)
+    outputs = {side: measure([*command, '--file', path, '--periods', str(periods)], cwd=ROOT)['lines'] for side, command in sides.items()}
     for side, command in sides.items():
-        samples = []
+        samples, count = [], counts[side]
         for _ in range(runs):
             empty = measure([*command, '--file', path, '--periods', '0'], cwd=ROOT)
-            full = measure([*command, '--file', path, '--periods', str(periods)], cwd=ROOT)
-            outputs[side] = full['lines']
-            samples.append(dict(per_period=(full['wall'] - empty['wall']) / periods, load_wall=empty['wall'], wall=full['wall'],
+            full = measure([*command, '--file', path, '--periods', str(count)], cwd=ROOT)
+            samples.append(dict(per_period=(full['wall'] - empty['wall']) / count, load_wall=empty['wall'], wall=full['wall'],
                                 peak_rss_kib=full['peak_rss_kib']))
-        out[side] = dict(per_period=median_of(samples, 'per_period'), load_wall=median_of(samples, 'load_wall'),
+        out[side] = dict(periods=count, per_period=median_of(samples, 'per_period'), load_wall=median_of(samples, 'load_wall'),
                          peak_rss_kib=max(s['peak_rss_kib'] for s in samples), runs=samples, output=outputs[side])
         print(f'audio: {side} {ms(out[side]["per_period"])} ms per period', flush=True)
     out['output_equal'] = outputs['native'] == outputs['cpu-1'] and outputs['native'] != ['not loaded']
@@ -536,6 +543,8 @@ def configure(parser):
     parser.add_argument('--extra-frames', type=int, default=30, help='idle frames added to the steady script (default 30)')
     parser.add_argument('--js', action='store_true', help='also measure the JavaScript lane (50-90x slower than native)')
     parser.add_argument('--audio-periods', type=int, default=300, help='10 ms periods mixed by the audio measurement (default 300)')
+    parser.add_argument('--audio-native-periods', type=int, default=30000,
+                        help="periods raylib's side is timed over (default 30000: 300 s of music, looping)")
     parser.add_argument('--no-audio', action='store_true', help='skip the audio measurement')
     parser.add_argument('--audio-only', action='store_true', help='only the audio measurement (with --merge, keeps the examples)')
     parser.add_argument('--merge', action='store_true',
@@ -590,7 +599,7 @@ def main():
         save()
     if not args.no_audio:
         try:
-            results['audio'] = measure_audio(ctx, args.audio_periods, args.runs)
+            results['audio'] = measure_audio(ctx, args.audio_periods, args.runs, args.audio_native_periods)
         except ProbeFailure as failure:
             results['audio'] = dict(skipped=f'failed: {str(failure).splitlines()[0][:200]}')
             print(f'audio: FAILED {failure}', flush=True)
