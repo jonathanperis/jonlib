@@ -129,17 +129,30 @@ fixture serializer checks all three component bits, including the Z component
 and signed zero. Full transforms, remaining metrics and other numeric profiles
 remain ledger gaps.
 
+Gate `vector3` compares `add`, `add_value`, `subtract`, `subtract_value`,
+`scale`, `multiply`, `negate`, `divide`, `invert`, `length`, `length_sqr`,
+`distance`, `distance_sqr`, `dot_product`, `cross_product`, `normalize`,
+`reflect`, `equals` and `lerp` with contraction off. Inputs are a table, so
+the C compiler emits the arithmetic instead of folding literals. Two 3-word
+grids cover signed zero, one, a subnormal, positive infinity and one quiet
+NaN on every component; the wider edge is swept one component at a time.
+`negate`, `invert`, `length`, `length_sqr` and `equals` match every result
+bit on CPU-1, CPU-2 and JavaScript, including zero divisors and a zero
+length, which retains the input. The other operations match every non-NaN
+bit. The sign of a quiet NaN their arithmetic produces is not reproduced.
+`min`, `max` and `clamp` stay on the signed-zero profiles. `angle` stays on
+atan2.
+
 `Vector3.normalize` preserves a zero-length input, including signed-zero bits;
 this differs from `Vector2.normalize`, which returns positive-zero components.
-Nonzero vectors multiply by the reciprocal length in reference order. Vector3
-division requires all three F32 divisors to remain nonzero.
+Nonzero vectors multiply by the reciprocal length in reference order.
 
 `project(vector, onto)` and `reject(vector, onto)` require the reference F32
 squared length of `onto` to be nonzero. `perpendicular(vector)` crosses against
 the axis whose component has the smallest absolute magnitude; strict comparison
 ties retain X before Y before Z. `lerp` permits extrapolation, and `reflect`
-does not normalize the supplied normal. `invert` requires nonzero components;
-`equals` applies the existing relative epsilon on all three axes.
+does not normalize the supplied normal. `divide` and `invert` include zero
+divisors; `equals` applies the existing relative epsilon on all three axes.
 
 `move_towards` divides each delta by length before multiplying by the step;
 negative steps move away, and zero distance returns the exact target value.
