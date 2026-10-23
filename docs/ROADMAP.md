@@ -41,7 +41,7 @@ passing gate does and does not establish is in
 1. **The macOS validation** ([MACOS-VALIDATION.md](MACOS-VALIDATION.md)):
    turn macOS back on in CI and run every gate on a Mac against raylib 6.2.
 2. **Wider domains and gaps** recorded per API in
-   [`api/progress.json`](../api/progress.json): 2748 open gap lines on 1309
+   [`api/progress.json`](../api/progress.json): 2753 open gap lines on 1309
    entries. C-to-Bend mappings with no observable difference (enums as U32
    constants, macros as functions, pointer ABI, explicit state) are recorded
    apart as [language adaptations](API-TRACKING.md#language-adaptations)

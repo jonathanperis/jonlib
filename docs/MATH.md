@@ -179,15 +179,32 @@ pinned Vector4 functions have scoped mappings:
 - Metrics: `length`, `length_sqr`, `dot_product`, `distance`, `distance_sqr`.
 - Other operations: `normalize`, `lerp`, `move_towards`, `equals`.
 
+Gate `vector4` compares Vector4 `add`, `add_value`, `subtract`,
+`subtract_value`, `scale`, `multiply`, `negate`, `divide`, `invert`, `length`,
+`length_sqr`, `dot_product`, `distance`, `distance_sqr`, `normalize`, `equals`
+and `lerp`, together with Quaternion `add`, `add_value`, `subtract`,
+`subtract_value`, `scale`, Hamilton `multiply`, component `divide`, conjugate
+`invert`, `length`, `normalize`, `lerp`, `nlerp` and `equals`, with contraction
+off. Inputs are a table, so the C compiler emits the arithmetic instead of
+folding literals. Three 2-word grids cover signed zero, one, a subnormal,
+positive infinity and one quiet NaN; the wider edge is swept one component at
+a time. Vector4 `negate`, `invert`, `normalize`, `length`, `length_sqr` and
+`equals`, and Quaternion `length` and `equals`, match every result bit on
+CPU-1, CPU-2 and JavaScript, including zero divisors and a zero length.
+Vector4 `normalize` returns four positive zeros when the length is not greater
+than zero. The other operations match every non-NaN bit. The sign of a quiet
+NaN their arithmetic produces is not reproduced. `min` and `max` stay on the
+signed-zero profiles. Quaternion slerp and the axis/Euler conversions stay on
+their host libm profiles.
+
 All four components are compared bitwise, including W and signed-zero results.
-Metric accumulation remains left-to-right. Division and reciprocals require
-every converted F32 divisor to be nonzero. Extrema use the same explicit
-signed-zero profiles as Vector2/Vector3. `normalize` returns four positive zeros
-for zero length, unlike Vector3's retained input zeros. `lerp` permits
-extrapolation; movement retains negative steps and division-before-step ordering,
-and snapping returns the exact target. `equals` includes W in the relative
-epsilon comparison. These mappings remain partial under the numerical and
-target/performance limits below.
+Metric accumulation remains left-to-right. `divide` and `invert` include zero
+divisors. Extrema use the same explicit signed-zero profiles as Vector2/Vector3.
+`normalize` returns four positive zeros for zero length, unlike Vector3's
+retained input zeros. `lerp` permits extrapolation; movement retains negative
+steps and division-before-step ordering, and snapping returns the exact target.
+`equals` includes W in the relative epsilon comparison. These mappings remain
+partial under the contracted-build and target/performance limits below.
 
 ## Matrix API
 
@@ -300,10 +317,15 @@ Multiplication is noncommutative and differs from `Vector4.multiply`.
 
 Additional operations are `add_value`, `subtract_value`, `length`, `normalize`,
 `invert`, `scale`, `divide`, `lerp`, `nlerp` and `equals`. Division remains
-component-wise and requires nonzero divisors; inversion instead uses conjugation
-and reciprocal squared length, with the original quaternion returned at zero
-length. Both normalization and inversion retain zero quaternion signs, unlike
-Vector4's positive-zero normalization result.
+component-wise, including zero divisors in the vector4 corpus; inversion
+instead uses conjugation and reciprocal squared length, with the original
+quaternion returned at zero length. Both normalization and inversion retain
+zero quaternion signs, unlike Vector4's positive-zero normalization result.
+Gate `vector4` runs these operations on the same exceptional table. `length`
+and `equals` match every result bit on CPU-1, CPU-2 and JavaScript. Hamilton
+multiplication, component division, conjugate inversion, normalization, `lerp`
+and `nlerp` match every non-NaN bit. Slerp and the axis/Euler conversions stay
+on their host libm profiles.
 
 `nlerp` performs component interpolation followed by quaternion normalization.
 It does not choose a common hemisphere: exactly opposite quaternions can collapse

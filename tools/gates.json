@@ -106,6 +106,21 @@
    "minutes": 65
   },
   {
+   "id": "vector4",
+   "title": "raymath Vector4 and Quaternion component arithmetic on exceptional and subnormal inputs",
+   "run": [
+    "{python}",
+    "tools/vector4_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 70
+  },
+  {
    "id": "enums",
    "title": "raylib.h, rlgl.h, rgestures.h and rcamera.h enumerations as Jonlib constants against the compiled headers",
    "run": [

@@ -72435,9 +72435,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.add",
       "mapping_state": "implemented",
-      "scope": "Finite F32 XYZW component addition, including signed-zero cases.",
+      "scope": "Uncontracted F32 component addition. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -72452,6 +72452,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -72497,9 +72498,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.add_value",
       "mapping_state": "implemented",
-      "scope": "Finite F32 scalar addition to all XYZW components.",
+      "scope": "Uncontracted F32 scalar addition to all four components. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -72514,6 +72515,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -72559,9 +72561,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.subtract",
       "mapping_state": "implemented",
-      "scope": "Finite F32 XYZW component subtraction in reference operand order.",
+      "scope": "Uncontracted F32 component subtraction. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -72576,6 +72578,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -72621,9 +72624,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.subtract_value",
       "mapping_state": "implemented",
-      "scope": "Finite F32 scalar subtraction from all XYZW components.",
+      "scope": "Uncontracted F32 scalar subtraction from all four components. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -72638,6 +72641,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -72683,9 +72687,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.length",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 four-component length in reference accumulation/square-root order.",
+      "scope": "F32 length, including a zero vector, subnormals, infinities and one quiet NaN. Every result bit of the corpus matches.",
       "gaps": [
-        "Exceptional/subnormal and contracted profiles",
+        "Contracted builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -72700,6 +72704,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -72745,9 +72750,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.length_sqr",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 squared length, retaining every component and accumulation step.",
+      "scope": "Uncontracted F32 squared length. Every result bit of the vector4 corpus matches.",
       "gaps": [
-        "Exceptional/subnormal and contracted profiles",
+        "Contracted builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -72762,6 +72767,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -72807,9 +72813,10 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.dot_product",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 XYZW dot product with left-to-right accumulation.",
+      "scope": "Uncontracted F32 dot product. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal and contracted profiles",
+        "Contracted builds",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -72824,6 +72831,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -72869,9 +72877,10 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.distance",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 four-component distance with reference subtraction/square-root order.",
+      "scope": "Uncontracted F32 distance. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal and contracted profiles",
+        "Contracted builds",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -72886,6 +72895,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -72931,9 +72941,10 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.distance_sqr",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 squared distance including W-only separation.",
+      "scope": "Uncontracted F32 squared distance. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal and contracted profiles",
+        "Contracted builds",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -72948,6 +72959,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -72993,9 +73005,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.scale",
       "mapping_state": "implemented",
-      "scope": "Finite F32 scalar multiplication of all four components.",
+      "scope": "F32 scalar multiplication of all four components. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -73010,6 +73022,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -73055,9 +73068,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.multiply",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component-wise multiplication including the W component.",
+      "scope": "F32 component multiplication. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -73072,6 +73085,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -73117,9 +73131,8 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.negate",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component negation including signed-zero bits.",
+      "scope": "Component negation. Every result bit of the vector4 corpus matches, including signed zero, subnormals, infinities and one quiet NaN.",
       "gaps": [
-        "Exceptional/subnormal",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -73134,6 +73147,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -73179,9 +73193,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.divide",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component division with all four converted divisors nonzero.",
+      "scope": "F32 component division, including zero divisors. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Zero-divisor/exceptional/subnormal domains",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -73196,6 +73210,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "tests/test_harness.py",
         "docs/MATH.md",
@@ -73242,9 +73257,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.normalize",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 inverse-length normalization; zero length returns four positive zeros.",
+      "scope": "Uncontracted normalization; a length that is not greater than zero returns four positive zeros. Every result bit of the vector4 corpus matches.",
       "gaps": [
-        "Exceptional/subnormal and contracted profiles",
+        "Contracted builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -73259,6 +73274,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -73440,9 +73456,10 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.lerp",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 four-component interpolation/extrapolation without amount clamping.",
+      "scope": "Uncontracted component interpolation. Non-NaN bits match for amounts +0, 1, +inf and one quiet NaN.",
       "gaps": [
-        "Exceptional/subnormal and contracted profiles",
+        "Contracted builds",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -73457,6 +73474,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -73564,9 +73582,8 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.invert",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component reciprocals with nonzero converted XYZW inputs.",
+      "scope": "Component reciprocals, including zero divisors. Every result bit of the vector4 corpus matches.",
       "gaps": [
-        "Zero-input/exceptional/subnormal domains",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -73581,6 +73598,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "tests/test_harness.py",
         "docs/MATH.md",
@@ -73627,9 +73645,8 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.equals",
       "mapping_state": "implemented",
-      "scope": "Finite F32 relative-epsilon comparison on all four components, including W-only differences.",
+      "scope": "Relative epsilon on all four components, including subnormals, infinities and one quiet NaN. The boolean matches on CPU-1, CPU-2 and JavaScript.",
       "gaps": [
-        "Exceptional/subnormal",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -73644,6 +73661,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -75078,9 +75096,9 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.add",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component-wise addition using the shared Vector4 representation.",
+      "scope": "Uncontracted F32 component addition. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -75095,6 +75113,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -75140,9 +75159,9 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.add_value",
       "mapping_state": "implemented",
-      "scope": "Finite F32 scalar addition to all quaternion components.",
+      "scope": "Uncontracted F32 scalar addition to all four components. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -75157,6 +75176,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -75202,9 +75222,9 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.subtract",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component-wise subtraction using the shared Vector4 representation.",
+      "scope": "Uncontracted F32 component subtraction. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -75219,6 +75239,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -75264,9 +75285,9 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.subtract_value",
       "mapping_state": "implemented",
-      "scope": "Finite F32 scalar subtraction from all quaternion components.",
+      "scope": "Uncontracted F32 scalar subtraction from all four components. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -75281,6 +75302,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -75388,9 +75410,9 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.length",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 four-component length with reference accumulation/square-root order.",
+      "scope": "F32 length, including a zero quaternion, subnormals, infinities and one quiet NaN. Every result bit of the corpus matches.",
       "gaps": [
-        "Exceptional/subnormal and contracted profiles",
+        "Contracted builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -75405,6 +75427,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -75450,9 +75473,10 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.normalize",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 normalization with reference length-one substitution for zero length, retaining zero quaternion signs.",
+      "scope": "Uncontracted normalization; a zero length is replaced by one, retaining the input signs. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal and contracted profiles",
+        "Contracted builds",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -75467,6 +75491,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -75512,9 +75537,10 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.invert",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 conjugate divided by squared length; zero squared length returns the original quaternion.",
+      "scope": "Conjugate divided by squared length; a zero square returns the input. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal and contracted profiles",
+        "Contracted builds",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -75529,6 +75555,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -75574,9 +75601,10 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.multiply",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 Hamilton product with reference operand and accumulation order, without implicit normalization.",
+      "scope": "Uncontracted Hamilton product in reference order. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal and contracted profiles",
+        "Contracted builds",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
@@ -75592,6 +75620,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -75637,9 +75666,9 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.scale",
       "mapping_state": "implemented",
-      "scope": "Finite F32 scalar multiplication of XYZW without implicit normalization.",
+      "scope": "F32 scalar multiplication of all four components. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -75654,6 +75683,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -75699,9 +75729,9 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.divide",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component-wise division with nonzero converted divisors; not a Hamilton inverse product.",
+      "scope": "F32 component division, including zero divisors; not a Hamilton inverse. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Zero-divisor/exceptional/subnormal domains",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -75716,6 +75746,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "tests/test_harness.py",
         "docs/MATH.md",
@@ -75762,9 +75793,10 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.lerp",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 component interpolation/extrapolation in reference order.",
+      "scope": "Uncontracted component interpolation. Non-NaN bits match for amounts +0, 1, +inf and one quiet NaN.",
       "gaps": [
-        "Exceptional/subnormal and contracted profiles",
+        "Contracted builds",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -75779,6 +75811,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -75824,9 +75857,10 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.nlerp",
       "mapping_state": "implemented",
-      "scope": "Reference component lerp followed by quaternion normalization; no hemisphere correction, including antipodal zero collapse.",
+      "scope": "Component lerp followed by quaternion normalization, with no hemisphere correction. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Exceptional/subnormal and contracted profiles",
+        "Contracted builds",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -75841,6 +75875,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -76524,9 +76559,8 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.equals",
       "mapping_state": "implemented",
-      "scope": "Finite F32 relative-epsilon comparison accepting either all matching or all opposite-sign components.",
+      "scope": "Relative epsilon accepting q or -q, including subnormals, infinities and one quiet NaN. The boolean matches on CPU-1, CPU-2 and JavaScript.",
       "gaps": [
-        "Exceptional/subnormal",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -76541,6 +76575,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
