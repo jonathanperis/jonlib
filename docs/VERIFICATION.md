@@ -34,11 +34,9 @@ and gaps live in the topic pages and in [`api/progress.json`](../api/progress.js
   and mismatched row counts fail the gate.
 - **Proofs and laws.** [`LAWS.bend`](../LAWS.bend) states durable structural
   properties (for example, `clear` preserves dimensions and transpose is an
-  involution); [`PROOF.bend`](../PROOF.bend) proves them and `--check-only` must
-  report `ALL PROOFS CHECK` (then `Use --verdict for mathematical validity.`).
-  Bend 2.0.38's `--verdict` rechecks the book in the BendTT kernel and needs
-  Lean 4.34.0, which the pin does not ship. A law covers exactly its statement,
-  not general correctness.
+  involution); [`PROOF.bend`](../PROOF.bend) proves them. `PROOF.bend --check-only`
+  must print `ALL PROOFS CHECK` and then `Use --verdict for mathematical validity.`
+  A law covers exactly its statement, not general correctness.
 - **Library boundary.** `tools/check_project.py` enforces that library code is
   Bend source without unsafe or custom foreign imports, that the API ledger and
   generated files are current, and that documentation links resolve.

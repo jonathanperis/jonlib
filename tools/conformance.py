@@ -21,8 +21,7 @@ else:
     import native_profiles
     import reference_environment
 
-# Bend 2.0.38 `--check-only` prints this when bend2 accepts the book. `--verdict`
-# rechecks it in the BendTT kernel and needs Lean 4.34.0, which the pin does not ship.
+# Bend 2.0.38 `--check-only` prints these two lines when bend2 accepts the book.
 CHECK_VERDICT = "ALL PROOFS CHECK\nUse --verdict for mathematical validity."
 
 # Fixture kinds whose Surface functions follow raylib 6.2's names: the kind

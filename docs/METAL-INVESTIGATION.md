@@ -1,10 +1,11 @@
 # Metal dispatch failure and the declared compiler overlay
 
-Stock Bend 2.0.27's generated Metal program fails on the full Jonlib image
-corpus, while CPU and JavaScript lanes of the same program pass. Jonlib
-therefore builds against the Bend base revision in `toolchain.json` plus the
-declared compiler overlay `patches/bend-metal-dispatch.patch`. This page records
-the defect, the rejected candidate fix and the adopted code-generation boundary.
+The pinned compiler is Bend 2.0.38. On the previous pin, Bend 2.0.27, the stock
+generated Metal program fails on the full Jonlib image corpus, while CPU and
+JavaScript lanes of the same program pass. Jonlib therefore builds against the
+Bend base revision in `toolchain.json` plus the declared compiler overlay
+`patches/bend-metal-dispatch.patch`. This page records the defect, the rejected
+candidate fix and the adopted code-generation boundary.
 Application steps are in [patches/README.md](../patches/README.md).
 
 ## Symptom
@@ -61,15 +62,15 @@ follows the compiler's existing reference graph. Generated CPU/CUDA source is
 identical to the stock compiler's after resolving the conditional wrappers.
 
 Bend 2.0.38 counts a spin in characters (`SPIN_FAR` is 8192) and spells a
-device-far spin `DFAR`. The 2.0.27 patch does not apply to that emitter. The
-same dispatcher-boundary policy was re-ported in those units: a helper whose
-own text already meets the threshold stays `DFAR` and does not inflate the
-budget, and only a non-native caller receives the Metal `FAR` wrapper. The
-2.0.38 boundary was checked on CPU and JavaScript (the regression prints
-16000 and the generated C contains both `DFAR Term spin_` and
+device-far spin `DFAR`. The patch written for 2.0.27 does not apply to that
+emitter. The same dispatcher-boundary policy was re-ported in those units: a
+helper whose own text already meets the threshold stays `DFAR` and does not
+inflate the budget, and only a non-native caller receives the Metal `FAR`
+wrapper. The 2.0.38 boundary was checked on CPU and JavaScript (the regression
+prints 16000 and the generated C contains both `DFAR Term spin_` and
 `FAR Term call_spin_`). It has not been re-run on Metal. The corpus result
-above is the 2.0.27 device evidence. Upstream's fix for non-tail recursion
-under `!` past 1023 frames is a different defect.
+above is the device evidence from the 2.0.27 pin. Upstream's fix for non-tail
+recursion under `!` past 1023 frames is a different defect.
 
 The overlay is general compiler code: it does not recognize Jonlib names, shapes
 or fixtures. It modifies `bend2/comp.ts` (which carries a modification notice),
@@ -97,6 +98,9 @@ authored for Jonathan Peris's Jonlib project. Retain
 - Gate `bend-overlay` (`tools/verify_bend.py`) runs a selected subset of
   upstream Bend regressions plus `metal_inline_budget` on CPU and JavaScript;
   `--gpu` adds forced device execution for tests containing `!` calls.
+  `stencil3d`, `array_fork` and `array_atomic_fadd` declare `@unsafe`. Bend
+  2.0.38's `--check-only` verdict fails a book whose own defs rely on that,
+  so the gate compiles those three and compares their printed results.
 - Forced-Metal correctness of the Jonlib corpus comes from
   `python3 tools/conformance.py --gpu` and the probes' `--gpu` lane, run locally
   (hosted runners have no GPU; see [CI.md](CI.md)).

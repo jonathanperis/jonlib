@@ -25,26 +25,29 @@ The two patches touch different files. Jonlib's library algorithms remain
 
 ### Why this patch exists
 
-Stock Bend 2.0.27's generated Metal program fails on the full Jonlib corpus.
-Large shared native helpers can expand repeatedly into the device dispatcher.
-The overlay accounts for inlined callees and source call-site counts, then adds
-a noinline Metal call wrapper at an oversized dispatch boundary. Helper-to-helper
-INLINE/FAR decisions remain unchanged. CPU/CUDA call names alias the originals.
+On Bend 2.0.27, the previous pin, the stock generated Metal program fails on
+the full Jonlib corpus. Large shared native helpers can expand repeatedly into
+the device dispatcher. The overlay accounts for inlined callees and source
+call-site counts, then adds a noinline Metal call wrapper at an oversized
+dispatch boundary. Helper-to-helper INLINE/FAR decisions remain unchanged.
+CPU/CUDA call names alias the originals.
 
 A broader attempt that globally outlined helper bodies was rejected: it passed
 Jonlib but changed the ray-tracer checksum. The adopted dispatcher-boundary
-approach passes that workload and the selected upstream regressions on 2.0.27.
+approach passes that workload and the selected upstream regressions on that
+2.0.27 compiler.
 
-Bend 2.0.38 rewrote the emitter. A device-far spin is `DFAR`, and `SPIN_FAR`
-is 8192 characters, so the 2.0.27 patch does not apply. The same policy was
-re-ported in those units: helper-to-helper inlining is unchanged, and an
-oversized call at a non-native (dispatcher) boundary gets a Metal-only `FAR`
-wrapper `call_<fid>`. CPU and CUDA `#define` that name back to the original
-helper. The regression still requires both a `DFAR` spin and a
-`FAR Term call_spin_` wrapper. This boundary has not been re-run on a Metal
-device or on the Jonlib corpus; the 2.0.27 Metal result above is the last
-device evidence. Upstream's separate fix for non-tail recursion past 1023
-Metal frames is a different defect and does not replace this patch.
+The pinned compiler is Bend 2.0.38, which rewrote the emitter. A device-far
+spin is `DFAR`, and `SPIN_FAR` is 8192 characters, so the patch written for
+2.0.27 does not apply. The same policy was re-ported in those units:
+helper-to-helper inlining is unchanged, and an oversized call at a non-native
+(dispatcher) boundary gets a Metal-only `FAR` wrapper `call_<fid>`. CPU and
+CUDA `#define` that name back to the original helper. The regression still
+requires both a `DFAR` spin and a `FAR Term call_spin_` wrapper. This boundary
+has not been re-run on a Metal device or on the Jonlib corpus; the Metal
+result recorded above is the device evidence from the 2.0.27 pin. Upstream's
+separate fix for non-tail recursion past 1023 Metal frames is a different
+defect and does not replace this patch.
 
 ## Applying and verifying
 
