@@ -22,7 +22,8 @@ buffer (one line per frame, flushed), Jonlib as the same runs plus the
 presented quadtree. That serialization is part of both measurements.
 
 Timing. Wall time is from the process start to its exit; peak memory is the
-process's maximum resident set (os.wait4). The reference runs base and
+process's maximum resident set (the launcher's ru_maxrss, stored as KiB:
+Linux reports that field in KiB and macOS in bytes). The reference runs base and
 steady as two processes and prints a line per frame, so its time per frame
 is also measured directly (median and 95th percentile of the steady run's
 extra frames). Jonlib's replay is a pure function of the script and prints
@@ -278,7 +279,8 @@ def pct(per_period):
 
 # ru_maxrss survives exec on Linux: a child forked from this Python process starts with Python's high-water mark (a few
 # hundred MiB once results are held). The measured program is started by this small launcher instead, whose own child
-# begins from the launcher's page or two, and the launcher reports that child's peak.
+# begins from the launcher's page or two, and the launcher reports that child's peak in the kernel's unit (KiB on
+# Linux, bytes on macOS). maxrss_kib stores KiB either way.
 LAUNCHER_C = r'''#include <stdio.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
@@ -307,12 +309,26 @@ def launcher():
     return binary
 
 
+def maxrss_kib(raw):
+    """A launcher ru_maxrss reading as KiB.
+
+    Linux reports kibibytes. macOS reports bytes, so that reading is divided by 1024 and truncated to the unit Linux
+    already stores. Any other host follows Linux, the same split as the byte conversion in codec_files and
+    image_export_probe.
+    """
+    if raw is None:
+        return None
+    if sys.platform == 'darwin':
+        return raw // 1024
+    return raw
+
+
 def peak_rss(stderr):
-    """The launcher's report (KiB) and the program's own stderr without it; None when it is missing."""
+    """The launcher's report in KiB, and the program's own stderr without it; None when the report is missing."""
     lines, peak = [], None
     for line in stderr.splitlines():
         if line.startswith(MAXRSS + ' '):
-            peak = int(line.split()[1])
+            peak = maxrss_kib(int(line.split()[1]))
         else:
             lines.append(line)
     return peak, '\n'.join(lines).rstrip('\n')

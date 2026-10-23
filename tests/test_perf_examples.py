@@ -66,8 +66,27 @@ class SplitTests(unittest.TestCase):
 
 class ProcessTests(unittest.TestCase):
     def test_peak_rss_report_is_taken_out_of_stderr(self):
-        self.assertEqual(pe.peak_rss('warning\n\nJONLIB_PERF_MAXRSS 2048\n'), (2048, 'warning'))
+        with mock.patch.object(pe.sys, 'platform', 'linux'):
+            self.assertEqual(pe.peak_rss('warning\n\nJONLIB_PERF_MAXRSS 2048\n'), (2048, 'warning'))
         self.assertEqual(pe.peak_rss('nothing'), (None, 'nothing'))
+
+    def test_peak_rss_is_kib_for_both_kernel_conventions(self):
+        # Linux ru_maxrss is KiB. macOS ru_maxrss is bytes: the nightly reading 10092544 is 9856 KiB, and treating
+        # those bytes as KiB fails the 48 MiB child ceiling (48 << 10 == 49152).
+        report = 'JONLIB_PERF_MAXRSS 10092544\n'
+        with mock.patch.object(pe.sys, 'platform', 'linux'):
+            self.assertEqual(pe.maxrss_kib(2048), 2048)
+            self.assertEqual(pe.maxrss_kib(10092544), 10092544)
+            self.assertEqual(pe.peak_rss(report), (10092544, ''))
+            self.assertIsNone(pe.maxrss_kib(None))
+        with mock.patch.object(pe.sys, 'platform', 'darwin'):
+            self.assertEqual(pe.maxrss_kib(2048 * 1024), 2048)
+            self.assertEqual(pe.maxrss_kib(1025), 1)
+            self.assertEqual(pe.maxrss_kib(10092544), 10092544 // 1024)
+            self.assertEqual(pe.peak_rss(report), (10092544 // 1024, ''))
+            self.assertLess(pe.peak_rss(report)[0], 48 << 10)
+            self.assertGreater(pe.peak_rss(report)[0], 0)
+            self.assertIsNone(pe.maxrss_kib(None))
 
     def test_launcher_reports_the_child_not_this_process(self):
         held = bytearray(64 << 20)  # this process's high-water mark must not reach the child's

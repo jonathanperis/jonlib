@@ -59,10 +59,13 @@ gives two times:
 - the base script's repeat, which covers setup and frames without the
   process start.
 
-**Peak memory.** This is the maximum resident set of the measured process.
-On Linux, `ru_maxrss` survives `exec`, so a program forked from the Python
-harness would inherit the harness's high-water mark. The tool therefore starts
-each program through a small C launcher and reads the launcher's child.
+**Peak memory.** This is the maximum resident set of the measured process,
+in kibibytes. The launcher reads `ru_maxrss` from `wait4`. Linux reports
+that field in kibibytes and macOS reports it in bytes, so the tool divides
+the macOS reading by 1024 before storing it. On Linux, `ru_maxrss` survives
+`exec`, so a program forked from the Python harness would inherit the
+harness's high-water mark. The tool therefore starts each program through a
+small C launcher and reads the launcher's child.
 
 **Runs.** Each program runs three times. The tables give medians, and peak
 memory is the maximum across runs.
