@@ -8,20 +8,21 @@ native file bytes, not just the decoded pixels. `ExportImage` remains a
 | API | Result |
 |---|---|
 | `Surface.write_image(surface, path)` | `IO(Result<&1, &1, Surface.IOError, Unit>)`; codec chosen by filename suffix |
-| `Surface.to_png` / `to_bmp` / `to_tga` / `to_qoi(surface)` | `Result<&1, &1, Surface & Surface.Error, +List<U32>>` (complete file bytes) |
+| `Surface.to_png` / `to_bmp` / `to_tga` / `to_qoi` / `to_pep(surface)` | `Result<&1, &1, Surface & Surface.Error, +List<U32>>` (complete file bytes) |
 | `Surface.export_to_memory(surface, ".png")` | `Result<&1, &1, Surface & Surface.Error, +List<U32>>` |
-| `Surface.write_png` / `write_bmp` / `write_tga` / `write_qoi` / `write_raw(surface, path)` | `IO(Result<&1, &1, Surface.IOError, Unit>)` |
+| `Surface.write_png` / `write_bmp` / `write_tga` / `write_qoi` / `write_pep` / `write_raw(surface, path)` | `IO(Result<&1, &1, Surface.IOError, Unit>)` |
 
 Every `write_<codec>` selects its codec explicitly, independently of the path
 extension (`.dat`, suffixless names and a misleading `.png` all work). Only
 `Surface.write_image` dispatches on the filename. `export_to_memory` corresponds
 to `ExportImageToMemory`, which implements PNG only; `to_png`/`to_bmp`/`to_tga`/
-`to_qoi` return the bytes `ExportImage` writes to a file.
+`to_qoi`/`to_pep` return the bytes `ExportImage` writes to a file.
 
 ## Filename-suffix dispatch
 
-`Surface.write_image` selects PNG, BMP, TGA, QOI or RAW from the filename and
-reuses the corresponding encoder.
+`Surface.write_image` selects PNG, BMP, TGA, QOI, PEP or RAW from the filename and
+reuses the corresponding encoder. PEP accepts only R8G8B8A8 images of at most
+4096 pixels ([CODECS.md](CODECS.md#pep)).
 
 - Suffix matching is ASCII case-insensitive: `.png`, `.PNG` and `.PnG` select
   the same encoder. The filename itself is never lowercased.

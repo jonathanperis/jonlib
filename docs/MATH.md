@@ -114,6 +114,7 @@ max 3.59, clamp 3.95; Vector4 min 2.36, max 2.37. The final bit pattern matched
 on every function. This is throughput of the body, not a single call, and not
 the JavaScript lane. No performance budget is set. The packed minimum is the
 faster code. Removing the NaN test would disagree with `fminf`.
+The 2.36x–3.95x slowdown is a candidate for a packed min/max lowering in the Jonlib Bend overlay.
 
 `rotate_for(reference, vector, radians)` uses the explicit trigonometric reference
 profile; `rotate` selects the accurate profile. The Apple profile covers finite

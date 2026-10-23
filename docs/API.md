@@ -384,15 +384,15 @@ HDR); use `Surface.colors` or `Surface.format(surface, 7)` for RGBA8.
 | Operation | Contract |
 |---|---|
 | `Surface.decode_qoi/dds/png/bmp/tga/pnm/pic/gif/psd/hdr(bytes)` / `decode_psd_for(contraction, bytes)` | Memory decoders returning `Result<&1, &1, Surface.Error, Surface>`. See [CODECS.md](CODECS.md), [PNG.md](PNG.md), [BMP.md](BMP.md), [TGA.md](TGA.md), [PNM.md](PNM.md), [PIC.md](PIC.md), [GIF.md](GIF.md), [PSD.md](PSD.md), [HDR.md](HDR.md). |
-| `Surface.decode_image(file_type, bytes)` / `decode_image_for(contraction, ...)` | `LoadImageFromMemory`: exact extension tokens select QOI or the raster signatures. See [IMAGE-FILES.md](IMAGE-FILES.md). |
+| `Surface.decode_image(file_type, bytes)` / `decode_image_for(contraction, ...)` | `LoadImageFromMemory`: exact extension tokens select QOI, PEP or the raster signatures. See [IMAGE-FILES.md](IMAGE-FILES.md). |
 | `Surface.load_image(path)` / `load_image_for(contraction, path)` | `LoadImage`: bounded ordinary files, native last-dot suffix/content selection, close before decode. |
-| `Surface.load_qoi/dds/png/bmp/tga/pnm/pic/hdr(path)` | Explicit codec selection independent of the suffix, with the same file boundary. |
+| `Surface.load_qoi/pep/dds/png/bmp/tga/pnm/pic/hdr(path)` | Explicit codec selection independent of the suffix, with the same file boundary. |
 | `Surface.load_raw(path, width, height, format, header_size)` | `LoadImageRaw` for formats 1..13 with native header selection. See [RAW-FILES.md](RAW-FILES.md). |
 | `Image.Animation.decode_gif/decode_image/load_image(...)` / `entries` / `unload` | GIF frame sequences or a one-frame fallback with caller budgets. See [GIF-ANIMATION.md](GIF-ANIMATION.md). |
-| `Surface.to_png/to_bmp/to_tga/to_qoi(surface)` | `ExportImage` file bytes: GRAYSCALE, GRAY_ALPHA, R8G8B8 and R8G8B8A8 write stored samples, other formats `LoadImageColors`; QOI accepts R8G8B8 and R8G8B8A8 only. See [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
+| `Surface.to_png/to_bmp/to_tga/to_qoi/to_pep(surface)` | `ExportImage` file bytes: GRAYSCALE, GRAY_ALPHA, R8G8B8 and R8G8B8A8 write stored samples, other formats `LoadImageColors`; QOI accepts R8G8B8 and R8G8B8A8 only; PEP accepts R8G8B8A8 only. See [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
 | `Surface.export_to_memory(surface, file_type)` | `ExportImageToMemory` (".png"): native raw-storage interpretation, including R32/R32G32B32 bytes read as RGBA; 16-bit packed formats are rejected. |
 | `Surface.to_code(surface, path)` | `ExportImageAsCode` text from raw bytes (at most 64 KiB). See [IMAGE-CODE.md](IMAGE-CODE.md). |
-| `Surface.write_png/bmp/tga/qoi/raw/code/ppm(surface, path)` / `write_image(surface, path)` | Write one file and close it; `write_image` selects PNG/BMP/TGA/QOI/RAW by ASCII-case-insensitive suffix. |
+| `Surface.write_png/bmp/tga/qoi/pep/raw/code/ppm(surface, path)` / `write_image(surface, path)` | Write one file and close it; `write_image` selects PNG/BMP/TGA/QOI/PEP/RAW by ASCII-case-insensitive suffix. |
 
 Drawing coordinates and rectangle extents are represented as **F32 but must be
 finite integers in -32767..32767**. Radius is **0..32767**. This permits negative

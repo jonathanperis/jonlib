@@ -536,6 +536,20 @@ law png_file_kind_by_name:
 law png_file_kind_other_case_unsupported:
   {J.Image.file.kind.of(".Png") == J.UnsupportedImageFile{} : J.Image.FileKind}
 
+# .pep and .PEP select the PEP decoder. Mixed case stays unsupported, as
+# LoadImageFromMemory compares the token exactly. Export folds ASCII case.
+law pep_file_kind:
+  {(J.Image.file.kind.of(".pep"), J.Image.file.kind.of(".PEP")) == (J.PepFile{}, J.PepFile{}) : J.Image.FileKind & J.Image.FileKind}
+
+law pep_file_kind_mixed_case:
+  {J.Image.file.kind.of(".Pep") == J.UnsupportedImageFile{} : J.Image.FileKind}
+
+law pep_file_limit:
+  {J.Image.file.limit(J.PepFile{}) == 65536 : U32}
+
+law pep_export_kind:
+  {J.Image.export.kind("a.PeP") == 6 : U32}
+
 law png_signature_selects_the_decoder:
   {(J.Image.file.png_signed([137, 80, 78, 71]), J.Image.file.png_signed([66, 77, 0, 0])) == (True{}, False{}) : Bool & Bool}
 

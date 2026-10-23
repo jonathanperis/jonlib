@@ -87,6 +87,9 @@ passing gate does and does not establish is in
    headless. No budget is set or met yet: the item stays open until budgets
    are agreed and reached (for example by parallel rendering of rows or tiles,
    flat stores, byte buffers in the decoders, or the Metal lane).
+   Vector2/3/4 min, max and clamp run 2.36x–3.95x clang's packed `minps`/`maxps`
+   on a dependent chain ([MATH.md](MATH.md)). That slowdown is a candidate for
+   a packed min/max lowering in the Jonlib Bend overlay.
 
 ## Delivery phases
 

@@ -116,6 +116,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | Image-file loading | `Surface.load_image/load_qoi` | Native suffix/content detection, complete reads, typed errors, closed handles ([IMAGE-FILES.md](IMAGE-FILES.md)) | `image-file` |
 | Image memory dispatch | `Surface.decode_image` | Extension-token/content selection across implemented codecs, shared raster aliases, QOI separation, typed invalid controls (also forced Metal) | `image-memory` |
 | QOI loading/export | `Surface.decode_qoi/to_qoi/load_qoi/write_qoi` | Valid streams, all opcodes, exact export bytes, typed malformed-input errors, file round trips ([CODECS.md](CODECS.md)) | `conformance`, `image-file` |
+| PEP loading/export | `Surface.decode_pep/to_pep/load_pep/write_pep` | `pep_serialize`/`pep_decompress` bytes for images of at most 4096 pixels, R8G8B8A8 load (first color transparent, premultiplied) and R8G8B8A8 export ([CODECS.md](CODECS.md#pep)) | `pep`, `conformance` |
 | BMP decoding/export | `Surface.decode_bmp/to_bmp/write_bmp` | CORE indexed/RGB24 and 40/56/108/124-byte headers; palette-count, mask, alpha and offset rules; exact exports ([BMP.md](BMP.md)) | `bmp` |
 | TGA decoding/export | `Surface.decode_tga/to_tga/write_tga` | Raw/RLE type/depth selection, indexed, RGB555/alpha, palette skips/index recovery, exact exports ([TGA.md](TGA.md)) | `tga` |
 | Binary PGM/PPM decoding | `Surface.decode_pnm` | P5/P6 8/16-bit, little-endian reduction to 8-bit samples, maxval/separator/comment rules ([PNM.md](PNM.md)) | `pnm` |

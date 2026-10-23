@@ -1,7 +1,7 @@
 # Image codecs
 
 Every codec is implemented in Bend and compared against the pinned raylib 6.2
-reference (stb_image/stb_image_write, sinfl/sdefl, QOI). Suffix/content
+reference (stb_image/stb_image_write, sinfl/sdefl, QOI, pep.h). Suffix/content
 selection and the shared bounded file boundary are documented in
 [IMAGE-FILES.md](IMAGE-FILES.md); the owned original-format image type in
 [FORMATS.md](FORMATS.md); export in [IMAGE-EXPORT.md](IMAGE-EXPORT.md).
@@ -11,6 +11,7 @@ selection and the shared bounded file boundary are documented in
 | Codec | Support | Page | Gates |
 |---|---|---|---|
 | QOI | Decode RGB/RGBA (native format 4/7), files, exact export | [below](#qoi) | `conformance`, `qoi-format`, `qoi-file`, `qoi-export` |
+| PEP | Decode to R8G8B8A8 (first color transparent, premultiplied), files, R8G8B8A8 export, at most 4096 pixels | [below](#pep) | `pep`, `conformance` |
 | PNG | Packed/8/16-bit, Adam7, native-default CgBI; native format 1/2/4/7; files | [PNG.md](PNG.md) | `png`, `png-format`, `png-file` |
 | BMP | CORE/INFO/56-byte/V4/V5, indexed/true-color/bitfields; native format 4/7; files; V4 export | [BMP.md](BMP.md) | `bmp`, `bmp-format`, `bmp-file`, `bmp-export` |
 | TGA | True-color/grayscale/indexed raw/RLE; native format 1/2/4/7; files; default RLE export | [TGA.md](TGA.md) | `tga`, `tga-format`, `tga-file`, `tga-export` |
@@ -207,6 +208,30 @@ allocation-failure parity, GPU for the
 format-preserving and file paths, Windows/browser and big-endian targets,
 special/concurrently changing files, maximum-area allocation and complete
 integration/resource/performance coverage.
+
+## PEP
+
+`src/pep.bend` is an altered Bend adaptation of ENDESGA's CC0 `pep.h` (pinned
+raylib `src/external/pep.h`, version 0.6.0). A color's first byte is its low 8
+bits, the little-endian layout of the comparison. Jonlib colors are `RRGGBBAA`,
+so `Surface.decode_pep` and `Surface.to_pep` swap bytes at that boundary.
+
+| Operation | Contract |
+|---|---|
+| `Surface.decode_pep(bytes)` / `Surface.load_pep(path)` | `pep_decompress` to `pep_rgba` with first-color transparency and premultiplication. The result is one R8G8B8A8 `Surface`. Empty, truncated and over-cap files are `InvalidImageHeader`. |
+| `Surface.to_pep(surface)` / `Surface.write_pep(surface, path)` | `pep_compress(..., pep_rgba, pep_8bit)` then `pep_serialize`. Only original R8G8B8A8, at most 4096 pixels. Other formats keep the owner (`UnsupportedFormat`); a larger image keeps it (`UnsupportedImageSize`). |
+
+`LoadImage` selects `.pep`/`.PEP`. `ExportImage` selects `.pep` in any ASCII
+case. `Surface.write_image_with` sends the serialized bytes through the save
+callback, which is `SaveFileData`. The pixel list stays with the caller.
+raylib's loader frees that buffer after storing it in the image; this port
+keeps it.
+
+Images above 4096 pixels and files above 65536 bytes are outside the port.
+A 16×16 image was not compared: the dense context slab did not finish in a
+bounded run. `Config.SUPPORT_FILEFORMAT_PEP` stays 0, matching `config.h`.
+The notice is in [LICENSES/pep.txt](../LICENSES/pep.txt). Gate `pep`
+(`tools/pep_probe.py`) compares serialize and decompress bytes with `pep.h`.
 
 ### QOI provenance
 

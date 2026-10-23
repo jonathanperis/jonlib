@@ -348,6 +348,18 @@ def Laws.png_file_kind_by_name():
 def Laws.png_file_kind_other_case_unsupported():
   {==}
 
+def Laws.pep_file_kind():
+  {==}
+
+def Laws.pep_file_kind_mixed_case():
+  {==}
+
+def Laws.pep_file_limit():
+  {==}
+
+def Laws.pep_export_kind():
+  {==}
+
 def Laws.png_signature_selects_the_decoder():
   {==}
 

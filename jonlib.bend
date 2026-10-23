@@ -46,6 +46,7 @@ import ./jonmath.bend as M
 import ./src/codec.bend as Codec
 import ./src/resample.bend as Resample
 import ./src/qoi.bend as Qoi
+import ./src/pep.bend as Pep
 import ./src/gradients.bend as Gradients
 import ./src/trig.bend as Trig
 import ./src/rotation.bend as Rotation
@@ -2964,19 +2965,22 @@ type Image.FileKind is Data:
   DdsFile{}
   RasterFile{}
   PngFile{}
+  PepFile{}
   UnsupportedImageFile{}
 
-def Image.memory.selected(qoi: Bool, dds: Bool, raster: Bool) -> Image.FileKind:
-  match qoi dds raster:
-    case True{} _ _: QoiFile{}
-    case False{} True{} _: DdsFile{}
-    case False{} False{} True{}: RasterFile{}
-    case False{} False{} False{}: UnsupportedImageFile{}
+def Image.memory.selected(pep: Bool, qoi: Bool, dds: Bool, raster: Bool) -> Image.FileKind:
+  match pep qoi dds raster:
+    case True{} _ _ _: PepFile{}
+    case False{} True{} _ _: QoiFile{}
+    case False{} False{} True{} _: DdsFile{}
+    case False{} False{} False{} True{}: RasterFile{}
+    case False{} False{} False{} False{}: UnsupportedImageFile{}
 
 # raylib 6.2's default file formats: stb_image signatures for the raster
-# suffixes, QOI and DDS (rltexgpu.h).
+# suffixes, QOI, PEP and DDS (rltexgpu.h).
 def Image.memory.kind(+file_type: String) -> Image.FileKind:
-  Image.memory.selected(String.eq(file_type, ".qoi") || String.eq(file_type, ".QOI"),
+  Image.memory.selected(String.eq(file_type, ".pep") || String.eq(file_type, ".PEP"),
+    String.eq(file_type, ".qoi") || String.eq(file_type, ".QOI"),
     String.eq(file_type, ".dds") || String.eq(file_type, ".DDS"),
     String.eq(file_type, ".png") || String.eq(file_type, ".PNG")
       || String.eq(file_type, ".bmp") || String.eq(file_type, ".BMP")
@@ -3013,18 +3017,19 @@ def Image.file.kind(path: String) -> Image.FileKind:
 
 # ExportImage uses ASCII-insensitive suffixes, unlike LoadImageFromMemory.
 # Adapted from raylib 6.2 rtextures.c / rcore.c; retain the native last-dot rule.
-def Image.export.selected(png: Bool, bmp: Bool, tga: Bool, qoi: Bool, raw: Bool) -> U32:
-  match png bmp tga qoi raw:
-    case True{} _ _ _ _: 1
-    case _ True{} _ _ _: 2
-    case _ _ True{} _ _: 3
-    case _ _ _ True{} _: 4
-    case _ _ _ _ True{}: 5
-    case _ _ _ _ _: 0
+def Image.export.selected(png: Bool, bmp: Bool, tga: Bool, qoi: Bool, raw: Bool, pep: Bool) -> U32:
+  match png bmp tga qoi raw pep:
+    case True{} _ _ _ _ _: 1
+    case _ True{} _ _ _ _: 2
+    case _ _ True{} _ _ _: 3
+    case _ _ _ True{} _ _: 4
+    case _ _ _ _ True{} _: 5
+    case _ _ _ _ _ True{}: 6
+    case _ _ _ _ _ _: 0
 
 def Image.export.kind(path: String) -> U32:
   +token = String.to_lower(Image.file.token(path))
-  Image.export.selected(String.eq(token, ".png"), String.eq(token, ".bmp"), String.eq(token, ".tga"), String.eq(token, ".qoi"), String.eq(token, ".raw"))
+  Image.export.selected(String.eq(token, ".png"), String.eq(token, ".bmp"), String.eq(token, ".tga"), String.eq(token, ".qoi"), String.eq(token, ".raw"), String.eq(token, ".pep"))
 
 # DDS admits its 128-byte header plus the largest uncompressed payload; a
 # file named .png the PNG decoder's 2 MiB.
@@ -3033,6 +3038,7 @@ def Image.file.limit(kind: Image.FileKind) -> U32:
     case QoiFile{}: 83886102
     case DdsFile{}: 67109000
     case PngFile{}: 2097152
+    case PepFile{}: 65536
     case _: 1048576
 
 def Image.file.psd(bytes: +List<U32>) -> Bool:
@@ -4961,6 +4967,76 @@ def Surface.codec.result(result: Result<&1, &1, Codec.Error, Codec.Picture>) -> 
     case Fail{error}: Fail{Image.codec.error(error)}
     case Done{Codec.Picture{width, height, +channels, pixels}}: Done{Surface.codec.stored(channels, width, height, channels, pixels)}
 
+# PEP words are little-endian channel bytes. A Jonlib color is RRGGBBAA.
+def Surface.pep.swap(+word: U32) -> U32:
+  (((word .&. 255) << 24n) .|. (((word >> 8n) .&. 255) << 16n) .|. (((word >> 16n) .&. 255) << 8n) .|. ((word >> 24n) .&. 255) : U32)
+
+def Surface.pep.paint(n: Nat, +i: U32, words: +List<U32>, pixels: Array<U32>) -> Array<U32>:
+  match n words:
+    case 0n Nil{}: pixels
+    case 0n Con{_, rest}: Surface.pep.paint(0n, i, rest, pixels)
+    case 1n+rest Nil{}: Surface.pep.paint(rest, i, Nil{}, pixels)
+    case 1n+rest Con{+word, tail}: Surface.pep.paint(rest, (i + 1 : U32), tail, Array.set(U32, pixels, i, Surface.pep.swap(word)))
+
+def Surface.pep.refused(+sink: U32) -> Result<&1, &1, Surface.Error, Surface>:
+  Bool.pick(Result<&1, &1, Surface.Error, Surface>, (sink >= 0 : U32), Fail{InvalidImageHeader{}}, Fail{InvalidImageHeader{}})
+
+def Surface.pep.fail(words: +List<U32>, +sink: U32) -> Result<&1, &1, Surface.Error, Surface>:
+  match words:
+    case Nil{}: Surface.pep.refused(sink)
+    case Con{+byte, rest}: Surface.pep.fail(rest, (sink .|. byte : U32))
+
+def Surface.pep.image(+width: U32, +height: U32, words: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
+  +area = (width * height : U32)
+  Done{Surface{width, height, 7, Words{Surface.pep.paint(U32.to_nat(area), 0, words, Array.new(U32, Storage.depth(area), 0))}}}
+
+def Surface.pep.opened(ok: Bool, +width: U32, +height: U32, words: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
+  match ok:
+    case False{}: Surface.pep.fail(words, (width .|. height : U32))
+    case True{}: Surface.pep.image(width, height, words)
+
+def Surface.pep.taken(shot: Pep.Shot) -> Result<&1, &1, Surface.Error, Surface>:
+  Pep.Shot{+width, +height, words} = shot
+  Surface.pep.opened((width > 0 : U32) && (height > 0 : U32), width, height, words)
+
+# LoadImageFromMemory(".pep"): pep_decompress to pep_rgba with the first color
+# transparent and premultiplication. The caller keeps the pixels. raylib's
+# loader frees that buffer after publishing it; this port does not.
+def Surface.decode_pep(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
+  Surface.pep.taken(Pep.picture(0, 1, 1, bytes))
+
+def Surface.pep.write(+i: U32, read: Array<U32> & U32) -> Array<U32>:
+  (values, word) = read
+  Array.set(U32, values, i, Surface.pep.swap(word))
+
+def Surface.pep.pack(n: Nat, +i: U32, values: Array<U32>) -> Array<U32>:
+  match n:
+    case 0n: values
+    case 1n+rest: Surface.pep.pack(rest, (i + 1 : U32), Surface.pep.write(i, Array.get(U32, values, i)))
+
+def Surface.pep.fit(+width: U32, +height: U32) -> Bool:
+  ((width > 0) && (height > 0) && (width <= 65535) && (height <= 65535) && ((width * height) > 0) && ((width * height) <= 4096) : U32)
+
+def Surface.pep.emit(+width: U32, +height: U32, format: U32, values: Array<U32>) -> +List<U32>:
+  +area = (width * height .|. (format .&. 0) : U32)
+  Pep.bytes(width, height, 0, 3, Surface.pep.pack(U32.to_nat(area), 0, values))
+
+def Surface.pep.sized(fit: Bool, +width: U32, +height: U32, format: U32, pixels: Surface.Pixels) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>:
+  match fit pixels:
+    case True{} Words{values}: Done{Surface.pep.emit(width, height, format, values)}
+    case False{} Words{values}: Fail{(Surface{width, height, format, Words{values}}, UnsupportedImageSize{})}
+    case _ Quads{values}: Fail{(Surface{width, height, format, Quads{values}}, UnsupportedFormat{})}
+
+def Surface.pep.keep(+width: U32, +height: U32, +format: U32, pixels: Surface.Pixels, error: Surface.Error) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>:
+  match pixels:
+    case Words{values}: Fail{(Surface{width, height, format, Words{values}}, error)}
+    case Quads{values}: Fail{(Surface{width, height, format, Quads{values}}, error)}
+
+def Surface.pep.route(rgba: Bool, +width: U32, +height: U32, format: U32, pixels: Surface.Pixels) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>:
+  match rgba:
+    case False{}: Surface.pep.keep(width, height, format, pixels, UnsupportedFormat{})
+    case True{}: Surface.pep.sized(Surface.pep.fit(width, height), width, height, format, pixels)
+
 # QOI channel metadata selects native storage; decoding/cache state stays RGBA.
 def Surface.decode_qoi(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   Surface.codec.result(Qoi.decode(bytes))
@@ -5096,9 +5172,10 @@ def Image.file.decode(reference: M.Contraction, kind: Image.FileKind, +bytes: +L
     case DdsFile{}: Surface.decode_dds(bytes)
     case RasterFile{}: Image.file.raster(reference, bytes)
     case PngFile{}: Image.file.named_png(Image.file.png_signed(bytes), reference, bytes)
+    case PepFile{}: Surface.decode_pep(bytes)
     case UnsupportedImageFile{}: Fail{InvalidImageHeader{}}
 
-# LoadImageFromMemory: the file type token selects QOI or the raster signatures.
+# LoadImageFromMemory: the file type token selects QOI, PEP or the raster signatures.
 def Surface.decode_image_for(reference: M.Contraction, file_type: String, bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   Image.file.decode(reference, Image.memory.kind(file_type), bytes)
 
@@ -5187,6 +5264,12 @@ def Surface.to_qoi(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, 
   Surface{width, height, +format, pixels} = surface
   +channels = Surface.qoi.channels(format)
   Surface.qoi.checked((channels > 0 : U32), channels, Surface{width, height, format, pixels})
+
+# ExportImage's PEP branch accepts only R8G8B8A8 and writes pep_rgba, pep_8bit.
+# Images above 4096 pixels keep their owner.
+def Surface.to_pep(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>:
+  Surface{width, height, +format, pixels} = surface
+  Surface.pep.route(U32.is_eq(format, 7), width, height, format, pixels)
 
 def Surface.memory.channels(format: U32) -> U32:
   match format:
@@ -5290,6 +5373,9 @@ def Surface.write_tga(surface: Surface, path: String) -> IO(Result<&1, &1, Surfa
 def Surface.write_qoi(surface: Surface, path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
   Surface.write.bytes(path, Surface.to_qoi(surface))
 
+def Surface.write_pep(surface: Surface, path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  Surface.write.bytes(path, Surface.to_pep(surface))
+
 def Surface.raw.payload(result: Result<&1, &1, Surface & Surface.Error, Surface>) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>:
   match result:
     case Fail{failure}: Fail{failure}
@@ -5311,9 +5397,10 @@ def Surface.write.kind(kind: U32, surface: Surface, path: String) -> IO(Result<&
     case 3: Surface.write_tga(surface, path)
     case 4: Surface.write_qoi(surface, path)
     case 5: Surface.write_raw(surface, path)
+    case 6: Surface.write_pep(surface, path)
     case _: IO.pure(Result<&1, &1, Surface.IOError, Unit>, Fail{SourceError{surface, UnsupportedFileType{}}})
 
-# ExportImage: the ASCII-insensitive suffix selects PNG, BMP, TGA, QOI or raw bytes.
+# ExportImage: the ASCII-insensitive suffix selects PNG, BMP, TGA, QOI, raw or PEP.
 def Surface.write_image(surface: Surface, +path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
   Surface.write.kind(Image.export.kind(path), surface, path)
 
@@ -5395,6 +5482,9 @@ def Surface.load_with(~decode: +List<U32> -> Result<&1, &1, Surface.Error, Surfa
 
 def Surface.load_qoi(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
   Surface.load_with(~Surface.decode_qoi, Image.file.limit(QoiFile{}), path)
+
+def Surface.load_pep(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
+  Surface.load_with(~Surface.decode_pep, Image.file.limit(PepFile{}), path)
 
 def Surface.load_dds(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
   Surface.load_with(~Surface.decode_dds, Image.file.limit(DdsFile{}), path)
@@ -5535,6 +5625,7 @@ def Surface.write.kind_with(~save: String -> +List<U32> -> IO(Result<&1, &1, Sur
     case 3: Surface.write_tga(surface, path)
     case 4: Surface.write_qoi(surface, path)
     case 5: Surface.write.bytes_with(~save, path, Surface.raw.payload(Surface.payload.check(surface)))
+    case 6: Surface.write.bytes_with(~save, path, Surface.to_pep(surface))
     case _: IO.pure(Result<&1, &1, Surface.IOError, Unit>, Fail{SourceError{surface, UnsupportedFileType{}}})
 
 def Surface.write_image_with(~save: String -> +List<U32> -> IO(Result<&1, &1, Surface.IOError, Unit>), surface: Surface, +path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
@@ -10787,6 +10878,7 @@ def Texture.file.decode(reference: M.Contraction, kind: Image.FileKind, +bytes: 
     case QoiFile{}: Surface.decode_qoi(bytes)
     case DdsFile{}: Surface.decode_dds(bytes)
     case RasterFile{}: Image.file.raster(reference, bytes)
+    case PepFile{}: Surface.decode_pep(bytes)
     case UnsupportedImageFile{}: Fail{InvalidImageHeader{}}
 
 def Texture.file.surface(reference: M.Contraction, kind: Image.FileKind, result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(Result<&1, &1, Surface.IOError, Surface>):

@@ -251,6 +251,16 @@ colorspace zero. Malformed streams are reported explicitly. QOI's MIT notice and
 are retained in [LICENSES/qoi.txt](LICENSES/qoi.txt). The standalone C implementation
 is used only by reference tooling; it is not linked into Jonlib's implementation.
 
+## PEP
+
+`src/pep.bend` is an altered Bend adaptation of the codec in raylib's pinned
+`src/external/pep.h`, by ENDESGA (2026, CC0). It uses owned arrays, bounds a
+file to 65536 bytes and an image to 4096 pixels, and keeps the decompressed
+pixel list with the caller. raylib's loader frees that buffer after publishing
+it; this port does not. The CC0 notice is retained in
+[LICENSES/pep.txt](LICENSES/pep.txt). The C header is used only by reference
+tooling; it is not linked into Jonlib's implementation.
+
 ## stb_image and stb_image_write
 
 `src/bmp.bend`, `src/tga.bend`, `src/pnm.bend`, `src/png.bend`, `src/psd.bend`,

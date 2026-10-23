@@ -52,13 +52,13 @@ forms of the operations raylib routes through it, as a template argument
 | Callback | Type | `_with` forms (raylib routing) |
 |---|---|---|
 | load data | `String -> IO(Result<&1, &1, Surface.IOError, +List<U32>>)` | `Files.load_data_with`, `Surface.load_image_with`, `Surface.load_raw_with`, `Image.Animation.load_image_with` |
-| save data | `String -> +List<U32> -> IO(Result<&1, &1, Surface.IOError, Unit>)` | `Files.save_data_with`, `Surface.write_image_with` (PNG and raw only) |
+| save data | `String -> +List<U32> -> IO(Result<&1, &1, Surface.IOError, Unit>)` | `Files.save_data_with`, `Surface.write_image_with` (PNG, raw and PEP) |
 | load text | `String -> IO(Result<&1, &1, Surface.IOError, String>)` | `Files.load_text_with`, `Files.text_find_index_with` |
 | save text | `String -> String -> IO(Result<&1, &1, Surface.IOError, Unit>)` | `Files.save_text_with`, `Surface.write_code_with`, `Files.export_data_as_code_with` |
 
 The forms keep raylib's routing exactly: `ExportImage` writes BMP, TGA and QOI
-files itself, so `Surface.write_image_with` calls `~save` only for `.png` and
-`.raw`; `FileTextFindIndex` checks `FileExists` on disk before loading through
+files itself, so `Surface.write_image_with` calls `~save` for `.png`, `.raw`
+and `.pep` (PEP goes through `SaveFileData`); `FileTextFindIndex` checks `FileExists` on disk before loading through
 the callback; `SaveFileText`'s callback receives the text up to its first NUL;
 the loaded bytes of an image keep the plain loader's size limits
 (`UnsupportedImageSize`) and `LoadImageRaw`'s header and truncation rules.

@@ -1,0 +1,24 @@
+Header notice from pep.h in the pinned raylib source:
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//  Prediction-Encoded Pixels (pep)
+//
+//  author(s):
+//  ENDESGA - https://x.com/ENDESGA | https://bsky.app/profile/endesga.bsky.social
+//
+//  contributer(s):
+//  Mariusz Dzikowski - https://github.com/demurzasty
+//  Akreson - https://github.com/Akreson
+//  Alepacho - https://github.com/Alepacho
+//
+//  https://github.com/ENDESGA/pep
+//  2026 - CC0 - FOSS forever
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ENDESGA dedicated that file to the public domain under CC0 1.0.
+The legal code is published at https://creativecommons.org/publicdomain/zero/1.0/legalcode.
+
+src/pep.bend is an altered, owned Bend adaptation of that codec. It keeps the
+decompressed pixels with the caller.

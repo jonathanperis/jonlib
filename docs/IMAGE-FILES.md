@@ -31,7 +31,7 @@ wrapped exactly once).
 ## Suffix and content selection
 
 Recognized tokens are `.png`, `.bmp`, `.tga`, `.pgm`, `.ppm`, `.jpg`, `.jpeg`,
-`.gif`, `.pic`, `.psd`, `.qoi` and `.dds`, plus their entirely uppercase forms.
+`.gif`, `.pic`, `.psd`, `.qoi`, `.pep` and `.dds`, plus their entirely uppercase forms.
 Mixed-case forms and `.pnm` are unsupported, matching native dispatch.
 
 - **Memory** calls require the complete token: `image.png` and `.png-tail` are
@@ -43,7 +43,8 @@ Mixed-case forms and `.pnm` are unsupported, matching native dispatch.
   `.jpeg`) yields no suffix; a directory-qualified path such as `images/.png` is
   classified normally. Unsupported suffixes are still opened and read under the
   1 MiB cap, then fail with `DataError{InvalidImageHeader}`.
-- `.qoi`/`.QOI` select QOI directly. Every other recognized token selects the
+- `.qoi`/`.QOI` select QOI directly. `.pep`/`.PEP` select PEP directly
+  ([CODECS.md](CODECS.md#pep)). Every other recognized token selects the
   stb-style raster family, which detects content: PNG, BMP, P5/P6, PSD, PIC,
   GIF and JPEG signatures are tried in that order, otherwise the TGA profile. PNG bytes
   named `image.bmp` therefore load as PNG, matching native content detection.
@@ -92,6 +93,7 @@ no guarantee of reported OS-close success. Ordinary byte files contain only
 | Raster tokens other than PNG's, unsupported suffixes, `load_pnm/tga/bmp/pic`, `load_hdr` | 1,048,576 bytes (`RasterFile`) |
 | `.png`/`.PNG`, `Surface.load_png` | 2,097,152 bytes (`PngFile`): the PNG decoder's cap. Under that name, contents without the PNG signature keep the raster cap: more than 1,048,576 bytes of them are `UnsupportedImageSize`, as before the file was read this far |
 | QOI tokens, `Surface.load_qoi` | 83,886,102 bytes = `14 + 5*(4096*4096) + 8` (`QoiFile`) |
+| PEP tokens, `Surface.load_pep` | 65,536 bytes (`PepFile`). Decoded area is at most 4096 pixels |
 | DDS tokens, `Surface.load_dds` | 67,109,000 bytes, above `128 + 4*(4096*4096)` (`DdsFile`) |
 | DDS tokens in `Image.Stored.load_image` | 89,478,612 bytes = `128 + 4*(4^13-1)/3`, a 4096x4096 R8G8B8A8 mipmap chain |
 
