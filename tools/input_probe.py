@@ -999,7 +999,7 @@ def b_op(op, run, clock, libm):
 
 def b_script(index, item, libm):
     clock = item['start']
-    lines = [f'def script.{index}() -> String:', f'  r0 = start(J.Core.init_window({item["width"]}, {item["height"]}, {b_double(clock)}))']
+    lines = [f'def script.n{index}() -> String:', f'  r0 = start(J.Core.init_window({item["width"]}, {item["height"]}, {b_double(clock)}))']
     run = 'r0'
     for k, op in enumerate(item['ops']):
         expression, clock = b_op(op, run, clock, libm)
@@ -1047,7 +1047,7 @@ def render(libm, items):
                 .replace('BUTTONS', b_list(BUTTONS)).replace('KEYS', b_list(KEYS))]
         body += load_defs([items[i] for i in selected])
         body += [b_script(i, items[i], libm) for i in selected]
-        body.append('def main() -> IO(Unit):\n  do IO<Unit>:\n' + '\n'.join(f'    IO.print(script.{i}())' for i in selected) + '\n')
+        body.append('def main() -> IO(Unit):\n  do IO<Unit>:\n' + '\n'.join(f'    IO.print(script.n{i}())' for i in selected) + '\n')
         return '\n\n'.join(body)
     return build
 

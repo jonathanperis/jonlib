@@ -1598,7 +1598,7 @@ def b_op(op):
 
 
 def b_scene(index, scene):
-    return f'def scene.{index}() -> +List<Op>:\n  [' + ',\n    '.join(b_op(op) for op in scene['ops']) + ']'
+    return f'def scene.n{index}() -> +List<Op>:\n  [' + ',\n    '.join(b_op(op) for op in scene['ops']) + ']'
 
 
 def render(libm):
@@ -1622,7 +1622,7 @@ def render(libm):
                 continue
             body.append(b_scene(index, item))
             screen = 'True{}' if item['screen'] else 'False{}'
-            prints.append(f'    IO.print(St.rrun(scene.{index}(), {screen}, J.Frame.init_window({item["width"]}, {item["height"]})))')
+            prints.append(f'    IO.print(St.rrun(scene.n{index}(), {screen}, J.Frame.init_window({item["width"]}, {item["height"]})))')
         body.append('def main() -> IO(Unit):\n  do IO<Unit>:\n' + '\n'.join(prints) + '\n')
         return '\n\n'.join(body)
     return build

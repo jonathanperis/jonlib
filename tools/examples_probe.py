@@ -2579,17 +2579,17 @@ def render(items, libm, logo, raylib_source, directories=None, listed=None):
             if name in LISTED:
                 args += listings_text(listed[index]) + ', '
             result = 'IO(String)' if io else 'String'
-            calls.append(f'def script.{index}() -> +List<J.ReplayFrame>:\n  {bend_script(item)}\n\n'
-                         f'def run.{index}({logo_param}) -> {result}:\n  replay({args}script.{index}(), {window})\n')
+            calls.append(f'def script.n{index}() -> +List<J.ReplayFrame>:\n  {bend_script(item)}\n\n'
+                         f'def run.n{index}({logo_param}) -> {result}:\n  replay({args}script.n{index}(), {window})\n')
         if logo_param:
             main = (f'def main.loaded(logo: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):\n'
-                    f'  IO.print(run.{indexes[0]}(logo))\n\n'
+                    f'  IO.print(run.n{indexes[0]}(logo))\n\n'
                     f'def main() -> IO(Unit):\n  IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_png("{logo}"), main.loaded)\n')
         elif io:
-            main = 'def main() -> IO(Unit):\n  do IO<Unit>:\n' + '\n'.join(f'    Unit <- IO.bind(String, Unit, run.{index}(), IO.print)'
+            main = 'def main() -> IO(Unit):\n  do IO<Unit>:\n' + '\n'.join(f'    Unit <- IO.bind(String, Unit, run.n{index}(), IO.print)'
                                                                        for index in indexes) + '\n    IO.pure(Unit, Unit{})\n'
         else:
-            main = 'def main() -> IO(Unit):\n  do IO<Unit>:\n' + '\n'.join(f'    IO.print(run.{index}())' for index in indexes) + '\n'
+            main = 'def main() -> IO(Unit):\n  do IO<Unit>:\n' + '\n'.join(f'    IO.print(run.n{index}())' for index in indexes) + '\n'
         return body + '\n' + '\n'.join(calls) + '\n' + main
     return build
 

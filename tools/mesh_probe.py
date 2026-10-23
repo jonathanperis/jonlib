@@ -645,14 +645,14 @@ def render(arith, libm, work):
         prints = []
         for index, case in selected:
             text, path = b_case(case, work)
-            body.append(f'def case.{index}() -> Case:\n  {text}')
+            body.append(f'def case.n{index}() -> Case:\n  {text}')
             if case['mesh'][0] in ('heightmap', 'cubicmap'):
                 data = inputs / f'{index}.bin'
                 data.write_bytes(bytes(case['mesh'][6]))
                 prints.append(f'    Unit <- IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Files.load_data("{data}"), '
-                              f'r => run.loaded(case.{index}(), "{path}", r))')
+                              f'r => run.loaded(case.n{index}(), "{path}", r))')
             else:
-                prints.append(f'    IO.print(run(case.{index}(), "{path}"))')
+                prints.append(f'    IO.print(run(case.n{index}(), "{path}"))')
         body.append('def main() -> IO(Unit):\n  do IO<Unit>:\n' + '\n'.join(prints) + '\n    return Unit{}\n')
         return '\n\n'.join(body)
     return build

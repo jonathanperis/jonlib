@@ -793,7 +793,7 @@ def b_op(op, libm, frame):
 
 
 def b_scene(index, scene, libm):
-    lines = [f'def scene.{index}(f0: J.Frame) -> J.Frame:']
+    lines = [f'def scene.n{index}(f0: J.Frame) -> J.Frame:']
     ops = [op if op[-1] != 'undefined' else op[:-1] for op in scene['ops']]
     for k, op in enumerate(ops):
         lines.append(f'  f{k + 1} = {b_op(op, libm, f"f{k}")}')
@@ -811,7 +811,7 @@ def render(libm):
                 continue
             body.append(b_scene(index, item, libm))
             screen = 'True{}' if item['screen'] else 'False{}'
-            prints.append(f'    IO.print(run(~scene.{index}, {screen}, J.Frame.init_window({item["width"]}, {item["height"]})))')
+            prints.append(f'    IO.print(run(~scene.n{index}, {screen}, J.Frame.init_window({item["width"]}, {item["height"]})))')
         body.append('def main() -> IO(Unit):\n  do IO<Unit>:\n' + '\n'.join(prints) + '\n')
         return '\n\n'.join(body)
     return build
@@ -937,9 +937,9 @@ def benchmark(probe, libm):
     drawn, empty = re.search(r'^H (\d+)', native, re.M).group(1), re.search(r'^E (\d+)', native, re.M).group(1)
     cli = ['bun', probe.args.bend_source / 'bend2/main.ts']
     timings = {}
-    for name, draw, expected in (('bench', 'scene.0(f)', drawn), ('bench-empty', 'f', empty)):
+    for name, draw, expected in (('bench', 'scene.n0(f)', drawn), ('bench-empty', 'f', empty)):
         source = render(libm)([('scene', 0, scene)], False)
-        source = source.replace('    IO.print(run(~scene.0, False{}, J.Frame.init_window(640, 480)))', '    IO.print(bench(J.Frame.init_window(640, 480)))')
+        source = source.replace('    IO.print(run(~scene.n0, False{}, J.Frame.init_window(640, 480)))', '    IO.print(bench(J.Frame.init_window(640, 480)))')
         source = source.replace('def main()', BENCH_BEND.replace('DRAW', draw) + 'def main()')
         (probe.work / f'{name}.bend').write_text(source)
         probekit.compile_outputs(cli, probe.work / f'{name}.bend', probe.work / name, probe.work / f'{name}.js')

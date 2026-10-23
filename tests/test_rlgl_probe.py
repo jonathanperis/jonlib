@@ -22,7 +22,7 @@ class RlglProbeTests(unittest.TestCase):
                 self.assertFalse(probe.refused(scene, libm), (name, libm))
             source = probe.c_scene(scene)
             self.assertIn('dump(', source)
-            self.assertIn(f'def scene.7() -> +List<Op>:', probe.b_scene(7, scene))
+            self.assertIn(f'def scene.n7() -> +List<Op>:', probe.b_scene(7, scene))
 
     def test_texture_parameters_reach_rlgl_and_the_texture_step(self):
         scene = self.scene('rl-texture-filter-pick-0')

@@ -653,12 +653,12 @@ def render(items):
             for f in item['pre']:
                 flags |= f
             start = dbits(item['start'])
-            body += (f'def script.{index}() -> IO(Unit):\n'
+            body += (f'def script.n{index}() -> IO(Unit):\n'
                      f'  start({bend_ops(item["ops"])}, J.Core.init_window_flags({flags}, {W}, {H}, f64({start >> 32}, {start & 0xFFFFFFFF})), '
                      f'J.Frame.init_window_flags({flags}, {W}, {H}))\n')
         body += 'def main() -> IO(Unit):\n  do IO<Unit>:\n'
         for index in selected:
-            body += f'    Unit <- script.{index}()\n'
+            body += f'    Unit <- script.n{index}()\n'
         return body + '    IO.print("done")\n'
     return emit
 

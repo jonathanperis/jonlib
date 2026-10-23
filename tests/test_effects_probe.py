@@ -45,8 +45,8 @@ class EffectsProbeTests(unittest.TestCase):
             self.assertIn('J.Program.replay_io(~Ex.State, ~Ex.program(M.Glibc239Libm{})', text)
             self.assertIn('def replay(+dir: String, script: +List<J.ReplayFrame>', text)
             self.assertIn('Ex.setup(dir, core, frame)', text)
-            self.assertIn('replay("/tmp/x0/", script.0(), J.Core.init_window_flags(0, 160, 90', text)
-            self.assertIn('replay("/tmp/x1/", script.1(), ', text)
+            self.assertIn('replay("/tmp/x0/", script.n0(), J.Core.init_window_flags(0, 160, 90', text)
+            self.assertIn('replay("/tmp/x1/", script.n1(), ', text)
         finally:
             for table in (ep.EXAMPLES, ep.MODULES, ep.SIZES):
                 table.pop(probe.NAME, None)
@@ -74,7 +74,7 @@ class ScratchScriptTests(unittest.TestCase):
         text = ep.render(items, 'Glibc239Libm', None, Path('/raylib'), {index: Path(f'/tmp/s{index}') for index in range(len(items))})(['core_storage_values'], False)
         self.assertIn('def replay(+seed: U32, +dir: String, script: +List<J.ReplayFrame>', text)
         self.assertIn('Ex.setup(seed, dir, core, frame)', text)
-        self.assertIn(f'replay({items[0]["seed"]}, "/tmp/s0/", script.0(), ', text)
+        self.assertIn(f'replay({items[0]["seed"]}, "/tmp/s0/", script.n0(), ', text)
         self.assertIn('J.Program.replay_io(~Ex.State', text)
 
     def test_the_undefined_scripts_start_from_files_and_name_their_frame(self):
