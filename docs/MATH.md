@@ -46,6 +46,20 @@ produce a NaN that way, so they match on JavaScript as well.
   `clamp`, `clamp_value`, `rotate`/`rotate_for`, `refract`, `transform`,
   `angle`/`angle_for`, `line_angle`/`line_angle_for`.
 
+Gate `vector2` compares `add`, `add_value`, `subtract`, `subtract_value`,
+`scale`, `multiply`, `negate`, `divide`, `invert`, `length`, `length_sqr`,
+`distance`, `distance_sqr`, `dot_product`, `cross_product`, `normalize`,
+`reflect`, `equals` and `lerp` with contraction off. Inputs are a table, so
+the C compiler emits the arithmetic instead of folding literals. The core grid
+is signed zeros, one, a subnormal, positive infinity and one quiet NaN; the
+wider edge (negative one, both infinities, the least normal, the 2^24 boundary,
+the largest finite) is swept one component at a time. `negate`, `invert`,
+`normalize`, `length`, `length_sqr` and `equals` match every result bit on
+CPU-1, CPU-2 and JavaScript, including zero divisors and a zero length.
+The other operations match every non-NaN bit. The sign of a quiet NaN their
+arithmetic produces is not reproduced. `min` and `max` stay on the separate
+signed-zero profiles.
+
 `divide` takes two vectors; `invert` takes component reciprocals. `lerp` takes
 two vectors and a scalar amount. `reflect` takes a vector and the supplied normal;
 it does not normalize that normal. `equals` uses the reference epsilon on both axes.

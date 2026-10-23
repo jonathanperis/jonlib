@@ -67957,9 +67957,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.add",
       "mapping_state": "implemented",
-      "scope": "Finite uncontracted F32 component addition.",
+      "scope": "Uncontracted F32 component addition. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Exceptional/subnormal values",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -67974,6 +67974,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -68019,9 +68020,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.add_value",
       "mapping_state": "implemented",
-      "scope": "Finite uncontracted F32 scalar addition to both components.",
+      "scope": "Uncontracted F32 scalar addition to both components. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Exceptional/subnormal values",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68036,6 +68037,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -68081,9 +68083,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.subtract",
       "mapping_state": "implemented",
-      "scope": "Finite uncontracted F32 component subtraction.",
+      "scope": "Uncontracted F32 component subtraction. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Exceptional/subnormal values",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68098,6 +68100,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -68143,9 +68146,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.subtract_value",
       "mapping_state": "implemented",
-      "scope": "Finite uncontracted F32 scalar subtraction from both components.",
+      "scope": "Uncontracted F32 scalar subtraction from both components. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Exceptional/subnormal values",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68160,6 +68163,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -68205,9 +68209,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.length",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 length.",
+      "scope": "F32 length, including a zero vector, subnormals, infinities and one quiet NaN. Every result bit of the corpus matches.",
       "gaps": [
-        "Exceptional/subnormal and contracted variants",
+        "Contracted builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68222,6 +68226,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -68267,9 +68272,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.length_sqr",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 squared length.",
+      "scope": "Uncontracted F32 squared length. Every result bit of the vector2 corpus matches.",
       "gaps": [
-        "Contracted builds, exceptional/subnormal values",
+        "Contracted builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68284,6 +68289,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -68329,9 +68335,10 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.dot_product",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 dot product.",
+      "scope": "Uncontracted F32 dot product. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Contracted builds, exceptional/subnormal values",
+        "Contracted builds",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68346,6 +68353,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -68391,9 +68399,10 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.cross_product",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 two-dimensional cross product.",
+      "scope": "Uncontracted F32 two-dimensional cross product. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Contracted builds, exceptional/subnormal values",
+        "Contracted builds",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68408,6 +68417,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -68453,9 +68463,10 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.distance",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 distance with reference subtraction, square sum and square root order.",
+      "scope": "Uncontracted F32 distance. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Exceptional/subnormal and contracted variants",
+        "Contracted builds",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68470,6 +68481,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -68515,9 +68527,10 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.distance_sqr",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 squared distance.",
+      "scope": "Uncontracted F32 squared distance. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Contracted builds, exceptional/subnormal values",
+        "Contracted builds",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68532,6 +68545,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -68725,9 +68739,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.scale",
       "mapping_state": "implemented",
-      "scope": "Finite F32 scalar multiplication of both components.",
+      "scope": "F32 scalar multiplication of both components. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Exceptional/subnormal values",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68742,6 +68756,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -68787,9 +68802,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.multiply",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component multiplication.",
+      "scope": "F32 component multiplication. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Exceptional/subnormal values",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68804,6 +68819,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -68849,9 +68865,8 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.negate",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component negation, preserving signed-zero semantics.",
+      "scope": "Component negation. Every result bit of the vector2 corpus matches, including signed zero, subnormals, infinities and one quiet NaN.",
       "gaps": [
-        "Exceptional/subnormal values",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68866,6 +68881,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -68911,9 +68927,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.divide",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component division with nonzero divisors.",
+      "scope": "F32 component division, including zero divisors. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Zero divisors, exceptional/subnormal values",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68928,6 +68944,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -68973,9 +68990,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.normalize",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 normalization; zero-length vectors return positive zero components.",
+      "scope": "Uncontracted normalization; a zero length returns positive-zero components. Every result bit of the vector2 corpus matches.",
       "gaps": [
-        "Exceptional/subnormal and contracted variants",
+        "Contracted builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68990,6 +69007,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -69098,9 +69116,10 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.lerp",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 component interpolation, including extrapolation.",
+      "scope": "Uncontracted component interpolation. Non-NaN bits match for amounts +0, 1, +inf and one quiet NaN.",
       "gaps": [
-        "Contracted builds, exceptional/subnormal values",
+        "Contracted builds",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -69115,6 +69134,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -69160,9 +69180,10 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.reflect",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 reflection with the supplied normal.",
+      "scope": "Uncontracted reflection by the supplied normal. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Contracted builds, exceptional/subnormal values",
+        "Contracted builds",
+        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -69177,6 +69198,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -69485,9 +69507,8 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.invert",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component reciprocals with nonzero divisors.",
+      "scope": "Component reciprocals, including zero divisors. Every result bit of the vector2 corpus matches.",
       "gaps": [
-        "Zero divisors, exceptional/subnormal values",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -69502,6 +69523,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -69677,9 +69699,8 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.equals",
       "mapping_state": "implemented",
-      "scope": "Reference relative epsilon comparison on both finite F32 components.",
+      "scope": "Relative epsilon on both components, including subnormals, infinities and one quiet NaN. The boolean matches on CPU-1, CPU-2 and JavaScript.",
       "gaps": [
-        "Exceptional/subnormal values",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -69694,6 +69715,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
