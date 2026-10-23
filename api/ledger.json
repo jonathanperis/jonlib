@@ -67466,9 +67466,8 @@
       "status": "partial",
       "jonlib": "jonmath.Math.clamp",
       "mapping_state": "implemented",
-      "scope": "Finite F32 scalar profile with explicit operation order, reversed bounds and signed zero.",
+      "scope": "Reference comparison order, including reversed bounds, signed zero, a subnormal, infinities and one quiet NaN. Every result bit of the corpus matches on CPU-1, CPU-2 and JavaScript.",
       "gaps": [
-        "Exceptional/subnormal values",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -67483,6 +67482,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/scalars_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -67526,9 +67526,10 @@
       "status": "partial",
       "jonlib": "jonmath.Math.lerp",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 interpolation, including extrapolation.",
+      "scope": "Uncontracted F32 interpolation and extrapolation, including signed zero, a subnormal, infinities, one quiet NaN and equal endpoints. CPU-1 and CPU-2 match every result bit of the corpus.",
       "gaps": [
-        "Contracted builds, exceptional/subnormal values",
+        "Contracted builds",
+        "JavaScript does not reproduce the sign of a quiet NaN this formula produces; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -67543,6 +67544,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/scalars_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -67586,9 +67588,9 @@
       "status": "partial",
       "jonlib": "jonmath.Math.normalize",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 values and nonzero ranges.",
+      "scope": "Uncontracted F32 normalization, including a zero range, signed zero, a subnormal, infinities and one quiet NaN. CPU-1 and CPU-2 match every result bit of the corpus.",
       "gaps": [
-        "Degenerate ranges, exceptional/subnormal values",
+        "JavaScript does not reproduce the sign of a quiet NaN this formula produces; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -67603,6 +67605,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/scalars_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -67646,9 +67649,10 @@
       "status": "partial",
       "jonlib": "jonmath.Math.remap",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 remapping with nonzero input ranges.",
+      "scope": "Uncontracted F32 remapping, including a zero input range, signed zero, a subnormal, infinities and one quiet NaN. CPU-1 and CPU-2 match every result bit of the corpus.",
       "gaps": [
-        "Contracted builds, degenerate ranges, exceptional/subnormal values",
+        "Contracted builds",
+        "JavaScript does not reproduce the sign of a quiet NaN this formula produces; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -67663,6 +67667,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/scalars_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -67706,9 +67711,10 @@
       "status": "partial",
       "jonlib": "jonmath.Math.wrap",
       "mapping_state": "implemented",
-      "scope": "Finite F32 wrapping with reference floor semantics and nonzero ranges.",
+      "scope": "Uncontracted F32 wrapping with reference floor, including a zero range, signed zero, a subnormal, infinities and one quiet NaN. CPU-1 and CPU-2 match every result bit of the corpus.",
       "gaps": [
-        "Contracted builds, degenerate ranges, exceptional/subnormal values",
+        "Contracted builds",
+        "JavaScript does not reproduce the sign of a quiet NaN this formula produces; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -67723,6 +67729,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/scalars_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -67766,9 +67773,8 @@
       "status": "partial",
       "jonlib": "jonmath.Math.float_equals",
       "mapping_state": "implemented",
-      "scope": "Reference relative epsilon 0.000001 for finite F32 values.",
+      "scope": "Reference relative epsilon 0.000001, including signed zero, a subnormal, infinities and one quiet NaN. The boolean matches on CPU-1, CPU-2 and JavaScript.",
       "gaps": [
-        "Exceptional/subnormal values",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -67783,6 +67789,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/scalars_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -77202,24 +77209,29 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.operator*(const float&,const Vector2&)",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector2.scale(b, a)",
+      "mapping_state": "implemented",
+      "scope": "Computed as `M.Vector2.scale(b, a)` (Vector2Scale of the vector by the scalar); every result bit matches the C++ operator.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Uncontracted profile only; exceptional/subnormal inputs"
       ],
-      "adaptations": [],
+      "adaptations": [
+        "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
+      ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/operators_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -77232,7 +77244,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive operator*(const float&,const Vector2&) semantics from the linked source, add a reference fixture, then implement jonmath.Math.operator*(const float&,const Vector2&).",
+      "next_step": "Close documented gaps and unverified gates for operator*(const float&,const Vector2&).",
       "priority": 202
     },
     {
@@ -78533,24 +78545,29 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.operator*(const float&,const Vector3&)",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector3.scale(b, a)",
+      "mapping_state": "implemented",
+      "scope": "Computed as `M.Vector3.scale(b, a)` (Vector3Scale of the vector by the scalar); every result bit matches the C++ operator.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Uncontracted profile only; exceptional/subnormal inputs"
       ],
-      "adaptations": [],
+      "adaptations": [
+        "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
+      ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/operators_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -78563,7 +78580,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive operator*(const float&,const Vector3&) semantics from the linked source, add a reference fixture, then implement jonmath.Math.operator*(const float&,const Vector3&).",
+      "next_step": "Close documented gaps and unverified gates for operator*(const float&,const Vector3&).",
       "priority": 202
     },
     {
@@ -79924,24 +79941,29 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.operator*(const float&,const Vector4&)",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector4.scale(b, a)",
+      "mapping_state": "implemented",
+      "scope": "Computed as `M.Vector4.scale(b, a)` (Vector4Scale of the vector by the scalar); every result bit matches the C++ operator.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Uncontracted profile only; exceptional/subnormal inputs"
       ],
-      "adaptations": [],
+      "adaptations": [
+        "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
+      ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/operators_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -79954,7 +79976,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive operator*(const float&,const Vector4&) semantics from the linked source, add a reference fixture, then implement jonmath.Math.operator*(const float&,const Vector4&).",
+      "next_step": "Close documented gaps and unverified gates for operator*(const float&,const Vector4&).",
       "priority": 202
     },
     {
@@ -88231,24 +88253,29 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_BOOL_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Bool",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: Bool is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
-      "adaptations": [],
+      "adaptations": [
+        "A type-definition guard has no Bend counterpart (language adaptation)"
+      ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -88262,7 +88289,7 @@
         "rgestures:macro:RL_BOOL_TYPE"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_BOOL_TYPE semantics from the linked source, add a reference fixture, then implement Config.RL_BOOL_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_BOOL_TYPE.",
       "priority": 829
     },
     {
@@ -108922,24 +108949,29 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
-      "jonlib": "Config.RL_BOOL_TYPE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Bool",
+      "mapping_state": "implemented",
+      "scope": "The guard that keeps a type defined once when several headers declare it: Bool is the one shared Bend type every module imports.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
-      "adaptations": [],
+      "adaptations": [
+        "A type-definition guard has no Bend counterpart (language adaptation)"
+      ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "docs/MODULES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -108953,7 +108985,7 @@
         "rlgl:macro:RL_BOOL_TYPE"
       ],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive RL_BOOL_TYPE semantics from the linked source, add a reference fixture, then implement Config.RL_BOOL_TYPE.",
+      "next_step": "Close documented gaps and unverified gates for RL_BOOL_TYPE.",
       "priority": 829
     },
     {
@@ -115921,24 +115953,32 @@
       "milestone": "configuration",
       "phase": 7,
       "sequence": 29,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Config.SUPPORT_FILEFORMAT_PEP",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The U32 value raylib's default build gives SUPPORT_FILEFORMAT_PEP: 0, from config.h.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The PEP loader and exporter are not ported (the reference build enables them)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
-      "adaptations": [],
+      "adaptations": [
+        "A constant of raylib's default build: Jonlib is not built from config.h, so redefining the option changes nothing (language adaptation)"
+      ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/macros_probe.py",
+        "docs/API.md",
+        "jonlib.bend",
+        "docs/VERIFICATION.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -115949,7 +115989,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check every declared configuration/default/conditional variant and its consuming feature; record language/package adaptations rather than silently dropping C glue.",
-      "next_step": "Derive SUPPORT_FILEFORMAT_PEP semantics from the linked source, add a reference fixture, then implement Config.SUPPORT_FILEFORMAT_PEP.",
+      "next_step": "Close documented gaps and unverified gates for SUPPORT_FILEFORMAT_PEP.",
       "priority": 829
     },
     {

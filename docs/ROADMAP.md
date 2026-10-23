@@ -10,11 +10,9 @@ page states where that stands and what remains. Per-API status is the
 ## Where Jonlib is
 
 - **API coverage** (`python3 tools/api_plan.py check`): 1906 catalogued
-  declarations and support entries, 1900 of them at least partial. Every
-  function of raylib.h (619), raymath.h (146), rlgl.h (163), rcamera.h (12)
-  and rgestures.h (10) is partial; six entries are not started (raymath's
-  `float * Vector` C++ operators, the `RL_BOOL_TYPE` macros of rlgl.h and
-  rgestures.h, and config.h's `SUPPORT_FILEFORMAT_PEP`). No entry is `complete`: completion
+  declarations and support entries, every one of them partial. That includes
+  every function of raylib.h (619), raymath.h (146), rlgl.h (163),
+  rcamera.h (12) and rgestures.h (10). No entry is `complete`: completion
   requires every target of [`api/milestones.json`](../api/milestones.json).
 - **Modules**: Jonlib, Jonmath, Jongui (raygui), Joneasings, Jonlights and
   the generated Jonlgl, Joncamera and Jongestures ([MODULES.md](MODULES.md)).
@@ -43,7 +41,7 @@ passing gate does and does not establish is in
 1. **The macOS validation** ([MACOS-VALIDATION.md](MACOS-VALIDATION.md)):
    turn macOS back on in CI and run every gate on a Mac against raylib 6.2.
 2. **Wider domains and gaps** recorded per API in
-   [`api/progress.json`](../api/progress.json): 2733 open gap lines on 1303
+   [`api/progress.json`](../api/progress.json): 2741 open gap lines on 1309
    entries. C-to-Bend mappings with no observable difference (enums as U32
    constants, macros as functions, pointer ABI, explicit state) are recorded
    apart as [language adaptations](API-TRACKING.md#language-adaptations)
@@ -51,7 +49,7 @@ passing gate does and does not establish is in
 
    | Theme | Gaps | Closed by |
    |---|---:|---|
-   | `Targets:` lanes not verified | 1128 | the macOS validation (macOS host, Metal lane) |
+   | `Targets:` lanes not verified | 1131 | the macOS validation (macOS host, Metal lane) |
    | `Performance:` | 396 | measurements against raylib and budgets |
    | Libm and contraction profiles | 358 | more reproduced host libm and FMA profiles |
    | `Integration:` | 186 | ported examples and Bend Base facilities |

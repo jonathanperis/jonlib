@@ -13,7 +13,7 @@ Each row inherits its milestone verification recipe and the six completion gates
 | [`rgestures:enum:bool`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rgestures.h#L66) | enum | `bool — false = 0; true = !false` | `Bool` (implemented) | partial | `types` |
 | [`rgestures:enumerator:false`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rgestures.h#L66) | enumerator | `false = 0` | `False{}` (implemented) | partial | `types` |
 | [`rgestures:enumerator:true`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rgestures.h#L66) | enumerator | `true = !false` | `True{}` (implemented) | partial | `types` |
-| [`rgestures:macro:RL_BOOL_TYPE`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rgestures.h#L67) | macro | `#define RL_BOOL_TYPE` | `Config.RL_BOOL_TYPE` (proposed) | not-started | `configuration` |
+| [`rgestures:macro:RL_BOOL_TYPE`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rgestures.h#L67) | macro | `#define RL_BOOL_TYPE` | `Bool` (implemented) | partial | `configuration` |
 | [`rgestures:switch:RL_VECTOR2_TYPE`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rgestures.h#L71) | switch | `#if !defined(RL_VECTOR2_TYPE)` | `M.Vector2` (implemented) | partial | `configuration` |
 | [`rgestures:type:Vector2`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rgestures.h#L73) | type | `Vector2 — float x; float y` | `jonmath.Vector2` (implemented) | partial | `types` |
 | [`rgestures:switch:RGESTURES_STANDALONE`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rgestures.h#L79) | switch | `#if defined(RGESTURES_STANDALONE)` | `import ./jonlib.bend` (implemented) | partial | `configuration` |
@@ -57,6 +57,7 @@ C-to-Bend mappings with no behavior difference reachable through the API ([polic
 - `rgestures:enum:bool`: C int-compatible bool conversions
 - `rgestures:enumerator:false`: C int-compatible bool conversions
 - `rgestures:enumerator:true`: C int-compatible bool conversions
+- `rgestures:macro:RL_BOOL_TYPE`: A type-definition guard has no Bend counterpart (language adaptation)
 - `rgestures:switch:RL_VECTOR2_TYPE`: A type-definition guard has no Bend counterpart (language adaptation)
 - `rgestures:switch:RGESTURES_STANDALONE`: A standalone build with private type copies is not separate (language adaptation)
 - `rgestures:enum:Gesture`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)

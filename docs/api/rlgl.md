@@ -111,7 +111,7 @@ Each row inherits its milestone verification recipe and the six completion gates
 | [`rlgl:enum:bool`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rlgl.h#L369) | enum | `bool — false = 0; true = !false` | `Bool` (implemented) | partial | `types` |
 | [`rlgl:enumerator:false`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rlgl.h#L369) | enumerator | `false = 0` | `False{}` (implemented) | partial | `types` |
 | [`rlgl:enumerator:true`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rlgl.h#L369) | enumerator | `true = !false` | `True{}` (implemented) | partial | `types` |
-| [`rlgl:macro:RL_BOOL_TYPE`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rlgl.h#L370) | macro | `#define RL_BOOL_TYPE` | `Config.RL_BOOL_TYPE` (proposed) | not-started | `configuration` |
+| [`rlgl:macro:RL_BOOL_TYPE`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rlgl.h#L370) | macro | `#define RL_BOOL_TYPE` | `Bool` (implemented) | partial | `configuration` |
 | [`rlgl:type:Matrix`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rlgl.h#L376) | type | `Matrix — float m0, m4, m8, m12; float m1, m5, m9, m13; float m2, m6, m10, m14; float m3, m7, m11, m15` | `jonmath.Matrix` (implemented) | partial | `types` |
 | [`rlgl:macro:RL_MATRIX_TYPE`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rlgl.h#L382) | macro | `#define RL_MATRIX_TYPE` | `M.Matrix` (implemented) | partial | `configuration` |
 | [`rlgl:type:rlVertexBuffer`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/rlgl.h#L386) | type | `rlVertexBuffer — int elementCount; float *vertices; float *texcoords; float *normals; unsigned char *colors; unsigned int *indices; unsigned short *indices; unsigned int vaoId; unsigned int vboId[5]` | `Rlgl.VertexBuffer` (implemented) | partial | `types` |
@@ -519,6 +519,7 @@ C-to-Bend mappings with no behavior difference reachable through the API ([polic
 - `rlgl:enum:bool`: C int-compatible bool conversions
 - `rlgl:enumerator:false`: C int-compatible bool conversions
 - `rlgl:enumerator:true`: C int-compatible bool conversions
+- `rlgl:macro:RL_BOOL_TYPE`: A type-definition guard has no Bend counterpart (language adaptation)
 - `rlgl:type:Matrix`: Preprocessor type guards have no Bend counterpart
 - `rlgl:macro:RL_MATRIX_TYPE`: A type-definition guard has no Bend counterpart (language adaptation)
 - `rlgl:enum:rlGlVersion`: C enum types and implicit int conversions have no Bend counterpart (U32 constants)

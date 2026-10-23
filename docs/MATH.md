@@ -24,6 +24,16 @@ pinned headers.
 - `Math.wrap(value, lower, upper)`: reference floor-based wrapping.
 - `Math.float_equals(left, right)`: relative epsilon comparison with `0.000001`.
 
+Gate `scalars` compiles the six from the pinned raymath.h with contraction off
+and loads each input through a volatile. The corpus is signed zeros, one
+subnormal, the least normal, the 2^24 boundary, the largest finite value, both
+infinities and one quiet NaN (Remap sweeps one argument at a time and a
+four-word grid, so five-argument products stay bounded). CPU-1 and CPU-2 match
+every result bit, including equal bounds. JavaScript matches every non-NaN bit.
+The sign of a quiet NaN an arithmetic formula produces is not stable there, so
+the gate records it and does not require it. Clamp and FloatEquals do not
+produce a NaN that way, so they match on JavaScript as well.
+
 ## Vector2 API
 
 `Vector2` remains immutable `Data` with F32 `x` and `y` fields.
@@ -385,14 +395,16 @@ and `mul` for `Matrix` (`MatrixSubtract`, `MatrixMultiply`):
 |---|---|
 | `a + b`, `a - b`, `a * b`, `a / b` (same vector type) | `(a + b : M.Vector3)`, `(a - b : M.Vector3)`, ... |
 | `m + n`, `m - n`, `m * n` | `(m + n : M.Matrix)`, `(m - n : M.Matrix)`, `(m * n : M.Matrix)` |
-| `v * s`, `v / s` | `M.Vector3.scale(v, s)`, `M.Vector3.scale(v, (1.0 / s : F32))` |
+| `v * s`, `s * v`, `v / s` | `M.Vector3.scale(v, s)`, `M.Vector3.scale(v, (1.0 / s : F32))` |
 | `v * m` (Vector2/Vector3), `q * m` | `M.Vector3.transform(v, m)`, `M.Quaternion.transform(q, m)` |
 | `q + s`, `q - s` | `M.Quaternion.add_value(q, s)`, `M.Quaternion.subtract_value(q, s)` |
 | `m * s` | `M.Matrix.multiply_value(m, s)` |
 | `a == b`, `a != b` | `M.Vector3.equals(a, b)`, `Bool.not(M.Vector3.equals(a, b))` |
 
 A compound assignment (`a += b`) returns its updated left operand; Bend values
-are immutable, so it is the same expression bound to a new name. The
+are immutable, so it is the same expression bound to a new name. raylib 6.2's
+`float * vector` (Vector2, Vector3 and Vector4) calls `Vector*Scale(vector, scalar)`,
+the same function as `vector * scalar`, and has no compound form. The
 `operators` gate compiles the pinned raymath.h as C++ with contraction off and
 compares every operator and compound assignment bit for bit, including zero
 divisors and nearly equal pairs.
@@ -411,9 +423,10 @@ Vector-returning operations write every component to adjacent verification cells
 the validator requires all cells to fit. Signed zero is retained in generated
 Bend literals. There is no tolerance added to make mismatches pass.
 
-Current evidence uses finite inputs, nonzero normalized ranges, and nonzero
-component divisors. Exceptional/subnormal behavior, contracted builds, remaining
-raymath functions and the full target/performance matrix remain open. These
+The conformance gate uses finite inputs, nonzero normalized ranges, and nonzero
+component divisors. Gate `scalars` is the exceptional/subnormal corpus for the
+six scalar functions; the same domain for the remaining raymath functions,
+contracted builds and the full target/performance matrix remain open. These
 are partial mappings, not completed raymath APIs. See the
 [progress dashboard](PROGRESS.md) and [VERIFICATION.md](VERIFICATION.md).
 
