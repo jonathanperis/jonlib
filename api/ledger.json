@@ -72439,7 +72439,7 @@
       "gaps": [
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -72502,7 +72502,7 @@
       "gaps": [
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -72565,7 +72565,7 @@
       "gaps": [
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -72628,7 +72628,7 @@
       "gaps": [
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -72691,7 +72691,7 @@
       "gaps": [
         "Contracted builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -72754,7 +72754,7 @@
       "gaps": [
         "Contracted builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -72818,7 +72818,7 @@
         "Contracted builds",
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -72882,7 +72882,7 @@
         "Contracted builds",
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -72946,7 +72946,7 @@
         "Contracted builds",
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -73009,7 +73009,7 @@
       "gaps": [
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -73072,7 +73072,7 @@
       "gaps": [
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -73134,7 +73134,7 @@
       "scope": "Component negation. Every result bit of the vector4 corpus matches, including signed zero, subnormals, infinities and one quiet NaN.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -73197,7 +73197,7 @@
       "gaps": [
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -73261,7 +73261,7 @@
       "gaps": [
         "Contracted builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -73461,7 +73461,7 @@
         "Contracted builds",
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -73585,7 +73585,7 @@
       "scope": "Component reciprocals, including zero divisors. Every result bit of the vector4 corpus matches.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -73648,7 +73648,7 @@
       "scope": "Relative epsilon on all four components, including subnormals, infinities and one quiet NaN. The boolean matches on CPU-1, CPU-2 and JavaScript.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: an invariant comparison was deleted by both compilers. Single calls and JavaScript are not measured (docs/MATH.md)"
       ],
       "adaptations": [],
       "blocker": null,
@@ -75100,7 +75100,7 @@
       "gaps": [
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -75163,7 +75163,7 @@
       "gaps": [
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -75226,7 +75226,7 @@
       "gaps": [
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -75289,7 +75289,7 @@
       "gaps": [
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -75414,7 +75414,7 @@
       "gaps": [
         "Contracted builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -75478,7 +75478,7 @@
         "Contracted builds",
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -75542,7 +75542,7 @@
         "Contracted builds",
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -75606,7 +75606,7 @@
         "Contracted builds",
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib",
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured",
         "Integration: not exercised beyond its gate"
       ],
       "adaptations": [],
@@ -75670,7 +75670,7 @@
       "gaps": [
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -75733,7 +75733,7 @@
       "gaps": [
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -75798,7 +75798,7 @@
         "Contracted builds",
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -75862,7 +75862,7 @@
         "Contracted builds",
         "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -76562,7 +76562,7 @@
       "scope": "Relative epsilon accepting q or -q, including subnormals, infinities and one quiet NaN. The boolean matches on CPU-1, CPU-2 and JavaScript.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: an invariant comparison was deleted by both compilers. Single calls and JavaScript are not measured (docs/MATH.md)"
       ],
       "adaptations": [],
       "blocker": null,

@@ -206,6 +206,32 @@ steps and division-before-step ordering, and snapping returns the exact target.
 `equals` includes W in the relative epsilon comparison. These mappings remain
 partial under the contracted-build and target/performance limits below.
 
+A dependent chain of five million calls, one CPU thread, was timed against
+the same loop compiled from the pinned `raymath.h` with `clang -O2
+-ffp-contract=off`. The Bend program is the pinned native compiler. Each
+sample is the median of three process times after subtracting an empty
+program. This is throughput of the body, not a single call from a larger
+program, and not the JavaScript lane. No performance budget is set.
+
+Bend/clang time, Vector4: `negate` 0.38, `add` 0.74, `add_value` 0.73,
+`subtract_value` 0.78, `subtract` 0.79, `length_sqr` 0.79, `distance_sqr`
+0.82, `lerp` 0.85, `length` 0.87, `scale` 0.91, `distance` 0.91, `dot_product`
+0.93, `invert` 0.97, `multiply` 0.98, `normalize` 1.01, `divide` 1.04.
+Quaternion wrappers (`add`, `subtract`, `scale`, `divide`, `add_value`,
+`subtract_value`, `length`, `lerp`) landed on the same ratios. Hamilton
+`multiply` was 0.59, `lerp` 0.92, `nlerp` 0.96, `normalize` 0.99 and conjugate
+`invert` 1.00. `divide` is the only ratio above 1, by about four percent,
+inside the spread of these short runs. `equals` on both sides was deleted:
+the two inputs did not change, so that row is not a throughput result.
+
+The functions are pure. A call consumes its arguments; a reused vector is
+duplicated by the caller. There is no allocation, pointer, or effect. The
+exceptional corpus is the safety evidence: zero divisors, infinities and one
+quiet NaN are defined and match raylib, except the quiet-NaN signs already
+recorded. Adding a NaN rejection would diverge from upstream. No library
+rewrite is indicated. Bend already emits a packed add for a live `Vector4`
+add, which is why that chain is faster than clang's `addps` loop here.
+
 ## Matrix API
 
 `Matrix` is immutable `Data`. Constructor fields match the reference declaration:
@@ -325,7 +351,8 @@ Gate `vector4` runs these operations on the same exceptional table. `length`
 and `equals` match every result bit on CPU-1, CPU-2 and JavaScript. Hamilton
 multiplication, component division, conjugate inversion, normalization, `lerp`
 and `nlerp` match every non-NaN bit. Slerp and the axis/Euler conversions stay
-on their host libm profiles.
+on their host libm profiles. The same chain timing as Vector4 is recorded
+above.
 
 `nlerp` performs component interpolation followed by quaternion normalization.
 It does not choose a common hemisphere: exactly opposite quaternions can collapse
