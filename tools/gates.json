@@ -118,7 +118,22 @@
     "linux",
     "macos"
    ],
-   "minutes": 70
+   "minutes": 40
+  },
+  {
+   "id": "extrema",
+   "title": "raymath Vector2, Vector3 and Vector4 min, max and clamp on the glibc fminf/fmaxf builtin profile",
+   "run": [
+    "{python}",
+    "tools/extrema_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 40
   },
   {
    "id": "enums",

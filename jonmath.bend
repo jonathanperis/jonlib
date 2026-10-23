@@ -312,13 +312,23 @@ def Vector2.equals(left: Vector2, right: Vector2) -> Bool:
   Vector2{u, v} = right
   Math.float_equals(x, u) && Math.float_equals(y, v)
 
+# A quiet or signaling NaN: exponent all ones and a nonzero mantissa.
+# fminf/fmaxf drop a NaN when the other operand is a number. Two NaNs keep the
+# second operand, which is clang -O2's builtin lowering of those calls.
+def Vector2.clamp.nan(value: F32) -> Bool:
+  ((F32.bits(value) .&. 2147483647) > 2139095040 : U32)
+
 def Vector2.clamp.minimum(gnu: Bool, +left: F32, +right: F32) -> F32:
   zero = Bool.pick(F32, U32.is_ne(((F32.bits(left) .|. F32.bits(right)) .&. 2147483648 : U32), 0), F32.neg(0.0), 0.0)
-  Bool.pick(F32, F32.is_eq(left, 0.0) && F32.is_eq(right, 0.0), Bool.pick(F32, gnu, left, zero), Bool.pick(F32, (left < right : F32), left, right))
+  ordered = Bool.pick(F32, (left < right : F32), left, right)
+  number = Bool.pick(F32, Vector2.clamp.nan(left), right, Bool.pick(F32, Vector2.clamp.nan(right), left, ordered))
+  Bool.pick(F32, F32.is_eq(left, 0.0) && F32.is_eq(right, 0.0), Bool.pick(F32, gnu, left, zero), number)
 
 def Vector2.clamp.maximum(gnu: Bool, +left: F32, +right: F32) -> F32:
   zero = Bool.pick(F32, U32.is_ne(((F32.bits(left) .&. F32.bits(right)) .&. 2147483648 : U32), 0), F32.neg(0.0), 0.0)
-  Bool.pick(F32, F32.is_eq(left, 0.0) && F32.is_eq(right, 0.0), Bool.pick(F32, gnu, left, zero), Bool.pick(F32, (left > right : F32), left, right))
+  ordered = Bool.pick(F32, (left > right : F32), left, right)
+  number = Bool.pick(F32, Vector2.clamp.nan(left), right, Bool.pick(F32, Vector2.clamp.nan(right), left, ordered))
+  Bool.pick(F32, F32.is_eq(left, 0.0) && F32.is_eq(right, 0.0), Bool.pick(F32, gnu, left, zero), number)
 
 def Vector2.clamp_for(reference: Libm, vector: Vector2, lower: Vector2, upper: Vector2) -> Vector2:
   Vector2{x, y} = vector

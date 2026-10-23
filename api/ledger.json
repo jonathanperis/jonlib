@@ -69244,12 +69244,12 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.min_for / jonmath.Vector2.min",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component minima with explicit reference signed-zero behavior.",
+      "scope": "Glibc239 builtin fminf on the extrema corpus: a signed-zero tie keeps the first operand, a NaN loses to a number, and two quiet NaNs keep the second. CPU lanes match every bit.",
       "gaps": [
-        "Exceptional/subnormal",
+        "Signaling NaNs are outside the corpus",
         "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: a dependent chain is about 2.7x clang -O2 on one CPU thread (docs/MATH.md). Single calls are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -69262,6 +69262,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/extrema_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
@@ -69312,12 +69313,12 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.max_for / jonmath.Vector2.max",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component maxima with explicit reference signed-zero behavior.",
+      "scope": "Glibc239 builtin fmaxf on the extrema corpus: a signed-zero tie keeps the first operand, a NaN loses to a number, and two quiet NaNs keep the second. CPU lanes match every bit.",
       "gaps": [
-        "Exceptional/subnormal",
+        "Signaling NaNs are outside the corpus",
         "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: a dependent chain is about 2.7x clang -O2 on one CPU thread (docs/MATH.md). Single calls are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -69330,6 +69331,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/extrema_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
@@ -69569,12 +69571,12 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.clamp_for / jonmath.Vector2.clamp",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component clamp, including reversed bounds and explicit AppleLibm/Glibc239Libm signed-zero selection.",
+      "scope": "Glibc239 component clamp, fminf of the upper bound with fmaxf of the lower bound and the value, on the extrema corpus including reversed bounds. CPU lanes match every bit.",
       "gaps": [
-        "Exceptional/subnormal",
+        "JavaScript quiets a returned negative quiet NaN; signaling NaNs are outside the corpus",
         "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: a dependent chain is about 2.9x clang -O2 on one CPU thread (docs/MATH.md). Single calls are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -69587,6 +69589,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/extrema_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
@@ -71664,12 +71667,12 @@
       "status": "partial",
       "jonlib": "jonmath.Vector3.min_for / jonmath.Vector3.min",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component minima with explicit reference signed-zero selection.",
+      "scope": "Glibc239 builtin fminf on the extrema corpus: a signed-zero tie keeps the first operand, a NaN loses to a number, and two quiet NaNs keep the second. CPU lanes match every bit.",
       "gaps": [
-        "Exceptional/subnormal",
+        "JavaScript quiets a returned negative quiet NaN; signaling NaNs are outside the corpus",
         "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: a dependent chain is about 3.6x clang -O2 on one CPU thread (docs/MATH.md). Single calls are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -71682,6 +71685,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/extrema_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
@@ -71732,12 +71736,12 @@
       "status": "partial",
       "jonlib": "jonmath.Vector3.max_for / jonmath.Vector3.max",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component maxima with explicit reference signed-zero selection.",
+      "scope": "Glibc239 builtin fmaxf on the extrema corpus: a signed-zero tie keeps the first operand, a NaN loses to a number, and two quiet NaNs keep the second. CPU lanes match every bit.",
       "gaps": [
-        "Exceptional/subnormal",
+        "JavaScript quiets a returned negative quiet NaN; signaling NaNs are outside the corpus",
         "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: a dependent chain is about 3.6x clang -O2 on one CPU thread (docs/MATH.md). Single calls are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -71750,6 +71754,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/extrema_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
@@ -72057,12 +72062,12 @@
       "status": "partial",
       "jonlib": "jonmath.Vector3.clamp_for / jonmath.Vector3.clamp",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component clamp with explicit AppleLibm/Glibc239Libm signed-zero ties and reference bound ordering.",
+      "scope": "Glibc239 component clamp, fminf of the upper bound with fmaxf of the lower bound and the value, on the extrema corpus including reversed bounds. CPU lanes match every bit.",
       "gaps": [
-        "Exceptional/subnormal domains",
+        "JavaScript quiets a returned negative quiet NaN; signaling NaNs are outside the corpus",
         "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: a dependent chain is about 4.0x clang -O2 on one CPU thread (docs/MATH.md). Single calls are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -72075,6 +72080,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/extrema_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
@@ -73320,12 +73326,12 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.min_for / jonmath.Vector4.min",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component minima with explicit reference signed-zero selection.",
+      "scope": "Glibc239 builtin fminf on the extrema corpus: a signed-zero tie keeps the first operand, a NaN loses to a number, and two quiet NaNs keep the second. CPU lanes match every bit.",
       "gaps": [
-        "Exceptional/subnormal",
+        "JavaScript quiets a returned negative quiet NaN; signaling NaNs are outside the corpus",
         "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: a dependent chain is about 2.4x clang -O2 on one CPU thread (docs/MATH.md). Single calls are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -73338,6 +73344,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/extrema_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
@@ -73388,12 +73395,12 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.max_for / jonmath.Vector4.max",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component maxima with explicit reference signed-zero selection.",
+      "scope": "Glibc239 builtin fmaxf on the extrema corpus: a signed-zero tie keeps the first operand, a NaN loses to a number, and two quiet NaNs keep the second. CPU lanes match every bit.",
       "gaps": [
-        "Exceptional/subnormal",
+        "JavaScript quiets a returned negative quiet NaN; signaling NaNs are outside the corpus",
         "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
-        "Performance: not measured against raylib"
+        "Performance: a dependent chain is about 2.4x clang -O2 on one CPU thread (docs/MATH.md). Single calls are not measured"
       ],
       "adaptations": [],
       "blocker": null,
@@ -73406,6 +73413,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/extrema_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",

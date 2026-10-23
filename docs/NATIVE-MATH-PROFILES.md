@@ -147,6 +147,12 @@ flags, compiler version, every observation and the native/Sun angle
 differences). Parser and host-field validation are unit-tested in
 `tests/test_native_math_profile.py`, which mocks all native execution.
 
+Gate `extrema` (`tools/extrema_probe.py`) compares Vector2/3/4 min and max and
+Vector2/3 component clamp with that builtin lowering under `Glibc239Libm`.
+Inputs are a table. CPU-1 and CPU-2 match every result bit, including quiet-NaN
+selection. JavaScript quiets a returned negative quiet NaN. Signaling NaNs and
+the native-pointer column stay outside the gate.
+
 ## Rules and known gaps
 
 - Do not repair a mismatch by switching profiles, suppressing builtins,

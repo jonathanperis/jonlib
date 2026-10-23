@@ -57,8 +57,8 @@ the largest finite) is swept one component at a time. `negate`, `invert`,
 `normalize`, `length`, `length_sqr` and `equals` match every result bit on
 CPU-1, CPU-2 and JavaScript, including zero divisors and a zero length.
 The other operations match every non-NaN bit. The sign of a quiet NaN their
-arithmetic produces is not reproduced. `min` and `max` stay on the separate
-signed-zero profiles.
+arithmetic produces is not reproduced. `min`, `max` and `clamp` are compared
+on the glibc builtin profile by gate `extrema`.
 
 `divide` takes two vectors; `invert` takes component reciprocals. `lerp` takes
 two vectors and a scalar amount. `reflect` takes a vector and the supplied normal;
@@ -80,6 +80,8 @@ for total internal reflection and otherwise applies the original formula.
 
 `min_for(reference, left, right)` and `max_for(reference, left, right)` share the
 same explicit zero-tie contract. `min` and `max` select the accurate profile.
+A NaN loses to a number. Two NaNs keep the second operand, which is the
+builtin lowering of `fminf` and `fmaxf`.
 
 The GNU label is a declared numerical profile, not a guarantee for every glibc
 version/compiler evaluation path: constant folding, builtin lowering and native
@@ -87,6 +89,31 @@ glibc calls give three different zero-tie behaviours. The reference harness
 selects the extrema profile from native controls instead of inferring it from the
 host or the gradient/angle profile; see
 [NATIVE-MATH-PROFILES.md](NATIVE-MATH-PROFILES.md).
+
+Gate `extrema` compares Vector2, Vector3 and Vector4 `min_for` and `max_for`,
+and Vector2 and Vector3 `clamp_for`, under `Glibc239Libm` with contraction off.
+Inputs are a table and each word is loaded through a volatile, so clang lowers
+`fminf` and `fmaxf` instead of folding the literals. CPU-1 and CPU-2 match every
+bit of the 14465-case corpus, including infinities, subnormals, signed zeros and
+both quiet-NaN signs. JavaScript matches those bits except where the selected
+operand is a negative quiet NaN, which it returns as a positive quiet NaN:
+Vector3 min 219 rows, max 219, clamp 448; Vector4 min 242, max 242; Vector2
+clamp 53. Vector2 min and max did not produce a negative-NaN result in this
+corpus, and those rows match on JavaScript. Signaling NaNs are outside the
+corpus. raymath has no Vector4 component clamp. The functions are pure: a call
+consumes its arguments, a reused vector is duplicated by the caller, and there
+is no allocation, pointer or effect. The corpus is the safety evidence.
+
+A dependent chain of five million calls, one CPU thread, was timed against the
+same loop compiled from the pinned `raymath.h` with `clang -O2
+-ffp-contract=off`. The other operand comes from an eight-value cycle, so the
+running value keeps changing. Clang emits a packed `minps` or `maxps` plus the
+NaN blend. Each sample is the median of three process times after an empty
+program. Bend/clang: Vector2 min 2.67, max 2.66, clamp 2.93; Vector3 min 3.56,
+max 3.59, clamp 3.95; Vector4 min 2.36, max 2.37. The final bit pattern matched
+on every function. This is throughput of the body, not a single call, and not
+the JavaScript lane. No performance budget is set. The packed minimum is the
+faster code. Removing the NaN test would disagree with `fminf`.
 
 `rotate_for(reference, vector, radians)` uses the explicit trigonometric reference
 profile; `rotate` selects the accurate profile. The Apple profile covers finite
@@ -140,7 +167,7 @@ NaN on every component; the wider edge is swept one component at a time.
 bit on CPU-1, CPU-2 and JavaScript, including zero divisors and a zero
 length, which retains the input. The other operations match every non-NaN
 bit. The sign of a quiet NaN their arithmetic produces is not reproduced.
-`min`, `max` and `clamp` stay on the signed-zero profiles. `angle` stays on
+`min`, `max` and `clamp` are on gate `extrema`. `angle` stays on
 atan2.
 
 `Vector3.normalize` preserves a zero-length input, including signed-zero bits;
@@ -193,8 +220,8 @@ a time. Vector4 `negate`, `invert`, `normalize`, `length`, `length_sqr` and
 CPU-1, CPU-2 and JavaScript, including zero divisors and a zero length.
 Vector4 `normalize` returns four positive zeros when the length is not greater
 than zero. The other operations match every non-NaN bit. The sign of a quiet
-NaN their arithmetic produces is not reproduced. `min` and `max` stay on the
-signed-zero profiles. Quaternion slerp and the axis/Euler conversions stay on
+NaN their arithmetic produces is not reproduced. `min` and `max` are on
+gate `extrema`. Quaternion slerp and the axis/Euler conversions stay on
 their host libm profiles.
 
 All four components are compared bitwise, including W and signed-zero results.
