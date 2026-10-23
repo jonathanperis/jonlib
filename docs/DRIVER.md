@@ -134,8 +134,9 @@ close button or the exit key only.
 
 ### Event table
 
-Base reports events as `Key{code, down}`, `Mouse{x, y, button, down}`,
-`Move{x, y}` and `Close{}` (`effs/window_open.c`, `effs/window_frame.c`). Key
+Base reports events as `Key{code, down}`, `Text{text}`, `Mouse{x, y, button, down}`,
+`Move{x, y}`, `Look{dx, dy}`, `Scroll{x, y, dx, dy}` and `Close{}`
+(`bend2/effs/window.c`). Key
 codes are the lower-case character of the key (`charactersIgnoringModifiers`
 on macOS, `XLookupString` with Shift and Lock on X11), the Mac's private-use
 function-key characters, or 65536 plus the Mac key code for modifiers (X11
@@ -173,8 +174,14 @@ number (left 0, right 1, middle 2, then `MOUSE_BUTTON_SIDE`...; X11 reports 0..2
 only); a button event first runs the cursor position callback when its
 position differs from the current one, then the button callback (with its
 mouse gesture, `SUPPORT_MOUSE_GESTURES`); `Move` is the cursor position
-callback (with a `TOUCH_ACTION_MOVE` gesture); `Close` is the window's close
-button.
+callback (with a `TOUCH_ACTION_MOVE` gesture); `Look` is grabbed motion, a
+delta added to the current mouse position (so `GetMouseDelta` sees it) with
+the same move gesture; `Scroll` replaces the current wheel move with `(dx, dy)`
+(the last scroll of the poll wins) and does not move the cursor; `Text` queues
+each codepoint through the char callback (at most 16 pending); `Close` is the
+window's close button. `DisableCursor` still only recenters and hides inside
+`Core`: Base emits `Look` while the window is grabbed (`Window.grab`), which
+that call does not do.
 
 **Key mapping gaps** (Base reports characters, not physical keys): the keypad
 digits and operators arrive as the main-row characters (`KEY_KP_0`..`KEY_KP_9`,
@@ -273,7 +280,7 @@ Build and run one (a native binary; Base windows need a desktop session):
 ```sh
 bun "$BEND_SOURCE/bend2/main.ts" examples/core_input_keys.bend -o core_input_keys
 ./core_input_keys                       # until the window closes or Escape
-./core_input_keys --threads 1 --frames 120
+./core_input_keys +RTS --threads 1 -RTS --frames 120
 ```
 
 ## Verification
@@ -328,7 +335,7 @@ keys, Shift, a shifted symbol and an unknown code.
 ### Interactive runs
 
 `python3 tools/examples_probe.py ... --interactive 180` builds each example
-and runs it in a Base window for 180 frames with `--gpu off` (the Bend program
+and runs it in a Base window for 180 frames with `+RTS --gpu off --threads N -RTS` (the Bend program
 on the CPU; Base presents through Metal) on one and two threads, recording the
 driver's summary (diagnostic, not a gate: it needs a desktop session). Apple
 M1, macOS arm64, October 2026, other jobs running on the machine; each window
@@ -363,11 +370,11 @@ windows and `IsWindowResized`, focus, hidden, topmost), position, size limits,
 opacity, icons, monitors and DPI, clipboard, `OpenURL`, cursor shape and
 visibility (`SetMouseCursor`; `HideCursor`, `DisableCursor` only set the
 flags), key names, gamepad mappings and vibration, dropped files, event
-waiting, vsync control and a window handle. Input without Base events: the mouse wheel, text input
-(`GetCharPressed` stays empty on the desktop), cursor enter/leave
-(`IsCursorOnScreen` stays false), gamepads, touch, window resize/focus
-events; mouse positions are clipped to the window by Base (GLFW reports
-positions outside while dragging). Timing: `IO.now` has millisecond
+waiting, vsync control and a window handle. Input without Base events: cursor
+enter/leave (`IsCursorOnScreen` stays false), gamepads, touch, window
+resize/focus events; mouse positions are clipped to the window by Base (GLFW
+reports positions outside while dragging). The wheel and typed text arrive as
+`Scroll` and `Text`. Timing: `IO.now` has millisecond
 resolution (raylib's `GetTime` is sub-millisecond) and `Window.frame` waits for
 the display on macOS (Base enables display sync), so frame rates do not
 reach raylib's pacing exactly. `Core.get_time` answers the clock of the last

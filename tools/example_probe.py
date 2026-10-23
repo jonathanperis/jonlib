@@ -9,8 +9,8 @@ def main(argv=None):
     binary, script = probe.work / 'math', probe.work / 'math.js'
     probekit.run(['bun', probe.args.bend_source / 'bend2/main.ts', ROOT / 'examples/math.bend', '-o', binary, '-o', script],
                  timeout=probekit.COMPILE_TIMEOUT)
-    outputs = {'cpu-1': probekit.run([binary, '--gpu', 'off', '--threads', '1']),
-               'cpu-2': probekit.run([binary, '--gpu', 'off', '--threads', '2']),
+    outputs = {'cpu-1': probekit.run([binary, *probekit.bend_runtime('--gpu', 'off', '--threads', '1')]),
+               'cpu-2': probekit.run([binary, *probekit.bend_runtime('--gpu', 'off', '--threads', '2')]),
                'javascript': probekit.run(['bun', script])}
     if not outputs['cpu-1'].strip() or len(set(outputs.values())) != 1:
         raise ProbeFailure(f'examples/math.bend output differs or is empty across lanes: {outputs}')

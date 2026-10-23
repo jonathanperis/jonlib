@@ -462,7 +462,7 @@ def measure_example(ctx, example, script, libm, extra, runs, js):
     entry['compile_seconds'] = time.perf_counter() - started
     reference = ep.build_reference(ctx, example)
 
-    native_runs, lanes = [], {'cpu-1': [binary, '--gpu', 'off', '--threads', '1']}
+    native_runs, lanes = [], {'cpu-1': [binary, *probekit.bend_runtime('--gpu', 'off', '--threads', '1')]}
     if js:
         lanes['javascript'] = ['bun', javascript]
     lane_runs = {lane: [] for lane in lanes}
@@ -520,7 +520,7 @@ def measure_audio(ctx, periods, runs, native_periods):
     bend.write_text(AUDIO_BEND)
     print('audio: compiling the candidate', flush=True)
     compile_cached(['bun', ctx.args.bend_source / 'bend2/main.ts'], bend, candidate, extra=json.dumps(ctx.lock['bend']))
-    sides = {'native': [binary], 'cpu-1': [candidate, '--gpu', 'off', '--threads', '1']}
+    sides = {'native': [binary], 'cpu-1': [candidate, *probekit.bend_runtime('--gpu', 'off', '--threads', '1')]}
     # raylib's period is too cheap to resolve from a few hundred: it is timed over native_periods (the music loops), and
     # both sides' GetMusicTimePlayed are compared after the same `periods`.
     counts = {'native': native_periods, 'cpu-1': periods}

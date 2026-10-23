@@ -307,7 +307,7 @@ def opened(started: Fr.Started, +ops: +List<U32>) -> String:
   match started:
     case Fr.Unready{S.Failed{+code}}: "[" ++ U32.show(code) ++ "]"
     case Fr.Unready{_}: "[-2]"
-    case Fr.Ready{+plan, +frames, +rate, +first}:
+    case Fr.Opened{+plan, +frames, +rate, +first}:
       run(ops, Bool.not(Fr.Frames.refused(frames)), plan, Run{frames, mix(mix(mix(2166136261, digest(frames)), rate), first), 0, 0}, "[" ++ U32.show(mix(mix(mix(2166136261, digest(frames)), rate), first)) ++ ", ")
 
 def loaded(result: Result<&1, &1, J.Surface.IOError, +List<U32>>, +ops: +List<U32>) -> IO(Unit):

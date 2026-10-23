@@ -80,17 +80,17 @@ def enough(n: Nat, data: +List<U32>) -> Bool:
     case _ Nil{}: False{}
     case 1n+rest Con{_, tail}: enough(rest, tail)
 
-def sample.byte(selected: Bool, shift: Nat, value: U32, data: +List<U32>) -> Maybe<&2, C.Word>:
+def sample.byte(selected: Bool, shift: Nat, value: U32, data: +List<U32>) -> Maybe<&2, C.Cursor>:
   match selected data:
-    case False{} _: Some{C.Word{value, data}}
+    case False{} _: Some{C.Cursor{value, data}}
     case True{} Nil{}: None{}
-    case True{} Con{byte, rest}: Some{C.Word{(value .|. (byte << shift) : U32), rest}}
+    case True{} Con{byte, rest}: Some{C.Cursor{(value .|. (byte << shift) : U32), rest}}
 
-def sample(n: Nat, +bit: U32, +shift: Nat, +channels: U32, state: Maybe<&2, C.Word>) -> Maybe<&2, C.Word>:
+def sample(n: Nat, +bit: U32, +shift: Nat, +channels: U32, state: Maybe<&2, C.Cursor>) -> Maybe<&2, C.Cursor>:
   match n state:
     case _ None{}: None{}
     case 0n _: state
-    case 1n+rest Some{C.Word{value, data}}:
+    case 1n+rest Some{C.Cursor{value, data}}:
       sample(rest, (bit >> 1n : U32), Nat.sub(shift, 8n), channels, sample.byte(U32.is_ne((channels .&. bit : U32), 0), shift, value, data))
 
 type State is Type:
@@ -100,17 +100,17 @@ def pixel.merge(index: U32, mask: U32, value: U32, data: +List<U32>, read: Array
   (pixels, old) = read
   State{data, Array.set(U32, pixels, index, ((old .&. (4294967295 - mask)) .|. value : U32))}
 
-def pixel.read(+index: U32, mask: U32, pixels: Array<U32>, result: Maybe<&2, C.Word>) -> Result<&1, &1, C.Error, State>:
+def pixel.read(+index: U32, mask: U32, pixels: Array<U32>, result: Maybe<&2, C.Cursor>) -> Result<&1, &1, C.Error, State>:
   match result:
     case None{}: Fail{C.Truncated{}}
-    case Some{C.Word{value, data}}: Done{pixel.merge(index, mask, value, data, Array.get(U32, pixels, index))}
+    case Some{C.Cursor{value, data}}: Done{pixel.merge(index, mask, value, data, Array.get(U32, pixels, index))}
 
 def pixels(n: Nat, +index: U32, +channels: U32, +mask: U32, state: Result<&1, &1, C.Error, State>) -> Result<&1, &1, C.Error, State>:
   match n state:
     case _ Fail{error}: Fail{error}
     case 0n _: state
     case 1n+rest Done{State{data, output}}:
-      pixels(rest, (index + 1 : U32), channels, mask, pixel.read(index, mask, output, sample(4n, 128, 24n, channels, Some{C.Word{0, data}})))
+      pixels(rest, (index + 1 : U32), channels, mask, pixel.read(index, mask, output, sample(4n, 128, 24n, channels, Some{C.Cursor{0, data}})))
 
 type Rle is Type:
   Rle{left: U32, index: U32, data: +List<U32>, pixels: Array<U32>}
@@ -126,22 +126,22 @@ def rle.repeat(n: Nat, +index: U32, +mask: U32, +value: U32, state: State) -> St
     case 1n+rest State{data, output}:
       rle.repeat(rest, (index + 1 : U32), mask, value, pixel.merge(index, mask, value, data, Array.get(U32, output, index)))
 
-def rle.repeated(+count: U32, left: U32, +index: U32, mask: U32, pixels: Array<U32>, result: Maybe<&2, C.Word>) -> Result<&1, &1, C.Error, Rle>:
+def rle.repeated(+count: U32, left: U32, +index: U32, mask: U32, pixels: Array<U32>, result: Maybe<&2, C.Cursor>) -> Result<&1, &1, C.Error, Rle>:
   match result:
     case None{}: Fail{C.Truncated{}}
-    case Some{C.Word{value, data}}:
+    case Some{C.Cursor{value, data}}:
       rle.written((left - count : U32), (index + count : U32), Done{rle.repeat(U32.to_nat(count), index, mask, value, State{data, pixels})})
 
 def rle.packet(valid: Bool, literal: Bool, +count: U32, left: U32, +index: U32, channels: U32, mask: U32, data: +List<U32>, output: Array<U32>) -> Result<&1, &1, C.Error, Rle>:
   match valid literal:
     case False{} _: Fail{C.BadStream{}}
     case True{} True{}: rle.written((left - count : U32), (index + count : U32), pixels(U32.to_nat(count), index, channels, mask, Done{State{data, output}}))
-    case True{} False{}: rle.repeated(count, left, index, mask, output, sample(4n, 128, 24n, channels, Some{C.Word{0, data}}))
+    case True{} False{}: rle.repeated(count, left, index, mask, output, sample(4n, 128, 24n, channels, Some{C.Cursor{0, data}}))
 
-def rle.extended(+left: U32, index: U32, channels: U32, mask: U32, output: Array<U32>, result: Maybe<&2, C.Word>) -> Result<&1, &1, C.Error, Rle>:
+def rle.extended(+left: U32, index: U32, channels: U32, mask: U32, output: Array<U32>, result: Maybe<&2, C.Cursor>) -> Result<&1, &1, C.Error, Rle>:
   match result:
     case None{}: Fail{C.Truncated{}}
-    case Some{C.Word{+count, data}}: rle.packet((count <= left : U32), False{}, count, left, index, channels, mask, data, output)
+    case Some{C.Cursor{+count, data}}: rle.packet((count <= left : U32), False{}, count, left, index, channels, mask, data, output)
 
 def rle.mixed(extended: Bool, +literal: Bool, +code: U32, +left: U32, index: U32, channels: U32, mask: U32, data: +List<U32>, output: Array<U32>) -> Result<&1, &1, C.Error, Rle>:
   match extended:
@@ -187,12 +187,12 @@ def rows(n: Nat, +y: U32, +width: U32, +packets: +List<Packet>, +fuel: Nat, stat
     case 0n _: state
     case 1n+rest _: rows(rest, (y + 1 : U32), width, packets, fuel, row(packets, (y * width : U32), width, fuel, state))
 
-def image(width: U32, height: U32, native_channels: U32, result: Result<&1, &1, C.Error, State>) -> Result<&1, &1, C.Error, C.Image>:
+def image(width: U32, height: U32, native_channels: U32, result: Result<&1, &1, C.Error, State>) -> Result<&1, &1, C.Error, C.Picture>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{State{_, output}}: Done{C.Image{width, height, native_channels, output}}
+    case Done{State{_, output}}: Done{C.Picture{width, height, native_channels, output}}
 
-def start.valid(valid: Bool, +width: U32, +height: U32, native_channels: U32, packets: +List<Packet>, fuel: Nat, data: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def start.valid(valid: Bool, +width: U32, +height: U32, native_channels: U32, packets: +List<Packet>, fuel: Nat, data: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   match valid:
     case False{}: Fail{C.Truncated{}}
     case True{}:
@@ -205,7 +205,7 @@ def raw(packets: +List<Packet>) -> Bool:
     case Nil{}: True{}
     case Con{Packet{kind, _, _}, rest}: U32.is_eq(kind, 0) && raw(rest)
 
-def start.kind(plain: Bool, +width: U32, +height: U32, native_channels: U32, packets: +List<Packet>, size: U32, +data: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def start.kind(plain: Bool, +width: U32, +height: U32, native_channels: U32, packets: +List<Packet>, size: U32, +data: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   match plain:
     case True{}: start.valid(enough(U32.to_nat((width * height * size : U32)), data), width, height, native_channels, packets, 0n, data)
     case False{}: start.valid(True{}, width, height, native_channels, packets, C.byte_count(data, 0n), data)
@@ -221,16 +221,16 @@ def native.mask(packets: +List<Packet>, mask: U32) -> U32:
 def native.channels(packets: +List<Packet>) -> U32:
   Bool.pick(U32, U32.is_ne((native.mask(packets, 0) .&. 16 : U32), 0), 4, 3)
 
-def start(result: Result<&2, &2, C.Error, Header>) -> Result<&1, &1, C.Error, C.Image>:
+def start(result: Result<&2, &2, C.Error, Header>) -> Result<&1, &1, C.Error, C.Picture>:
   match result:
     case Fail{error}: Fail{error}
     case Done{Header{width, height, +packets, size, data}}:
       start.kind(raw(packets), width, height, native.channels(packets), packets, size, data)
 
-def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   match valid:
     case False{}: Fail{C.BadByte{}}
     case True{}: start(header(bytes))
 
-def decode(+bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def decode(+bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   checked(C.valid_bytes(bytes, True{}), bytes)

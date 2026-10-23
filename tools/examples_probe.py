@@ -2606,7 +2606,7 @@ def interactive(probe, frames):
         probekit.run([*probekit.compiler_command(cli), ROOT / f'examples/{name}.bend', '-o', binary], timeout=probekit.COMPILE_TIMEOUT, env=probekit.compiler_env())
         results[name] = {}
         for lane, threads in (('cpu-1', '1'), ('cpu-2', '2')):
-            command = [binary, '--gpu', 'off', '--threads', threads, '--frames', str(frames)]
+            command = [binary, *probekit.bend_runtime('--gpu', 'off', '--threads', threads), '--frames', str(frames)]
             if name == 'textures_logo_raylib':
                 command += ['--logo', logo]
             if name in IO_SETUP:

@@ -6,7 +6,7 @@ import statistics
 import time
 from pathlib import Path
 
-from conformance import BUILD, ROOT, checkout, run, source_gate
+from conformance import BUILD, ROOT, bend_runtime, checkout, run, source_gate
 from probekit import native_library
 
 
@@ -56,11 +56,11 @@ def main() -> IO(Unit):
         binary=work/mode
         run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary])
         programs[mode]=binary
-    lanes = {'serial-1':[programs['serial'],'--threads','1'],
-             'parallel-1':[programs['parallel'],'--threads','1'],
-             'parallel-2':[programs['parallel'],'--threads','2']}
+    lanes = {'serial-1':[programs['serial'], *bend_runtime('--threads', '1')],
+             'parallel-1':[programs['parallel'], *bend_runtime('--threads', '1')],
+             'parallel-2':[programs['parallel'], *bend_runtime('--threads', '2')]}
     if args.gpu:
-        lanes['metal']=[programs['gpu'],'--gpu','on']
+        lanes['metal']=[programs['gpu'], *bend_runtime('--gpu', 'on')]
     for command in lanes.values():
         if int(run(command).strip()) != expected:
             raise ValueError('Benchmark checksum differs from actual raylib')

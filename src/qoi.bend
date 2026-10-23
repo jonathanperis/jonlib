@@ -19,19 +19,19 @@ def header.tail(width: U32, height: U32, bytes: +List<U32>) -> Result<&2, &2, C.
       header.valid(((channels >= 3) && (channels <= 4) && (space <= 1) : U32), width, height, channels, rest)
     case _: Fail{C.BadHeader{}}
 
-def header.height(width: U32, result: Maybe<&2, C.Word>) -> Result<&2, &2, C.Error, Header>:
+def header.height(width: U32, result: Maybe<&2, C.Cursor>) -> Result<&2, &2, C.Error, Header>:
   match result:
     case None{}: Fail{C.BadHeader{}}
-    case Some{C.Word{height, rest}}: header.tail(width, height, rest)
+    case Some{C.Cursor{height, rest}}: header.tail(width, height, rest)
 
-def header.width(result: Maybe<&2, C.Word>) -> Result<&2, &2, C.Error, Header>:
+def header.width(result: Maybe<&2, C.Cursor>) -> Result<&2, &2, C.Error, Header>:
   match result:
     case None{}: Fail{C.BadHeader{}}
-    case Some{C.Word{width, rest}}: header.height(width, C.word(rest))
+    case Some{C.Cursor{width, rest}}: header.height(width, C.word(rest))
 
-def header.magic(result: Maybe<&2, C.Word>) -> Result<&2, &2, C.Error, Header>:
+def header.magic(result: Maybe<&2, C.Cursor>) -> Result<&2, &2, C.Error, Header>:
   match result:
-    case Some{C.Word{1903126886, rest}}: header.width(C.word(rest))
+    case Some{C.Cursor{1903126886, rest}}: header.width(C.word(rest))
     case _: Fail{C.BadHeader{}}
 
 def rgba(r: U32, g: U32, b: U32, a: U32) -> U32:
@@ -113,12 +113,12 @@ def loop(n: Nat, +i: U32, +channels: U32, state: Result<&1, &1, C.Error, State>)
     case 1n+k Done{State{data, cache, pixel, repeat, output}}:
       loop(k, (i + 1 : U32), channels, write(i, channels, next(repeat, data, cache, pixel, output)))
 
-def image(width: U32, height: U32, channels: U32, result: Result<&1, &1, C.Error, Array<U32>>) -> Result<&1, &1, C.Error, C.Image>:
+def image(width: U32, height: U32, channels: U32, result: Result<&1, &1, C.Error, Array<U32>>) -> Result<&1, &1, C.Error, C.Picture>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{pixels}: Done{C.Image{width, height, channels, pixels}}
+    case Done{pixels}: Done{C.Picture{width, height, channels, pixels}}
 
-def sized(valid: Bool, +width: U32, +height: U32, +channels: U32, data: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def sized(valid: Bool, +width: U32, +height: U32, +channels: U32, data: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   match valid:
     case False{}: Fail{C.BadSize{}}
     case True{}:
@@ -126,18 +126,18 @@ def sized(valid: Bool, +width: U32, +height: U32, +channels: U32, data: +List<U3
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
       image(width, height, channels, loop(U32.to_nat(count), 0, channels, Done{State{data, Array.new(U32, 6n, 0), 255, 0, Array.new(U32, depth, 0)}}))
 
-def start(header: Result<&2, &2, C.Error, Header>) -> Result<&1, &1, C.Error, C.Image>:
+def start(header: Result<&2, &2, C.Error, Header>) -> Result<&1, &1, C.Error, C.Picture>:
   match header:
     case Fail{error}: Fail{error}
     case Done{Header{+w, +h, channels, data}}:
       sized(((w >= 1) && (h >= 1) && (w <= 4096) && (h <= 4096) : U32), w, h, channels, data)
 
-def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   match valid:
     case False{}: Fail{C.BadByte{}}
     case True{}: start(header.magic(C.word(bytes)))
 
-def decode(+bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def decode(+bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   checked(C.valid_bytes(bytes, True{}), bytes)
 
 type Encoder is Type:

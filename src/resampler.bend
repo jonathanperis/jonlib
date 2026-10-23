@@ -113,8 +113,8 @@ def expected(+frames: U32, +rin: U32, +rout: U32) -> Maybe<U32>:
 type Coefs is Data:
   Coefs{b0: U32, b1: U32, b2: U32, a1: U32, a2: U32}
 
-type Chan is Data:
-  Chan{r1a: U32, r2a: U32, r1b: U32, r2b: U32}
+type Lane is Data:
+  Lane{r1a: U32, r2a: U32, r1b: U32, r2b: U32}
 
 type Step is Data:
   Step{y: U32, r1: U32, r2: U32, ok: Bool}
@@ -184,13 +184,13 @@ def stored(+f32: Bool, +y: U32) -> U32:
   Bool.pick(U32, f32, y, clamp16(y))
 
 type Filtered is Data:
-  Filtered{frame: +List<U32>, chans: +List<Chan>, ok: Bool}
+  Filtered{frame: +List<U32>, chans: +List<Lane>, ok: Bool}
 
 def Filtered.frame(+f: Filtered) -> +List<U32>:
   Filtered{frame, _, _} = f
   frame
 
-def Filtered.chans(+f: Filtered) -> +List<Chan>:
+def Filtered.chans(+f: Filtered) -> +List<Lane>:
   Filtered{_, chans, _} = f
   chans
 
@@ -204,15 +204,15 @@ type Lpf is Data:
 type Steps is Data:
   Steps{a: Step, b: Step}
 
-def channel.step(+lpf: Lpf, +x: U32, +chan: Chan) -> Steps:
+def channel.step(+lpf: Lpf, +x: U32, +chan: Lane) -> Steps:
   Lpf{+f32, +fused, +first, +second} = lpf
-  Chan{+r1a, +r2a, +r1b, +r2b} = chan
+  Lane{+r1a, +r2a, +r1b, +r2b} = chan
   +a = biquad(f32, fused, first, x, r1a, r2a)
   Steps{a, biquad(f32, fused, second, stored(f32, Step.y(a)), r1b, r2b)}
 
 def channel.join(+f32: Bool, +steps: Steps, +rest: Filtered) -> Filtered:
   Steps{+a, +b} = steps
-  Filtered{Con{stored(f32, Step.y(b)), Filtered.frame(rest)}, Con{Chan{Step.r1(a), Step.r2(a), Step.r1(b), Step.r2(b)}, Filtered.chans(rest)},
+  Filtered{Con{stored(f32, Step.y(b)), Filtered.frame(rest)}, Con{Lane{Step.r1(a), Step.r2(a), Step.r1(b), Step.r2(b)}, Filtered.chans(rest)},
     Step.ok(a) && Step.ok(b) && Filtered.ok(rest)}
 
 def Lpf.f32(+lpf: Lpf) -> Bool:
@@ -220,15 +220,15 @@ def Lpf.f32(+lpf: Lpf) -> Bool:
   f32
 
 # ma_lpf_process_pcm_frame: each channel through both sections.
-def filter(frame: +List<U32>, +chans: +List<Chan>, +lpf: Lpf) -> Filtered:
+def filter(frame: +List<U32>, +chans: +List<Lane>, +lpf: Lpf) -> Filtered:
   match frame chans:
     case Con{+x, xs} Con{+chan, cs}: channel.join(Lpf.f32(lpf), channel.step(lpf, x, chan), filter(xs, cs, lpf))
     case _ _: Filtered{Nil{}, Nil{}, True{}}
 
-def chans.zero(n: Nat, acc: +List<Chan>) -> +List<Chan>:
+def chans.zero(n: Nat, acc: +List<Lane>) -> +List<Lane>:
   match n:
     case 0n: acc
-    case 1n+k: chans.zero(k, Con{Chan{0, 0, 0, 0}, acc})
+    case 1n+k: chans.zero(k, Con{Lane{0, 0, 0, 0}, acc})
 
 def zeros(n: Nat, acc: +List<U32>) -> +List<U32>:
   match n:
@@ -242,7 +242,7 @@ def zeros(n: Nat, acc: +List<U32>) -> +List<U32>:
 # the result), then advances time by rin/rout.
 
 type St is Data:
-  St{t_int: U32, t_frac: U32, x0: +List<U32>, x1: +List<U32>, chans: +List<Chan>, ok: Bool}
+  St{t_int: U32, t_frac: U32, x0: +List<U32>, x1: +List<U32>, chans: +List<Lane>, ok: Bool}
 
 type Params is Data:
   Params{lpf: Lpf, rout: U32, adv_int: U32, adv_frac: U32, down: Bool}
@@ -255,7 +255,7 @@ def St.ok(+st: St) -> Bool:
   St{_, _, _, _, _, ok} = st
   ok
 
-def filter.if(apply: Bool, +frame: +List<U32>, +chans: +List<Chan>, +lpf: Lpf) -> Filtered:
+def filter.if(apply: Bool, +frame: +List<U32>, +chans: +List<Lane>, +lpf: Lpf) -> Filtered:
   match apply:
     case True{}: filter(frame, chans, lpf)
     case False{}: Filtered{frame, chans, True{}}
@@ -264,7 +264,7 @@ def load.filtered(+f: Filtered, +st: St) -> St:
   St{+t_int, +t_frac, _, +x1, _, +ok} = st
   St{(t_int - 1 : U32), t_frac, x1, Filtered.frame(f), Filtered.chans(f), ok && Filtered.ok(f)}
 
-def St.chans(+st: St) -> +List<Chan>:
+def St.chans(+st: St) -> +List<Lane>:
   St{_, _, _, _, chans, _} = st
   chans
 

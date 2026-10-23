@@ -170,7 +170,7 @@ def pump(+plan: K.Plan, +frames: Frames) -> Frames:
 # A decoder of the data, with the stream's sample rate and where its audio
 # begins (first_audio_page_offset), or why there is none.
 type Started is Data:
-  Ready{plan: K.Plan, frames: Frames, rate: U32, first: U32}
+  Opened{plan: K.Plan, frames: Frames, rate: U32, first: U32}
   Unready{status: S.Status}
 
 # first_audio_page_offset, of the reader as the setup leaves it: where the
@@ -182,7 +182,7 @@ def first.audio(+reader: O.Reader) -> U32:
 def memory.opened(decoder: K.Decoder, +rate: U32) -> Started:
   match decoder:
     case K.Closed{+status}: Unready{status}
-    case K.Opened{+plan, +state}: Ready{plan, pump(plan, Frames{state, K.rows.new(U32.to_nat(K.Plan.channels(plan)), (C.ilog(K.Plan.blocksize_1(plan)) - 2 : U32), Nil{}), 0, 0, 0, 0}), rate, first.audio(K.State.reader(state))}
+    case K.Opened{+plan, +state}: Opened{plan, pump(plan, Frames{state, K.rows.new(U32.to_nat(K.Plan.channels(plan)), (C.ilog(K.Plan.blocksize_1(plan)) - 2 : U32), Nil{}), 0, 0, 0, 0}), rate, first.audio(K.State.reader(state))}
 
 def memory.set(+libm: Mth.Libm, +setup: S.Setup) -> Started:
   memory.opened(K.open.set(libm, setup), S.Head.rate(S.Setup.head(setup)))

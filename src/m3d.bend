@@ -24,15 +24,15 @@ import ./png.bend as Png
 # The file after its container: the bytes from HEAD on (raw) and their count,
 # the scale, the index sizes (0 for an index the file does not have) and the
 # bytes from the first chunk after HEAD with their offset in raw.
-type File is Data:
-  File{raw: +List<U32>, size: U32, scale: F32, vc: U32, vi: U32, si: U32, ci: U32, ti: U32, bi: U32, nb: U32, sk: U32, fc: U32, first: U32}
+type Source is Data:
+  Source{raw: +List<U32>, size: U32, scale: F32, vc: U32, vi: U32, si: U32, ci: U32, ti: U32, bi: U32, nb: U32, sk: U32, fc: U32, first: U32}
 
 # Unread: the importer reads outside its buffers or the profile ends.
 # Foreign: m3d_load gives no model (LoadM3D returns the empty model).
 type Opened is Data:
   Unread{}
   Foreign{}
-  Open{file: File}
+  Open{file: Source}
 
 # An index read from the stream and the bytes after it; ok: the bytes were there.
 type Index is Data:
@@ -177,7 +177,7 @@ def headed(+raw: +List<U32>, +size: U32) -> Opened:
   +vi = sized(types, 2, False{})
   +si = sized(types, 4, False{})
   Bool.pick(Opened, (size < 16 : U32) || U32.is_eq(vc, 8), Unread{}, Bool.pick(Opened, (vi > 4 : U32) || (si > 4 : U32) || U32.is_eq(sized(types, 24, False{}), 4) || Bool.not(magic(at(raw, (size - 4 : U32)), 79, 77, 68, 51)), Foreign{},
-    Open{File{raw, size, Bool.pick(F32, (scale <= 0.0 : F32), 1.0, scale), vc, vi, si, sized(types, 6, True{}), sized(types, 8, True{}), sized(types, 10, True{}), sized(types, 12, False{}), sized(types, 14, True{}),
+    Open{Source{raw, size, Bool.pick(F32, (scale <= 0.0 : F32), 1.0, scale), vc, vi, si, sized(types, 6, True{}), sized(types, 8, True{}), sized(types, 10, True{}), sized(types, 12, False{}), sized(types, 14, True{}),
       sized(types, 16, True{}), word(at(raw, 4))}}))
 
 # The stream inflated: no model unless it gives bytes that start with HEAD.
@@ -300,11 +300,11 @@ def colored(+ci: U32, +cmapped: Bool, +cmap: Store, +read: Index) -> Index:
 
 # VRTS: numvertex = len/reclen records of four coordinates of vc bytes, the
 # color (index or word) and the skin index (M3D_UNDEF without one).
-def vertices(n: Nat, +bytes: +List<U32>, +file: File, +cmapped: Bool, +cmap: Store, +ok: Bool, +acc: +List<Row>) -> Rows:
+def vertices(n: Nat, +bytes: +List<U32>, +file: Source, +cmapped: Bool, +cmap: Store, +ok: Bool, +acc: +List<Row>) -> Rows:
   match n:
     case 0n: Rows{ok, rows.reversed(acc, Nil{})}
     case 1n+k:
-      File{_, _, _, +vc, _, _, +ci, _, _, _, +sk, _, _} = file
+      Source{_, _, _, +vc, _, _, +ci, _, _, _, +sk, _, _} = file
       +x = value(vc, bytes)
       +y = value(vc, Index.rest(x))
       +z = value(vc, Index.rest(y))
@@ -323,13 +323,13 @@ type Boned is Data:
 # The bone hierarchy: parent (bi), name (si), position and orientation (vi
 # each) of `n` bones, or of those the chunk holds (a truncated chunk keeps
 # what it has; a bone cut by the chunk's end is a read outside it).
-def bones(n: Nat, bytes: +List<U32>, +file: File, +ok: Bool, +count: U32, +acc: +List<Row>) -> Boned:
+def bones(n: Nat, bytes: +List<U32>, +file: Source, +ok: Bool, +count: U32, +acc: +List<Row>) -> Boned:
   match n bytes:
     case 0n Nil{}: Boned{ok, rows.reversed(acc, Nil{}), count, Nil{}}
     case 0n Con{+b, +rest}: Boned{ok, rows.reversed(acc, Nil{}), count, Con{b, rest}}
     case 1n+_ Nil{}: Boned{ok, rows.reversed(acc, Nil{}), count, Nil{}}
     case 1n+k Con{+b, +rest}:
-      File{_, _, _, _, +vi, +si, _, _, +bi, _, _, _, _} = file
+      Source{_, _, _, _, +vi, +si, _, _, +bi, _, _, _, _} = file
       +parent = index(bi, Con{b, rest}, 0)
       +name = index(si, Index.rest(parent), 0)
       +pos = index(vi, Index.rest(name), 0)
@@ -421,15 +421,15 @@ def skins(n: Nat, bytes: +List<U32>, +nb: U32, +bi: U32, +ok: Bool, +count: U32,
 # the offset is not 0 (a NULL name) and the NUL is among the first 256 bytes
 # (inside the file; longer strings are outside the profile).
 type Text is Data:
-  Text{ok: Bool, bytes: +List<U32>}
+  Label{ok: Bool, bytes: +List<U32>}
 
 def text.go(n: Nat, bytes: +List<U32>, +done: Bool, +acc: +List<U32>) -> Text:
   match n bytes:
     case 1n+k Con{+b, rest}: text.go(k, rest, done || U32.is_eq(b, 0), Bool.pick(+List<U32>, done || U32.is_eq(b, 0), acc, Con{b, acc}))
-    case _ _: Text{done, List.reverse(&2, U32, acc)}
+    case _ _: Label{done, List.reverse(&2, U32, acc)}
 
 def text(+raw: +List<U32>, +offset: U32) -> Text:
-  Bool.pick(Text, U32.is_eq(offset, 0), Text{False{}, Nil{}}, text.go(256n, at(raw, (16 + offset : U32)), False{}, Nil{}))
+  Bool.pick(Text, U32.is_eq(offset, 0), Label{False{}, Nil{}}, text.go(256n, at(raw, (16 + offset : U32)), False{}, Nil{}))
 
 def same(a: +List<U32>, b: +List<U32>) -> Bool:
   match a b:
@@ -456,8 +456,8 @@ def format(+kind: U32) -> U32:
     Bool.pick(U32, U32.is_eq(kind, 8), 1, 9)))
 
 # One property's value after its type byte.
-def prop.value(+kind: U32, +bytes: +List<U32>, +file: File, +cmapped: Bool, +cmap: Store) -> Index:
-  File{_, _, _, _, _, +si, +ci, _, _, _, _, _, _} = file
+def prop.value(+kind: U32, +bytes: +List<U32>, +file: Source, +cmapped: Bool, +cmap: Store) -> Index:
+  Source{_, _, _, _, _, +si, +ci, _, _, _, _, _, _} = file
   Bool.pick(Index, (kind >= 128 : U32), index(si, bytes, 0), Bool.pick(Index, U32.is_eq(format(kind), 0),
     colored(ci, cmapped, cmap, Bool.pick(Index, U32.is_eq(ci, 0), Index{True{}, 0, bytes}, value(ci, bytes))), Bool.pick(Index, U32.is_eq(format(kind), 4), value(4, bytes), value(1, bytes))))
 
@@ -468,7 +468,7 @@ def props.turned(xs: +List<Prop>, acc: +List<Prop>) -> +List<Prop>:
 
 # The properties of a material until the chunk ends; an unknown type ends
 # them (the importer leaves the rest of the chunk).
-def props(fuel: Nat, bytes: +List<U32>, +file: File, +cmapped: Bool, +cmap: Store, +ok: Bool, +acc: +List<Prop>) -> Props:
+def props(fuel: Nat, bytes: +List<U32>, +file: Source, +cmapped: Bool, +cmap: Store, +ok: Bool, +acc: +List<Prop>) -> Props:
   match fuel bytes:
     case _ Nil{}: Props{ok, props.turned(acc, Nil{})}
     case 0n Con{_, _}: Props{False{}, Nil{}}
@@ -539,11 +539,11 @@ def Corner.rest(c: Corner) -> +List<U32>:
   rest
 
 def Text.ok(t: Text) -> Bool:
-  Text{ok, _} = t
+  Label{ok, _} = t
   ok
 
 def Text.bytes(t: Text) -> +List<U32>:
-  Text{_, bytes} = t
+  Label{_, bytes} = t
   bytes
 
 # The index of the material with a name among those defined so far (their
@@ -551,7 +551,7 @@ def Text.bytes(t: Text) -> +List<U32>:
 def material.find(names: +List<Text>, +name: +List<U32>, +at: U32) -> U32:
   match names:
     case Nil{}: 4294967295
-    case Con{Text{_, +bytes}, rest}: Bool.pick(U32, same(bytes, name), at, material.find(rest, name, (at + 1 : U32)))
+    case Con{Label{_, +bytes}, rest}: Bool.pick(U32, same(bytes, name), at, material.find(rest, name, (at + 1 : U32)))
 
 # A "use material" record: no name is no material; a name selects the
 # material defined with it (none: M3D_UNDEF). Read as a NULL-safe string.
@@ -568,12 +568,12 @@ def record.kind(+head: U32) -> U32:
 # The faces of a mesh chunk, last first. A face cut at a corner's start
 # empties the faces and ends the import; one cut inside a corner is a read
 # outside the chunk; a material's name must be a string of the file.
-def faces(fuel: Nat, bytes: +List<U32>, +file: File, +names: +List<Text>, +state: Faces) -> Faces:
+def faces(fuel: Nat, bytes: +List<U32>, +file: Source, +names: +List<Text>, +state: Faces) -> Faces:
   match fuel bytes:
     case _ Nil{}: state
     case 0n Con{_, _}: Faces{False{}, True{}, 0, False{}, Nil{}, False{}}
     case 1n+k Con{+head, +rest}:
-      File{+raw, _, _, _, +vi, +si, _, +ti, _, _, _, _, _} = file
+      Source{+raw, _, _, _, +vi, +si, _, +ti, _, _, _, _, _} = file
       Faces{+ok, +stop, +material, +neednorm, +list, +lookups} = state
       +kind = Bool.pick(U32, stop, 3, record.kind(head))
       +name = index(si, rest, 0)
@@ -616,12 +616,12 @@ def frames.turned(xs: +List<Frame>, acc: +List<Frame>) -> +List<Frame>:
 # a chunk that ends before the last frame leaves frames the importer never
 # wrote (count tells how many were read); a count over the profile's 65536
 # transforms a frame is refused.
-def frames(n: Nat, bytes: +List<U32>, +file: File, +ok: Bool, +count: U32, +acc: +List<Frame>) -> Frames:
+def frames(n: Nat, bytes: +List<U32>, +file: Source, +ok: Bool, +count: U32, +acc: +List<Frame>) -> Frames:
   match n bytes:
     case 0n _: Frames{ok, frames.turned(acc, Nil{}), count}
     case 1n+_ Nil{}: Frames{ok, frames.turned(acc, Nil{}), count}
     case 1n+k Con{+b, +rest}:
-      File{_, _, _, _, +vi, _, _, _, +bi, _, _, +fc, _} = file
+      Source{_, _, _, _, +vi, _, _, _, +bi, _, _, +fc, _} = file
       +msec = value(4, Con{b, rest})
       +number = index(fc, Index.rest(msec), 0)
       +read = moves(U32.to_nat(U32.min(Index.value(number), 65537)), Index.rest(number), bi, vi, True{}, Nil{})
@@ -661,8 +661,8 @@ def got.bad(+got: Got) -> Got:
   Got{False{}, stop, maps, shape, rig, looks, actions}
 
 # CMAP: one color map (a second one, or one in a file without color indices, is skipped).
-def chunk.cmap(+content: +List<U32>, +file: File, +got: Got) -> Got:
-  File{_, _, _, _, _, _, +ci, _, _, _, _, _, _} = file
+def chunk.cmap(+content: +List<U32>, +file: Source, +got: Got) -> Got:
+  Source{_, _, _, _, _, _, +ci, _, _, _, _, _, _} = file
   Got{+ok, +stop, +maps, +shape, +rig, +looks, +actions} = got
   Maps{+cmapped, +cmap, +tmapped, +tmap} = maps
   Bool.pick(Got, cmapped || U32.is_eq(ci, 0), got, Got{ok, stop, Maps{True{}, stored(colors(content, Nil{})), tmapped, tmap}, shape, rig, looks, actions})
@@ -676,16 +676,16 @@ def Rows.rows(r: Rows) -> +List<Row>:
   rows
 
 # TMAP: one texture map (a second one, or one in a file without texture indices, is skipped).
-def chunk.tmap(+content: +List<U32>, +file: File, +got: Got) -> Got:
-  File{_, _, _, +vc, _, _, _, +ti, _, _, _, _, _} = file
+def chunk.tmap(+content: +List<U32>, +file: Source, +got: Got) -> Got:
+  Source{_, _, _, +vc, _, _, _, +ti, _, _, _, _, _} = file
   Got{+ok, +stop, +maps, +shape, +rig, +looks, +actions} = got
   Maps{+cmapped, +cmap, +tmapped, +tmap} = maps
   +read = texcoords(U32.to_nat((length(content, 0) + 1 : U32)), content, vc, True{}, Nil{})
   Bool.pick(Got, tmapped || U32.is_eq(ti, 0), got, Got{ok && Rows.ok(read), stop, Maps{cmapped, cmap, True{}, stored(Rows.rows(read))}, shape, rig, looks, actions})
 
 # VRTS: one vertex list of len/reclen vertices (a second chunk is skipped).
-def chunk.vrts(+content: +List<U32>, +file: File, +got: Got) -> Got:
-  File{_, _, _, +vc, _, _, +ci, _, _, _, +sk, _, _} = file
+def chunk.vrts(+content: +List<U32>, +file: Source, +got: Got) -> Got:
+  Source{_, _, _, +vc, _, _, +ci, _, _, _, +sk, _, _} = file
   Got{+ok, +stop, +maps, +shape, +rig, +looks, +actions} = got
   Maps{+cmapped, +cmap, _, _} = maps
   Shape{+vertexed, _, +neednorm, +faces} = shape
@@ -713,8 +713,8 @@ def Boned.rest(b: Boned) -> +List<U32>:
 # indices are skipped; one before the vertices ends the chunk loop. Bones
 # that the chunk does not hold all of drop the skins. More than 65535 bones
 # or 1048576 skins are outside the profile.
-def chunk.bone(+content: +List<U32>, +file: File, +got: Got) -> Got:
-  File{_, _, _, _, _, _, _, _, +bi, +nb, +sk, _, _} = file
+def chunk.bone(+content: +List<U32>, +file: Source, +got: Got) -> Got:
+  Source{_, _, _, _, _, _, _, _, +bi, +nb, +sk, _, _} = file
   Got{+ok, +stop, +maps, +shape, +rig, +looks, +actions} = got
   Shape{+vertexed, _, _, _} = shape
   Rig{+boned, _, _} = rig
@@ -777,8 +777,8 @@ def Asked.names(a: Asked) -> +List<U32>:
 # MTRL: a material's name and its properties. A name defined before is
 # skipped (errcode only); a NULL name is skipped when no material exists
 # (the importer compares it with the existing ones otherwise).
-def chunk.mtrl(+content: +List<U32>, +file: File, +got: Got) -> Got:
-  File{+raw, _, _, _, _, +si, _, _, _, _, _, _, _} = file
+def chunk.mtrl(+content: +List<U32>, +file: Source, +got: Got) -> Got:
+  Source{+raw, _, _, _, _, +si, _, _, _, _, _, _, _} = file
   Got{+ok, +stop, +maps, +shape, +rig, +looks, +actions} = got
   Maps{+cmapped, +cmap, _, _} = maps
   Looks{+materials, +names, +lookups, +assets} = looks
@@ -810,7 +810,7 @@ def Faces.faces(f: Faces) -> +List<Face>:
 # MESH: faces added to those read so far; the material starts undefined in
 # each chunk. A record that is not a triangle, and a face cut at a corner,
 # make the importer return (without its post-processing).
-def chunk.mesh(+content: +List<U32>, +file: File, +got: Got) -> Got:
+def chunk.mesh(+content: +List<U32>, +file: Source, +got: Got) -> Got:
   Got{+ok, +stop, +maps, +shape, +rig, +looks, +actions} = got
   Shape{+vertexed, +vertices, +neednorm, +list} = shape
   Looks{_, +names, _, _} = looks
@@ -833,8 +833,8 @@ def Frames.count(f: Frames) -> U32:
 # action), its duration (uint32) and its frames, all of which the chunk must
 # hold (the importer keeps the declared count and later reads frames it
 # never wrote).
-def chunk.actn(+content: +List<U32>, +file: File, +got: Got) -> Got:
-  File{_, _, _, _, _, +si, _, _, _, _, _, _, _} = file
+def chunk.actn(+content: +List<U32>, +file: Source, +got: Got) -> Got:
+  Source{_, _, _, _, _, +si, _, _, _, _, _, _, _} = file
   Got{+ok, +stop, +maps, +shape, +rig, +looks, +actions} = got
   +name = index(si, content, 0)
   +count = value(2, Index.rest(name))
@@ -846,7 +846,7 @@ def chunk.actn(+content: +List<U32>, +file: File, +got: Got) -> Got:
 # A chunk by its magic: procedural surfaces, voxels, shapes and labels are
 # outside the profile; inlined assets and unknown chunks are kept aside by
 # the importer (nothing here).
-def chunk(name: U32, +content: +List<U32>, +file: File, +got: Got) -> Got:
+def chunk(name: U32, +content: +List<U32>, +file: Source, +got: Got) -> Got:
   match name:
     case 1346456899: chunk.cmap(content, file, got)
     case 1346456916: chunk.tmap(content, file, got)
@@ -869,7 +869,7 @@ def Got.stop(got: Got) -> U32:
 # while (chunk < end && !OMD3): a chunk's length under its header's 8 bytes
 # or reaching the end leaves the loop; `left` bytes remain to the end. The
 # magic needs 4 bytes and the length 8 (fewer: a read past the buffer).
-def chunks(fuel: Nat, bytes: +List<U32>, +left: U32, +file: File, +got: Got) -> Got:
+def chunks(fuel: Nat, bytes: +List<U32>, +left: U32, +file: Source, +got: Got) -> Got:
   match fuel bytes:
     case _ Nil{}: got
     case 0n Con{_, _}: got.bad(got)
@@ -901,14 +901,14 @@ def assets(fuel: Nat, bytes: +List<U32>, +left: U32, +si: U32, +state: Assets) -
       assets(k, Bool.pick(+List<U32>, read, at(Con{b, rest}, len), Nil{}), (left - len : U32), si,
         Assets{ok && (last || (left >= 8 : U32)) && (Bool.not(asset) || Index.ok(offset)), Bool.pick(+List<U32>, asset, Con{Index.value(offset), names}, names)})
 
-def parsed.with(+found: Assets, +file: File) -> Got:
+def parsed.with(+found: Assets, +file: Source) -> Got:
   Assets{+ok, +names} = found
-  File{+raw, +size, _, _, _, _, _, _, _, _, _, _, +first} = file
+  Source{+raw, +size, _, _, _, _, _, _, _, _, _, _, +first} = file
   Bool.pick(Got, ok, chunks(U32.to_nat((size / 8 + 2 : U32)), at(raw, first), (size - U32.min(first, size) : U32), file, got.start(names)), got.bad(got.start(Nil{})))
 
 # The chunks of an opened file.
-def parsed(+file: File) -> Got:
-  File{+raw, +size, _, _, _, +si, _, _, _, _, _, _, +first} = file
+def parsed(+file: Source) -> Got:
+  Source{+raw, +size, _, _, _, +si, _, _, _, _, _, _, +first} = file
   parsed.with(assets(U32.to_nat((size / 8 + 2 : U32)), at(raw, first), (size - U32.min(first, size) : U32), si, Assets{True{}, Nil{}}), file)
 
 # A mesh LoadM3D builds for a run of faces of one material: meshMaterial
@@ -1270,12 +1270,12 @@ def fine(+got: Got) -> Bool:
       Bool.not(skins.inside(skins, rows.length(bones, 0)) && parents.inside(bones, rows.length(bones, 0)) && bones.inside(bones, rows.length(vertices, 0))))
 
 # The model of what the chunks gave.
-def model.got(+got: Got, +file: File) -> Loaded:
+def model.got(+got: Got, +file: Source) -> Loaded:
   Got{_, _, _, +shape, +rig, +looks, _} = got
   Shape{_, +vertices, _, +faces} = shape
   Rig{_, +bones, _} = rig
   Looks{+materials, _, _, _} = looks
-  File{+raw, _, +scale, _, _, _, _, _, _, _, _, _, _} = file
+  Source{+raw, _, +scale, _, _, _, _, _, _, _, _, _, _} = file
   +count = rows.length(bones, 0)
   Bool.pick(Loaded, Bool.not(fine(got)), Refused{}, Bool.pick(Loaded, List.is_empty(&2, Face, faces), Empty{},
     model.made(built(got, scale), skeleton(bones, 0, count, raw, stored(vertices), scale, True{}, Nil{}, Nil{}), U32.is_ne(count, 0), materials)))
@@ -1501,11 +1501,11 @@ def animated.listed(+found: Listed, +fits: Bool) -> Animated:
   Listed{+ok, +items} = found
   Bool.pick(Animated, ok && fits, Animations{items}, Unanimated{})
 
-def animated.got(+got: Got, +file: File) -> Animated:
+def animated.got(+got: Got, +file: Source) -> Animated:
   Got{_, _, _, +shape, +rig, _, +actions} = got
   Shape{_, +vertices, _, _} = shape
   Rig{_, +bones, _} = rig
-  File{+raw, _, +scale, _, _, _, _, _, _, _, _, _, _} = file
+  Source{+raw, _, +scale, _, _, _, _, _, _, _, _, _, _} = file
   Bool.pick(Animated, Bool.not(fine(got)), Unanimated{}, Bool.pick(Animated, List.is_empty(&2, Action, actions) || List.is_empty(&2, Row, bones), Animations{Nil{}},
     animated.listed(listed(actions, raw, bones, stored(vertices), scale, Listed{True{}, Nil{}}), Skel.ok(skeleton(bones, 0, rows.length(bones, 0), raw, stored(vertices), scale, True{}, Nil{}, Nil{})))))
 

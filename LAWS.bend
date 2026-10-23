@@ -1295,10 +1295,10 @@ law gltf_index_past_array_refused:
   {Gltf.each.below([Json.JNumber{[52]}], 4) == False{} : Bool}
 
 law gltf_other_texture_kind_refused:
-  {Gltf.look.with(4294967295, True{}, Gltf.Words{True{}, Nil{}}) == Gltf.Look{False{}, 4294967295, Nil{}} : Gltf.Look}
+  {Gltf.look.with(4294967295, True{}, Gltf.Words{True{}, Nil{}}) == Gltf.Albedo{False{}, 4294967295, Nil{}} : Gltf.Look}
 
 law gltf_base_color_image_kept:
-  {Gltf.look.with(255, False{}, Gltf.Words{True{}, [137, 80]}) == Gltf.Look{True{}, 255, [137, 80]} : Gltf.Look}
+  {Gltf.look.with(255, False{}, Gltf.Words{True{}, [137, 80]}) == Gltf.Albedo{True{}, 255, [137, 80]} : Gltf.Look}
 
 # Wavefront OBJ files (src/obj.bend, docs/MODELS.md), raylib 6.2's bounds:
 # parseLine takes lines of up to 4095 bytes; LoadOBJ copies a vertex, normal
@@ -2454,13 +2454,13 @@ law sound_unloaded_handle_ignored:
 # buffer from its first frame and a buffer that stops goes back to it; the
 # frames its resampler holds stay.
 law sound_play_from_the_start:
-  {J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, True{}, Mixer.Head{48000, 48000, 0, 0, 1, Resampler.St{1, 0, [5, 6], [7, 8], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, False{}, Mixer.Head{48000, 48000, 0, 0, 0, Resampler.St{1, 0, [5, 6], [7, 8], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0} : J.AudioDevice}
+  {J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, True{}, Mixer.Head{48000, 48000, 0, 0, 1, Resampler.St{1, 0, [5, 6], [7, 8], [Resampler.Lane{0, 0, 0, 0}, Resampler.Lane{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, False{}, Mixer.Head{48000, 48000, 0, 0, 0, Resampler.St{1, 0, [5, 6], [7, 8], [Resampler.Lane{0, 0, 0, 0}, Resampler.Lane{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0} : J.AudioDevice}
 
 law sound_stop_back_to_the_start:
-  {J.Sound.stop(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, False{}, Mixer.Head{48000, 48000, 0, 0, 1, Resampler.St{1, 0, [5, 6], [7, 8], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head{48000, 48000, 0, 0, 0, Resampler.St{1, 0, [5, 6], [7, 8], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0} : J.AudioDevice}
+  {J.Sound.stop(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, False{}, Mixer.Head{48000, 48000, 0, 0, 1, Resampler.St{1, 0, [5, 6], [7, 8], [Resampler.Lane{0, 0, 0, 0}, Resampler.Lane{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head{48000, 48000, 0, 0, 0, Resampler.St{1, 0, [5, 6], [7, 8], [Resampler.Lane{0, 0, 0, 0}, Resampler.Lane{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0} : J.AudioDevice}
 
 law sound_stop_paused_keeps_its_place:
-  {J.Sound.stop(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, True{}, Mixer.Head{48000, 48000, 0, 0, 1, Resampler.St{1, 0, [0, 0], [0, 0], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, True{}, Mixer.Head{48000, 48000, 0, 0, 1, Resampler.St{1, 0, [0, 0], [0, 0], [Resampler.Chan{0, 0, 0, 0}, Resampler.Chan{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0} : J.AudioDevice}
+  {J.Sound.stop(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, True{}, Mixer.Head{48000, 48000, 0, 0, 1, Resampler.St{1, 0, [0, 0], [0, 0], [Resampler.Lane{0, 0, 0, 0}, Resampler.Lane{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, True{}, True{}, Mixer.Head{48000, 48000, 0, 0, 1, Resampler.St{1, 0, [0, 0], [0, 0], [Resampler.Lane{0, 0, 0, 0}, Resampler.Lane{0, 0, 0, 0}], True{}}, Nil{}, Mixer.HeadStatic{}}}], [J.AudioBlock{1, [1, 2, 3, 4]}], 0} : J.AudioDevice}
 
 # raudio's read of a static buffer (src/mixer.bend): the frames left, at most
 # the frames asked for; it ends the buffer with its last frame; nothing when
@@ -3394,6 +3394,68 @@ law desktop_key_shifted_symbol:
 
 law desktop_key_unknown:
   {J.Desktop.key(65599) == 0 : U32}
+
+def desktop.fresh() -> J.Core:
+  J.Core{CoreState.Core.new(8, 8, Clock.zero()), []}
+
+def desktop.char.finish(pair: J.Core & U32, +first: U32) -> U32 & U32:
+  (_, second) = pair
+  (first, second)
+
+def desktop.char.next(pair: J.Core & U32) -> U32 & U32:
+  (rest, first) = pair
+  desktop.char.finish(J.Input.get_char_pressed(rest), first)
+
+def desktop.char.pair(core: J.Core) -> U32 & U32:
+  desktop.char.next(J.Input.get_char_pressed(core))
+
+def desktop.chars(moved: Maybe<J.Core>) -> Maybe<(U32 & U32)>:
+  match moved:
+    case None{}: None{}
+    case Some{+core}: Some{desktop.char.pair(core)}
+
+def desktop.wheel(moved: Maybe<J.Core>) -> Maybe<M.Vector2>:
+  match moved:
+    case None{}: None{}
+    case Some{+core}: Some{J.Input.get_mouse_wheel_move_v(core)}
+
+def desktop.delta(moved: Maybe<J.Core>) -> Maybe<M.Vector2>:
+  match moved:
+    case None{}: None{}
+    case Some{+core}: Some{J.Input.get_mouse_delta(core)}
+
+def desktop.scrolls() -> List<Event>:
+  [Scroll{0, 0, 1.0, 0.0}, Scroll{9, 8, 0.0, F32.neg(2.0)}]
+
+def desktop.scroll.want() -> M.Vector2:
+  M.Vector2{0.0, F32.neg(2.0)}
+
+def desktop.looks() -> List<Event>:
+  [Look{3.0, F32.neg(2.0)}, Look{1.0, 0.5}]
+
+# F32 arithmetic does not fold in the checker, so the expected delta is the
+# same chain GetMouseDelta builds: add each look to the origin, subtract the
+# position registered at the poll, then multiply by the scale (1).
+def desktop.look.want() -> M.Vector2:
+  M.Vector2{((((0.0 + 3.0 : F32) + 1.0 : F32) - 0.0 : F32) * 1.0 : F32),
+    ((((0.0 + F32.neg(2.0) : F32) + 0.5 : F32) - 0.0 : F32) * 1.0 : F32)}
+
+# A Text event queues each codepoint, in order (CharCallback).
+law desktop_text_queues_codepoints:
+  {desktop.chars(J.Desktop.event(0, desktop.fresh(), Text{SCon{Char.from_u32(65), SCon{Char.from_u32(233), SNil{}}}}, M.Float64{0, 0}))
+    == Some{(65, 233)} : Maybe<(U32 & U32)>}
+
+# Scroll replaces the wheel, and the last scroll of the poll wins. The
+# pointer position on the event is not applied.
+law desktop_scroll_last_wins:
+  {desktop.wheel(J.Desktop.events(desktop.scrolls(), 0, M.Float64{0, 0}, Some{desktop.fresh()}))
+    == Some{desktop.scroll.want()} : Maybe<M.Vector2>}
+
+# Look adds each delta to the current position. GetMouseDelta is that
+# position minus the one registered at the poll (the origin here).
+law desktop_look_is_mouse_delta:
+  {desktop.delta(J.Desktop.events(desktop.looks(), 0, M.Float64{0, 0}, Some{desktop.fresh()}))
+    == Some{desktop.look.want()} : Maybe<M.Vector2>}
 
 # The software renderer ignores blend modes (rlSetBlendMode is GL3-only) and
 # texture wrap modes (rlsw rejects GL_CLAMP_TO_EDGE): both leave their input.

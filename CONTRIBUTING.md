@@ -40,10 +40,12 @@ the real proof entry point before an implementation commit:
 
 ```sh
 BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" guide
-BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
+BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend --check-only
 ```
 
-Check the complete proof verdict. Prefer balanced, ownership-safe parallel work
+Check the complete bend2 verdict (`ALL PROOFS CHECK`, then the line
+`Use --verdict for mathematical validity.`). `--verdict` rechecks the book in
+the BendTT kernel and needs Lean 4.34.0, which the pin does not ship. Prefer balanced, ownership-safe parallel work
 where measurements support it; retain reference arithmetic order. Proofs establish
 the stated laws, while conformance and runtime tests establish their exercised scope.
 

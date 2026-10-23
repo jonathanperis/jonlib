@@ -41,8 +41,8 @@ type Animation is Data:
   Animation{name: +List<U32>, bones: U32, frames: U32, poses: +List<+List<Transform>>}
 
 # A file's JSON, its BIN chunk and that chunk's length.
-type File is Data:
-  File{root: JS.Json, bin: +List<U32>, limit: U32}
+type Bundle is Data:
+  Bundle{root: JS.Json, bin: +List<U32>, limit: U32}
 
 def none() -> U32:
   4294967295
@@ -51,14 +51,14 @@ def none() -> U32:
 def unended() -> U32:
   4294967294
 
-def file.json(root: +Maybe<JS.Json>, +bin: +List<U32>, +limit: U32) -> Maybe<File>:
+def file.json(root: +Maybe<JS.Json>, +bin: +List<U32>, +limit: U32) -> Maybe<Bundle>:
   match root:
     case None{}: None{}
-    case Some{+value}: Bool.pick(Maybe<File>, G.fixup(value) && G.buffers.ok(G.list(value, "buffers"), limit), Some{File{value, bin, limit}}, None{})
+    case Some{+value}: Bool.pick(Maybe<Bundle>, G.fixup(value) && G.buffers.ok(G.list(value, "buffers"), limit), Some{Bundle{value, bin, limit}}, None{})
 
 # The container, as src/gltf.bend reads it: "glTF", version 2, the total
 # length, a JSON chunk and a BIN chunk; the indices cgltf checks.
-def file(+bytes: +List<U32>) -> Maybe<File>:
+def file(+bytes: +List<U32>) -> Maybe<Bundle>:
   +size = G.length(bytes, 0)
   +json_length = G.u32(List.drop(&2, U32, bytes, 12n))
   +after = List.drop(&2, U32, bytes, U32.to_nat((20 + json_length : U32)))
@@ -66,7 +66,7 @@ def file(+bytes: +List<U32>) -> Maybe<File>:
   +valid = (size >= 28 : U32) && U32.is_eq(G.u32(bytes), 1179937895) && U32.is_eq(G.u32(List.drop(&2, U32, bytes, 4n)), 2) && U32.is_eq(G.u32(List.drop(&2, U32, bytes, 8n)), size) &&
     U32.is_eq(G.u32(List.drop(&2, U32, bytes, 16n)), 1313821514) && G.good(json_length) && ((28 + json_length : U32) <= size : U32) &&
     U32.is_eq(G.u32(List.drop(&2, U32, after, 4n)), 5130562) && G.good(bin_length) && U32.is_eq((28 + json_length + bin_length : U32), size)
-  Bool.pick(Maybe<File>, valid, file.json(JS.parse(G.take(U32.to_nat(json_length), List.drop(&2, U32, bytes, 20n))), List.drop(&2, U32, after, 8n), bin_length), None{})
+  Bool.pick(Maybe<Bundle>, valid, file.json(JS.parse(G.take(U32.to_nat(json_length), List.drop(&2, U32, bytes, 20n))), List.drop(&2, U32, after, 8n), bin_length), None{})
 
 # -----------------------------------------------------------------------------
 # The BIN chunk in blocks
@@ -242,10 +242,10 @@ def skeleton.of(+root: JS.Json, +bin: +List<+List<U32>>, +limit: U32) -> Maybe<S
   Bool.pick(Maybe<Skeleton>, G.good(total) && parents.ok(all, nodes, total) && bones.ok(made) && bind.ok(source, all, nodes, total),
     Some{Skeleton{made, bind(source, inverses.list(ibm), all, nodes, total)}}, None{})
 
-def skeleton.file(file: Maybe<File>) -> Maybe<Skeleton>:
+def skeleton.file(file: Maybe<Bundle>) -> Maybe<Skeleton>:
   match file:
     case None{}: None{}
-    case Some{File{+root, +bin, +limit}}: skeleton.of(root, blocks(U32.to_nat(((limit / 4096) + 1 : U32)), bin), limit)
+    case Some{Bundle{+root, +bin, +limit}}: skeleton.of(root, blocks(U32.to_nat(((limit / 4096) + 1 : U32)), bin), limit)
 
 # The skeleton of a .glb file's bytes.
 def skeleton(+bytes: +List<U32>) -> Maybe<Skeleton>:
@@ -348,7 +348,7 @@ def f(values: +List<F32>) -> F32:
 
 # The key a time falls in and its pair's times.
 type Key is Data:
-  Key{index: U32, start: F32, end: F32}
+  Knot{index: U32, start: F32, end: F32}
 
 def key.count(values: +List<F32>, +acc: U32) -> U32:
   match values:
@@ -369,7 +369,7 @@ def key.chosen(+found: U32, +before: Bool, +count: U32) -> U32:
 # Key i with tstart = times[i] and tend = times[i + 1].
 def key.at(times: +List<F32>, +index: U32) -> Key:
   +at = List.drop(&2, F32, times, U32.to_nat(index))
-  Key{index, f(at), f(List.drop(&2, F32, at, 1n))}
+  Knot{index, f(at), f(List.drop(&2, F32, at, 1n))}
 
 # The key a time falls in: with two keys or more, the search's, else the
 # last pair (so t clamps to 1), or the first pair before the first key
@@ -378,17 +378,17 @@ def key.at(times: +List<F32>, +index: U32) -> Key:
 def key(times: +List<F32>, +time: F32) -> Key:
   match times:
     case Con{+a, Con{+b, +rest}}: key.at(Con{a, Con{b, rest}}, key.chosen(key.search(Con{a, Con{b, rest}}, time, 0), (time < a : F32), key.count(rest, 2)))
-    case _: Key{0, 0.0, 0.0}
+    case _: Knot{0, 0.0, 0.0}
 
 # What a pose reads: 1 the key's element alone (STEP, or a constant
 # animation), 0 the key's and the next one's (LINEAR), 2 CUBICSPLINE.
 def mode(+interpolation: U32, +key: Key) -> U32:
-  Key{_, +start, +end} = key
+  Knot{_, +start, +end} = key
   Bool.pick(U32, M.Math.float_equals(end, start), 1, interpolation)
 
 # t = clamp((time - tstart)/fmaxf(tend - tstart, EPSILON), 0, 1).
 def amount(+key: Key, +time: F32) -> F32:
-  Key{_, +start, +end} = key
+  Knot{_, +start, +end} = key
   +span = (end - start : F32)
   +raw = ((time - start) / Bool.pick(F32, (span > 0.000001 : F32), span, 0.000001) : F32)
   Bool.pick(F32, (raw < 0.0 : F32), 0.0, Bool.pick(F32, (raw > 1.0 : F32), 1.0, raw))
@@ -402,7 +402,7 @@ def v4(+values: +List<F32>, +index: U32) -> M.Vector4:
   M.Vector4{f(at), f(List.drop(&2, F32, at, 1n)), f(List.drop(&2, F32, at, 2n)), f(List.drop(&2, F32, at, 3n))}
 
 def key.index(key: Key) -> U32:
-  Key{index, _, _} = key
+  Knot{index, _, _} = key
   index
 
 # Whether the pose's reads stay inside the output accessor, for STEP and LINEAR.
@@ -651,10 +651,10 @@ def animations.skinned(+root: JS.Json, +bin: +List<+List<U32>>, +limit: U32, +li
   +valid = G.good(total) && U32.is_ne(first(all), none()) && parents.ok(all, nodes, total) && bones.ok(made) && rests.ok(bases)
   Bool.pick(Maybe<+List<Animation>>, valid, animations.go(G.list(root, "animations"), all, bases, made, root, bin, limit, libm), None{})
 
-def animations.file(file: Maybe<File>, +libm: M.Libm) -> Maybe<+List<Animation>>:
+def animations.file(file: Maybe<Bundle>, +libm: M.Libm) -> Maybe<+List<Animation>>:
   match file:
     case None{}: None{}
-    case Some{File{+root, +bin, +limit}}: Bool.pick(Maybe<+List<Animation>>, U32.is_eq(G.count(G.list(root, "skins"), 0), 0), Some{Nil{}}, animations.skinned(root, blocks(U32.to_nat(((limit / 4096) + 1 : U32)), bin), limit, libm))
+    case Some{Bundle{+root, +bin, +limit}}: Bool.pick(Maybe<+List<Animation>>, U32.is_eq(G.count(G.list(root, "skins"), 0), 0), Some{Nil{}}, animations.skinned(root, blocks(U32.to_nat(((limit / 4096) + 1 : U32)), bin), limit, libm))
 
 # LoadModelAnimationsGLTF of a .glb file's bytes: none without a skin.
 def animations(+bytes: +List<U32>, +libm: M.Libm) -> Maybe<+List<Animation>>:

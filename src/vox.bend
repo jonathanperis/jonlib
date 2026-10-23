@@ -37,8 +37,8 @@ type Loaded is Data:
   Foreign{}
   Meshes{parts: +List<Part>}
 
-type Word is Data:
-  Word{value: U32, rest: +List<U32>}
+type Cursor is Data:
+  Cursor{value: U32, rest: +List<U32>}
 
 # What the chunks read so far give: the array's sizes (0 before a SIZE
 # chunk), the voxels set since (cell*256 + id, the last one first) and the
@@ -47,7 +47,7 @@ type Read is Data:
   Read{sx: U32, sy: U32, sz: U32, sets: +List<U32>, palette: +List<U32>}
 
 type Step is Data:
-  Halt{}
+  Stop{}
   Next{bytes: +List<U32>, read: Read}
 
 type Sets is Data:
@@ -77,9 +77,9 @@ def length(values: +List<U32>, +acc: U32) -> U32:
     case Con{_, rest}: length(rest, (acc + 1 : U32))
 
 # A little-endian unsigned int.
-def word(bytes: +List<U32>) -> Maybe<&2, Word>:
+def word(bytes: +List<U32>) -> Maybe<&2, Cursor>:
   match bytes:
-    case Con{+a, Con{+b, Con{+c, Con{+d, +rest}}}}: Some{Word{(a .|. (b << 8n) .|. (c << 16n) .|. (d << 24n) : U32), rest}}
+    case Con{+a, Con{+b, Con{+c, Con{+d, +rest}}}}: Some{Cursor{(a .|. (b << 8n) .|. (c << 16n) .|. (d << 24n) : U32), rest}}
     case _: None{}
 
 # sx + ((CHUNKSIZE - (sx % CHUNKSIZE)) % CHUNKSIZE).
@@ -93,27 +93,27 @@ def stop(+read: Read) -> Step:
 
 def size.set(valid: Bool, +x: U32, +y: U32, +z: U32, +rest: +List<U32>, +read: Read) -> Step:
   match valid:
-    case False{}: Halt{}
+    case False{}: Stop{}
     case True{}:
       Read{_, _, _, _, +palette} = read
       Next{rest, Read{padded(x), padded(z), padded(y), Nil{}, palette}}
 
-def size.z(z: Maybe<&2, Word>, +x: U32, +y: U32, +read: Read) -> Step:
+def size.z(z: Maybe<&2, Cursor>, +x: U32, +y: U32, +read: Read) -> Step:
   match z:
     case None{}: stop(read)
-    case Some{Word{+v, +rest}}:
+    case Some{Cursor{+v, +rest}}:
       size.set((x <= 1024 : U32) && (y <= 1024 : U32) && (v <= 1024 : U32) && ((padded(x) * padded(y) * padded(v)) <= 2097152 : U32), x, y, v, rest, read)
 
-def size.y(y: Maybe<&2, Word>, +x: U32, +read: Read) -> Step:
+def size.y(y: Maybe<&2, Cursor>, +x: U32, +read: Read) -> Step:
   match y:
     case None{}: stop(read)
-    case Some{Word{+v, +rest}}: size.z(word(rest), x, v, read)
+    case Some{Cursor{+v, +rest}}: size.z(word(rest), x, v, read)
 
 # A SIZE chunk: sizeX, sizeY, sizeZ; fewer than 12 bytes end the reading.
-def size(x: Maybe<&2, Word>, +read: Read) -> Step:
+def size(x: Maybe<&2, Cursor>, +read: Read) -> Step:
   match x:
     case None{}: stop(read)
-    case Some{Word{+v, +rest}}: size.y(word(rest), v, read)
+    case Some{Cursor{+v, +rest}}: size.y(word(rest), v, read)
 
 # Vox_SetVoxel(x, z, sizeZ - y - 1, id) for each voxel: the cell is
 # (x*sizeZ + z)*sizeY + y in the array's coordinates, the order the mesh is
@@ -136,10 +136,10 @@ def xyzi.set(+done: Sets, +read: Read) -> Step:
 # past the voxels the file holds is cut to them (raylib 6.2): the voxels run
 # out, and the fewer than 4 bytes left end the reading; fewer than 4 bytes
 # for the count end it too.
-def xyzi(count: Maybe<&2, Word>, +read: Read) -> Step:
+def xyzi(count: Maybe<&2, Cursor>, +read: Read) -> Step:
   match count:
     case None{}: stop(read)
-    case Some{Word{+n, +rest}}:
+    case Some{Cursor{+n, +rest}}:
       Read{+sx, +sy, +sz, +sets, _} = read
       xyzi.set(voxels(U32.to_nat(U32.min(n, 524289)), rest, sx, sy, sz, sets), read)
 
@@ -179,20 +179,20 @@ def chunk.body(kind: U32, +n: U32, +body: +List<U32>, +read: Read) -> Step:
     case 3: rgba(colors(255n, body, Nil{}), read)
     case _: Next{List.drop(&2, U32, body, U32.to_nat(U32.min(n, 2097152))), read}
 
-def chunk.children(children: Maybe<&2, Word>, +name: U32, +n: U32, +read: Read) -> Step:
+def chunk.children(children: Maybe<&2, Cursor>, +name: U32, +n: U32, +read: Read) -> Step:
   match children:
     case None{}: stop(read)
-    case Some{Word{_, +rest}}: chunk.body(kind(name), n, rest, read)
+    case Some{Cursor{_, +rest}}: chunk.body(kind(name), n, rest, read)
 
-def chunk.sized(size: Maybe<&2, Word>, +name: U32, +read: Read) -> Step:
+def chunk.sized(size: Maybe<&2, Cursor>, +name: U32, +read: Read) -> Step:
   match size:
     case None{}: stop(read)
-    case Some{Word{+n, +rest}}: chunk.children(word(rest), name, n, read)
+    case Some{Cursor{+n, +rest}}: chunk.children(word(rest), name, n, read)
 
-def chunk.named(name: Maybe<&2, Word>, +read: Read) -> Step:
+def chunk.named(name: Maybe<&2, Cursor>, +read: Read) -> Step:
   match name:
     case None{}: stop(read)
-    case Some{Word{+id, +rest}}: chunk.sized(word(rest), id, read)
+    case Some{Cursor{+id, +rest}}: chunk.sized(word(rest), id, read)
 
 # A chunk: its name, the size of its contents, the size of its children
 # (not read), then its contents. Fewer than the header's 12 bytes end the
@@ -203,7 +203,7 @@ def chunk(+bytes: +List<U32>, +read: Read) -> Step:
 # while (fileDataPtr < endfileDataPtr).
 def chunks(fuel: Nat, step: Step) -> Maybe<&2, Read>:
   match fuel step:
-    case _ Halt{}: None{}
+    case _ Stop{}: None{}
     case 1n+_ Next{Nil{}, +read}: Some{read}
     case 1n+f Next{Con{+b, +rest}, +read}: chunks(f, chunk(Con{b, rest}, read))
     case 0n Next{_, _}: None{}
@@ -377,10 +377,10 @@ def read.checked(known: Bool, +rest: +List<U32>, +size: U32) -> Loaded:
     case True{}: built(chunks(U32.to_nat((size / 8 + 2 : U32)), Next{rest, Read{0, 0, 0, Nil{}, zeros(256n, Nil{})}}))
 
 # version = ((unsigned int *)fileDataPtr)[0]: 150 or 200.
-def read.version(version: Maybe<&2, Word>, +size: U32) -> Loaded:
+def read.version(version: Maybe<&2, Cursor>, +size: U32) -> Loaded:
   match version:
     case None{}: Unread{}
-    case Some{Word{+v, +rest}}: read.checked(U32.is_eq(v, 150) || U32.is_eq(v, 200), rest, size)
+    case Some{Cursor{+v, +rest}}: read.checked(U32.is_eq(v, 150) || U32.is_eq(v, 200), rest, size)
 
 # strncmp(data, "VOX ", 4): 0 a difference, 1 the four bytes, 2 the file ends before a difference (a read past it).
 def magic(bytes: +List<U32>) -> U32:

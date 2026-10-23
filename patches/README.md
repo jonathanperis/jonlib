@@ -8,12 +8,15 @@ The overlay is two reviewed patches for the exact Bend revision in
 2. `bend-os-effects.patch` adds **path, directory and process effects** to
    Bend's base library (`Path.stat`, `Path.rename`, `Path.remove`,
    `Dir.read`, `Dir.make`, `Dir.change`, `Dir.current`, `Process.path`,
-   `Process.run`), each a foreign def with a C and a JavaScript source, as
+   `Process.shell`), each a foreign def with a C and a JavaScript source, as
    Base's `File.*` effects are. It touches no compiler code, applies alone to
    the pinned upstream revision, and is written up as a proposal for Bend in
    [bend-os-effects.md](bend-os-effects.md). Jonlib's file-system functions
    that need the host (`LoadDirectoryFiles`, `GetFileModTime`,
-   `ChangeDirectory`, `OpenURL`, ...) are built on it.
+   `ChangeDirectory`, `OpenURL`, ...) are built on it. Bend 2.0.38 already
+   ships `Process.run` (a program, arguments, captured output and a timeout);
+   that def is left as upstream wrote it. `Process.shell` is the `/bin/sh -c`
+   effect `OpenURL` needs.
 
 The two patches touch different files. Jonlib's library algorithms remain
 `.bend` source.
@@ -30,7 +33,18 @@ INLINE/FAR decisions remain unchanged. CPU/CUDA call names alias the originals.
 
 A broader attempt that globally outlined helper bodies was rejected: it passed
 Jonlib but changed the ray-tracer checksum. The adopted dispatcher-boundary
-approach passes that workload and the selected upstream regressions.
+approach passes that workload and the selected upstream regressions on 2.0.27.
+
+Bend 2.0.38 rewrote the emitter. A device-far spin is `DFAR`, and `SPIN_FAR`
+is 8192 characters, so the 2.0.27 patch does not apply. The same policy was
+re-ported in those units: helper-to-helper inlining is unchanged, and an
+oversized call at a non-native (dispatcher) boundary gets a Metal-only `FAR`
+wrapper `call_<fid>`. CPU and CUDA `#define` that name back to the original
+helper. The regression still requires both a `DFAR` spin and a
+`FAR Term call_spin_` wrapper. This boundary has not been re-run on a Metal
+device or on the Jonlib corpus; the 2.0.27 Metal result above is the last
+device evidence. Upstream's separate fix for non-tail recursion past 1023
+Metal frames is a different defect and does not replace this patch.
 
 ## Applying and verifying
 
@@ -72,10 +86,10 @@ effects patch. The language parser/checker is untouched.
 - CUDA execution and the upstream cluster/site gates were not run. The local
   repository token-cap gate also requires the unavailable `ttok` tool.
 
-The OS effects patch: its two tests and the neighbouring upstream IO tests
-(`file_*`, `path_utf8`, `nul_bytes`, `args`, the `effect_*` and `cbody_*`
-ones) pass on the check, interpreted, C and JavaScript lanes on Linux; macOS
-is still to be run ([bend-os-effects.md](bend-os-effects.md)).
+The OS effects patch, rebased onto 2.0.38: its two tests pass on the check,
+the C binary and the JavaScript lane on Linux x86_64 with Bun 1.3.12. The
+neighbouring upstream IO suite and macOS were not re-run for this rebase
+([bend-os-effects.md](bend-os-effects.md)).
 
 This is a Jonlib-maintained compiler overlay, not an upstream Bend release or
 an upstream-approved change. Its tests and source hashes support the recorded

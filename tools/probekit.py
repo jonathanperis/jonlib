@@ -39,6 +39,11 @@ class ProbeFailure(Exception):
     """A candidate/reference mismatch or a failed command."""
 
 
+def bend_runtime(*flags):
+    """Compiled Bend 2.0.38 reads runtime flags between +RTS and -RTS."""
+    return ['+RTS', *map(str, flags), '-RTS']
+
+
 def run(command, *, cwd=ROOT, timeout=600, fd_limit=None, env=None):
     """Run a command and return stdout; raise ProbeFailure with output tails."""
     command = [str(part) for part in command]
@@ -244,14 +249,14 @@ class Probe:
         source.write_text(render(False))
         # Compile time grows with batch size and machine load; it is a budget, not a check.
         compile_outputs(cli, source, binary, script)
-        commands = {'cpu-1': [binary, '--gpu', 'off', '--threads', '1'],
-                    'cpu-2': [binary, '--gpu', 'off', '--threads', '2'],
+        commands = {'cpu-1': [binary, *bend_runtime('--gpu', 'off', '--threads', '1')],
+                    'cpu-2': [binary, *bend_runtime('--gpu', 'off', '--threads', '2')],
                     'javascript': ['bun', script]}
         if self.args.gpu:
             gpu_source, gpu_binary = self.work / f'candidate-{index}-gpu.bend', self.work / f'candidate-{index}-gpu'
             gpu_source.write_text(render(True))
             run([*cli, gpu_source, '-o', gpu_binary], timeout=COMPILE_TIMEOUT)
-            commands['gpu'] = [gpu_binary, '--gpu', 'on']
+            commands['gpu'] = [gpu_binary, *bend_runtime('--gpu', 'on')]
         return commands
 
     def candidates(self, render, actions, *, batch=64, source_limit=None, fd_limit=None, parse=None, parse_lane=None, timeout=600):

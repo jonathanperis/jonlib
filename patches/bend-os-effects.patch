@@ -1,14 +1,15 @@
 diff --git a/bend2/base.bend b/bend2/base.bend
-index 515949f6..4a35ff9d 100644
+index 5ab38471..a9a20f36 100644
 --- a/bend2/base.bend
 +++ b/bend2/base.bend
-@@ -1,3 +1,5 @@
-+# Modified 2026-10-14: path, directory and process effects (Path.*, Dir.*, Process.*).
+@@ -1,3 +1,6 @@
++# Modified 2026-10-23: path, directory and process effects (Path.*, Dir.*, Process.path, Process.shell).
++# Upstream Process.run is a different effect (a program and arguments, captured output) and is left as it is.
 +
  # Types
  # =====
  
-@@ -277,6 +279,53 @@ def File.close(file: File) -> IO(Unit):
+@@ -329,6 +332,54 @@ def File.close(file: File) -> IO(Unit):
    import "./effs/file_close.c"
    import "./effs/file_close.js"
  
@@ -47,24 +48,25 @@ index 515949f6..4a35ff9d 100644
 +  import "./effs/dir_current.c"
 +  import "./effs/dir_current.js"
 +
-+# The process: the running program's own file (the executable, or the script
-+# the JS runtime runs), and a shell command run to its end (/bin/sh -c, its
-+# output where the program's goes): the exit status, or 128 plus the signal
-+# that ended it.
++# The running program's own file (the executable, or the script the JS
++# runtime runs). Process.shell runs a shell command to its end (/bin/sh -c,
++# its output where the program's goes): the exit status, or 128 plus the
++# signal that ended it. It is not Process.run, which Bend already provides
++# for a program, arguments and captured output.
 +def Process.path() -> IO(Result<&1, &1, U32 & String, String>):
 +  import "./effs/process_path.c"
 +  import "./effs/process_path.js"
 +
-+def Process.run(command: String) -> IO(Result<&1, &1, U32 & String, U32>):
-+  import "./effs/process_run.c"
-+  import "./effs/process_run.js"
++def Process.shell(command: String) -> IO(Result<&1, &1, U32 & String, U32>):
++  import "./effs/process_shell.c"
++  import "./effs/process_shell.js"
 +
- def TCP.listen(port: U32) -> IO(Result<&1, &1, U32 & String, Listener>):
+ def TCP.listen(host: String, port: U32) -> IO(Result<&1, &1, U32 & String, Listener>):
    import "./effs/tcp_listen.c"
    import "./effs/tcp_listen.js"
 diff --git a/bend2/effs/dir_change.c b/bend2/effs/dir_change.c
 new file mode 100644
-index 00000000..ca1db3cb
+index 00000000..8cc415c8
 --- /dev/null
 +++ b/bend2/effs/dir_change.c
 @@ -0,0 +1,28 @@
@@ -81,7 +83,7 @@ index 00000000..ca1db3cb
 +static Term dir_change_pack(Env e, IoWork* w) {
 +  free(w->data);
 +  return w->code != 0 ? io_fail(e, w->code, NULL)
-+    : io_done(e, term_pak(CID_UNIT, 0));
++    : io_done(e, term_pak(CID(Unit), 0));
 +}
 +
 +Term dir_change_run(Env e, Term* f, IoWork* w) {
@@ -94,14 +96,14 @@ index 00000000..ca1db3cb
 +}
 +
 +static void __attribute__((constructor)) dir_change_use(void) {
-+  io_eff(CID_DIR_CHANGE, dir_change_run, 0);
++  io_eff(CID(Dir.change), dir_change_run);
 +}
 diff --git a/bend2/effs/dir_change.js b/bend2/effs/dir_change.js
 new file mode 100644
-index 00000000..f26c84f4
+index 00000000..79e023ff
 --- /dev/null
 +++ b/bend2/effs/dir_change.js
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,17 @@
 +// Dir
 +// ===
 +
@@ -112,14 +114,16 @@ index 00000000..f26c84f4
 +  }
 +  try {
 +    process.chdir(io_text(name, name.length));
-+    return io_done({ $: "Unit" });
++    return io_done({ $: CID(Unit) });
 +  } catch (e) {
 +    return io_fail(Math.abs(e.errno ?? 5));
 +  }
 +}
++
++io_eff(CID(Dir.change), dir_change);
 diff --git a/bend2/effs/dir_current.c b/bend2/effs/dir_current.c
 new file mode 100644
-index 00000000..62bc9850
+index 00000000..52b1fbcd
 --- /dev/null
 +++ b/bend2/effs/dir_current.c
 @@ -0,0 +1,27 @@
@@ -148,14 +152,14 @@ index 00000000..62bc9850
 +}
 +
 +static void __attribute__((constructor)) dir_current_use(void) {
-+  io_eff(CID_DIR_CURRENT, dir_current_run, 0);
++  io_eff(CID(Dir.current), dir_current_run);
 +}
 diff --git a/bend2/effs/dir_current.js b/bend2/effs/dir_current.js
 new file mode 100644
-index 00000000..747f6078
+index 00000000..677c8df3
 --- /dev/null
 +++ b/bend2/effs/dir_current.js
-@@ -0,0 +1,10 @@
+@@ -0,0 +1,12 @@
 +// Dir
 +// ===
 +
@@ -166,9 +170,11 @@ index 00000000..747f6078
 +    return io_fail(Math.abs(e.errno ?? 5));
 +  }
 +}
++
++io_eff(CID(Dir.current), dir_current);
 diff --git a/bend2/effs/dir_make.c b/bend2/effs/dir_make.c
 new file mode 100644
-index 00000000..765edd8c
+index 00000000..87f14ed8
 --- /dev/null
 +++ b/bend2/effs/dir_make.c
 @@ -0,0 +1,28 @@
@@ -185,7 +191,7 @@ index 00000000..765edd8c
 +static Term dir_make_pack(Env e, IoWork* w) {
 +  free(w->data);
 +  return w->code != 0 ? io_fail(e, w->code, NULL)
-+    : io_done(e, term_pak(CID_UNIT, 0));
++    : io_done(e, term_pak(CID(Unit), 0));
 +}
 +
 +Term dir_make_run(Env e, Term* f, IoWork* w) {
@@ -198,14 +204,14 @@ index 00000000..765edd8c
 +}
 +
 +static void __attribute__((constructor)) dir_make_use(void) {
-+  io_eff(CID_DIR_MAKE, dir_make_run, 0);
++  io_eff(CID(Dir.make), dir_make_run);
 +}
 diff --git a/bend2/effs/dir_make.js b/bend2/effs/dir_make.js
 new file mode 100644
-index 00000000..4bbc6239
+index 00000000..49fdfd9e
 --- /dev/null
 +++ b/bend2/effs/dir_make.js
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,17 @@
 +// Dir
 +// ===
 +
@@ -216,14 +222,16 @@ index 00000000..4bbc6239
 +  }
 +  try {
 +    require("fs").mkdirSync(Buffer.from(name), { mode: 0o777 });
-+    return io_done({ $: "Unit" });
++    return io_done({ $: CID(Unit) });
 +  } catch (e) {
 +    return io_fail(Math.abs(e.errno ?? 5));
 +  }
 +}
++
++io_eff(CID(Dir.make), dir_make);
 diff --git a/bend2/effs/dir_read.c b/bend2/effs/dir_read.c
 new file mode 100644
-index 00000000..386a6e4c
+index 00000000..4bc934c2
 --- /dev/null
 +++ b/bend2/effs/dir_read.c
 @@ -0,0 +1,78 @@
@@ -282,10 +290,10 @@ index 00000000..386a6e4c
 +    at[i] = p;
 +    p += strlen(w->text + p) + 1;
 +  }
-+  Term xs = term_pak(CID_NIL, 0);
++  Term xs = term_pak(CID(Nil), 0);
 +  for (u32 i = w->word; i > 0; i -= 1) {
 +    const char* name = w->text + at[i - 1];
-+    xs = io_node(e, CID_CON, io_str(e, name, strlen(name)), xs);
++    xs = io_node(e, CID(Con), io_str(e, name, strlen(name)), xs);
 +  }
 +  free(at);
 +  free(w->text);
@@ -303,14 +311,14 @@ index 00000000..386a6e4c
 +}
 +
 +static void __attribute__((constructor)) dir_read_use(void) {
-+  io_eff(CID_DIR_READ, dir_read_run, 0);
++  io_eff(CID(Dir.read), dir_read_run);
 +}
 diff --git a/bend2/effs/dir_read.js b/bend2/effs/dir_read.js
 new file mode 100644
-index 00000000..40a1033f
+index 00000000..21ed88cf
 --- /dev/null
 +++ b/bend2/effs/dir_read.js
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,23 @@
 +// Dir
 +// ===
 +
@@ -322,19 +330,21 @@ index 00000000..40a1033f
 +  try {
 +    const names = require("fs")
 +      .readdirSync(Buffer.from(name), { encoding: "buffer" });
-+    let xs = { $: "Nil" };
++    let xs = { $: CID(Nil) };
 +    for (let i = names.length; i > 0; i -= 1) {
 +      const b = new Uint8Array(names[i - 1]);
-+      xs = { $: "Con", head: io_text(b, b.length), tail: xs };
++      xs = { $: CID(Con), head: io_text(b, b.length), tail: xs };
 +    }
 +    return io_done(xs);
 +  } catch (e) {
 +    return io_fail(Math.abs(e.errno ?? 5));
 +  }
 +}
++
++io_eff(CID(Dir.read), dir_read);
 diff --git a/bend2/effs/path_remove.c b/bend2/effs/path_remove.c
 new file mode 100644
-index 00000000..752d67cc
+index 00000000..2b4554fd
 --- /dev/null
 +++ b/bend2/effs/path_remove.c
 @@ -0,0 +1,28 @@
@@ -351,7 +361,7 @@ index 00000000..752d67cc
 +static Term path_remove_pack(Env e, IoWork* w) {
 +  free(w->data);
 +  return w->code != 0 ? io_fail(e, w->code, NULL)
-+    : io_done(e, term_pak(CID_UNIT, 0));
++    : io_done(e, term_pak(CID(Unit), 0));
 +}
 +
 +Term path_remove_run(Env e, Term* f, IoWork* w) {
@@ -364,14 +374,14 @@ index 00000000..752d67cc
 +}
 +
 +static void __attribute__((constructor)) path_remove_use(void) {
-+  io_eff(CID_PATH_REMOVE, path_remove_run, 0);
++  io_eff(CID(Path.remove), path_remove_run);
 +}
 diff --git a/bend2/effs/path_remove.js b/bend2/effs/path_remove.js
 new file mode 100644
-index 00000000..a73538af
+index 00000000..c694acd4
 --- /dev/null
 +++ b/bend2/effs/path_remove.js
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,29 @@
 +// Path
 +// ====
 +
@@ -386,7 +396,7 @@ index 00000000..a73538af
 +  const at = Buffer.from(name);
 +  try {
 +    fs.unlinkSync(at);
-+    return io_done({ $: "Unit" });
++    return io_done({ $: CID(Unit) });
 +  } catch (e) {
 +    if (e.code !== "EISDIR" && e.code !== "EPERM") {
 +      return io_fail(Math.abs(e.errno ?? 5));
@@ -394,14 +404,16 @@ index 00000000..a73538af
 +  }
 +  try {
 +    fs.rmdirSync(at);
-+    return io_done({ $: "Unit" });
++    return io_done({ $: CID(Unit) });
 +  } catch (e) {
 +    return io_fail(Math.abs(e.errno ?? 5));
 +  }
 +}
++
++io_eff(CID(Path.remove), path_remove);
 diff --git a/bend2/effs/path_rename.c b/bend2/effs/path_rename.c
 new file mode 100644
-index 00000000..24ed51fe
+index 00000000..64f10bb5
 --- /dev/null
 +++ b/bend2/effs/path_rename.c
 @@ -0,0 +1,31 @@
@@ -410,7 +422,7 @@ index 00000000..24ed51fe
 +
 +#include <stdio.h>
 +
-+// rename(2): `target` replaced if it exists, as the host allows.
++// rename(2): replaces target where the host allows it.
 +static void path_rename_call(IoWork* w) {
 +  io_sys_end(w, rename(w->data, w->text));
 +}
@@ -419,12 +431,12 @@ index 00000000..24ed51fe
 +  free(w->data);
 +  free(w->text);
 +  return w->code != 0 ? io_fail(e, w->code, NULL)
-+    : io_done(e, term_pak(CID_UNIT, 0));
++    : io_done(e, term_pak(CID(Unit), 0));
 +}
 +
 +Term path_rename_run(Env e, Term* f, IoWork* w) {
-+  uint64_t n = 0;
 +  w->data = io_cstr(e, f[0], &w->size);
++  u64 n = 0;
 +  w->text = io_cstr(e, f[1], &n);
 +  if (io_nul(w->data, w->size) || io_nul(w->text, n)) {
 +    w->code = EILSEQ;
@@ -434,14 +446,14 @@ index 00000000..24ed51fe
 +}
 +
 +static void __attribute__((constructor)) path_rename_use(void) {
-+  io_eff(CID_PATH_RENAME, path_rename_run, 0);
++  io_eff(CID(Path.rename), path_rename_run);
 +}
 diff --git a/bend2/effs/path_rename.js b/bend2/effs/path_rename.js
 new file mode 100644
-index 00000000..71924047
+index 00000000..7ae1709a
 --- /dev/null
 +++ b/bend2/effs/path_rename.js
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,18 @@
 +// Path
 +// ====
 +
@@ -453,14 +465,16 @@ index 00000000..71924047
 +  }
 +  try {
 +    require("fs").renameSync(Buffer.from(from), Buffer.from(to));
-+    return io_done({ $: "Unit" });
++    return io_done({ $: CID(Unit) });
 +  } catch (e) {
 +    return io_fail(Math.abs(e.errno ?? 5));
 +  }
 +}
++
++io_eff(CID(Path.rename), path_rename);
 diff --git a/bend2/effs/path_stat.c b/bend2/effs/path_stat.c
 new file mode 100644
-index 00000000..edb7e220
+index 00000000..d741e33e
 --- /dev/null
 +++ b/bend2/effs/path_stat.c
 @@ -0,0 +1,40 @@
@@ -502,14 +516,14 @@ index 00000000..edb7e220
 +}
 +
 +static void __attribute__((constructor)) path_stat_use(void) {
-+  io_eff(CID_PATH_STAT, path_stat_run, 0);
++  io_eff(CID(Path.stat), path_stat_run);
 +}
 diff --git a/bend2/effs/path_stat.js b/bend2/effs/path_stat.js
 new file mode 100644
-index 00000000..53d030d2
+index 00000000..c2ac7700
 --- /dev/null
 +++ b/bend2/effs/path_stat.js
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,23 @@
 +// Path
 +// ====
 +
@@ -520,19 +534,22 @@ index 00000000..53d030d2
 +  }
 +  try {
 +    const st = require("fs").statSync(Buffer.from(name), { bigint: true });
++    // A Nat is a host number, not a BigInt, and 2^48-1 still fits exactly.
 +    if (st.size > 281474976710655n) {
 +      return io_fail(process.platform === "darwin" ? 84 : 75);
 +    }
 +    const kind = st.isFile() ? 1 : st.isDirectory() ? 2 : 3;
-+    const seconds = st.mtimeNs < 0n ? 0n : st.mtimeNs / 1000000000n;
-+    return io_done(io_tup(kind, st.size, seconds));
++    const seconds = st.mtimeNs < 0n ? 0 : Number(st.mtimeNs / 1000000000n);
++    return io_done(io_tup(kind, Number(st.size), seconds));
 +  } catch (e) {
 +    return io_fail(Math.abs(e.errno ?? 5));
 +  }
 +}
++
++io_eff(CID(Path.stat), path_stat);
 diff --git a/bend2/effs/process_path.c b/bend2/effs/process_path.c
 new file mode 100644
-index 00000000..5ff0e832
+index 00000000..5e5d32ab
 --- /dev/null
 +++ b/bend2/effs/process_path.c
 @@ -0,0 +1,34 @@
@@ -568,14 +585,14 @@ index 00000000..5ff0e832
 +}
 +
 +static void __attribute__((constructor)) process_path_use(void) {
-+  io_eff(CID_PROCESS_PATH, process_path_run, 0);
++  io_eff(CID(Process.path), process_path_run);
 +}
 diff --git a/bend2/effs/process_path.js b/bend2/effs/process_path.js
 new file mode 100644
-index 00000000..00c62229
+index 00000000..b51239bf
 --- /dev/null
 +++ b/bend2/effs/process_path.js
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,13 @@
 +// Process
 +// =======
 +
@@ -587,12 +604,14 @@ index 00000000..00c62229
 +    return io_fail(Math.abs(e.errno ?? 5));
 +  }
 +}
-diff --git a/bend2/effs/process_run.c b/bend2/effs/process_run.c
++
++io_eff(CID(Process.path), process_path);
+diff --git a/bend2/effs/process_shell.c b/bend2/effs/process_shell.c
 new file mode 100644
-index 00000000..d26c1a93
+index 00000000..76f0ebf3
 --- /dev/null
-+++ b/bend2/effs/process_run.c
-@@ -0,0 +1,38 @@
++++ b/bend2/effs/process_shell.c
+@@ -0,0 +1,39 @@
 +// Process
 +// =======
 +
@@ -601,8 +620,9 @@ index 00000000..d26c1a93
 +
 +// system(3): `command` through /bin/sh -c, the program waiting for it; its
 +// output goes where the program's goes (flushed first). The exit status, or
-+// 128 plus the signal that ended it.
-+static void process_run_call(IoWork* w) {
++// 128 plus the signal that ended it. This is not upstream Process.run, which
++// spawns a program with arguments and captures its output.
++static void process_shell_call(IoWork* w) {
 +  int status = system(w->data);
 +  if (status == -1) {
 +    w->code = (u32)errno;
@@ -613,34 +633,36 @@ index 00000000..d26c1a93
 +    : WIFSIGNALED(status) ? 128 + (u32)WTERMSIG(status) : 255;
 +}
 +
-+static Term process_run_pack(Env e, IoWork* w) {
++static Term process_shell_pack(Env e, IoWork* w) {
 +  free(w->data);
 +  return w->code != 0 ? io_fail(e, w->code, NULL) : io_done(e, w->word);
 +}
 +
-+Term process_run_run(Env e, Term* f, IoWork* w) {
++Term process_shell_run(Env e, Term* f, IoWork* w) {
 +  w->data = io_cstr(e, f[0], &w->size);
 +  if (io_nul(w->data, w->size)) {
 +    w->code = EILSEQ;
-+    return process_run_pack(e, w);
++    return process_shell_pack(e, w);
 +  }
 +  io_sync();
-+  return io_work(w, process_run_call, process_run_pack);
++  return io_work(w, process_shell_call, process_shell_pack);
 +}
 +
-+static void __attribute__((constructor)) process_run_use(void) {
-+  io_eff(CID_PROCESS_RUN, process_run_run, 0);
++static void __attribute__((constructor)) process_shell_use(void) {
++  io_eff(CID(Process.shell), process_shell_run);
 +}
-diff --git a/bend2/effs/process_run.js b/bend2/effs/process_run.js
+diff --git a/bend2/effs/process_shell.js b/bend2/effs/process_shell.js
 new file mode 100644
-index 00000000..dfab2d6c
+index 00000000..b516030b
 --- /dev/null
-+++ b/bend2/effs/process_run.js
-@@ -0,0 +1,18 @@
++++ b/bend2/effs/process_shell.js
+@@ -0,0 +1,22 @@
 +// Process
 +// =======
 +
-+function process_run(command) {
++// /bin/sh -c, waiting for it, its output where the program's goes. Not
++// Process.run, which captures output and takes a program and arguments.
++function process_shell(command) {
 +  if (io_bytes(command).includes(0)) {
 +    return io_fail(process.platform === "darwin" ? 92 : 84);
 +  }
@@ -655,15 +677,17 @@ index 00000000..dfab2d6c
 +  const signal = require("os").constants.signals[r.signal];
 +  return io_done(128 + (signal ?? 127));
 +}
++
++io_eff(CID(Process.shell), process_shell);
 diff --git a/tests/io/cwd_process.bend b/tests/io/cwd_process.bend
 new file mode 100644
-index 00000000..cc7b8584
+index 00000000..176c20d6
 --- /dev/null
 +++ b/tests/io/cwd_process.bend
 @@ -0,0 +1,97 @@
 +# io (io_cwd_process): the working directory and the process: Dir.change
 +# to "/" and Dir.current, Dir.change to a missing directory (ENOENT),
-+# Process.path (a regular file), and Process.run of a command that exits
++# Process.path (a regular file), and Process.shell of a command that exits
 +# with 3, of one that prints (its output lands before the status that
 +# follows it) and of one that a signal ends (128 + SIGTERM).
 +import Base
@@ -742,11 +766,11 @@ index 00000000..cc7b8584
 +    c1 : Unit <- said(c)
 +    d : Result<&1, &1, (U32 & String), String> <- Process.path()
 +    d1 : Unit <- self_said(d)
-+    e : Result<&1, &1, (U32 & String), U32> <- Process.run("exit 3")
++    e : Result<&1, &1, (U32 & String), U32> <- Process.shell("exit 3")
 +    e1 : Unit <- status_said(e)
-+    f : Result<&1, &1, (U32 & String), U32> <- Process.run("echo from-sh")
++    f : Result<&1, &1, (U32 & String), U32> <- Process.shell("echo from-sh")
 +    f1 : Unit <- status_said(f)
-+    g : Result<&1, &1, (U32 & String), U32> <- Process.run("kill -TERM $$")
++    g : Result<&1, &1, (U32 & String), U32> <- Process.shell("kill -TERM $$")
 +    g1 : Unit <- status_said(g)
 +    return 0
 +

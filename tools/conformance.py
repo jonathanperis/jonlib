@@ -21,6 +21,10 @@ else:
     import native_profiles
     import reference_environment
 
+# Bend 2.0.38 `--check-only` prints this when bend2 accepts the book. `--verdict`
+# rechecks it in the BendTT kernel and needs Lean 4.34.0, which the pin does not ship.
+CHECK_VERDICT = "ALL PROOFS CHECK\nUse --verdict for mathematical validity."
+
 # Fixture kinds whose Surface functions follow raylib 6.2's names: the kind
 # rectangle_lines is ImageDrawRectangleLinesEx, triangle_ex ImageDrawTriangleGradient.
 RENAMED_DRAWS = {'rectangle_lines': 'rectangle_lines_ex', 'triangle_ex': 'triangle_gradient'}
@@ -173,6 +177,11 @@ CONTRACTED_COLLISIONS = {'lines', 'circles', 'point_circle', 'circle_rec', 'poin
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / ".build"
 ENV = dict(os.environ, BEND_NO_TELEMETRY="1")
+
+
+def bend_runtime(*flags):
+    """Compiled Bend 2.0.38 reads runtime flags between +RTS and -RTS."""
+    return ['+RTS', *map(str, flags), '-RTS']
 
 
 def run(command, cwd=ROOT, timeout=240, *, env=None):
@@ -1630,11 +1639,11 @@ def main():
     check_budget = 900
     for module in ('jonlib','jonmath'):
         library_verdict = run([*cli, ROOT / f'{module}.bend', '--check-only'], timeout=check_budget)
-        if library_verdict.strip() != 'All terms check.':
+        if library_verdict.strip() != CHECK_VERDICT:
             raise ValueError(f"Unexpected {module} verdict: {library_verdict}")
         report['modules'][module] = library_verdict.strip()
     proof_verdict = run([*cli, ROOT / 'PROOF.bend', '--check-only'], timeout=check_budget)
-    if proof_verdict.strip() != 'All terms check.':
+    if proof_verdict.strip() != CHECK_VERDICT:
         raise ValueError(f"Unexpected proof verdict: {proof_verdict}")
     report['proof'] = proof_verdict.strip()
     report['scalar_profile'] = 'jonmath-f32-uncontracted-v1'
@@ -1707,8 +1716,8 @@ def main():
         batch_started = time.monotonic()
         run([*cli,source,'-o',binary,'-o',javascript],timeout=600)
         host_build_seconds = round(time.monotonic()-batch_started,3)
-        lanes['cpu-1'].append([binary,'--threads','1'])
-        lanes['cpu-2'].append([binary,'--threads','2'])
+        lanes['cpu-1'].append([binary, *bend_runtime('--threads', '1')])
+        lanes['cpu-2'].append([binary, *bend_runtime('--threads', '2')])
         lanes['javascript'].append(['bun',javascript])
         if args.gpu:
             build.update(cpu_js_build_seconds=host_build_seconds,phase='compile-gpu')
@@ -1717,7 +1726,7 @@ def main():
             gpu_binary = BUILD/f'candidate-gpu-{batch}'
             gpu_source.write_text(bend_source(selected,gpu=True,extrema_reference=extrema_reference,angle_reference=angle_reference))
             run([*cli,gpu_source,'-o',gpu_binary],timeout=600)
-            lanes['gpu-forced'].append([gpu_binary,'--gpu','on'])
+            lanes['gpu-forced'].append([gpu_binary, *bend_runtime('--gpu', 'on')])
         build.update(cpu_js_build_seconds=host_build_seconds,phase='complete')
         report_path.write_text(json.dumps(report,indent=2)+'\n')
     for lane, commands in lanes.items():
@@ -1743,7 +1752,7 @@ def main():
                                     ('decoding','decode contracts ok','decode_contracts')]:
             binary = BUILD / f'verify-{name}-gpu'
             run([*cli, ROOT / f'tests/{name}_gpu.bend', '-o', binary])
-            if run([binary, '--gpu', 'on']).strip() != expected:
+            if run([binary, *bend_runtime('--gpu', 'on')]).strip() != expected:
                 raise ValueError(f'GPU {name} contract failed')
             report[key].append('gpu-forced')
             print(f'{name}: forced GPU contracts passed', flush=True)

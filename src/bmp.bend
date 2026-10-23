@@ -34,10 +34,10 @@ type Mode is Data:
 type Header is Data:
   Header{width: U32, height: U32, top: Bool, mode: Mode, gap: U32, data: +List<U32>}
 
-def words.step(values: +List<U32>, next: Maybe<&2, F.Word>) -> Maybe<&2, Words>:
+def words.step(values: +List<U32>, next: Maybe<&2, F.Cursor>) -> Maybe<&2, Words>:
   match next:
     case None{}: None{}
-    case Some{F.Word{value, rest}}: Some{Words{Con{value, values}, rest}}
+    case Some{F.Cursor{value, rest}}: Some{Words{Con{value, values}, rest}}
 
 def words(n: Nat, +size: Nat, state: Maybe<&2, Words>) -> Maybe<&2, Words>:
   match n state:
@@ -211,10 +211,10 @@ def pixel.rgba(layout: Layout, +word: U32) -> U32:
   ((channel.value(red, word) << 24n) .|. (channel.value(green, word) << 16n)
     .|. (channel.value(blue, word) << 8n) .|. channel.value(alpha, word) : U32)
 
-def pixel.read(index: U32, layout: Layout, padding: Nat, pixels: Array<U32>, alpha: U32, result: Maybe<&2, F.Word>) -> Result<&1, &1, C.Error, State>:
+def pixel.read(index: U32, layout: Layout, padding: Nat, pixels: Array<U32>, alpha: U32, result: Maybe<&2, F.Cursor>) -> Result<&1, &1, C.Error, State>:
   match result:
     case None{}: Fail{C.Truncated{}}
-    case Some{F.Word{word, data}}:
+    case Some{F.Cursor{word, data}}:
       +rgba = pixel.rgba(layout, word)
       Done{State{List.drop(&2, U32, data, padding), Array.set(U32, pixels, index, rgba), (alpha .|. (rgba .&. 255) : U32)}}
 
@@ -239,17 +239,17 @@ def opaque(n: Nat, +index: U32, pixels: Array<U32>) -> Array<U32>:
     case 0n: pixels
     case 1n+rest: opaque(rest, (index + 1 : U32), opaque.write(index, Array.get(U32, pixels, index)))
 
-def finish.alpha(restore: Bool, +width: U32, +height: U32, channels: U32, pixels: Array<U32>) -> C.Image:
+def finish.alpha(restore: Bool, +width: U32, +height: U32, channels: U32, pixels: Array<U32>) -> C.Picture:
   match restore:
-    case False{}: C.Image{width, height, channels, pixels}
-    case True{}: C.Image{width, height, channels, opaque(U32.to_nat((width * height : U32)), 0, pixels)}
+    case False{}: C.Picture{width, height, channels, pixels}
+    case True{}: C.Picture{width, height, channels, opaque(U32.to_nat((width * height : U32)), 0, pixels)}
 
-def finish(width: U32, height: U32, channels: U32, restore: Bool, state: Result<&1, &1, C.Error, State>) -> Result<&1, &1, C.Error, C.Image>:
+def finish(width: U32, height: U32, channels: U32, restore: Bool, state: Result<&1, &1, C.Error, State>) -> Result<&1, &1, C.Error, C.Picture>:
   match state:
     case Fail{error}: Fail{error}
     case Done{State{_, pixels, alpha}}: Done{finish.alpha(restore && U32.is_eq(alpha, 0), width, height, channels, pixels)}
 
-def start.valid(valid: Bool, +width: U32, +height: U32, top: Bool, bytes: U32, +layout: Layout, restore: Bool, padding: U32, data: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def start.valid(valid: Bool, +width: U32, +height: U32, top: Bool, bytes: U32, +layout: Layout, restore: Bool, padding: U32, data: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   match valid:
     case False{}: Fail{C.Truncated{}}
     case True{}:
@@ -257,7 +257,7 @@ def start.valid(valid: Bool, +width: U32, +height: U32, top: Bool, bytes: U32, +
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
       finish(width, height, native.channels(layout), restore, pixels(U32.to_nat(count), 0, width, height, top, bytes, layout, U32.to_nat(padding), Done{State{data, Array.new(U32, depth, 0), 0}}))
 
-def start.color(+width: U32, +height: U32, top: Bool, +bytes: U32, layout: Layout, restore: Bool, gap: U32, +data: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def start.color(+width: U32, +height: U32, top: Bool, +bytes: U32, layout: Layout, restore: Bool, gap: U32, +data: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   +row = (width * bytes : U32)
   +padding = ((0 - row) .&. 3 : U32)
   # The pinned true-color reader skips the post-header gap twice.
@@ -268,9 +268,9 @@ def start.color(+width: U32, +height: U32, top: Bool, +bytes: U32, layout: Layou
 type Indexed is Type:
   Indexed{data: +List<U32>, byte: U32, pixels: Array<U32>}
 
-def indexed.byte(fresh: Bool, byte: U32, data: +List<U32>) -> Maybe<&2, F.Word>:
+def indexed.byte(fresh: Bool, byte: U32, data: +List<U32>) -> Maybe<&2, F.Cursor>:
   match fresh:
-    case False{}: Some{F.Word{byte, data}}
+    case False{}: Some{F.Cursor{byte, data}}
     case True{}: F.read_word(1n, 0n, 0, data)
 
 def indexed.write(index: U32, byte: U32, padding: Nat, data: +List<U32>, pixels: Array<U32>, color: Maybe<&2, U32>) -> Result<&1, &1, C.Error, Indexed>:
@@ -280,17 +280,17 @@ def indexed.write(index: U32, byte: U32, padding: Nat, data: +List<U32>, pixels:
       rgba = ((((word >> 16n) .&. 255) << 24n) .|. (((word >> 8n) .&. 255) << 16n) .|. ((word .&. 255) << 8n) .|. 255 : U32)
       Done{Indexed{List.drop(&2, U32, data, padding), byte, Array.set(U32, pixels, index, rgba)}}
 
-def indexed.read(index: U32, bits: U32, shift: Nat, palette: +List<U32>, padding: Nat, pixels: Array<U32>, result: Maybe<&2, F.Word>) -> Result<&1, &1, C.Error, Indexed>:
+def indexed.read(index: U32, bits: U32, shift: Nat, palette: +List<U32>, padding: Nat, pixels: Array<U32>, result: Maybe<&2, F.Cursor>) -> Result<&1, &1, C.Error, Indexed>:
   match result:
     case None{}: Fail{C.Truncated{}}
-    case Some{F.Word{+byte, data}}:
+    case Some{F.Cursor{+byte, data}}:
       color = ((byte >> shift) .&. ((1 << U32.to_nat(bits)) - 1) : U32)
       indexed.write(index, byte, padding, data, pixels, List.get(&2, U32, palette, U32.to_nat(color)))
 
-def indexed.pixels(n: Nat, +index: U32, +width: U32, +height: U32, +top: Bool, +bits: U32, +palette: +List<U32>, +padding: Nat, state: Result<&1, &1, C.Error, Indexed>) -> Result<&1, &1, C.Error, C.Image>:
+def indexed.pixels(n: Nat, +index: U32, +width: U32, +height: U32, +top: Bool, +bits: U32, +palette: +List<U32>, +padding: Nat, state: Result<&1, &1, C.Error, Indexed>) -> Result<&1, &1, C.Error, C.Picture>:
   match n state:
     case _ Fail{error}: Fail{error}
-    case 0n Done{Indexed{_, _, output}}: Done{C.Image{width, height, 3, output}}
+    case 0n Done{Indexed{_, _, output}}: Done{C.Picture{width, height, 3, output}}
     case 1n+rest Done{Indexed{data, byte, output}}:
       +x = (index % width : U32)
       +y = (index / width : U32)
@@ -301,7 +301,7 @@ def indexed.pixels(n: Nat, +index: U32, +width: U32, +height: U32, +top: Bool, +
         indexed.read(at, bits, U32.to_nat((8 - bits - part * bits : U32)), palette, pad, output,
           indexed.byte(U32.is_eq(part, 0), byte, data)))
 
-def indexed.start(valid: Bool, +width: U32, +height: U32, top: Bool, bits: U32, palette: +List<U32>, padding: U32, data: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def indexed.start(valid: Bool, +width: U32, +height: U32, top: Bool, bits: U32, palette: +List<U32>, padding: U32, data: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   match valid:
     case False{}: Fail{C.Truncated{}}
     case True{}:
@@ -309,7 +309,7 @@ def indexed.start(valid: Bool, +width: U32, +height: U32, top: Bool, bits: U32, 
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
       indexed.pixels(U32.to_nat(count), 0, width, height, top, bits, palette, U32.to_nat(padding), Done{Indexed{data, 0, Array.new(U32, depth, 0)}})
 
-def indexed.palette(+width: U32, +height: U32, top: Bool, +bits: U32, +skip: U32, result: Maybe<&2, Words>) -> Result<&1, &1, C.Error, C.Image>:
+def indexed.palette(+width: U32, +height: U32, top: Bool, +bits: U32, +skip: U32, result: Maybe<&2, Words>) -> Result<&1, &1, C.Error, C.Picture>:
   match result:
     case None{}: Fail{C.Truncated{}}
     case Some{Words{palette, +data}}:
@@ -318,28 +318,28 @@ def indexed.palette(+width: U32, +height: U32, top: Bool, +bits: U32, +skip: U32
       indexed.start(enough(U32.to_nat((skip + (row + padding) * height : U32)), data), width, height, top, bits, palette, padding,
         List.drop(&2, U32, data, U32.to_nat(skip)))
 
-def start.indexed(width: U32, height: U32, top: Bool, bits: U32, +entry_bytes: U32, bias: U32, +gap: U32, data: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def start.indexed(width: U32, height: U32, top: Bool, bits: U32, +entry_bytes: U32, bias: U32, +gap: U32, data: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   # Native CORE palette sizing subtracts twelve extra bytes before counting triples.
   +count = ((gap - bias) / entry_bytes : U32)
   indexed.palette(width, height, top, bits, (gap - count * entry_bytes : U32),
     words(U32.to_nat(count), U32.to_nat(entry_bytes), Some{Words{Nil{}, data}}))
 
-def start.mode(width: U32, height: U32, top: Bool, mode: Mode, gap: U32, data: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def start.mode(width: U32, height: U32, top: Bool, mode: Mode, gap: U32, data: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   match mode:
     case IndexedMode{bits, entry_bytes, bias}: start.indexed(width, height, top, bits, entry_bytes, bias, gap, data)
     case ColorMode{bytes, layout, repair}: start.color(width, height, top, bytes, layout, repair, gap, data)
 
-def start(result: Result<&2, &2, C.Error, Header>) -> Result<&1, &1, C.Error, C.Image>:
+def start(result: Result<&2, &2, C.Error, Header>) -> Result<&1, &1, C.Error, C.Picture>:
   match result:
     case Fail{error}: Fail{error}
     case Done{Header{width, height, top, mode, gap, data}}: start.mode(width, height, top, mode, gap, data)
 
-def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   match valid:
     case False{}: Fail{C.BadByte{}}
     case True{}: start(header(bytes))
 
-def decode(+bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def decode(+bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   checked(C.valid_bytes(bytes, True{}), bytes)
 
 def encode.read(bytes: +List<U32>, read: Array<U32> & U32) -> Array<U32> & +List<U32>:

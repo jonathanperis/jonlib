@@ -132,7 +132,7 @@ unmodified:
 
 | Dependency | Revision |
 |---|---|
-| Bend 2.0.27 + Jonlib overlay | `b7ebee9217c8813067e200b0c0c9153a3be31c5e` |
+| Bend 2.0.38 + Jonlib overlay | `0a57ca0d21de94a3724d8be21afb0eb89f88b4d8` |
 | raylib 6.2 | `02566453880e06bec97f5b8160fa6fe1e98397ca` |
 
 Keep the dependency checkouts wherever you prefer. From Jonlib's repository root,
@@ -156,7 +156,7 @@ done
 ```
 
 Verification never patches or updates the checkout itself. An unmodified
-installed Bend 2.0.27 is not equivalent to this declared source toolchain.
+installed Bend 2.0.38 is not equivalent to this declared source toolchain.
 
 ## Verify
 

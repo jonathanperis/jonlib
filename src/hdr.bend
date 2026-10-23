@@ -5,8 +5,8 @@ import Base
 import ./codec.bend as C
 import ./../jonmath.bend as M
 
-type Image is Type:
-  Image{width: U32, height: U32, pixels: Array<M.Vector3>}
+type Picture is Type:
+  Picture{width: U32, height: U32, pixels: Array<M.Vector3>}
 
 def float_bits(value: U32) -> F32:
   U32{word} = value
@@ -119,12 +119,12 @@ def pixels(n: Nat, +index: U32, data: +List<U32>, output: Array<M.Vector3>) -> R
       pixels(rest, (index + 1 : U32), tail, Array.set(M.Vector3, output, index, M.Vector3{sample(r, e), sample(g, e), sample(b, e)}))
     case _ _: Fail{C.Truncated{}}
 
-def image(width: U32, height: U32, result: Result<&1, &1, C.Error, Array<M.Vector3>>) -> Result<&1, &1, C.Error, Image>:
+def image(width: U32, height: U32, result: Result<&1, &1, C.Error, Array<M.Vector3>>) -> Result<&1, &1, C.Error, Picture>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{pixels}: Done{Image{width, height, pixels}}
+    case Done{pixels}: Done{Picture{width, height, pixels}}
 
-def start.raw(complete: Bool, +width: U32, +height: U32, data: +List<U32>) -> Result<&1, &1, C.Error, Image>:
+def start.raw(complete: Bool, +width: U32, +height: U32, data: +List<U32>) -> Result<&1, &1, C.Error, Picture>:
   match complete:
     case False{}: Fail{C.Truncated{}}
     case True{}:
@@ -259,7 +259,7 @@ def rows(n: Nat, +y: U32, +width: U32, +height: U32, state: Result<&1, &1, C.Err
     case 1n+rest Done{Raster{+data, packed, output}}:
       rows(rest, (y + 1 : U32), width, height, row.selected(rle_marker(data), width, height, y, data, packed, output))
 
-def start.kind(raw: Bool, +width: U32, +height: U32, +data: +List<U32>) -> Result<&1, &1, C.Error, Image>:
+def start.kind(raw: Bool, +width: U32, +height: U32, +data: +List<U32>) -> Result<&1, &1, C.Error, Picture>:
   match raw:
     case True{}: start.raw(enough(U32.to_nat((width * height * 4 : U32)), data), width, height, data)
     case False{}:
@@ -269,16 +269,16 @@ def start.kind(raw: Bool, +width: U32, +height: U32, +data: +List<U32>) -> Resul
       image(width, height, rows(U32.to_nat(height), 0, width, height,
         Done{Raster{data, Array.new(U32, row_depth, 0), Array.new(M.Vector3, depth, M.Vector3{0.0, 0.0, 0.0})}}))
 
-def start(result: Result<&2, &2, C.Error, Header>) -> Result<&1, &1, C.Error, Image>:
+def start(result: Result<&2, &2, C.Error, Header>) -> Result<&1, &1, C.Error, Picture>:
   match result:
     case Fail{error}: Fail{error}
     case Done{Header{+width, +height, +data}}:
       start.kind((width < 8 : U32) || Bool.not(rle_marker(data)), width, height, data)
 
-def checked(valid: Bool, data: +List<U32>) -> Result<&1, &1, C.Error, Image>:
+def checked(valid: Bool, data: +List<U32>) -> Result<&1, &1, C.Error, Picture>:
   match valid:
     case False{}: Fail{C.BadByte{}}
     case True{}: start(header(line(1023n, data, Nil{})))
 
-def decode(+data: +List<U32>) -> Result<&1, &1, C.Error, Image>:
+def decode(+data: +List<U32>) -> Result<&1, &1, C.Error, Picture>:
   checked(C.valid_bytes(data, True{}), data)

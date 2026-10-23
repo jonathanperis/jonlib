@@ -2429,6 +2429,15 @@ def Laws.desktop_key_shifted_symbol():
 def Laws.desktop_key_unknown():
   {==}
 
+def Laws.desktop_text_queues_codepoints():
+  {==}
+
+def Laws.desktop_scroll_last_wins():
+  {==}
+
+def Laws.desktop_look_is_mouse_delta():
+  {==}
+
 def Laws.frame_blend_mode_unchanged(frame, mode):
   {==}
 

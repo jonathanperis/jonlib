@@ -4956,10 +4956,10 @@ def Surface.codec.stored(kind: U32, +width: U32, +height: U32, +channels: U32, p
     case 4: Surface{width, height, 7, Words{pixels}}
     case _: Surface{width, height, Surface.codec.format(channels), Words{Surface.codec.pixels(U32.to_nat((width * height : U32)), 0, channels, pixels)}}
 
-def Surface.codec.result(result: Result<&1, &1, Codec.Error, Codec.Image>) -> Result<&1, &1, Surface.Error, Surface>:
+def Surface.codec.result(result: Result<&1, &1, Codec.Error, Codec.Picture>) -> Result<&1, &1, Surface.Error, Surface>:
   match result:
     case Fail{error}: Fail{Image.codec.error(error)}
-    case Done{Codec.Image{width, height, +channels, pixels}}: Done{Surface.codec.stored(channels, width, height, channels, pixels)}
+    case Done{Codec.Picture{width, height, +channels, pixels}}: Done{Surface.codec.stored(channels, width, height, channels, pixels)}
 
 # QOI channel metadata selects native storage; decoding/cache state stays RGBA.
 def Surface.decode_qoi(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
@@ -4990,7 +4990,7 @@ def Surface.dds.created(result: Maybe<Surface>) -> Result<&1, &1, Surface.Error,
 
 def Surface.dds.result(outcome: Dds.Outcome) -> Result<&1, &1, Surface.Error, Surface>:
   match outcome:
-    case Dds.Decoded{Dds.Image{width, height, format, data}}: Surface.dds.created(Surface.from_bytes(width, height, format, data))
+    case Dds.Decoded{Dds.Picture{width, height, format, data}}: Surface.dds.created(Surface.from_bytes(width, height, format, data))
     case Dds.Levels{_, _}: Fail{UnsupportedFormat{}}
     case Dds.Unsupported{}: Fail{UnsupportedFormat{}}
     case Dds.Invalid{error}: Fail{Image.codec.error(error)}
@@ -5012,10 +5012,10 @@ def Surface.decode_jpeg(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surf
 def Surface.decode_png(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   Surface.codec.result(Png.decode(bytes))
 
-def Surface.psd.result(result: Result<&1, &1, Codec.Error, Psd.Image>) -> Result<&1, &1, Surface.Error, Surface>:
+def Surface.psd.result(result: Result<&1, &1, Codec.Error, Psd.Picture>) -> Result<&1, &1, Surface.Error, Surface>:
   match result:
     case Fail{error}: Fail{Image.codec.error(error)}
-    case Done{Psd.Image{width, height, pixels}}: Done{Surface{width, height, 7, Words{pixels}}}
+    case Done{Psd.Picture{width, height, pixels}}: Done{Surface{width, height, 7, Words{pixels}}}
 
 def Surface.decode_psd_for(reference: M.Contraction, bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   Surface.psd.result(Psd.decode(M.Contraction.fused(reference), bytes))
@@ -5023,10 +5023,10 @@ def Surface.decode_psd_for(reference: M.Contraction, bytes: +List<U32>) -> Resul
 def Surface.decode_psd(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   Surface.decode_psd_for(M.Uncontracted{}, bytes)
 
-def Surface.gif.result(result: Result<&1, &1, Codec.Error, Gif.Image>) -> Result<&1, &1, Surface.Error, Surface>:
+def Surface.gif.result(result: Result<&1, &1, Codec.Error, Gif.Picture>) -> Result<&1, &1, Surface.Error, Surface>:
   match result:
     case Fail{error}: Fail{Image.codec.error(error)}
-    case Done{Gif.Image{width, height, pixels}}: Done{Surface{width, height, 7, Words{pixels}}}
+    case Done{Gif.Picture{width, height, pixels}}: Done{Surface{width, height, 7, Words{pixels}}}
 
 def Surface.decode_gif(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   Surface.gif.result(Gif.decode(bytes))
@@ -5035,10 +5035,10 @@ def Surface.quad.of_vector(value: M.Vector3) -> Surface.Quad:
   M.Vector3{r, g, b} = value
   Quad{F32.bits(r), F32.bits(g), F32.bits(b), 0}
 
-def Surface.hdr.result(result: Result<&1, &1, Codec.Error, Hdr.Image>) -> Result<&1, &1, Surface.Error, Surface>:
+def Surface.hdr.result(result: Result<&1, &1, Codec.Error, Hdr.Picture>) -> Result<&1, &1, Surface.Error, Surface>:
   match result:
     case Fail{error}: Fail{Image.codec.error(error)}
-    case Done{Hdr.Image{width, height, pixels}}: Done{Surface{width, height, 9, Quads{Array.map(~M.Vector3, ~Surface.Quad, ~Surface.quad.of_vector, pixels)}}}
+    case Done{Hdr.Picture{width, height, pixels}}: Done{Surface{width, height, 9, Quads{Array.map(~M.Vector3, ~Surface.Quad, ~Surface.quad.of_vector, pixels)}}}
 
 def Surface.decode_hdr(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   Surface.hdr.result(Hdr.decode(bytes))
@@ -5318,10 +5318,10 @@ def Surface.write_image(surface: Surface, +path: String) -> IO(Result<&1, &1, Su
   Surface.write.kind(Image.export.kind(path), surface, path)
 
 # Animations: GIF frames are R8G8B8A8; other files load one native frame.
-def Image.Animation.gif.frames(frames: List<Gif.Image>, values: List<Surface>) -> List<Surface>:
+def Image.Animation.gif.frames(frames: List<Gif.Picture>, values: List<Surface>) -> List<Surface>:
   match frames:
     case Nil{}: List.reverse(&1, Surface, values)
-    case Con{Gif.Image{width, height, pixels}, rest}: Image.Animation.gif.frames(rest, Con{Surface{width, height, 7, Words{pixels}}, values})
+    case Con{Gif.Picture{width, height, pixels}, rest}: Image.Animation.gif.frames(rest, Con{Surface{width, height, 7, Words{pixels}}, values})
 
 def Image.Animation.gif.result(result: Result<&1, &1, Codec.Error, GifAnimation.Animation>) -> Result<&1, &1, Surface.Error, Image.Animation>:
   match result:
@@ -5580,8 +5580,8 @@ def Image.Stored.surface(result: Result<&1, &1, Surface.Error, Surface>) -> Resu
 
 def Image.Stored.dds(outcome: Dds.Outcome) -> Result<&1, &1, Surface.Error, Image.Stored>:
   match outcome:
-    case Dds.Decoded{Dds.Image{width, height, format, data}}: Image.Stored.created(width, height, format, 1, data)
-    case Dds.Levels{Dds.Image{width, height, format, data}, count}: Image.Stored.created(width, height, format, count, data)
+    case Dds.Decoded{Dds.Picture{width, height, format, data}}: Image.Stored.created(width, height, format, 1, data)
+    case Dds.Levels{Dds.Picture{width, height, format, data}, count}: Image.Stored.created(width, height, format, count, data)
     case Dds.Unsupported{}: Fail{UnsupportedFormat{}}
     case Dds.Invalid{error}: Fail{Image.codec.error(error)}
 
@@ -6481,7 +6481,7 @@ def System.url.command(+url: String) -> Maybe<String>:
 def System.url.run(command: Maybe<String>) -> IO(Unit):
   match command:
     case None{}: IO.pure(Unit, Unit{})
-    case Some{+text}: IO.bind(Result<&1, &1, U32 & String, U32>, Unit, Process.run(text), r => IO.pure(Unit, Unit{}))
+    case Some{+text}: IO.bind(Result<&1, &1, U32 & String, U32>, Unit, Process.shell(text), r => IO.pure(Unit, Unit{}))
 
 # OpenURL on the reference platform: system("explorer \"url\"") through
 # /bin/sh, its result unused; nothing for a URL with a "'".
@@ -6690,7 +6690,7 @@ def Wave.ogg.ready(refused: Bool, +plan: VorbisK.Plan, +frames: VorbisF.Frames, 
 def Wave.ogg.opened(started: VorbisF.Started) -> Result<&1, &1, Wave.Error, Wave>:
   match started:
     case VorbisF.Unready{+status}: Wave.ogg.unready(status)
-    case VorbisF.Ready{+plan, +frames, +rate, +first}: Wave.ogg.ready(VorbisF.Frames.refused(frames), plan, frames, rate, first)
+    case VorbisF.Opened{+plan, +frames, +rate, +first}: Wave.ogg.ready(VorbisF.Frames.refused(frames), plan, frames, rate, first)
 
 # stb_vorbis_open_memory, stb_vorbis_stream_length_in_samples frames and
 # one stb_vorbis_get_samples_short_interleaved for all of them.
@@ -8421,7 +8421,7 @@ def Music.ogg.status(+audio: AudioDevice, result: Result<&1, &1, Wave.Error, Wav
 def Music.decode.ogg(started: VorbisF.Started, +audio: AudioDevice) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
   match started:
     case VorbisF.Unready{+status}: Music.ogg.status(audio, Wave.ogg.unready(status))
-    case VorbisF.Ready{+plan, +frames, +rate, +first}:
+    case VorbisF.Opened{+plan, +frames, +rate, +first}:
       Music.ogg.ready(Bool.not(VorbisF.Frames.refused(frames)) && U32.is_ne(first, 0), VorbisF.Frames.refused(frames), audio, plan, frames, rate, first)
 
 # A MOD music as raylib leaves it: a 16-bit stereo stream of the device's
@@ -16883,11 +16883,43 @@ def Desktop.mouse.valid(valid: Bool, +profile: U32, +core: Core, +x: U32, +y: U3
 def Desktop.mouse_event(+profile: U32, +core: Core, +x: U32, +y: U32, +button: U32, +down: Bool, +now: M.Float64) -> Maybe<Core>:
   Desktop.mouse.valid((button <= 7 : U32), profile, core, x, y, button, down, now)
 
+# CharCallback for each codepoint of a Text event. Base already drops control
+# characters, and a long input-method commit arrives as several Texts. The
+# queue holds at most 16 (MAX_CHAR_PRESSED_QUEUE).
+def Desktop.typed(text: String, core: Core) -> Core:
+  match text:
+    case SNil{}: core
+    case SCon{head, tail}: Desktop.typed(tail, Input.char_callback(core, Char.to_u32(head)))
+
+# Grabbed motion. Base sends a delta and no Move: on X11, the pointer's
+# distance from the window center for the frame (then the pointer is warped
+# back); on macOS, the event's deltaX/deltaY. GLFW's disabled cursor keeps a
+# virtual position, and GetMouseDelta is that position minus the one registered
+# at the last poll, so the delta is added to the current position. The cursor
+# callback's move gesture follows, as it does for Move.
+def Desktop.look.at(+position: InputCore.Point, +dx: F32, +dy: F32) -> InputCore.Point:
+  InputCore.Point{+x, +y} = position
+  InputCore.Point{(x + dx : F32), (y + dy : F32)}
+
+def Desktop.look(+profile: U32, +core: Core, +dx: F32, +dy: F32, +now: M.Float64) -> Maybe<Core>:
+  +state = Core.state(core)
+  Core.wrap(CoreState.Core.cursor_position(state, profile, Desktop.look.at(InputCore.MouseState.position(CoreState.Core.mouse(state)), dx, dy), Core.words(now)))
+
+# ScrollCallback: currentWheelMove becomes (dx, dy). The last scroll of the
+# poll wins. The event's pointer position is not applied; raylib's callback
+# does not move the cursor (a Move carries that).
+def Desktop.wheel(+core: Core, +dx: F32, +dy: F32) -> Core:
+  +state = Core.state(core)
+  Core{CoreState.Core.with_mouse(state, InputCore.MouseState.set_wheel(CoreState.Core.mouse(state), InputCore.Point{dx, dy})), Nil{}}
+
 def Desktop.event(+profile: U32, +core: Core, event: Event, +now: M.Float64) -> Maybe<Core>:
   match event:
     case Key{+code, +down}: Desktop.key_event(core, Desktop.key(code), down)
+    case Text{text}: Some{Desktop.typed(text, core)}
     case Mouse{+x, +y, +button, +down}: Desktop.mouse_event(profile, core, x, y, button, down, now)
     case Move{+x, +y}: Desktop.cursor(profile, core, x, y, now)
+    case Look{+dx, +dy}: Desktop.look(profile, core, dx, dy, now)
+    case Scroll{_, _, +dx, +dy}: Some{Desktop.wheel(core, dx, dy)}
     case Close{}: Some{Core{CoreState.Core.request_close(Core.state(core)), Nil{}}}
 
 # The GLFW callbacks of a poll, in event order; None as soon as one is.
@@ -16914,8 +16946,9 @@ def Core.desktop.timed(+profile: U32, events: List<Event>, timed: Maybe<(CoreSta
 # EndDrawing on the desktop platform at time now (after presenting), `after`
 # the clock when a SetTargetFPS wait ends (as Core.end_drawing): recording,
 # frame timing, then rcore_desktop_glfw.c's PollInputEvents with the GLFW
-# callbacks of the Base events (keys through Desktop.key; mouse buttons,
-# positions and mouse gestures, whose atan2f follows the M.Libm profile;
+# callbacks of the Base events (keys through Desktop.key; text into the char
+# queue; mouse buttons, positions and mouse gestures, whose atan2f follows
+# the M.Libm profile; grabbed motion added to the mouse position; the wheel;
 # Close as the window's close button), the F12 check and the frame counter.
 # WindowShouldClose then answers the close requests of this poll only.
 def Core.end_drawing_desktop(libm: M.Libm, +core: Core, +now: M.Float64, +after: M.Float64, events: List<Event>) -> Maybe<Core>:

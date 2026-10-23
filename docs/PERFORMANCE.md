@@ -18,7 +18,7 @@ way the `examples-*` gates do ([EXAMPLES.md](EXAMPLES.md),
   immediately, so neither side sleeps.
 - **Jonlib**: the probe's generated replay program for the example, compiled
   by the pinned Bend to a native binary and run on one thread
-  (`--gpu off --threads 1`). With `--js`, the tool also measures the JavaScript
+  (`+RTS --gpu off --threads 1 -RTS`). With `--js`, the tool also measures the JavaScript
   lane.
 
 Both sides use the same working directory, the same resource paths, the same
@@ -72,7 +72,9 @@ memory is the maximum across runs.
 
 ## Machine and toolchain
 
-Measured on 2026-10-20:
+Measured on 2026-10-20. The Bend row is the compiler this table was measured
+with. The pin has since moved to 2.0.38 (`0a57ca0d`); these numbers are the
+2.0.27 run:
 
 | | |
 |---|---|
@@ -80,7 +82,7 @@ Measured on 2026-10-20:
 | Memory | 16 GB host, 8 GiB cgroup v2 limit (`memory.max`), no swap |
 | OS | Linux 6.8.0 x86-64, glibc 2.39 (host libm profile `Glibc239Libm`) |
 | C compiler | Ubuntu clang 18.1.3 |
-| Bend | `b7ebee9` with the declared overlay (`toolchain.json`), Bun 1.3.12 |
+| Bend | `b7ebee9` with the 2.0.27 overlay (`metal.1`, `os-effects.1`), Bun 1.3.12 |
 | raylib | 6.2, `0256645` |
 
 The machine is shared with other workloads, so expect a few percent of noise

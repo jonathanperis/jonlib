@@ -65,22 +65,22 @@ def fdiv(x: F32, y: F32) -> F32:
 def lpf1.sample(+a: U32, +x: U32, +r1: U32) -> U32:
   F32.bits(fadd(fmul(fsub(1.0, R.float(a)), R.float(x)), fmul(R.float(a), R.float(r1))))
 
-def Chan.r1(chan: R.Chan) -> U32:
-  R.Chan{r1, _, _, _} = chan
+def Chan.r1(chan: R.Lane) -> U32:
+  R.Lane{r1, _, _, _} = chan
   r1
 
 def lpf1.join(+y: U32, rest: R.Filtered) -> R.Filtered:
   R.Filtered{frame, chans, ok} = rest
-  R.Filtered{Con{y, frame}, Con{R.Chan{y, 0, 0, 0}, chans}, ok}
+  R.Filtered{Con{y, frame}, Con{R.Lane{y, 0, 0, 0}, chans}, ok}
 
 # A frame through the filter; each channel's register is the first of its
 # resampler registers.
-def lpf1(frame: +List<U32>, chans: +List<R.Chan>, +a: U32) -> R.Filtered:
+def lpf1(frame: +List<U32>, chans: +List<R.Lane>, +a: U32) -> R.Filtered:
   match frame chans:
     case Con{+x, xs} Con{+chan, cs}: lpf1.join(lpf1.sample(a, x, Chan.r1(chan)), lpf1(xs, cs, a))
     case _ _: R.Filtered{Nil{}, Nil{}, True{}}
 
-def lpf1.if(apply: Bool, +frame: +List<U32>, +chans: +List<R.Chan>, +a: U32) -> R.Filtered:
+def lpf1.if(apply: Bool, +frame: +List<U32>, +chans: +List<R.Lane>, +a: U32) -> R.Filtered:
   match apply:
     case True{}: lpf1(frame, chans, a)
     case False{}: R.Filtered{frame, chans, True{}}

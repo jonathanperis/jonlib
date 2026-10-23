@@ -863,72 +863,72 @@ def scan.header(+frame: Frame, +selectors: +List<U32>, +rest: +List<U32>) -> Sca
 # (baseline, in samples) or block position (progressive), and whether it ends
 # a minimum coded unit (where the restart interval counts down).
 
-type Unit is Data:
-  Unit{comp: U32, x: U32, y: U32, last: Bool}
+type Mcu is Data:
+  Mcu{comp: U32, x: U32, y: U32, last: Bool}
 
-def units.row(n: Nat, +comp: U32, +i: U32, +y: U32, +scale: U32, +acc: +List<Unit>) -> +List<Unit>:
+def units.row(n: Nat, +comp: U32, +i: U32, +y: U32, +scale: U32, +acc: +List<Mcu>) -> +List<Mcu>:
   match n:
     case 0n: acc
-    case 1n+k: units.row(k, comp, (i + 1 : U32), y, scale, Con{Unit{comp, (i * scale : U32), y, True{}}, acc})
+    case 1n+k: units.row(k, comp, (i + 1 : U32), y, scale, Con{Mcu{comp, (i * scale : U32), y, True{}}, acc})
 
-def units.single(n: Nat, +comp: U32, +w: U32, +j: U32, +scale: U32, +acc: +List<Unit>) -> +List<Unit>:
+def units.single(n: Nat, +comp: U32, +w: U32, +j: U32, +scale: U32, +acc: +List<Mcu>) -> +List<Mcu>:
   match n:
     case 0n: acc
     case 1n+k: units.single(k, comp, w, (j + 1 : U32), scale, units.row(U32.to_nat(w), comp, 0, (j * scale : U32), scale, acc))
 
-def units.blocks.row(n: Nat, +comp: U32, +bx: U32, +by: U32, +xx: U32, +h: U32, +scale: U32, +final: Bool, +acc: +List<Unit>) -> +List<Unit>:
+def units.blocks.row(n: Nat, +comp: U32, +bx: U32, +by: U32, +xx: U32, +h: U32, +scale: U32, +final: Bool, +acc: +List<Mcu>) -> +List<Mcu>:
   match n:
     case 0n: acc
     case 1n+k: units.blocks.row(k, comp, bx, by, (xx + 1 : U32), h, scale, final,
-      Con{Unit{comp, ((bx * h + xx) * scale : U32), by, final && U32.is_eq((xx + 1 : U32), h)}, acc})
+      Con{Mcu{comp, ((bx * h + xx) * scale : U32), by, final && U32.is_eq((xx + 1 : U32), h)}, acc})
 
-def units.blocks(n: Nat, +comp: U32, +bx: U32, +by: U32, +yy: U32, +h: U32, +v: U32, +scale: U32, +final: Bool, +acc: +List<Unit>) -> +List<Unit>:
+def units.blocks(n: Nat, +comp: U32, +bx: U32, +by: U32, +yy: U32, +h: U32, +v: U32, +scale: U32, +final: Bool, +acc: +List<Mcu>) -> +List<Mcu>:
   match n:
     case 0n: acc
     case 1n+k: units.blocks(k, comp, bx, by, (yy + 1 : U32), h, v, scale, final,
       units.blocks.row(U32.to_nat(h), comp, bx, ((by * v + yy) * scale : U32), 0, h, scale, final && U32.is_eq((yy + 1 : U32), v), acc))
 
-def units.mcu(order: +List<U32>, +comps: +List<Comp>, +bx: U32, +by: U32, +scale: U32, +acc: +List<Unit>) -> +List<Unit>:
+def units.mcu(order: +List<U32>, +comps: +List<Comp>, +bx: U32, +by: U32, +scale: U32, +acc: +List<Mcu>) -> +List<Mcu>:
   match order:
     case Nil{}: acc
     case Con{+n, +rest}:
       +comp = pick(Comp, comps, n, Comp.empty())
       units.mcu(rest, comps, bx, by, scale, units.blocks(U32.to_nat(Comp.v(comp)), n, bx, by, 0, Comp.h(comp), Comp.v(comp), scale, List.is_empty(&2, U32, rest), acc))
 
-def units.mcus.row(n: Nat, +order: +List<U32>, +comps: +List<Comp>, +i: U32, +j: U32, +scale: U32, +acc: +List<Unit>) -> +List<Unit>:
+def units.mcus.row(n: Nat, +order: +List<U32>, +comps: +List<Comp>, +i: U32, +j: U32, +scale: U32, +acc: +List<Mcu>) -> +List<Mcu>:
   match n:
     case 0n: acc
     case 1n+k: units.mcus.row(k, order, comps, (i + 1 : U32), j, scale, units.mcu(order, comps, i, j, scale, acc))
 
-def units.mcus(n: Nat, +order: +List<U32>, +comps: +List<Comp>, +mcux: U32, +j: U32, +scale: U32, +acc: +List<Unit>) -> +List<Unit>:
+def units.mcus(n: Nat, +order: +List<U32>, +comps: +List<Comp>, +mcux: U32, +j: U32, +scale: U32, +acc: +List<Mcu>) -> +List<Mcu>:
   match n:
     case 0n: acc
     case 1n+k: units.mcus(k, order, comps, mcux, (j + 1 : U32), scale, units.mcus.row(U32.to_nat(mcux), order, comps, 0, j, scale, acc))
 
-def units(+frame: Frame, +order: +List<U32>, +scale: U32) -> +List<Unit>:
+def units(+frame: Frame, +order: +List<U32>, +scale: U32) -> +List<Mcu>:
   Frame{_, _, _, comps, _, _, _, mcux, mcuy} = frame
   +n = head(order)
   +comp = pick(Comp, comps, n, Comp.empty())
   +x = Comp.x(comp)
   +y = Comp.y(comp)
-  List.reverse(&2, Unit, Bool.pick(+List<Unit>, U32.is_eq(U32.from_nat(List.length(&2, U32, order)), 1),
+  List.reverse(&2, Mcu, Bool.pick(+List<Mcu>, U32.is_eq(U32.from_nat(List.length(&2, U32, order)), 1),
     units.single(U32.to_nat(((y + 7) >> 3n : U32)), n, ((x + 7) >> 3n : U32), 0, scale, Nil{}),
     units.mcus(U32.to_nat(mcuy), order, comps, mcux, 0, scale, Nil{})))
 
-def Unit.comp(+unit: Unit) -> U32:
-  Unit{comp, _, _, _} = unit
+def Mcu.comp(+unit: Mcu) -> U32:
+  Mcu{comp, _, _, _} = unit
   comp
 
-def Unit.x(+unit: Unit) -> U32:
-  Unit{_, x, _, _} = unit
+def Mcu.x(+unit: Mcu) -> U32:
+  Mcu{_, x, _, _} = unit
   x
 
-def Unit.y(+unit: Unit) -> U32:
-  Unit{_, _, y, _} = unit
+def Mcu.y(+unit: Mcu) -> U32:
+  Mcu{_, _, y, _} = unit
   y
 
-def Unit.last(+unit: Unit) -> Bool:
-  Unit{_, _, _, last} = unit
+def Mcu.last(+unit: Mcu) -> Bool:
+  Mcu{_, _, _, last} = unit
   last
 
 def Frame.comps(+frame: Frame) -> +List<Comp>:
@@ -1278,19 +1278,19 @@ def base.placed(block: Block, +n: U32, +x: U32, +y: U32, +last: Bool, +width: U3
       countdown(last, restart, bits, replace(U32, preds, n, pred), todo, eob, plane.block(n, x, y, width, idct(data), Planes.take(n, planes)))
 
 # A baseline block: decode, inverse DCT into its plane, count down.
-def base.unit(+unit: Unit, +frame: Frame, +tables: Tables, +head: ScanHead, driver: Driver) -> Driver:
+def base.unit(+unit: Mcu, +frame: Frame, +tables: Tables, +head: ScanHead, driver: Driver) -> Driver:
   match driver:
     case Driver{bits, +preds, todo, eob, planes}:
-      +n = Unit.comp(unit)
+      +n = Mcu.comp(unit)
       +comp = pick(Comp, Frame.comps(frame), n, Comp.empty())
       +selector = nth(ScanHead.selectors(head), n)
       base.placed(block.base(Tables.dc(tables, (selector >> 4n : U32)), Tables.ac(tables, (selector .&. 15 : U32)), Tables.quant(tables, Comp.tq(comp)), nth(preds, n), bits),
-        n, Unit.x(unit), Unit.y(unit), Unit.last(unit), Comp.w2(comp), Tables.restart(tables), preds, todo, eob, planes)
+        n, Mcu.x(unit), Mcu.y(unit), Mcu.last(unit), Comp.w2(comp), Tables.restart(tables), preds, todo, eob, planes)
     case Stopped{bits, planes}: Partial{bits, planes}
     case Partial{bits, planes}: Partial{bits, planes}
     case Failed{}: Failed{}
 
-def base.run(units: +List<Unit>, +frame: Frame, +tables: Tables, +head: ScanHead, driver: Driver) -> Driver:
+def base.run(units: +List<Mcu>, +frame: Frame, +tables: Tables, +head: ScanHead, driver: Driver) -> Driver:
   match units:
     case Nil{}: driver
     case Con{unit, rest}: base.run(rest, frame, tables, head, base.unit(unit, frame, tables, head, driver))
@@ -1327,19 +1327,19 @@ def prog.block(+dc: Bool, +tables: Tables, +head: ScanHead, +selector: U32, +bas
   Taken{array, rest} = taken
   prog.placed(prog.select(dc, tables, head, selector, base, pred, eob, bits, array), n, last, restart, preds, todo, rest)
 
-def prog.unit(+unit: Unit, +frame: Frame, +tables: Tables, +head: ScanHead, driver: Driver) -> Driver:
+def prog.unit(+unit: Mcu, +frame: Frame, +tables: Tables, +head: ScanHead, driver: Driver) -> Driver:
   match driver:
     case Driver{bits, +preds, todo, eob, planes}:
-      +n = Unit.comp(unit)
+      +n = Mcu.comp(unit)
       +comp = pick(Comp, Frame.comps(frame), n, Comp.empty())
       +dc = (U32.from_nat(List.length(&2, U32, ScanHead.order(head))) > 1 : U32) || U32.is_eq(ScanHead.start(head), 0)
-      prog.block(dc, tables, head, nth(ScanHead.selectors(head), n), (64 * (Unit.x(unit) + Unit.y(unit) * (Comp.w2(comp) / 8)) : U32),
-        nth(preds, n), eob, bits, Planes.take(n, planes), n, Unit.last(unit), Tables.restart(tables), preds, todo)
+      prog.block(dc, tables, head, nth(ScanHead.selectors(head), n), (64 * (Mcu.x(unit) + Mcu.y(unit) * (Comp.w2(comp) / 8)) : U32),
+        nth(preds, n), eob, bits, Planes.take(n, planes), n, Mcu.last(unit), Tables.restart(tables), preds, todo)
     case Stopped{bits, planes}: Partial{bits, planes}
     case Partial{bits, planes}: Partial{bits, planes}
     case Failed{}: Failed{}
 
-def prog.run(units: +List<Unit>, +frame: Frame, +tables: Tables, +head: ScanHead, driver: Driver) -> Driver:
+def prog.run(units: +List<Mcu>, +frame: Frame, +tables: Tables, +head: ScanHead, driver: Driver) -> Driver:
   match units:
     case Nil{}: driver
     case Con{unit, rest}: prog.run(rest, frame, tables, head, prog.unit(unit, frame, tables, head, driver))
@@ -1609,7 +1609,7 @@ def mode(+count: U32, +rgb: U32, +transform: U32, +jfif: Bool) -> U32:
   Bool.pick(U32, U32.is_eq(count, 3), Bool.pick(U32, U32.is_eq(rgb, 3) || (U32.is_eq(transform, 0) && Bool.not(jfif)), 2, 3),
     Bool.pick(U32, U32.is_eq(transform, 0), 4, Bool.pick(U32, U32.is_eq(transform, 2), 5, 3))))
 
-def output(+frame: Frame, +tables: Tables, planes: Planes) -> C.Image:
+def output(+frame: Frame, +tables: Tables, planes: Planes) -> C.Picture:
   Frame{_, width, height, comps, rgb, _, _, _, _} = frame
   Planes{a, b, c, d} = planes
   +count = U32.from_nat(List.length(&2, Comp, comps))
@@ -1618,7 +1618,7 @@ def output(+frame: Frame, +tables: Tables, planes: Planes) -> C.Image:
     comp.output.if((count > 1 : U32), frame, pick(Comp, comps, 1, Comp.empty()), b),
     comp.output.if((count > 2 : U32), frame, pick(Comp, comps, 2, Comp.empty()), c),
     comp.output.if((count > 3 : U32), frame, pick(Comp, comps, 3, Comp.empty()), d), Nil{})
-  C.Image{width, height, Bool.pick(U32, (count >= 3 : U32), 3, 1), fill.array(words, 0, Array.new(U32, capacity((width * height : U32)), 0))}
+  C.Picture{width, height, Bool.pick(U32, (count >= 3 : U32), 3, 1), fill.array(words, 0, Array.new(U32, capacity((width * height : U32)), 0))}
 
 def plane.new(+comp: Comp) -> Array<U32>:
   Array.new(U32, capacity((Comp.w2(comp) * Comp.h2(comp) : U32)), 0)
@@ -1695,19 +1695,19 @@ def complete(n: Nat, written: +List<U32>) -> Bool:
 # Planes stb would leave uninitialized (a component without a complete scan,
 # or a progressive frame ending before EOI, which skips stbi__jpeg_finish)
 # are InvalidImageStream rather than undefined samples.
-def decode.defined(valid: Bool, +frame: Frame, +tables: Tables, planes: Planes, coeffs: Planes) -> Result<&1, &1, C.Error, C.Image>:
+def decode.defined(valid: Bool, +frame: Frame, +tables: Tables, planes: Planes, coeffs: Planes) -> Result<&1, &1, C.Error, C.Picture>:
   match valid:
     case False{}: Fail{C.BadStream{}}
     case True{}: Done{output(frame, tables, finish(frame, tables, planes, coeffs))}
 
-def decode.main(state: Main, +frame: Frame) -> Result<&1, &1, C.Error, C.Image>:
+def decode.main(state: Main, +frame: Frame) -> Result<&1, &1, C.Error, C.Picture>:
   match state:
     case Finished{+tables, written, eoi, planes, coeffs}:
       decode.defined(complete(List.length(&2, Comp, Frame.comps(frame)), written) && (eoi || Bool.not(Frame.progressive(frame))), frame, tables, planes, coeffs)
     case Main{_, _, _, _, _, _, _}: Fail{C.BadStream{}}
     case Error{kind}: Fail{Bool.pick(C.Error, U32.is_eq(kind, 3), C.BadStream{}, C.BadHeader{})}
 
-def decode.status(status: U32, n: Nat, +frame: Frame, +rest: +List<U32>, +tables: Tables) -> Result<&1, &1, C.Error, C.Image>:
+def decode.status(status: U32, n: Nat, +frame: Frame, +rest: +List<U32>, +tables: Tables) -> Result<&1, &1, C.Error, C.Picture>:
   match status:
     case 0:
       +first = get_marker(255, rest)
@@ -1716,17 +1716,17 @@ def decode.status(status: U32, n: Nat, +frame: Frame, +rest: +List<U32>, +tables
     case 2: Fail{C.BadSize{}}
     case _: Fail{C.BadHeader{}}
 
-def decode.frame(framed: Framed, n: Nat, +tables: Tables) -> Result<&1, &1, C.Error, C.Image>:
+def decode.frame(framed: Framed, n: Nat, +tables: Tables) -> Result<&1, &1, C.Error, C.Picture>:
   match framed:
     case Framed{frame, rest, status}: decode.status(status, n, frame, rest, tables)
 
-def decode.head(head: Head, n: Nat) -> Result<&1, &1, C.Error, C.Image>:
+def decode.head(head: Head, n: Nat) -> Result<&1, &1, C.Error, C.Picture>:
   match head:
     case Sof{m, rest, tables}: decode.frame(frame(U32.is_eq(m, 194), rest), n, tables)
     case Head{_, _, _, _}: Fail{C.BadHeader{}}
     case HeadBad{}: Fail{C.BadHeader{}}
 
-def decode.soi(ok: Bool, +n: Nat, +rest: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def decode.soi(ok: Bool, +n: Nat, +rest: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   match ok:
     case False{}: Fail{C.BadHeader{}}
     case True{}:
@@ -1739,6 +1739,6 @@ def signature(+bytes: +List<U32>) -> Bool:
 
 # stbi__jpeg_load with raylib's desired channels 0: 1 for grayscale files,
 # 3 otherwise; canonical RGBA words.
-def decode(+bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def decode(+bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   +soi = get_marker(255, bytes)
   decode.soi(U32.is_eq(Mark.value(soi), 216), 1n+1n+C.byte_count(bytes, 0n), Mark.rest(soi))

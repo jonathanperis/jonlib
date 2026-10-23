@@ -676,24 +676,24 @@ def shape.with(~sub: @+b:Blob -> @+i:Info -> @+g:U32 -> Shape, +b: Blob, +info: 
 def shape.deep(+b: Blob, +info: Info, +g: U32) -> Shape:
   Shape{False{}, Nil{}}
 
-def shape.1(+b: Blob, +info: Info, +g: U32) -> Shape:
+def shape.n1(+b: Blob, +info: Info, +g: U32) -> Shape:
   shape.with(~shape.deep, b, info, g)
 
-def shape.2(+b: Blob, +info: Info, +g: U32) -> Shape:
-  shape.with(~shape.1, b, info, g)
+def shape.n2(+b: Blob, +info: Info, +g: U32) -> Shape:
+  shape.with(~shape.n1, b, info, g)
 
-def shape.3(+b: Blob, +info: Info, +g: U32) -> Shape:
-  shape.with(~shape.2, b, info, g)
+def shape.n3(+b: Blob, +info: Info, +g: U32) -> Shape:
+  shape.with(~shape.n2, b, info, g)
 
-def shape.4(+b: Blob, +info: Info, +g: U32) -> Shape:
-  shape.with(~shape.3, b, info, g)
+def shape.n4(+b: Blob, +info: Info, +g: U32) -> Shape:
+  shape.with(~shape.n3, b, info, g)
 
-def shape.5(+b: Blob, +info: Info, +g: U32) -> Shape:
-  shape.with(~shape.4, b, info, g)
+def shape.n5(+b: Blob, +info: Info, +g: U32) -> Shape:
+  shape.with(~shape.n4, b, info, g)
 
 # stbtt_GetGlyphShape (composites nest at most 6 deep here).
 def shape(+b: Blob, +info: Info, +g: U32) -> Shape:
-  shape.with(~shape.5, b, info, g)
+  shape.with(~shape.n5, b, info, g)
 
 # -----------------------------------------------------------------------------
 # stbtt_FlattenCurves: contours of points.

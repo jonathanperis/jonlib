@@ -1,8 +1,8 @@
 # Compatibility ledger
 
 Reference: raylib **6.2** at `02566453880e06bec97f5b8160fa6fe1e98397ca`.
-Candidate: Bend **2.0.27+jonlib-metal.1.os-effects.1**, base
-`b7ebee9217c8813067e200b0c0c9153a3be31c5e` plus the exact
+Candidate: Bend **2.0.38+jonlib-metal.2.os-effects.2**, base
+`0a57ca0d21de94a3724d8be21afb0eb89f88b4d8` plus the exact
 [compiler overlay](../patches/README.md) declared in `toolchain.json`.
 Profile: **rgba8-cpu-images-v1**, with domains defined in [API.md](API.md).
 

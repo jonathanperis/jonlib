@@ -7,8 +7,8 @@ import Base
 type Normal is Data:
   Normal{r: F32, g: F32, b: F32, a: F32}
 
-type Word is Data:
-  Word{value: U32, rest: +List<U32>}
+type Cursor is Data:
+  Cursor{value: U32, rest: +List<U32>}
 
 type Input is Type:
   Input{bytes: +List<U32>, pixels: Array<U32>}
@@ -76,16 +76,16 @@ def half.bits(value: F32) -> U32:
   +subnormal = Bool.pick(U32, ((e < 113) && (e > 101) : U32), ((((8384512 + m) >> U32.to_nat((125 - e : U32))) + 1) >> 1n : U32), 0)
   ((((b .&. 2147483648) >> 16n) .|. normal .|. subnormal .|. Bool.pick(U32, (e > 143 : U32), 32767, 0)) .&. 65535 : U32)
 
-def read_word(n: Nat, +shift: Nat, value: U32, bytes: +List<U32>) -> Maybe<&2, Word>:
+def read_word(n: Nat, +shift: Nat, value: U32, bytes: +List<U32>) -> Maybe<&2, Cursor>:
   match n bytes:
-    case 0n _: Some{Word{value, bytes}}
+    case 0n _: Some{Cursor{value, bytes}}
     case _ Nil{}: None{}
     case 1n+rest Con{byte, tail}: read_word(rest, (shift + 8n : Nat), (value .|. (byte << shift) : U32), tail)
 
-def read_pixel(index: U32, pixels: Array<U32>, word: Maybe<&2, Word>) -> Maybe<Input>:
+def read_pixel(index: U32, pixels: Array<U32>, word: Maybe<&2, Cursor>) -> Maybe<Input>:
   match word:
     case None{}: None{}
-    case Some{Word{value, rest}}: Some{Input{rest, Array.set(U32, pixels, index, value)}}
+    case Some{Cursor{value, rest}}: Some{Input{rest, Array.set(U32, pixels, index, value)}}
 
 def unpack(n: Nat, +index: U32, +bytes_per_pixel: Nat, input: Maybe<Input>) -> Maybe<Array<U32>>:
   match n input:

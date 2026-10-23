@@ -5,8 +5,8 @@ import Base
 import ./codec.bend as C
 import ./fused.bend as Fused
 
-type Image is Type:
-  Image{width: U32, height: U32, pixels: Array<U32>}
+type Picture is Type:
+  Picture{width: U32, height: U32, pixels: Array<U32>}
 
 def matte.value(fused: Bool, value: F32, reciprocal: F32, inverse: F32) -> U32:
   match fused:
@@ -91,10 +91,10 @@ def section.data(result: Maybe<&2, +List<U32>>) -> Result<&2, &2, C.Error, +List
     case None{}: Fail{C.Truncated{}}
     case Some{data}: Done{data}
 
-def section(word: Maybe<&2, C.Word>) -> Result<&2, &2, C.Error, +List<U32>>:
+def section(word: Maybe<&2, C.Cursor>) -> Result<&2, &2, C.Error, +List<U32>>:
   match word:
     case None{}: Fail{C.BadHeader{}}
-    case Some{C.Word{size, data}}: section.data(skip(U32.to_nat(size), data))
+    case Some{C.Cursor{size, data}}: section.data(skip(U32.to_nat(size), data))
 
 def sections(n: Nat, state: Result<&2, &2, C.Error, +List<U32>>) -> Result<&2, &2, C.Error, +List<U32>>:
   match n state:
@@ -115,10 +115,10 @@ def pixel.merge(index: U32, shift: Nat, value: U32, data: +List<U32>, result: Ar
   (pixels, old) = result
   State{data, Array.set(U32, pixels, index, (old .|. (value << shift) : U32))}
 
-def pixel.read(+index: U32, shift: Nat, wide: Bool, pixels: Array<U32>, result: Maybe<&2, C.Word>) -> Result<&1, &1, C.Error, State>:
+def pixel.read(+index: U32, shift: Nat, wide: Bool, pixels: Array<U32>, result: Maybe<&2, C.Cursor>) -> Result<&1, &1, C.Error, State>:
   match result:
     case None{}: Fail{C.Truncated{}}
-    case Some{C.Word{+value, data}}:
+    case Some{C.Cursor{+value, data}}:
       Done{pixel.merge(index, shift, Bool.pick(U32, wide, (value >> 8n : U32), value), data, Array.get(U32, pixels, index))}
 
 def pixels(n: Nat, +index: U32, +shift: Nat, +wide: Bool, state: Result<&1, &1, C.Error, State>) -> Result<&1, &1, C.Error, State>:
@@ -182,22 +182,22 @@ def rle.channels(n: Nat, +shift: Nat, +count: U32, +fuel: Nat, state: Result<&1,
     case 1n+rest Done{State{data, output}}:
       rle.channels(rest, Nat.sub(shift, 8n), count, fuel, rle.run(fuel, shift, Done{Rle{count, 0, data, output}}))
 
-def image.pixels(width: U32, height: U32, result: Result<&1, &1, C.Error, Array<U32>>) -> Result<&1, &1, C.Error, Image>:
+def image.pixels(width: U32, height: U32, result: Result<&1, &1, C.Error, Array<U32>>) -> Result<&1, &1, C.Error, Picture>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{pixels}: Done{Image{width, height, pixels}}
+    case Done{pixels}: Done{Picture{width, height, pixels}}
 
-def image.alpha(active: Bool, fused: Bool, +width: U32, +height: U32, pixels: Array<U32>) -> Result<&1, &1, C.Error, Image>:
+def image.alpha(active: Bool, fused: Bool, +width: U32, +height: U32, pixels: Array<U32>) -> Result<&1, &1, C.Error, Picture>:
   match active:
-    case False{}: Done{Image{width, height, pixels}}
+    case False{}: Done{Picture{width, height, pixels}}
     case True{}: image.pixels(width, height, matte.pixels(U32.to_nat((width * height : U32)), 0, fused, Done{pixels}))
 
-def image(fused: Bool, width: U32, height: U32, amount: U32, result: Result<&1, &1, C.Error, State>) -> Result<&1, &1, C.Error, Image>:
+def image(fused: Bool, width: U32, height: U32, amount: U32, result: Result<&1, &1, C.Error, State>) -> Result<&1, &1, C.Error, Picture>:
   match result:
     case Fail{error}: Fail{error}
     case Done{State{_, output}}: image.alpha((amount >= 4 : U32), fused, width, height, output)
 
-def start.valid(valid: Bool, fused: Bool, +width: U32, +height: U32, +amount: U32, wide: Bool, data: +List<U32>) -> Result<&1, &1, C.Error, Image>:
+def start.valid(valid: Bool, fused: Bool, +width: U32, +height: U32, +amount: U32, wide: Bool, data: +List<U32>) -> Result<&1, &1, C.Error, Picture>:
   match valid:
     case False{}: Fail{C.Truncated{}}
     case True{}:
@@ -206,7 +206,7 @@ def start.valid(valid: Bool, fused: Bool, +width: U32, +height: U32, +amount: U3
       initial = Bool.pick(U32, (amount < 4 : U32), 255, 0)
       image(fused, width, height, amount, channels(U32.to_nat(U32.min(amount, 4)), 24n, U32.to_nat(count), wide, Done{State{data, Array.new(U32, depth, initial)}}))
 
-def compressed(fused: Bool, +width: U32, +height: U32, +amount: U32, result: Maybe<&2, +List<U32>>) -> Result<&1, &1, C.Error, Image>:
+def compressed(fused: Bool, +width: U32, +height: U32, +amount: U32, result: Maybe<&2, +List<U32>>) -> Result<&1, &1, C.Error, Picture>:
   match result:
     case None{}: Fail{C.Truncated{}}
     case Some{+data}:
@@ -216,31 +216,31 @@ def compressed(fused: Bool, +width: U32, +height: U32, +amount: U32, result: May
       # Native RLE ignores row lengths and emits byte samples even at depth 16.
       image(fused, width, height, amount, rle.channels(U32.to_nat(U32.min(amount, 4)), 24n, count, C.byte_count(data, 0n), Done{State{data, Array.new(U32, depth, initial)}}))
 
-def compression.code(code: U32, fused: Bool, +width: U32, +height: U32, +amount: U32, +wide: Bool, +data: +List<U32>) -> Result<&1, &1, C.Error, Image>:
+def compression.code(code: U32, fused: Bool, +width: U32, +height: U32, +amount: U32, +wide: Bool, +data: +List<U32>) -> Result<&1, &1, C.Error, Picture>:
   match code:
     case 0: start.valid(enough(U32.to_nat((width * height * U32.min(amount, 4) * Bool.pick(U32, wide, 2, 1) : U32)), data), fused, width, height, amount, wide, data)
     case 1: compressed(fused, width, height, amount, skip(U32.to_nat((height * amount * 2 : U32)), data))
     case _: Fail{C.BadHeader{}}
 
-def compression(fused: Bool, width: U32, height: U32, amount: U32, wide: Bool, word: Maybe<&2, C.Word>) -> Result<&1, &1, C.Error, Image>:
+def compression(fused: Bool, width: U32, height: U32, amount: U32, wide: Bool, word: Maybe<&2, C.Cursor>) -> Result<&1, &1, C.Error, Picture>:
   match word:
     case None{}: Fail{C.BadHeader{}}
-    case Some{C.Word{code, data}}: compression.code(code, fused, width, height, amount, wide, data)
+    case Some{C.Cursor{code, data}}: compression.code(code, fused, width, height, amount, wide, data)
 
-def prepared(fused: Bool, width: U32, height: U32, amount: U32, wide: Bool, result: Result<&2, &2, C.Error, +List<U32>>) -> Result<&1, &1, C.Error, Image>:
+def prepared(fused: Bool, width: U32, height: U32, amount: U32, wide: Bool, result: Result<&2, &2, C.Error, +List<U32>>) -> Result<&1, &1, C.Error, Picture>:
   match result:
     case Fail{error}: Fail{error}
     case Done{data}: compression(fused, width, height, amount, wide, C.read(2n, 0, data))
 
-def prepare(fused: Bool, result: Result<&2, &2, C.Error, Header>) -> Result<&1, &1, C.Error, Image>:
+def prepare(fused: Bool, result: Result<&2, &2, C.Error, Header>) -> Result<&1, &1, C.Error, Picture>:
   match result:
     case Fail{error}: Fail{error}
     case Done{Header{width, height, amount, wide, data}}: prepared(fused, width, height, amount, wide, sections(3n, Done{data}))
 
-def checked(valid: Bool, fused: Bool, bytes: +List<U32>) -> Result<&1, &1, C.Error, Image>:
+def checked(valid: Bool, fused: Bool, bytes: +List<U32>) -> Result<&1, &1, C.Error, Picture>:
   match valid:
     case False{}: Fail{C.BadByte{}}
     case True{}: prepare(fused, header(bytes))
 
-def decode(fused: Bool, +bytes: +List<U32>) -> Result<&1, &1, C.Error, Image>:
+def decode(fused: Bool, +bytes: +List<U32>) -> Result<&1, &1, C.Error, Picture>:
   checked(C.valid_bytes(bytes, True{}), fused, bytes)

@@ -262,8 +262,8 @@ def three() -> V:
 # -----------------------------------------------------------------------------
 # sin(x) brackets
 
-type Window is Data:
-  Window{lo: V, hi: V}
+type Span is Data:
+  Span{lo: V, hi: V}
 
 def word(value: F.Words) -> V:
   F.Words{high, low} = value
@@ -274,31 +274,31 @@ def negated(value: V) -> V:
     case Ok{high, low}: Ok{(high .^. 2147483648 : U32), low}
     case Bad{}: Bad{}
 
-def window.signed(negative: Bool, +nearest: Rounded) -> Window:
+def window.signed(negative: Bool, +nearest: Rounded) -> Span:
   Rounded{+high, +low} = nearest
   +lo = word(O.decrement(high, low))
   +hi = word(O.increment(high, low))
-  Bool.pick(Window, negative, Window{negated(hi), negated(lo)}, Window{lo, hi})
+  Bool.pick(Span, negative, Span{negated(hi), negated(lo)}, Span{lo, hi})
 
-def window.magnitude(+high: U32, +low: U32) -> Window:
+def window.magnitude(+high: U32, +low: U32) -> Span:
   +x = fx.from_words(high, low)
   +r = Bool.pick(+List<U32>, fx.greater(x, fx.pi_half()), fx.difference(fx.pi(), x, 0), x)
   +s = fx.sin(r)
   window.signed((high >= 2147483648 : U32), fx.rounded(s, fx.top.go(s, 0, 0)))
 
-def window.checked(kind: U32, +high: U32, +low: U32) -> Window:
+def window.checked(kind: U32, +high: U32, +low: U32) -> Span:
   match kind:
-    case 0: Window{Ok{high, low}, Ok{high, low}}
+    case 0: Span{Ok{high, low}, Ok{high, low}}
     case 1: window.magnitude(high, low)
-    case _: Window{Bad{}, Bad{}}
+    case _: Span{Bad{}, Bad{}}
 
 # Doubles bracketing every faithful sin(x) for |x| <= pi (sin(+-0) is exact).
-def window(x: V) -> Window:
+def window(x: V) -> Span:
   match x:
     case Ok{+high, +low}:
       +e = stored(high)
       window.checked(Bool.pick(U32, zero(high, low), 0, Bool.pick(U32, ((e >= 963) && (e <= 1024) : U32), 1, 2)), high, low)
-    case Bad{}: Window{Bad{}, Bad{}}
+    case Bad{}: Span{Bad{}, Bad{}}
 
 # -----------------------------------------------------------------------------
 # Coefficients
@@ -330,12 +330,12 @@ def biquad.words(b0: Maybe<U32>, b1: Maybe<U32>, a1: Maybe<U32>, a2: Maybe<U32>)
     case Some{+x0} Some{x1} Some{x3} Some{x4}: Some{[x0, x1, x0, x3, x4]}
     case _ _ _ _: None{}
 
-def Window.lo(+window: Window) -> V:
-  Window{lo, _} = window
+def Span.lo(+window: Span) -> V:
+  Span{lo, _} = window
   lo
 
-def Window.hi(+window: Window) -> V:
-  Window{_, hi} = window
+def Span.hi(+window: Span) -> V:
+  Span{_, hi} = window
   hi
 
 # One ma_lpf2 biquad (b0, b1, b2, a1, a2 normalized by a0) from the windows of
@@ -355,8 +355,8 @@ def biquad(+f32: Bool, +slo: V, +shi: V, +clo: V, +chi: V, +klo: V, +khi: V) -> 
     corners(f32, mul(minus_two(), chi), mul(minus_two(), clo), a0lo, a0hi),
     agree(final(f32, div(sub(one(), alo), a0lo)), final(f32, div(sub(one(), ahi), a0hi))))
 
-def biquad.at(+f32: Bool, +s: Window, +c: Window, +k: Window) -> Maybe<+List<U32>>:
-  biquad(f32, Window.lo(s), Window.hi(s), Window.lo(c), Window.hi(c), Window.lo(k), Window.hi(k))
+def biquad.at(+f32: Bool, +s: Span, +c: Span, +k: Span) -> Maybe<+List<U32>>:
+  biquad(f32, Span.lo(s), Span.hi(s), Span.lo(c), Span.hi(c), Span.lo(k), Span.hi(k))
 
 def pair(first: Maybe<+List<U32>>, second: Maybe<+List<U32>>) -> Maybe<+List<U32>>:
   match first second:
@@ -395,21 +395,21 @@ def fx.exp.series(n: Nat, +k: U32, +t: +List<U32>, +term: +List<U32>, +even: +Li
 def fx.exp_neg(+t: +List<U32>) -> +List<U32>:
   fx.exp.series(52n, 1, t, fx.one(), fx.one(), fx.zeros(9n, Nil{}))
 
-def lpf1.window(kind: U32, +high: U32, +low: U32) -> Window:
+def lpf1.window(kind: U32, +high: U32, +low: U32) -> Span:
   match kind:
     case 1:
       +e = fx.exp_neg(fx.from_words(high, low))
       window.signed(False{}, fx.rounded(e, fx.top.go(e, 0, 0)))
-    case _: Window{Bad{}, Bad{}}
+    case _: Span{Bad{}, Bad{}}
 
 # Doubles bracketing every faithful exp(-w) for 2^-60 <= w < 4.
-def lpf1.of(w: V) -> Window:
+def lpf1.of(w: V) -> Span:
   match w:
     case Ok{+high, +low}: lpf1.window(Bool.pick(U32, ((stored(high) >= 963) && (stored(high) <= 1024) : U32), 1, 2), high, low)
-    case Bad{}: Window{Bad{}, Bad{}}
+    case Bad{}: Span{Bad{}, Bad{}}
 
-def lpf1.certified(window: Window) -> Maybe<U32>:
-  Window{lo, hi} = window
+def lpf1.certified(window: Span) -> Maybe<U32>:
+  Span{lo, hi} = window
   agree(final(True{}, lo), final(True{}, hi))
 
 # The binary32 coefficient of the first-order low-pass filter for reduced

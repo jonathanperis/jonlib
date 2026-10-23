@@ -197,7 +197,7 @@ class AngleQualificationRoutingTests(unittest.TestCase):
                 return original(*args, **kwargs)
             def run(command, **kwargs):
                 self.executions.append((command,kwargs))
-                if '--check-only' in command: return 'All terms check.'
+                if '--check-only' in command: return c.CHECK_VERDICT + '\n'
                 if '--version' in command: return 'mock version'
                 if Path(command[0]).name == 'reference': return reference
                 if '-o' in command:

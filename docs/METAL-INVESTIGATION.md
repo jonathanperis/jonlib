@@ -60,6 +60,17 @@ CPU/CUDA wrapper names alias the original functions, and wrapper liveness
 follows the compiler's existing reference graph. Generated CPU/CUDA source is
 identical to the stock compiler's after resolving the conditional wrappers.
 
+Bend 2.0.38 counts a spin in characters (`SPIN_FAR` is 8192) and spells a
+device-far spin `DFAR`. The 2.0.27 patch does not apply to that emitter. The
+same dispatcher-boundary policy was re-ported in those units: a helper whose
+own text already meets the threshold stays `DFAR` and does not inflate the
+budget, and only a non-native caller receives the Metal `FAR` wrapper. The
+2.0.38 boundary was checked on CPU and JavaScript (the regression prints
+16000 and the generated C contains both `DFAR Term spin_` and
+`FAR Term call_spin_`). It has not been re-run on Metal. The corpus result
+above is the 2.0.27 device evidence. Upstream's fix for non-tail recursion
+under `!` past 1023 frames is a different defect.
+
 The overlay is general compiler code: it does not recognize Jonlib names, shapes
 or fixtures. It modifies `bend2/comp.ts` (which carries a modification notice),
 adds the regression `tests/run/metal_inline_budget.bend` (repeated flat-helper

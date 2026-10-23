@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import re
 
-from conformance import BUILD, ROOT, checkout, run
+from conformance import BUILD, ROOT, bend_runtime, checkout, run
 
 TESTS = [
     'run/metal_inline_budget', 'run/array_map_loop', 'run/matrix_multiply_array',
@@ -50,11 +50,11 @@ def main():
             run(['clang', '-std=c11', '-O3', c_file, '-lpthread', '-lm', '-o', binary])
         if name == 'run/metal_inline_budget':
             emitted = c_file.read_text()
-            if 'FAR Term call_spin_' not in emitted or not re.search(r'^FAR Term spin_\d+', emitted, re.M):
-                raise ValueError('The regression must combine a Metal dispatch boundary with an existing FAR helper')
-        lanes = [('cpu', [binary, '--gpu', 'off', '--threads', '2']), ('javascript', ['bun', js_file])]
+            if 'FAR Term call_spin_' not in emitted or not re.search(r'^DFAR Term spin_\d+', emitted, re.M):
+                raise ValueError('The regression must combine a Metal dispatch boundary with a device-far helper')
+        lanes = [('cpu', [binary, *bend_runtime('--gpu', 'off', '--threads', '2')]), ('javascript', ['bun', js_file])]
         if device:
-            lanes.append(('gpu-forced', [binary, '--gpu', 'on']))
+            lanes.append(('gpu-forced', [binary, *bend_runtime('--gpu', 'on')]))
         for lane, command in lanes:
             actual = run(command).strip()
             if actual != expected:

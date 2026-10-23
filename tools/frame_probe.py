@@ -904,8 +904,8 @@ def bench(frame: Maybe<J.Frame>) -> String:
 
 def time_lanes(executable, script, expected):
     timings = {}
-    for lane, command in (('cpu-1', [executable, '--gpu', 'off', '--threads', '1']),
-                          ('cpu-2', [executable, '--gpu', 'off', '--threads', '2']),
+    for lane, command in (('cpu-1', [executable, *probekit.bend_runtime('--gpu', 'off', '--threads', '1')]),
+                          ('cpu-2', [executable, *probekit.bend_runtime('--gpu', 'off', '--threads', '2')]),
                           ('javascript', ['bun', script])):
         best = None
         for _ in range(3):

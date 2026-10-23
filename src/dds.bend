@@ -12,21 +12,21 @@ import ./formats.bend as Formats
 type Header is Data:
   Header{width: U32, height: U32, mipmaps: U32, flags: U32, fourcc: U32, bits: U32, alpha: U32}
 
-type Image is Type:
-  Image{width: U32, height: U32, format: U32, data: +List<U32>}
+type Picture is Type:
+  Picture{width: U32, height: U32, format: U32, data: +List<U32>}
 
 # Single-level uncompressed owners, compressed or multi-level data (the
 # complete level chain, largest first) and invalid data.
 type Outcome is Type:
-  Decoded{image: Image}
-  Levels{image: Image, count: U32}
+  Decoded{image: Picture}
+  Levels{image: Picture, count: U32}
   Unsupported{}
   Invalid{error: C.Error}
 
-def words.read(values: +List<U32>, word: Maybe<&2, Formats.Word>) -> Maybe<(+List<U32> & +List<U32>)>:
+def words.read(values: +List<U32>, word: Maybe<&2, Formats.Cursor>) -> Maybe<(+List<U32> & +List<U32>)>:
   match word:
     case None{}: None{}
-    case Some{Formats.Word{value, rest}}: Some{(Con{value, values}, rest)}
+    case Some{Formats.Cursor{value, rest}}: Some{(Con{value, values}, rest)}
 
 def words(n: Nat, state: Maybe<(+List<U32> & +List<U32>)>) -> Maybe<(+List<U32> & +List<U32>)>:
   match n state:
@@ -64,7 +64,7 @@ def swap_rb(data: +List<U32>, out: +List<U32>) -> +List<U32>:
 def payload(+format: U32, +count: U32, data: +List<U32>) -> Outcome:
   +size = (count * Bool.pick(U32, U32.is_eq(format, 4), 3, Bool.pick(U32, U32.is_eq(format, 7), 4, 2)) : U32)
   +bytes = List.take(&2, U32, data, U32.to_nat(size))
-  Bool.pick(Outcome, Nat.is_eq(C.byte_count(bytes, 0n), U32.to_nat(size)), Decoded{Image{0, 0, format, bytes}}, Invalid{C.Truncated{}})
+  Bool.pick(Outcome, Nat.is_eq(C.byte_count(bytes, 0n), U32.to_nat(size)), Decoded{Picture{0, 0, format, bytes}}, Invalid{C.Truncated{}})
 
 def converted(+format: U32, +bits: U32, +flags: U32, +alpha: U32) -> U32:
   Bool.pick(U32, U32.is_eq(bits, 16) && U32.is_eq(flags, 64), 3,
@@ -82,7 +82,7 @@ def reorder(kind: U32, data: +List<U32>) -> +List<U32>:
 
 def finished(+width: U32, +height: U32, outcome: Outcome) -> Outcome:
   match outcome:
-    case Decoded{Image{_, _, +format, data}}: Decoded{Image{width, height, format, reorder(format, data)}}
+    case Decoded{Picture{_, _, +format, data}}: Decoded{Picture{width, height, format, reorder(format, data)}}
     case other: other
 
 # DXT1 (RGB without the alpha flag, RGBA with it), DXT3 and DXT5; 0 for other
@@ -116,7 +116,7 @@ def chain(n: Nat, +width: U32, +height: U32, +format: U32, +total: U32) -> U32:
 def levels.payload(+width: U32, +height: U32, +format: U32, +count: U32, +total: U32, data: +List<U32>) -> Outcome:
   +bytes = List.take(&2, U32, data, U32.to_nat(total))
   Bool.pick(Outcome, Nat.is_eq(C.byte_count(bytes, 0n), U32.to_nat(total)),
-    Levels{Image{width, height, format, reorder(format, bytes)}, count}, Invalid{C.Truncated{}})
+    Levels{Picture{width, height, format, reorder(format, bytes)}, count}, Invalid{C.Truncated{}})
 
 # Compressed or multi-level files keep every level the header describes, read
 # from the file: raylib copies only pitch (+pitch/3) or size (+size/3) bytes,

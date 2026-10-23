@@ -5,8 +5,8 @@ import Base
 import ./codec.bend as C
 import ./gif_lzw.bend as Lzw
 
-type Image is Type:
-  Image{width: U32, height: U32, pixels: Array<U32>}
+type Picture is Type:
+  Picture{width: U32, height: U32, pixels: Array<U32>}
 
 def signature(bytes: +List<U32>) -> Bool:
   match bytes:
@@ -279,12 +279,12 @@ def draw(frame: Frame, preserve: Bool, pixels: Array<U32>) -> Result<&1, &1, C.E
   Frame{width, _, Region{x, y, +w, +h, interlaced}, _, palette, _, minimum, data, _} = frame
   draw.decoded(width, Region{x, y, w, h, interlaced}, palette, preserve, pixels, Lzw.decode(minimum, (w * h : U32), data))
 
-def image(width: U32, height: U32, result: Result<&1, &1, C.Error, Array<U32>>) -> Result<&1, &1, C.Error, Image>:
+def image(width: U32, height: U32, result: Result<&1, &1, C.Error, Array<U32>>) -> Result<&1, &1, C.Error, Picture>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{pixels}: Done{Image{width, height, pixels}}
+    case Done{pixels}: Done{Picture{width, height, pixels}}
 
-def start(result: Result<&2, &2, C.Error, Search>) -> Result<&1, &1, C.Error, Image>:
+def start(result: Result<&2, &2, C.Error, Search>) -> Result<&1, &1, C.Error, Picture>:
   match result:
     case Fail{error}: Fail{error}
     case Done{Found{Frame{+width, +height, region, +background, palette, selected, minimum, data, following}}}:
@@ -293,10 +293,10 @@ def start(result: Result<&2, &2, C.Error, Search>) -> Result<&1, &1, C.Error, Im
       image(width, height, draw(Frame{width, height, region, background, palette, selected, minimum, data, following}, False{}, Array.new(U32, depth, background)))
     case _: Fail{C.BadHeader{}}
 
-def checked(valid: Bool, data: +List<U32>) -> Result<&1, &1, C.Error, Image>:
+def checked(valid: Bool, data: +List<U32>) -> Result<&1, &1, C.Error, Picture>:
   match valid:
     case False{}: Fail{C.BadByte{}}
     case True{}: start(scanned(header(data)))
 
-def decode(+data: +List<U32>) -> Result<&1, &1, C.Error, Image>:
+def decode(+data: +List<U32>) -> Result<&1, &1, C.Error, Picture>:
   checked(C.valid_bytes(data, True{}), data)

@@ -699,15 +699,15 @@ def albedo(+info: JS.Json, +root: JS.Json, +bin: +List<U32>, +limit: U32) -> Wor
 # A material's albedo: its color (0xRRGGBBAA) and its base color texture's
 # PNG bytes (empty for none).
 type Look is Data:
-  Look{ok: Bool, color: U32, image: +List<U32>}
+  Albedo{ok: Bool, color: U32, image: +List<U32>}
 
 def look.with(color: U32, +other: Bool, image: Words) -> Look:
   Words{ok, values} = image
-  Look{Bool.not(other) && ok, color, values}
+  Albedo{Bool.not(other) && ok, color, values}
 
 def look(color: Maybe<U32>, +other: Bool, +image: Words) -> Look:
   match color:
-    case None{}: Look{False{}, 0, Nil{}}
+    case None{}: Albedo{False{}, 0, Nil{}}
     case Some{c}: look.with(c, other, image)
 
 # White (the default material's color) and no texture without
@@ -726,17 +726,17 @@ def materials(items: +List<JS.Json>, +root: JS.Json, +bin: +List<U32>, +limit: U
 def looks.ok(looks: +List<Look>) -> Bool:
   match looks:
     case Nil{}: True{}
-    case Con{Look{+ok, _, _}, rest}: ok && looks.ok(rest)
+    case Con{Albedo{+ok, _, _}, rest}: ok && looks.ok(rest)
 
 def looks.colors(looks: +List<Look>) -> +List<U32>:
   match looks:
     case Nil{}: Nil{}
-    case Con{Look{_, +color, _}, rest}: Con{color, looks.colors(rest)}
+    case Con{Albedo{_, +color, _}, rest}: Con{color, looks.colors(rest)}
 
 def looks.images(looks: +List<Look>) -> +List<+List<U32>>:
   match looks:
     case Nil{}: Nil{}
-    case Con{Look{_, _, +image}, rest}: Con{image, looks.images(rest)}
+    case Con{Albedo{_, _, +image}, rest}: Con{image, looks.images(rest)}
 
 # The meshes, and for each material its albedo color (0xRRGGBBAA) and its
 # base color texture's PNG bytes (empty for none).

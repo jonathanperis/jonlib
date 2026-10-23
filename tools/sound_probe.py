@@ -1556,10 +1556,10 @@ def words.text(words: +List<U32>) -> String:
     case Nil{}: ""
     case Con{+word, rest}: "," ++ U32.show(word) ++ words.text(rest)
 
-def chans.text(chans: +List<Resampler.Chan>) -> String:
+def chans.text(chans: +List<Resampler.Lane>) -> String:
   match chans:
     case Nil{}: ""
-    case Con{Resampler.Chan{r1a, _, _, _}, rest}: "," ++ U32.show(r1a) ++ chans.text(rest)
+    case Con{Resampler.Lane{r1a, _, _, _}, rest}: "," ++ U32.show(r1a) ++ chans.text(rest)
 
 def count(frames: +List<+List<U32>>, +n: U32) -> U32:
   match frames:

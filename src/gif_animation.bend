@@ -6,7 +6,7 @@ import ./codec.bend as C
 import ./gif.bend as G
 
 type Animation is Type:
-  Animation{width: U32, height: U32, count: U32, frames: List<G.Image>}
+  Animation{width: U32, height: U32, count: U32, frames: List<G.Picture>}
 
 type Previous is Type:
   Initial{}
@@ -46,41 +46,41 @@ def prepare(width: U32, height: U32, background: U32, previous: Previous) -> Pre
       prepared.clone(Array.clone(U32, restore(U32.is_eq(disposal, 2), width, region, canvas, saved)))
 
 type State is Type:
-  Continuing{header: G.Header, previous: Previous, count: U32, remaining: U32, frames: List<G.Image>}
+  Continuing{header: G.Header, previous: Previous, count: U32, remaining: U32, frames: List<G.Picture>}
   Complete{animation: Animation}
 
-def retained(width: U32, height: U32, region: G.Region, disposal: U32, following: G.Header, +count: U32, remaining: U32, frames: List<G.Image>, saved: Array<U32>, result: Array<U32> & Array<U32>) -> State:
+def retained(width: U32, height: U32, region: G.Region, disposal: U32, following: G.Header, +count: U32, remaining: U32, frames: List<G.Picture>, saved: Array<U32>, result: Array<U32> & Array<U32>) -> State:
   (canvas, copy) = result
-  Continuing{following, Previous{canvas, saved, region, disposal}, (count + 1 : U32), remaining, Con{G.Image{width, height, copy}, frames}}
+  Continuing{following, Previous{canvas, saved, region, disposal}, (count + 1 : U32), remaining, Con{G.Picture{width, height, copy}, frames}}
 
-def drawn(width: U32, height: U32, region: G.Region, disposal: U32, following: G.Header, count: U32, remaining: U32, frames: List<G.Image>, saved: Array<U32>, result: Result<&1, &1, C.Error, Array<U32>>) -> Result<&1, &1, C.Error, State>:
+def drawn(width: U32, height: U32, region: G.Region, disposal: U32, following: G.Header, count: U32, remaining: U32, frames: List<G.Picture>, saved: Array<U32>, result: Result<&1, &1, C.Error, Array<U32>>) -> Result<&1, &1, C.Error, State>:
   match result:
     case Fail{error}: Fail{error}
     case Done{canvas}: Done{retained(width, height, region, disposal, following, count, remaining, frames, saved, Array.clone(U32, canvas))}
 
-def drawing(width: U32, height: U32, region: G.Region, disposal: U32, following: G.Header, +count: U32, remaining: U32, frames: List<G.Image>, frame: G.Frame, prepared: Prepared) -> Result<&1, &1, C.Error, State>:
+def drawing(width: U32, height: U32, region: G.Region, disposal: U32, following: G.Header, +count: U32, remaining: U32, frames: List<G.Picture>, frame: G.Frame, prepared: Prepared) -> Result<&1, &1, C.Error, State>:
   Prepared{canvas, saved} = prepared
   drawn(width, height, region, disposal, following, count, remaining, frames, saved, G.draw(frame, (count > 0 : U32), canvas))
 
-def frame.checked(supported: Bool, budget: Bool, +width: U32, +height: U32, region: G.Region, background: U32, disposal: U32, following: G.Header, previous: Previous, count: U32, remaining: U32, frames: List<G.Image>, frame: G.Frame) -> Result<&1, &1, C.Error, State>:
+def frame.checked(supported: Bool, budget: Bool, +width: U32, +height: U32, region: G.Region, background: U32, disposal: U32, following: G.Header, previous: Previous, count: U32, remaining: U32, frames: List<G.Picture>, frame: G.Frame) -> Result<&1, &1, C.Error, State>:
   match supported budget:
     case False{} _: Fail{C.BadHeader{}}
     case True{} False{}: Fail{C.BadSize{}}
     case True{} True{}:
       drawing(width, height, region, disposal, following, count, (remaining - width * height : U32), frames, frame, prepare(width, height, background, previous))
 
-def frame(allowed: Bool, +width: U32, +height: U32, previous: Previous, count: U32, +remaining: U32, frames: List<G.Image>, frame: G.Frame) -> Result<&1, &1, C.Error, State>:
+def frame(allowed: Bool, +width: U32, +height: U32, previous: Previous, count: U32, +remaining: U32, frames: List<G.Picture>, frame: G.Frame) -> Result<&1, &1, C.Error, State>:
   G.Frame{fw, fh, +region, +background, palette, selected, minimum, data, G.Header{cw, ch, global, bg, transparent, +disposal, tail}} = frame
   +following = {G.Header{cw, ch, global, bg, transparent, disposal, tail} : G.Header}
   frame.checked((disposal <= 2 : U32), allowed && (width * height <= remaining : U32), width, height, region, background, disposal,
     following, previous, count, remaining, frames, G.Frame{fw, fh, region, background, palette, selected, minimum, data, following})
 
-def finished(valid: Bool, width: U32, height: U32, count: U32, frames: List<G.Image>) -> Result<&1, &1, C.Error, State>:
+def finished(valid: Bool, width: U32, height: U32, count: U32, frames: List<G.Picture>) -> Result<&1, &1, C.Error, State>:
   match valid:
     case False{}: Fail{C.BadHeader{}}
-    case True{}: Done{Complete{Animation{width, height, count, List.reverse(&1, G.Image, frames)}}}
+    case True{}: Done{Complete{Animation{width, height, count, List.reverse(&1, G.Picture, frames)}}}
 
-def step(allowed: Bool, width: U32, height: U32, previous: Previous, +count: U32, remaining: U32, frames: List<G.Image>, result: Result<&2, &2, C.Error, G.Search>) -> Result<&1, &1, C.Error, State>:
+def step(allowed: Bool, width: U32, height: U32, previous: Previous, +count: U32, remaining: U32, frames: List<G.Picture>, result: Result<&2, &2, C.Error, G.Search>) -> Result<&1, &1, C.Error, State>:
   match result:
     case Fail{error}: Fail{error}
     case Done{G.End{}}: finished((count > 0 : U32), width, height, count, frames)

@@ -1,152 +1,178 @@
 diff --git a/.gitignore b/.gitignore
-index 695f8eb..2884a01 100644
+index 034e9c9f..f4f6a4be 100644
 --- a/.gitignore
 +++ b/.gitignore
-@@ -3,3 +3,4 @@
- .agents/
+@@ -4,3 +4,4 @@
  node_modules/
  *.tgz
+ *.bendtt
 +.specs/
 diff --git a/bend2/comp.ts b/bend2/comp.ts
-index 0c23c74..95dd514 100644
+index 00987bb8..a19030d3 100644
 --- a/bend2/comp.ts
 +++ b/bend2/comp.ts
 @@ -1,6 +1,7 @@
  // NOTE: Bend's runtime was designed by humans, but this file was mostly written
  // by AI's, as it includes a ton of optimizations. It works and tests pass, yet,
  // bugs ARE expected. It will take some time for the compiler to be stable.
-+// Modified 2026-09-24: budget Metal dispatch inlining with native call boundaries.
++// Modified 2026-10-23: budget Metal dispatch inlining with native call boundaries.
  
- import * as fs from "node:fs";
- 
-@@ -35,6 +36,8 @@ type Seg = {
+ // Comp
+ // ====
+@@ -32,10 +33,21 @@ type Seg = {
    ks: Kind[];
    frame: { pop: number; at: number[] } | null;
    refs: Set<string>;
 +  inlined: number;
 +  native?: boolean;
-   host?: boolean;
-   spin?: boolean;
-   fork?: boolean;
-@@ -59,6 +62,10 @@ type TLD  = Bend.ADT | Def;
+   spin: boolean;
+   fork: boolean;
+ };
  
- type Src = { refs: Set<Name>; deps: Set<Name>; flat: boolean };
- 
++// A flat helper's device expansion: its own text, plus INLINE callees, and
++// the parameter text a Metal noinline wrapper forwards.
 +type Spin = {
-+  fid: string; size: number; params: string; args: string
++  fid: string;
++  size: number;
++  params: string;
++  args: string;
 +};
 +
- type Carb = {
-   // a copy of the book whose defs carry their raised body (def_body)
-   book: Bend.Book & { tlds: Record<Name, TLD> };
-@@ -84,7 +91,7 @@ type File = Carb & {
-   cids: Map<string, number>;
-   tabs: Map<string, number>;
-   spins: { fid: string; text: string; refs: Set<string> }[];
--  spun: Map<string, string>;
-+  spun: Map<string, Spin>;
-   clos: Set<string>;
-   img: string[];
-   lits: Map<string, number>;
-@@ -149,6 +156,8 @@ const FOLD_FUEL = 8192;
+ type Spine = {
+   h: HTerm;
+   t: HTerm;
+@@ -85,7 +97,9 @@ type Fun = { n: number; h: HTerm | null; live: Dom[]; lays: Lay[]; ret: Lay };
  
- // A native this long is a call on both lanes: the device inlines every
- // native (slow Metal compiles); at 128 raytrace lost 31% on PAR-CPU.
-+// Metal also budgets inlined callees and source call sites at dispatch calls.
-+// Wrappers bound that expansion without changing helper-to-helper inlining.
- const SPIN_FAR = 256;
+ // CLO_APPLY and IO_EMIT are the runtime's own segments (a ~ keeps any file
+ // from declaring them). FOLD_FUEL caps the nodes unfolds add to a segment.
+-// A spin of SPIN_FAR characters is a call on the device (DFAR). A node past
++// A spin of SPIN_FAR characters is a call on the device (DFAR). Metal also
++// budgets inlined callees and source call sites at dispatch calls. Wrappers
++// bound that expansion without changing helper-to-helper inlining. A node past
+ // WIDE pads to its size class (240 + log2 in CID_T). An argument nested past
+ // TPL_DEEP brackets goes to a local (clang allows 256).
  
- const USE0 = Bend.Emp<number>();
-@@ -1579,7 +1588,7 @@ function spare_flush(fl: File): void {
- function seg_new(name: string, ret: Lay, params: string[],
-   ks: Kind[] = params.map(() => "w64"), frame: Seg["frame"] = null): Seg {
-   return { fid: seg_fid(name), def: name, ret, lines: [], params, ks, frame,
--    refs: new Set() };
-+    refs: new Set(), inlined: 0 };
+@@ -1391,7 +1405,7 @@ function file_new(book: Bend.Book, js: boolean) {
+     lend: new Set<string>(),
+     segs: [] as Seg[],
+     spins: [] as Seg[],
+-    spun: new Map<string, string>(),
++    spun: new Map<string, Spin>(),
+     clos: new Set<string>(),
+     tabs: new Map<string, number>(),
+     tails: new Map<Name, Set<Name>>(),
+@@ -1586,7 +1600,7 @@ function seg_new(name: string, ret: Lay, vals: Val[],
+   frame: Seg["frame"] = null): Seg {
+   return { fid: name && seg_fid(name), def: name, ret, lines: [],
+     params: vals.flatMap((v) => v.ws), ks: vals.flatMap((v) => v.lay.ks),
+-    frame, refs: new Set(), spin: false, fork: false };
++    frame, refs: new Set(), inlined: 0, spin: false, fork: false };
  }
  
  function seg_fid(k: Name): string {
-@@ -2164,7 +2173,11 @@ function emit_fuse(fl: File, ck: Call, dst: Dst, tail = false): void {
-     return;
+@@ -2224,7 +2238,11 @@ function emit_fuse(sc: Scope, ck: Spine, dst: Val | null, tail = false): void {
+     return emit_body({ ...sc, def: k }, h!, T, ers,
+       lays.map((lay) => val_new(ws.splice(0, lay.ks.length), lay)), dst);
    }
-   const out = emit_dst(fl, ret);
--  const name = emit_native(fl, ck, ers);
-+  const native = emit_native(fl, ck, ers);
-+  fl.seg.inlined += native.size;
-+  const wrap = !fl.seg.native
-+    && native.size * (fl.sites.get(ck.k) ?? 1) >= SPIN_FAR;
-+  const name = wrap ? seg_ref(fl, "call_" + native.fid) : native.fid;
-   const o = name_local(fl, "o");
-   file_push(fl, `Term ${o}[${out.ws.length}];`);
-   block(fl, `if (${name}(${["e", o, ...ws].join(", ")}) == 0) {`, () => {
-@@ -2195,24 +2208,30 @@ function emit_open(fl: File, k: Name): Val[] {
-   return vals;
+-  const name = emit_native(sc, k, ers, f);
++  const native = emit_native(sc, k, ers, f);
++  sc.seg.inlined += native.size;
++  const wrap = !sc.seg.native
++    && native.size * (FL.sites.get(k) ?? 1) >= SPIN_FAR;
++  const name = wrap ? seg_ref(sc, "call_" + native.fid) : native.fid;
+   const o = name_local(sc, "o");
+   const out = val_new(ret.ks.map((k, j) =>
+     `${k === "w32" ? "(u32)" : ""}${o}[${j}]`), ret);
+@@ -2255,31 +2273,40 @@ function emit_open(sc: Scope, k: Name, f = fun_of(k)): [Scope, Val[]] {
+   return [{ ...sc, seg, spares: [], uses: new Map(), def: k }, vals];
  }
  
--function emit_native(fl: File, ck: Call, ers: HTerm[]): string {
-+function emit_native(fl: File, ck: Call, ers: HTerm[]): Spin {
-   const key = [ck.k, ...ers.map((e) => JSON.stringify(lay_of(fl.book, e)))]
-     .join("|");
-   const got = fl.spun.get(key);
-   if (got !== undefined) {
--    return seg_ref(fl, got);
-+    seg_ref(fl, got.fid);
+-function emit_native(sc: Scope, k: Name, ers: HTerm[], f: Fun): string {
++function emit_native(sc: Scope, k: Name, ers: HTerm[], f: Fun): Spin {
+   const key = [k, JSON.stringify([f.lays, f.ret]), ...ers.map((e) =>
+     memo(FL.lay_ids, lay_of(e), () => FL.lay_ids.size))].join("|");
+-  return seg_ref(sc, memo(FL.spun, key, () => {
+-    const name = `spin_${FL.spun.size}`;
+-    FL.spun.set(key, name);
+-    const fuel = FUEL;
+-    const [sl, vals] = emit_open(sc, k, f);
+-    const seg = sl.seg;
+-    seg.fid = name;
+-    emit_body(sl, f.h!, FL.book.tlds[k].T, ers, vals,
+-      val_new(seg.ret.ks.map((_, j) => `o[${j}]`), seg.ret));
+-    FUEL = fuel;
+-    const body = [...seg_text(["u32 wpoll = 0;", ...seg.ks.flatMap((k, i) =>
+-      arr_q(k) ? [`Term h${i} = r${i};`] : []),
+-    ...seg_take(seg), "WL_SPIN"], 1),
+-    ...seg_text(seg.lines, 2), "  break;", "  }",
+-    "  return 1;", "}"];
+-    const far = body.reduce((n, l) => n + l.length + 1, 0) >= SPIN_FAR;
+-    FL.spins.push({ ...seg, lines: [`${far ? "DFAR" : "INLINE"} Term ${
+-      name}(Env e, THR Term* o${
+-      seg.ks.map((k, i) => `, ${lay_c(k)} r${i}${arr_q(k)
+-        ? `, u64 q${i}` : ""}`).join("")}) {`, ...body] });
+-    return name;
+-  }));
++  const got = FL.spun.get(key);
++  if (got !== undefined) {
++    seg_ref(sc, got.fid);
 +    return got;
-   }
-   const name = seg_ref(fl, `spin_${fl.spun.size}`);
--  fl.spun.set(key, name);
-+  const native: Spin = { fid: name, size: 0, params: "", args: "" };
-+  fl.spun.set(key, native);
-   const tld = fl.book.tlds[ck.k] as Def;
-   const outer = { ...fl };
-   const vals = emit_open(fl, ck.k);
-   const seg = fl.seg;
-   seg.fid = name;
++  }
++  const native: Spin = { fid: `spin_${FL.spun.size}`, size: 0, params: "", args: "" };
++  FL.spun.set(key, native);
++  seg_ref(sc, native.fid);
++  const fuel = FUEL;
++  const [sl, vals] = emit_open(sc, k, f);
++  const seg = sl.seg;
++  seg.fid = native.fid;
 +  seg.native = true;
-+  native.params = seg.ks.map((k, i) => `, ${lay_c(k)} r${i}`).join("");
-+  native.args = seg.ks.map((_, i) => `, r${i}`).join("");
-   const dst = val_new(seg.ret.ks.map(() => name_local(fl, "v")), seg.ret);
-   emit_body(fl, tld.h as HTerm, tld.T, ers, vals, dst);
--  fl.spins.push({ fid: name, refs: seg.refs, text: [`${seg.lines.length < SPIN_FAR ? "INLINE" : "FAR"} Term ${name}(Env e, THR Term* o${
--    seg.ks.map((k, i) => `, ${lay_c(k)} r${i}`).join("")}) {`,
-+  native.size = seg.lines.length < SPIN_FAR ? seg.lines.length + seg.inlined : 0;
-+  const attr = seg.lines.length < SPIN_FAR ? "INLINE" : "FAR";
-+  fl.spins.push({ fid: name, refs: seg.refs, text: [`${attr} Term ${name}(Env e, THR Term* o${native.params}) {`,
-   "  u32 wpoll = 0;",
-   ...dst.ws.map((v, j) => `  ${lay_c(seg.ret.ks[j])} ${v} = 0;`),
-   ...seg_take(seg).map((l) => "  " + l),
-@@ -2220,7 +2239,7 @@ function emit_native(fl: File, ck: Call, ers: HTerm[]): string {
-   ...dst.ws.map((v, j) => `  o[${j}] = ${v};`),
-   "  return 1;", "}"].join("\n") });
-   Object.assign(fl, outer);
--  return name;
++  native.params = seg.ks.map((kd, i) => `, ${lay_c(kd)} r${i}${arr_q(kd)
++    ? `, u64 q${i}` : ""}`).join("");
++  native.args = seg.ks.map((kd, i) => arr_q(kd) ? `, r${i}, q${i}` : `, r${i}`).join("");
++  emit_body(sl, f.h!, FL.book.tlds[k].T, ers, vals,
++    val_new(seg.ret.ks.map((_, j) => `o[${j}]`), seg.ret));
++  FUEL = fuel;
++  const body = [...seg_text(["u32 wpoll = 0;", ...seg.ks.flatMap((kd, i) =>
++    arr_q(kd) ? [`Term h${i} = r${i};`] : []),
++  ...seg_take(seg), "WL_SPIN"], 1),
++  ...seg_text(seg.lines, 2), "  break;", "  }",
++  "  return 1;", "}"];
++  const chars = body.reduce((n, l) => n + l.length + 1, 0);
++  const far = chars >= SPIN_FAR;
++  // Already a device call: Metal will not inline it into the dispatcher.
++  native.size = far ? 0 : chars + seg.inlined;
++  FL.spins.push({ ...seg, lines: [`${far ? "DFAR" : "INLINE"} Term ${
++    native.fid}(Env e, THR Term* o${native.params}) {`, ...body] });
 +  return native;
  }
  
- function emit_dst(fl: File, lay: Lay, k = "v"): Val {
-@@ -3053,8 +3072,13 @@ export function compile_book(book: Bend.Book): string {
-     `#define BLK_SHR ${Number(cb.hot.has("t:Array"))}`);
-   const tabs = [defs.join("\n"), ...[...fl.tabs].map(([r, i]) =>
+ function emit_dst(sc: Scope, lay: Lay, k = "v"): Val {
+@@ -2952,8 +2979,13 @@ export function compile_book(book: Bend.Book): string {
+   `#define BLK_SHR ${Number(FL.hot.has("t:Array"))}`);
+   const tabs = [defs.join("\n"), ...[...FL.tabs].map(([r, i]) =>
      `CONSTV u64 TAB_${i}[] = { ${r} };`)].join("\n\n");
-+  const wraps = [...fl.spun.values()].filter((s) => live.has("call_" + s.fid))
-+    .map((s) => [`#ifdef __METAL_VERSION__`,
++  const wraps = [...FL.spun.values()].filter((s) => live.has("call_" + s.fid))
++    .map((s) => ["#ifdef __METAL_VERSION__",
 +      `FAR Term call_${s.fid}(Env e, THR Term* o${s.params}) {`,
 +      `  return ${s.fid}(e, o${s.args});`, "}", "#else",
 +      `#define call_${s.fid} ${s.fid}`, "#endif"].join("\n"));
-   const spins = [`CONSTV u64 STAT_IMG[] = { ${fl.img.join(", ") || 0} };`,
--    ...fl.spins.map((s) => s.text)].join("\n\n");
-+    ...fl.spins.map((s) => s.text), ...wraps].join("\n\n");
-   const segs = compile_segs(fl);
-   if (/\bundefined\b/.test([tabs, spins, segs, fl.reqs].join("\n"))) {
-     die("an unbound name in the emitted C");
+   const spins = [`CONSTV u64 STAT_IMG[] = { ${FL.img.join(", ") || 0} };`,
+-    ...FL.spins.map((s) => s.lines.join("\n"))].join("\n\n");
++    ...FL.spins.map((s) => s.lines.join("\n")), ...wraps].join("\n\n");
+   const segs = FL.segs.map((seg) => {
+     const out = [`  WL_CASE(${seg.fid})`, ...seg_text([...seg_take(seg),
+       "WL_OPEN", ...seg.spin ? ["WL_SPIN", ...seg.lines, "WL_SPUN"]
 diff --git a/tests/run/metal_inline_budget.bend b/tests/run/metal_inline_budget.bend
 new file mode 100644
-index 0000000..ba4a1cd
+index 00000000..87673bee
 --- /dev/null
 +++ b/tests/run/metal_inline_budget.bend
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,53 @@
 +# Repeated calls to a shared flat helper must retain correct values when the
 +# device compiler outlines their transitive expansion. Each loop saturates.
++# wide's own text passes the device spin threshold (DFAR). The shared helper
++# stays INLINE and gets a noinline wrapper only at the dispatch boundary.
++# The wrapper is Metal-only; CPU and CUDA alias the original helper.
 +import Base
 +
 +def step(+x: F32) -> F32:
@@ -156,8 +182,6 @@ index 0000000..ba4a1cd
 +  step(step(step(step(step(step(step(step(
 +    step(step(step(step(step(step(step(step(x))))))))))))))))
 +
-+# This body also exceeds the pre-existing local FAR threshold, so the new
-+# dispatch boundary must coexist with an already outlined native helper.
 +def heavy(x: F32) -> F32:
 +  v = step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(x))))))))))))))))))))))))))))))))
 +  step(step(v))
@@ -177,7 +201,23 @@ index 0000000..ba4a1cd
 +      a b = tree(k, x) tree(k, x)
 +      (a + b : U32)
 +
++# Own generated text past SPIN_FAR characters, so the device outlines it
++# directly and the dispatch budget does not also wrap it.
++def wide(x: F32) -> F32:
++  ((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((x * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32) * 1.0000001 + 0.0000001 : F32)
++
++# wide of the tree's result is positive, so this adds 0 and the checksum stays.
++def use.sign(negative: Bool) -> U32:
++  match negative:
++    case True{}: 1
++    case False{}: 0
++
++def use(w: F32) -> U32:
++  use.sign(F32.is_lt(w, 0.0))
++
 +def main() -> IO(Unit):
-+  IO.print(U32.show(tree!(4n, 0.0)))
++  do IO<Unit>:
++    t : Nat <- IO.now()
++    IO.print(U32.show((tree!(4n, 0.0) + use(wide(F32.from_nat(t))) : U32)))
 +
 +#|16000

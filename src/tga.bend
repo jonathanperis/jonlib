@@ -45,10 +45,10 @@ type ColorMap is Data:
 type Palette is Data:
   Palette{colors: +List<U32>, data: +List<U32>}
 
-def palette.color(channels: U32, packed: Bool, colors: +List<U32>, word: Maybe<&2, F.Word>) -> Result<&2, &2, C.Error, Palette>:
+def palette.color(channels: U32, packed: Bool, colors: +List<U32>, word: Maybe<&2, F.Cursor>) -> Result<&2, &2, C.Error, Palette>:
   match word:
     case None{}: Fail{C.Truncated{}}
-    case Some{F.Word{value, data}}: Done{Palette{Con{rgba(packed, channels, value), colors}, data}}
+    case Some{F.Cursor{value, data}}: Done{Palette{Con{rgba(packed, channels, value), colors}, data}}
 
 def palette.read(n: Nat, +channels: U32, +packed: Bool, state: Result<&2, &2, C.Error, Palette>) -> Result<&2, &2, C.Error, Palette>:
   match n state:
@@ -112,10 +112,10 @@ def rgba.selected(palette: +List<U32>, packed: Bool, channels: U32, word: U32) -
 type Cursor is Data:
   Cursor{data: +List<U32>, left: U32, repeat: Bool, pixel: U32}
 
-def read(channels: U32, packed: Bool, palette: +List<U32>, left: U32, repeat: Bool, word: Maybe<&2, F.Word>) -> Result<&2, &2, C.Error, Cursor>:
+def read(channels: U32, packed: Bool, palette: +List<U32>, left: U32, repeat: Bool, word: Maybe<&2, F.Cursor>) -> Result<&2, &2, C.Error, Cursor>:
   match word:
     case None{}: Fail{C.Truncated{}}
-    case Some{F.Word{value, rest}}: Done{Cursor{rest, left, repeat, rgba.selected(palette, packed, channels, value)}}
+    case Some{F.Cursor{value, rest}}: Done{Cursor{rest, left, repeat, rgba.selected(palette, packed, channels, value)}}
 
 def packet(valid: Bool, +channels: U32, packed: Bool, palette: +List<U32>, +count: U32, repeat: Bool, data: +List<U32>) -> Result<&2, &2, C.Error, Cursor>:
   match valid:
@@ -144,17 +144,17 @@ def write(index: U32, pixels: Array<U32>, result: Result<&2, &2, C.Error, Cursor
     case Fail{error}: Fail{error}
     case Done{Cursor{data, left, repeat, +pixel}}: Done{State{Cursor{data, left, repeat, pixel}, Array.set(U32, pixels, index, pixel)}}
 
-def pixels(n: Nat, +index: U32, +width: U32, +height: U32, +top: Bool, +rle: Bool, +channels: U32, +native_channels: U32, +packed: Bool, +palette: +List<U32>, state: Result<&1, &1, C.Error, State>) -> Result<&1, &1, C.Error, C.Image>:
+def pixels(n: Nat, +index: U32, +width: U32, +height: U32, +top: Bool, +rle: Bool, +channels: U32, +native_channels: U32, +packed: Bool, +palette: +List<U32>, state: Result<&1, &1, C.Error, State>) -> Result<&1, &1, C.Error, C.Picture>:
   match n state:
     case _ Fail{error}: Fail{error}
-    case 0n Done{State{_, output}}: Done{C.Image{width, height, native_channels, output}}
+    case 0n Done{State{_, output}}: Done{C.Picture{width, height, native_channels, output}}
     case 1n+rest Done{State{Cursor{data, +left, repeat, pixel}, output}}:
       +y = (index / width : U32)
       at = (Bool.pick(U32, top, y, (height - 1 - y : U32)) * width + index % width : U32)
       pixels(rest, (index + 1 : U32), width, height, top, rle, channels, native_channels, packed, palette,
         write(at, output, next(rle, U32.is_eq(left, 0), repeat, (width * height - index : U32), channels, packed, palette, left, pixel, data)))
 
-def start(result: Result<&2, &2, C.Error, Header>) -> Result<&1, &1, C.Error, C.Image>:
+def start(result: Result<&2, &2, C.Error, Header>) -> Result<&1, &1, C.Error, C.Picture>:
   match result:
     case Fail{error}: Fail{error}
     case Done{Header{+width, +height, top, rle, channels, native_channels, packed, palette, data}}:
@@ -162,12 +162,12 @@ def start(result: Result<&2, &2, C.Error, Header>) -> Result<&1, &1, C.Error, C.
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
       pixels(U32.to_nat(count), 0, width, height, top, rle, channels, native_channels, packed, palette, Done{State{Cursor{data, 0, False{}, 0}, Array.new(U32, depth, 0)}})
 
-def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   match valid:
     case False{}: Fail{C.BadByte{}}
     case True{}: start(header(bytes))
 
-def decode(+bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+def decode(+bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Picture>:
   checked(C.valid_bytes(bytes, True{}), bytes)
 
 type Packet is Data:

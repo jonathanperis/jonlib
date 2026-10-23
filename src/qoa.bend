@@ -162,25 +162,25 @@ def slice.decode(n: Nat, +j: U32, +base: U32, +c: U32, +channels: U32, +scale: U
         Array.set(U32, out, ((base + j) * channels + c : U32), (sample .&. 65535 : U32)))
 
 # A frame's slices in file order: sample offset and channel.
-type Unit is Data:
-  Unit{base: U32, channel: U32}
+type Cell is Data:
+  Cell{base: U32, channel: U32}
 
-def Unit.base(+unit: Unit) -> U32:
-  Unit{base, _} = unit
+def Cell.base(+unit: Cell) -> U32:
+  Cell{base, _} = unit
   base
 
-def Unit.channel(+unit: Unit) -> U32:
-  Unit{_, channel} = unit
+def Cell.channel(+unit: Cell) -> U32:
+  Cell{_, channel} = unit
   channel
 
-def units.channels(n: Nat, +base: U32, +c: U32, +acc: +List<Unit>) -> +List<Unit>:
+def units.channels(n: Nat, +base: U32, +c: U32, +acc: +List<Cell>) -> +List<Cell>:
   match n:
     case 0n: acc
-    case 1n+k: units.channels(k, base, (c + 1 : U32), Con{Unit{base, c}, acc})
+    case 1n+k: units.channels(k, base, (c + 1 : U32), Con{Cell{base, c}, acc})
 
-def units(n: Nat, +base: U32, +channels: U32, +acc: +List<Unit>) -> +List<Unit>:
+def units(n: Nat, +base: U32, +channels: U32, +acc: +List<Cell>) -> +List<Cell>:
   match n:
-    case 0n: List.reverse(&2, Unit, acc)
+    case 0n: List.reverse(&2, Cell, acc)
     case 1n+k: units(k, (base + 20 : U32), channels, units.channels(U32.to_nat(channels), base, 0, acc))
 
 type Frame is Type:
@@ -196,18 +196,18 @@ def frame.unit.read(fits: Bool, +base: U32, +c: U32, +channels: U32, +count: U32
     case True{}:
       frame.slice(slice.decode(U32.to_nat(count), 0, base, c, channels, ((W.hi(word) >> 28n) .&. 15 : U32), W.shl(word, 4), pick.lms(states, c), out), p, states, c)
 
-def frame.unit(+unit: Unit, +bytes: +List<U32>, +len: U32, +samples: U32, +channels: U32, frame: Frame) -> Frame:
+def frame.unit(+unit: Cell, +bytes: +List<U32>, +len: U32, +samples: U32, +channels: U32, frame: Frame) -> Frame:
   match frame:
     case Frame{+p, +states, out, False{}}:
-      +base = Unit.base(unit)
-      +c = Unit.channel(unit)
+      +base = Cell.base(unit)
+      +c = Cell.channel(unit)
       +word = be64(bytes, p)
       +count = Bool.pick(U32, ((base + 20) <= samples : U32), 20, (samples - base : U32))
       +fits = ((p + 8) <= len : U32)
       frame.unit.read(fits, base, c, channels, count, word, p, states, out)
     case Frame{p, states, out, True{}}: Frame{p, states, out, True{}}
 
-def frame.units(units: +List<Unit>, +bytes: +List<U32>, +len: U32, +samples: U32, +channels: U32, frame: Frame) -> Frame:
+def frame.units(units: +List<Cell>, +bytes: +List<U32>, +len: U32, +samples: U32, +channels: U32, frame: Frame) -> Frame:
   match units:
     case Nil{}: frame
     case Con{unit, rest}: frame.units(rest, bytes, len, samples, channels, frame.unit(unit, bytes, len, samples, channels, frame))
@@ -423,12 +423,12 @@ def Enc.prevs(+enc: Enc) -> +List<U32>:
   Enc{_, prevs, _} = enc
   prevs
 
-def enc.units(units: +List<Unit>, +chans: +List<+List<U32>>, +length: U32, +enc: Enc) -> Enc:
+def enc.units(units: +List<Cell>, +chans: +List<+List<U32>>, +length: U32, +enc: Enc) -> Enc:
   match units:
     case Nil{}: enc
     case Con{+unit, rest}:
-      +base = Unit.base(unit)
-      +c = Unit.channel(unit)
+      +base = Cell.base(unit)
+      +c = Cell.channel(unit)
       +count = Bool.pick(U32, ((base + 20) <= length : U32), 20, (length - base : U32))
       +samples = List.take(&2, U32, List.drop(&2, U32, pick.list(chans, c), U32.to_nat(base)), U32.to_nat(count))
       +lms = pick.lms(Enc.states(enc), c)

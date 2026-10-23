@@ -3,9 +3,15 @@
 `bend-os-effects.patch` adds nine IO effects to Bend's base library, written
 the way Base's own `File.*` effects are: a foreign def in `bend2/base.bend`
 whose body imports one C source and one JavaScript source from
-`bend2/effs/`. Nothing in the language, the checker or the compiler changes;
-the patch applies alone to Bend `b7ebee92` (2.0.27) and adds two tests in
-`tests/io/` that pass on the checked, interpreted, C and JavaScript lanes.
+`bend2/effs/`. Nothing in the language, the checker or the compiler changes.
+The patch applies alone to Bend `0a57ca0d` (2.0.38). Bend 2.0.38 already
+ships `Process.run(program, args, input, max_output, timeout_ms)`, which
+spawns a program, captures stdout and stderr and stops at a timeout. That is
+not `system(3)` through `/bin/sh -c` with inherited standard streams, so the
+shell effect is `Process.shell` and upstream `Process.run` is left in place.
+The two tests in `tests/io/` pass on the check, the C binary and the
+JavaScript lane on Linux x86_64 with Bun 1.3.12. The interpreter lane, the
+neighbouring upstream IO suite and macOS were not re-run for this rebase.
 
 It was written for Jonlib, a Bend 2 library inspired by raylib, whose file-system API
 (`LoadDirectoryFiles`, `GetFileModTime`, `ChangeDirectory`, `OpenURL`, ...)
@@ -26,10 +32,11 @@ program, not only to Jonlib.
 | `Dir.change(path) -> IO(Result<.., Unit>)` | the process's working directory | `chdir` | `process.chdir` |
 | `Dir.current() -> IO(Result<.., String>)` | the working directory | `getcwd` (any length) | `process.cwd()` |
 | `Process.path() -> IO(Result<.., String>)` | the running program's file, absolute, links resolved | `realpath("/proc/self/exe")`; `_NSGetExecutablePath` on macOS | the script the runtime runs (`process.argv[1]`) |
-| `Process.run(command) -> IO(Result<.., U32>)` | runs `command` with `/bin/sh -c` to its end, its output where the program's goes; the exit status, or 128 plus the signal that ended it | `system` (standard streams flushed first) | `child_process.spawnSync("/bin/sh", ["-c", command], {stdio: "inherit"})` |
+| `Process.shell(command) -> IO(Result<.., U32>)` | runs `command` with `/bin/sh -c` to its end, its output where the program's goes; the exit status, or 128 plus the signal that ended it | `system` (standard streams flushed first) | `child_process.spawnSync("/bin/sh", ["-c", command], {stdio: "inherit"})` |
 
-`Process.run` is the only effect that executes something. It is kept as its
-own def so that it can be taken or left without the others.
+`Process.shell` is the only effect in this patch that executes something. It
+is its own def so that it can be taken or left without the others. It is not
+upstream `Process.run`.
 
 ## Conventions kept from Base
 
@@ -45,7 +52,9 @@ own def so that it can be taken or left without the others.
   `chdir`, `system`) run on Base's IO helper threads through `io_work`, like
   the file effects; `Dir.current` and `Process.path` answer at once.
 - **Nat** carries sizes and times: a size past Nat's 2^48 - 1 fails with
-  `EOVERFLOW`, as `File.size` does past 4 GiB; a time before 1970 is 0.
+  `EOVERFLOW`, as `File.size` does past 4 GiB; a time before 1970 is 0. On
+  the JavaScript lane a Nat is a host number, not a BigInt, so a value that
+  passes the 2^48 - 1 check is converted with `Number`.
 
 ## Where the lanes differ, and why that is acceptable
 
@@ -68,17 +77,17 @@ own def so that it can be taken or left without the others.
   directory`). What an earlier run left is removed first.
 - `tests/io/cwd_process.bend`: `Dir.change("/")` and `Dir.current()`,
   `Dir.change` to a missing directory, `Process.path` (a regular file), and
-  `Process.run` of `exit 3`, of `echo from-sh` (its output lands before the
+  `Process.shell` of `exit 3`, of `echo from-sh` (its output lands before the
   status after it) and of `kill -TERM $$` (143).
 
-Both pass on the check, interpreted, C and JavaScript lanes on Linux x86_64
-with Bun 1.3.12. The upstream tests next to them (`file_*`, `path_utf8`,
-`nul_bytes`, `args`, `driver_name_clash`, `fail_keeps_handle`, the `cbody_*`
-and `effect_*` ones) still pass. The new files fit the repository gate's
-allow list (`bend2/effs/*.c|js`, `tests/io/*.bend`) without changing it.
-macOS has not been run yet: `_NSGetExecutablePath`, the errno numbers
-`EILSEQ` (92) and `EOVERFLOW` (84) and `remove`'s `EPERM` for a directory
-are written for it.
+On Bend 2.0.38 both pass on the check, the C binary and the JavaScript lane
+on Linux x86_64 with Bun 1.3.12. The interpreter lane and the upstream tests
+next to them were not re-run for this rebase. The new files fit the
+repository gate's allow list (`bend2/effs/*.c|js`, `tests/io/*.bend`) without
+changing it. macOS has not been run yet: `_NSGetExecutablePath`, the errno
+numbers `EILSEQ` (92) and `EOVERFLOW` (84) and `remove`'s `EPERM` for a
+directory are written for it. Registration follows 2.0.38: `io_eff(CID(Name), fn)`
+with two arguments, and a JavaScript constructor tag is the bare name.
 
 ## Applying it
 
@@ -87,9 +96,10 @@ git -C /path/to/bend apply --check patches/bend-os-effects.patch
 git -C /path/to/bend apply patches/bend-os-effects.patch
 ```
 
-It touches `bend2/base.bend` (nine defs after `File.close`, and a one-line
-modification notice at the top that an upstream version would drop) and
-adds 18 files in `bend2/effs/` and 2 in `tests/io/`.
+It touches `bend2/base.bend` (nine defs after `File.close` and before
+`TCP.listen`, and a modification notice at the top that an upstream version
+would drop) and adds 18 files in `bend2/effs/` (`process_shell`, not a second
+`process_run`) and 2 in `tests/io/`.
 
 ## License
 

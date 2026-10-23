@@ -27,7 +27,7 @@ byte, on every lane.
 | `Files.application_directory() -> IO(String)` | `GetApplicationDirectory` | The running program's file (`/proc/self/exe`; the script on the JavaScript target) up to and with its last `/`, `"./"` where it is not found. |
 | `Files.load_directory_files(path)`, `Files.load_directory_files_ex(path, filter, subdirs) -> IO(Maybe<FilePathList>)`, `Files.unload_directory_files(files)` | `LoadDirectoryFiles(Ex)`, `UnloadDirectoryFiles` | The paths `path/name` of a directory's entries in `readdir`'s order, a subdirectory's (with `subdirs`) right after it. `filter` `None` (or empty) is `NULL`: every regular file. Otherwise a regular file is listed for the `*.*` or `FILES*` tag or an extension of the list (`IsFileExtension`), anything else (a directory, or a path `stat` fails on) for `*.*` or `DIRS*`. A path of 4096 bytes or more is skipped, as `snprintf` leaves it. No directory gives no paths. `LoadDirectoryFiles` is the `*.*` filter without subdirectories. |
 | `Files.directory_file_count(path)`, `Files.directory_file_count_ex(path, filter, subdirs) -> IO(Maybe<U32>)` | `GetDirectoryFileCount(Ex)` | What the listing would hold, counted; the filter as given (an empty one counts nothing). |
-| `System.open_url(url) -> IO(Unit)` | `OpenURL` | The reference platform's (`rcore_memory.c`): `system()` of `explorer "url"` through `/bin/sh` (Base's `Process.run`), its result unused; nothing for a URL with a `'`. |
+| `System.open_url(url) -> IO(Unit)` | `OpenURL` | The reference platform's (`rcore_memory.c`): `system()` of `explorer "url"` through `/bin/sh` (Base's `Process.shell`), its result unused; nothing for a URL with a `'`. |
 | `Files.length(path) -> IO(U32)` | `GetFileLength` | The size in bytes; 0 when the file does not open. |
 | `Files.load_data(path)` / `unload_data` | `LoadFileData` / `UnloadFileData` | Every byte, up to raylib's `INT_MAX` size, as `Result<&1, &1, Surface.IOError, +List<U32>>`; an existing empty file is an empty list (raylib: `NULL` with size 0). |
 | `Files.save_data(path, bytes)` | `SaveFileData` | Writes every byte; values above 255 are `InvalidRequest` before opening. |
@@ -71,7 +71,7 @@ invalid raw parameters) are rejected before calling the callback.
 The functions that look at or change the file system beyond a file's bytes
 are built on Bend Base's path, directory and process effects (`Path.stat`,
 `Path.rename`, `Path.remove`, `Dir.read`, `Dir.make`, `Dir.change`,
-`Dir.current`, `Process.path`, `Process.run`), which the declared compiler
+`Dir.current`, `Process.path`, `Process.shell`), which the declared compiler
 overlay adds to Base ([bend-os-effects.md](../patches/bend-os-effects.md)).
 Paths are Base strings, as `Files.load_data`'s are, and raylib's `int`
 results are the int's U32 bits.

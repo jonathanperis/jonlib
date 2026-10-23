@@ -787,7 +787,7 @@ contributors under Apache-2.0. No Bend3D implementation or demo assets are vendo
 
 The compiler overlay in `patches/bend-metal-dispatch.patch` adapts Bend's
 `bend2/comp.ts` and includes an original regression test and local-spec ignore
-entry. It is based on `b7ebee9217c8813067e200b0c0c9153a3be31c5e` and is distributed
+entry. It is based on `0a57ca0d21de94a3724d8be21afb0eb89f88b4d8` (Bend 2.0.38) and is distributed
 under **Apache-2.0**, including its modifications. The original copyright is
 2026 HigherOrderCO; the modifications were authored for Jonathan Peris's Jonlib
 project in 2026. The modified compiler carries a change notice.
@@ -795,10 +795,14 @@ project in 2026. The modified compiler carries a change notice.
 `patches/bend-os-effects.patch` adds path, directory and process effects to
 Bend's base library under the same license: nine foreign defs in
 `bend2/base.bend` (which carries its own change notice), their C and
-JavaScript sources in `bend2/effs/` (`path_*`, `dir_*`, `process_*`) and the
-tests `tests/io/path_dir.bend` and `tests/io/cwd_process.bend`, authored for
-Jonlib in 2026 in the style of Bend's `File.*` effects and offered to Bend as
-a proposal ([patches/bend-os-effects.md](patches/bend-os-effects.md)).
+JavaScript sources in `bend2/effs/` (`path_*`, `dir_*`, `process_path`,
+`process_shell`) and the tests `tests/io/path_dir.bend` and
+`tests/io/cwd_process.bend`, authored for Jonlib in 2026 in the style of
+Bend's `File.*` effects and offered to Bend as a proposal
+([patches/bend-os-effects.md](patches/bend-os-effects.md)). Upstream
+`Process.run` (a program, arguments, captured output and a timeout) is left
+as Bend 2.0.38 ships it. The shell effect Jonlib uses for `OpenURL` is
+`Process.shell`.
 
 The upstream license is retained verbatim in [LICENSES/bend.txt](LICENSES/bend.txt).
 No upstream NOTICE file was present at the base revision. These patches are not
