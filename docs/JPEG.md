@@ -42,6 +42,19 @@ Jonlib contracts where stb's result is not defined or not supported:
 - other failures are `InvalidImageHeader` (headers and markers) or
   `InvalidImageStream` (entropy-coded data); raylib returns no image.
 
+## Export
+
+`Surface.to_jpeg` and `Surface.write_jpeg` are `ExportImage`'s JPEG branch:
+`stbi_write_jpg` at quality 90. `.jpg` and `.jpeg` (ASCII case folded by
+`Surface.write_image`) select it. GRAYSCALE, GRAY_ALPHA, R8G8B8 and R8G8B8A8
+pass stored samples; gray-alpha keeps both bytes and the writer ignores alpha.
+Every other format goes through `LoadImageColors` and is written as four
+channels. The encoder is the scalar float AAN DCT from Jon Olick's
+public-domain `jo_jpeg`, copied into `src/jpeg_write.bend` with each add and
+multiply kept as its own F32 operation. Subsampling is 4:2:0 and the scaled
+quality is 20. Other qualities, progressive output and `ExportImageToMemory`
+for JPEG are not implemented.
+
 ## How it is verified
 
 `tools/jpeg_probe.py` (gate `jpeg`) builds raylib with
@@ -64,5 +77,11 @@ The fixtures were produced once from synthetic pixels by libjpeg-turbo's
 them, and `tests/fixtures/jpeg/manifest.json` lists each command. Native
 raylib, not the encoder, is the reference.
 
+`tools/jpeg_export_probe.py` (gate `jpeg-export`) compares `Surface.to_jpeg`
+and suffix-selected `Surface.write_image` with pinned `ExportImage` on small
+GRAYSCALE, GRAY_ALPHA, R8G8B8, R8G8B8A8 and one RGB565 image, including a
+size that is not a multiple of 16 and the `.JPG` / `.JpEg` suffixes. CPU-1,
+CPU-2 and JavaScript must match every byte. Performance is not measured.
+
 Not covered: hosts other than the CI pair, larger images and performance, and
-decoding on the GPU lane.
+decoding or export on the GPU lane.

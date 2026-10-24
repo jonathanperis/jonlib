@@ -360,6 +360,9 @@ def Laws.pep_file_limit():
 def Laws.pep_export_kind():
   {==}
 
+def Laws.jpeg_export_kind():
+  {==}
+
 def Laws.hdr_file_kind():
   {==}
 

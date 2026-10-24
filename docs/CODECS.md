@@ -24,7 +24,7 @@ selection and the shared bounded file boundary are documented in
 | GIF animation | Owned frames, retain/restore disposal, budgets; memory and files | [GIF-ANIMATION.md](GIF-ANIMATION.md) | `gif-animation`, `animation-file` |
 | GIF recording (msf_gif) | Encoder: dither, lowered depths, local palettes, LZW, frame differences | [GIF-ENCODER.md](GIF-ENCODER.md) | `msf-gif` |
 | HDR | Raw/RLE Radiance RGBE to exact F32 (format 9); shared `.hdr` promotion and raster tone map; files | [HDR.md](HDR.md) | `hdr`, `hdr-file`, `hdr-dispatch` |
-| JPEG | stb baseline/progressive decoding as raylib with `SUPPORT_FILEFORMAT_JPG`; GRAYSCALE or R8G8B8; files | [JPEG.md](JPEG.md) | `jpeg` |
+| JPEG | stb baseline/progressive decoding as raylib with `SUPPORT_FILEFORMAT_JPG`; GRAYSCALE or R8G8B8; files. Export is quality-90 baseline JPEG from `ExportImage` | [JPEG.md](JPEG.md) | `jpeg`, `jpeg-export` |
 | Raw headerless | `LoadImageRaw`/`.raw` export for formats 1..13 (checked R32/R16) | [RAW-FILES.md](RAW-FILES.md) | `raw-file`, `r32-raw-file`, `float-rgb-raw-file` |
 | Image as code | Exact `ExportImageAsCode` text and file export | [IMAGE-CODE.md](IMAGE-CODE.md) | `image-code` |
 | DEFLATE decompression | Bounded raw DEFLATE (`DecompressData`) and the PNG inflater policy | [DEFLATE.md](DEFLATE.md) | `inflate` |
