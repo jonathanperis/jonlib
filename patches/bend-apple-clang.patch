@@ -1,0 +1,42 @@
+diff --git a/bend2/main.ts b/bend2/main.ts
+index 45db022..2550f54 100755
+--- a/bend2/main.ts
++++ b/bend2/main.ts
+@@ -8,6 +8,7 @@
+ // value, ...}, a closure is a function, Nat is a number, Bool, String and U32
+ // are native. A page bundles through Bun.build with the loader on, since
+ // the bun build CLI takes no plugins.
++// Modified 2026-10-24: Apple clang 21+ builds the CPU lane with -fno-stack-check.
+ 
+ import * as child from "node:child_process";
+ import * as crypto from "node:crypto";
+@@ -439,6 +440,17 @@ function cc_find(gpu: boolean): string {
+     + " --install";
+ }
+ 
++// Apple clang 21's Darwin default -fstack-check probes the stack with a
++// scratch register that preserve_none still uses for a later argument (the
++// host outline and musttail lanes). The probe aborts with "live register
++// clobbered by inserted prologue instructions". -fno-stack-check keeps the
++// calling conventions. Disabling shrink-wrapping does not.
++function apple_clang_21(cc: string): boolean {
++  const [, out] = Safe.run_read(cc, ["--version"]);
++  const version = /^Apple clang version (\d+)/m.exec(out);
++  return version !== null && Number(version[1]) >= 21;
++}
++
+ // cli_build builds the C file at `file` into the binary `bin`. A `!` program
+ // builds with the GPU lane and writes its GPU program too (on Linux only with
+ // CUDA at the first of $CUDA_HOME, $CUDA_PATH, /usr/local/cuda and /opt/cuda
+@@ -459,8 +471,9 @@ function cli_build(bin: string, file: string): void {
+     ? ["-x", "objective-c", "-fobjc-arc", "-fmodules"] : [];
+   const libs  = [["X11", "X11", "dl"], ["alsa", "asound"]].flatMap(([h, ...ls]) =>
+     !mac && c.includes("#include <" + h + "/") ? ls.map((l) => "-l" + l) : []);
+-  const cpu = [...objc, "-std=c11", "-O3", file, "-lpthread", "-lm",
+-    ...libs, "-o", path.resolve(bin)];
++  const cpu = [...objc, "-std=c11", "-O3",
++    ...(mac && apple_clang_21(cc) ? ["-fno-stack-check"] : []),
++    file, "-lpthread", "-lm", ...libs, "-o", path.resolve(bin)];
+   const gpu = mac ? ["-DBEND_METAL=1", ...cpu]
+     : ["-DBEND_CUDA=1", "-I" + cuda + "/include", "-L" + cuda + "/lib64",
+       "-L" + cuda + "/lib", ...cpu, "-lcuda", "-lnvrtc"];

@@ -1,6 +1,6 @@
 # Bend compiler overlay
 
-The overlay is two reviewed patches for the exact Bend revision in
+The overlay is three reviewed patches for the exact Bend revision in
 `toolchain.json`, applied in the order it declares them:
 
 1. `bend-metal-dispatch.patch` changes **compiler-generated Metal call
@@ -17,8 +17,15 @@ The overlay is two reviewed patches for the exact Bend revision in
    ships `Process.run` (a program, arguments, captured output and a timeout);
    that def is left as upstream wrote it. `Process.shell` is the `/bin/sh -c`
    effect `OpenURL` needs.
+3. `bend-apple-clang.patch` passes `-fno-stack-check` on the CPU clang
+   line when the compiler is Apple clang 21 or newer. That clang's Darwin
+   default `-fstack-check` probes the stack with a scratch register that
+   `preserve_none` still uses for a later argument, and the backend aborts
+   (`live register clobbered by inserted prologue instructions`). The host
+   outline and musttail lanes use that calling convention. Linux builds are
+   unchanged.
 
-The two patches touch different files. Jonlib's library algorithms remain
+The patches touch different files. Jonlib's library algorithms remain
 `.bend` source.
 
 ## The Metal dispatch patch
@@ -58,7 +65,7 @@ its patches in order:
 ```sh
 export BEND_SOURCE="/path/to/bend"
 export RAYLIB_SOURCE="/path/to/raylib"
-for patch in bend-metal-dispatch bend-os-effects; do
+for patch in bend-metal-dispatch bend-os-effects bend-apple-clang; do
   git -C "$BEND_SOURCE" apply --check "$PWD/patches/$patch.patch"
   git -C "$BEND_SOURCE" apply "$PWD/patches/$patch.patch"
 done

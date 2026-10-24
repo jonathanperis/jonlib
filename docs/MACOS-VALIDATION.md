@@ -25,7 +25,7 @@ Pushes and pull requests then run every scoped gate on both hosts.
 ## 2. Run every gate on the Mac
 
 Set up the pinned toolchains of [`toolchain.json`](../toolchain.json) as
-`.github/actions/setup-pinned` does: Bend at its base revision with both
+`.github/actions/setup-pinned` does: Bend at its base revision with the
 declared overlay patches ([patches/README.md](../patches/README.md)), raylib
 6.2 at `02566453`, Bun 1.3.12 first in `PATH`. Then:
 
@@ -64,6 +64,10 @@ Re-run green on this Mac after the contract fixes, same lanes and jobs:
 - `gltf-anim`: `greenman.glb` is compared (12 bones, 4 animations).
   `robot.glb`'s rotations leave the nlerp band, so that load stays a
   contract. 19 cases, 13 compared, 6 contracts.
+- `examples-shaders`: 36 examples, 184 frames, on the same lanes. Apple
+  clang 21's Darwin `-fstack-check` probe clobbers a register
+  `preserve_none` still uses; the overlay's CPU line passes
+  `-fno-stack-check` for that clang (`patches/bend-apple-clang.patch`).
 
 Still open from the `fa0755b` shard (not re-run on the current tree):
 
@@ -73,9 +77,7 @@ Still open from the `fa0755b` shard (not re-run on the current tree):
 - `mp3-layer3`, `mp3-stream`, `mp3-wave`: sample hashes differ;
 - `ogg-music`: the first filled buffer's hash differs;
 - `examples-audio`: `audio_mixed_processor-powers` frame 1;
-- `examples-textures`: `textures_sprite_stacking-spin` frame 1;
-- `examples-shaders`: Apple clang 21 crashes compiling `candidate-33`
-  (`shaders_game_of_life`).
+- `examples-textures`: `textures_sprite_stacking-spin` frame 1.
 
 Each failure gets the same diagnosis as on Linux: raylib's semantics on
 macOS, then Jonlib, the fixtures and the host differences. Never a looser

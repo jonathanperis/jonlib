@@ -814,6 +814,12 @@ Bend's `File.*` effects and offered to Bend as a proposal
 as Bend 2.0.38 ships it. The shell effect Jonlib uses for `OpenURL` is
 `Process.shell`.
 
+`patches/bend-apple-clang.patch` changes `bend2/main.ts` so Apple clang 21
+and newer compile the CPU lane with `-fno-stack-check`. That compiler's
+Darwin stack probe otherwise aborts while a `preserve_none` function still
+holds an argument in the probe's scratch register. The file carries a change
+notice. Same Apache-2.0 terms.
+
 The upstream license is retained verbatim in [LICENSES/bend.txt](LICENSES/bend.txt).
 No upstream NOTICE file was present at the base revision. These patches are not
 an upstream-approved Bend release. See [patches/README.md](patches/README.md) for
