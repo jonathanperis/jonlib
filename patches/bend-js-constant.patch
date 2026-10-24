@@ -1,0 +1,65 @@
+diff --git a/bend2/comp.ts b/bend2/comp.ts
+--- a/bend2/comp.ts
++++ b/bend2/comp.ts
+@@ -2,6 +2,7 @@
+ // by AI's, as it includes a ton of optimizations. It works and tests pass, yet,
+ // bugs ARE expected. It will take some time for the compiler to be stable.
+ // Modified 2026-10-23: budget Metal dispatch inlining with native call boundaries.
++// Modified 2026-10-24: share one JavaScript value for a nullary pure constructor.
+ 
+ // Comp
+ // ====
+@@ -3210,6 +3211,33 @@
+   }
+   emit_chain(sc, lv.map(([c, h, fs]) => [c, () =>
+     js_func(sc, h, null, [...fs, ...args.slice(1)])]));
++}
++
++// A nullary constructor is immutable. The C lane keeps it in STAT_IMG and
++// copies that image once; emitting it as the function body rebuilds it on
++// every JavaScript call. $: is the tag key, so any other $ is a binding and
++// stays a call. A literal with no call is safe to share.
++function js_held(expr: string): boolean {
++  if (expr.includes("(") || /\$(?!:)/.test(expr)) {
++    return false;
++  }
++  const bare = expr.replace(/"(?:\\.|[^"\\])*"/g, "");
++  return bare.includes("{") && /^[\s\d{} ,:.+\-eE$]*$/.test(bare);
++}
++
++function js_hoist(lines: string[], name: string): void {
++  const close = lines.length - 1;
++  if (lines[close] !== "}" || lines[close - 2] !== `function ${name}() {`) {
++    return;
++  }
++  const got = /^return (.+);$/.exec(lines[close - 1]);
++  const held = name + "$k";
++  if (got === null || FL.taken.has(held) || !js_held(got[1])) {
++    return;
++  }
++  FL.taken.add(held);
++  lines.splice(close - 2, 3, `const ${held} = ${got[1]};`,
++    `function ${name}() {`, `return ${held};`, "}");
+ }
+ 
+ function js_def(sc: Scope, k: Name, def: Bend.Def): void {
+@@ -3227,7 +3255,8 @@
+   if (def_foreign(def)) {
+     params.push(name_local(sc, "k"));
+   }
+-  block(sc, `function ${name_id("$", k)}(${params.join(", ")}) {`, () => {
++  const fname = name_id("$", k);
++  block(sc, `function ${fname}(${params.join(", ")}) {`, () => {
+     if (def_foreign(def)) {
+       const K = ty_wnf(tele_unbind(def.T).doms.at(-1)![2]);
+       return file_push(sc, `return { $: ${JSON.stringify(k)
+@@ -3254,6 +3283,9 @@
+         });
+       }));
+   });
++  if (params.length === 0 && loop.length === 0 && !def_foreign(def)) {
++    js_hoist(sc.seg.lines, fname);
++  }
+   file_push(sc, "");
+ }
+ 

@@ -9,9 +9,11 @@ approximation (`|x| <= 6.283186f`).
 
 - `M.Libm.sin(libm, x) -> Maybe<F32>` / `M.Libm.cos(libm, x) -> Maybe<F32>`:
   - Under the glibc profiles, `None` only for infinities and NaN.
-  - Under `M.AppleLibm{}`, `Some` only for the arguments verified against
+  - Under `M.AppleLibm{}`, `Some` for the arguments verified against
     macOS arm64: `fl(DEG2RAD*d)` for integral `|d| <= 360` except 13, 19, 22,
-    103 and 188 ([FRAME.md](FRAME.md)). `None` otherwise.
+    103 and 188 ([FRAME.md](FRAME.md)), and for jar_xm's 64 waveform steps
+    `fl(6.283184 * step / 64)` (`Apple.wave` in `src/apple_exp2.bend`, the
+    host `sinf`). `None` otherwise. `cosf` stays the whole-degree set.
 - `Trig.sincos_for(gnu, x)` (`src/trig.bend`) uses the kernel for its GNU
   branch. That branch serves Jonmath's rotation constructors (`Matrix.rotate*`,
   `Vector2.rotate_for`, `Vector3.rotate_by_axis_angle_for`,
@@ -171,5 +173,6 @@ set as Jonlib.
 - glibc builds for other architectures (aarch64 contracts differently) are not
   verified and are not this profile.
 - `M.AppleLibm{}` keeps its one-turn, whole-degree set
-  ([ROTATION.md](ROTATION.md), [FRAME.md](FRAME.md)): macOS arm64 `sinf`/`cosf`
-  are unpublished and not correctly rounded.
+  ([ROTATION.md](ROTATION.md), [FRAME.md](FRAME.md)), plus jar_xm's 64
+  waveform steps. macOS arm64 `sinf`/`cosf` are unpublished and not
+  correctly rounded outside those arguments.

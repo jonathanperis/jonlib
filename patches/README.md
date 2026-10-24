@@ -1,6 +1,6 @@
 # Bend compiler overlay
 
-The overlay is three reviewed patches for the exact Bend revision in
+The overlay is four reviewed patches for the exact Bend revision in
 `toolchain.json`, applied in the order it declares them:
 
 1. `bend-metal-dispatch.patch` changes **compiler-generated Metal call
@@ -24,9 +24,16 @@ The overlay is three reviewed patches for the exact Bend revision in
    (`live register clobbered by inserted prologue instructions`). The host
    outline and musttail lanes use that calling convention. Linux builds are
    unchanged.
+4. `bend-js-constant.patch` shares one JavaScript value for a nullary def
+   whose body is a pure constructor literal. The C lane already keeps that
+   tree in `STAT_IMG` and copies it once. The JavaScript lane was rebuilding
+   it on every call, which made `Apple.at` (the 32,768-leaf exp2 table) take
+   milliseconds per call. A body that calls anything, names a binding, or is
+   not a constructor literal stays a function. Linux and macOS both emit it.
 
-The patches touch different files. Jonlib's library algorithms remain
-`.bend` source.
+The Metal and JavaScript-constant patches both edit `bend2/comp.ts`; the
+others touch different files. Jonlib's library algorithms remain `.bend`
+source.
 
 ## The Metal dispatch patch
 
@@ -65,7 +72,7 @@ its patches in order:
 ```sh
 export BEND_SOURCE="/path/to/bend"
 export RAYLIB_SOURCE="/path/to/raylib"
-for patch in bend-metal-dispatch bend-os-effects bend-apple-clang; do
+for patch in bend-metal-dispatch bend-os-effects bend-apple-clang bend-js-constant; do
   git -C "$BEND_SOURCE" apply --check "$PWD/patches/$patch.patch"
   git -C "$BEND_SOURCE" apply "$PWD/patches/$patch.patch"
 done

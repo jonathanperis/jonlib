@@ -8730,8 +8730,9 @@ def Music.decode.kind(+file_type: String) -> U32:
 def Music.load_from_memory_for(+libm: M.Libm, +audio: AudioDevice, +file_type: String, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
   Music.decode.selected(Music.decode.kind(file_type), True{}, libm, audio, bytes)
 
-# LoadMusicStreamFromMemory under the AppleLibm profile, which gives an XM
-# player no sine and no power of two: a module that needs one is not loaded.
+# LoadMusicStreamFromMemory under the AppleLibm profile. An XM module loads
+# when its powers of two and waveform sines are among the words that profile
+# answers; one that needs anything else is not loaded.
 def Music.load_from_memory(+audio: AudioDevice, +file_type: String, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
   Music.load_from_memory_for(M.AppleLibm{}, audio, file_type, bytes)
 

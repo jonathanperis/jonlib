@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
+from conformance import gradient_reference
 import sound_probe as sp
 import xm_module_probe as xp
 import xm_music_probe as mp
@@ -38,7 +39,7 @@ class CasesTests(unittest.TestCase):
         self.cases = {case['id']: case for case in mp.cases()}
 
     def test_the_cases(self):
-        self.assertEqual(len(self.cases), 9 + 5 + 1)
+        self.assertEqual(len(self.cases), 9 + 5 + (1 if gradient_reference() == 'AppleLibm' else 0))
         files = set(mp.modules(b''))
         for name, case in self.cases.items():
             for step in case['steps']:
@@ -54,15 +55,20 @@ class CasesTests(unittest.TestCase):
         self.assertEqual(self.cases['not-a-module']['tags'], {1: 'header'})
         self.assertEqual(self.cases['refused-channels']['tags'], {1: 'data'})
         self.assertEqual(self.cases['refused-break-past']['tags'], {1: 'data'})
-        # Music.load: raylib's module needs a power of two, which the AppleLibm profile does not give
-        self.assertEqual(self.cases['refused-default-profile']['tags'], {1: 'unsupported'})
+        # Music.load of raylib's module is compared only where the host libm is AppleLibm.
+        if gradient_reference() == 'AppleLibm':
+            self.assertEqual(self.cases['apple-mini']['tags'], {})
+            self.assertEqual(self.cases['apple-mini']['steps'][1], ('music', 3, 'mini'))
+        else:
+            self.assertNotIn('apple-mini', self.cases)
         self.assertEqual(self.cases['default-profile']['tags'], {})
         self.assertEqual(self.cases['default-profile']['steps'][2], ('music', 3, 'bare'))
 
     def test_raylib_runs_a_file_it_does_not_take_where_jonlib_refuses(self):
         refused = self.cases['refused-delay-bare']
         self.assertEqual(mp.native_steps(refused), [('init',), ('music', 0, 'text'), ('play', 0), ('musicupdate', 0), ('close',)])
-        self.assertEqual(mp.native_steps(self.cases['refused-default-profile'])[1], ('music', 3, 'text'))
+        if gradient_reference() == 'AppleLibm':
+            self.assertEqual(mp.native_steps(self.cases['apple-mini']), self.cases['apple-mini']['steps'])
         self.assertEqual(mp.native_steps(self.cases['play']), self.cases['play']['steps'])
 
     def test_the_candidate_s_row_for_a_reference_row(self):

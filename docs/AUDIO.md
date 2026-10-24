@@ -1414,7 +1414,8 @@ tick: `jar_xm_linear_period`, `jar_xm_linear_frequency`,
 - **Linear frequencies**: a note's period is `7680 - 64*note`, and a
   period's frequency `8363*powf(2, (4608 - period)/768)`, which is
   `M.Libm.pow2` (given under the glibc profiles for an exponent within 126
-  of 0; `None` under `M.AppleLibm`).
+  of 0, and under `M.AppleLibm` for the exponents `src/apple_exp2.bend`
+  records).
 - **Amiga frequencies**: a note's period is its place between two of the
   table's 13 periods, shifted by the note's octave; a period's frequency is
   `7093789.2/(2*period)`. With a note offset (vibrato, arpeggio) the
@@ -1601,9 +1602,10 @@ device, ".xm", bytes)` are raylib's `LoadMusicStream` and
 `LoadMusicStreamFromMemory` for a module, under a libm profile: the
 player's sines (the vibrato and tremolo waveforms) and powers of two
 (linear frequencies) are libm's. `Music.load` and `Music.load_from_memory`
-are the same under the AppleLibm profile, which gives neither yet: they
-load a module that asks for neither (Amiga frequencies, and no sine
-waveform), and not one that does.
+are the same under the AppleLibm profile. That profile answers the
+measured powers of two and the 64 waveform sines, so a module whose
+exponents and sines stay in that set loads; `Music.load` of an Amiga
+module with no sine waveform does not need them.
 
 What raylib does, and Jonlib with it:
 
@@ -1654,24 +1656,28 @@ Where Jonlib differs:
 on raudio.c itself, each case in a process of its own, and compares every
 step's state: the music's fields, the samples generated, the times, each
 buffer's halves (a hash of their samples), cursor and counts, and what the
-device mixed. 15 cases, 278 steps: raylib's `mini1111.xm` played through
-its halves, stopped and played again, sought, paused, resumed and with its
-volume, pitch and pan changed; the xm-player gate's seeded modules of
-linear and of Amiga frequencies; a song of four rows played to its end
-without looping, where it stops, and again; a module loaded before the
-device is ready; two at once; a module of Amiga frequencies without a
-vibrato under `Music.load`; and a file that is no module. 6 are
-contracts: the modules the other XM gates find undefined by jar_xm.h
-itself, and raylib's module under `Music.load`. For those the expected
+device mixed. 14 cases (273 steps) on every host, and where the host libm
+is AppleLibm a 15th, `apple-mini` (278 steps in all): raylib's `mini1111.xm`
+played through its halves, stopped and played again, sought, paused, resumed
+and with its volume, pitch and pan changed; the xm-player gate's seeded
+modules of linear and of Amiga frequencies; a song of four rows played to
+its end without looping, where it stops, and again; a module loaded before
+the device is ready; two at once; a module of Amiga frequencies without a
+vibrato under `Music.load`; a file that is no module; and, on AppleLibm,
+`Music.load` of raylib's module. 6 are contracts: that file, and the modules
+the other XM gates find undefined by jar_xm.h itself. For those the expected
 state is raylib's after a file jar_xm does not take, with Jonlib's error.
+`apple-mini` is compared with the host, not refused.
 
 The example `audio_module_playing` plays `mini1111.xm` once
 (`music.looping = false`) under 64 fading circles, with a bar of
 `GetMusicTimePlayed/GetMusicTimeLength`: its 53 frames replay equal to the
 native example's on the three lanes, with the speed raised and lowered
 (`SetMusicPitch`, the stream resampled from there on), a pause and a
-restart. A frame is refused where the module is not loaded: under the
-AppleLibm profile every frame is a contract.
+restart. A frame is refused where the module is not loaded. Under
+AppleLibm the module's exponents and waveform sines are among the words
+`src/apple_exp2.bend` records and the circles are whole degrees, so the
+frames are compared.
 
 Still to come: the music stream (`LoadMusicStream` for `.xm`).
 

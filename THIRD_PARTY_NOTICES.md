@@ -820,6 +820,11 @@ Darwin stack probe otherwise aborts while a `preserve_none` function still
 holds an argument in the probe's scratch register. The file carries a change
 notice. Same Apache-2.0 terms.
 
+`patches/bend-js-constant.patch` changes `bend2/comp.ts` so a nullary def
+whose body is a pure constructor literal is one shared JavaScript value,
+matching the C lane's `STAT_IMG` copy. The file carries a change notice.
+Same Apache-2.0 terms.
+
 The upstream license is retained verbatim in [LICENSES/bend.txt](LICENSES/bend.txt).
 No upstream NOTICE file was present at the base revision. These patches are not
 an upstream-approved Bend release. See [patches/README.md](patches/README.md) for

@@ -420,7 +420,9 @@ in magnitude, where C's conversion is undefined, and for infinities and NaN).
 `M.Libm.pow2(libm, y)` is `powf(2, y)` (and the `exp2f(y)` compilers
 substitute for it) under both glibc profiles for every finite `y` below 126
 in magnitude, where the result is normal (exactly `2^y` for an integral
-`y`); `None` for `AppleLibm` and every other `y` (gate `pow2`,
+`y`). Under `AppleLibm`, `Some` for the exponents measured in
+`src/apple_exp2.bend` (the XM gates' linear frequencies; clang's `exp2f`,
+which agreed with `powf` on each) and `None` for every other `y` (gate `pow2`,
 [Powers of two](#powers-of-two)).
 `M.Libm.exp(libm, x)` and `M.Libm.log(libm, x)` are `expf` and `logf` under
 both glibc profiles: `expf` for a finite `x` below 87 in magnitude except two
@@ -566,7 +568,11 @@ helper's exponent window for subnormal `y`). The JSON results are in
 `tools/reference/glibc_pow2/results`. Gate `pow2` (`tools/pow2_probe.py`)
 evaluates the same arithmetic in Python's binary64 for 280 arguments, checks
 the host's two functions against it on glibc hosts and Jonmath's result on
-every lane. macOS's `powf` and `exp2f` are not modeled: `AppleLibm` is `None`.
+every lane. `AppleLibm` is not that kernel. It answers the 25,980 exponents
+`src/apple_exp2.bend` records, measured on macOS arm64 against `exp2f`
+(the call clang substitutes for `powf(2, y)`; `powf` agreed on every one).
+179 of them differ from this model by one ulp. Every other argument is
+`None`. On macOS the `pow2` gate checks the recorded words against the host.
 
 ## powf
 

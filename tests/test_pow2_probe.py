@@ -33,6 +33,20 @@ class Pow2ModelTests(unittest.TestCase):
         self.assertIn(pow2_probe.LIMIT, chosen)
         self.assertTrue(any(pow2_probe.inside(b) and (b & 0x7F800000) == 0 and b & 0x7FFFFF for b in chosen))
 
+    def test_the_apple_exponents(self):
+        answers = pow2_probe.apple_answers()
+        self.assertEqual(len(answers), 25980)
+        self.assertEqual(answers[1076883057], 1087839249)
+        self.assertEqual(answers[1076886747], 1087847848)
+        self.assertTrue(all(pow2_probe.inside(bits) for bits in answers))
+        self.assertEqual(answers[1084227584], 1107296256)  # 2^5
+        differing = [bits for bits, result in answers.items() if pow2_probe.model(bits) != result]
+        self.assertEqual(len(differing), 179)
+        self.assertTrue(all(abs(int(pow2_probe.model(bits)) - int(answers[bits])) == 1 for bits in differing))
+        waves = pow2_probe.apple_waves()
+        self.assertEqual(len(waves), 64)
+        self.assertEqual(waves[0], 0)
+
 
 if __name__ == '__main__':
     unittest.main()

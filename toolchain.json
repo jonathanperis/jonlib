@@ -1,6 +1,6 @@
 {
   "bend": {
-    "version": "2.0.38+jonlib-metal.2.os-effects.2.apple-clang.1",
+    "version": "2.0.38+jonlib-metal.2.os-effects.2.apple-clang.1.js-constant.1",
     "revision": "0a57ca0d21de94a3724d8be21afb0eb89f88b4d8",
     "overlay": {
       "patches": [
@@ -15,13 +15,17 @@
         {
           "path": "patches/bend-apple-clang.patch",
           "sha256": "0a81bdbf34e68063c185aaf140fd3e8b3bb31e25b9ee65c2a23a610617225f66"
+        },
+        {
+          "path": "patches/bend-js-constant.patch",
+          "sha256": "c475e564db8a11cdc14b89d57c820753b0cde1ce9378079b1f0ac440daf41f3a"
         }
       ],
       "files": {
         ".gitignore": "553574099eebf3612b8cb99559251f5e30a1d4cd53255071b53fab9d54abe933",
         "bend2/main.ts": "c9238530982719bec106d6e96a2a671bfd3b2358afea6dd2115a9c450a2a03f1",
         "bend2/base.bend": "a7f21337a4077d9b8cca75e1fa986eadf671d42d6da38f2c1c0f2bdb184ed9dc",
-        "bend2/comp.ts": "c17a4d7aa9414adb1c63129b60ffbd128253db80007cb1b095d9840680c958d8",
+        "bend2/comp.ts": "8bf9ba3139c4ade13de869483726d8cd7b3a700971e8f79591f4fa9da73a85bf",
         "bend2/effs/dir_change.c": "e50af6262a59578956b6a9443599c95635821ac09e2b588371cee136d37277d1",
         "bend2/effs/dir_change.js": "986fe0710620560e2946ba5841216934f3e48fa2b8e147303fefa9841eccefce",
         "bend2/effs/dir_current.c": "0ef0c75f22967280ae60350338566c5e9cc42c73ba512540d2f29388dff7352e",
