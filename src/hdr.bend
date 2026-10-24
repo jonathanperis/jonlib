@@ -5,6 +5,20 @@ import Base
 import ./codec.bend as C
 import ./../jonmath.bend as M
 
+# stbi__hdr_test: the first line is exactly "#?RADIANCE" or "#?RGBE", newline included.
+def signature.radiance(bytes: +List<U32>) -> Bool:
+  match bytes:
+    case Con{35, Con{63, Con{82, Con{65, Con{68, Con{73, Con{65, Con{78, Con{67, Con{69, Con{10, _}}}}}}}}}}}: True{}
+    case _: False{}
+
+def signature.rgbe(bytes: +List<U32>) -> Bool:
+  match bytes:
+    case Con{35, Con{63, Con{82, Con{71, Con{66, Con{69, Con{10, _}}}}}}}: True{}
+    case _: False{}
+
+def signature(+bytes: +List<U32>) -> Bool:
+  signature.radiance(bytes) || signature.rgbe(bytes)
+
 type Picture is Type:
   Picture{width: U32, height: U32, pixels: Array<M.Vector3>}
 

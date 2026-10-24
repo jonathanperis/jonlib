@@ -22,6 +22,7 @@ def file_kind(kind: J.Image.FileKind) -> U32:
     case J.DdsFile{}: 3
     case J.PngFile{}: 4
     case J.PepFile{}: 5
+    case J.HdrFile{}: 6
 
 def short_read(result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> Bool:
   match result:
@@ -112,6 +113,10 @@ def checks() -> Bool:
     && U32.is_eq(file_kind(J.Image.file.kind("sprite.pep")), 5)
     && U32.is_eq(file_kind(J.Image.file.kind("sprite.PEP")), 5)
     && U32.is_eq(file_kind(J.Image.file.kind("sprite.Pep")), 2)
+    && U32.is_eq(file_kind(J.Image.file.kind("scene.hdr")), 6)
+    && U32.is_eq(file_kind(J.Image.file.kind("scene.HDR")), 6)
+    && U32.is_eq(file_kind(J.Image.file.kind("scene.Hdr")), 2)
+    && U32.is_eq(J.Image.file.limit(J.HdrFile{}), 1048576)
     && U32.is_eq(J.Image.file.limit(J.PepFile{}), 65536)
     && U32.is_eq(J.Image.export.kind("sprite.PeP"), 6)
     && U32.is_eq(error_code(J.Surface.decode_image(".pep", [])), 0)

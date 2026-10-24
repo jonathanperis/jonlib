@@ -550,6 +550,17 @@ law pep_file_limit:
 law pep_export_kind:
   {J.Image.export.kind("a.PeP") == 6 : U32}
 
+# .hdr and .HDR select stbi_loadf. Mixed case stays unsupported. The shared
+# file cap is the raster 1 MiB cap. Explicit load_hdr uses the same cap.
+law hdr_file_kind:
+  {(J.Image.file.kind.of(".hdr"), J.Image.file.kind.of(".HDR")) == (J.HdrFile{}, J.HdrFile{}) : J.Image.FileKind & J.Image.FileKind}
+
+law hdr_file_kind_mixed_case:
+  {J.Image.file.kind.of(".Hdr") == J.UnsupportedImageFile{} : J.Image.FileKind}
+
+law hdr_file_limit:
+  {J.Image.file.limit(J.HdrFile{}) == 1048576 : U32}
+
 law png_signature_selects_the_decoder:
   {(J.Image.file.png_signed([137, 80, 78, 71]), J.Image.file.png_signed([66, 77, 0, 0])) == (True{}, False{}) : Bool & Bool}
 

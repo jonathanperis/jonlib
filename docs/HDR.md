@@ -59,8 +59,41 @@ boundary as Surface and animation loading ([IMAGE-FILES.md](IMAGE-FILES.md)).
 
 Checked [RGB float/RGBA8 conversion](FLOAT-RGB.md) is available for samples in
 `[0,1]`, returning the original owner when outside that domain.
-`Surface.decode_image` retains its RGBA8 profiles; use the typed float API to
-preserve HDR samples.
+`Surface.decode_hdr` and `Surface.load_hdr` stay on that Radiance-only path.
+Shared `.hdr` selection is below.
+
+## Shared suffix and content dispatch
+
+`LoadImage` and `LoadImageFromMemory` recognize `.hdr` and `.HDR` only. Mixed
+case stays unsupported, the same as `.Hdr` against `strcmp`. The file cap is
+1,048,576 bytes.
+
+- A `#?RADIANCE\n` or `#?RGBE\n` prefix (the newline is required) decodes with
+  `Surface.decode_hdr` and stays format 9.
+- Any other admitted raster is decoded first, then promoted the way
+  `stbi_loadf_from_memory` calls `stbi__ldr_to_hdr` (gamma 2.2, scale 1). Format
+  1 becomes format 8, one `pow(byte/255, 2.2)` per gray byte. Format 4 becomes
+  format 9 (R, G and B, fourth channel 0). Format 7 becomes format 10 (R, G and
+  B from the canonical word, alpha `byte/255` with no power). Bytes 0 and 255
+  are 0 and 1.0 and do not call `powf`.
+- Format 2 and every other decoded format return `InvalidImageHeader`. raylib's
+  `comp == 2` branch calls `UnloadImage` on a by-value copy, so the caller's
+  `image.data` is left dangling and the format stays 0. That undefined state is
+  refused. The dispatch gate checks the dangling condition without reading or
+  unloading it, and checks that Jonlib returns the header error.
+
+A raster token (`.png`, `.bmp`, `.tga`, `.jpg`, `.jpeg`, `.gif`, `.pic`,
+`.psd`, `.pgm`, `.ppm`, and the uppercase forms) that begins with the Radiance
+signature uses `stbi__hdr_to_ldr` into format 4. A zero sample stays byte 0, a
+sample greater than or equal to 1 becomes 255, and every other sample is
+`floor` of `pow(sample, 1/2.2) * 255 + 0.5` after clamping into `[0, 256)`.
+The signature does not fall through to TGA when the Radiance decode fails.
+Jonlib still tries PNG, BMP, PNM, PSD, PIC and GIF before JPEG, then Radiance,
+then TGA. Those signatures do not overlap `#?`.
+
+`powf` is `M.Libm.powf(M.Glibc239Libm{}, ...)`. `None` becomes 0 on the way to
+float and byte 0 on the way to 8-bit. The samples in the dispatch gate are in
+the profile's `Some` domain.
 
 ## How it is verified
 
@@ -80,6 +113,13 @@ preserve HDR samples.
   explicit cases use native `LoadFileData` plus `LoadImageFromMemory(".hdr", ...)`.
   Boundary/error controls and a low-descriptor success/decode/read/size closure
   loop are included.
+- **Shared dispatch** (`tools/hdr_dispatch_probe.py`, gate `hdr-dispatch`):
+  `LoadImageFromMemory` and `LoadImage` on CPU-1, CPU-2 and JavaScript against
+  the pinned library. Radiance under `.hdr`/`.HDR` is format 9; the same bytes
+  under raster tokens are tone-mapped R8G8B8. PNG gray, RGB and RGBA and a BMP
+  under `.hdr` promote to formats 8, 9 and 10. A `.png` path whose bytes are
+  Radiance still returns format 9 through `load_hdr`. Gray-alpha under `.hdr`
+  is the refusal sentinel on both sides. Garbage and `.Hdr` fail on both sides.
 
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only hdr
@@ -87,9 +127,9 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 
 ## Known gaps
 
-Shared float-format dispatch, broader header/permissive recovery, GPU filesystem
-IO, callbacks, concurrent/special files and complete
-metadata/resource/platform/performance coverage.
+Gray-alpha under shared `.hdr` (refused), glibc 2.39 `powf` where the profile
+returns no value, broader header/permissive recovery, GPU filesystem
+IO, callbacks, concurrent/special files, macOS/Metal and performance.
 
 ## Provenance
 

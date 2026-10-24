@@ -135,6 +135,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | Image-as-code export | `Surface.to_code/write_code` | Banner/name/metadata/hex text from formats 1..9; bounded payloads ([IMAGE-CODE.md](IMAGE-CODE.md)) | `image-code` |
 | HDR float decoding | `Surface.decode_hdr` | Raw/RLE RGB F32, later-row origin reset, bounded packets, exhaustive sample bits including subnormals ([HDR.md](HDR.md)) | `hdr` |
 | HDR float file loading | `Surface.load_hdr` | Explicit Radiance selection, shared bounded/complete/closed-handle IO | `hdr-file` |
+| Shared HDR dispatch | `Surface.decode_image` / `Surface.load_image` | `.hdr`/`.HDR` keep Radiance as format 9 and promote other rasters to formats 8/9/10; raster tokens tone-map Radiance to R8G8B8; gray-alpha is refused ([HDR.md](HDR.md)) | `hdr-dispatch` |
 | RGB float/RGBA8 conversion | `Surface.format` | Byte normalization, finite `[0,1]` truncation, opaque alpha, rejected-owner preservation ([FLOAT-RGB.md](FLOAT-RGB.md)) | `float-rgb` |
 | RGB float raw bytes | `Surface.from_bytes/export` | Non-NaN little-endian format-9 samples, strict size/byte checks | `float-rgb-bytes` |
 | RGB float copy/orientation | `Surface.copy/flip_*/rotate_*` | Independent owners, exact sample movement (also forced Metal) | `float-rgb-transform` |

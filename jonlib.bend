@@ -2966,20 +2966,23 @@ type Image.FileKind is Data:
   RasterFile{}
   PngFile{}
   PepFile{}
+  HdrFile{}
   UnsupportedImageFile{}
 
-def Image.memory.selected(pep: Bool, qoi: Bool, dds: Bool, raster: Bool) -> Image.FileKind:
-  match pep qoi dds raster:
-    case True{} _ _ _: PepFile{}
-    case False{} True{} _ _: QoiFile{}
-    case False{} False{} True{} _: DdsFile{}
-    case False{} False{} False{} True{}: RasterFile{}
-    case False{} False{} False{} False{}: UnsupportedImageFile{}
+def Image.memory.selected(hdr: Bool, pep: Bool, qoi: Bool, dds: Bool, raster: Bool) -> Image.FileKind:
+  match hdr pep qoi dds raster:
+    case True{} _ _ _ _: HdrFile{}
+    case False{} True{} _ _ _: PepFile{}
+    case False{} False{} True{} _ _: QoiFile{}
+    case False{} False{} False{} True{} _: DdsFile{}
+    case False{} False{} False{} False{} True{}: RasterFile{}
+    case False{} False{} False{} False{} False{}: UnsupportedImageFile{}
 
 # raylib 6.2's default file formats: stb_image signatures for the raster
-# suffixes, QOI, PEP and DDS (rltexgpu.h).
+# suffixes, Radiance HDR, QOI, PEP and DDS (rltexgpu.h).
 def Image.memory.kind(+file_type: String) -> Image.FileKind:
-  Image.memory.selected(String.eq(file_type, ".pep") || String.eq(file_type, ".PEP"),
+  Image.memory.selected(String.eq(file_type, ".hdr") || String.eq(file_type, ".HDR"),
+    String.eq(file_type, ".pep") || String.eq(file_type, ".PEP"),
     String.eq(file_type, ".qoi") || String.eq(file_type, ".QOI"),
     String.eq(file_type, ".dds") || String.eq(file_type, ".DDS"),
     String.eq(file_type, ".png") || String.eq(file_type, ".PNG")
@@ -3039,6 +3042,7 @@ def Image.file.limit(kind: Image.FileKind) -> U32:
     case DdsFile{}: 67109000
     case PngFile{}: 2097152
     case PepFile{}: 65536
+    case HdrFile{}: 1048576
     case _: 1048576
 
 def Image.file.psd(bytes: +List<U32>) -> Bool:
@@ -5119,10 +5123,139 @@ def Surface.hdr.result(result: Result<&1, &1, Codec.Error, Hdr.Picture>) -> Resu
 def Surface.decode_hdr(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   Surface.hdr.result(Hdr.decode(bytes))
 
-def Image.file.raster_other(jpeg: Bool, bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
-  match jpeg:
-    case True{}: Surface.decode_jpeg(bytes)
-    case False{}: Surface.decode_tga(bytes)
+# stb's ldr_to_hdr / hdr_to_ldr (gamma 2.2, scale 1). powf is glibc 2.39's.
+# Altered from stb_image.h; MIT notice in LICENSES/stb-image.txt.
+def Surface.hdr.float(+word: U32) -> F32:
+  U32{bits} = word
+  F32{bits}
+
+def Surface.hdr.gamma() -> F32:
+  Surface.hdr.float(1074580685)
+
+def Surface.hdr.gamma_i() -> F32:
+  Surface.hdr.float(1055427118)
+
+def Surface.hdr.bits(value: Maybe<F32>) -> U32:
+  match value:
+    case None{}: 0
+    case Some{sample}: F32.bits(sample)
+
+def Surface.hdr.expand.at(zero: Bool, full: Bool, +byte: U32) -> U32:
+  match zero full:
+    case True{} _: 0
+    case False{} True{}: 1065353216
+    case False{} False{}: Surface.hdr.bits(M.Libm.powf(M.Glibc239Libm{}, (U32.to_f32(byte) / 255.0 : F32), Surface.hdr.gamma()))
+
+def Surface.hdr.expand(+byte: U32) -> U32:
+  Surface.hdr.expand.at(U32.is_eq(byte, 0), U32.is_eq(byte, 255), byte)
+
+def Surface.hdr.unit(+byte: U32) -> U32:
+  F32.bits((U32.to_f32(byte) / 255.0 : F32))
+
+def Surface.hdr.scaled(value: Maybe<F32>) -> F32:
+  match value:
+    case None{}: 0.0
+    case Some{z}: (z * 255.0 + 0.5 : F32)
+
+def Surface.hdr.tone.byte(+z: F32) -> U32:
+  Bool.pick(U32, (z <= 0.0 : F32), 0, Bool.pick(U32, (z >= 256.0 : F32), 255, F32.to_u32(F32.floor(z))))
+
+def Surface.hdr.tone.of(kind: U32, +sample: F32) -> U32:
+  match kind:
+    case 0: 0
+    case 1: 255
+    case _: Surface.hdr.tone.byte(Surface.hdr.scaled(M.Libm.powf(M.Glibc239Libm{}, sample, Surface.hdr.gamma_i())))
+
+def Surface.hdr.tone(+sample: F32) -> U32:
+  Surface.hdr.tone.of(Bool.pick(U32, F32.is_eq(sample, 0.0), 0, Bool.pick(U32, (sample >= 1.0 : F32), 1, 2)), sample)
+
+def Surface.hdr.gray.step(+i: U32, output: Array<U32>, read: Array<U32> & U32) -> Array<U32> & Array<U32>:
+  (pixels, +word) = read
+  (pixels, Array.set(U32, output, i, Surface.hdr.expand((word .&. 255 : U32))))
+
+def Surface.hdr.gray(n: Nat, +i: U32, state: Array<U32> & Array<U32>) -> Array<U32>:
+  match n state:
+    case 0n Tuple{_, output}: output
+    case 1n+rest Tuple{pixels, output}: Surface.hdr.gray(rest, (i + 1 : U32), Surface.hdr.gray.step(i, output, Array.get(U32, pixels, i)))
+
+def Surface.hdr.rgb.step(+i: U32, output: Array<Surface.Quad>, read: Array<U32> & U32) -> Array<U32> & Array<Surface.Quad>:
+  (pixels, +word) = read
+  (pixels, Array.set(Surface.Quad, output, i, Quad{Surface.hdr.expand((word .&. 255 : U32)),
+    Surface.hdr.expand(((word >> 8n) .&. 255 : U32)), Surface.hdr.expand(((word >> 16n) .&. 255 : U32)), 0}))
+
+def Surface.hdr.rgb(n: Nat, +i: U32, state: Array<U32> & Array<Surface.Quad>) -> Array<Surface.Quad>:
+  match n state:
+    case 0n Tuple{_, output}: output
+    case 1n+rest Tuple{pixels, output}: Surface.hdr.rgb(rest, (i + 1 : U32), Surface.hdr.rgb.step(i, output, Array.get(U32, pixels, i)))
+
+def Surface.hdr.rgba.step(+i: U32, output: Array<Surface.Quad>, read: Array<U32> & U32) -> Array<U32> & Array<Surface.Quad>:
+  (pixels, +word) = read
+  (pixels, Array.set(Surface.Quad, output, i, Quad{Surface.hdr.expand((word >> 24n : U32)),
+    Surface.hdr.expand(((word >> 16n) .&. 255 : U32)), Surface.hdr.expand(((word >> 8n) .&. 255 : U32)),
+    Surface.hdr.unit((word .&. 255 : U32))}))
+
+def Surface.hdr.rgba(n: Nat, +i: U32, state: Array<U32> & Array<Surface.Quad>) -> Array<Surface.Quad>:
+  match n state:
+    case 0n Tuple{_, output}: output
+    case 1n+rest Tuple{pixels, output}: Surface.hdr.rgba(rest, (i + 1 : U32), Surface.hdr.rgba.step(i, output, Array.get(U32, pixels, i)))
+
+def Surface.hdr.tone.step(+i: U32, output: Array<U32>, read: Array<Surface.Quad> & Surface.Quad) -> Array<Surface.Quad> & Array<U32>:
+  (pixels, Quad{+a, +b, +c, _}) = read
+  (pixels, Array.set(U32, output, i, (Surface.hdr.tone(Surface.hdr.float(a))
+    .|. (Surface.hdr.tone(Surface.hdr.float(b)) << 8n)
+    .|. (Surface.hdr.tone(Surface.hdr.float(c)) << 16n) : U32)))
+
+def Surface.hdr.tone.pixels(n: Nat, +i: U32, state: Array<Surface.Quad> & Array<U32>) -> Array<U32>:
+  match n state:
+    case 0n Tuple{_, output}: output
+    case 1n+rest Tuple{pixels, output}: Surface.hdr.tone.pixels(rest, (i + 1 : U32), Surface.hdr.tone.step(i, output, Array.get(Surface.Quad, pixels, i)))
+
+def Surface.hdr.drop(pixels: Surface.Pixels) -> Result<&1, &1, Surface.Error, Surface>:
+  match pixels:
+    case Words{_}: Fail{InvalidImageHeader{}}
+    case Quads{_}: Fail{InvalidImageHeader{}}
+
+def Surface.hdr.promote.at(kind: U32, surface: Surface) -> Result<&1, &1, Surface.Error, Surface>:
+  match kind surface:
+    case 1 Surface{+width, +height, _, Words{values}}:
+      Done{Surface{width, height, 8, Words{Surface.hdr.gray(U32.to_nat((width * height : U32)), 0, (values, Array.new(U32, Storage.depth((width * height : U32)), 0)))}}}
+    case 4 Surface{+width, +height, _, Words{values}}:
+      Done{Surface{width, height, 9, Quads{Surface.hdr.rgb(U32.to_nat((width * height : U32)), 0, (values, Array.new(Surface.Quad, Storage.depth((width * height : U32)), Quad{0, 0, 0, 0})))}}}
+    case 7 Surface{+width, +height, _, Words{values}}:
+      Done{Surface{width, height, 10, Quads{Surface.hdr.rgba(U32.to_nat((width * height : U32)), 0, (values, Array.new(Surface.Quad, Storage.depth((width * height : U32)), Quad{0, 0, 0, 0})))}}}
+    case _ Surface{_, _, _, pixels}: Surface.hdr.drop(pixels)
+
+def Surface.hdr.kind(+format: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(format, 1), 1, Bool.pick(U32, U32.is_eq(format, 4), 4, Bool.pick(U32, U32.is_eq(format, 7), 7, 0)))
+
+def Surface.hdr.promote.surface(surface: Surface) -> Result<&1, &1, Surface.Error, Surface>:
+  match surface:
+    case Surface{width, height, +format, pixels}: Surface.hdr.promote.at(Surface.hdr.kind(format), Surface{width, height, format, pixels})
+
+# stbi_loadf's non-Radiance path: an 8-bit decode, then ldr_to_hdr.
+# comp 2 is refused: raylib UnloadImage's a by-value copy and leaves the caller's pointer dangling.
+def Surface.hdr.promote(result: Result<&1, &1, Surface.Error, Surface>) -> Result<&1, &1, Surface.Error, Surface>:
+  match result:
+    case Fail{error}: Fail{error}
+    case Done{surface}: Surface.hdr.promote.surface(surface)
+
+def Surface.hdr.ldr.surface(surface: Surface) -> Result<&1, &1, Surface.Error, Surface>:
+  match surface:
+    case Surface{+width, +height, 9, Quads{values}}:
+      Done{Surface{width, height, 4, Words{Surface.hdr.tone.pixels(U32.to_nat((width * height : U32)), 0, (values, Array.new(U32, Storage.depth((width * height : U32)), 0)))}}}
+    case Surface{_, _, _, pixels}: Surface.hdr.drop(pixels)
+
+# stbi_load's Radiance path: float RGBE, then hdr_to_ldr into R8G8B8.
+def Surface.hdr.ldr(result: Result<&1, &1, Surface.Error, Surface>) -> Result<&1, &1, Surface.Error, Surface>:
+  match result:
+    case Fail{error}: Fail{error}
+    case Done{surface}: Surface.hdr.ldr.surface(surface)
+
+def Image.file.raster_other(jpeg: Bool, hdr: Bool, bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
+  match jpeg hdr:
+    case True{} _: Surface.decode_jpeg(bytes)
+    case False{} True{}: Surface.hdr.ldr(Surface.decode_hdr(bytes))
+    case False{} False{}: Surface.decode_tga(bytes)
 
 def Image.file.raster_selected(reference: M.Contraction, png: Bool, bmp: Bool, pnm: Bool, psd: Bool, pic: Bool, gif: Bool, +bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   match png bmp pnm psd pic gif:
@@ -5132,7 +5265,7 @@ def Image.file.raster_selected(reference: M.Contraction, png: Bool, bmp: Bool, p
     case False{} False{} False{} True{} _ _: Surface.decode_psd_for(reference, bytes)
     case False{} False{} False{} False{} True{} _: Surface.decode_pic(bytes)
     case False{} False{} False{} False{} False{} True{}: Surface.decode_gif(bytes)
-    case False{} False{} False{} False{} False{} False{}: Image.file.raster_other(Jpeg.signature(bytes), bytes)
+    case False{} False{} False{} False{} False{} False{}: Image.file.raster_other(Jpeg.signature(bytes), Hdr.signature(bytes), bytes)
 
 def Image.file.raster(reference: M.Contraction, +bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   match bytes:
@@ -5166,6 +5299,16 @@ def Image.file.png_signed(bytes: +List<U32>) -> Bool:
     case Con{+a, Con{+b, _}}: U32.is_eq(a, 137) && U32.is_eq(b, 80)
     case _: False{}
 
+# .hdr/.HDR follow stbi_loadf: Radiance stays float RGB; any other admitted
+# raster is promoted. Explicit Surface.decode_hdr / load_hdr stay Radiance-only.
+def Image.file.hdr.selected(hdr: Bool, reference: M.Contraction, +bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
+  match hdr:
+    case True{}: Surface.decode_hdr(bytes)
+    case False{}: Surface.hdr.promote(Image.file.raster(reference, bytes))
+
+def Image.file.hdr(reference: M.Contraction, +bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
+  Image.file.hdr.selected(Hdr.signature(bytes), reference, bytes)
+
 def Image.file.decode(reference: M.Contraction, kind: Image.FileKind, +bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   match kind:
     case QoiFile{}: Surface.decode_qoi(bytes)
@@ -5173,6 +5316,7 @@ def Image.file.decode(reference: M.Contraction, kind: Image.FileKind, +bytes: +L
     case RasterFile{}: Image.file.raster(reference, bytes)
     case PngFile{}: Image.file.named_png(Image.file.png_signed(bytes), reference, bytes)
     case PepFile{}: Surface.decode_pep(bytes)
+    case HdrFile{}: Image.file.hdr(reference, bytes)
     case UnsupportedImageFile{}: Fail{InvalidImageHeader{}}
 
 # LoadImageFromMemory: the file type token selects QOI, PEP or the raster signatures.
@@ -5462,7 +5606,7 @@ def Image.file.load(reference: M.Contraction, +kind: Image.FileKind, path: Strin
   IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, Surface>,
     Image.file.bytes(path, Image.file.limit(kind)), Image.file.surface(reference, kind))
 
-# LoadImage: the path suffix selects QOI or the raster signatures.
+# LoadImage: the path suffix selects QOI, PEP, DDS, Radiance or the raster signatures.
 def Surface.load_image_for(reference: M.Contraction, +path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
   Image.file.load(reference, Image.file.kind(path), path)
 
@@ -10879,6 +11023,7 @@ def Texture.file.decode(reference: M.Contraction, kind: Image.FileKind, +bytes: 
     case DdsFile{}: Surface.decode_dds(bytes)
     case RasterFile{}: Image.file.raster(reference, bytes)
     case PepFile{}: Surface.decode_pep(bytes)
+    case HdrFile{}: Image.file.hdr(reference, bytes)
     case UnsupportedImageFile{}: Fail{InvalidImageHeader{}}
 
 def Texture.file.surface(reference: M.Contraction, kind: Image.FileKind, result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(Result<&1, &1, Surface.IOError, Surface>):

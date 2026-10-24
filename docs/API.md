@@ -379,12 +379,13 @@ kernels above inside a `Result`, whose failure hands it back).
 
 Decoders and loaders return the file's native format, as raylib's `LoadImage`
 does (GRAYSCALE, GRAY_ALPHA, R8G8B8 or R8G8B8A8 for 8-bit codecs, R32G32B32 for
-HDR); use `Surface.colors` or `Surface.format(surface, 7)` for RGBA8.
+explicit HDR, and R32, R32G32B32 or R32G32B32A32 for a shared `.hdr` token);
+use `Surface.colors` or `Surface.format(surface, 7)` for RGBA8.
 
 | Operation | Contract |
 |---|---|
 | `Surface.decode_qoi/dds/png/bmp/tga/pnm/pic/gif/psd/hdr(bytes)` / `decode_psd_for(contraction, bytes)` | Memory decoders returning `Result<&1, &1, Surface.Error, Surface>`. See [CODECS.md](CODECS.md), [PNG.md](PNG.md), [BMP.md](BMP.md), [TGA.md](TGA.md), [PNM.md](PNM.md), [PIC.md](PIC.md), [GIF.md](GIF.md), [PSD.md](PSD.md), [HDR.md](HDR.md). |
-| `Surface.decode_image(file_type, bytes)` / `decode_image_for(contraction, ...)` | `LoadImageFromMemory`: exact extension tokens select QOI, PEP or the raster signatures. See [IMAGE-FILES.md](IMAGE-FILES.md). |
+| `Surface.decode_image(file_type, bytes)` / `decode_image_for(contraction, ...)` | `LoadImageFromMemory`: exact extension tokens select QOI, PEP, Radiance HDR or the raster signatures. See [IMAGE-FILES.md](IMAGE-FILES.md). |
 | `Surface.load_image(path)` / `load_image_for(contraction, path)` | `LoadImage`: bounded ordinary files, native last-dot suffix/content selection, close before decode. |
 | `Surface.load_qoi/pep/dds/png/bmp/tga/pnm/pic/hdr(path)` | Explicit codec selection independent of the suffix, with the same file boundary. |
 | `Surface.load_raw(path, width, height, format, header_size)` | `LoadImageRaw` for formats 1..13 with native header selection. See [RAW-FILES.md](RAW-FILES.md). |

@@ -23,7 +23,7 @@ selection and the shared bounded file boundary are documented in
 | GIF (first frame) | Rectangles, interlacing, palettes, transparency, bounded LZW; R8G8B8A8 | [GIF.md](GIF.md) | `gif` |
 | GIF animation | Owned frames, retain/restore disposal, budgets; memory and files | [GIF-ANIMATION.md](GIF-ANIMATION.md) | `gif-animation`, `animation-file` |
 | GIF recording (msf_gif) | Encoder: dither, lowered depths, local palettes, LZW, frame differences | [GIF-ENCODER.md](GIF-ENCODER.md) | `msf-gif` |
-| HDR | Raw/RLE Radiance RGBE to exact F32 (format 9); files | [HDR.md](HDR.md) | `hdr`, `hdr-file` |
+| HDR | Raw/RLE Radiance RGBE to exact F32 (format 9); shared `.hdr` promotion and raster tone map; files | [HDR.md](HDR.md) | `hdr`, `hdr-file`, `hdr-dispatch` |
 | JPEG | stb baseline/progressive decoding as raylib with `SUPPORT_FILEFORMAT_JPG`; GRAYSCALE or R8G8B8; files | [JPEG.md](JPEG.md) | `jpeg` |
 | Raw headerless | `LoadImageRaw`/`.raw` export for formats 1..13 (checked R32/R16) | [RAW-FILES.md](RAW-FILES.md) | `raw-file`, `r32-raw-file`, `float-rgb-raw-file` |
 | Image as code | Exact `ExportImageAsCode` text and file export | [IMAGE-CODE.md](IMAGE-CODE.md) | `image-code` |
@@ -31,7 +31,7 @@ selection and the shared bounded file boundary are documented in
 | Compression | sdefl quality-8 raw DEFLATE (`CompressData`) | [COMPRESSION.md](COMPRESSION.md) | `sdeflate-huffman`, `sdeflate-lz`, `sdeflate` |
 
 Shared dispatch (`Surface.decode_image`, `Surface.load_image`) is
-gated by `image-memory` and `image-file`. Run any gate with
+gated by `image-memory`, `image-file` and, for Radiance suffixes, `hdr-dispatch`. Run any gate with
 `python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only <gate-id>`.
 
 `Surface.Error` distinguishes `InvalidImageHeader`, `InvalidImageByte`,

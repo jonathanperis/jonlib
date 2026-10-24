@@ -3,7 +3,8 @@
 Jonlib mirrors raylib's `LoadImageFromMemory`/`LoadImage` dispatch for its
 implemented codecs, plus dedicated per-codec loaders. Every decoder returns the
 native pixel format raylib produces (GRAYSCALE, GRAY_ALPHA, R8G8B8 or R8G8B8A8;
-PSD and GIF are R8G8B8A8; HDR is R32G32B32). All file loading goes through one
+PSD and GIF are R8G8B8A8; explicit Radiance decoding is R32G32B32; a shared
+`.hdr` token is R32, R32G32B32 or R32G32B32A32). All file loading goes through one
 bounded byte-file boundary.
 
 | API | Result |
@@ -31,7 +32,7 @@ wrapped exactly once).
 ## Suffix and content selection
 
 Recognized tokens are `.png`, `.bmp`, `.tga`, `.pgm`, `.ppm`, `.jpg`, `.jpeg`,
-`.gif`, `.pic`, `.psd`, `.qoi`, `.pep` and `.dds`, plus their entirely uppercase forms.
+`.gif`, `.pic`, `.psd`, `.qoi`, `.pep`, `.hdr` and `.dds`, plus their entirely uppercase forms.
 Mixed-case forms and `.pnm` are unsupported, matching native dispatch.
 
 - **Memory** calls require the complete token: `image.png` and `.png-tail` are
@@ -44,9 +45,15 @@ Mixed-case forms and `.pnm` are unsupported, matching native dispatch.
   classified normally. Unsupported suffixes are still opened and read under the
   1 MiB cap, then fail with `DataError{InvalidImageHeader}`.
 - `.qoi`/`.QOI` select QOI directly. `.pep`/`.PEP` select PEP directly
-  ([CODECS.md](CODECS.md#pep)). Every other recognized token selects the
+  ([CODECS.md](CODECS.md#pep)). `.hdr`/`.HDR` follow `stbi_loadf`: a Radiance
+  signature (`#?RADIANCE` or `#?RGBE`, newline included) stays format 9, and any
+  other admitted raster is promoted with `pow(byte/255, 2.2)` (format 1 to R32,
+  format 4 to R32G32B32, format 7 to R32G32B32A32 with linear alpha). Gray-alpha
+  is `InvalidImageHeader`: raylib unloads a by-value copy and leaves the
+  caller's pointer dangling, which Jonlib refuses instead of reading. Every other recognized token selects the
   stb-style raster family, which detects content: PNG, BMP, P5/P6, PSD, PIC,
-  GIF and JPEG signatures are tried in that order, otherwise the TGA profile. PNG bytes
+  GIF, JPEG and then Radiance. A Radiance signature on those tokens becomes
+  R8G8B8 through `hdr_to_ldr` and does not fall through to TGA. PNG bytes
   named `image.bmp` therefore load as PNG, matching native content detection.
   QOI bytes under a raster token and raster bytes under a QOI token are
   rejected. The `.jpg/.jpeg/.gif/.pic/.psd` aliases accept any implemented
@@ -54,8 +61,8 @@ Mixed-case forms and `.pnm` are unsupported, matching native dispatch.
   [JPEG.md](JPEG.md) describes.
 - Codec profiles: [PNG](PNG.md), [BMP](BMP.md), [TGA](TGA.md), [PNM](PNM.md),
   [PSD](PSD.md), [PIC](PIC.md), [GIF](GIF.md) (first frame), QOI in
-  [CODECS.md](CODECS.md). HDR is selected only explicitly (`load_hdr`,
-  `decode_hdr`); the shared dispatch does not recognize `.hdr`.
+  [CODECS.md](CODECS.md), shared and explicit HDR in [HDR.md](HDR.md).
+  `load_hdr` and `decode_hdr` stay Radiance-only and ignore the filename.
 
 Strings are ordinary extension/path text without embedded NULs.
 
@@ -91,6 +98,7 @@ no guarantee of reported OS-close success. Ordinary byte files contain only
 | Selection | Inclusive encoded-file cap |
 |---|---|
 | Raster tokens other than PNG's, unsupported suffixes, `load_pnm/tga/bmp/pic`, `load_hdr` | 1,048,576 bytes (`RasterFile`) |
+| `.hdr`/`.HDR` | 1,048,576 bytes (`HdrFile`), the same cap `load_hdr` uses |
 | `.png`/`.PNG`, `Surface.load_png` | 2,097,152 bytes (`PngFile`): the PNG decoder's cap. Under that name, contents without the PNG signature keep the raster cap: more than 1,048,576 bytes of them are `UnsupportedImageSize`, as before the file was read this far |
 | QOI tokens, `Surface.load_qoi` | 83,886,102 bytes = `14 + 5*(4096*4096) + 8` (`QoiFile`) |
 | PEP tokens, `Surface.load_pep` | 65,536 bytes (`PepFile`). Decoded area is at most 4096 pixels |
@@ -336,7 +344,7 @@ paths they exercise.
 
 ## Known gaps
 
-- HDR in the shared suffix dispatch; original source formats
+- Gray-alpha under a shared `.hdr` token (refused; the native pointer is dangling) and glibc 2.39 `powf` pairs that return no value; original source formats
   for PSD and GIF (decoded as R8G8B8A8); multi-level KTX/PVR files and `.ktx`
   export; operations on mipmapped images.
 - Concurrent or changing files, special files, native callbacks, native

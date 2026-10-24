@@ -360,6 +360,15 @@ def Laws.pep_file_limit():
 def Laws.pep_export_kind():
   {==}
 
+def Laws.hdr_file_kind():
+  {==}
+
+def Laws.hdr_file_kind_mixed_case():
+  {==}
+
+def Laws.hdr_file_limit():
+  {==}
+
 def Laws.png_signature_selects_the_decoder():
   {==}
 
