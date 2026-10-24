@@ -67,6 +67,7 @@ import ./src/psd.bend as Psd
 import ./src/pic.bend as Pic
 import ./src/gif.bend as Gif
 import ./src/jpeg.bend as Jpeg
+import ./src/jpeg_write.bend as JpegWrite
 import ./src/wav.bend as Wav
 import ./src/qoa.bend as Qoa
 import ./src/mp3_stream.bend as Mp3S
@@ -3030,9 +3031,15 @@ def Image.export.selected(png: Bool, bmp: Bool, tga: Bool, qoi: Bool, raw: Bool,
     case _ _ _ _ _ True{}: 6
     case _ _ _ _ _ _: 0
 
+# .jpg and .jpeg share kind 7. The six-way match stays the other suffixes.
+def Image.export.jpeg(other: U32, +token: String) -> U32:
+  match other:
+    case 0: Bool.pick(U32, String.eq(token, ".jpg") || String.eq(token, ".jpeg"), 7, 0)
+    case _: other
+
 def Image.export.kind(path: String) -> U32:
   +token = String.to_lower(Image.file.token(path))
-  Image.export.selected(String.eq(token, ".png"), String.eq(token, ".bmp"), String.eq(token, ".tga"), String.eq(token, ".qoi"), String.eq(token, ".raw"), String.eq(token, ".pep"))
+  Image.export.jpeg(Image.export.selected(String.eq(token, ".png"), String.eq(token, ".bmp"), String.eq(token, ".tga"), String.eq(token, ".qoi"), String.eq(token, ".raw"), String.eq(token, ".pep")), token)
 
 # DDS admits its 128-byte header plus the largest uncompressed payload; a
 # file named .png the PNG decoder's 2 MiB.
@@ -5415,6 +5422,37 @@ def Surface.to_pep(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, 
   Surface{width, height, +format, pixels} = surface
   Surface.pep.route(U32.is_eq(format, 7), width, height, format, pixels)
 
+# ExportImage's JPEG branch is stbi_write_jpg at quality 90. Formats 1, 2, 4
+# and 7 pass stored samples (gray-alpha keeps both bytes; the writer ignores
+# alpha). Every other format is LoadImageColors, then four channels.
+def Surface.jpeg.channels(format: U32) -> U32:
+  match format:
+    case 1: 1
+    case 2: 2
+    case 4: 3
+    case 7: 4
+    case _: 0
+
+def Surface.jpeg.stored(+channels: U32, +width: U32, +height: U32, values: Array<U32>) -> +List<U32>:
+  match channels:
+    case 4: JpegWrite.colors(width, height, values)
+    case _: JpegWrite.packed(width, height, channels, values)
+
+def Surface.jpeg.colors(result: Result<&1, &1, Surface & Surface.Error, Rgba>) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>:
+  match result:
+    case Fail{failure}: Fail{failure}
+    case Done{Rgba{+width, +height, pixels}}: Done{JpegWrite.colors(width, height, pixels)}
+
+def Surface.jpeg.direct(direct: Bool, +channels: U32, +width: U32, +height: U32, +format: U32, pixels: Surface.Pixels) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>:
+  match direct pixels:
+    case True{} Words{values}: Done{Surface.jpeg.stored(channels, width, height, values)}
+    case _ _: Surface.jpeg.colors(Surface.rgba.load(Surface{width, height, format, pixels}))
+
+def Surface.to_jpeg(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>:
+  Surface{+width, +height, +format, pixels} = surface
+  +channels = Surface.jpeg.channels(format)
+  Surface.jpeg.direct((channels > 0 : U32), channels, width, height, format, pixels)
+
 def Surface.memory.channels(format: U32) -> U32:
   match format:
     case 8: 4
@@ -5520,6 +5558,9 @@ def Surface.write_qoi(surface: Surface, path: String) -> IO(Result<&1, &1, Surfa
 def Surface.write_pep(surface: Surface, path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
   Surface.write.bytes(path, Surface.to_pep(surface))
 
+def Surface.write_jpeg(surface: Surface, path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  Surface.write.bytes(path, Surface.to_jpeg(surface))
+
 def Surface.raw.payload(result: Result<&1, &1, Surface & Surface.Error, Surface>) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>:
   match result:
     case Fail{failure}: Fail{failure}
@@ -5542,9 +5583,10 @@ def Surface.write.kind(kind: U32, surface: Surface, path: String) -> IO(Result<&
     case 4: Surface.write_qoi(surface, path)
     case 5: Surface.write_raw(surface, path)
     case 6: Surface.write_pep(surface, path)
+    case 7: Surface.write_jpeg(surface, path)
     case _: IO.pure(Result<&1, &1, Surface.IOError, Unit>, Fail{SourceError{surface, UnsupportedFileType{}}})
 
-# ExportImage: the ASCII-insensitive suffix selects PNG, BMP, TGA, QOI, raw or PEP.
+# ExportImage: the ASCII-insensitive suffix selects PNG, BMP, TGA, QOI, raw, PEP or JPEG.
 def Surface.write_image(surface: Surface, +path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
   Surface.write.kind(Image.export.kind(path), surface, path)
 
@@ -5770,6 +5812,7 @@ def Surface.write.kind_with(~save: String -> +List<U32> -> IO(Result<&1, &1, Sur
     case 4: Surface.write_qoi(surface, path)
     case 5: Surface.write.bytes_with(~save, path, Surface.raw.payload(Surface.payload.check(surface)))
     case 6: Surface.write.bytes_with(~save, path, Surface.to_pep(surface))
+    case 7: Surface.write.bytes_with(~save, path, Surface.to_jpeg(surface))
     case _: IO.pure(Result<&1, &1, Surface.IOError, Unit>, Fail{SourceError{surface, UnsupportedFileType{}}})
 
 def Surface.write_image_with(~save: String -> +List<U32> -> IO(Result<&1, &1, Surface.IOError, Unit>), surface: Surface, +path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):

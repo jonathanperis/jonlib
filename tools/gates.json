@@ -1061,6 +1061,21 @@
    "minutes": 2
   },
   {
+   "id": "jpeg-export",
+   "title": "Quality-90 JPEG ExportImage bytes for stored samples and LoadImageColors expansion",
+   "run": [
+    "{python}",
+    "tools/jpeg_export_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 8
+  },
+  {
    "id": "png-export",
    "title": "",
    "run": [

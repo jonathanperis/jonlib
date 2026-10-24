@@ -266,14 +266,17 @@ tooling; it is not linked into Jonlib's implementation.
 
 `src/bmp.bend`, `src/tga.bend`, `src/pnm.bend`, `src/png.bend`, `src/psd.bend`,
 `src/pic.bend`, `src/gif.bend`, `src/gif_lzw.bend`, `src/gif_animation.bend`,
-`src/hdr.bend` and `src/jpeg.bend` are altered, bounded Bend
-adaptations of the BMP/TGA readers and writers and PNM/PNG/PSD/PIC/GIF/HDR/JPEG readers
+`src/hdr.bend`, `src/jpeg.bend` and `src/jpeg_write.bend` are altered, bounded Bend
+adaptations of the BMP/TGA readers and writers, the PNM/PNG/PSD/PIC/GIF/HDR/JPEG readers
+and the JPEG writer
 in pinned raylib's `src/external/stb_image.h` and `stb_image_write.h`, by Sean
 Barrett and contributors. Jonlib selects their MIT alternative, retained in
 [LICENSES/stb-image.txt](LICENSES/stb-image.txt). It uses owned arrays and explicit
 byte validation, preserves the exercised native pixel/export rules, and rejects
 unsupported or truncated inputs. The native headers are used only by reference
 tooling; no stb implementation is linked into the Bend candidate.
+`src/jpeg_write.bend` adapts `stbi_write_jpg_core` at quality 90 (4:2:0, scaled
+quality 20). That function is Jon Olick's public-domain `jo_jpeg`.
 The formatted TGA channel-aware writer adapts `stb_image_write.h` lines 532–603
 and the raylib `ExportImage`/`LoadImageColors` routing, retaining its row-bounded
 RLE scan and component ordering in owned Bend arrays.
