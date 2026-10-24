@@ -18,6 +18,7 @@ import ./src/sincosf.bend as Sincosf
 import ./src/inverse_trig.bend as InverseTrig
 import ./src/asin.bend as Asin
 import ./src/power.bend as Power
+import ./src/apple_exp2.bend as Apple
 import ./src/libc_rand.bend as CRand
 import ./src/hypot.bend as Hypot
 import ./src/strtod.bend as Strtod
@@ -1407,11 +1408,12 @@ def Libm.powf(libm: Libm, +x: F32, +y: F32) -> Maybe<F32>:
 # powf(2, k), and the exp2f(k) compilers substitute for it, under a reference
 # profile: glibc's (2.39 and 2.41 on x86_64, the SSE2 and the FMA variants
 # alike) for a finite k with |k| < 126, where the result is normal
-# (Power.exp2; exactly 2^k for an integral k). None for AppleLibm (not
-# verified) and for every other k.
+# (Power.exp2; exactly 2^k for an integral k). Under AppleLibm, the exponents
+# measured for the XM gates (Apple.at: clang's exp2f, which agreed with powf
+# on each of them). None for every other k.
 def Libm.pow2(libm: Libm, +k: F32) -> Maybe<F32>:
   match libm:
-    case AppleLibm{}: None{}
+    case AppleLibm{}: Apple.at(F32.bits(k))
     case _: Power.exp2(k)
 
 # expf(x) under a reference profile: glibc's (2.39 and 2.41 on x86_64) for a
@@ -1495,12 +1497,19 @@ def Libm.apple.verified(+x: F32) -> Bool:
   (m <= 360.0 : F32) && F32.is_eq((deg2rad * d : F32), x)
     && Bool.not(F32.is_eq(m, 13.0) || F32.is_eq(m, 19.0) || F32.is_eq(m, 22.0) || F32.is_eq(m, 103.0) || F32.is_eq(m, 188.0))
 
+# A waveform step's sine, when x is one, else the verified whole-degree sine.
+def Libm.apple.sin(found: Maybe<F32>, +x: F32) -> Maybe<F32>:
+  match found:
+    case Some{value}: Some{value}
+    case None{}: Bool.pick(Maybe<F32>, Libm.apple.verified(x), Some{Libm.sin.value(Trig.sincos_for(False{}, x))}, None{})
+
 # sinf under a reference profile: glibc's x86_64 sinf for every finite x under
 # both glibc profiles (docs/SINCOSF.md); under AppleLibm the verified
-# whole-degree arguments (Libm.apple.verified). None otherwise.
+# whole-degree arguments (Libm.apple.verified) and jar_xm's 64 waveform steps
+# (Apple.wave). None otherwise.
 def Libm.sin(libm: Libm, +x: F32) -> Maybe<F32>:
   match libm:
-    case AppleLibm{}: Bool.pick(Maybe<F32>, Libm.apple.verified(x), Some{Libm.sin.value(Trig.sincos_for(False{}, x))}, None{})
+    case AppleLibm{}: Libm.apple.sin(Apple.wave(F32.bits(x)), x)
     case _: Sincosf.sinf(x)
 
 # cosf under a reference profile, with the domains of Libm.sin.

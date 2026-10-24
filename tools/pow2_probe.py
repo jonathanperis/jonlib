@@ -8,11 +8,15 @@ optimized-routines' exp2_inline) in Python's binary64, which
 tools/reference/glibc_pow2 checks against glibc 2.39 and 2.41, in their SSE2
 and FMA variants, on every such y. On a glibc host the native powf(2, y) and
 exp2f(y) (through volatile pointers, so neither is folded) must give the same
-words. AppleLibm and every other y (126 and beyond, infinities, NaN) are None.
-CPU-1, CPU-2 and JavaScript lanes.
+words. AppleLibm answers the measured exponents in src/apple_exp2.bend and
+None for every other y (126 and beyond, infinities, NaN, and any exponent
+the measurement did not reach). On macOS those measured words are checked
+against the host's powf(2, y) and exp2f(y). CPU-1, CPU-2 and JavaScript lanes.
 """
 import json
+import re
 import struct
+from pathlib import Path
 
 from conformance import gradient_reference
 import probekit
@@ -30,6 +34,27 @@ TABLE = [0x3ff0000000000000, 0x3fefd9b0d3158574, 0x3fefb5586cf9890f, 0x3fef9301d
 C0, C1, C2 = float.fromhex('0x1.c6af84b912394p-5'), float.fromhex('0x1.ebfce50fac4f3p-3'), float.fromhex('0x1.62e42ff0c52d6p-1')
 SHIFT = float.fromhex('0x1.8p47')
 LIMIT = 0x42FC0000  # 126.0f
+_APPLE = None
+
+
+def apple_answers():
+    """y word -> result word, from the Apple.at leaves in src/apple_exp2.bend."""
+    global _APPLE
+    if _APPLE is None:
+        text = (Path(__file__).resolve().parents[1] / 'src' / 'apple_exp2.bend').read_text()
+        body = text.split('def table', 1)[1].split('def search', 1)[0]
+        # The tree repeats its last leaf to fill a power of two; the first copy wins.
+        _APPLE = {}
+        for key, value in re.findall(r'PowTip\{(\d+), (\d+)\}', body):
+            _APPLE.setdefault(int(key), int(value))
+    return _APPLE
+
+
+def apple_waves():
+    """Argument word -> sinf word, from Apple.wave."""
+    text = (Path(__file__).resolve().parents[1] / 'src' / 'apple_exp2.bend').read_text()
+    body = text.split('def wave', 1)[1].split('def at.', 1)[0]
+    return {int(key): int(value) for key, value in re.findall(r'case (\d+): Some\{float\((\d+)\)\}', body)}
 
 NATIVE = r'''#include <math.h>
 #include <stdint.h>
@@ -60,10 +85,30 @@ def one(+word: U32) -> List<U32>:
   U32{w} = word
   List.append(&1, U32, show(M.Libm.pow2(M.Glibc239Libm{}, F32{w})),
     List.append(&1, U32, show(M.Libm.pow2(M.Glibc241Libm{}, F32{w})), show(M.Libm.pow2(M.AppleLibm{}, F32{w}))))
+# A flat walk of the words is not a tail call, and the JavaScript lane
+# overflows on a few thousand of them. One fuelled loop drains each word's
+# six results onto the front and reverses once. 65536 steps cover a batch
+# of 4096 words (eight steps a word). phase True reads words; False drains extra.
+def all.go(+fuel: Nat, phase: Bool, words: List<U32>, extra: List<U32>, acc: List<U32>) -> List<U32>:
+  match fuel:
+    case 0n:
+      Nil{}
+    case 1n+p:
+      match phase:
+        case True{}:
+          match words:
+            case Nil{}:
+              List.reverse(&1, U32, acc)
+            case Con{+w, rest}:
+              all.go(p, False{}, rest, one(w), acc)
+        case False{}:
+          match extra:
+            case Nil{}:
+              all.go(p, True{}, words, Nil{}, acc)
+            case Con{h, t}:
+              all.go(p, False{}, words, t, h <> acc)
 def all(words: List<U32>) -> List<U32>:
-  match words:
-    case Nil{}: Nil{}
-    case Con{w, rest}: List.append(&1, U32, one(w), all(rest))
+  all.go(65536n, True{}, words, Nil{}, Nil{})
 def main() -> IO(Unit):
   IO.print(List.show(~&1, ~U32, ~U32.show, all([WORDS])))
 '''
@@ -129,10 +174,20 @@ def main():
                 compared += 1
                 if power != model(bits) or exp2 != model(bits):
                     raise ProbeFailure(f'pow2: the host powf(2, y) or exp2f(y) differs from the model at y = {bits:#010x}')
+    answers = apple_answers()
+    if not glibc:
+        measured = list(answers)
+        native_measured = [[int(v) for v in line.split()] for line in probe.native(NATIVE.replace('WORDS', ', '.join(f'{w}u' for w in measured))).splitlines()]
+        if len(native_measured) != len(measured):
+            raise ProbeFailure('pow2: incomplete native output for the Apple exponents')
+        for bits, (power, exp2) in zip(measured, native_measured):
+            if power != answers[bits] or exp2 != answers[bits]:
+                raise ProbeFailure(f'pow2: the host powf(2, y) or exp2f(y) differs from the measured word at y = {bits:#010x}')
     expected = []
     for bits in chosen:
         some = [1, model(bits)] if inside(bits) else [0, 0]
-        expected.append(some + some + [0, 0])
+        apple = [1, answers[bits]] if bits in answers else [0, 0]
+        expected.append(some + some + apple)
 
     def render(words, gpu):
         return PROGRAM.replace('WORDS', ', '.join(str(w) for w in words)).replace('all([', 'all!([' if gpu else 'all([')
@@ -145,7 +200,18 @@ def main():
 
     probe.compare(expected, probe.candidates(render, chosen, batch=len(chosen), parse=parse),
                   describe=lambda i: f'y = {chosen[i]:#010x}')
-    probe.finish(cases=len(chosen), inside=sum(1 for b in chosen if inside(b)), native_compared=compared)
+    measured = list(answers)
+    measured_expected = []
+    for bits in measured:
+        some = [1, model(bits)]
+        measured_expected.append(some + some + [1, answers[bits]])
+    # A Bend list longer than 4096 overflows the checker. A JavaScript list
+    # literal deeper than about 2500 overflows the lane that evaluates it, so
+    # the measured words are batches of 1024. The expectations are still every
+    # recorded word.
+    probe.compare(measured_expected, probe.candidates(render, measured, batch=1024, parse=parse),
+                  describe=lambda i: f'apple y = {measured[i]:#010x}')
+    probe.finish(cases=len(chosen), inside=sum(1 for b in chosen if inside(b)), native_compared=compared, apple=len(answers))
 
 
 if __name__ == '__main__':

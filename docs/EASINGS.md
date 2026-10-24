@@ -31,8 +31,10 @@ raylib's examples build it on Linux).
   `M.Glibc241Libm{}`, `M.AppleLibm{}`) and answer None where it does not
   verify the argument: the glibc profiles take every finite normal or zero
   `sinf`/`cosf` argument and `powf(2, y)` for finite `|y| < 126`; AppleLibm
-  takes the integral degrees of [FRAME.md](FRAME.md) for `sinf`/`cosf` and no
-  `powf` ([MATH.md](MATH.md), [SINCOSF.md](SINCOSF.md)). The early returns
+  takes the integral degrees of [FRAME.md](FRAME.md) for `sinf`/`cosf` (and
+  jar_xm's waveform steps, which these easings do not use) and `powf(2, y)`
+  only for the exponents in `src/apple_exp2.bend` ([MATH.md](MATH.md),
+  [SINCOSF.md](SINCOSF.md)). The early returns
   (`t == 0`, `t == d`) need no libm. The plain forms are the `_for` forms
   under `M.AppleLibm{}`, as Jonlib's profile-free forms are.
 - **EaseBounceOut's third bound** is the double `2.5/2.75`: a float is below

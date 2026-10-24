@@ -62,7 +62,10 @@ def trig_ok(libm, arg):
 
 
 def pow_ok(libm, y):
-    return libm != 'AppleLibm' and pow2_probe.inside(word(y))
+    bits = word(y)
+    if libm == 'AppleLibm':
+        return bits in pow2_probe.apple_answers()
+    return pow2_probe.inside(bits)
 
 
 def accepted(libm, name, t, b, c, d):
@@ -88,7 +91,8 @@ def accepted(libm, name, t, b, c, d):
             u = f32(t / f32(d / 2.0))
             if u == 2.0:
                 return True
-            p = f32(d * f32(0.3 * 1.5))
+            # 0.3f*1.5f is two F32 literals. A binary64 product rounds one ulp away.
+            p = f32(d * f32(f32(0.3) * f32(1.5)))
             v = f32(u - 1.0)
             exponent = f32(10.0 * v) if u < 1.0 else f32(-10.0 * v)
         else:

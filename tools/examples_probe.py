@@ -491,8 +491,9 @@ PERSPECTIVE.add('audio_spectrum_visualizer')
 PERSPECTIVE.add('audio_sound_positioning')
 # The SDF font's cubic solver takes glibc 2.39's pow, acos and cos; the AppleLibm profile has none: the same contract.
 IO_SETUP.add('text_font_sdf'); PERSPECTIVE.add('text_font_sdf')
-# The module's player takes its sines and powers of two from libm, and the AppleLibm profile gives it none: the same contract.
-SEEDED.add('audio_module_playing'); PERSPECTIVE.add('audio_module_playing'); CONFIG_FLAGS['audio_module_playing'] = 32
+# The module's powers of two and waveform sines are in the AppleLibm set (src/apple_exp2.bend), and its
+# circles are whole degrees, so under AppleLibm the frames are compared. GetRandomValue after InitWindow.
+SEEDED.add('audio_module_playing'); CONFIG_FLAGS['audio_module_playing'] = 32
 PERSPECTIVE.add('core_vr_simulator')
 IO_SETUP.add('shaders_game_of_life'); SEEDED.add('shaders_game_of_life')
 IO_SETUP.add('text_unicode_ranges'); EFFECTS.add('text_unicode_ranges')

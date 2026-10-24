@@ -127,7 +127,7 @@ The local verification commands below do not install tools or download dependenc
 GitHub Actions provisions its own pinned dependencies on hosted runners.
 
 The harness requires these base revisions. Bend additionally needs the exact
-[declared compiler overlay](patches/README.md) (three patches); raylib remains
+[declared compiler overlay](patches/README.md) (four patches); raylib remains
 unmodified:
 
 | Dependency | Revision |
@@ -149,7 +149,7 @@ Apply the overlay once, its patches in order, to a checkout already at the
 pinned Bend revision:
 
 ```sh
-for patch in bend-metal-dispatch bend-os-effects bend-apple-clang; do
+for patch in bend-metal-dispatch bend-os-effects bend-apple-clang bend-js-constant; do
   git -C "$BEND_SOURCE" apply --check "$PWD/patches/$patch.patch"
   git -C "$BEND_SOURCE" apply "$PWD/patches/$patch.patch"
 done

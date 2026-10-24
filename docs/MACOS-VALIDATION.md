@@ -68,12 +68,19 @@ Re-run green on this Mac after the contract fixes, same lanes and jobs:
   clang 21's Darwin `-fstack-check` probe clobbers a register
   `preserve_none` still uses; the overlay's CPU line passes
   `-fno-stack-check` for that clang (`patches/bend-apple-clang.patch`).
+- `easings`, `pow2`, `xm-pitch`, `xm-player`, `xm-mixer`, `xm-music`:
+  AppleLibm answers the 25,980 measured `exp2f` words in
+  `src/apple_exp2.bend`, including two linear exponents that appear only
+  after `jar_xm_reset` following 9,000 samples of the linear module at
+  48,000 Hz. The JavaScript lane shares one value for that table
+  (`patches/bend-js-constant.patch`). easings 382 samples; pow2 25,980 host
+  words; xm-pitch 524 frequencies; xm-player 11,460 ticks; xm-mixer 164,741
+  frames; xm-music 15 cases, 10 compared, 278 steps, including `linear`
+  and `apple-mini`.
 
 Still open from the `fa0755b` shard (not re-run on the current tree):
 
 - `sound`: `stream-play-mono` step 8 (`mix`, 480) hashes differ;
-- `xm-pitch`, `xm-player`, `xm-mixer`, `xm-music`: AppleLibm `powf`/`exp2f`
-  refuse linear periods the host's jar_xm answers;
 - `mp3-layer3`, `mp3-stream`, `mp3-wave`: sample hashes differ;
 - `ogg-music`: the first filled buffer's hash differs;
 - `examples-audio`: `audio_mixed_processor-powers` frame 1;

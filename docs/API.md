@@ -194,7 +194,8 @@ see [GUI.md](GUI.md).
 `M.Libm.sin(libm, x)` / `M.Libm.cos(libm, x) -> Maybe<F32>` are glibc's
 x86_64 `sinf`/`cosf` on every finite argument under both glibc profiles (and
 behind every glibc-profile rotation, camera and drawing call), and the
-verified whole-degree arguments under `M.AppleLibm{}`; see [SINCOSF.md](SINCOSF.md).
+verified whole-degree arguments under `M.AppleLibm{}`, and that profile's
+`sinf` also answers jar_xm's 64 waveform steps; see [SINCOSF.md](SINCOSF.md).
 
 `M.Vector3{x, y, z}` is immutable `Data` with three F32 fields.
 `M.Vector4{x, y, z, w}` provides four immutable F32 fields.

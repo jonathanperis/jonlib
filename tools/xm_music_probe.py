@@ -26,9 +26,12 @@ on a device that is not ready (a rate of 0) and play two at once.
 
 Contracts (the reference does not run them as they are): the modules the
 xm-module and xm-player gates find undefined by jar_xm.h itself, which
-Jonlib does not load, and raylib's module under the AppleLibm profile,
-which gives its player no power of two. For those the expected state is
-raylib's after a file jar_xm does not take, with the error Jonlib gives.
+Jonlib does not load. For those the expected state is raylib's after a
+file jar_xm does not take, with the error Jonlib gives. On a host whose
+libm is AppleLibm, Music.load of raylib's module is played and compared:
+that profile now answers the module's powers of two and waveform sines.
+On a glibc host the reference would be a different libm, so that case is
+not run.
 CPU-1, CPU-2 and JavaScript lanes.
 """
 import hashlib
@@ -86,8 +89,6 @@ def cases():
         for index, step in enumerate(steps):
             if step[0] == 'music' and (step[2] in REFUSED or step[2] == 'text'):
                 tags[index] = REFUSED.get(step[2], 'header')
-            if step[0] == 'music' and step[1] == 3 and step[2] == 'mini':
-                tags[index] = 'unsupported'
         out.append(dict(id=name, steps=list(steps), tags=tags))
 
     turn = [('musicupdate', 0), ('mix', 480), ('mix', 480)]
@@ -114,7 +115,9 @@ def cases():
     add('not-a-module', ('init',), ('music', 0, 'text'), ('play', 0), ('musicupdate', 0), ('close',))
     for name in REFUSED:
         add(f'refused-{name}', ('init',), ('music', 0, name), ('play', 0), ('musicupdate', 0), ('close',))
-    add('refused-default-profile', ('init',), ('music', 3, 'mini'), ('play', 3), ('musicupdate', 3), ('close',))
+    # Music.load is the AppleLibm profile. Compare it with raylib only where that is the host libm.
+    if gradient_reference() == 'AppleLibm':
+        add('apple-mini', ('init',), ('music', 3, 'mini'), ('play', 3), ('musicupdate', 3), ('close',))
     return out
 
 
@@ -163,7 +166,8 @@ def main():
     # what the cases are for: raylib's module with its length, a music that plays to its end and stops, musics without a file
     lengths = {name: [int(m) for m in re.findall(r' U1,(\d+),', rows[name])] for name in rows}
     if (set(lengths['play']) != {2974098} or not lengths['once'] or ' U0,0,1,0,2143289344,0' not in rows['unready'] or not lengths['default-profile']
-            or any(lengths[name] for name in rows if name.startswith('refused-') or name == 'not-a-module') or len(set(lengths['two'])) != 2):
+            or any(lengths[name] for name in rows if name.startswith('refused-') or name == 'not-a-module') or len(set(lengths['two'])) != 2
+            or ('apple-mini' in lengths and set(lengths['apple-mini']) != {2974098})):
         raise ProbeFailure(f'xm-music: the reference rows are not the ones this probe was written for: {lengths}')
     # the music that does not loop: playing after its first step, stopped and back at its start before it is played again
     once = rows['once'].split(';')
