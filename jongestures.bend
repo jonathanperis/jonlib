@@ -31,6 +31,7 @@ import ./src/psd.bend as Psd
 import ./src/pic.bend as Pic
 import ./src/gif.bend as Gif
 import ./src/jpeg.bend as Jpeg
+import ./src/jpeg_write.bend as JpegWrite
 import ./src/wav.bend as Wav
 import ./src/qoa.bend as Qoa
 import ./src/mp3_stream.bend as Mp3S
