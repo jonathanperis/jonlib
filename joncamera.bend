@@ -10,6 +10,7 @@ import ./jonmath.bend as M
 import ./src/codec.bend as Codec
 import ./src/resample.bend as Resample
 import ./src/qoi.bend as Qoi
+import ./src/pep.bend as Pep
 import ./src/gradients.bend as Gradients
 import ./src/trig.bend as Trig
 import ./src/rotation.bend as Rotation
