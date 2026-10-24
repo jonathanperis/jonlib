@@ -19,7 +19,7 @@ selection and the shared bounded file boundary are documented in
 | PSD | Raw/PackBits RGB(A) planes, explicit matte profiles; R8G8B8A8 | [PSD.md](PSD.md) | `psd`, `psd-matte` |
 | PIC | Softimage raw/pure-RLE/mixed-RLE packets; native format 4/7; files | [PIC.md](PIC.md) | `pic`, `pic-format`, `pic-file` |
 | DDS | Uncompressed single-level R5G6B5/A1R5G5B5/A4R4G4B4/RGB24/BGRA32; native format 3/5/6/4/7; files. DXT blocks and mip chains as `Image.Stored` | [below](#dds), [IMAGE-FILES.md](IMAGE-FILES.md#compressed-and-multi-level-images) | `dds`, `stored` |
-| KTX, PKM, PVR, ASTC | Configuration-gated single-level loaders as `Image.Stored` | [IMAGE-FILES.md](IMAGE-FILES.md#compressed-and-multi-level-images) | `gputex` |
+| KTX, PKM, PVR, ASTC | Configuration-gated loaders as `Image.Stored`. KTX and PVR report the header mip count and store the first level; PKM and ASTC are one level | [IMAGE-FILES.md](IMAGE-FILES.md#compressed-and-multi-level-images) | `gputex` |
 | GIF (first frame) | Rectangles, interlacing, palettes, transparency, bounded LZW; R8G8B8A8 | [GIF.md](GIF.md) | `gif` |
 | GIF animation | Owned frames, retain/restore disposal, budgets; memory and files | [GIF-ANIMATION.md](GIF-ANIMATION.md) | `gif-animation`, `animation-file` |
 | GIF recording (msf_gif) | Encoder: dither, lowered depths, local palettes, LZW, frame differences | [GIF-ENCODER.md](GIF-ENCODER.md) | `msf-gif` |

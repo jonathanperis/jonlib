@@ -3811,9 +3811,9 @@
       "status": "partial",
       "jonlib": "Surface / Image.Mipmaps / Image.Stored",
       "mapping_state": "implemented",
-      "scope": "One owned Surface per image: dimensions 1..4096, one mip level and raylib PixelFormat 1..13 (R8G8B8A8 as canonical Color words, other byte formats, R32 and R16 as native sample words, formats 9, 10, 12 and 13 as Quads of sample bits). Image.Mipmaps owns complete base-to-1x1 levels in any of those formats. Image.Stored keeps raylib's fields for loaded compressed blocks (DXT, ETC, PVRTC, ASTC) and DDS mipmap chains, with every level as bytes.",
+      "scope": "One owned Surface per image: dimensions 1..4096, one mip level and raylib PixelFormat 1..13 (R8G8B8A8 as canonical Color words, other byte formats, R32 and R16 as native sample words, formats 9, 10, 12 and 13 as Quads of sample bits). Image.Mipmaps owns complete base-to-1x1 levels in any of those formats. Image.Stored keeps raylib's fields for compressed blocks (DXT, ETC, PVRTC, ASTC). DDS stores every chain level. KTX and PVR report the header mip count and keep the first level's bytes.",
       "gaps": [
-        "Operations on compressed or mipmapped images beyond loading, copy, export and level splitting; full dimension domain",
+        "Operations on compressed or mipmapped images beyond loading, copy, export and level splitting; full dimension domain; KTX/PVR data is the first level only",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
@@ -44779,7 +44779,7 @@
       "status": "partial",
       "jonlib": "Surface.load_image / Surface.load_image_for / Surface.load_qoi / Surface.load_dds / Surface.load_hdr / Surface.load_pnm / Surface.load_tga / Surface.load_bmp / Surface.load_png / Surface.load_pic / Surface.load_image_with / Image.Stored.load_image / Surface.load_jpeg / Surface.load_pep",
       "mapping_state": "implemented",
-      "scope": "Bounded ordinary-file loading returning the native format: last-dot suffix selection across BMP/PNG/TGA/PNM/PSD/PIC/GIF, QOI (83,886,102-byte cap), DDS (67,109,000), PEP (65,536 bytes, at most 4096 pixels, R8G8B8A8) and .hdr/.HDR (1 MiB; Radiance format 9, other rasters promoted, gray-alpha refused). Explicit load_{qoi,dds,png,bmp,tga,pnm,pic,hdr,pep} ignore the filename; load_hdr stays Radiance-only. Raster files share a 1,048,576-byte cap (.png: 2 MiB). One exact-length read, close before decode, typed errors; Base does not report close failures.",
+      "scope": "Bounded file loading returning native format: suffix selection across BMP/PNG/TGA/PNM/PSD/PIC/GIF, QOI (83,886,102-byte cap), DDS (67,109,000), PEP (65,536 bytes, at most 4096 pixels, R8G8B8A8) and .hdr/.HDR (1 MiB; Radiance format 9, other rasters promoted, gray-alpha refused). Explicit load_{qoi,dds,png,bmp,tga,pnm,pic,hdr,pep} ignore the filename; load_hdr stays Radiance-only. Raster files share a 1,048,576-byte cap (.png: 2 MiB). KTX/PVR files report the header mip count and keep the first level. One exact-length read, close before decode, typed errors; Base does not report close failures.",
       "gaps": [
         "Larger files and decoder domains; gray-alpha under .hdr is refused; tone-map powf is glibc 2.39",
         "Original pixel-format metadata for the other normalized codec paths and additional native arithmetic profiles",
@@ -44809,7 +44809,7 @@
         "tools/qoi_file_probe.py",
         "tools/hdr_file_probe.py",
         "tests/io_decoding.bend",
-        "tools/dds_probe.py",
+        "tools/gputex_probe.py",
         "tools/hdr_dispatch_probe.py"
       ],
       "gate_evidence": {},
@@ -45070,9 +45070,9 @@
       "status": "partial",
       "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_dds / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Surface.decode_hdr / Image.Stored.decode_image / Image.Stored.decode_dds / Surface.decode_jpeg / Surface.decode_pep",
       "mapping_state": "implemented",
-      "scope": "Shared token/content dispatch decodes QOI, uncompressed single-level DDS, BMP, TGA, binary 8/16-bit PNM, PNG (1..16-bit, Adam7, native-default CgBI; 2 MiB encoded/64 MiB filtered caps), PSD (raw/PackBits, explicit matte arithmetic), PIC, first-frame GIF and .hdr/.HDR. Radiance stays R32G32B32; other rasters promote to R32, R32G32B32 or R32G32B32A32; raster tokens tone-map Radiance to R8G8B8. decode_hdr stays Radiance-only. Dimensions 1..4096, exact bytes, typed errors. .pep/.PEP decompress to R8G8B8A8 with a transparent first color and premultiplication.",
+      "scope": "Shared token/content dispatch decodes QOI, uncompressed single-level DDS, BMP, TGA, 8/16-bit PNM, PNG (1..16-bit, Adam7, CgBI; 2 MiB encoded/64 MiB filtered caps), PSD (raw/PackBits, explicit matte arithmetic), PIC, first-frame GIF and .hdr/.HDR. Radiance stays R32G32B32; other rasters promote to R32, R32G32B32 or R32G32B32A32; raster tokens tone-map Radiance to R8G8B8. decode_hdr stays Radiance-only. KTX/PVR report the header mip count and keep the first level. Dimensions 1..4096, exact bytes, typed errors. .pep/.PEP decompress to R8G8B8A8 with a transparent first color and premultiplication.",
       "gaps": [
-        "Multi-level KTX/PVR files; gray-alpha under .hdr is refused; tone-map powf is glibc 2.39",
+        "gray-alpha under .hdr is refused; tone-map powf is glibc 2.39; KTX/PVR later levels are not stored",
         "Original pixel-format metadata for the remaining normalized codecs (PSD, GIF) and remaining dispatch families",
         "Nondefault external stb decoder flags, PSD out-of-range matte casts and permissive incomplete/excess raster recovery",
         "Other permissive malformed-stream recovery, dimensions above 4096 and OOM parity; other native arithmetic profiles; GPU/Metal targets; maximum-area allocation, latency/throughput/memory budgets",
@@ -45101,7 +45101,7 @@
         "tools/tga_probe.py",
         "tools/pic_probe.py",
         "tools/gif_probe.py",
-        "tests/decoding.bend",
+        "tools/gputex_probe.py",
         "tools/hdr_dispatch_probe.py",
         "tools/dds_probe.py"
       ],

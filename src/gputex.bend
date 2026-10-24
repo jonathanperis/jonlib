@@ -1,14 +1,16 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of rl_load_ktx_from_memory, rl_load_pkm_from_memory,
 # rl_load_pvr_from_memory and rl_load_astc_from_memory from raylib 6.2's
-# rltexgpu.h (single-level files); notice retained in LICENSES/raylib.txt. See
-# THIRD_PARTY_NOTICES.md.
+# rltexgpu.h; notice retained in LICENSES/raylib.txt. See
+# THIRD_PARTY_NOTICES.md. KTX and PVR report the header mip count and keep
+# the first level raylib copies. PKM and ASTC are one level.
 import Base
 import ./codec.bend as C
 
-# A loaded level: dimensions, raylib PixelFormat and GetPixelDataSize bytes.
+# A loaded level: dimensions, raylib PixelFormat, the header mip count and
+# the first level's GetPixelDataSize bytes.
 type Outcome is Type:
-  Loaded{width: U32, height: U32, format: U32, data: +List<U32>}
+  Loaded{width: U32, height: U32, format: U32, mipmaps: U32, data: +List<U32>}
   Unsupported{}
   Invalid{error: C.Error}
 
@@ -50,13 +52,14 @@ def level_size(+width: U32, +height: U32, +format: U32) -> U32:
     Bool.pick(U32, small && ((format >= 16) && (format < 24) : U32), 16, (width * height * bits_per_pixel(format) / 8 : U32)))
 
 # raylib copies `copied` bytes from `offset`; Jonlib keeps the level's
-# GetPixelDataSize bytes, which must lie within that copy.
-def level(+width: U32, +height: U32, +format: U32, +offset: U32, +copied: U32, +bytes: +List<U32>) -> Outcome:
+# GetPixelDataSize bytes, which must lie within that copy. `mipmaps` is the
+# count raylib stores (the KTX/PVR header value, or 1 for PKM and ASTC).
+def level(+width: U32, +height: U32, +format: U32, +mipmaps: U32, +offset: U32, +copied: U32, +bytes: +List<U32>) -> Outcome:
   +size = level_size(width, height, format)
   +data = List.take(&2, U32, List.drop(&2, U32, bytes, U32.to_nat(offset)), U32.to_nat(copied))
   Bool.pick(Outcome, Bool.not(Nat.is_eq(C.byte_count(data, 0n), U32.to_nat(copied))), Invalid{C.Truncated{}},
     Bool.pick(Outcome, (copied < size : U32), Invalid{C.BadSize{}},
-      Loaded{width, height, format, List.take(&2, U32, data, U32.to_nat(size))}))
+      Loaded{width, height, format, mipmaps, List.take(&2, U32, data, U32.to_nat(size))}))
 
 # PKM: "PKM ", version, then big-endian format, width and height; ETC1 (0),
 # ETC2 RGB (1) and ETC2 EAC RGBA (3) data of width*height*bpp/8 bytes.
@@ -73,11 +76,11 @@ def pkm(+bytes: +List<U32>) -> Outcome:
   +height = be16(bytes, 10)
   +format = pkm.format(code)
   Bool.pick(Outcome, U32.is_eq(format, 0), Invalid{C.BadHeader{}},
-    level(width, height, format, 16, (width * height * Bool.pick(U32, U32.is_eq(code, 3), 8, 4) / 8 : U32), bytes))
+    level(width, height, format, 1, 16, (width * height * Bool.pick(U32, U32.is_eq(code, 3), 8, 4) / 8 : U32), bytes))
 
 # KTX 1.1: the 64-byte header, key/value data, then the first level's byte
-# count and data. ETC1/ETC2/ETC2 EAC internal formats; one mipmap level (raylib
-# keeps only the first level of a chain while reporting all of them).
+# count and data. ETC1/ETC2/ETC2 EAC internal formats. mipmap_levels is stored
+# as raylib stores it; only that first image is copied.
 def ktx.format(+internal: U32) -> U32:
   Bool.pick(U32, U32.is_eq(internal, 36196), 18, Bool.pick(U32, U32.is_eq(internal, 37492), 19, Bool.pick(U32, U32.is_eq(internal, 37496), 20, 0)))
 
@@ -85,12 +88,13 @@ def ktx(+bytes: +List<U32>) -> Outcome:
   +format = ktx.format(le32(bytes, 28))
   +skip = le32(bytes, 60)
   +offset = (68 + skip : U32)
+  +mipmaps = le32(bytes, 56)
   Bool.pick(Outcome, U32.is_eq(format, 0) || (skip > 2147483647 : U32), Invalid{C.BadHeader{}},
-    Bool.pick(Outcome, U32.is_ne(le32(bytes, 56), 1), Unsupported{},
-      level(le32(bytes, 36), le32(bytes, 40), format, offset, le32(bytes, (64 + skip : U32)), bytes)))
+    level(le32(bytes, 36), le32(bytes, 40), format, mipmaps, offset, le32(bytes, (64 + skip : U32)), bytes))
 
 # PVR v3: the 52-byte header (channel names and depths select the format),
-# metadata, then the first level of the first surface and face.
+# metadata, then the first level of the first surface and face. num_mipmaps
+# is stored as raylib stores it; later levels are not copied.
 def pvr.rgb(+alpha: U32, +d0: U32, +d1: U32, +d2: U32, +d3: U32) -> U32:
   Bool.pick(U32, U32.is_eq(alpha, 97),
     Bool.pick(U32, U32.is_eq(d0, 5) && U32.is_eq(d1, 5) && U32.is_eq(d2, 5) && U32.is_eq(d3, 1), 5,
@@ -115,10 +119,10 @@ def pvr(+bytes: +List<U32>) -> Outcome:
   +width = le32(bytes, 28)
   +height = le32(bytes, 24)
   +skip = le32(bytes, 48)
+  +mipmaps = le32(bytes, 44)
   Bool.pick(Outcome, Bool.not(U32.is_eq(at(bytes, 0), 80) && U32.is_eq(at(bytes, 1), 86) && U32.is_eq(at(bytes, 2), 82) && U32.is_eq(at(bytes, 3), 3))
       || U32.is_eq(format, 0) || (skip > 2147483647 : U32), Invalid{C.BadHeader{}},
-    Bool.pick(Outcome, U32.is_ne(le32(bytes, 44), 1), Unsupported{},
-      level(width, height, format, (52 + skip : U32), (width * height * bits_per_pixel(format) / 8 : U32), bytes)))
+    level(width, height, format, mipmaps, (52 + skip : U32), (width * height * bits_per_pixel(format) / 8 : U32), bytes))
 
 # ASTC: the 16-byte header with block dimensions and 24-bit sizes; raylib takes
 # 128/(blockX*blockY) bits per pixel, loading 8 as ASTC 4x4 and 2 as ASTC 8x8.
@@ -129,7 +133,7 @@ def astc(+bytes: +List<U32>) -> Outcome:
   +height = le24(bytes, 10)
   Bool.pick(Outcome, U32.is_eq(blocks, 0), Invalid{C.BadHeader{}},
     Bool.pick(Outcome, Bool.not(U32.is_eq(bits, 8) || U32.is_eq(bits, 2)), Unsupported{},
-      level(width, height, Bool.pick(U32, U32.is_eq(bits, 8), 23, 24), 16, (width * height * bits / 8 : U32), bytes)))
+      level(width, height, Bool.pick(U32, U32.is_eq(bits, 8), 23, 24), 1, 16, (width * height * bits / 8 : U32), bytes)))
 
 # Signatures as raylib checks them: PKM "PKM ", KTX "KTX 11" at bytes 1..6,
 # PVR version byte 'P', ASTC 13 AB A1 5C. Shorter files are truncated.

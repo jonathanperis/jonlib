@@ -5832,9 +5832,12 @@ def Image.file.is_dds(kind: Image.FileKind) -> Bool:
     case DdsFile{}: True{}
     case _: False{}
 
+# KTX and PVR: mipmaps is the header count and data is the first level's
+# GetPixelDataSize bytes, the prefix of the one copy raylib performs. PKM and
+# ASTC stay one level. Later levels in the file are not stored.
 def Image.Stored.loaded(outcome: GpuTex.Outcome) -> Result<&1, &1, Surface.Error, Image.Stored>:
   match outcome:
-    case GpuTex.Loaded{width, height, format, data}: Image.Stored.created(width, height, format, 1, data)
+    case GpuTex.Loaded{width, height, format, mipmaps, data}: Image.Stored.created(width, height, format, mipmaps, data)
     case GpuTex.Unsupported{}: Fail{UnsupportedFormat{}}
     case GpuTex.Invalid{error}: Fail{Image.codec.error(error)}
 

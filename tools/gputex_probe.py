@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """Compare raylib's configuration-gated KTX, PKM, PVR and ASTC loaders with Image.Stored.
 
-raylib is built with SUPPORT_FILEFORMAT_KTX/PKM/PVR/ASTC=ON. Single-level
-ETC1/ETC2/ETC2 EAC (KTX, PKM), PVR v3 uncompressed and PVRTC, and ASTC 4x4/8x8
-files decode to the format, dimensions and GetPixelDataSize bytes native
-LoadImageFromMemory returns. Jonlib contracts, asserted natively where raylib's
-result is defined: multi-level KTX/PVR files (raylib keeps only the first
-level while reporting all) are UnsupportedFormat; unknown formats, which raylib
-returns as format 0, InvalidImageHeader; levels whose copied bytes are fewer
-than GetPixelDataSize (below one block) UnsupportedImageSize; ASTC blocks other
-than 8 or 2 bits per pixel UnsupportedFormat; short files TruncatedImageData.
-.ktx/.PVR file loading by suffix is compared too. CPU/JS lanes.
+raylib is built with SUPPORT_FILEFORMAT_KTX/PKM/PVR/ASTC=ON. ETC1/ETC2/ETC2 EAC
+(KTX, PKM), PVR v3 uncompressed and PVRTC, and ASTC 4x4/8x8 files decode to the
+format, dimensions, mip count and GetPixelDataSize bytes native
+LoadImageFromMemory returns. KTX and PVR report the header mip count and keep
+only the first level (a tail past that copy must not appear). PKM and ASTC stay
+one level. Jonlib contracts, asserted natively where raylib's result is defined:
+unknown formats, which raylib returns as format 0, InvalidImageHeader; levels
+whose copied bytes are fewer than GetPixelDataSize (below one block)
+UnsupportedImageSize; ASTC blocks other than 8 or 2 bits per pixel
+UnsupportedFormat; short files TruncatedImageData. .ktx/.PVR file loading by
+suffix, including a multi-level file of each, is compared too. CPU/JS lanes.
 """
 import hashlib
 import json
@@ -62,10 +63,10 @@ def fixtures():
     noise = lambda n: [rng.randrange(256) for _ in range(n)]
     cases = []
 
-    def loaded(name, token, data, fmt, width, height, payload, copied, native=True):
+    def loaded(name, token, data, fmt, width, height, payload, copied, native=True, mipmaps=1):
         size = level_size(width, height, fmt)
         cases.append(dict(id=name, token=token, bytes=data, kind='loaded', native=native,
-                          expected=[fmt, width, height, 1, payload[:size]], prefix=size))
+                          expected=[fmt, width, height, mipmaps, payload[:size]], prefix=size))
 
     def refused(name, token, data, error, check=None):
         cases.append(dict(id=name, token=token, bytes=data, kind='refused', expected=['error', error], check=check))
@@ -87,7 +88,13 @@ def fixtures():
     payload = noise(48)
     loaded('ktx-key-values', '.KTX', ktx(0x8D64, 8, 8, payload, key_values=bytes(noise(8))), 18, 8, 8, payload, 48)
     loaded('ktx-larger-image', '.ktx', ktx(0x9278, 4, 4, payload), 20, 4, 4, payload, 48)
-    refused('ktx-chain', '.ktx', ktx(0x8D64, 8, 8, noise(32), mipmaps=2), 'unsupported', check='loaded')
+    level_bytes = noise(32)
+    loaded('ktx-chain', '.ktx', ktx(0x8D64, 8, 8, level_bytes + [0xA5] * 16, image_size=32, mipmaps=2), 18, 8, 8, level_bytes, 32, mipmaps=2)
+    loaded('ktx-chain-larger', '.ktx', ktx(0x9278, 4, 4, payload, mipmaps=3), 20, 4, 4, payload, 48, mipmaps=3)
+    nonsquare = noise(16)
+    loaded('ktx-nonsquare-chain', '.KTX', ktx(0x8D64, 8, 4, nonsquare, mipmaps=4), 18, 8, 4, nonsquare, 16, mipmaps=4)
+    zero = noise(8)
+    loaded('ktx-mips-zero', '.ktx', ktx(0x9274, 4, 4, zero, mipmaps=0), 19, 4, 4, zero, 8, mipmaps=0)
     refused('ktx-internal', '.ktx', ktx(0x1908, 4, 4, noise(16)), 'header', check='format0')
     refused('ktx-short-image', '.ktx', ktx(0x9278, 4, 4, noise(8)), 'size', check='loaded')
     refused('ktx-truncated', '.ktx', ktx(0x8D64, 8, 8, noise(20), image_size=32), 'truncated')
@@ -100,7 +107,12 @@ def fixtures():
                    width * height * BITS[fmt] // 8)
     payload = noise(64)
     loaded('pvr-metadata', '.PVR', pvr(b'rgba', b'\x08\x08\x08\x08', 4, 4, payload, metadata=bytes(noise(12))), 7, 4, 4, payload, 64)
-    refused('pvr-chain', '.pvr', pvr(b'rgba', b'\x08\x08\x08\x08', 4, 4, noise(84), mipmaps=3), 'unsupported', check='loaded')
+    level_bytes = noise(64)
+    loaded('pvr-chain', '.pvr', pvr(b'rgba', b'\x08\x08\x08\x08', 4, 4, level_bytes + [0x5A] * 20, mipmaps=3), 7, 4, 4, level_bytes, 64, mipmaps=3)
+    gray = noise(16)
+    loaded('pvr-gray-chain', '.pvr', pvr(b'l\0\0\0', b'\x08\0\0\0', 4, 4, gray + [0x11] * 12, mipmaps=5), 1, 4, 4, gray, 16, mipmaps=5)
+    rgb = noise(48)
+    loaded('pvr-mips-zero', '.PVR', pvr(b'rgb\0', b'\x08\x08\x08\0', 4, 4, rgb, mipmaps=0), 4, 4, 4, rgb, 48, mipmaps=0)
     refused('pvr-pvrtc-small', '.pvr', pvr(b'\x02\0\0\0', b'\0\0\0\0', 2, 2, noise(16)), 'size', check='loaded')
     refused('pvr-channels', '.pvr', pvr(b'rgba', b'\x06\x06\x06\x06', 4, 4, noise(64)), 'header')
     refused('pvr-v2', '.pvr', [52] + noise(60), 'header', check='null')
@@ -116,7 +128,8 @@ def fixtures():
     return cases
 
 
-FILES = {'.build/gputex-probe/file.ktx': 'ktx-18-8x8', '.build/gputex-probe/FILE.PVR': 'pvr-7-4x4'}
+FILES = {'.build/gputex-probe/file.ktx': 'ktx-18-8x8', '.build/gputex-probe/FILE.PVR': 'pvr-7-4x4',
+         '.build/gputex-probe/chain.ktx': 'ktx-chain', '.build/gputex-probe/CHAIN.PVR': 'pvr-chain'}
 
 
 def native(probe, cases):

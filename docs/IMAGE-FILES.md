@@ -232,7 +232,7 @@ mipmaps, data}` holds raylib's Image fields for them:
 
 | Function | raylib | Contract |
 |---|---|---|
-| `Image.Stored.decode_image(file_type, bytes)` / `decode_image_for` | `LoadImageFromMemory` | DDS tokens decode every DDS raylib loads: Surface's uncompressed formats, DXT1 (format 14, or 15 with the alpha-pixels flag), DXT3 (16) and DXT5 (17) blocks and mipmap chains of up to 64 levels. KTX, PKM, PVR and ASTC tokens decode the single-level files raylib loads when built with `SUPPORT_FILEFORMAT_KTX/PKM/PVR/ASTC` (below). Other tokens decode one Surface level (mipmaps 1). |
+| `Image.Stored.decode_image(file_type, bytes)` / `decode_image_for` | `LoadImageFromMemory` | DDS tokens decode every DDS raylib loads: Surface's uncompressed formats, DXT1 (format 14, or 15 with the alpha-pixels flag), DXT3 (16) and DXT5 (17) blocks and mipmap chains of up to 64 levels. KTX, PKM, PVR and ASTC tokens decode the files raylib loads when built with `SUPPORT_FILEFORMAT_KTX/PKM/PVR/ASTC` (below). KTX and PVR report the header mip count and keep the first level; PKM and ASTC stay one level. Other tokens decode one Surface level (mipmaps 1). |
 | `Image.Stored.load_image(path)` / `load_image_for` | `LoadImage` | DDS, KTX, PKM, PVR and ASTC files by suffix (both cases), other files through `Surface.load_image_for`. |
 | `Image.Stored.decode_dds(bytes)` | DDS `LoadImageFromMemory` | As above without the token dispatch. |
 | `Image.Stored.levels(image)` | — | The uncompressed levels as an `Image.Mipmaps` of Surfaces; compressed images are `UnsupportedFormat` (with their owner). |
@@ -241,7 +241,7 @@ mipmaps, data}` holds raylib's Image fields for them:
 | `Image.Stored.to_code(image, path)` / `write_code` | `ExportImageAsCode` | raylib's header text over the top level's bytes, at most 64 KiB. |
 | `Image.Stored.is_valid` / `unload` / `entries` | `IsImageValid` / `UnloadImage` | Fields, validity and consumption. |
 
-`data` is the complete level chain, largest level first, each level halving
+DDS `data` is the complete level chain, largest level first, each level halving
 both dimensions down to 1 with `GetPixelDataSize` bytes (compressed levels
 below 4x4 hold one 8- or 16-byte block), with raylib's channel reordering for
 A1R5G5B5, A4R4G4B4 and B8G8R8A8 files. raylib copies only `pitch` (compressed)
@@ -255,7 +255,8 @@ compressed data (it warns, or converts uninitialized `LoadImageColors` output)
 have no `Image.Stored` form.
 
 The configuration-gated loaders keep one level of `GetPixelDataSize` bytes,
-the start of the bytes raylib copies:
+the start of the bytes raylib copies. KTX and PVR also report the header mip
+count:
 
 | Token | Formats | Contract |
 |---|---|---|
@@ -264,11 +265,15 @@ the start of the bytes raylib copies:
 | `.pvr` | GRAYSCALE, GRAY_ALPHA, R5G6B5, R8G8B8, R5G5B5A1, R4G4B4A4, R8G8B8A8, PVRTC RGB (21) and RGBA (22) | PVR v3 channel names and depths; metadata skipped; the first surface and face. |
 | `.astc` | ASTC 4x4 (23), 8x8 (24) | 24-bit dimensions; raylib's `128/(blockX*blockY)` bits per pixel, so any 8-bit block is 4x4 and any 2-bit block 8x8. |
 
-raylib keeps only the first level of a multi-level KTX or PVR chain while
-reporting every level, so those are `UnsupportedFormat`; codes raylib leaves
-as format 0 are `InvalidImageHeader`; a level whose copied bytes are fewer
-than `GetPixelDataSize` (sizes below one block, a short KTX image size) is
-`UnsupportedImageSize`; other ASTC block sizes (raylib returns no data) are
+KTX and PVR report the header mip count (`mipmap_levels`, `num_mipmaps`,
+including zero) and store only the first level: the `GetPixelDataSize` prefix
+of the one copy raylib performs (KTX's first image-size field, PVR's
+`width*height*bpp/8`). Later levels in the file are not part of `data`.
+`Image.Stored.levels` still expects a complete DDS-style chain and does not
+rebuild levels raylib never stored. PKM and ASTC stay one level. Codes raylib
+leaves as format 0 are `InvalidImageHeader`; a level whose copied bytes are
+fewer than `GetPixelDataSize` (sizes below one block, a short KTX image size)
+is `UnsupportedImageSize`; other ASTC block sizes (raylib returns no data) are
 `UnsupportedFormat`; files shorter than raylib's copy are `TruncatedImageData`.
 `ExportImage` to `.ktx` is not provided: raylib's `rl_save_ktx` writes a
 4-byte size per level past the buffer it allocates, and its GL format codes
@@ -330,9 +335,10 @@ verified on CPU and JavaScript only; no GPU filesystem claim is made.
   the split levels, a QOI file and `.dds`/`.DDS` file loading are compared too.
 - **Configuration-gated loaders** (`tools/gputex_probe.py`, gate `gputex`):
   PKM, KTX, PVR and ASTC files of every format above against raylib built with
-  them, including key/value and metadata blocks, larger copies and each
+  them, including key/value and metadata blocks, larger copies, KTX and PVR
+  header mip counts (a tail past the first level must not appear) and each
   refusal (native data, format 0 or no data asserted where defined), plus
-  `.ktx`/`.PVR` file loading.
+  `.ktx`/`.PVR` file loading of single-level and multi-level files.
 
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only tga-file
@@ -345,8 +351,8 @@ paths they exercise.
 ## Known gaps
 
 - Gray-alpha under a shared `.hdr` token (refused; the native pointer is dangling) and glibc 2.39 `powf` pairs that return no value; original source formats
-  for PSD and GIF (decoded as R8G8B8A8); multi-level KTX/PVR files and `.ktx`
-  export; operations on mipmapped images.
+  for PSD and GIF (decoded as R8G8B8A8); `.ktx` export; operations on mipmapped
+  images. KTX and PVR `data` is the first level only.
 - Concurrent or changing files, special files, native callbacks, native
   pointer/allocation ABI and OOM parity, OS-close failure reporting.
 - Maximum decoded-area, heap and performance qualification; nondefault stb
