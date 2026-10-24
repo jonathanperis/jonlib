@@ -1,14 +1,17 @@
 # macOS validation
 
 Every gate passes on Linux against the pinned raylib 6.2. macOS (arm64,
-`macos-15`) has been off the merge path since 2026-10-10 ([CI.md](CI.md)), so
-nothing on `main` is verified there yet. Both CI hosts are part of every
-entry's verification ([API-TRACKING.md](API-TRACKING.md)), so this is the
-validation of the second of Jonlib's two target platforms
+`macos-15`) has been off the merge path since 2026-10-10 ([CI.md](CI.md)).
+Both CI hosts are part of every entry's verification
+([API-TRACKING.md](API-TRACKING.md)), so this is the validation of the
+second of Jonlib's two target platforms
 ([`api/milestones.json`](../api/milestones.json)). It is run by the maintainer
-on a Mac.
+on a Mac. `macos-15` stays out of `MERGE_HOSTS` until a full shard of the
+current `main` is green on this host.
 
 ## 1. Turn macOS back on in CI
+
+Do this only after section 3 lists no open failure on the current `main`.
 
 - Add `('macos', 'macos-15')` to `MERGE_HOSTS` in
   [`tools/ci_scope.py`](../tools/ci_scope.py) (and drop the deferral note in
@@ -39,34 +42,40 @@ On macOS the host libm selects `M.AppleLibm{}` and the linked raylib fuses
 runs (`tools/conformance.py --gpu`, `tools/verify_bend.py --gpu` and the
 probes' `--gpu`) are separate local evidence; hosted runners have no GPU.
 
-## 3. What is known to need diagnosis
+## 3. Verified state
 
-**The pin moved since the last macOS run.** The last nightly that ran
-macOS (2026-10-16, `main` at `b4f74f4`) was against raylib 6.0. Every gate
-has changed reference since, so every gate must be run again on 6.2, not only
-the ones below. These failed there on `macos-15` (first symptom each):
+A full shard on 2026-10-24 (`fa0755b`, raylib 6.2, Apple clang 21.0.0,
+arm64, `--jobs 1`, lanes cpu-1, cpu-2 and javascript) passed 191 of 206
+gates. That run supersedes the raylib 6.0 nightly of 2026-10-16. Gates the
+6.0 note had never run, or had failing, and that passed there include
+`macros`, `easings`, `lights`, `facades`, `mod`, `mod-music`, `files-os`,
+`gui-icon-files`, `examples-gui` and `examples-text`. `filter-precision`
+recorded its float-normalization mismatches and exited 0.
 
-- `sound`: the model disagrees with raylib on `stream-play-mono` at step 8
-  (`mix`, 480);
-- `xm-pitch`, `xm-player`, `xm-mixer`, `xm-music`: jar_xm's linear
-  frequencies and what follows from them (Apple's `exp2f`/`powf` and `sinf`
-  against the glibc models);
-- `mp3-layer3`, `mp3-wave`: frame 19 of a Layer III stream and a Layer I
-  stream's samples (dr_mp3's float path on arm64);
-- `ogg-music`: the first state;
-- `spectrum`: raylib refuses where Jonlib answers on a silent input;
-- `gltf-anim`: raylib's `greenman` is null where Jonlib loads it;
-- `ttf`, `examples-text`, `examples-audio`: glyph and audio frames (likely
-  consequences of the above);
-- `examples-shaders`: a candidate failed to build with clang on macOS
-  (`candidate-33`).
+Re-run green on this Mac after the contract fixes, same lanes and jobs:
 
-**Gates that have never run on macOS:** `macros`, `easings` (most sine,
-exponential and elastic easings refuse under AppleLibm), `lights`,
-`facades`, `mod`, `mod-music`, `files-os`, `gui-icon-files` and
-`examples-gui`, plus the scenes added to existing gates since (for example
-`texture`'s `params` and `rl-update`, `rlgl`'s `resize` and `client`,
-`models`' clip planes, and everything raylib 6.2 changed).
+- `spectrum`: `capture` refuses a frame whose Blackman weights or twiddle
+  factors were not answered. Under AppleLibm every frame is that refusal
+  (50 frames, nothing compared).
+- `ttf`: a curve SDF under AppleLibm stays a refusal (`data-sdf-curves` of
+  the generated curve font, and `data-sdf-example`). DotGothic16 is lines,
+  so its SDF is compared. The AppleLibm run reported `refused_operations=18`
+  and `cubic_compared=False`.
+- `gltf-anim`: `greenman.glb` is compared (12 bones, 4 animations).
+  `robot.glb`'s rotations leave the nlerp band, so that load stays a
+  contract. 19 cases, 13 compared, 6 contracts.
+
+Still open from the `fa0755b` shard (not re-run on the current tree):
+
+- `sound`: `stream-play-mono` step 8 (`mix`, 480) hashes differ;
+- `xm-pitch`, `xm-player`, `xm-mixer`, `xm-music`: AppleLibm `powf`/`exp2f`
+  refuse linear periods the host's jar_xm answers;
+- `mp3-layer3`, `mp3-stream`, `mp3-wave`: sample hashes differ;
+- `ogg-music`: the first filled buffer's hash differs;
+- `examples-audio`: `audio_mixed_processor-powers` frame 1;
+- `examples-textures`: `textures_sprite_stacking-spin` frame 1;
+- `examples-shaders`: Apple clang 21 crashes compiling `candidate-33`
+  (`shaders_game_of_life`).
 
 Each failure gets the same diagnosis as on Linux: raylib's semantics on
 macOS, then Jonlib, the fixtures and the host differences. Never a looser

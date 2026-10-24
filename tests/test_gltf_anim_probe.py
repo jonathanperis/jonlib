@@ -29,7 +29,8 @@ class GltfAnimCasesTests(unittest.TestCase):
 
     def test_another_profile_refuses_the_rotations_that_need_acosf(self):
         refused = {item['id'] for item in self.cases('AppleLibm')[0] if item['contract']}
-        self.assertTrue({'greenman', 'robot', 'linear'} <= refused)
+        self.assertTrue({'robot', 'linear'} <= refused)
+        self.assertNotIn('greenman', refused)
         self.assertFalse({'steps', 'gentle', 'constant'} & refused)
 
     def test_the_linear_case_turns_a_quarter_between_keys(self):

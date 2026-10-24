@@ -595,7 +595,9 @@ Gate `gltf-anim` (`tools/gltf_anim_probe.py`) compares the skeleton words and
 a hash of every keyframe pose of `greenman.glb` (12 bones, 4 animations) and
 `robot.glb` (43 bones, 14 animations), both with inverse bind matrices and
 joints under nodes that are not joints, and of generated files for each
-rule above with the native loader.
+rule above with the native loader. `greenman.glb`'s rotation keys stay
+within the band above, so that file is compared on every profile;
+`robot.glb`'s do not, and off `Glibc239Libm` the load is a contract.
 
 ### Poses
 

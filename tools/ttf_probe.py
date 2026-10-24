@@ -47,7 +47,9 @@ atlas): raylib's own LoadFontData, whose stbtt__solve_cubic calls this
 host's pow, acos and cos. Compared where the profile is Glibc239Libm and the
 host's functions reproduce the controls of the glibc-sin, glibc-acos and
 pow-third gates (the CI's Linux runners); elsewhere they are 'J'
-contracts. CPU-1, CPU-2 and JavaScript lanes.
+contracts. A line font (DotGothic16) never calls that solver, so its SDF
+is compared on every profile (docs/FONTS.md). CPU-1, CPU-2 and JavaScript
+lanes.
 """
 import hashlib
 import json
@@ -291,10 +293,11 @@ def scenes(paths, libm, cubic=False):
                               ('data', P['DotGothic16-Regular.ttf'], 18, SPACES + [65], len(SPACES) + 1, 0)])
     add('data-refused', 4, 4, [('data', P['truncated.ttf'], 20, [], 0, 0, 'R'), ('data', P['cff.otf'], 20, [], 0, 0, 'R'),
                                ('data', P['f4.ttf'], 20, [65, 66], 2, 2, 'J'), ('data', P['f4.ttf'], 20, [65, 66, 67], 5, 0, 'R')])
-    # the cubic solver under the profile: compared on a glibc 2.39 host, a refusal Jonlib must give elsewhere
+    # the cubic solver under the profile: compared on a glibc 2.39 host, a refusal Jonlib must give elsewhere.
+    # DotGothic16 is lines, so its SDF does not take the solver and stays compared.
     mark = () if cubic and libm == 'Glibc239Libm' else ('J',)
     add('data-sdf-curves', 4, 4, [('datafor', P['f4.ttf'], 20, [65, 66, 67, 103], 4, 2, *mark), ('datafor', P['f4.ttf'], 20, [65, 66], 2, 0),
-                                  ('datafor', P['DotGothic16-Regular.ttf'], 20, [65, 103, 0x3042], 3, 2, *mark)])
+                                  ('datafor', P['DotGothic16-Regular.ttf'], 20, [65, 103, 0x3042], 3, 2)])
     add('data-sdf-example', 4, 4, [('atlas_datafor', P['anonymous_pro_bold.ttf'], 16, [], 0, 2, 95, 16, 0, 1, *mark)])
     # GenImageFontAtlas over loaded glyphs.
     for k, (name, size, pad, method, count) in enumerate((('f4.ttf', 20, 4, 0, 0), ('f4.ttf', 20, 4, 1, 0), ('f12.ttf', 13, 0, 0, 0), ('f12.ttf', 13, 0, 1, 0),

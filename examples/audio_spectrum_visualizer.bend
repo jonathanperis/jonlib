@@ -243,16 +243,18 @@ def history.set(rows: +List<+List<F32>>, +at: U32, +row: +List<F32>, acc: +List<
 type Captured is Data:
   Captured{fine: Bool, fft: Fft}
 
-def capture.done(+smoothed: Smoothed, +history: +List<+List<F32>>, +position: U32) -> Captured:
-  Captured{Smoothed.fine(smoothed), Fft{List.reverse(&2, F32, Smoothed.magnitudes(smoothed)), history.set(history, position, List.reverse(&2, F32, Smoothed.spectrum(smoothed)), Nil{}),
+def capture.done(+ready: Bool, +smoothed: Smoothed, +history: +List<+List<F32>>, +position: U32) -> Captured:
+  Captured{ready && Smoothed.fine(smoothed), Fft{List.reverse(&2, F32, Smoothed.magnitudes(smoothed)), history.set(history, position, List.reverse(&2, F32, Smoothed.spectrum(smoothed)), Nil{}),
     ((position + 1) % 45 : U32)}}
 
 # CaptureFrame(&fft, audioSamples): the window, the transform, the smoothed
 # magnitudes as decibels in the history's row at historyPos, which moves on.
+# A frame whose Blackman weights or twiddle factors were not answered is
+# refused with the frame whose logf was not.
 def capture(+libm: M.Libm, tables: Tables, +samples: +List<F32>, fft: Fft) -> Captured:
-  Tables{_, +window, +twiddled, +tiny} = tables
+  Tables{ready, +window, +twiddled, +tiny} = tables
   Fft{+previous, +history, +position} = fft
-  capture.done(bins(512n, transform(twiddled, reversed(10n, windowed(samples, window, Nil{})), 512, 1), previous, libm, tiny, Smoothed{True{}, Nil{}, Nil{}}), history, position)
+  capture.done(ready, bins(512n, transform(twiddled, reversed(10n, windowed(samples, window, Nil{})), 512, 1), previous, libm, tiny, Smoothed{True{}, Nil{}, Nil{}}), history, position)
 
 def row.at(rows: +List<+List<F32>>, +at: U32) -> +List<F32>:
   match rows:

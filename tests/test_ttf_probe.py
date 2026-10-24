@@ -213,6 +213,17 @@ class TtfProbeTests(unittest.TestCase):
         self.assertTrue(set(tp.SPACES) <= set(mapping))
         self.assertEqual(len(tp.SPACES), 17)
 
+    def test_a_line_font_sdf_stays_compared_without_the_cubic_solver(self):
+        apple = next(s for s in tp.scenes(self.paths, 'AppleLibm') if s['id'] == 'data-sdf-curves')
+        curve, bitmap, gothic = apple['ops']
+        self.assertEqual((curve[0], curve[-1], curve[5]), ('datafor', 'J', 2))
+        self.assertEqual(bitmap[0], 'datafor')
+        self.assertNotIn(bitmap[-1], ('J', 'R'))
+        self.assertEqual((gothic[0], gothic[5]), ('datafor', 2))
+        self.assertNotIn(gothic[-1], ('J', 'R'))
+        glibc = next(s for s in tp.scenes(self.paths, 'Glibc239Libm', cubic=True) if s['id'] == 'data-sdf-curves')
+        self.assertFalse(any(tp.declared(op) for op in glibc['ops']))
+
     def test_space_codepoints_match_the_library(self):
         source = (ROOT / 'src' / 'font_data.bend').read_text()
         body = source[source.index('def blank.codepoint('):]

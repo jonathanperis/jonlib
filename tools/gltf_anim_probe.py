@@ -27,7 +27,9 @@ world matrices then).
 The reference is the raylib built with -ffp-contract=off. QuaternionSlerp's
 acosf and sinf are the host's: the rows are compared under M.Glibc239Libm
 (glibc before 2.41); under another profile the files whose rotations need
-them are contracts (Jonlib must answer null). Contracts on every profile, the
+them are contracts (Jonlib must answer null). greenman.glb's keys stay
+inside the nlerp band (about 36 degrees, cos > 0.95), so it is compared on
+every profile; robot.glb's do not. Contracts on every profile, the
 reference not run: a CUBICSPLINE sampler, an output accessor shorter than
 its keys, integer key times, inverse bind matrices of another component
 type. CPU-1, CPU-2 and JavaScript lanes.
@@ -296,8 +298,10 @@ def cases(work, raylib, libm):
         out.append(dict(id=name, path=str(path), contract=contract))
 
     models = raylib / 'examples/models/resources/models/gltf'
-    for name in ('greenman', 'robot'):
-        out.append(dict(id=name, path=str(models / f'{name}.glb'), contract=slerp))
+    # greenman's rotation keys stay inside QuaternionSlerp's nlerp band, so
+    # AppleLibm loads them; robot's leave it and need acosf.
+    out.append(dict(id='greenman', path=str(models / 'greenman.glb'), contract=False))
+    out.append(dict(id='robot', path=str(models / 'robot.glb'), contract=slerp))
     out.append(dict(id='greenman_hat', path=str(models / 'greenman_hat.glb'), contract=False))
     out.append(dict(id='missing', path=str(work / 'missing.glb'), contract=False))
     add('linear', armature(linear), contract=slerp)
@@ -349,9 +353,10 @@ def main():
     if len(output) != len(native):
         raise ProbeFailure(f'gltf-anim: reference printed {len(output)} lines for {len(native)} cases')
     expected_by_id = {c['id']: line.rstrip() for c, line in zip(native, output)}
-    if libm == 'Glibc239Libm' and (expected_by_id['greenman'][:4] != 'k12 ' or ' a4 ' not in expected_by_id['greenman'] or expected_by_id['robot'][:4] != 'k43 '
-                                   or ' a14 ' not in expected_by_id['robot']):
-        raise ProbeFailure('gltf-anim: the reference did not load the examples\' animations as expected')
+    if expected_by_id['greenman'][:4] != 'k12 ' or ' a4 ' not in expected_by_id['greenman']:
+        raise ProbeFailure('gltf-anim: the reference did not load greenman\'s animations as expected')
+    if libm == 'Glibc239Libm' and (expected_by_id['robot'][:4] != 'k43 ' or ' a14 ' not in expected_by_id['robot']):
+        raise ProbeFailure('gltf-anim: the reference did not load robot\'s animations as expected')
     if expected_by_id['greenman_hat'] != 'k0 a0' or expected_by_id['missing'] != 'k0 a0' or ' a1 A7475726e,2,61,' not in expected_by_id.get('linear', ' a1 A7475726e,2,61,'):
         raise ProbeFailure('gltf-anim: the reference did not answer the plain cases as expected')
     expected = [expected_by_id.get(c['id'], 'null') for c in items]
