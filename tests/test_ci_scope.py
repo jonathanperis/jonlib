@@ -255,6 +255,12 @@ class HostTests(unittest.TestCase):
             self.assertEqual(ci_scope.hosts({'GITHUB_EVENT_NAME': event}), (('linux', 'ubuntu-24.04'),), event)
         self.assertEqual(ci_scope.MERGE_HOSTS, (('linux', 'ubuntu-24.04'),))
 
+    def test_gate_results_are_recorded_only_when_gates_run(self):
+        self.assertTrue(ci_scope.records_gates(ci_scope.full('because')))
+        self.assertFalse(ci_scope.records_gates(ci_scope.NONE))
+        self.assertTrue(ci_scope.records_gates(dict(mode='scoped', gates=['rand'], examples=[])))
+        self.assertFalse(ci_scope.records_gates(dict(mode='scoped', gates=[], examples=['core_basic_window'])))
+
     def test_scheduled_and_manual_runs_use_every_host(self):
         for event in ('schedule', 'workflow_dispatch'):
             self.assertEqual([runner for _, runner in ci_scope.hosts({'GITHUB_EVENT_NAME': event})], ['ubuntu-24.04', 'macos-15'], event)

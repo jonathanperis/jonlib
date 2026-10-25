@@ -22,9 +22,11 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --shard 1/1
 ```
 
-Use `--only GATE_ID` (repeatable) for the gates in `tools/gates.json` that your
-change affects; [VERIFICATION.md](docs/VERIFICATION.md) explains what each kind of
-gate establishes.
+Use `--only GATE_ID` (repeatable, or several ids separated by commas or spaces)
+for the gates in `tools/gates.json` that your change affects.
+`--failed-from .build/gate-results.json` reruns what the last local run failed.
+[VERIFICATION.md](docs/VERIFICATION.md) explains what each kind of gate establishes,
+and [CI.md](docs/CI.md) has the manual pick workflow.
 
 Native Metal verification requires a real supported Mac/GPU and a suitable Apple
 clang version. `--gpu` forces device execution; it must fail rather than silently
@@ -121,7 +123,9 @@ becomes a conformance test. Consult asset-specific licenses before adding files.
   duration-balanced shards with the pinned toolchain and hash-checked compiler
   overlay; the aggregate `CPU and JavaScript` checks require every shard.
   Diagnostic gates record open gaps and are never treated as passing
-  implementations. See [CI](docs/CI.md) for details and local equivalents.
+  implementations. A manual [Conformance pick](docs/CI.md) runs named gates, or
+  the gates that failed in a given run, without a full matrix. See
+  [CI](docs/CI.md) for details and local equivalents.
 - Actions are pinned to immutable commits; dependency revisions come from
   `toolchain.json`. Workflows use read-only repository permissions.
 - Hosted conformance does not claim Metal/CUDA or live window/audio validation.

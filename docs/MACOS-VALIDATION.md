@@ -32,7 +32,28 @@ declared overlay patches ([patches/README.md](../patches/README.md)), raylib
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only <id>
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only extrema,bmp-format
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --failed-from .build/gate-results.json
 ```
+
+The last command reruns the gates the previous local run recorded as failed.
+That record is `.build/gate-results.json` (`os` and a `gates` list of `id` and
+`passed`), overwritten by every `run_gates.py` invocation and gitignored with
+`.build/`.
+
+The same selection runs in CI without a full matrix.
+[Conformance pick](CI.md) takes the ids and the hosts; it is not a merge
+check, and macOS stays out of `MERGE_HOSTS`.
+
+```sh
+gh workflow run conformance-pick.yml -f gates=extrema -f hosts=macos
+gh workflow run conformance-pick.yml -f gates=extrema -f hosts=both
+gh workflow run conformance-pick.yml -f rerun_failed_from=<run-id>
+```
+
+`hosts=macos` runs the listed gates on `macos-15` only. A rerun uses the
+failed gates from that run's `gate-results-macos-15` artifact (and the Linux
+artifact, on Linux, when those failed) and ignores `hosts`.
 
 On macOS the host libm selects `M.AppleLibm{}` and the linked raylib fuses
 `a*b + c` (`M.Fused{}`); what those profiles refuse is in

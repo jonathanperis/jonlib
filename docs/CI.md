@@ -106,6 +106,18 @@ duration, toolchain, host and a hashed summary of each results file) plus the
 full probe results as artifacts kept for 30 days. `--record DIR` also writes
 the compact record of each passing gate into `DIR` (`<id>-<host>.json`).
 
+Each gate invocation also writes `.build/gate-results.json` (gitignored with
+the rest of `.build/`). It is one object, `os` plus a `gates` list of `{id,
+passed}` in run order:
+
+```json
+{"os": "linux", "gates": [{"id": "extrema", "passed": true}]}
+```
+
+Conformance uploads that file from every shard and then merges one artifact per
+host, `gate-results-ubuntu-24.04` and `gate-results-macos-15`, kept for 30
+days. A scoped run that only replays examples has no gate-result artifact.
+
 Probes compile and run independent batches concurrently, bounded by CPUs (at
 most four) and by 9 GB of memory per batch (physical memory, or a lower cgroup v2
 limit): compiling a candidate that imports `jonlib.bend` peaks near 8 GB in the
@@ -121,7 +133,46 @@ Run the same gates locally:
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --plan
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only bmp-format
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only extrema,bmp-format
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only extrema --only bmp-format
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --shard 1/1
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --failed-from .build/gate-results.json
+```
+
+`--only` takes one id or several. Repeat the flag, or separate ids with commas
+or spaces in one value. An id that is not in `tools/gates.json` fails before
+any gate runs. `--failed-from` reads the results file above and reruns the
+gates it recorded as failed on the file's host (the last local run on this
+machine). A file from the other host is refused.
+
+## Picking gates, and rerunning what failed
+
+[`.github/workflows/conformance-pick.yml`](../.github/workflows/conformance-pick.yml)
+is a manual workflow. It does not run on push or on a pull request, and it
+does not put macOS on the merge path. A manual run of **Conformance** with no
+extra inputs is still the complete suite on every host.
+
+`gates` is a comma- or space-separated list of ids. `hosts` is `linux`,
+`macos` or `both` (default `linux`). More than four gates, or a list whose
+estimated minutes exceed 90, is split into duration-balanced shards (at most
+fifteen). macOS shards still run three at a time. An unknown id fails in the
+Plan job before a host starts.
+
+```sh
+gh workflow run conformance-pick.yml -f gates=extrema -f hosts=macos
+gh workflow run conformance-pick.yml -f gates='extrema,bmp-format' -f hosts=both
+gh workflow run conformance-pick.yml -f gates=extrema -f hosts=linux --ref feature/ci-pick-tests
+```
+
+`rerun_failed_from` is a workflow run id. The plan job downloads that run's
+`gate-results-*` artifacts and reruns only the failed gates, on the hosts
+where they failed. `hosts` is ignored for a rerun. Set `gates` or
+`rerun_failed_from`, not both. A run whose results list no failure finishes
+without starting a host. The run id can be a Conformance run or a Conformance
+pick run, once that run has uploaded its result artifacts.
+
+```sh
+gh workflow run conformance-pick.yml -f rerun_failed_from=1234567890
 ```
 
 Hosted runners have no GPU; forced-Metal evidence (`--gpu` on

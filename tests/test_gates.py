@@ -151,10 +151,58 @@ class WorkflowTests(unittest.TestCase):
         self.assertRegex(self.text, r"schedule:\n    - cron: '")
 
     def test_actions_are_pinned_to_commits(self):
-        for path in [WORKFLOW, ROOT / '.github/actions/setup-pinned/action.yml', ROOT / '.github/workflows/checks.yml']:
+        paths = [WORKFLOW, ROOT / '.github/actions/setup-pinned/action.yml', ROOT / '.github/workflows/checks.yml',
+                 ROOT / '.github/workflows/conformance-pick.yml']
+        for path in paths:
             for use in re.findall(r'uses: (\S+)', path.read_text()):
                 if not use.startswith('./'):
                     self.assertRegex(use, r'@[0-9a-f]{40}$', f'{path.name}: {use}')
+
+    def test_every_gate_run_uploads_a_result_file_per_host(self):
+        self.assertIn('gate_runs: ${{ steps.scope.outputs.gate_runs }}', self.text)
+        self.assertIn("needs.scope.outputs.gate_runs == 'yes'", self.text)
+        self.assertIn('name: gate-results-${{ matrix.os }}-${{ matrix.shard }}', self.text)
+        self.assertIn('name: gate-results-${{ matrix.runner }}', self.text)
+        self.assertIn('python3 tools/run_gates.py --merge-results .build/shard-results', self.text)
+        # The aggregate stays the scope check. The result upload does not decide it.
+        ubuntu = self.text.split('  conformanceUbuntu:')[1].split('  conformanceMac:')[0]
+        self.assertNotIn('results', ubuntu)
+
+
+class PickWorkflowTests(unittest.TestCase):
+    def setUp(self):
+        self.text = (ROOT / '.github/workflows/conformance-pick.yml').read_text()
+
+    def test_only_a_manual_dispatch_starts_it(self):
+        header = self.text.split('\njobs:', 1)[0]
+        self.assertIn('workflow_dispatch:', header)
+        self.assertNotIn('\n  push:', header)
+        self.assertNotIn('pull_request:', header)
+        self.assertNotIn('schedule:', header)
+        self.assertNotIn('MERGE_HOSTS =', self.text)
+
+    def test_inputs_are_gates_hosts_and_a_run_id(self):
+        self.assertIn('\n      gates:\n', self.text)
+        self.assertIn('\n      hosts:\n', self.text)
+        self.assertIn('\n      rerun_failed_from:\n', self.text)
+        self.assertIn('default: linux', self.text)
+        for choice in ('linux', 'macos', 'both'):
+            self.assertIn(f'\n          - {choice}\n', self.text)
+        self.assertIn('python3 tools/run_gates.py --plan-dispatch', self.text)
+        self.assertLess(self.text.index('--plan-dispatch'), self.text.index('--only='))
+
+    def test_macos_shards_stay_at_three(self):
+        linux = self.text.split('\n  linux:')[1].split('\n  macos:')[0]
+        mac = self.text.split('\n  macos:')[1].split('\n  results:')[0]
+        self.assertNotIn('max-parallel', linux)
+        self.assertIn('runs-on: ubuntu-24.04', linux)
+        self.assertIn('max-parallel: 3', mac)
+        self.assertIn('runs-on: macos-15', mac)
+        self.assertNotIn('continue-on-error', self.text)
+        self.assertNotIn('|| true', self.text)
+        self.assertIn('name: gate-results-ubuntu-24.04-${{ matrix.shard }}', linux)
+        self.assertIn('name: gate-results-macos-15-${{ matrix.shard }}', mac)
+        self.assertIn('name: gate-results-${{ matrix.runner }}', self.text.split('\n  results:')[1])
 
 
 if __name__ == '__main__':

@@ -14,6 +14,8 @@ name: Conformance
 # Pushes and pull requests run on Linux only until the macOS validation
 # (tools/ci_scope.py MERGE_HOSTS, docs/CI.md, docs/MACOS-VALIDATION.md): hosted macOS runs five jobs at a
 # time and held every merge for hours. Scheduled and manual runs use every host.
+# A manual run of this workflow is still the complete suite. To run a few gates,
+# or only what failed in a previous run, use conformance-pick.yml (docs/CI.md).
 #
 # The account's five hosted macOS runners are shared by every repository of the
 # owner. Fifteen macOS shards started together took all five for hours, and the
@@ -50,6 +52,7 @@ jobs:
       mode: ${{ steps.scope.outputs.mode }}
       matrix: ${{ steps.scope.outputs.matrix }}
       hosts: ${{ steps.scope.outputs.hosts }}
+      gate_runs: ${{ steps.scope.outputs.gate_runs }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -101,6 +104,15 @@ jobs:
             .build/gates/*.json
             .build/*-probe/results.json
             .build/conformance.json
+            .build/gate-results.json
+      - name: Upload the shard summary
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gate-results-${{ matrix.os }}-${{ matrix.shard }}
+          retention-days: 30
+          if-no-files-found: error
+          path: .build/gate-results.json
 
   # The same shards on macOS, three at a time (see the note at the top). Same
   # job names and artifact names as the Linux shards; keep the steps equal.
@@ -142,6 +154,15 @@ jobs:
             .build/gates/*.json
             .build/*-probe/results.json
             .build/conformance.json
+            .build/gate-results.json
+      - name: Upload the shard summary
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gate-results-${{ matrix.os }}-${{ matrix.shard }}
+          retention-days: 30
+          if-no-files-found: error
+          path: .build/gate-results.json
 
   scoped:
     name: Scoped ${{ matrix.os }} ${{ matrix.part }}
@@ -189,6 +210,15 @@ jobs:
             .build/gates/*.json
             .build/*-probe/results.json
             .build/conformance.json
+            .build/gate-results.json
+      - name: Upload the shard summary
+        if: ${{ always() && matrix.gates != '' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gate-results-${{ matrix.os }}-${{ strategy.job-index }}
+          retention-days: 30
+          if-no-files-found: error
+          path: .build/gate-results.json
 
   conformanceUbuntu:
     name: CPU and JavaScript (ubuntu-24.04)
@@ -234,3 +264,37 @@ jobs:
             none) test "$GATES_RESULT" = skipped && test "$SCOPED_RESULT" = skipped ;;
             *) exit 1 ;;
           esac
+
+  # Merges the shard summaries into one result file per host. A later pick
+  # (conformance-pick.yml) reads these artifacts to rerun what failed.
+  results:
+    name: Results ${{ matrix.runner }}
+    needs: [scope, gates, gatesMac, scoped]
+    if: ${{ always() && needs.scope.result == 'success' && needs.scope.outputs.gate_runs == 'yes' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: ${{ fromJSON(needs.scope.outputs.hosts) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download shard summaries
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: gate-results-${{ matrix.runner }}-*
+          path: .build/shard-results
+      - name: Merge shard summaries
+        run: python3 tools/run_gates.py --merge-results .build/shard-results --results .build/gate-results.json
+      - name: Upload host results
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gate-results-${{ matrix.runner }}
+          retention-days: 30
+          if-no-files-found: error
+          path: .build/gate-results.json

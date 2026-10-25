@@ -250,6 +250,11 @@ def hosts(env=os.environ):
     return ALL_HOSTS if env.get('GITHUB_EVENT_NAME') in ('schedule', 'workflow_dispatch') else MERGE_HOSTS
 
 
+def records_gates(result):
+    """Whether this scope runs gates, and so writes a per-host result file."""
+    return result['mode'] == 'full' or bool(result.get('gates'))
+
+
 def matrix(gates, examples, on=MERGE_HOSTS):
     """The scoped jobs: each part of the gates on each host that runs them, and the examples on every host."""
     include = []
@@ -422,6 +427,7 @@ def main(argv=None):
             idle = dict(include=[dict(os=ALL_HOSTS[0][1], part='none', gates='', examples='')])
             print('matrix=' + json.dumps(result.get('matrix', idle)), file=handle)
             print('hosts=' + json.dumps([runner for _, runner in hosts()]), file=handle)
+            print(f"gate_runs={'yes' if records_gates(result) else 'no'}", file=handle)
     step = os.environ.get('GITHUB_STEP_SUMMARY')
     if step:
         with open(step, 'a') as handle:

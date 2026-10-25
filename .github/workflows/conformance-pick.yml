@@ -1,0 +1,207 @@
+name: Conformance pick
+
+# A manual run of a few gates, or of the gates that failed in an earlier run.
+# Pushes and pull requests do not start this workflow. It is not a merge check
+# and it does not change MERGE_HOSTS (tools/ci_scope.py, docs/CI.md).
+# A complete run is still a manual dispatch of conformance.yml.
+#
+# `gates` is comma- or space-separated ids from tools/gates.json. `hosts` is
+# linux, macos or both (default linux) and applies only to a picked list.
+# `rerun_failed_from` is a run id: the failed gates are rerun on the hosts
+# where they failed, and `hosts` is ignored. Pass one of gates or
+# rerun_failed_from, not both. An unknown id fails in Plan before any host starts.
+#
+# More than a few gates (or a list over the shard budget) is split into
+# duration-balanced shards. macOS shards run three at a time, same as gatesMac
+# in conformance.yml, so the account's other macOS jobs keep two runners.
+on:
+  workflow_dispatch:
+    inputs:
+      gates:
+        description: 'Gate ids from tools/gates.json, separated by commas or spaces'
+        required: false
+        default: ''
+        type: string
+      hosts:
+        description: 'Hosts for a picked run (ignored when rerun_failed_from is set)'
+        required: false
+        default: linux
+        type: choice
+        options:
+          - linux
+          - macos
+          - both
+      rerun_failed_from:
+        description: 'Run id whose failed gates to rerun, on the hosts where they failed'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: conformance-pick-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      run_linux: ${{ steps.plan.outputs.run_linux }}
+      linux: ${{ steps.plan.outputs.linux }}
+      run_macos: ${{ steps.plan.outputs.run_macos }}
+      macos: ${{ steps.plan.outputs.macos }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Resolve the gates
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PICK_GATES: ${{ inputs.gates }}
+          PICK_HOSTS: ${{ inputs.hosts }}
+          PICK_RERUN: ${{ inputs.rerun_failed_from }}
+        run: python3 tools/run_gates.py --plan-dispatch --gates "$PICK_GATES" --hosts "$PICK_HOSTS" --rerun-run "$PICK_RERUN"
+
+  linux:
+    name: Pick linux ${{ matrix.shard }}/${{ matrix.count }}
+    needs: [plan]
+    if: ${{ needs.plan.outputs.run_linux == 'yes' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.linux) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 210
+    env:
+      BEND_NO_TELEMETRY: '1'
+      CC: clang
+      CXX: clang++
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-pinned
+      - name: Run the picked gates
+        env:
+          GATES: ${{ matrix.gates }}
+        run: |
+          test -n "$GATES"
+          python3 tools/run_gates.py --os linux --only="$GATES" \
+            --bend-source "${{ github.workspace }}/.build/dependencies/bend" \
+            --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Upload the shard summary
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gate-results-ubuntu-24.04-${{ matrix.shard }}
+          retention-days: 30
+          if-no-files-found: error
+          path: .build/gate-results.json
+      - name: Upload gate evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pick-ubuntu-24.04-${{ matrix.shard }}
+          retention-days: 30
+          include-hidden-files: true
+          if-no-files-found: error
+          path: |
+            .build/gates/*.json
+            .build/*-probe/results.json
+            .build/conformance.json
+            .build/gate-results.json
+
+  # Three at a time: the account has five hosted macOS runners (see conformance.yml).
+  macos:
+    name: Pick macos ${{ matrix.shard }}/${{ matrix.count }}
+    needs: [plan]
+    if: ${{ needs.plan.outputs.run_macos == 'yes' }}
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.macos) }}
+    runs-on: macos-15
+    timeout-minutes: 210
+    env:
+      BEND_NO_TELEMETRY: '1'
+      CC: clang
+      CXX: clang++
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-pinned
+      - name: Run the picked gates
+        env:
+          GATES: ${{ matrix.gates }}
+        run: |
+          test -n "$GATES"
+          python3 tools/run_gates.py --os macos --only="$GATES" \
+            --bend-source "${{ github.workspace }}/.build/dependencies/bend" \
+            --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Upload the shard summary
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gate-results-macos-15-${{ matrix.shard }}
+          retention-days: 30
+          if-no-files-found: error
+          path: .build/gate-results.json
+      - name: Upload gate evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pick-macos-15-${{ matrix.shard }}
+          retention-days: 30
+          include-hidden-files: true
+          if-no-files-found: error
+          path: |
+            .build/gates/*.json
+            .build/*-probe/results.json
+            .build/conformance.json
+            .build/gate-results.json
+
+  results:
+    name: Results ${{ matrix.runner }}
+    needs: [plan, linux, macos]
+    if: ${{ always() && needs.plan.result == 'success' && matrix.active == 'yes' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            active: ${{ needs.plan.outputs.run_linux }}
+          - runner: macos-15
+            active: ${{ needs.plan.outputs.run_macos }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download shard summaries
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: gate-results-${{ matrix.runner }}-*
+          path: .build/shard-results
+      - name: Merge shard summaries
+        run: python3 tools/run_gates.py --merge-results .build/shard-results --results .build/gate-results.json
+      - name: Upload host results
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gate-results-${{ matrix.runner }}
+          retention-days: 30
+          if-no-files-found: error
+          path: .build/gate-results.json
