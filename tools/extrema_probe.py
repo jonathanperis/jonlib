@@ -1,24 +1,31 @@
 #!/usr/bin/env python3
-"""Compare raymath extrema to the glibc fminf/fmaxf builtin profile.
+"""Compare raymath extrema to the host's volatile fminf/fmaxf profile.
 
 Vector2/3/4 min and max, and Vector2/3 component clamp, are compiled from the
-pinned raymath.h with contraction off (`clang -O2 -fno-builtin-atan2f`,
-`FP_CONTRACT OFF`). Inputs live in a table and each word is loaded through a
-volatile, so clang lowers fminf/fmaxf instead of folding the literals and
-instead of calling the native glibc pointer (a different signed-zero tie).
-Jonmath selects `Glibc239Libm`: a signed-zero tie keeps the first operand, a
-NaN loses to a number, and two NaNs keep the second operand. CPU-1 and CPU-2
-must match every result bit. JavaScript may quiet a returned negative quiet
-NaN to a positive one; any other difference fails. Signaling NaNs are outside
-this corpus. There is no Vector4 component clamp in raymath.
+pinned raymath.h with contraction off (`clang -O2 -ffp-contract=off
+-fno-builtin-atan2f`, `FP_CONTRACT OFF`). Inputs live in a table and each word
+is loaded through a volatile, so clang lowers fminf/fmaxf instead of folding
+the literals and instead of calling the native library through a pointer (a
+different signed-zero tie). A 4-by-4 control of the same loads selects the one
+declared profile those ties implement: `Glibc239Libm` keeps the first zero
+(the Linux builtin) and `AppleLibm` takes the sign OR for min and the sign AND
+for max (Apple clang). A NaN loses to a number in both. Two NaNs keep the
+second operand under `Glibc239Libm` and the first under `AppleLibm`. CPU-1 and
+CPU-2 must match every
+result bit. JavaScript may quiet a returned negative quiet NaN to a positive
+one; any other difference fails. Signaling NaNs are outside this corpus. There
+is no Vector4 component clamp in raymath.
 """
 import hashlib
 import itertools
 import json
 from collections import Counter
 
+import native_profiles
 import probekit
 from probekit import ProbeFailure
+
+REFERENCE_FLAGS = ['-std=c11', '-O2', '-ffp-contract=off', '-fno-builtin-atan2f']
 
 P0, N0 = 0x00000000, 0x80000000
 P1, N1 = 0x3f800000, 0xbf800000
@@ -154,9 +161,52 @@ def native(probe, built):
     ]
     source, binary = probe.work / 'reference.c', probe.work / 'reference'
     source.write_text('\n'.join(lines) + '\n')
-    probekit.run(['clang', '-std=c11', '-O2', '-ffp-contract=off', '-fno-builtin-atan2f',
-                   '-I' + str(probe.args.raylib_source / 'src'), source, '-lm', '-o', binary])
+    probekit.run(['clang', *REFERENCE_FLAGS, '-I' + str(probe.args.raylib_source / 'src'), source, '-lm', '-o', binary])
     return probekit.run([binary])
+
+
+def tie_words(profile):
+    """The 16 min ties, then the 16 max ties, for one declared profile."""
+    bits = native_profiles.CONTROL_BITS
+    table = native_profiles.TABLES[profile]
+    return [bits[index] for function in ('min', 'max') for row in table[function] for index in row]
+
+
+def selected_profile(observed):
+    """The single declared profile whose zero-tie table is `observed`."""
+    matches = [name for name in native_profiles.EXTREMA_PROFILES if tie_words(name) == list(observed)]
+    if len(matches) != 1:
+        raise ProbeFailure(f'extrema: volatile fminf/fmaxf matched {matches or "no"} declared profile')
+    return matches[0]
+
+
+def observe_ties(probe):
+    """Signed-zero ties of Vector2Min/Max under the corpus compiler and loads."""
+    bits = ','.join(f'0x{word:08x}u' for word in native_profiles.CONTROL_BITS)
+    source = probe.work / 'ties.c'
+    binary = probe.work / 'ties'
+    source.write_text(f'''#include <stdio.h>
+#include <string.h>
+#pragma STDC FP_CONTRACT OFF
+#define RAYMATH_STATIC_INLINE
+#include "raymath.h"
+static float load(unsigned bits){{volatile unsigned u=bits; float x; memcpy(&x,(void*)&u,4); return x;}}
+static unsigned bits(float x){{unsigned b; memcpy(&b,&x,4); return b;}}
+static Vector2 V2(unsigned x,unsigned y){{return (Vector2){{load(x),load(y)}};}}
+static const unsigned vals[4]={{{bits}}};
+int main(void){{
+  for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++)
+    printf("%u\\n", bits(Vector2Min(V2(vals[i], 0x3f800000u), V2(vals[j], 0x3f800000u)).x));
+  for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++)
+    printf("%u\\n", bits(Vector2Max(V2(vals[i], 0x3f800000u), V2(vals[j], 0x3f800000u)).x));
+  return 0;
+}}
+''')
+    probekit.run(['clang', *REFERENCE_FLAGS, '-I' + str(probe.args.raylib_source / 'src'), source, '-lm', '-o', binary])
+    observed = [int(line) for line in probekit.run([binary]).splitlines() if line.strip()]
+    if len(observed) != 32:
+        raise ProbeFailure(f'extrema: tie control produced {len(observed)} words, expected 32')
+    return selected_profile(observed)
 
 
 PROGRAM = '''import Base
@@ -183,9 +233,8 @@ def vec(kind, words):
     return f'M.{kind}{{{fields}}}'
 
 
-def render(selected, gpu):
+def render(selected, gpu, libm='M.Glibc239Libm{}'):
     body = PROGRAM
-    libm = 'M.Glibc239Libm{}'
     for name, args in selected:
         if name == 'v2_min':
             call = f'M.Vector2.min_for({libm}, {vec("Vector2", args[:2])}, {vec("Vector2", args[2:])})'
@@ -270,14 +319,15 @@ def main():
     rows = cases(built)
     if len(rows) > 40000:
         raise ProbeFailure(f'extrema: {len(rows)} cases is more than the probe budget')
+    profile = observe_ties(probe)
     text = native(probe, built)
     expected = [json.loads(line) for line in text.splitlines() if line.strip()]
     if len(expected) != len(rows):
         raise ProbeFailure(f'extrema: native produced {len(expected)} rows for {len(rows)} cases')
-    lanes = probe.candidates(render, rows, batch=120, source_limit=48000)
+    lanes = probe.candidates(lambda selected, gpu: render(selected, gpu, f'M.{profile}{{}}'), rows, batch=120, source_limit=48000)
     lanes = {lane: values for lane, values in lanes.items() if lane != 'gpu'}
     signs = compare(probe, expected, lanes, rows)
-    probe.finish(cases=len(rows), javascript_nan_sign=dict(signs),
+    probe.finish(cases=len(rows), libm=profile, javascript_nan_sign=dict(signs),
                  inputs_sha256=hashlib.sha256(json.dumps(rows).encode()).hexdigest(),
                  reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 

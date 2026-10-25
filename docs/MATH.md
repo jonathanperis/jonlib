@@ -80,8 +80,9 @@ for total internal reflection and otherwise applies the original formula.
 
 `min_for(reference, left, right)` and `max_for(reference, left, right)` share the
 same explicit zero-tie contract. `min` and `max` select the accurate profile.
-A NaN loses to a number. Two NaNs keep the second operand, which is the
-builtin lowering of `fminf` and `fmaxf`.
+A NaN loses to a number. Two NaNs keep the second operand under `Glibc239Libm`
+(clang's builtin lowering of `fminf` and `fmaxf`) and the first under
+`AppleLibm` (Apple clang's `fminf` and `fmaxf`).
 
 The GNU label is a declared numerical profile, not a guarantee for every glibc
 version/compiler evaluation path: constant folding, builtin lowering and native
@@ -91,15 +92,18 @@ host or the gradient/angle profile; see
 [NATIVE-MATH-PROFILES.md](NATIVE-MATH-PROFILES.md).
 
 Gate `extrema` compares Vector2, Vector3 and Vector4 `min_for` and `max_for`,
-and Vector2 and Vector3 `clamp_for`, under `Glibc239Libm` with contraction off.
+and Vector2 and Vector3 `clamp_for`, under the host's volatile `fminf`/`fmaxf`
+profile with contraction off.
 Inputs are a table and each word is loaded through a volatile, so clang lowers
 `fminf` and `fmaxf` instead of folding the literals. CPU-1 and CPU-2 match every
 bit of the 14465-case corpus, including infinities, subnormals, signed zeros and
 both quiet-NaN signs. JavaScript matches those bits except where the selected
-operand is a negative quiet NaN, which it returns as a positive quiet NaN:
-Vector3 min 219 rows, max 219, clamp 448; Vector4 min 242, max 242; Vector2
-clamp 53. Vector2 min and max did not produce a negative-NaN result in this
-corpus, and those rows match on JavaScript. Signaling NaNs are outside the
+operand is a negative quiet NaN, which it returns as a positive quiet NaN.
+Under `Glibc239Libm` that is Vector3 min 219 rows, max 219, clamp 448;
+Vector4 min 242, max 242; Vector2 clamp 53, and Vector2 min and max had none.
+Under `AppleLibm` on Apple clang 21 it is Vector2 min 1, max 1, clamp 53;
+Vector3 min 219, max 219, clamp 448; Vector4 min 243, max 243. Signaling NaNs
+are outside the
 corpus. raymath has no Vector4 component clamp. The functions are pure: a call
 consumes its arguments, a reused vector is duplicated by the caller, and there
 is no allocation, pointer or effect. The corpus is the safety evidence.
