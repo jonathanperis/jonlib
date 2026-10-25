@@ -88,10 +88,14 @@ Re-run green on this Mac after the contract fixes, same lanes and jobs:
   `audio_mixed_processor-powers` compares frame 0. AppleLibm has no `powf`,
   so the first update that owes a 10 ms period (frame 1) refuses that frame
   and every later one.
+- `examples-textures`: 33 examples, 390 frames, 343 compared, 47 refused.
+  `textures_sprite_stacking-spin` compares frame 0 (rotation 0, no sine).
+  Frame 1's rotation is 0.504 degrees, which AppleLibm does not answer, so
+  that frame and the next are refused. The out-of-range texture read stays
+  the glibc cut, at frame 2.
 
-Still open from the `fa0755b` shard:
-
-- `examples-textures`: `textures_sprite_stacking-spin` frame 1.
+The `fa0755b` failures listed in earlier notes are closed on this tree.
+Turning macOS on in CI stays the step in section 1.
 
 Each failure gets the same diagnosis as on Linux: raylib's semantics on
 macOS, then Jonlib, the fixtures and the host differences. Never a looser

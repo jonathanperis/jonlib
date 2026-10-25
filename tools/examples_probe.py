@@ -505,7 +505,8 @@ IO_SETUP.add('textures_sprite_stacking')
 # raylib 6.2's rlsw starts a span's texture coordinates from the triangle's plane at the first pixel center, which can
 # sit just outside it: in the spin script's frame 2 the top slice samples v = -9.9e-9, fract gives 1.0 and
 # sw_texture_sample_nearest reads row 11468 of an 112x11468 texture, past its pixels (found with a bounds check added
-# to a copy of rlsw.h). Jonlib refuses that read; the frames before it are compared.
+# to a copy of rlsw.h). Jonlib refuses that read. AppleLibm refuses earlier: frame 1's rotation is not a whole
+# degree, so DrawTexturePro's sinf/cosf has no answer (stacking_refusal).
 UNDEFINED_FROM['textures_sprite_stacking-spin'] = 2
 # core_directory_files lists its working directory, after its back button the directory above and, after a click on a
 # directory of the list (raylib 6.2), that directory. Base has no directory listing: the port is handed the listings
@@ -2022,7 +2023,7 @@ def bullet_hell_refusal(item, libm):
 # raylib 6.2 fixed both of 6.0's (text_codepoints_loading's duplicate removal and audio_stream_callback's last
 # column each read one element past an array): none is left.
 UNDEFINED_NATIVE = {}
-REPORTED = {'textures_sprite_stacking', 'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
+REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
             'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass',
             'shapes_rlgl_color_wheel', 'shapes_rectangle_advanced', 'core_input_gestures_testbed', 'core_input_gamepad',
             'shapes_easings_ball', 'shapes_easings_box', 'shapes_easings_testbed', 'textures_textured_curve',
@@ -2033,6 +2034,31 @@ REPORTED = {'textures_sprite_stacking', 'shapes_triangle_strip', 'shapes_recursi
             # raylib 6.2's sinf of their samples and waves (6.0 took the double sin, which has no AppleLibm profile).
             'audio_raw_stream', 'audio_stream_callback',
             'shapes_outlines_testbed', 'shapes_outlines_thickness', 'text_animations', 'audio_amp_envelope'}
+
+
+def stacking_refusal(item, libm):
+    """The first frame textures_sprite_stacking refuses.
+
+    Rotation starts at 0, which draws the slices axis-aligned. Each update adds
+    speed*GetFrameTime after A/D have moved the speed by 0.25. AppleLibm answers
+    sinf/cosf of that angle only at a verified whole degree, so the first other
+    angle refuses the frame. Otherwise the spin script refuses at its out-of-range
+    texture read."""
+    speed, rotation, down = fp.f32(30.0), fp.f32(0.0), set()
+    for index, (frame, dt) in enumerate(zip(item['frames'], frame_times(item))):
+        for kind, code, _, _ in frame['events']:
+            if kind == KEY_DOWN_EVENT:
+                down.add(code)
+            elif kind == KEY_UP_EVENT:
+                down.discard(code)
+        if KEY_LEFT in down or KEY_A in down:
+            speed = fp.f32(speed - fp.f32(0.25))
+        if KEY_RIGHT in down or KEY_D in down:
+            speed = fp.f32(speed + fp.f32(0.25))
+        rotation = fp.f32(rotation + fp.f32(speed * dt))
+        if libm == 'AppleLibm' and rotation != 0.0 and not fp.accepted(libm, fp.f32(rotation * fp.DEG2RAD)):
+            return index
+    return UNDEFINED_FROM.get(item['name'])
 
 
 def processor_refusal(item):
@@ -2055,6 +2081,8 @@ def refusal(item, libm):
     """The index of the first frame Jonlib refuses (None when none is; 'reported' to take Jonlib's own)."""
     if item['example'] in UNDEFINED_NATIVE:
         return 0
+    if item['example'] == 'textures_sprite_stacking':
+        return stacking_refusal(item, libm)
     if item['name'] in UNDEFINED_FROM:
         return UNDEFINED_FROM[item['name']]
     if item['example'] in REPORTED:

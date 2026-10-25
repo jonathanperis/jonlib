@@ -265,6 +265,12 @@ class UndefinedNativeExampleTests(unittest.TestCase):
             self.assertEqual(ep.refusal(items['text_codepoints_loading-before'], libm), 1)
         self.assertIn('DotGothic16-Regular.ttf", 36, deduped()', text)
 
+    def test_the_sprite_stack_refuses_a_fractional_degree_on_apple(self):
+        item = next(item for item in ep.scripts() if item['name'] == 'textures_sprite_stacking-spin')
+        self.assertEqual(ep.refusal(item, 'Glibc239Libm'), 2)
+        self.assertEqual(ep.refusal(item, 'AppleLibm'), 1)
+        self.assertEqual(ep.stacking_refusal(item, 'Glibc239Libm'), 2)
+
     def test_the_mixed_processor_refuses_when_apple_powf_has_no_answer(self):
         item = next(item for item in ep.scripts() if item['name'] == 'audio_mixed_processor-powers')
         self.assertIsNone(ep.refusal(item, 'Glibc239Libm'))
