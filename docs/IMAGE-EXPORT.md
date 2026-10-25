@@ -8,9 +8,9 @@ native file bytes, not just the decoded pixels. `ExportImage` remains a
 | API | Result |
 |---|---|
 | `Surface.write_image(surface, path)` | `IO(Result<&1, &1, Surface.IOError, Unit>)`; codec chosen by filename suffix |
-| `Surface.to_png` / `to_bmp` / `to_tga` / `to_qoi` / `to_pep` / `to_jpeg(surface)` | `Result<&1, &1, Surface & Surface.Error, +List<U32>>` (complete file bytes) |
+| `Surface.to_png` / `to_bmp` / `to_tga` / `to_qoi` / `to_pep` / `to_jpeg` / `to_ktx(surface)` | `Result<&1, &1, Surface & Surface.Error, +List<U32>>` (complete file bytes) |
 | `Surface.export_to_memory(surface, ".png")` | `Result<&1, &1, Surface & Surface.Error, +List<U32>>` |
-| `Surface.write_png` / `write_bmp` / `write_tga` / `write_qoi` / `write_pep` / `write_jpeg` / `write_raw(surface, path)` | `IO(Result<&1, &1, Surface.IOError, Unit>)` |
+| `Surface.write_png` / `write_bmp` / `write_tga` / `write_qoi` / `write_pep` / `write_jpeg` / `write_ktx` / `write_raw(surface, path)` | `IO(Result<&1, &1, Surface.IOError, Unit>)` |
 
 Every `write_<codec>` selects its codec explicitly, independently of the path
 extension (`.dat`, suffixless names and a misleading `.png` all work). Only
@@ -20,10 +20,11 @@ to `ExportImageToMemory`, which implements PNG only; `to_png`/`to_bmp`/`to_tga`/
 
 ## Filename-suffix dispatch
 
-`Surface.write_image` selects PNG, BMP, TGA, QOI, PEP, JPEG or RAW from the filename and
+`Surface.write_image` selects PNG, BMP, TGA, QOI, PEP, JPEG, KTX or RAW from the filename and
 reuses the corresponding encoder. PEP accepts only R8G8B8A8 images of at most
 4096 pixels ([CODECS.md](CODECS.md#pep)). JPEG is `.jpg` and `.jpeg` at stb's
-quality 90 ([JPEG.md](JPEG.md#export)).
+quality 90 ([JPEG.md](JPEG.md#export)). KTX is `.ktx`: the one-level
+`rl_save_ktx` file prefix, from raw pixels rather than `LoadImageColors`.
 
 - Suffix matching is ASCII case-insensitive: `.png`, `.PNG` and `.PnG` select
   the same encoder. The filename itself is never lowercased.
@@ -282,6 +283,7 @@ exactly EFBIG after open (EMFILE cannot substitute).
 |---|---|---|
 | `image-export` | `tools/image_export_probe.py` | `Surface.write_image` for PNG, BMP, TGA, QOI and RAW: suffix rules, complete files, decoded pixels, rejected-owner retention, unchanged sentinels, typed errors and handle closure |
 | `jpeg-export` | `tools/jpeg_export_probe.py` | Quality-90 JPEG bytes from `Surface.to_jpeg` and suffix-selected `Surface.write_image` |
+| `ktx-export` | `tools/ktx_export_probe.py` | One-level KTX file prefix from `Surface.to_ktx` and suffix-selected `Surface.write_image` |
 | `png-export` | `tools/png_export_probe.py` | PNG memory/file bytes for byte formats (byte formats via memory and file; packed via file), complete decode round trips |
 | `deflate` | `tools/deflate_probe.py` | The private quality-8 compressor against linked stb (eviction, lazy matching, window edges, Adler boundaries, stored blocks) |
 | `r32-image` | `tools/r32_image_probe.py` | R32 memory PNG raw-word bytes and file PNG red-only output |
@@ -309,7 +311,7 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 
 ## Known gaps
 
-- KTX and other native export codecs. JPEG is quality 90 only.
+- KTX mip chains and non-Surface owners. Other native export codecs. JPEG is quality 90 only.
 - QOI export of formats other than R8G8B8/R8G8B8A8 (raylib rejects them too).
 - `ExportImageToMemory` beyond PNG; packed formats 3/5/6 in memory PNG.
 - Nondefault PNG compression/filter/flip settings, other TGA/BMP options and
@@ -330,6 +332,8 @@ BMP and TGA writers (`src/bmp.bend`, `src/tga.bend`) and the JPEG writer
 public-domain `jo_jpeg` at quality 90 (4:2:0, scaled quality 20). The QOI encoder is an altered Bend
 adaptation of Dominic Szablewski's codec in pinned raylib `src/external/qoi.h`
 ([QOI MIT](../LICENSES/qoi.txt)); export routing adapts raylib `src/rtextures.c`
-([raylib zlib](../LICENSES/raylib.txt)). Altered-source descriptions are in
+([raylib zlib](../LICENSES/raylib.txt)). `Surface.to_ktx` adapts `rl_save_ktx`
+in `src/external/rltexgpu.h` (same zlib license): the header and the file
+prefix of the allocated length. Altered-source descriptions are in
 [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md). No native codec is linked
 into the candidate.

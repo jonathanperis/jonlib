@@ -3037,9 +3037,15 @@ def Image.export.jpeg(other: U32, +token: String) -> U32:
     case 0: Bool.pick(U32, String.eq(token, ".jpg") || String.eq(token, ".jpeg"), 7, 0)
     case _: other
 
+# .ktx is kind 8. ASCII case is already folded by Image.export.kind.
+def Image.export.ktx(other: U32, token: String) -> U32:
+  match other:
+    case 0: Bool.pick(U32, String.eq(token, ".ktx"), 8, 0)
+    case _: other
+
 def Image.export.kind(path: String) -> U32:
   +token = String.to_lower(Image.file.token(path))
-  Image.export.jpeg(Image.export.selected(String.eq(token, ".png"), String.eq(token, ".bmp"), String.eq(token, ".tga"), String.eq(token, ".qoi"), String.eq(token, ".raw"), String.eq(token, ".pep")), token)
+  Image.export.ktx(Image.export.jpeg(Image.export.selected(String.eq(token, ".png"), String.eq(token, ".bmp"), String.eq(token, ".tga"), String.eq(token, ".qoi"), String.eq(token, ".raw"), String.eq(token, ".pep")), token), token)
 
 # DDS admits its 128-byte header plus the largest uncompressed payload; a
 # file named .png the PNG decoder's 2 MiB.
@@ -5561,6 +5567,89 @@ def Surface.write_pep(surface: Surface, path: String) -> IO(Result<&1, &1, Surfa
 def Surface.write_jpeg(surface: Surface, path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
   Surface.write.bytes(path, Surface.to_jpeg(surface))
 
+# rlGetGlTextureFormats' answer: glInternalFormat, glFormat and glType.
+# Defined here because ExportImage's KTX writer and the later rlgl helpers
+# both use it, and a Bend def is visible only below its definition.
+type Rlgl.GlFormats is Data:
+  Rlgl.GlFormats{internal: U32, format: U32, kind: U32}
+
+# rlGetGlTextureFormats under OpenGL 1.1 (the software renderer): the seven
+# uncompressed formats of 8-bit channels or packed 16-bit pixels, as rlsw's
+# GL_LUMINANCE (0x1909), GL_LUMINANCE_ALPHA (0x190A), GL_RGB (0x1907) and
+# GL_RGBA (0x1908) with GL_UNSIGNED_BYTE (0x1401) or the packed types
+# (0x8363, 0x8034, 0x8033); 0, 0 and 0 for every other format, the float and
+# compressed ones included.
+def Rlgl.get_gl_texture_formats(+format: U32) -> Rlgl.GlFormats:
+  match format:
+    case 1: Rlgl.GlFormats{6409, 6409, 5121}
+    case 2: Rlgl.GlFormats{6410, 6410, 5121}
+    case 3: Rlgl.GlFormats{6407, 6407, 33635}
+    case 4: Rlgl.GlFormats{6407, 6407, 5121}
+    case 5: Rlgl.GlFormats{6408, 6408, 32820}
+    case 6: Rlgl.GlFormats{6408, 6408, 32819}
+    case 7: Rlgl.GlFormats{6408, 6408, 5121}
+    case _: Rlgl.GlFormats{0, 0, 0}
+
+# ExportImage ".ktx" follows rl_save_ktx (src/external/rltexgpu.h). The native
+# function allocates the 64-byte header plus each level's GetPixelDataSize,
+# then writes a 4-byte size before every level, past that allocation. fwrite
+# uses the allocated length, so the file is the header plus the prefix of
+# (size, pixels) that fits. A Surface has one level. GL codes are the OpenGL
+# 1.1 software table above. This writer returns that prefix and does not copy
+# past it.
+def Ktx.le(~q: Quant, +word: U32, rest: List<q, U32>) -> List<q, U32>:
+  Con{(word .&. 255 : U32), Con{((word >> 8n) .&. 255 : U32), Con{((word >> 16n) .&. 255 : U32), Con{((word >> 24n) .&. 255 : U32), rest}}}}
+
+def Ktx.words(~q: Quant, words: List<U32>, rest: List<q, U32>) -> List<q, U32>:
+  match words:
+    case Nil{}: rest
+    case Con{+word, tail}: Ktx.le(~q, word, Ktx.words(~q, tail, rest))
+
+# The KTX 1.1 identifier, byte by byte. Large U32 literals are not exact here,
+# so these stay below 256.
+def Ktx.identifier(~q: Quant, rest: List<q, U32>) -> List<q, U32>:
+  Con{171, Con{75, Con{84, Con{88, Con{32, Con{49, Con{49, Con{187, Con{13, Con{10, Con{26, Con{10, rest}}}}}}}}}}}}
+
+def Ktx.header(~q: Quant, +width: U32, +height: U32, formats: Rlgl.GlFormats) -> List<q, U32>:
+  Rlgl.GlFormats{internal, +gl_format, gl_type} = formats
+  # endianness is 0, glTypeSize is 1, depth and elements are 0, one face,
+  # one level, no key/value data. glBaseInternalFormat copies glFormat.
+  Ktx.identifier(~q, Ktx.words(~q, [0, gl_type, 1, gl_format, internal, gl_format, width, height, 0, 0, 1, 1, 0], Nil{}))
+
+def Ktx.prefix(~q: Quant, n: Nat, values: List<q, U32>, prefix: List<q, U32>) -> List<q, U32>:
+  match n values:
+    case 0n _: List.reverse(q, U32, prefix)
+    case _ Nil{}: List.reverse(q, U32, prefix)
+    case 1n+rest Con{value, tail}: Ktx.prefix(~q, rest, tail, Con{value, prefix})
+
+def Ktx.take(~q: Quant, values: List<q, U32>, n: Nat) -> List<q, U32>:
+  Ktx.prefix(~q, n, values, Nil{})
+
+def Ktx.tail.short(short: Bool, +size: U32, raw: +List<U32>) -> +List<U32>:
+  match short:
+    case True{}: Ktx.take(~&2, Ktx.le(~&2, size, Nil{}), U32.to_nat(size))
+    case False{}: List.append(&2, U32, Ktx.le(~&2, size, Nil{}), Ktx.take(~&2, raw, U32.to_nat((size - 4 : U32))))
+
+def Ktx.tail(+size: U32, raw: +List<U32>) -> +List<U32>:
+  Ktx.tail.short((size < 4 : U32), size, raw)
+
+def Surface.ktx.bytes(+size: U32, +width: U32, +height: U32, +format: U32, pixels: Surface.Pixels) -> +List<U32>:
+  List.append(&2, U32, Ktx.header(~&2, width, height, Rlgl.get_gl_texture_formats(format)), Ktx.tail(size, Surface.raw(~&2, Surface{width, height, format, pixels})))
+
+def Surface.ktx.sized(size: Maybe<&2, U32>, +width: U32, +height: U32, +format: U32, pixels: Surface.Pixels) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>:
+  match size:
+    case None{}: Fail{(Surface{width, height, format, pixels}, UnsupportedImageSize{})}
+    case Some{+bytes}: Done{Surface.ktx.bytes(bytes, width, height, format, pixels)}
+
+# One-level KTX: raw image.data, not LoadImageColors. None from Pixel.data_size
+# keeps the owner.
+def Surface.to_ktx(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>:
+  Surface{+width, +height, +format, pixels} = surface
+  Surface.ktx.sized(Pixel.data_size(width, height, format), width, height, format, pixels)
+
+def Surface.write_ktx(surface: Surface, path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  Surface.write.bytes(path, Surface.to_ktx(surface))
+
 def Surface.raw.payload(result: Result<&1, &1, Surface & Surface.Error, Surface>) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>:
   match result:
     case Fail{failure}: Fail{failure}
@@ -5584,9 +5673,10 @@ def Surface.write.kind(kind: U32, surface: Surface, path: String) -> IO(Result<&
     case 5: Surface.write_raw(surface, path)
     case 6: Surface.write_pep(surface, path)
     case 7: Surface.write_jpeg(surface, path)
+    case 8: Surface.write_ktx(surface, path)
     case _: IO.pure(Result<&1, &1, Surface.IOError, Unit>, Fail{SourceError{surface, UnsupportedFileType{}}})
 
-# ExportImage: the ASCII-insensitive suffix selects PNG, BMP, TGA, QOI, raw, PEP or JPEG.
+# ExportImage: the ASCII-insensitive suffix selects PNG, BMP, TGA, QOI, raw, PEP, JPEG or KTX.
 def Surface.write_image(surface: Surface, +path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
   Surface.write.kind(Image.export.kind(path), surface, path)
 
@@ -5813,6 +5903,7 @@ def Surface.write.kind_with(~save: String -> +List<U32> -> IO(Result<&1, &1, Sur
     case 5: Surface.write.bytes_with(~save, path, Surface.raw.payload(Surface.payload.check(surface)))
     case 6: Surface.write.bytes_with(~save, path, Surface.to_pep(surface))
     case 7: Surface.write.bytes_with(~save, path, Surface.to_jpeg(surface))
+    case 8: Surface.write.bytes_with(~save, path, Surface.to_ktx(surface))
     case _: IO.pure(Result<&1, &1, Surface.IOError, Unit>, Fail{SourceError{surface, UnsupportedFileType{}}})
 
 def Surface.write_image_with(~save: String -> +List<U32> -> IO(Result<&1, &1, Surface.IOError, Unit>), surface: Surface, +path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
@@ -12336,26 +12427,8 @@ def Rlgl.get_texture_id_default() -> U32:
 def Rlgl.get_shader_id_default() -> U32:
   0
 
-# rlGetGlTextureFormats' answer: glInternalFormat, glFormat and glType.
-type Rlgl.GlFormats is Data:
-  Rlgl.GlFormats{internal: U32, format: U32, kind: U32}
-
-# rlGetGlTextureFormats under OpenGL 1.1 (the software renderer): the seven
-# uncompressed formats of 8-bit channels or packed 16-bit pixels, as rlsw's
-# GL_LUMINANCE (0x1909), GL_LUMINANCE_ALPHA (0x190A), GL_RGB (0x1907) and
-# GL_RGBA (0x1908) with GL_UNSIGNED_BYTE (0x1401) or the packed types
-# (0x8363, 0x8034, 0x8033); 0, 0 and 0 for every other format, the float and
-# compressed ones included.
-def Rlgl.get_gl_texture_formats(+format: U32) -> Rlgl.GlFormats:
-  match format:
-    case 1: Rlgl.GlFormats{6409, 6409, 5121}
-    case 2: Rlgl.GlFormats{6410, 6410, 5121}
-    case 3: Rlgl.GlFormats{6407, 6407, 33635}
-    case 4: Rlgl.GlFormats{6407, 6407, 5121}
-    case 5: Rlgl.GlFormats{6408, 6408, 32820}
-    case 6: Rlgl.GlFormats{6408, 6408, 32819}
-    case 7: Rlgl.GlFormats{6408, 6408, 5121}
-    case _: Rlgl.GlFormats{0, 0, 0}
+# rlGetGlTextureFormats is defined beside Surface.to_ktx: the OpenGL 1.1
+# software table (Rlgl.GlFormats). rlglInit and the helpers below use it.
 
 # rlglInit(width, height): the frame InitWindow makes, rlglInit's software
 # context cleared, with the default font and shapes rectangle rcore adds

@@ -363,6 +363,9 @@ def Laws.pep_export_kind():
 def Laws.jpeg_export_kind():
   {==}
 
+def Laws.ktx_export_kind():
+  {==}
+
 def Laws.hdr_file_kind():
   {==}
 

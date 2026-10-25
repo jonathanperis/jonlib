@@ -249,7 +249,7 @@ class ImageExportTests(unittest.TestCase):
         cases = image_export_probe.fixtures()
         self.assertEqual(len({c['id'] for c in cases}), len(cases))
         self.assertEqual({c['codec'] for c in cases if c['status'] == 'ok'}, set(image_export_probe.CODECS))
-        self.assertTrue(all(not c['native'] for c in cases if c['path'].endswith(('.jpg', '.jpeg', '.ktx'))))
+        self.assertTrue(all(not c['native'] for c in cases if c['path'].endswith(('.jpg', '.jpeg'))))
 
     def test_candidate_parser_checks_raw_bytes_owners_and_io_errors(self):
         raw = dict(id='raw', status='ok', width=1, height=1, pixels=[0x01020300], codec='raw')

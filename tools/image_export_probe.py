@@ -115,13 +115,10 @@ def fixtures():
     unsupported = ['no-extension', 'bad.data', 'trailing.', '.png', '.RAW',
                    'folder.png/no-extension', 'last.png.data', 'bad.pngx', 'bad.pnG ',
                    'bad.ppm', 'bad.pgm', 'bad.gif',
-                   'bad.psd', 'bad.pic', 'bad.ktx', 'bad.pnＧ']
+                   'bad.psd', 'bad.pic', 'bad.pnＧ']
     for index, path in enumerate(unsupported):
-        # KTX export is outside this scoped Surface contract, although some
-        # native builds have an exporter for it. Do not call that oracle.
-        native = not path.endswith('.ktx')
         cases.append(dict(images[1], id='unsupported-'+str(index), path=path,
-                          codec=None, status='unsupported', native=native))
+                          codec=None, status='unsupported', native=True))
     # Unsupported dispatch must happen even when opening the path would fail.
     cases.append(dict(images[1], id='unsupported-missing-parent', path='missing-parent/output.data',
                       codec=None, status='unsupported', native=True))

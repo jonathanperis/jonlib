@@ -75,11 +75,13 @@ identify the original sources and their required attribution.
   raylib examples of the same names (copyright Ramon Santamaria; zlib/libpng).
   `src/dds.bend` adapts `rl_load_dds_from_memory` and `get_pixel_data_size`
   from `src/external/rltexgpu.h` (same author and zlib license) for DDS files,
-  including DXT blocks and mipmap chains; `src/gputex.bend` adapts the same
+  including DXT blocks and mipmap chains;   `src/gputex.bend` adapts the same
   file's `rl_load_ktx_from_memory`, `rl_load_pkm_from_memory`,
   `rl_load_pvr_from_memory` and `rl_load_astc_from_memory`. KTX and PVR report
   the header mip count and keep the first level raylib copies; PKM and ASTC
-  are one level.
+  are one level. `Surface.to_ktx` in `jonlib.bend` adapts `rl_save_ktx` from
+  the same file: the 64-byte header and the file prefix of the allocated
+  length. It does not copy past that allocation.
   `Image.Formatted.decode_pnm` adapts `LoadImageFromMemory`'s PNM component-to-format
   selection from `rtextures.c`, preserving grayscale/RGB888 in owned Bend storage.
   `Image.Formatted.decode_png` adapts the same source's lines 461–471 for native

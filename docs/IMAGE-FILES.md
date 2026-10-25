@@ -275,9 +275,18 @@ leaves as format 0 are `InvalidImageHeader`; a level whose copied bytes are
 fewer than `GetPixelDataSize` (sizes below one block, a short KTX image size)
 is `UnsupportedImageSize`; other ASTC block sizes (raylib returns no data) are
 `UnsupportedFormat`; files shorter than raylib's copy are `TruncatedImageData`.
-`ExportImage` to `.ktx` is not provided: raylib's `rl_save_ktx` writes a
-4-byte size per level past the buffer it allocates, and its GL format codes
-depend on the rlgl build.
+`ExportImage` to `.ktx` writes the prefix `rl_save_ktx` puts in the file. The
+header is 64 bytes: the KTX 1.1 identifier, endianness 0, `glTypeSize` 1,
+depth 0, elements 0, one face, the image mip count and no key/value data.
+GL type, format and internal format are `rlGetGlTextureFormats` on the
+OpenGL 1.1 software renderer (the pinned `PLATFORM=Memory` build). The
+allocated file length is the header plus each level's `GetPixelDataSize`.
+The writer then stores a 4-byte little-endian level size before each level,
+so that size consumes the tail of a one-level image and the pixel bytes past
+it are not in the file. The native copy runs four bytes per level past the
+allocation; those bytes are not written. `Surface.to_ktx` returns that
+prefix for one Surface level, from raw `image.data`. Mip chains and
+`Image.Stored` owners are not exported.
 
 ## How it is verified
 
@@ -351,7 +360,7 @@ paths they exercise.
 ## Known gaps
 
 - Gray-alpha under a shared `.hdr` token (refused; the native pointer is dangling) and glibc 2.39 `powf` pairs that return no value; original source formats
-  for PSD and GIF (decoded as R8G8B8A8); `.ktx` export; operations on mipmapped
+  for PSD and GIF (decoded as R8G8B8A8); KTX export of mip chains and non-Surface owners; operations on mipmapped
   images. KTX and PVR `data` is the first level only.
 - Concurrent or changing files, special files, native callbacks, native
   pointer/allocation ABI and OOM parity, OS-close failure reporting.

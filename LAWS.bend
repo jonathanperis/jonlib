@@ -554,6 +554,10 @@ law pep_export_kind:
 law jpeg_export_kind:
   {(J.Image.export.kind("a.JPG"), J.Image.export.kind("a.JpEg")) == (7, 7) : U32 & U32}
 
+# .ktx selects KTX export. ASCII case is folded, as IsFileExtension does.
+law ktx_export_kind:
+  {(J.Image.export.kind("a.KTX"), J.Image.export.kind("a.KtX")) == (8, 8) : U32 & U32}
+
 # .hdr and .HDR select stbi_loadf. Mixed case stays unsupported. The shared
 # file cap is the raster 1 MiB cap. Explicit load_hdr uses the same cap.
 law hdr_file_kind:
