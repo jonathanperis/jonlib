@@ -3,7 +3,7 @@
 Import `jonlib.bend` as `J` for core operations and `jonmath.bend` as `M` for math
 operations and shared vector/matrix types. See [MODULES.md](MODULES.md) for the
 `ray*` → `jon*` naming convention and the module imports.
-This is a source library for the Bend 2.0.38 base plus the compiler overlay in
+This is a source library for the Bend 2.0.39 base plus the compiler overlay in
 `toolchain.json`. Helpers with further dotted suffixes
 are implementation details; only operations listed here form the public API.
 

@@ -72,7 +72,7 @@ memory is the maximum across runs.
 
 ## Machine and toolchain
 
-Measured on 2026-10-20. The current pin is Bend 2.0.38 (`0a57ca0d`). The Bend
+Measured on 2026-10-20. The current pin is Bend 2.0.39 (`a3efe8a3`). The Bend
 row is the compiler this table was measured with, the previous pin:
 
 | | |

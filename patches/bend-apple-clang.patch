@@ -1,5 +1,5 @@
 diff --git a/bend2/main.ts b/bend2/main.ts
-index 45db022..2550f54 100755
+index 884d577..db381f3 100755
 --- a/bend2/main.ts
 +++ b/bend2/main.ts
 @@ -8,6 +8,7 @@
@@ -10,7 +10,7 @@ index 45db022..2550f54 100755
  
  import * as child from "node:child_process";
  import * as crypto from "node:crypto";
-@@ -439,6 +440,17 @@ function cc_find(gpu: boolean): string {
+@@ -463,6 +464,17 @@ function cc_find(gpu: boolean): string {
      + " --install";
  }
  
@@ -28,7 +28,7 @@ index 45db022..2550f54 100755
  // cli_build builds the C file at `file` into the binary `bin`. A `!` program
  // builds with the GPU lane and writes its GPU program too (on Linux only with
  // CUDA at the first of $CUDA_HOME, $CUDA_PATH, /usr/local/cuda and /opt/cuda
-@@ -459,8 +471,9 @@ function cli_build(bin: string, file: string): void {
+@@ -483,8 +495,9 @@ function cli_build(bin: string, file: string): void {
      ? ["-x", "objective-c", "-fobjc-arc", "-fmodules"] : [];
    const libs  = [["X11", "X11", "dl"], ["alsa", "asound"]].flatMap(([h, ...ls]) =>
      !mac && c.includes("#include <" + h + "/") ? ls.map((l) => "-l" + l) : []);

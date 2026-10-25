@@ -4,14 +4,14 @@
 the way Base's own `File.*` effects are: a foreign def in `bend2/base.bend`
 whose body imports one C source and one JavaScript source from
 `bend2/effs/`. Nothing in the language, the checker or the compiler changes.
-The patch applies alone to Bend `0a57ca0d` (2.0.38). Bend 2.0.38 already
+The patch applies alone to Bend `a3efe8a3` (2.0.39). Bend 2.0.39 already
 ships `Process.run(program, args, input, max_output, timeout_ms)`, which
-spawns a program, captures stdout and stderr and stops at a timeout. That is
-not `system(3)` through `/bin/sh -c` with inherited standard streams, so the
-shell effect is `Process.shell` and upstream `Process.run` is left in place.
-The two tests in `tests/io/` pass on the check, the C binary and the
-JavaScript lane on Linux x86_64 with Bun 1.3.12. The interpreter lane, the
-neighbouring upstream IO suite and macOS were not re-run for this rebase.
+spawns a program, captures stdout and stderr and stops at a timeout, through
+one worker on Bun and Node. That is not `system(3)` through `/bin/sh -c` with
+inherited standard streams, so the shell effect is `Process.shell` and upstream
+`Process.run` is left in place. The two tests in `tests/io/` passed on Bend
+2.0.38 on the check, the C binary and the JavaScript lane on Linux x86_64 with
+Bun 1.3.12. The 2.0.39 rebase has not re-run them.
 
 It was written for Jonlib, a Bend 2 library inspired by raylib, whose file-system API
 (`LoadDirectoryFiles`, `GetFileModTime`, `ChangeDirectory`, `OpenURL`, ...)
@@ -82,7 +82,9 @@ upstream `Process.run`.
 
 On Bend 2.0.38 both pass on the check, the C binary and the JavaScript lane
 on Linux x86_64 with Bun 1.3.12. The interpreter lane and the upstream tests
-next to them were not re-run for this rebase. The new files fit the
+next to them were not re-run for that rebase, and the 2.0.39 rebase has not
+re-run them either. The effect sources are byte-identical to the 2.0.38 patch.
+The new files fit the
 repository gate's allow list (`bend2/effs/*.c|js`, `tests/io/*.bend`) without
 changing it. macOS has not been run yet: `_NSGetExecutablePath`, the errno
 numbers `EILSEQ` (92) and `EOVERFLOW` (84) and `remove`'s `EPERM` for a

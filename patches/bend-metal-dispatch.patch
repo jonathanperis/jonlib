@@ -1,5 +1,5 @@
 diff --git a/.gitignore b/.gitignore
-index 034e9c9f..f4f6a4be 100644
+index 034e9c9..f4f6a4b 100644
 --- a/.gitignore
 +++ b/.gitignore
 @@ -4,3 +4,4 @@
@@ -8,7 +8,7 @@ index 034e9c9f..f4f6a4be 100644
  *.bendtt
 +.specs/
 diff --git a/bend2/comp.ts b/bend2/comp.ts
-index 00987bb8..a19030d3 100644
+index d86ddc8..9948f24 100644
 --- a/bend2/comp.ts
 +++ b/bend2/comp.ts
 @@ -1,6 +1,7 @@
@@ -52,7 +52,7 @@ index 00987bb8..a19030d3 100644
  // WIDE pads to its size class (240 + log2 in CID_T). An argument nested past
  // TPL_DEEP brackets goes to a local (clang allows 256).
  
-@@ -1391,7 +1405,7 @@ function file_new(book: Bend.Book, js: boolean) {
+@@ -1416,7 +1430,7 @@ function file_new(book: Bend.Book, js: boolean) {
      lend: new Set<string>(),
      segs: [] as Seg[],
      spins: [] as Seg[],
@@ -61,7 +61,7 @@ index 00987bb8..a19030d3 100644
      clos: new Set<string>(),
      tabs: new Map<string, number>(),
      tails: new Map<Name, Set<Name>>(),
-@@ -1586,7 +1600,7 @@ function seg_new(name: string, ret: Lay, vals: Val[],
+@@ -1612,7 +1626,7 @@ function seg_new(name: string, ret: Lay, vals: Val[],
    frame: Seg["frame"] = null): Seg {
    return { fid: name && seg_fid(name), def: name, ret, lines: [],
      params: vals.flatMap((v) => v.ws), ks: vals.flatMap((v) => v.lay.ks),
@@ -70,7 +70,7 @@ index 00987bb8..a19030d3 100644
  }
  
  function seg_fid(k: Name): string {
-@@ -2224,7 +2238,11 @@ function emit_fuse(sc: Scope, ck: Spine, dst: Val | null, tail = false): void {
+@@ -2257,7 +2271,11 @@ function emit_fuse(sc: Scope, ck: Spine, dst: Val | null, tail = false): void {
      return emit_body({ ...sc, def: k }, h!, T, ers,
        lays.map((lay) => val_new(ws.splice(0, lay.ks.length), lay)), dst);
    }
@@ -83,7 +83,7 @@ index 00987bb8..a19030d3 100644
    const o = name_local(sc, "o");
    const out = val_new(ret.ks.map((k, j) =>
      `${k === "w32" ? "(u32)" : ""}${o}[${j}]`), ret);
-@@ -2255,31 +2273,40 @@ function emit_open(sc: Scope, k: Name, f = fun_of(k)): [Scope, Val[]] {
+@@ -2288,31 +2306,40 @@ function emit_open(sc: Scope, k: Name, f = fun_of(k)): [Scope, Val[]] {
    return [{ ...sc, seg, spares: [], uses: new Map(), def: k }, vals];
  }
  
@@ -147,7 +147,7 @@ index 00987bb8..a19030d3 100644
  }
  
  function emit_dst(sc: Scope, lay: Lay, k = "v"): Val {
-@@ -2952,8 +2979,13 @@ export function compile_book(book: Bend.Book): string {
+@@ -2985,8 +3012,13 @@ export function compile_book(book: Bend.Book): string {
    `#define BLK_SHR ${Number(FL.hot.has("t:Array"))}`);
    const tabs = [defs.join("\n"), ...[...FL.tabs].map(([r, i]) =>
      `CONSTV u64 TAB_${i}[] = { ${r} };`)].join("\n\n");
@@ -164,7 +164,7 @@ index 00987bb8..a19030d3 100644
        "WL_OPEN", ...seg.spin ? ["WL_SPIN", ...seg.lines, "WL_SPUN"]
 diff --git a/tests/run/metal_inline_budget.bend b/tests/run/metal_inline_budget.bend
 new file mode 100644
-index 00000000..87673bee
+index 0000000..87673be
 --- /dev/null
 +++ b/tests/run/metal_inline_budget.bend
 @@ -0,0 +1,53 @@

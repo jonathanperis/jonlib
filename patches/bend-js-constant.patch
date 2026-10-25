@@ -1,4 +1,5 @@
 diff --git a/bend2/comp.ts b/bend2/comp.ts
+index 9948f24..a4f4f30 100644
 --- a/bend2/comp.ts
 +++ b/bend2/comp.ts
 @@ -2,6 +2,7 @@
@@ -9,12 +10,10 @@ diff --git a/bend2/comp.ts b/bend2/comp.ts
  
  // Comp
  // ====
-@@ -3210,6 +3211,33 @@
-   }
-   emit_chain(sc, lv.map(([c, h, fs]) => [c, () =>
+@@ -3245,6 +3246,33 @@ function js_match(sc: Scope, x: HTerm, ty: HTerm | null, args: string[]): void {
      js_func(sc, h, null, [...fs, ...args.slice(1)])]));
-+}
-+
+ }
+ 
 +// A nullary constructor is immutable. The C lane keeps it in STAT_IMG and
 +// copies that image once; emitting it as the function body rebuilds it on
 +// every JavaScript call. $: is the tag key, so any other $ is a binding and
@@ -40,10 +39,12 @@ diff --git a/bend2/comp.ts b/bend2/comp.ts
 +  FL.taken.add(held);
 +  lines.splice(close - 2, 3, `const ${held} = ${got[1]};`,
 +    `function ${name}() {`, `return ${held};`, "}");
- }
- 
++}
++
  function js_def(sc: Scope, k: Name, def: Bend.Def): void {
-@@ -3227,7 +3255,8 @@
+   if (intr_of(k, true)) {
+     return;
+@@ -3260,7 +3288,8 @@ function js_def(sc: Scope, k: Name, def: Bend.Def): void {
    if (def_foreign(def)) {
      params.push(name_local(sc, "k"));
    }
@@ -53,7 +54,7 @@ diff --git a/bend2/comp.ts b/bend2/comp.ts
      if (def_foreign(def)) {
        const K = ty_wnf(tele_unbind(def.T).doms.at(-1)![2]);
        return file_push(sc, `return { $: ${JSON.stringify(k)
-@@ -3254,6 +3283,9 @@
+@@ -3287,6 +3316,9 @@ function js_def(sc: Scope, k: Name, def: Bend.Def): void {
          });
        }));
    });

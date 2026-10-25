@@ -21,7 +21,7 @@ else:
     import native_profiles
     import reference_environment
 
-# Bend 2.0.38 `--check-only` prints these two lines when bend2 accepts the book.
+# Bend 2.0.39 `--check-only` prints these two lines when bend2 accepts the book.
 CHECK_VERDICT = "ALL PROOFS CHECK\nUse --verdict for mathematical validity."
 
 # Fixture kinds whose Surface functions follow raylib 6.2's names: the kind
@@ -179,7 +179,7 @@ ENV = dict(os.environ, BEND_NO_TELEMETRY="1")
 
 
 def bend_runtime(*flags):
-    """Compiled Bend 2.0.38 reads runtime flags between +RTS and -RTS."""
+    """Compiled Bend 2.0.39 reads runtime flags between +RTS and -RTS."""
     return ['+RTS', *map(str, flags), '-RTS']
 
 

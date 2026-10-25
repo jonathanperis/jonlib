@@ -40,7 +40,7 @@ class ProbeFailure(Exception):
 
 
 def bend_runtime(*flags):
-    """Compiled Bend 2.0.38 reads runtime flags between +RTS and -RTS."""
+    """Compiled Bend 2.0.39 reads runtime flags between +RTS and -RTS."""
     return ['+RTS', *map(str, flags), '-RTS']
 
 

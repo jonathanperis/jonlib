@@ -1,6 +1,6 @@
 # Metal dispatch failure and the declared compiler overlay
 
-The pinned compiler is Bend 2.0.38. On the previous pin, Bend 2.0.27, the stock
+The pinned compiler is Bend 2.0.39. On the previous pin, Bend 2.0.27, the stock
 generated Metal program fails on the full Jonlib image corpus, while CPU and
 JavaScript lanes of the same program pass. Jonlib therefore builds against the
 Bend base revision in `toolchain.json` plus the declared compiler overlay
@@ -71,6 +71,10 @@ prints 16000 and the generated C contains both `DFAR Term spin_` and
 `FAR Term call_spin_`). It has not been re-run on Metal. The corpus result
 above is the device evidence from the 2.0.27 pin. Upstream's fix for non-tail
 recursion under `!` past 1023 frames is a different defect.
+
+Bend 2.0.39 (`a3efe8a3`) removes the 2.0.38 Metal lane spill. The dispatch
+patch was rebased onto that commit with the same inserted text. That rebase
+has not been re-run on Metal or on the regression binary.
 
 The overlay is general compiler code: it does not recognize Jonlib names, shapes
 or fixtures. It modifies `bend2/comp.ts` (which carries a modification notice),

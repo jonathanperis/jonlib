@@ -801,7 +801,7 @@ contributors under Apache-2.0. No Bend3D implementation or demo assets are vendo
 
 The compiler overlay in `patches/bend-metal-dispatch.patch` adapts Bend's
 `bend2/comp.ts` and includes an original regression test and local-spec ignore
-entry. It is based on `0a57ca0d21de94a3724d8be21afb0eb89f88b4d8` (Bend 2.0.38) and is distributed
+entry. It is based on `a3efe8a3801f423827424227172eed9802c5e6cb` (Bend 2.0.39) and is distributed
 under **Apache-2.0**, including its modifications. The original copyright is
 2026 HigherOrderCO; the modifications were authored for Jonathan Peris's Jonlib
 project in 2026. The modified compiler carries a change notice.
@@ -815,7 +815,7 @@ JavaScript sources in `bend2/effs/` (`path_*`, `dir_*`, `process_path`,
 Bend's `File.*` effects and offered to Bend as a proposal
 ([patches/bend-os-effects.md](patches/bend-os-effects.md)). Upstream
 `Process.run` (a program, arguments, captured output and a timeout) is left
-as Bend 2.0.38 ships it. The shell effect Jonlib uses for `OpenURL` is
+as Bend 2.0.39 ships it. The shell effect Jonlib uses for `OpenURL` is
 `Process.shell`.
 
 `patches/bend-apple-clang.patch` changes `bend2/main.ts` so Apple clang 21

@@ -13,10 +13,10 @@ The overlay is four reviewed patches for the exact Bend revision in
    the pinned upstream revision, and is written up as a proposal for Bend in
    [bend-os-effects.md](bend-os-effects.md). Jonlib's file-system functions
    that need the host (`LoadDirectoryFiles`, `GetFileModTime`,
-   `ChangeDirectory`, `OpenURL`, ...) are built on it. Bend 2.0.38 already
-   ships `Process.run` (a program, arguments, captured output and a timeout);
-   that def is left as upstream wrote it. `Process.shell` is the `/bin/sh -c`
-   effect `OpenURL` needs.
+   `   ChangeDirectory`, `OpenURL`, ...) are built on it. Bend 2.0.39 already
+   ships `Process.run` (a program, arguments, captured output and a timeout,
+   through one worker on Bun and Node); that def is left as upstream wrote it.
+   `Process.shell` is the `/bin/sh -c` effect `OpenURL` needs.
 3. `bend-apple-clang.patch` passes `-fno-stack-check` on the CPU clang
    line when the compiler is Apple clang 21 or newer. That clang's Darwin
    default `-fstack-check` probes the stack with a scratch register that
@@ -51,7 +51,7 @@ Jonlib but changed the ray-tracer checksum. The adopted dispatcher-boundary
 approach passes that workload and the selected upstream regressions on that
 2.0.27 compiler.
 
-The pinned compiler is Bend 2.0.38, which rewrote the emitter. A device-far
+Bend 2.0.38 rewrote the emitter. A device-far
 spin is `DFAR`, and `SPIN_FAR` is 8192 characters, so the patch written for
 2.0.27 does not apply. The same policy was re-ported in those units:
 helper-to-helper inlining is unchanged, and an oversized call at a non-native
@@ -61,7 +61,10 @@ requires both a `DFAR` spin and a `FAR Term call_spin_` wrapper. This boundary
 has not been re-run on a Metal device or on the Jonlib corpus; the Metal
 result recorded above is the device evidence from the 2.0.27 pin. Upstream's
 separate fix for non-tail recursion past 1023 Metal frames is a different
-defect and does not replace this patch.
+defect and does not replace this patch. Bend 2.0.39 keeps that character-budget
+emitter and removes the 2.0.38 lane spill. All four overlay patches were
+rebased onto `a3efe8a3` with the same inserted text; only the hunk positions
+moved.
 
 ## Applying and verifying
 
@@ -105,8 +108,9 @@ effects patch. The language parser/checker is untouched.
 
 The OS effects patch, rebased onto 2.0.38: its two tests pass on the check,
 the C binary and the JavaScript lane on Linux x86_64 with Bun 1.3.12. The
-neighbouring upstream IO suite and macOS were not re-run for this rebase
-([bend-os-effects.md](bend-os-effects.md)).
+neighbouring upstream IO suite and macOS were not re-run for that rebase
+([bend-os-effects.md](bend-os-effects.md)). The 2.0.39 rebase did not re-run
+those tests. The effect sources are byte-identical to the 2.0.38 patch.
 
 This is a Jonlib-maintained compiler overlay, not an upstream Bend release or
 an upstream-approved change. Its tests and source hashes support the recorded

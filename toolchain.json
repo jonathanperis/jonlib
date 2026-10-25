@@ -1,31 +1,31 @@
 {
   "bend": {
-    "version": "2.0.38+jonlib-metal.2.os-effects.2.apple-clang.1.js-constant.1",
-    "revision": "0a57ca0d21de94a3724d8be21afb0eb89f88b4d8",
+    "version": "2.0.39+jonlib-metal.2.os-effects.2.apple-clang.1.js-constant.1",
+    "revision": "a3efe8a3801f423827424227172eed9802c5e6cb",
     "overlay": {
       "patches": [
         {
           "path": "patches/bend-metal-dispatch.patch",
-          "sha256": "ed94fd0be1f026c4a42546381c1f59d32547c8a654f6a66c350e682bc91bab4c"
+          "sha256": "aed95f8b025b9ce4a24c05ee4a39588db4524ef6af6ae2250c51e14721f4d341"
         },
         {
           "path": "patches/bend-os-effects.patch",
-          "sha256": "300a653137083e3961d0d18a61b33b74f1c7c00c36f0955639c228056410ce38"
+          "sha256": "0aec4f49949c31cfe00efc6d5838382c1e55a89aba804aae6bfae6c018f5676b"
         },
         {
           "path": "patches/bend-apple-clang.patch",
-          "sha256": "0a81bdbf34e68063c185aaf140fd3e8b3bb31e25b9ee65c2a23a610617225f66"
+          "sha256": "cfd55fc7431de00fc1fa0a338b81d0e2cb3d77423436e89fa7fbf5768e2c5b7d"
         },
         {
           "path": "patches/bend-js-constant.patch",
-          "sha256": "c475e564db8a11cdc14b89d57c820753b0cde1ce9378079b1f0ac440daf41f3a"
+          "sha256": "a43b0a24d0b86a87d45d3efabfb4ab4526e08057fa018f3ab76d8a64e8902daf"
         }
       ],
       "files": {
         ".gitignore": "553574099eebf3612b8cb99559251f5e30a1d4cd53255071b53fab9d54abe933",
-        "bend2/main.ts": "c9238530982719bec106d6e96a2a671bfd3b2358afea6dd2115a9c450a2a03f1",
-        "bend2/base.bend": "a7f21337a4077d9b8cca75e1fa986eadf671d42d6da38f2c1c0f2bdb184ed9dc",
-        "bend2/comp.ts": "8bf9ba3139c4ade13de869483726d8cd7b3a700971e8f79591f4fa9da73a85bf",
+        "bend2/main.ts": "cf48b075e81da838965a8cd1653fcb4aa0f232dd838d8d9dffbb9a3ee67eb8f8",
+        "bend2/base.bend": "39d54ab3db481a672c1a06d26ddbba9c2de6067ffde376d0750a9341eaa00911",
+        "bend2/comp.ts": "17a6a93d2d79f9a10e4575efda10128eea6d4cf0a8be389b03a2b780a0e497ee",
         "bend2/effs/dir_change.c": "e50af6262a59578956b6a9443599c95635821ac09e2b588371cee136d37277d1",
         "bend2/effs/dir_change.js": "986fe0710620560e2946ba5841216934f3e48fa2b8e147303fefa9841eccefce",
         "bend2/effs/dir_current.c": "0ef0c75f22967280ae60350338566c5e9cc42c73ba512540d2f29388dff7352e",
