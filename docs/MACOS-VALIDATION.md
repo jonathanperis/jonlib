@@ -65,13 +65,31 @@ probes' `--gpu`) are separate local evidence; hosted runners have no GPU.
 
 ## 3. Verified state
 
-A full shard on 2026-10-24 (`fa0755b`, raylib 6.2, Apple clang 21.0.0,
-arm64, `--jobs 1`, lanes cpu-1, cpu-2 and javascript) passed 191 of 206
-gates. That run supersedes the raylib 6.0 nightly of 2026-10-16. Gates the
-6.0 note had never run, or had failing, and that passed there include
-`macros`, `easings`, `lights`, `facades`, `mod`, `mod-music`, `files-os`,
-`gui-icon-files`, `examples-gui` and `examples-text`. `filter-precision`
-recorded its float-normalization mismatches and exited 0.
+A full shard on 2026-10-25 (`b5fb204`, Bend 2.0.39 with the declared overlay,
+raylib 6.2, Apple clang 21.0.0, arm64, macOS 27.0.1, `--shard 1/1 --jobs 1`,
+lanes cpu-1, cpu-2 and javascript) ran all 210 gates in 11h 23m 47s. 209
+passed. The six diagnostic gates (`native-math-profiles`, `inverse-trig`,
+`perspective`, `filter-precision`, `bend-defects`, `libm-survey`) passed.
+`extrema` was the only failure: Apple clang's volatile `fminf`/`fmaxf` is
+`AppleLibm` (signed-zero OR/AND, and the first of two NaNs), and the probe
+was still asking for `Glibc239Libm`. That gate was rerun on the fix and
+passed: 14465 cases, `libm=AppleLibm`. `mesh`, `mesh-uncontracted`, `ray`
+and `ray-uncontracted` were rerun with that change and passed.
+
+While the shard ran, `main` moved to `b017d71` (negative line thickness,
+gradient densities outside 0..1, and one-level KTX export). `conformance`,
+`surface-format` and `image-export` were rerun on that tree and passed.
+`ktx-export` is the new gate: Apple ld rejects GNU `--wrap`, so the oracle
+pads `malloc` through the default zone. It passed, 15 cases. The manifest
+is 211 gates. Nothing from this run remains open. `MERGE_HOSTS` is
+unchanged; section 1 is the remaining step.
+
+The 2026-10-24 shard (`fa0755b`) had passed 191 of 206 gates and supersedes
+the raylib 6.0 nightly of 2026-10-16. Gates the 6.0 note had never run, or
+had failing, and that passed there include `macros`, `easings`, `lights`,
+`facades`, `mod`, `mod-music`, `files-os`, `gui-icon-files`, `examples-gui`
+and `examples-text`. `filter-precision` recorded its float-normalization
+mismatches and exited 0.
 
 Re-run green on this Mac after the contract fixes, same lanes and jobs:
 
@@ -114,9 +132,13 @@ Re-run green on this Mac after the contract fixes, same lanes and jobs:
   Frame 1's rotation is 0.504 degrees, which AppleLibm does not answer, so
   that frame and the next are refused. The out-of-range texture read stays
   the glibc cut, at frame 2.
+- `extrema`: the volatile control selects `AppleLibm`. 14465 cases. CPU-1
+  and CPU-2 match every bit. JavaScript quiets a returned negative quiet
+  NaN (Vector2 min 1 row, max 1, clamp 53; Vector3 min 219, max 219, clamp
+  448; Vector4 min 243, max 243).
 
-The `fa0755b` failures listed in earlier notes are closed on this tree.
-Turning macOS on in CI stays the step in section 1.
+Nothing from this shard remains open. Turning macOS on in CI stays the step
+in section 1.
 
 Each failure gets the same diagnosis as on Linux: raylib's semantics on
 macOS, then Jonlib, the fixtures and the host differences. Never a looser
