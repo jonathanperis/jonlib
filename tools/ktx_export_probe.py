@@ -12,6 +12,7 @@ inside the allocation; the file length is still raylib's. The compared bytes
 are that file, not the overrun.
 """
 import json
+import platform
 
 import probekit
 from probekit import ProbeFailure, bend_list, c_bytes
@@ -51,6 +52,18 @@ def c_source(cases, directory):
         '#include <stdio.h>',
         '#include <stdlib.h>',
         '#include <string.h>',
+        '#ifdef __APPLE__',
+        '#include <malloc/malloc.h>',
+        'void *malloc(size_t n) { malloc_zone_t *z = malloc_default_zone(); return z->malloc(z, n + 64); }',
+        'void *calloc(size_t n, size_t s) {',
+        '  size_t bytes = n * s + 64;',
+        '  malloc_zone_t *z = malloc_default_zone();',
+        '  void *p = z->malloc(z, bytes);',
+        '  if (p) memset(p, 0, bytes);',
+        '  return p;',
+        '}',
+        'void *realloc(void *p, size_t n) { malloc_zone_t *z = malloc_default_zone(); return z->realloc(z, p, n + 64); }',
+        '#else',
         'void *__real_malloc(size_t);',
         'void *__real_realloc(void *, size_t);',
         'void *__wrap_malloc(size_t n) { return __real_malloc(n + 64); }',
@@ -61,6 +74,7 @@ def c_source(cases, directory):
         '  return p;',
         '}',
         'void *__wrap_realloc(void *p, size_t n) { return __real_realloc(p, n + 64); }',
+        '#endif',
         'int main(void){',
         'SetTraceLogLevel(LOG_NONE);',
     ]
@@ -136,13 +150,21 @@ def bend_source(cases, directory):
     return '\n'.join(lines) + '\n'
 
 
+def link_flags():
+    """GNU ld --wrap is how the Linux oracle pads malloc. Apple ld has no --wrap;
+    the reference defines malloc itself and pads through the default zone."""
+    if platform.system() == 'Darwin':
+        return []
+    return ['-Wl,--wrap=malloc', '-Wl,--wrap=calloc', '-Wl,--wrap=realloc']
+
+
 def main():
     args = probekit.arguments(__doc__)
     probe = probekit.Probe('ktx-export', args)
     cases = fixtures()
     expected = [json.loads(line) for line in probe.native(
         c_source(cases, probe.work),
-        extra_flags=['-Wl,--wrap=malloc', '-Wl,--wrap=calloc', '-Wl,--wrap=realloc']).splitlines() if line.strip()]
+        extra_flags=link_flags()).splitlines() if line.strip()]
     if len(expected) != len(cases):
         raise ProbeFailure(f'ktx-export: oracle produced {len(expected)} rows for {len(cases)} cases')
     lanes = probe.candidates(lambda selected, gpu: bend_source(selected, probe.work), cases,
