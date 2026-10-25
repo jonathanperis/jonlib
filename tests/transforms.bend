@@ -1,5 +1,6 @@
 import Base
 import ../jonlib.bend as J
+import ../jonmath.bend as M
 
 def kept_values(values: List<U32>) -> Bool:
   match values:
@@ -124,6 +125,54 @@ def gradient_present(result: Maybe<J.Surface>) -> Bool:
   match result:
     case Some{_}: True{}
     case None{}: False{}
+
+def gradient_kept(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Bool:
+  match result:
+    case Done{J.Surface{_, _, _, J.Words{pixels}}}:
+      gradient_pixel(Array.get(U32, pixels, 0), 16909060)
+    case _: False{}
+
+def gradient_refused(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Bool:
+  match result:
+    case Fail{Tuple{J.Surface{_, _, _, J.Words{pixels}}, J.InvalidRequest{}}}:
+      gradient_pixel(Array.get(U32, pixels, 0), 16909060)
+    case _: False{}
+
+# Far and non-positive extents draw nothing. Non-finite fields and floor/ceil
+# results outside a C int are InvalidRequest and keep the owner.
+def gradient_domain(surface: J.Surface, operation: U32) -> Bool:
+  match operation:
+    case 0:
+      gradient_kept(J.Surface.draw_rectangle_gradient_ex(surface, J.Rectangle{40000.0, 40000.0, 10.0, 10.0}, 1, 2, 3, 4))
+    case 1:
+      gradient_kept(J.Surface.draw_rectangle_gradient_ex(surface, J.Rectangle{1.0, 1.0, F32.neg(50000.0), 2.0}, 1, 2, 3, 4))
+    case 2:
+      gradient_refused(J.Surface.draw_rectangle_gradient_ex(surface, J.Rectangle{(1.0 / 0.0 : F32), 1.0, 2.0, 2.0}, 1, 2, 3, 4))
+    case 3:
+      gradient_refused(J.Surface.draw_rectangle_gradient_ex(surface, J.Rectangle{4294967296.0, 1.0, 2.0, 2.0}, 1, 2, 3, 4))
+    case 4:
+      gradient_kept(J.Surface.draw_circle_gradient(surface, M.Vector2{80000.0, 80000.0}, 4.0, 1, 2))
+    case 5:
+      gradient_kept(J.Surface.draw_circle_gradient(surface, M.Vector2{1.0, 1.0}, F32.neg(80000.0), 1, 2))
+    case 6:
+      gradient_refused(J.Surface.draw_circle_gradient(surface, M.Vector2{1.0, 1.0}, (1.0 / 0.0 : F32), 1, 2))
+    case 7:
+      gradient_refused(J.Surface.draw_circle_gradient(surface, M.Vector2{4294967296.0, 1.0}, 2.0, 1, 2))
+    case 8:
+      gradient_kept(J.Surface.draw_rectangle_gradient_ex(surface, J.Rectangle{(0.0 / 0.0 : F32), 1.0, F32.neg(1.0), 2.0}, 1, 2, 3, 4))
+    case 9:
+      gradient_kept(J.Surface.draw_rectangle_gradient_ex(surface, J.Rectangle{F32.neg(2147483648.0), 1.0, 1.0, 1.0}, 1, 2, 3, 4))
+    case 10:
+      gradient_refused(J.Surface.draw_rectangle_gradient_ex(surface, J.Rectangle{2147483520.0, 1.0, 1.0, 1.0}, 1, 2, 3, 4))
+    case 11:
+      gradient_kept(J.Surface.draw_rectangle_gradient_ex(surface, J.Rectangle{2147483392.0, 0.0, 1.0, 1.0}, 1, 2, 3, 4))
+    case _:
+      gradient_kept(J.Surface.draw_circle_gradient(surface, M.Vector2{(0.0 / 0.0 : F32), 1.0}, F32.neg(1.0), 1, 2))
+
+def gradient_domain.apply(created: Maybe<J.Surface>, operation: U32) -> Bool:
+  match created:
+    case None{}: False{}
+    case Some{surface}: gradient_domain(surface, operation)
 
 def rotation_last(result: Array<U32> & U32) -> Bool:
   (_, pixel) = result
@@ -328,6 +377,19 @@ def checks() -> Bool:
     && gradient_present(J.Surface.create_gradient_radial(1, 1, 1.5, 7, 9))
     && gradient_word(J.Surface.create_gradient_radial(1, 1, (1.0 / 0.0 : F32), 7, 9), 7)
     && gradient_word(J.Surface.create_gradient_radial(1, 1, (0.0 / 0.0 : F32), 7, 9), 7)
+    && gradient_domain.apply(J.Surface.create(4, 3, 16909060), 0)
+    && gradient_domain.apply(J.Surface.create(4, 3, 16909060), 1)
+    && gradient_domain.apply(J.Surface.create(4, 3, 16909060), 2)
+    && gradient_domain.apply(J.Surface.create(4, 3, 16909060), 3)
+    && gradient_domain.apply(J.Surface.create(4, 3, 16909060), 4)
+    && gradient_domain.apply(J.Surface.create(4, 3, 16909060), 5)
+    && gradient_domain.apply(J.Surface.create(4, 3, 16909060), 6)
+    && gradient_domain.apply(J.Surface.create(4, 3, 16909060), 7)
+    && gradient_domain.apply(J.Surface.create(4, 3, 16909060), 8)
+    && gradient_domain.apply(J.Surface.create(4, 3, 16909060), 9)
+    && gradient_domain.apply(J.Surface.create(4, 3, 16909060), 10)
+    && gradient_domain.apply(J.Surface.create(4, 3, 16909060), 11)
+    && gradient_domain.apply(J.Surface.create(4, 3, 16909060), 12)
     && no_surface(J.Surface.create_gradient_linear(1, 1, 90.0, 0, 4294967295))
     && no_surface(J.Surface.create_gradient_linear(3, 2, 0.5, 0, 4294967295))
     && no_surface(J.Surface.create_gradient_linear(3, 2, 361.0, 0, 4294967295))

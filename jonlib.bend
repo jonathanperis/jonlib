@@ -4067,14 +4067,40 @@ def Surface.gradient_rectangle.checked(valid: Bool, surface: Surface, +x: F32, +
     case False{}: Fail{(surface, InvalidRequest{})}
     case True{}: Done{Surface.gradient_rectangle.sized(x, y, width, height, c1, c2, c3, c4, Surface.dimensions.of(surface))}
 
+# (int)floorf/(int)ceilf of a finite value. INT_MIN (-2147483648) is exact.
+# 2147483520 is the first f32 above INT_MAX, so it is not a defined C int.
+def Surface.int.holds(+value: F32) -> Bool:
+  ((F32.bits(value) .&. 2147483647) < 2139095040 : U32)
+    && (value < 2147483520.0 : F32)
+    && (value >= F32.neg(2147483648.0) : F32)
+
+def Surface.gradient.span(+origin: F32, +end: F32) -> Bool:
+  Surface.int.holds(F32.floor(origin)) && Surface.int.holds(F32.ceil(end))
+
+# A side that compares <= 0 is raylib's early return: the casts are not done.
+def Surface.gradient_rectangle.ready(blank: Bool, +x: F32, +y: F32, +width: F32, +height: F32) -> Bool:
+  match blank:
+    case True{}: True{}
+    case False{}:
+      Surface.gradient.span(x, (x + width : F32)) && Surface.gradient.span(y, (y + height : F32))
+
+def Surface.gradient_circle.ready(blank: Bool, +cx: F32, +cy: F32, +radius: F32) -> Bool:
+  match blank:
+    case True{}: True{}
+    case False{}:
+      Surface.gradient.span((cx - radius : F32), (cx + radius : F32)) && Surface.gradient.span((cy - radius : F32), (cy + radius : F32))
+
 # ImageDrawRectangleGradientEx (raylib 6.2): pixels (int)floorf(rec.x) ..
 # (int)ceilf(rec.x + rec.width) (clipped), the bilinear weights of the clamped
 # tx = (x - rec.x)/width and ty = (y - rec.y)/height on col1 (top-left), col2
 # (bottom-left), col3 (bottom-right), col4 (top-right), each channel truncated.
-# Nothing for a width or height <= 0; bounded finite fields (InvalidRequest).
+# A width or height that compares <= 0 draws nothing. Otherwise each floor and
+# ceil must fit in a C int (InvalidRequest for a non-finite field or a cast
+# outside that range).
 def Surface.draw_rectangle_gradient_ex(surface: Surface, rect: Rectangle, +c1: U32, +c2: U32, +c3: U32, +c4: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Rectangle{+x, +y, +width, +height} = rect
-  Surface.gradient_rectangle.checked(Surface.drawing.bounded(x) && Surface.drawing.bounded(y) && Surface.drawing.bounded(width) && Surface.drawing.bounded(height),
+  +blank = (width <= 0.0 : F32) || (height <= 0.0 : F32)
+  Surface.gradient_rectangle.checked(Surface.gradient_rectangle.ready(blank, x, y, width, height),
     surface, x, y, width, height, c1, c2, c3, c4)
 
 def Surface.gradient_circle.bounded(surface: Surface, +cx: F32, +cy: F32, +radius: F32, +inner: U32, +outer: U32, size: U32 & U32) -> Surface:
@@ -4094,11 +4120,14 @@ def Surface.gradient_circle.checked(valid: Bool, surface: Surface, +cx: F32, +cy
 
 # ImageDrawCircleGradient (raylib 6.2): pixels (int)floorf(center - radius) ..
 # (int)ceilf(center + radius) (clipped) whose center lies within the radius,
-# colored inner + (outer - inner)*sqrtf(distSq)/radius per channel. Nothing for
-# a radius <= 0; bounded finite center and radius (InvalidRequest).
+# colored inner + (outer - inner)*sqrtf(distSq)/radius per channel. A radius
+# that compares <= 0 draws nothing before the center is used. Otherwise
+# floor(center - radius) and ceil(center + radius) must fit in a C int
+# (InvalidRequest for a non-finite field or a cast outside that range).
 def Surface.draw_circle_gradient(surface: Surface, center: M.Vector2, +radius: F32, +inner: U32, +outer: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   M.Vector2{+cx, +cy} = center
-  Surface.gradient_circle.checked(Surface.drawing.bounded(cx) && Surface.drawing.bounded(cy) && Surface.drawing.bounded(radius),
+  +blank = (radius <= 0.0 : F32)
+  Surface.gradient_circle.checked(Surface.gradient_circle.ready(blank, cx, cy, radius),
     surface, cx, cy, radius, inner, outer)
 
 # ImageDraw on every format. Each drawn pixel is GetPixelColor of both images,

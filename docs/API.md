@@ -355,8 +355,8 @@ returns the original owner.
 | `Surface.draw_triangle(surface, v1, v2, v3, color)` / `draw_triangle_lines` / `draw_triangle_fan` / `draw_triangle_strip` | Truncated bounds and edge steps, both windings, inclusive edges; fans/strips with fewer than three points draw nothing. |
 | `Surface.draw_triangle_gradient(surface, v1, v2, v3, c1, c2, c3)` | `ImageDrawTriangleGradient`: byte-quantized barycentric colors, each stored as `ImageDrawPixel` encodes it. |
 | `Surface.draw_rectangle_pro(surface, rectangle, origin, rotation, color)` / `draw_rectangle_pro_for(libm, ...)` | `ImageDrawRectanglePro`: every pixel of the turned rectangle's integer bounding box whose center, turned back about `rectangle + origin`, lies in `[-origin, size - origin)`. Bounded finite fields and a rotation whose `DEG2RAD` multiple the `M.Libm` profile verifies, otherwise `InvalidRequest`; nothing for a width or height `<= 0`. |
-| `Surface.draw_rectangle_gradient_ex(surface, rectangle, c1, c2, c3, c4)` | `ImageDrawRectangleGradientEx`: pixels `floorf(x)..ceilf(x + width)` (clipped), bilinear F32 weights of the clamped `tx`, `ty` on top-left, bottom-left, bottom-right and top-right colors, channels truncated. Bounded finite fields (`InvalidRequest`). |
-| `Surface.draw_circle_gradient(surface, center, radius, inner, outer)` | `ImageDrawCircleGradient`: pixels whose center lies within the radius, `inner + (outer - inner)*sqrtf(d²)/radius` per channel, truncated. Bounded finite center and radius (`InvalidRequest`); nothing for a radius `<= 0`. |
+| `Surface.draw_rectangle_gradient_ex(surface, rectangle, c1, c2, c3, c4)` | `ImageDrawRectangleGradientEx`: pixels `floorf(x)..ceilf(x + width)` (clipped), bilinear F32 weights of the clamped `tx`, `ty` on top-left, bottom-left, bottom-right and top-right colors, channels truncated. A width or height that compares `<= 0` draws nothing. Otherwise each `floor`/`ceil` must fit in a C `int`; a non-finite field or an out-of-range cast is `InvalidRequest`. |
+| `Surface.draw_circle_gradient(surface, center, radius, inner, outer)` | `ImageDrawCircleGradient`: pixels whose center lies within the radius, `inner + (outer - inner)*sqrtf(d²)/radius` per channel, truncated. A radius that compares `<= 0` draws nothing. Otherwise `floor(center - radius)` and `ceil(center + radius)` must fit in a C `int`; a non-finite field or an out-of-range cast is `InvalidRequest`. |
 
 Every drawing call consumes the owner and returns the updated one (the 6.2
 kernels above inside a `Result`, whose failure hands it back).
@@ -401,7 +401,7 @@ finite integers in -32767..32767**. Radius is **0..32767**. This permits negativ
 positions while Bend has no native signed integer type. The vector wrappers,
 `draw_rectangle_rec`, `draw_rectangle_lines_ex` and `draw_image_rect` accept bounded
 finite fractional fields with the conversion rules above, as do filled triangle
-vertices (truncated like raylib's `int` casts). NaN/infinity and larger values are outside the drawing profile.
+vertices (truncated like raylib's `int` casts). `draw_rectangle_gradient_ex` and `draw_circle_gradient` accept finite fields whose `floor` and `ceil` results fit in a C `int`, and draw nothing when a side or the radius compares `<= 0`. A non-finite field or a cast outside that range is `InvalidRequest`. NaN, infinity and larger values are outside the rest of the drawing profile.
 Surface operations do not promise successful allocation when the process runs
 out of memory; Bend's runtime treats allocation failure as fatal.
 

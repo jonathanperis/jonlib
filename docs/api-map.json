@@ -4283,9 +4283,9 @@
   "ImageDrawRectangleGradientEx": {
     "jonlib": "Surface.draw_rectangle_gradient_ex",
     "status": "profile-covered",
-    "scope": "raylib 6.2: pixels (int)floorf(rec.x) .. (int)ceilf(rec.x + rec.width) (and y) clipped to the image, bilinear F32 weights of tx = (x - rec.x)/width and ty = (y - rec.y)/height clamped to 0..1 on col1..col4 (counter-clockwise from the top-left), each channel sum truncated, stored with ImageDrawPixel's per-format encoding; nothing for a width or height <= 0. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "scope": "raylib 6.2: pixels (int)floorf(rec.x) .. (int)ceilf(rec.x + rec.width) (and y) clipped, bilinear F32 weights of tx = (x - rec.x)/width and ty = (y - rec.y)/height clamped to 0..1 on col1..col4, each channel truncated and stored with ImageDrawPixel; nothing for a width or height <= 0. Finite fields whose floor and ceil fit in a C int. Formats 1..13 on the surface-format profile.",
     "gaps": [
-      "Fields beyond 32767 in magnitude or not finite are InvalidRequest",
+      "Undefined native behavior: a non-finite field or a floor/ceil outside a C int is InvalidRequest",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:ImageDrawRectangleGradientEx",
@@ -4338,9 +4338,9 @@
   "ImageDrawCircleGradient": {
     "jonlib": "Surface.draw_circle_gradient",
     "status": "profile-covered",
-    "scope": "raylib 6.2: pixels (int)floorf(center - radius) .. (int)ceilf(center + radius) clipped, those whose center (x + 0.5) lies within radius*radius, colored inner + (outer - inner)*sqrtf(distSq)/radius per channel (truncated) and stored with ImageDrawPixel's per-format encoding; nothing for a radius <= 0. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "scope": "raylib 6.2: pixels (int)floorf(center - radius) .. (int)ceilf(center + radius) clipped, those whose center (x + 0.5) lies within radius*radius, colored inner + (outer - inner)*sqrtf(distSq)/radius per channel (truncated) and stored with ImageDrawPixel; nothing for a radius <= 0. Finite center and radius whose floor and ceil fit in a C int. Formats 1..13 on the surface-format profile.",
     "gaps": [
-      "Center or radius beyond 32767 in magnitude or not finite are InvalidRequest",
+      "Undefined native behavior: a non-finite field or a floor/ceil outside a C int is InvalidRequest",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:ImageDrawCircleGradient",
