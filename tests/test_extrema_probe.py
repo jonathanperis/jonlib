@@ -19,6 +19,12 @@ class ExtremaTieTests(unittest.TestCase):
         with self.assertRaisesRegex(probe.ProbeFailure, 'no declared profile'):
             probe.selected_profile(words)
 
+    def test_the_tie_control_uses_the_corpus_load(self):
+        text = probe.tie_source()
+        self.assertIn('sink+=u', text)
+        self.assertIn('(void)sink', text)
+        self.assertEqual(text.split('static Vector2 V2', 1)[0], '\n'.join(probe.reference_header()) + '\n')
+
     def test_the_candidate_uses_the_selected_profile(self):
         text = probe.render([('v2_min', (0, 0, 0, 0x80000000))], False, 'M.AppleLibm{}')
         self.assertIn('M.Vector2.min_for(M.AppleLibm{}, ', text)

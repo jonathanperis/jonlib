@@ -9,7 +9,9 @@ the literals and instead of calling the native library through a pointer (a
 different signed-zero tie). A 4-by-4 control of the same loads selects the one
 declared profile those ties implement: `Glibc239Libm` keeps the first zero
 (the Linux builtin) and `AppleLibm` takes the sign OR for min and the sign AND
-for max (Apple clang). A NaN loses to a number in both. Two NaNs keep the
+for max (Apple clang). The control uses the corpus `load`, including the sink
+that keeps each volatile read live, so the tie is that builtin rather than a
+folded literal. A NaN loses to a number in both. Two NaNs keep the
 second operand under `Glibc239Libm` and the first under `AppleLibm`. CPU-1 and
 CPU-2 must match every
 result bit. JavaScript may quiet a returned negative quiet NaN to a positive
@@ -98,6 +100,17 @@ def cases(built):
     return rows
 
 
+def reference_header():
+    """The corpus includes and the load that keeps each volatile word live."""
+    return [
+        '#include <stdio.h>', '#include <string.h>',
+        '#pragma STDC FP_CONTRACT OFF', '#define RAYMATH_STATIC_INLINE', '#include "raymath.h"',
+        'static unsigned sink;',
+        'static float load(unsigned bits){volatile unsigned u=bits; float x; memcpy(&x,(void*)&u,4); sink+=u; return x;}',
+        'static unsigned bits(float x){unsigned b; memcpy(&b,&x,4); return b;}',
+    ]
+
+
 def native(probe, built):
     """One loop per width, so each raymath function is inlined once."""
     def array(name, width, rows):
@@ -106,12 +119,7 @@ def native(probe, built):
         lines.append('};')
         return lines
 
-    lines = [
-        '#include <stdio.h>', '#include <string.h>',
-        '#pragma STDC FP_CONTRACT OFF', '#define RAYMATH_STATIC_INLINE', '#include "raymath.h"',
-        'static unsigned sink;',
-        'static float load(unsigned bits){volatile unsigned u=bits; float x; memcpy(&x,(void*)&u,4); sink+=u; return x;}',
-        'static unsigned bits(float x){unsigned b; memcpy(&b,&x,4); return b;}',
+    lines = reference_header() + [
         'static Vector2 V2(unsigned x,unsigned y){return (Vector2){load(x),load(y)};}',
         'static Vector3 V3(unsigned x,unsigned y,unsigned z){return (Vector3){load(x),load(y),load(z)};}',
         'static Vector4 V4(unsigned x,unsigned y,unsigned z,unsigned w){return (Vector4){load(x),load(y),load(z),load(w)};}',
@@ -176,32 +184,33 @@ def selected_profile(observed):
     """The single declared profile whose zero-tie table is `observed`."""
     matches = [name for name in native_profiles.EXTREMA_PROFILES if tie_words(name) == list(observed)]
     if len(matches) != 1:
-        raise ProbeFailure(f'extrema: volatile fminf/fmaxf matched {matches or "no"} declared profile')
+        shown = ','.join(f'{word:08x}' for word in observed)
+        raise ProbeFailure(f'extrema: volatile fminf/fmaxf matched {matches or "no"} declared profile: {shown}')
     return matches[0]
+
+
+def tie_source():
+    """Vector2Min/Max zero ties, loaded the same way as the corpus."""
+    bits = ','.join(f'0x{word:08x}u' for word in native_profiles.CONTROL_BITS)
+    return '\n'.join(reference_header() + [
+        'static Vector2 V2(unsigned x,unsigned y){return (Vector2){load(x),load(y)};}',
+        f'static const unsigned vals[4]={{{bits}}};',
+        'int main(void){',
+        '  for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++)',
+        '    printf("%u\\n", bits(Vector2Min(V2(vals[i], 0x3f800000u), V2(vals[j], 0x3f800000u)).x));',
+        '  for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++)',
+        '    printf("%u\\n", bits(Vector2Max(V2(vals[i], 0x3f800000u), V2(vals[j], 0x3f800000u)).x));',
+        '  (void)sink; return 0;',
+        '}',
+        '',
+    ])
 
 
 def observe_ties(probe):
     """Signed-zero ties of Vector2Min/Max under the corpus compiler and loads."""
-    bits = ','.join(f'0x{word:08x}u' for word in native_profiles.CONTROL_BITS)
     source = probe.work / 'ties.c'
     binary = probe.work / 'ties'
-    source.write_text(f'''#include <stdio.h>
-#include <string.h>
-#pragma STDC FP_CONTRACT OFF
-#define RAYMATH_STATIC_INLINE
-#include "raymath.h"
-static float load(unsigned bits){{volatile unsigned u=bits; float x; memcpy(&x,(void*)&u,4); return x;}}
-static unsigned bits(float x){{unsigned b; memcpy(&b,&x,4); return b;}}
-static Vector2 V2(unsigned x,unsigned y){{return (Vector2){{load(x),load(y)}};}}
-static const unsigned vals[4]={{{bits}}};
-int main(void){{
-  for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++)
-    printf("%u\\n", bits(Vector2Min(V2(vals[i], 0x3f800000u), V2(vals[j], 0x3f800000u)).x));
-  for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++)
-    printf("%u\\n", bits(Vector2Max(V2(vals[i], 0x3f800000u), V2(vals[j], 0x3f800000u)).x));
-  return 0;
-}}
-''')
+    source.write_text(tie_source())
     probekit.run(['clang', *REFERENCE_FLAGS, '-I' + str(probe.args.raylib_source / 'src'), source, '-lm', '-o', binary])
     observed = [int(line) for line in probekit.run([binary]).splitlines() if line.strip()]
     if len(observed) != 32:
