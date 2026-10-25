@@ -137,7 +137,7 @@ def tagged(case, row):
 def program(libm):
     if sp.PROGRAM.count(PLAIN) != 1 or sp.PROGRAM.count('\ndef step(') != 1:
         raise ProbeFailure('xm-music: the sound gate\'s program does not load its musics where this probe changes it')
-    return sp.PROGRAM.replace(PLAIN, 'music.load(U32.is_eq(slot, 3), audio, path)').replace('\ndef step(', '\n' + LOADER).replace('LIBM', libm)
+    return sp.hosted_program().replace(PLAIN, 'music.load(U32.is_eq(slot, 3), audio, path)').replace('\ndef step(', '\n' + LOADER).replace('LIBM', libm)
 
 
 def main():

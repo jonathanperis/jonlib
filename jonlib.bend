@@ -6915,8 +6915,12 @@ def Wave.mp3.opened(player: Maybe<Mp3S.Player>, +most: U32) -> Result<&1, &1, Wa
     case None{}: Fail{InvalidWaveData{}}
     case Some{+opened}: Wave.mp3.read(Mp3S.read.f32.whole(opened, most))
 
+def Wave.decode.mp3.for(+nearest: Bool, +bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
+  Wave.mp3.opened(Mp3S.open.memory.for(nearest, bytes), (((Wave.mp3.length(bytes, 0) / 4) + 18) * 1152 : U32))
+
+# The SSE window conversion, which is raylib's build on x86-64.
 def Wave.decode.mp3(+bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
-  Wave.mp3.opened(Mp3S.open.memory(bytes), (((Wave.mp3.length(bytes, 0) / 4) + 18) * 1152 : U32))
+  Wave.decode.mp3.for(True{}, bytes)
 
 # A setup stb_vorbis fails on, or one C leaves undefined, gives no wave
 # (InvalidWaveData). One past this port's limits (an allocation over 16 MiB,
@@ -7040,6 +7044,18 @@ def Wave.load_for(+libm: M.Libm, +path: String) -> IO(Result<&1, &1, Wave.IOErro
 # LoadWave under the AppleLibm profile.
 def Wave.load(+path: String) -> IO(Result<&1, &1, Wave.IOError, Wave>):
   Wave.load_for(M.AppleLibm{}, path)
+
+def Wave.load.mp3.read(+nearest: Bool, result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(Result<&1, &1, Wave.IOError, Wave>):
+  match result:
+    case Fail{FileError{code, message}}: IO.pure(Result<&1, &1, Wave.IOError, Wave>, Fail{WaveFileError{code, message}})
+    case Fail{_}: IO.pure(Result<&1, &1, Wave.IOError, Wave>, Fail{WaveDataError{InvalidWaveHeader{}}})
+    case Done{+bytes}: IO.pure(Result<&1, &1, Wave.IOError, Wave>, Wave.load.decoded(Wave.decode.mp3.for(nearest, bytes)))
+
+# LoadWave of an MP3 file on one window conversion (`nearest`: SSE, otherwise
+# the NEON conversion of an arm64 build). The extension is not read: the
+# bytes are an MP3 stream.
+def Wave.load_mp3(+nearest: Bool, +path: String) -> IO(Result<&1, &1, Wave.IOError, Wave>):
+  IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Wave.IOError, Wave>, Files.load_data(path), Wave.load.mp3.read(nearest))
 
 # IsWaveValid: frames, sample rate, sample size and channels all positive.
 def Wave.is_valid(+wave: Wave) -> Bool:
@@ -7874,38 +7890,46 @@ def AudioStream.update(+audio: AudioDevice, +stream: AudioStream, +data: +List<U
 # volume and clips, in uncontracted f32 arithmetic.
 
 # MixAudioFrames' level for a side: volume*0.5*side*(3 - side*side), in the
-# callback's arithmetic (subnormals are zeros there, src/mixer.bend).
+# callback's arithmetic (src/mixer.bend: flush is x86-64's denormal mode).
+def AudioDevice.level.of(+flush: Bool, +volume: F32, +side: F32) -> F32:
+  Mixer.fmul.of(flush, Mixer.fmul.of(flush, Mixer.fmul.of(flush, volume, 0.5), side), Mixer.fsub.of(flush, 3.0, Mixer.fmul.of(flush, side, side)))
+
 def AudioDevice.level(+volume: F32, +side: F32) -> F32:
-  Mixer.fmul(Mixer.fmul(Mixer.fmul(volume, 0.5), side), Mixer.fsub(3.0, Mixer.fmul(side, side)))
+  AudioDevice.level.of(True{}, volume, side)
 
 type AudioDevice.Levels is Data:
   AudioLevels{left: F32, right: F32, fine: Bool}
 
 # right = (pan + 1)/2 and left = 1 - right. Not fine: a level that is NaN.
+def AudioDevice.levels.of(+flush: Bool, +volume: F32, +pan: F32) -> AudioDevice.Levels:
+  +right = Mixer.fdiv.of(flush, Mixer.fadd.of(flush, pan, 1.0), 2.0)
+  +left = Mixer.fsub.of(flush, 1.0, right)
+  +low = AudioDevice.level.of(flush, volume, left)
+  +high = AudioDevice.level.of(flush, volume, right)
+  AudioLevels{low, high, Bool.not(Mixer.nanf(low) || Mixer.nanf(high))}
+
 def AudioDevice.levels(+volume: F32, +pan: F32) -> AudioDevice.Levels:
-  +right = Mixer.fdiv(Mixer.fadd(pan, 1.0), 2.0)
-  +left = Mixer.fsub(1.0, right)
-  AudioLevels{AudioDevice.level(volume, left), AudioDevice.level(volume, right), Bool.not(Mixer.nanf(AudioDevice.level(volume, left)) || Mixer.nanf(AudioDevice.level(volume, right)))}
+  AudioDevice.levels.of(True{}, volume, pan)
 
 # frameOut += frameIn*level.
-def AudioDevice.mix.sample(+sample: U32, +level: F32, +sum: U32) -> U32:
-  F32.bits(Mixer.fadd(Wave.float_bits(sum), Mixer.fmul(Wave.float_bits(sample), level)))
+def AudioDevice.mix.sample(+flush: Bool, +sample: U32, +level: F32, +sum: U32) -> U32:
+  F32.bits(Mixer.fadd.of(flush, Wave.float_bits(sum), Mixer.fmul.of(flush, Wave.float_bits(sample), level)))
 
-def AudioDevice.mix.sample.fine(+sample: U32, +level: F32, +sum: U32) -> Bool:
-  Bool.not(Mixer.nan(AudioDevice.mix.sample(sample, level, sum)))
+def AudioDevice.mix.sample.fine(+flush: Bool, +sample: U32, +level: F32, +sum: U32) -> Bool:
+  Bool.not(Mixer.nan(AudioDevice.mix.sample(flush, sample, level, sum)))
 
 type AudioDevice.Mixed is Data:
   AudioMixed{out: +List<U32>, fine: Bool}
 
 # A buffer's frames added to the start of the mix.
-def AudioDevice.mix.frames(made: +List<+List<U32>>, out: +List<U32>, +left: F32, +right: F32, +fine: Bool, acc: +List<U32>) -> AudioDevice.Mixed:
+def AudioDevice.mix.frames(made: +List<+List<U32>>, +flush: Bool, out: +List<U32>, +left: F32, +right: F32, +fine: Bool, acc: +List<U32>) -> AudioDevice.Mixed:
   match made:
     case Nil{}: AudioMixed{List.reverse.go(&2, U32, acc, out), fine}
     case Con{Con{+l, Con{+r, _}}, rest}:
       match out:
         case Con{+sl, Con{+sr, more}}:
-          AudioDevice.mix.frames(rest, more, left, right, fine && AudioDevice.mix.sample.fine(l, left, sl) && AudioDevice.mix.sample.fine(r, right, sr),
-            Con{AudioDevice.mix.sample(r, right, sr), Con{AudioDevice.mix.sample(l, left, sl), acc}})
+          AudioDevice.mix.frames(rest, flush, more, left, right, fine && AudioDevice.mix.sample.fine(flush, l, left, sl) && AudioDevice.mix.sample.fine(flush, r, right, sr),
+            Con{AudioDevice.mix.sample(flush, r, right, sr), Con{AudioDevice.mix.sample(flush, l, left, sl), acc}})
         case _: AudioMixed{Nil{}, False{}}
     case Con{_, _}: AudioMixed{Nil{}, False{}}
 
@@ -7920,10 +7944,10 @@ def AudioDevice.mix.added(mixed: AudioDevice.Mixed, +buffer: AudioDevice.Buffer,
 
 # A playing buffer's turn: the frames src/mixer.bend reads through its
 # converter, at the buffer's levels.
-def AudioDevice.mix.leveled(levels: AudioDevice.Levels, turn: Mixer.Turn, +id: U32, +block: U32, +frames: U32, +volume: F32, +pitch: F32, +pan: F32, out: +List<U32>, +fine: Bool) -> AudioDevice.Turn:
+def AudioDevice.mix.leveled(+flush: Bool, levels: AudioDevice.Levels, turn: Mixer.Turn, +id: U32, +block: U32, +frames: U32, +volume: F32, +pitch: F32, +pan: F32, out: +List<U32>, +fine: Bool) -> AudioDevice.Turn:
   AudioLevels{+left, +right, +level_fine} = levels
   Mixer.Turn{+head, +playing, +made, +turn_fine, +asked} = turn
-  AudioDevice.mix.added(AudioDevice.mix.frames(made, out, left, right, True{}, Nil{}), AudioBuffer{id, block, frames, volume, pitch, pan, playing, False{}, head}, fine && level_fine && turn_fine, asked)
+  AudioDevice.mix.added(AudioDevice.mix.frames(made, flush, out, left, right, True{}, Nil{}), AudioBuffer{id, block, frames, volume, pitch, pan, playing, False{}, head}, fine && level_fine && turn_fine, asked)
 
 # What a buffer's turn reads: its samples, or for a stream with a callback
 # the answers that are left.
@@ -7932,12 +7956,12 @@ def AudioDevice.mix.source(called: Bool, +answers: +List<U32>, +data: +List<U32>
     case True{}: answers
     case False{}: data
 
-def AudioDevice.mix.block(found: Maybe<&2, +List<U32>>, +buffer: AudioDevice.Buffer, +n: U32, out: +List<U32>, +fine: Bool, +answers: +List<U32>) -> AudioDevice.Turn:
+def AudioDevice.mix.block(+flush: Bool, found: Maybe<&2, +List<U32>>, +buffer: AudioDevice.Buffer, +n: U32, out: +List<U32>, +fine: Bool, +answers: +List<U32>) -> AudioDevice.Turn:
   match found:
     case None{}: AudioTurn{buffer, out, False{}, Nil{}}
     case Some{+data}:
       AudioBuffer{+id, +block, +frames, +volume, +pitch, +pan, _, _, +head} = buffer
-      AudioDevice.mix.leveled(AudioDevice.levels(volume, pan), Mixer.turn(head, frames, AudioDevice.mix.source(Mixer.Feed.called(Mixer.Head.kind(head)), answers, data), n),
+      AudioDevice.mix.leveled(flush, AudioDevice.levels.of(flush, volume, pan), Mixer.turn.for(flush, head, frames, AudioDevice.mix.source(Mixer.Feed.called(Mixer.Head.kind(head)), answers, data), n),
         id, block, frames, volume, pitch, pan, out, fine)
 
 # What a stream's callback is asked for: the stream's buffer and the frames
@@ -7979,24 +8003,24 @@ def AudioDevice.mix.passed(turn: AudioDevice.Turn, +done: +List<AudioDevice.Buff
   AudioPass{Con{buffer, done}, out, fine, List.drop(&2, U32, answers, U32.to_nat(AudioDevice.mix.read(buffer, asked))), AudioDevice.asks.noted(asked, id, asks),
     starved || Bool.not(AudioDevice.answers.hold(U32.to_nat(AudioDevice.mix.read(buffer, asked)), answers))}
 
-def AudioDevice.mix.active(active: Bool, +buffer: AudioDevice.Buffer, +blocks: +List<AudioDevice.Block>, +n: U32, +done: +List<AudioDevice.Buffer>, out: +List<U32>, +fine: Bool,
+def AudioDevice.mix.active(+flush: Bool, active: Bool, +buffer: AudioDevice.Buffer, +blocks: +List<AudioDevice.Block>, +n: U32, +done: +List<AudioDevice.Buffer>, out: +List<U32>, +fine: Bool,
     +answers: +List<U32>, +asks: +List<AudioDevice.Ask>, +starved: Bool) -> AudioDevice.Pass:
   match active:
     case False{}: AudioPass{Con{buffer, done}, out, fine, answers, asks, starved}
     case True{}:
       AudioBuffer{_, +block, _, _, _, _, _, _, _} = buffer
-      AudioDevice.mix.passed(AudioDevice.mix.block(AudioDevice.block.find(blocks, block), buffer, n, out, fine, answers), done, answers, asks, starved)
+      AudioDevice.mix.passed(AudioDevice.mix.block(flush, AudioDevice.block.find(blocks, block), buffer, n, out, fine, answers), done, answers, asks, starved)
 
 # Buffers that are playing and not paused are mixed, in tracked order.
-def AudioDevice.mix.one(pass: AudioDevice.Pass, +buffer: AudioDevice.Buffer, +blocks: +List<AudioDevice.Block>, +n: U32) -> AudioDevice.Pass:
+def AudioDevice.mix.one(+flush: Bool, pass: AudioDevice.Pass, +buffer: AudioDevice.Buffer, +blocks: +List<AudioDevice.Block>, +n: U32) -> AudioDevice.Pass:
   AudioPass{+done, out, +fine, +answers, +asks, +starved} = pass
   AudioBuffer{_, _, _, _, _, _, +playing, +paused, _} = buffer
-  AudioDevice.mix.active(playing && Bool.not(paused), buffer, blocks, n, done, out, fine, answers, asks, starved)
+  AudioDevice.mix.active(flush, playing && Bool.not(paused), buffer, blocks, n, done, out, fine, answers, asks, starved)
 
-def AudioDevice.mix.all(buffers: +List<AudioDevice.Buffer>, +blocks: +List<AudioDevice.Block>, +n: U32, pass: AudioDevice.Pass) -> AudioDevice.Pass:
+def AudioDevice.mix.all(buffers: +List<AudioDevice.Buffer>, +flush: Bool, +blocks: +List<AudioDevice.Block>, +n: U32, pass: AudioDevice.Pass) -> AudioDevice.Pass:
   match buffers:
     case Nil{}: pass
-    case Con{+buffer, rest}: AudioDevice.mix.all(rest, blocks, n, AudioDevice.mix.one(pass, buffer, blocks, n))
+    case Con{+buffer, rest}: AudioDevice.mix.all(rest, flush, blocks, n, AudioDevice.mix.one(flush, pass, buffer, blocks, n))
 
 # ma_clip_f32.
 def AudioDevice.clip(+x: F32) -> F32:
@@ -8006,12 +8030,12 @@ type AudioDevice.Sent is Data:
   AudioSent{out: +List<U32>, fine: Bool}
 
 # The master volume (when it is not 1), then the clip to -1..1.
-def AudioDevice.mix.sent(out: +List<U32>, +master: F32, +scaled: Bool, +fine: Bool, acc: +List<U32>) -> AudioDevice.Sent:
+def AudioDevice.mix.sent(out: +List<U32>, +flush: Bool, +master: F32, +scaled: Bool, +fine: Bool, acc: +List<U32>) -> AudioDevice.Sent:
   match out:
     case Nil{}: AudioSent{List.reverse(&2, U32, acc), fine}
     case Con{+v, rest}:
-      +x = Bool.pick(F32, scaled, Mixer.fmul(Wave.float_bits(v), master), Wave.float_bits(v))
-      AudioDevice.mix.sent(rest, master, scaled, fine && Bool.not(Mixer.nanf(x)), Con{F32.bits(AudioDevice.clip(x)), acc})
+      +x = Bool.pick(F32, scaled, Mixer.fmul.of(flush, Wave.float_bits(v), master), Wave.float_bits(v))
+      AudioDevice.mix.sent(rest, flush, master, scaled, fine && Bool.not(Mixer.nanf(x)), Con{F32.bits(AudioDevice.clip(x)), acc})
 
 def AudioDevice.mix.given(sent: AudioDevice.Sent, +device: AudioDevice, +buffers: +List<AudioDevice.Buffer>) -> AudioDevice & Maybe<&2, +List<U32>>:
   AudioSent{+out, fine} = sent
@@ -8021,15 +8045,15 @@ def AudioDevice.mix.given(sent: AudioDevice.Sent, +device: AudioDevice, +buffers
       AudioDevice{ready, master, next, _, blocks, stream} = device
       (AudioDevice{ready, master, next, buffers, blocks, stream}, Some{out})
 
-def AudioDevice.mix.mastered(pass: AudioDevice.Pass, +device: AudioDevice) -> AudioDevice & Maybe<&2, +List<U32>>:
+def AudioDevice.mix.mastered(+flush: Bool, pass: AudioDevice.Pass, +device: AudioDevice) -> AudioDevice & Maybe<&2, +List<U32>>:
   AudioPass{+done, out, +fine, _, _, _} = pass
   +master = AudioDevice.master_volume(device)
-  AudioDevice.mix.given(AudioDevice.mix.sent(out, master, U32.is_ne(F32.bits(master), 1065353216), fine && Bool.not(Mixer.nanf(master)), Nil{}), device, List.reverse(&2, AudioDevice.Buffer, done))
+  AudioDevice.mix.given(AudioDevice.mix.sent(out, flush, master, U32.is_ne(F32.bits(master), 1065353216), fine && Bool.not(Mixer.nanf(master)), Nil{}), device, List.reverse(&2, AudioDevice.Buffer, done))
 
 # Every buffer's turn in a callback of `frames` frames.
-def AudioDevice.mix.passes(+device: AudioDevice, +frames: U32, +answers: +List<U32>) -> AudioDevice.Pass:
+def AudioDevice.mix.passes(+flush: Bool, +device: AudioDevice, +frames: U32, +answers: +List<U32>) -> AudioDevice.Pass:
   AudioDevice{_, _, _, +buffers, +blocks, _} = device
-  AudioDevice.mix.all(buffers, blocks, frames, AudioPass{Nil{}, Memory.zeros(U32.to_nat((2 * frames : U32)), Nil{}), True{}, answers, Nil{}, False{}})
+  AudioDevice.mix.all(buffers, flush, blocks, frames, AudioPass{Nil{}, Memory.zeros(U32.to_nat((2 * frames : U32)), Nil{}), True{}, answers, Nil{}, False{}})
 
 # The answers must be what the callbacks were asked for: none missing, none
 # left.
@@ -8039,10 +8063,10 @@ def AudioDevice.mix.exact(pass: AudioDevice.Pass) -> AudioDevice.Pass:
     case Nil{}: AudioPass{done, out, fine && Bool.not(starved), Nil{}, asks, starved}
     case Con{_, _}: AudioPass{done, out, False{}, Nil{}, asks, starved}
 
-def AudioDevice.mix.checked(valid: Bool, +device: AudioDevice, +frames: U32, +answers: +List<U32>) -> AudioDevice & Maybe<&2, +List<U32>>:
+def AudioDevice.mix.checked(+flush: Bool, valid: Bool, +device: AudioDevice, +frames: U32, +answers: +List<U32>) -> AudioDevice & Maybe<&2, +List<U32>>:
   match valid:
     case False{}: (device, None{})
-    case True{}: AudioDevice.mix.mastered(AudioDevice.mix.exact(AudioDevice.mix.passes(device, frames, answers)), device)
+    case True{}: AudioDevice.mix.mastered(flush, AudioDevice.mix.exact(AudioDevice.mix.passes(flush, device, frames, answers)), device)
 
 # One data callback of `frames` frames (a device asks for a period at a time:
 # 480 frames on miniaudio's null backend): every buffer that is playing and
@@ -8054,9 +8078,11 @@ def AudioDevice.mix.checked(valid: Bool, +device: AudioDevice, +frames: U32, +an
 # then the master volume and the clip to -1..1. The result is the device's samples
 # (F32 bits, two per frame).
 #
-# The arithmetic is the callback's on x86-64: miniaudio disables denormals
-# around it, so a subnormal operand counts as zero and a subnormal result is
-# zero (other hosts keep them: not ported).
+# The arithmetic is the callback's. `AudioDevice.mix` flushes subnormals,
+# which is x86-64: miniaudio disables denormals around the callback, so a
+# subnormal operand counts as zero and a subnormal result is zero.
+# `AudioDevice.mix.for(False{}, ...)` keeps them, which is AArch64, where
+# miniaudio leaves the flags alone.
 #
 # None, and the device as it was: an unready device; no frames or more than
 # 2^20; a playing buffer without frames (raudio divides by its size), whose
@@ -8066,8 +8092,11 @@ def AudioDevice.mix.checked(valid: Bool, +device: AudioDevice, +frames: U32, +an
 # temporary holds no frame of it); a playing stream with a callback, whose
 # answers AudioDevice.mix_answered takes; and a callback that makes a NaN
 # (its bits are the host's).
+def AudioDevice.mix.for(+flush: Bool, +device: AudioDevice, +frames: U32) -> AudioDevice & Maybe<&2, +List<U32>>:
+  AudioDevice.mix.checked(flush, AudioDevice.is_ready(device) && (frames > 0 : U32) && (frames <= 1048576 : U32), device, frames, Nil{})
+
 def AudioDevice.mix(+device: AudioDevice, +frames: U32) -> AudioDevice & Maybe<&2, +List<U32>>:
-  AudioDevice.mix.checked(AudioDevice.is_ready(device) && (frames > 0 : U32) && (frames <= 1048576 : U32), device, frames, Nil{})
+  AudioDevice.mix.for(True{}, device, frames)
 
 def AudioDevice.asks.of(pass: AudioDevice.Pass) -> Maybe<&2, +List<AudioDevice.Ask>>:
   AudioPass{_, _, +fine, _, +asks, _} = pass
@@ -8078,7 +8107,7 @@ def AudioDevice.asks.of(pass: AudioDevice.Pass) -> Maybe<&2, +List<AudioDevice.A
 def AudioDevice.asks.checked(valid: Bool, +device: AudioDevice, +frames: U32) -> Maybe<&2, +List<AudioDevice.Ask>>:
   match valid:
     case False{}: None{}
-    case True{}: AudioDevice.asks.of(AudioDevice.mix.passes(device, frames, Nil{}))
+    case True{}: AudioDevice.asks.of(AudioDevice.mix.passes(True{}, device, frames, Nil{}))
 
 # What the stream callbacks will be asked for in one data callback of
 # `frames` frames, in order: each time the mixer wants frames of a playing
@@ -8097,8 +8126,11 @@ def AudioDevice.asks(+device: AudioDevice, +frames: U32) -> Maybe<&2, +List<Audi
 # AudioDevice.asks, each of its frames in the stream's format (as
 # AudioStream.update takes them). None too, and the device as it was, when
 # the answers are not exactly the frames asked for.
+def AudioDevice.mix_answered.for(+flush: Bool, +device: AudioDevice, +frames: U32, +answers: +List<U32>) -> AudioDevice & Maybe<&2, +List<U32>>:
+  AudioDevice.mix.checked(flush, AudioDevice.is_ready(device) && (frames > 0 : U32) && (frames <= 1048576 : U32), device, frames, answers)
+
 def AudioDevice.mix_answered(+device: AudioDevice, +frames: U32, +answers: +List<U32>) -> AudioDevice & Maybe<&2, +List<U32>>:
-  AudioDevice.mix.checked(AudioDevice.is_ready(device) && (frames > 0 : U32) && (frames <= 1048576 : U32), device, frames, answers)
+  AudioDevice.mix_answered.for(True{}, device, frames, answers)
 
 # Audio processors (AttachAudioStreamProcessor, AttachAudioMixedProcessor).
 # raylib keeps functions and calls them from inside the device's callback: a
@@ -8230,51 +8262,51 @@ def AudioDevice.made.leveled(levels: AudioDevice.Levels, turn: Mixer.Turn, +id: 
   Mixer.Turn{+head, +playing, +made, +turn_fine, +asked} = turn
   AudioMade{AudioBuffer{id, block, frames, volume, pitch, pan, playing, False{}, head}, made, left, right, level_fine && turn_fine, asked}
 
-def AudioDevice.made.block(found: Maybe<&2, +List<U32>>, +buffer: AudioDevice.Buffer, +n: U32, +answers: +List<U32>) -> AudioDevice.Made:
+def AudioDevice.made.block(+flush: Bool, found: Maybe<&2, +List<U32>>, +buffer: AudioDevice.Buffer, +n: U32, +answers: +List<U32>) -> AudioDevice.Made:
   match found:
     case None{}: AudioMade{buffer, Nil{}, 0.0, 0.0, False{}, Nil{}}
     case Some{+data}:
       AudioBuffer{+id, +block, +frames, +volume, +pitch, +pan, _, _, +head} = buffer
-      AudioDevice.made.leveled(AudioDevice.levels(volume, pan), Mixer.turn(head, frames, AudioDevice.mix.source(Mixer.Feed.called(Mixer.Head.kind(head)), answers, data), n),
+      AudioDevice.made.leveled(AudioDevice.levels.of(flush, volume, pan), Mixer.turn.for(flush, head, frames, AudioDevice.mix.source(Mixer.Feed.called(Mixer.Head.kind(head)), answers, data), n),
         id, block, frames, volume, pitch, pan)
 
 # The buffer's processed frames at its levels, added to the mix.
-def AudioDevice.process.added(given: +List<+List<U32>> & Bool, +buffer: AudioDevice.Buffer, +left: F32, +right: F32, +fine: Bool, +asked: +List<U32>, +done: +List<AudioDevice.Buffer>,
+def AudioDevice.process.added(+flush: Bool, given: +List<+List<U32>> & Bool, +buffer: AudioDevice.Buffer, +left: F32, +right: F32, +fine: Bool, +asked: +List<U32>, +done: +List<AudioDevice.Buffer>,
     out: +List<U32>, +answers: +List<U32>, +asks: +List<AudioDevice.Ask>, +starved: Bool) -> AudioDevice.Pass:
   (+frames, +same) = given
-  AudioDevice.mix.passed(AudioDevice.mix.added(AudioDevice.mix.frames(frames, out, left, right, True{}, Nil{}), buffer, fine && same, asked), done, answers, asks, starved)
+  AudioDevice.mix.passed(AudioDevice.mix.added(AudioDevice.mix.frames(frames, flush, out, left, right, True{}, Nil{}), buffer, fine && same, asked), done, answers, asks, starved)
 
-def AudioDevice.process.mixed(~P: Type, processed: (+List<+List<U32>> & Bool) & P, +buffer: AudioDevice.Buffer, +left: F32, +right: F32, +fine: Bool, +asked: +List<U32>,
+def AudioDevice.process.mixed(~P: Type, +flush: Bool, processed: (+List<+List<U32>> & Bool) & P, +buffer: AudioDevice.Buffer, +left: F32, +right: F32, +fine: Bool, +asked: +List<U32>,
     +done: +List<AudioDevice.Buffer>, out: +List<U32>, +answers: +List<U32>, +asks: +List<AudioDevice.Ask>, +starved: Bool) -> AudioDevice.Pass & P:
   (given, state) = processed
-  (AudioDevice.process.added(given, buffer, left, right, fine, asked, done, out, answers, asks, starved), state)
+  (AudioDevice.process.added(flush, given, buffer, left, right, fine, asked, done, out, answers, asks, starved), state)
 
-def AudioDevice.process.made(~P: Type, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, made: AudioDevice.Made, +tags: +List<U32>, +done: +List<AudioDevice.Buffer>, out: +List<U32>,
+def AudioDevice.process.made(~P: Type, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, +flush: Bool, made: AudioDevice.Made, +tags: +List<U32>, +done: +List<AudioDevice.Buffer>, out: +List<U32>,
     +fine: Bool, +answers: +List<U32>, +asks: +List<AudioDevice.Ask>, +starved: Bool, state: P) -> AudioDevice.Pass & P:
   AudioMade{+buffer, +frames, +left, +right, +made_fine, +asked} = made
-  AudioDevice.process.mixed(~P, AudioDevice.process.frames(~P, ~process, tags, frames, state), buffer, left, right, fine && made_fine, asked, done, out, answers, asks, starved)
+  AudioDevice.process.mixed(~P, flush, AudioDevice.process.frames(~P, ~process, tags, frames, state), buffer, left, right, fine && made_fine, asked, done, out, answers, asks, starved)
 
-def AudioDevice.process.active(~P: Type, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, active: Bool, +buffer: AudioDevice.Buffer, +blocks: +List<AudioDevice.Block>, +n: U32,
+def AudioDevice.process.active(~P: Type, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, +flush: Bool, active: Bool, +buffer: AudioDevice.Buffer, +blocks: +List<AudioDevice.Block>, +n: U32,
     +attached: +List<AudioDevice.Processor>, +done: +List<AudioDevice.Buffer>, out: +List<U32>, +fine: Bool, +answers: +List<U32>, +asks: +List<AudioDevice.Ask>, +starved: Bool,
     state: P) -> AudioDevice.Pass & P:
   match active:
     case False{}: (AudioPass{Con{buffer, done}, out, fine, answers, asks, starved}, state)
     case True{}:
       AudioBuffer{+id, +block, _, _, _, _, _, _, _} = buffer
-      AudioDevice.process.made(~P, ~process, AudioDevice.made.block(AudioDevice.block.find(blocks, block), buffer, n, answers), AudioProcessors.tags(attached, id, Nil{}), done, out, fine,
+      AudioDevice.process.made(~P, ~process, flush, AudioDevice.made.block(flush, AudioDevice.block.find(blocks, block), buffer, n, answers), AudioProcessors.tags(attached, id, Nil{}), done, out, fine,
         answers, asks, starved, state)
 
 # Every buffer's turn, its processors and its place in the mix. `last` is the
 # pass and the program's state after the buffer before.
-def AudioDevice.process.all(~P: Type, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, buffers: +List<AudioDevice.Buffer>, +blocks: +List<AudioDevice.Block>, +n: U32,
+def AudioDevice.process.all(~P: Type, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, buffers: +List<AudioDevice.Buffer>, +flush: Bool, +blocks: +List<AudioDevice.Block>, +n: U32,
     +attached: +List<AudioDevice.Processor>, last: AudioDevice.Pass & P) -> AudioDevice.Pass & P:
   match buffers:
     case Nil{}: last
     case Con{AudioBuffer{+id, +block, +frames, +volume, +pitch, +pan, +playing, +paused, +head}, rest}:
       match last:
         case Tuple{AudioPass{+done, +out, +fine, +answers, +asks, +starved}, state}:
-          AudioDevice.process.all(~P, ~process, rest, blocks, n, attached,
-            AudioDevice.process.active(~P, ~process, playing && Bool.not(paused), AudioBuffer{id, block, frames, volume, pitch, pan, playing, paused, head}, blocks, n, attached, done, out, fine,
+          AudioDevice.process.all(~P, ~process, rest, flush, blocks, n, attached,
+            AudioDevice.process.active(~P, ~process, flush, playing && Bool.not(paused), AudioBuffer{id, block, frames, volume, pitch, pan, playing, paused, head}, blocks, n, attached, done, out, fine,
               answers, asks, starved, state))
 
 # The mixed processors on the whole mix: it must come back whole.
@@ -8290,17 +8322,17 @@ def AudioDevice.process.output(~P: Type, ~process: U32 -> +List<U32> -> P -> P &
   match passed:
     case Tuple{pass, state}: AudioDevice.process.outcome(~P, ~process, AudioDevice.mix.exact(pass), tags, n, state)
 
-def AudioDevice.process.sent(~P: Type, passed: AudioDevice.Pass & P, +device: AudioDevice) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
+def AudioDevice.process.sent(~P: Type, +flush: Bool, passed: AudioDevice.Pass & P, +device: AudioDevice) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
   (pass, state) = passed
-  (AudioDevice.mix.mastered(pass, device), state)
+  (AudioDevice.mix.mastered(flush, pass, device), state)
 
-def AudioDevice.process.checked(~P: Type, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, valid: Bool, +device: AudioDevice, +attached: +List<AudioDevice.Processor>, +frames: U32,
+def AudioDevice.process.checked(~P: Type, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, +flush: Bool, valid: Bool, +device: AudioDevice, +attached: +List<AudioDevice.Processor>, +frames: U32,
     +answers: +List<U32>, state: P) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
   match valid:
     case False{}: ((device, None{}), state)
     case True{}:
       AudioDevice{_, _, _, +buffers, +blocks, _} = device
-      AudioDevice.process.sent(~P, AudioDevice.process.output(~P, ~process, AudioDevice.process.all(~P, ~process, buffers, blocks, frames, attached,
+      AudioDevice.process.sent(~P, flush, AudioDevice.process.output(~P, ~process, AudioDevice.process.all(~P, ~process, buffers, flush, blocks, frames, attached,
         (AudioPass{Nil{}, Memory.zeros(U32.to_nat((2 * frames : U32)), Nil{}), True{}, answers, Nil{}, False{}}, state)), AudioProcessors.tags(attached, 0, Nil{}), frames), device)
 
 # AudioDevice.mix_answered with the program's processors: `process(tag,
@@ -8311,10 +8343,14 @@ def AudioDevice.process.checked(~P: Type, ~process: U32 -> +List<U32> -> P -> P 
 # whole mix; it is a template and closes over nothing. None too, with the
 # device as it was, when a processor gives back another number of samples
 # (the program's state is then as the calls left it).
-def AudioDevice.mix_processed(~P: Type, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, +device: AudioDevice, processors: AudioProcessors, +frames: U32, +answers: +List<U32>,
+def AudioDevice.mix_processed.for(~P: Type, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, +flush: Bool, +device: AudioDevice, processors: AudioProcessors, +frames: U32, +answers: +List<U32>,
     state: P) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
   AudioProcessors{+attached} = processors
-  AudioDevice.process.checked(~P, ~process, AudioDevice.is_ready(device) && (frames > 0 : U32) && (frames <= 1048576 : U32), device, attached, frames, answers, state)
+  AudioDevice.process.checked(~P, ~process, flush, AudioDevice.is_ready(device) && (frames > 0 : U32) && (frames <= 1048576 : U32), device, attached, frames, answers, state)
+
+def AudioDevice.mix_processed(~P: Type, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, +device: AudioDevice, processors: AudioProcessors, +frames: U32, +answers: +List<U32>,
+    state: P) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
+  AudioDevice.mix_processed.for(~P, ~process, True{}, device, processors, frames, answers, state)
 
 # The device's clock (Jonlib-specific). raylib's device runs on a thread of
 # its own: miniaudio asks it for a callback of one period (480 frames, 10 ms)
@@ -8407,21 +8443,21 @@ def AudioClock.answers(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, ask
       (state, +data) = last
       AudioClock.answers(~P, ~answer, rest, answer(buffer, frames, state), List.reverse.go(&2, U32, data, acc))
 
-def AudioClock.period.mixed(~P: Type, answered: P & +List<U32>, +device: AudioDevice) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
+def AudioClock.period.mixed(~P: Type, +flush: Bool, answered: P & +List<U32>, +device: AudioDevice) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
   (state, +answers) = answered
-  (AudioDevice.mix_answered(device, 480, answers), state)
+  (AudioDevice.mix_answered.for(flush, device, 480, answers), state)
 
-def AudioClock.period.asked(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, asks: Maybe<&2, +List<AudioDevice.Ask>>, +device: AudioDevice, state: P) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
+def AudioClock.period.asked(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, +flush: Bool, asks: Maybe<&2, +List<AudioDevice.Ask>>, +device: AudioDevice, state: P) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
   match asks:
     case None{}: ((device, None{}), state)
-    case Some{+list}: AudioClock.period.mixed(~P, AudioClock.answers(~P, ~answer, list, (state, Nil{}), Nil{}), device)
+    case Some{+list}: AudioClock.period.mixed(~P, flush, AudioClock.answers(~P, ~answer, list, (state, Nil{}), Nil{}), device)
 
 # One period of a device whose streams have callbacks: what they are asked
 # for, the program's answers in that order, and the callback with them.
-def AudioClock.period(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, +device: AudioDevice, state: P) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
-  AudioClock.period.asked(~P, ~answer, AudioDevice.asks(device, 480), device, state)
+def AudioClock.period(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, +flush: Bool, +device: AudioDevice, state: P) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
+  AudioClock.period.asked(~P, ~answer, flush, AudioDevice.asks(device, 480), device, state)
 
-def AudioClock.pump_answering(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, periods: Nat, last: (AudioDevice & Maybe<&2, +List<U32>>) & P) -> (AudioDevice & Bool) & P:
+def AudioClock.pump_answering(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, periods: Nat, +flush: Bool, last: (AudioDevice & Maybe<&2, +List<U32>>) & P) -> (AudioDevice & Bool) & P:
   match periods:
     case 0n:
       match last:
@@ -8430,23 +8466,23 @@ def AudioClock.pump_answering(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U3
     case 1n+rest:
       match last:
         case Tuple{Tuple{+device, None{}}, state}: ((device, False{}), state)
-        case Tuple{Tuple{+device, Some{_}}, state}: AudioClock.pump_answering(~P, ~answer, rest, AudioClock.period(~P, ~answer, device, state))
+        case Tuple{Tuple{+device, Some{_}}, state}: AudioClock.pump_answering(~P, ~answer, rest, flush, AudioClock.period(~P, ~answer, flush, device, state))
 
 def AudioClock.advance_answering.done(~P: Type, pumped: (AudioDevice & Bool) & P, +opened: M.Float64, +periods: U32, +count: U32) -> AudioClock.Step & P:
   (result, state) = pumped
   (AudioClock.advance.done(result, opened, periods, count), state)
 
-def AudioClock.advance_answering.run(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, ready: Bool, within: Bool, +opened: M.Float64, +periods: U32, +count: U32, +device: AudioDevice,
+def AudioClock.advance_answering.run(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, +flush: Bool, ready: Bool, within: Bool, +opened: M.Float64, +periods: U32, +count: U32, +device: AudioDevice,
     state: P) -> AudioClock.Step & P:
   match ready within:
     case False{} _: (AudioStep{AudioClock{opened, (periods + count : U32)}, device, True{}}, state)
     case True{} False{}: (AudioStep{AudioClock{opened, periods}, device, False{}}, state)
-    case True{} True{}: AudioClock.advance_answering.done(~P, AudioClock.pump_answering(~P, ~answer, U32.to_nat(count), ((device, Some{Nil{}}), state)), opened, periods, count)
+    case True{} True{}: AudioClock.advance_answering.done(~P, AudioClock.pump_answering(~P, ~answer, U32.to_nat(count), flush, ((device, Some{Nil{}}), state)), opened, periods, count)
 
-def AudioClock.advance_answering.owed(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, owed: Maybe<U32>, +opened: M.Float64, +periods: U32, +device: AudioDevice, state: P) -> AudioClock.Step & P:
+def AudioClock.advance_answering.owed(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, +flush: Bool, owed: Maybe<U32>, +opened: M.Float64, +periods: U32, +device: AudioDevice, state: P) -> AudioClock.Step & P:
   match owed:
     case None{}: (AudioStep{AudioClock{opened, periods}, device, False{}}, state)
-    case Some{+count}: AudioClock.advance_answering.run(~P, ~answer, AudioDevice.is_ready(device), (count <= 65536 : U32), opened, periods, count, device, state)
+    case Some{+count}: AudioClock.advance_answering.run(~P, ~answer, flush, AudioDevice.is_ready(device), (count <= 65536 : U32), opened, periods, count, device, state)
 
 # AudioClock.advance for a program whose streams have callbacks
 # (AudioStream.set_callback). `answer` is the program's callback: for a
@@ -8457,26 +8493,29 @@ def AudioClock.advance_answering.owed(~P: Type, ~answer: U32 -> U32 -> P -> P & 
 # order, before the period's AudioDevice.mix_answered: as raylib's device
 # thread calls the stream's function from inside its callback. Not fine as
 # AudioClock.advance, and when an answer is not the frames asked for.
-def AudioClock.advance_answering(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, clock: AudioClock, +device: AudioDevice, time: M.Float64, state: P) -> AudioClock.Step & P:
+def AudioClock.advance_answering.for(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, +flush: Bool, clock: AudioClock, +device: AudioDevice, time: M.Float64, state: P) -> AudioClock.Step & P:
   AudioClock{+opened, +periods} = clock
-  AudioClock.advance_answering.owed(~P, ~answer, AudioClock.owed(periods, AudioClock.due(opened, time)), opened, periods, device, state)
+  AudioClock.advance_answering.owed(~P, ~answer, flush, AudioClock.owed(periods, AudioClock.due(opened, time)), opened, periods, device, state)
 
-def AudioClock.period_processing.mixed(~P: Type, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, answered: P & +List<U32>, +device: AudioDevice, +attached: +List<AudioDevice.Processor>) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
+def AudioClock.advance_answering(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, clock: AudioClock, +device: AudioDevice, time: M.Float64, state: P) -> AudioClock.Step & P:
+  AudioClock.advance_answering.for(~P, ~answer, True{}, clock, device, time, state)
+
+def AudioClock.period_processing.mixed(~P: Type, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, +flush: Bool, answered: P & +List<U32>, +device: AudioDevice, +attached: +List<AudioDevice.Processor>) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
   (state, +answers) = answered
-  AudioDevice.mix_processed(~P, ~process, device, AudioProcessors{attached}, 480, answers, state)
+  AudioDevice.mix_processed.for(~P, ~process, flush, device, AudioProcessors{attached}, 480, answers, state)
 
-def AudioClock.period_processing.asked(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, asks: Maybe<&2, +List<AudioDevice.Ask>>, +device: AudioDevice, +attached: +List<AudioDevice.Processor>,
+def AudioClock.period_processing.asked(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, +flush: Bool, asks: Maybe<&2, +List<AudioDevice.Ask>>, +device: AudioDevice, +attached: +List<AudioDevice.Processor>,
     state: P) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
   match asks:
     case None{}: ((device, None{}), state)
-    case Some{+list}: AudioClock.period_processing.mixed(~P, ~process, AudioClock.answers(~P, ~answer, list, (state, Nil{}), Nil{}), device, attached)
+    case Some{+list}: AudioClock.period_processing.mixed(~P, ~process, flush, AudioClock.answers(~P, ~answer, list, (state, Nil{}), Nil{}), device, attached)
 
 # One period with callbacks and processors: the asks, the answers, and the
 # callback with them and the processors.
-def AudioClock.period_processing(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, +device: AudioDevice, +attached: +List<AudioDevice.Processor>, state: P) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
-  AudioClock.period_processing.asked(~P, ~answer, ~process, AudioDevice.asks(device, 480), device, attached, state)
+def AudioClock.period_processing(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, +flush: Bool, +device: AudioDevice, +attached: +List<AudioDevice.Processor>, state: P) -> (AudioDevice & Maybe<&2, +List<U32>>) & P:
+  AudioClock.period_processing.asked(~P, ~answer, ~process, flush, AudioDevice.asks(device, 480), device, attached, state)
 
-def AudioClock.pump_processing(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, periods: Nat, +attached: +List<AudioDevice.Processor>, last: (AudioDevice & Maybe<&2, +List<U32>>) & P) -> (AudioDevice & Bool) & P:
+def AudioClock.pump_processing(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, periods: Nat, +flush: Bool, +attached: +List<AudioDevice.Processor>, last: (AudioDevice & Maybe<&2, +List<U32>>) & P) -> (AudioDevice & Bool) & P:
   match periods:
     case 0n:
       match last:
@@ -8485,30 +8524,33 @@ def AudioClock.pump_processing(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U
     case 1n+rest:
       match last:
         case Tuple{Tuple{+device, None{}}, state}: ((device, False{}), state)
-        case Tuple{Tuple{+device, Some{_}}, state}: AudioClock.pump_processing(~P, ~answer, ~process, rest, attached, AudioClock.period_processing(~P, ~answer, ~process, device, attached, state))
+        case Tuple{Tuple{+device, Some{_}}, state}: AudioClock.pump_processing(~P, ~answer, ~process, rest, flush, attached, AudioClock.period_processing(~P, ~answer, ~process, flush, device, attached, state))
 
-def AudioClock.advance_processing.run(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, ready: Bool, within: Bool, +opened: M.Float64, +periods: U32, +count: U32, +device: AudioDevice,
+def AudioClock.advance_processing.run(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, +flush: Bool, ready: Bool, within: Bool, +opened: M.Float64, +periods: U32, +count: U32, +device: AudioDevice,
     +attached: +List<AudioDevice.Processor>, state: P) -> AudioClock.Step & P:
   match ready within:
     case False{} _: (AudioStep{AudioClock{opened, (periods + count : U32)}, device, True{}}, state)
     case True{} False{}: (AudioStep{AudioClock{opened, periods}, device, False{}}, state)
     case True{} True{}:
-      AudioClock.advance_answering.done(~P, AudioClock.pump_processing(~P, ~answer, ~process, U32.to_nat(count), attached, ((device, Some{Nil{}}), state)), opened, periods, count)
+      AudioClock.advance_answering.done(~P, AudioClock.pump_processing(~P, ~answer, ~process, U32.to_nat(count), flush, attached, ((device, Some{Nil{}}), state)), opened, periods, count)
 
-def AudioClock.advance_processing.owed(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, owed: Maybe<U32>, +opened: M.Float64, +periods: U32, +device: AudioDevice, +attached: +List<AudioDevice.Processor>,
+def AudioClock.advance_processing.owed(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, +flush: Bool, owed: Maybe<U32>, +opened: M.Float64, +periods: U32, +device: AudioDevice, +attached: +List<AudioDevice.Processor>,
     state: P) -> AudioClock.Step & P:
   match owed:
     case None{}: (AudioStep{AudioClock{opened, periods}, device, False{}}, state)
-    case Some{+count}: AudioClock.advance_processing.run(~P, ~answer, ~process, AudioDevice.is_ready(device), (count <= 65536 : U32), opened, periods, count, device, attached, state)
+    case Some{+count}: AudioClock.advance_processing.run(~P, ~answer, ~process, flush, AudioDevice.is_ready(device), (count <= 65536 : U32), opened, periods, count, device, attached, state)
 
 # AudioClock.advance_answering for a program with audio processors: each
 # period is an AudioDevice.mix_processed with the answers of its asks. Not
 # fine as AudioClock.advance_answering, and when a processor gives back
 # another number of samples than it was given.
-def AudioClock.advance_processing(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, clock: AudioClock, +device: AudioDevice, processors: AudioProcessors, time: M.Float64, state: P) -> AudioClock.Step & P:
+def AudioClock.advance_processing.for(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, +flush: Bool, clock: AudioClock, +device: AudioDevice, processors: AudioProcessors, time: M.Float64, state: P) -> AudioClock.Step & P:
   AudioClock{+opened, +periods} = clock
   AudioProcessors{+attached} = processors
-  AudioClock.advance_processing.owed(~P, ~answer, ~process, AudioClock.owed(periods, AudioClock.due(opened, time)), opened, periods, device, attached, state)
+  AudioClock.advance_processing.owed(~P, ~answer, ~process, flush, AudioClock.owed(periods, AudioClock.due(opened, time)), opened, periods, device, attached, state)
+
+def AudioClock.advance_processing(~P: Type, ~answer: U32 -> U32 -> P -> P & +List<U32>, ~process: U32 -> +List<U32> -> P -> P & +List<U32>, clock: AudioClock, +device: AudioDevice, processors: AudioProcessors, time: M.Float64, state: P) -> AudioClock.Step & P:
+  AudioClock.advance_processing.for(~P, ~answer, ~process, True{}, clock, device, processors, time, state)
 
 # Music streams (LoadMusicStream, UpdateMusicStream, ...): an audio stream
 # and the decoder that fills its halves. raylib's Music is a struct the
@@ -8627,10 +8669,13 @@ def Music.decode.mp3(opened: Maybe<Mp3S.Player>, +audio: AudioDevice) -> AudioDe
 # dr_mp3 reads a file's stream through its callbacks and a memory stream
 # with a function of its own (src/mp3.bend, H.Stream): the two end a stream
 # with tags after its frames differently.
-def Music.decode.mp3.opened(memory: Bool, +bytes: +List<U32>) -> Maybe<Mp3S.Player>:
+def Music.decode.mp3.opened.for(+nearest: Bool, memory: Bool, +bytes: +List<U32>) -> Maybe<Mp3S.Player>:
   match memory:
-    case False{}: Mp3S.open(bytes)
-    case True{}: Mp3S.open.memory(bytes)
+    case False{}: Mp3S.open.for(nearest, bytes)
+    case True{}: Mp3S.open.memory.for(nearest, bytes)
+
+def Music.decode.mp3.opened(memory: Bool, +bytes: +List<U32>) -> Maybe<Mp3S.Player>:
+  Music.decode.mp3.opened.for(True{}, memory, bytes)
 
 # An XM music as raylib leaves it: the player back at the song's start
 # (jar_xm_reset), which keeps what the count of its length left elsewhere.
@@ -8734,11 +8779,11 @@ def Music.decode.mod(sized: Bool, +bytes: +List<U32>, +rate: U32, +audio: AudioD
     case False{}: (audio, Fail{InvalidWaveHeader{}})
     case True{}: Music.decode.mod.loaded(ModP.load(bytes), rate, audio)
 
-def Music.decode.selected(kind: U32, +memory: Bool, +libm: M.Libm, +audio: AudioDevice, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
+def Music.decode.selected(kind: U32, +nearest: Bool, +memory: Bool, +libm: M.Libm, +audio: AudioDevice, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
   match kind:
     case 1: Music.decode.wav(Wav.bits(bytes), audio, bytes)
     case 2: Music.decode.ogg(VorbisF.memory.open(libm, bytes), audio)
-    case 4: Music.decode.mp3(Music.decode.mp3.opened(memory, bytes), audio)
+    case 4: Music.decode.mp3(Music.decode.mp3.opened.for(nearest, memory, bytes), audio)
     case 5: Music.decode.qoa(Qoa.decode.played(bytes), audio, Music.qoa.declared(bytes))
     case 6: Music.decode.xm(XmM.load(bytes), libm, Music.device.rate(AudioDevice.is_ready(audio)), audio)
     case 7: Music.decode.mod(U32.is_ne(ModP.count.bytes(bytes), 0) && (ModP.count.bytes(bytes) < 33554432 : U32), bytes, Music.device.rate(AudioDevice.is_ready(audio)), audio)
@@ -8774,7 +8819,7 @@ def Music.decode.kind(+file_type: String) -> U32:
 # (UnsupportedWaveFormat). MP3 data is opened as drmp3_init_memory opens
 # it.
 def Music.load_from_memory_for(+libm: M.Libm, +audio: AudioDevice, +file_type: String, +bytes: +List<U32>) -> AudioDevice & Result<&1, &1, Wave.Error, Music>:
-  Music.decode.selected(Music.decode.kind(file_type), True{}, libm, audio, bytes)
+  Music.decode.selected(Music.decode.kind(file_type), True{}, True{}, libm, audio, bytes)
 
 # LoadMusicStreamFromMemory under the AppleLibm profile. An XM module loads
 # when its powers of two and waveform sines are among the words that profile
@@ -8787,17 +8832,21 @@ def Music.load.decoded(result: AudioDevice & Result<&1, &1, Wave.Error, Music>) 
     case Tuple{+audio, Fail{error}}: (audio, Fail{WaveDataError{error}})
     case Tuple{+audio, Done{music}}: (audio, Done{music})
 
-def Music.load.read(+token: String, +libm: M.Libm, +audio: AudioDevice, result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(AudioDevice & Result<&1, &1, Wave.IOError, Music>):
+def Music.load.read(+nearest: Bool, +token: String, +libm: M.Libm, +audio: AudioDevice, result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(AudioDevice & Result<&1, &1, Wave.IOError, Music>):
   match result:
     case Fail{FileError{code, message}}: IO.pure(AudioDevice & Result<&1, &1, Wave.IOError, Music>, (audio, Fail{WaveFileError{code, message}}))
     case Fail{_}: IO.pure(AudioDevice & Result<&1, &1, Wave.IOError, Music>, (audio, Fail{WaveDataError{InvalidWaveHeader{}}}))
-    case Done{+bytes}: IO.pure(AudioDevice & Result<&1, &1, Wave.IOError, Music>, Music.load.decoded(Music.decode.selected(Music.decode.kind(token), False{}, libm, audio, bytes)))
+    case Done{+bytes}: IO.pure(AudioDevice & Result<&1, &1, Wave.IOError, Music>, Music.load.decoded(Music.decode.selected(Music.decode.kind(token), nearest, False{}, libm, audio, bytes)))
 
 # LoadMusicStream: the file's bytes, by its extension, under a libm profile
 # (an XM module's: see Music.load_from_memory_for); an MP3 file is opened as
-# drmp3_init_file opens it.
+# drmp3_init_file opens it. `nearest` selects the MP3 window conversion
+# (SSE when true, NEON otherwise); other formats do not use it.
+def Music.load_pcm(+nearest: Bool, +libm: M.Libm, +audio: AudioDevice, +path: String) -> IO(AudioDevice & Result<&1, &1, Wave.IOError, Music>):
+  IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, AudioDevice & Result<&1, &1, Wave.IOError, Music>, Files.load_data(path), result => Music.load.read(nearest, Image.file.token(path), libm, audio, result))
+
 def Music.load_for(+libm: M.Libm, +audio: AudioDevice, +path: String) -> IO(AudioDevice & Result<&1, &1, Wave.IOError, Music>):
-  IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, AudioDevice & Result<&1, &1, Wave.IOError, Music>, Files.load_data(path), result => Music.load.read(Image.file.token(path), libm, audio, result))
+  Music.load_pcm(True{}, libm, audio, path)
 
 # LoadMusicStream under the AppleLibm profile.
 def Music.load(+audio: AudioDevice, +path: String) -> IO(AudioDevice & Result<&1, &1, Wave.IOError, Music>):

@@ -265,6 +265,12 @@ class UndefinedNativeExampleTests(unittest.TestCase):
             self.assertEqual(ep.refusal(items['text_codepoints_loading-before'], libm), 1)
         self.assertIn('DotGothic16-Regular.ttf", 36, deduped()', text)
 
+    def test_the_mixed_processor_refuses_when_apple_powf_has_no_answer(self):
+        item = next(item for item in ep.scripts() if item['name'] == 'audio_mixed_processor-powers')
+        self.assertIsNone(ep.refusal(item, 'Glibc239Libm'))
+        self.assertEqual(ep.refusal(item, 'AppleLibm'), 1)
+        self.assertEqual(ep.processor_refusal(item), 1)
+
     def test_the_stream_callback_example_runs_on_the_audio_clock(self):
         self.assertIn('audio_stream_callback', ep.AUDIO_CLOCK)
         self.assertIn('audio_stream_callback', ep.IO_SETUP)

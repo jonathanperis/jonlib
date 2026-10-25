@@ -25,11 +25,12 @@ import ./convert.bend as C
 
 # -----------------------------------------------------------------------------
 # miniaudio runs the device callback with denormals disabled
-# (ma_device_disable_denormals): on x86 with SSE2, the reference here, that is
-# MXCSR's denormals-are-zero and flush-to-zero. Every operation of the
-# callback takes a subnormal operand for a zero of its sign and gives a zero
-# for a result that would be subnormal. (Other hosts keep subnormals: not
-# ported.) A NaN's bits are the host's: a callback that makes one is refused.
+# (ma_device_disable_denormals): on x86 with SSE2 that is MXCSR's
+# denormals-are-zero and flush-to-zero. `flush` selects it. A subnormal
+# operand is the zero of its sign and a subnormal result is zero. AArch64
+# leaves those flags alone, so the same operations keep subnormals when
+# `flush` is false. A NaN's bits are the host's: a callback that makes one
+# is refused.
 
 def nan(+word: U32) -> Bool:
   U32.is_ne((word .&. 8388607 : U32), 0) && U32.is_eq((word .&. 2139095040 : U32), 2139095040)
@@ -49,21 +50,41 @@ def zero.word(+word: U32) -> U32:
 def zero(value: F32) -> F32:
   R.float(zero.word(F32.bits(value)))
 
+def fadd.of(+flush: Bool, x: F32, y: F32) -> F32:
+  match flush:
+    case True{}: zero((zero(x) + zero(y) : F32))
+    case False{}: (x + y : F32)
+
+def fsub.of(+flush: Bool, x: F32, y: F32) -> F32:
+  match flush:
+    case True{}: zero((zero(x) - zero(y) : F32))
+    case False{}: (x - y : F32)
+
+def fmul.of(+flush: Bool, x: F32, y: F32) -> F32:
+  match flush:
+    case True{}: zero((zero(x) * zero(y) : F32))
+    case False{}: (x * y : F32)
+
+def fdiv.of(+flush: Bool, x: F32, y: F32) -> F32:
+  match flush:
+    case True{}: zero((zero(x) / zero(y) : F32))
+    case False{}: (x / y : F32)
+
 def fadd(x: F32, y: F32) -> F32:
-  zero((zero(x) + zero(y) : F32))
+  fadd.of(True{}, x, y)
 
 def fsub(x: F32, y: F32) -> F32:
-  zero((zero(x) - zero(y) : F32))
+  fsub.of(True{}, x, y)
 
 def fmul(x: F32, y: F32) -> F32:
-  zero((zero(x) * zero(y) : F32))
+  fmul.of(True{}, x, y)
 
 def fdiv(x: F32, y: F32) -> F32:
-  zero((zero(x) / zero(y) : F32))
+  fdiv.of(True{}, x, y)
 
 # ma_lpf1_process_pcm_frame_f32: y = (1 - a)*x + a*r1, and y is the next r1.
-def lpf1.sample(+a: U32, +x: U32, +r1: U32) -> U32:
-  F32.bits(fadd(fmul(fsub(1.0, R.float(a)), R.float(x)), fmul(R.float(a), R.float(r1))))
+def lpf1.sample(+flush: Bool, +a: U32, +x: U32, +r1: U32) -> U32:
+  F32.bits(fadd.of(flush, fmul.of(flush, fsub.of(flush, 1.0, R.float(a)), R.float(x)), fmul.of(flush, R.float(a), R.float(r1))))
 
 def Chan.r1(chan: R.Lane) -> U32:
   R.Lane{r1, _, _, _} = chan
@@ -75,20 +96,20 @@ def lpf1.join(+y: U32, rest: R.Filtered) -> R.Filtered:
 
 # A frame through the filter; each channel's register is the first of its
 # resampler registers.
-def lpf1(frame: +List<U32>, chans: +List<R.Lane>, +a: U32) -> R.Filtered:
+def lpf1(frame: +List<U32>, +flush: Bool, chans: +List<R.Lane>, +a: U32) -> R.Filtered:
   match frame chans:
-    case Con{+x, xs} Con{+chan, cs}: lpf1.join(lpf1.sample(a, x, Chan.r1(chan)), lpf1(xs, cs, a))
+    case Con{+x, xs} Con{+chan, cs}: lpf1.join(lpf1.sample(flush, a, x, Chan.r1(chan)), lpf1(xs, flush, cs, a))
     case _ _: R.Filtered{Nil{}, Nil{}, True{}}
 
-def lpf1.if(apply: Bool, +frame: +List<U32>, +chans: +List<R.Lane>, +a: U32) -> R.Filtered:
+def lpf1.if(+flush: Bool, apply: Bool, +frame: +List<U32>, +chans: +List<R.Lane>, +a: U32) -> R.Filtered:
   match apply:
-    case True{}: lpf1(frame, chans, a)
+    case True{}: lpf1(frame, flush, chans, a)
     case False{}: R.Filtered{frame, chans, True{}}
 
 # ma_linear_resampler_interpolate_frame_f32: x0 + (x1 - x0)*t for each channel.
-def lerp(a: +List<U32>, b: +List<U32>, +t: F32) -> +List<U32>:
+def lerp(a: +List<U32>, +flush: Bool, b: +List<U32>, +t: F32) -> +List<U32>:
   match a b:
-    case Con{+x, xs} Con{+y, ys}: Con{F32.bits(fadd(R.float(x), fmul(fsub(R.float(y), R.float(x)), t))), lerp(xs, ys, t)}
+    case Con{+x, xs} Con{+y, ys}: Con{F32.bits(fadd.of(flush, R.float(x), fmul.of(flush, fsub.of(flush, R.float(y), R.float(x)), t))), lerp(xs, flush, ys, t)}
     case _ _: Nil{}
 
 # -----------------------------------------------------------------------------
@@ -98,8 +119,8 @@ def lerp(a: +List<U32>, b: +List<U32>, +t: F32) -> +List<U32>:
 # converter's resampler has a filter of order 1, not the order 4 of
 # ma_convert_frames).
 
-def load(+plain: Bool, +st: R.St, +frame: +List<U32>, +p: R.Params, +a: U32) -> R.St:
-  R.load.filtered(lpf1.if(Bool.not(plain) && R.Params.down(p), frame, R.St.chans(st), a), st)
+def load(+flush: Bool, +plain: Bool, +st: R.St, +frame: +List<U32>, +p: R.Params, +a: U32) -> R.St:
+  R.load.filtered(lpf1.if(flush, Bool.not(plain) && R.Params.down(p), frame, R.St.chans(st), a), st)
 
 def St.x0(+st: R.St) -> +List<U32>:
   R.St{_, _, x0, _, _, _} = st
@@ -109,12 +130,12 @@ def St.x1(+st: R.St) -> +List<U32>:
   R.St{_, _, _, x1, _, _} = st
   x1
 
-def fraction(+st: R.St, +rout: U32) -> F32:
+def fraction(+flush: Bool, +st: R.St, +rout: U32) -> F32:
   R.St{_, t_frac, _, _, _, _} = st
-  fdiv(U32.to_f32(t_frac), U32.to_f32(rout))
+  fdiv.of(flush, U32.to_f32(t_frac), U32.to_f32(rout))
 
-def produce(+plain: Bool, +st: R.St, +p: R.Params, +a: U32) -> R.Produced:
-  R.produce.advance(lpf1.if(Bool.not(plain) && Bool.not(R.Params.down(p)), lerp(St.x0(st), St.x1(st), fraction(st, R.Params.rout(p))), R.St.chans(st), a), st, p)
+def produce(+flush: Bool, +plain: Bool, +st: R.St, +p: R.Params, +a: U32) -> R.Produced:
+  R.produce.advance(lpf1.if(flush, Bool.not(plain) && Bool.not(R.Params.down(p)), lerp(St.x0(st), flush, St.x1(st), fraction(flush, st, R.Params.rout(p))), R.St.chans(st), a), st, p)
 
 # No NaN in what a step keeps or gives: the frame the resampler holds last.
 def held.fine(+st: R.St) -> Bool:
@@ -128,7 +149,7 @@ type Flow is Data:
 
 # Phases as in the resampler: 1 loads an input frame that is due, 2 makes an
 # output frame; it ends with `remaining` frames made or the input used up.
-def flow(fuel: Nat, phase: U32, input: +List<+List<U32>>, +st: R.St, +acc: +List<+List<U32>>, +count: U32, +remaining: U32, +plain: Bool, +p: R.Params, +a: U32, +fine: Bool) -> Flow:
+def flow(fuel: Nat, +flush: Bool, phase: U32, input: +List<+List<U32>>, +st: R.St, +acc: +List<+List<U32>>, +count: U32, +remaining: U32, +plain: Bool, +p: R.Params, +a: U32, +fine: Bool) -> Flow:
   match fuel:
     case 0n: Flow{st, acc, input, count, False{}}
     case 1n+k:
@@ -136,13 +157,13 @@ def flow(fuel: Nat, phase: U32, input: +List<+List<U32>>, +st: R.St, +acc: +List
         case 1:
           match input:
             case Con{+frame, rest}:
-              +loaded = load(plain, st, frame, p, a)
-              flow(k, R.next_phase(loaded, remaining), rest, loaded, acc, count, remaining, plain, p, a, fine && held.fine(loaded))
+              +loaded = load(flush, plain, st, frame, p, a)
+              flow(k, flush, R.next_phase(loaded, remaining), rest, loaded, acc, count, remaining, plain, p, a, fine && held.fine(loaded))
             case Nil{}: Flow{st, acc, Nil{}, count, fine}
         case 2:
-          +made = produce(plain, st, p, a)
+          +made = produce(flush, plain, st, p, a)
           +next = R.Produced.st(made)
-          flow(k, R.next_phase(next, (remaining - 1 : U32)), input, next, Con{R.Produced.frame(made), acc}, (count + 1 : U32), (remaining - 1 : U32), plain, p, a, fine && Bool.not(any.nan(R.Produced.frame(made), False{})))
+          flow(k, flush, R.next_phase(next, (remaining - 1 : U32)), input, next, Con{R.Produced.frame(made), acc}, (count + 1 : U32), (remaining - 1 : U32), plain, p, a, fine && Bool.not(any.nan(R.Produced.frame(made), False{})))
         case _: Flow{st, acc, input, count, fine}
 
 # -----------------------------------------------------------------------------
@@ -340,7 +361,7 @@ def splice(+block: +List<U32>, +offset: U32, data: +List<U32>, +pad: U32, +skip:
 # filter's coefficient, and its format: the bits of a sample, the channels,
 # and whether it is a stream.
 type K is Data:
-  K{size: U32, data: +List<U32>, source: U32, rate: U32, plain: Bool, p: R.Params, a: U32, bits: U32, channels: U32, stream: Bool, called: Bool}
+  K{size: U32, data: +List<U32>, source: U32, rate: U32, plain: Bool, p: R.Params, a: U32, bits: U32, channels: U32, stream: Bool, called: Bool, flush: Bool}
 
 # ReadAudioBufferFramesInInternalFormat for a static buffer of `size` frames
 # (not 0) asked for `est` frames: nothing when it is not playing, or when its
@@ -362,7 +383,7 @@ type Read is Data:
   Read{frames: +List<+List<U32>>, cursor: U32, playing: Bool, first: Bool, second: Bool, short: Bool}
 
 def read.static(+k: K, +cursor: U32, +playing: Bool, +est: U32) -> Read:
-  K{+size, +data, _, _, _, _, _, _, _, _, _} = k
+  K{+size, +data, _, _, _, _, _, _, _, _, _, _} = k
   +count = read.count(size, cursor, playing, est)
   +ends = read.ends(size, cursor, playing, est)
   Read{C.split(U32.to_nat(count), 2n, List.take(&2, U32, List.drop(&2, U32, data, U32.to_nat((2 * cursor : U32))), U32.to_nat((2 * count : U32)))),
@@ -395,7 +416,7 @@ def read.there(+size: U32, +cursor: U32, +first: Bool, +second: Bool, +est: U32)
   Bool.pick(U32, ended && Bool.not(either((cursor >= sub : U32), first, second)), U32.min((est - a : U32), sub), 0)
 
 def read.stream(+k: K, +cursor: U32, +first: Bool, +second: Bool, +est: U32) -> Read:
-  K{+size, +data, _, _, _, _, _, _, +channels, _, _} = k
+  K{+size, +data, _, _, _, _, _, _, +channels, _, _, _} = k
   +sub = U32.max((size / 2 : U32), 1)
   +upper = (cursor >= sub : U32)
   +a = read.here(size, cursor, first, second, est)
@@ -422,7 +443,7 @@ def take.padded(n: Nat, xs: +List<U32>, acc: +List<U32>) -> +List<U32>:
 # where the answers end the frames are zeros (a turn made to learn what the
 # callback will be asked for).
 def read.called(+k: K, +cursor: U32, +first: Bool, +second: Bool, +est: U32, +taken: U32) -> Read:
-  K{_, +data, _, _, _, _, _, _, +channels, _, _} = k
+  K{_, +data, _, _, _, _, _, _, +channels, _, _, _} = k
   Read{C.split(U32.to_nat(est), U32.to_nat(channels), take.padded(U32.to_nat((est * channels : U32)), List.drop(&2, U32, data, U32.to_nat((taken * channels : U32))), Nil{})),
     cursor, True{}, first, second, False{}}
 
@@ -433,12 +454,16 @@ def read.kind(called: Bool, streams: Bool, +k: K, +cursor: U32, +playing: Bool, 
     case False{} False{}: read.static(k, cursor, playing, est)
 
 def K.stream(+k: K) -> Bool:
-  K{_, _, _, _, _, _, _, _, _, stream, _} = k
+  K{_, _, _, _, _, _, _, _, _, stream, _, _} = k
   stream
 
 def K.called(+k: K) -> Bool:
-  K{_, _, _, _, _, _, _, _, _, _, called} = k
+  K{_, _, _, _, _, _, _, _, _, _, called, _} = k
   called
+
+def K.flush(+k: K) -> Bool:
+  K{_, _, _, _, _, _, _, _, _, _, _, flush} = k
+  flush
 
 # A stream that does not play gives nothing, as a sound.
 def read(+k: K, +cursor: U32, +playing: Bool, +first: Bool, +second: Bool, +est: U32, +taken: U32) -> Read:
@@ -471,42 +496,42 @@ def count.frames(frames: +List<+List<U32>>, +n: U32) -> U32:
 
 # ma_channel_converter's weights for one output channel: the sum of each
 # input sample times its weight (quarters), in input order.
-def mixed(xs: +List<U32>, ws: +List<U32>, +acc: F32) -> F32:
+def mixed(xs: +List<U32>, +flush: Bool, ws: +List<U32>, +acc: F32) -> F32:
   match xs ws:
-    case Con{+x, rest} Con{+w, more}: mixed(rest, more, fadd(acc, fmul(R.float(x), (U32.to_f32(w) * 0.25 : F32))))
+    case Con{+x, rest} Con{+w, more}: mixed(rest, flush, more, fadd.of(flush, acc, fmul.of(flush, R.float(x), (U32.to_f32(w) * 0.25 : F32))))
     case _ _: acc
 
-def mixdown.frame(table: +List<+List<U32>>, +frame: +List<U32>) -> +List<U32>:
+def mixdown.frame(table: +List<+List<U32>>, +flush: Bool, +frame: +List<U32>) -> +List<U32>:
   match table:
     case Nil{}: Nil{}
-    case Con{+ws, rest}: Con{F32.bits(mixed(frame, ws, 0.0)), mixdown.frame(rest, frame)}
+    case Con{+ws, rest}: Con{F32.bits(mixed(frame, flush, ws, 0.0)), mixdown.frame(rest, flush, frame)}
 
-def mixdown(frames: +List<+List<U32>>, +table: +List<+List<U32>>, acc: +List<+List<U32>>) -> +List<+List<U32>>:
+def mixdown(frames: +List<+List<U32>>, +flush: Bool, +table: +List<+List<U32>>, acc: +List<+List<U32>>) -> +List<+List<U32>>:
   match frames:
     case Nil{}: List.reverse(&2, +List<U32>, acc)
-    case Con{+frame, rest}: mixdown(rest, table, Con{mixdown.frame(table, frame), acc})
+    case Con{+frame, rest}: mixdown(rest, flush, table, Con{mixdown.frame(table, flush, frame), acc})
 
 # The f32 samples of raw frames, flat.
 def floats(+k: K, raw: +List<+List<U32>>) -> +List<U32>:
-  K{_, _, _, _, _, _, _, +bits, _, _, _} = k
+  K{_, _, _, _, _, _, _, +bits, _, _, _, _} = k
   C.map.sample(C.map.decode(C.flat(raw), U32.is_eq(bits, 16)), (3 * C.format(bits) + 2 : U32))
 
 def K.channels(+k: K) -> U32:
-  K{_, _, _, _, _, _, _, _, channels, _, _} = k
+  K{_, _, _, _, _, _, _, _, channels, _, _, _} = k
   channels
 
-def converted.mixed(many: Bool, +frames: +List<+List<U32>>, +channels: U32) -> +List<+List<U32>>:
+def converted.mixed(+flush: Bool, many: Bool, +frames: +List<+List<U32>>, +channels: U32) -> +List<+List<U32>>:
   match many:
-    case True{}: mixdown(frames, C.weights(2n, channels, 2, 0), Nil{})
+    case True{}: mixdown(frames, flush, C.weights(2n, channels, 2, 0), Nil{})
     case False{}: frames
 
 # The resampler's input for raw frames.
 def converted(+k: K, +raw: +List<+List<U32>>) -> +List<+List<U32>>:
   +frames = C.split(U32.to_nat(count.frames(raw, 0)), U32.to_nat(K.channels(k)), floats(k, raw))
-  converted.mixed((K.channels(k) > 2 : U32), frames, K.channels(k))
+  converted.mixed(K.flush(k), (K.channels(k) > 2 : U32), frames, K.channels(k))
 
 def in.cap(+k: K) -> U32:
-  K{_, _, _, _, _, _, _, +bits, +channels, _, _} = k
+  K{_, _, _, _, _, _, _, +bits, +channels, _, _, _} = k
   +formatted = U32.is_ne(bits, 32)
   Bool.pick(U32, U32.is_eq(channels, 2), Bool.pick(U32, formatted, 512, 4294967295),
     Bool.pick(U32, U32.is_eq(channels, 1), Bool.pick(U32, formatted, 1024, 4294967295), Bool.pick(U32, formatted, U32.min(512, (1024 / U32.max(channels, 1) : U32)), 512)))
@@ -543,11 +568,11 @@ def pass.flowed(flow: Flow, +rest: +List<+List<U32>>, +taken: U32, +count: U32) 
 
 def pass(fed: Fed, +want: U32, +k: K) -> Fed:
   Fed{+st, +acc, +rest, +count, +fine, _} = fed
-  K{_, _, _, _, +plain, +p, +a, _, +channels, _, _} = k
+  K{_, _, _, _, +plain, +p, +a, _, +channels, _, _, +flush} = k
   +out = U32.min((want - count : U32), out.cap(k))
   +taken = U32.min(U32.min(count.frames(rest, 0), in.cap(k)), Bool.pick(U32, U32.is_eq(channels, 2), 4294967295, required(st, out, p)))
   +raw = List.take(&2, +List<U32>, rest, U32.to_nat(taken))
-  pass.flowed(flow(U32.to_nat((taken + out + 2 : U32)), R.next_phase(st, out), converted(k, raw), st, acc, 0, out, plain, p, a, fine), rest, taken, count)
+  pass.flowed(flow(U32.to_nat((taken + out + 2 : U32)), flush, R.next_phase(st, out), converted(k, raw), st, acc, 0, out, plain, p, a, fine), rest, taken, count)
 
 def passes(fuel: Nat, done: Bool, +fed: Fed, +want: U32, +k: K) -> Fed:
   match fuel:
@@ -609,7 +634,7 @@ def step.read(read: Read, +st: R.St, +acc: +List<+List<U32>>, +need: U32, +now: 
 
 # The frames one pass reads: raudio's guess for what is left of the run.
 def step.estimate(+k: K, +want: U32) -> U32:
-  K{_, _, +source, +rate, _, _, _, +bits, +channels, _, _} = k
+  K{_, _, +source, +rate, _, _, _, +bits, +channels, _, _, _} = k
   estimate(source, rate, want, read.cap(bits, channels))
 
 # One pass of ReadAudioBufferFramesInMixingFormat's loop: the residual goes
@@ -699,11 +724,14 @@ def Feed.second(feed: Feed) -> Bool:
 # rate Jonlib does not resample (mode 2), a buffer without frames (raudio
 # divides by its size) and a stream of more than 1024 channels (raudio's
 # input buffer or miniaudio's temporary holds no frame of it).
-def turn(head: Head, +size: U32, +data: +List<U32>, +n: U32) -> Turn:
+def turn.for(+flush: Bool, head: Head, +size: U32, +data: +List<U32>, +n: U32) -> Turn:
   Head{+source, +rate, +mode, +coef, cursor, st, residual, +kind} = head
   +g = C.gcd(64n, source, rate)
   +wide = (Feed.channels(kind) > 1024 : U32)
   turn.done(runs(U32.to_nat((n + 2 : U32)), False{},
     S{n, 0, 0, cursor, True{}, Feed.first(kind), Feed.second(kind), st, residual, Nil{}, U32.is_ne(mode, 2) && (size > 0 : U32) && Bool.not(wide), False{}, Nil{}},
-    K{size, data, source, rate, U32.is_eq(mode, 0), R.params(True{}, False{}, Nil{}, (source / g : U32), (rate / g : U32)), coef, Feed.bits(kind), Feed.channels(kind), Bool.not(Feed.static(kind)), Feed.called(kind)}),
+    K{size, data, source, rate, U32.is_eq(mode, 0), R.params(True{}, False{}, Nil{}, (source / g : U32), (rate / g : U32)), coef, Feed.bits(kind), Feed.channels(kind), Bool.not(Feed.static(kind)), Feed.called(kind), flush}),
     source, rate, mode, coef, kind)
+
+def turn(head: Head, +size: U32, +data: +List<U32>, +n: U32) -> Turn:
+  turn.for(True{}, head, size, data, n)

@@ -34,14 +34,14 @@ def zeros(n: Nat, acc: +List<U32>) -> +List<U32>:
 # The decoder's header, free format size and reservoir, which the stream
 # keeps too.
 def Decoder.dec(decoder: L.Decoder) -> H.Dec:
-  L.Decoder{dec, _, _, _, _, _, _, _, _} = decoder
+  L.Decoder{dec, _, _, _, _, _, _, _, _, _} = decoder
   dec
 
 # drmp3dec_init: the header's first byte cleared, so that the next frame is
 # searched for in a zeroed decoder.
 def Decoder.cleared(decoder: L.Decoder) -> L.Decoder:
-  L.Decoder{H.Dec{+header, free, reserv}, main, scf, ist0, ist1, compress, overlap0, overlap1, qmf} = decoder
-  L.Decoder{H.Dec{(header .&. 16777215 : U32), free, reserv}, main, scf, ist0, ist1, compress, overlap0, overlap1, qmf}
+  L.Decoder{H.Dec{+header, free, reserv}, main, scf, ist0, ist1, compress, overlap0, overlap1, qmf, nearest} = decoder
+  L.Decoder{H.Dec{(header .&. 16777215 : U32), free, reserv}, main, scf, ist0, ist1, compress, overlap0, overlap1, qmf, nearest}
 
 def Stream.have(stream: H.Stream) -> U32:
   H.Stream{_, _, _, _, _, have, _, _, _, _, _, _, _, _, _, _, _} = stream
@@ -73,7 +73,7 @@ def pcm.written(+samples: +List<U32>, +array: +List<U32>) -> +List<U32>:
 
 # `array` is pcmFrames: a frame the port refuses leaves it as it was.
 def next.frame(+stream: H.Stream, +decoder: L.Decoder, +samples: U32, +bytes: U32, +status: U32, +pcm: +List<U32>, +array: +List<U32>) -> Next:
-  L.Decoder{H.Dec{+header, _, _}, _, _, _, _, _, _, _, _} = decoder
+  L.Decoder{H.Dec{+header, _, _}, _, _, _, _, _, _, _, _, _} = decoder
   Next{H.stream.used(stream, Decoder.dec(decoder), bytes), decoder, Bool.pick(U32, U32.is_eq(status, 0), samples, 0), status,
     Bool.pick(+List<U32>, U32.is_eq(status, 0), pcm.written(pcm, array), array), Bool.pick(U32, H.hdr.mono(header), 1, 2)}
 
@@ -166,21 +166,29 @@ def open.stream(+data: +List<U32>, +opened: H.Stream) -> H.Stream:
   H.Stream{_, +size, +length, _, _, _, _, _, _, _, _, _, _, _, _, _, _} = opened
   H.stream.began(H.stream.memory(opened), data, size, length, H.tags.id3v2(data))
 
-def open.opened(opened: Maybe<H.Opened>, +data: +List<U32>) -> Maybe<Player>:
+def open.opened.for(+nearest: Bool, opened: Maybe<H.Opened>, +data: +List<U32>) -> Maybe<Player>:
   match opened:
     case None{}: None{}
     case Some{H.Opened{+stream, +first}}:
-      Some{open.first(Bool.not(first), advance(Player{open.stream(data, stream), L.Decoder.zero(), zeros(2304n, Nil{}), 0, 0, 0, 0, 0}), stream)}
+      Some{open.first(Bool.not(first), advance(Player{open.stream(data, stream), L.Decoder.zeroed(nearest), zeros(2304n, Nil{}), 0, 0, 0, 0, 0}), stream)}
 
-# drmp3_init_file on the file's bytes: None where it fails (H.open).
+# drmp3_init_file on the file's bytes, with the window conversion of the
+# build (`nearest`: SSE, otherwise NEON). None where it fails (H.open).
+def open.for(+nearest: Bool, +data: +List<U32>) -> Maybe<Player>:
+  open.opened.for(nearest, H.open(data), data)
+
+# drmp3_init_file on the SSE conversion, which is raylib's build on x86-64.
 def open(+data: +List<U32>) -> Maybe<Player>:
-  open.opened(H.open(data), data)
+  open.for(True{}, data)
 
 # drmp3_init_memory on the same bytes (H.open.memory): what LoadWave and
 # LoadMusicStreamFromMemory open. The two read a stream's end differently:
 # a memory stream never sees the tags after its frames.
+def open.memory.for(+nearest: Bool, +data: +List<U32>) -> Maybe<Player>:
+  open.opened.for(nearest, H.open.memory(data), data)
+
 def open.memory(+data: +List<U32>) -> Maybe<Player>:
-  open.opened(H.open.memory(data), data)
+  open.memory.for(True{}, data)
 
 # -----------------------------------------------------------------------------
 # Reading (drmp3_read_pcm_frames_raw)

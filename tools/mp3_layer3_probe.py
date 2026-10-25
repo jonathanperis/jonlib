@@ -2,7 +2,8 @@
 """Compare MP3 frame decoding (src/mp3_layer3.bend with src/mp3_layer12.bend) with dr_mp3.
 
 The reference is dr_mp3 itself (pinned raylib's src/external/dr_mp3.h, built
-as raylib builds it: SSE, 16-bit output). Its frame function is run over a
+as raylib builds it: 16-bit output, the SSE window conversion on x86-64 and
+the NEON one on arm64). Its frame function is run over a
 file's bytes the way a caller does, a frame after a frame. The three
 functions on the way to a granule's values (drmp3dec_decode_frame,
 drmp3_L3_decode, drmp3_L3_huffman) are copied from the header's text with
@@ -162,7 +163,7 @@ def fnv.qmf(qmf: +List<+List<U32>>, +h: U32) -> U32:
     case Con{+newest, +older}: fnv.live(newest, 0, fnv.rows(List.reverse(&2, +List<U32>, older), h))
 
 def state(+decoder: L.Decoder) -> U32:
-  L.Decoder{H.Dec{+header, +free, +reserv}, +main, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1, +qmf} = decoder
+  L.Decoder{H.Dec{+header, +free, +reserv}, +main, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1, +qmf, _} = decoder
   fnv.qmf(qmf, fnv(overlap1, fnv(overlap0, fnv([compress], fnv(ist1, fnv(ist0, fnv(scf, fnv(main, fnv(reserv, fnv([H.b0(header), H.b1(header), H.b2(header), H.b3(header), free, H.count(reserv, 0)], 2166136261))))))))))
 
 def shown(status: U32, +decoder: L.Decoder, +samples: U32, +bytes: U32, +spectra: +List<+List<U32>>, +pcm: +List<U32>) -> String:
@@ -192,7 +193,7 @@ def printed(lines: +List<String>) -> IO(Unit):
         printed(rest)
 
 def walked(+bytes: +List<U32>, +size: U32) -> IO(Unit):
-  printed(Con{"frames", List.reverse(&2, String, frames(U32.to_nat((size + 1 : U32)), U32.is_eq(size, 0), L.decode(L.Decoder.zero(), bytes, size), bytes, size, Nil{}))})
+  printed(Con{"frames", List.reverse(&2, String, frames(U32.to_nat((size + 1 : U32)), U32.is_eq(size, 0), L.decode(L.Decoder.zeroed(NEAREST), bytes, size), bytes, size, Nil{}))})
 
 def loaded(result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Unit):
   match result:
@@ -496,7 +497,9 @@ def corpus(source):
 
 
 def render(selected, gpu):
-    return PROGRAM + ''.join(f'    Unit <- IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Files.load_data({json.dumps(path)}), loaded)\n'
+    import platform
+    nearest = 'False{}' if platform.machine() in ('arm64', 'aarch64') else 'True{}'
+    return PROGRAM.replace('NEAREST', nearest) + ''.join(f'    Unit <- IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Files.load_data({json.dumps(path)}), loaded)\n'
                              for _, path in selected) + '    IO.print("done")\n'
 
 

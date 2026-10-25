@@ -161,14 +161,18 @@ class SoundMixTests(unittest.TestCase):
         model, _ = run(('init',), ('load', 0, 'five32'), ('pitch', 0, sp.bits(2.0)), ('pitch', 0, sp.bits(0.9999999)), ('pitch', 0, sp.bits(1e9)), ('play', 0), ('mix', 1))
         self.assertEqual((model.mixed, model.undefined, model.buffers[0]['rate']), ([0, 0], False, 48000))
 
-    def test_subnormals_are_zeros_in_the_callback(self):
+    def test_subnormals_follow_the_host_callback(self):
+        # x86 flushes a subnormal to the zero of its sign. AArch64 keeps it. A product below 2^-149 is zero on both.
+        flushed = sp.keeps_subnormals() is False
         self.assertEqual([sp.bits(sp.fz(sp.fl(w))) for w in (0, 1, 0x80000001, 0x007FFFFF, 0x00800000, 0x7F800000, sp.bits(-0.0))],
-                         [0, 0, 0x80000000, 0, 0x00800000, 0x7F800000, 0x80000000])
+                         [0, 0, 0x80000000, 0, 0x00800000, 0x7F800000, 0x80000000] if flushed else
+                         [0, 1, 0x80000001, 0x007FFFFF, 0x00800000, 0x7F800000, 0x80000000])
         self.assertEqual([sp.bits(v) for v in (sp.fmul(2.0 ** -126, 0.5), sp.fmul(2.0 ** -127, 4.0), sp.fadd(2.0 ** -127, 1.0), sp.fsub(1.5 * 2.0 ** -126, 2.0 ** -126),
-                                               sp.fdiv(-(2.0 ** -126), 2.0))], [0, 0, ONE, 0, 0x80000000])
+                                               sp.fdiv(-(2.0 ** -126), 2.0))],
+                         [0, 0, ONE, 0, 0x80000000] if flushed else [0x00400000, 0x01000000, ONE, 0x00400000, 0x80400000])
         model, _ = run(('init',), ('load', 0, 'tiny32'), ('play', 0), ('mix', 1), ('mix', 1))       # (0.5, 1e-40): the frame it holds
-        self.assertEqual((model.mixed, model.undefined), ([sp.bits(0.5 * 0.6875), 0], False))
-        model, _ = run(('init',), ('load', 0, 'five32'), ('volume', 0, 1), ('play', 0), ('mix', 2))  # a subnormal volume is silence
+        self.assertEqual((model.mixed, model.undefined), ([sp.bits(0.5 * 0.6875), 0 if flushed else 49061], False))
+        model, _ = run(('init',), ('load', 0, 'five32'), ('volume', 0, 1), ('play', 0), ('mix', 2))  # volume 2^-149 underflows in the level
         self.assertEqual((model.mixed, model.undefined), ([0, 0, 0, 0], False))
 
 

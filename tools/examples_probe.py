@@ -1494,7 +1494,8 @@ def scripts():
         # country.mp3 once more, with the processor on the device's mix: every callback raises its 960 samples to the
         # exponent and leaves an average, a bar of the frame. The music begins quietly, so space plays coin.wav over it at
         # once; left lowers the exponent twice (0.95, 0.90: louder), right raises it three times (1.05) over a slow frame
-        # and one of a tenth of a second, whose ten callbacks each leave a bar.
+        # and one of a tenth of a second, whose ten callbacks each leave a bar. powf has no AppleLibm answer, so the
+        # first update that owes a 10 ms period refuses that frame and every later one (processor_refusal).
         script('audio_mixed_processor', 'powers', [quick(), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False), key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]),
                                                    quick([key(KEY_LEFT)]), slow([key(KEY_LEFT, False), key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]),
                                                    quick([key(KEY_RIGHT)]), long([key(KEY_RIGHT, False)]), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]),
@@ -2034,6 +2035,22 @@ REPORTED = {'textures_sprite_stacking', 'shapes_triangle_strip', 'shapes_recursi
             'shapes_outlines_testbed', 'shapes_outlines_thickness', 'text_animations', 'audio_amp_envelope'}
 
 
+def processor_refusal(item):
+    """The first frame whose update owes an audio period after InitAudioDevice.
+
+    Setup opens the device at the script start. Each update reads GetTime before
+    BeginDrawing: the previous frame's `after`, and the start on the first frame.
+    A positive `(int)((time - opened)*100)` is a callback. AppleLibm has no powf,
+    so that callback refuses the frame."""
+    opened = item['start']
+    clock = opened
+    for index, frame in enumerate(item['frames']):
+        if int((clock - opened) * 100.0) > 0:
+            return index
+        clock = frame['after']
+    return None
+
+
 def refusal(item, libm):
     """The index of the first frame Jonlib refuses (None when none is; 'reported' to take Jonlib's own)."""
     if item['example'] in UNDEFINED_NATIVE:
@@ -2042,6 +2059,8 @@ def refusal(item, libm):
         return UNDEFINED_FROM[item['name']]
     if item['example'] in REPORTED:
         return 'reported' if libm == 'AppleLibm' else None
+    if item['example'] == 'audio_mixed_processor' and libm == 'AppleLibm':
+        return processor_refusal(item)
     if item['example'] in PERSPECTIVE and libm == 'AppleLibm':
         return 0
     if item['example'] == 'shapes_basic_shapes':
@@ -2559,6 +2578,11 @@ def render(items, libm, logo, raylib_source, directories=None, listed=None):
         if effects and not io:
             raise ProbeFailure(f'examples: {name}: an Effects program is replayed in IO (add it to IO_SETUP, its setup in IO)')
         resources = 'dir' if name in SCRATCH else json.dumps(str(raylib_source / 'examples' / resource_module(name)) + '/')
+        if name == 'audio_mixed_processor':
+            import platform
+            arm = platform.machine() in ('arm64', 'aarch64')
+            kept = platform.system() == 'Darwin' and arm
+            setup = f'Ex.setup(M.LIBM{{}}, {"False{}" if arm else "True{}"}, {"False{}" if kept else "True{}"}, RESOURCES, core, frame)'
         body = (PROGRAM.replace('MODULE', MODULES.get(name, f'../../examples/{name}.bend')).replace('READY', EFFECTS_READY if effects else PURE_READY)
                 .replace('REPLAY', EFFECTS_REPLAY if effects else IO_REPLAY if io else PURE_REPLAY).replace('EXAMPLE', name)
                 .replace('SETUP_PARAMS ', setup_params).replace('SETUP', setup).replace('LIBM', libm).replace('RESOURCES', resources))

@@ -219,8 +219,8 @@ def opened(player: Maybe<S.Player>, +ops: +List<U32>) -> String:
 
 def open.as(memory: Bool, +bytes: +List<U32>) -> Maybe<S.Player>:
   match memory:
-    case False{}: S.open(bytes)
-    case True{}: S.open.memory(bytes)
+    case False{}: S.open.for(NEAREST, bytes)
+    case True{}: S.open.memory.for(NEAREST, bytes)
 
 def loaded(result: Result<&1, &1, J.Surface.IOError, +List<U32>>, +ops: +List<U32>, +memory: Bool) -> IO(Unit):
   match result:
@@ -245,7 +245,9 @@ def operations(name, straight=False):
 
 
 def render(selected, gpu):
-    return PROGRAM + ''.join(
+    import platform
+    nearest = 'False{}' if platform.machine() in ('arm64', 'aarch64') else 'True{}'
+    return PROGRAM.replace('NEAREST', nearest) + ''.join(
         f'    Unit <- IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Files.load_data({json.dumps(path)}), result => loaded(result, {probekit.bend_list(operations(name, straight))}, '
         f'{"True" if memory else "False"}{{}}))\n'
         for name, path, memory, straight in selected) + '    IO.print("done")\n'

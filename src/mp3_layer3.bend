@@ -537,8 +537,14 @@ def Spectrum.fine(spectrum: Spectrum) -> Bool:
 # mono frame does not write and whose stereo step reads; the IMDCT's
 # overlap for each channel (mdct_overlap: nine floats a subband, 288); and
 # the synthesis filter's last fifteen rows (qmf_state, the newest first).
+# `nearest` is not in drmp3dec. True keeps the SSE window conversion
+# (_mm_cvtps_epi32: nearest, ties to even), which is raylib's build on
+# x86-64. False keeps the NEON one (half added, truncated toward zero, one
+# less when that sum is negative, then saturated to an int16), which is
+# raylib's build on arm64. A search that zeroes the decoder keeps it, so a
+# stream stays on the conversion it was opened with.
 type Decoder is Data:
-  Decoder{dec: H.Dec, main: +List<U32>, scf: +List<U32>, ist0: +List<U32>, ist1: +List<U32>, compress: U32, overlap0: +List<U32>, overlap1: +List<U32>, qmf: +List<+List<U32>>}
+  Decoder{dec: H.Dec, main: +List<U32>, scf: +List<U32>, ist0: +List<U32>, ist1: +List<U32>, compress: U32, overlap0: +List<U32>, overlap1: +List<U32>, qmf: +List<+List<U32>>, nearest: Bool}
 
 # qmf_state zeroed: fifteen rows of 64.
 def rows.zero(n: Nat, acc: +List<+List<U32>>) -> +List<+List<U32>>:
@@ -546,10 +552,14 @@ def rows.zero(n: Nat, acc: +List<+List<U32>>) -> +List<+List<U32>>:
     case 0n: acc
     case 1n+k: rows.zero(k, Con{zeros.onto(64n, Nil{}), acc})
 
-# A decoder zeroed: what drmp3dec_decode_frame makes of it before it
-# searches for a frame.
+# A decoder zeroed, on one window conversion: what drmp3dec_decode_frame
+# makes of it before it searches for a frame.
+def Decoder.zeroed(+nearest: Bool) -> Decoder:
+  Decoder{H.Dec.zero(), zeros.onto(2815n, Nil{}), zeros.onto(40n, Nil{}), zeros.onto(39n, Nil{}), zeros.onto(39n, Nil{}), 0, zeros.onto(288n, Nil{}), zeros.onto(288n, Nil{}), rows.zero(15n, Nil{}), nearest}
+
+# The SSE conversion, which is raylib's build on x86-64.
 def Decoder.zero() -> Decoder:
-  Decoder{H.Dec.zero(), zeros.onto(2815n, Nil{}), zeros.onto(40n, Nil{}), zeros.onto(39n, Nil{}), zeros.onto(39n, Nil{}), 0, zeros.onto(288n, Nil{}), zeros.onto(288n, Nil{}), rows.zero(15n, Nil{})}
+  Decoder.zeroed(True{})
 
 # What a frame gives: the decoder after it, its samples for a channel (0:
 # none decoded), the bytes it used, `status`, the granules' subband samples
@@ -1126,12 +1136,15 @@ def filter.right(mono: Bool, +values: +List<U32>, +overlap: +List<U32>, +h: U32,
 # Synthesis (drmp3d_DCT_II, drmp3d_synth_pair, drmp3d_synth,
 # drmp3d_synth_granule): a granule's subband samples to 16-bit PCM.
 #
-# raylib builds dr_mp3 with SSE and 16-bit output, and the SSE branches are
+# raylib builds dr_mp3 with SIMD and 16-bit output. The SIMD branches are
 # the ones followed where they differ from the scalar code: the last sums
-# of the DCT are associated otherwise, and the window's sums are rounded to
-# integers by the processor's rule (to nearest, ties to even) where the two
-# samples a subband pair computes alone (drmp3d_synth_pair) are rounded by
-# drmp3d_scale_pcm (half added, truncated, one less below zero).
+# of the DCT are associated otherwise (the same way on SSE and NEON, which
+# both add a product after the multiply). The window's sums are integers by
+# the build: SSE rounds to nearest, ties to even (`nearest`); NEON adds a
+# half, truncates toward zero and subtracts one when that sum is negative.
+# The two samples a subband pair computes alone (drmp3d_synth_pair) are
+# rounded by drmp3d_scale_pcm on both builds (half added, truncated, one
+# less below zero).
 
 # Four floats.
 type Four is Data:
@@ -1284,6 +1297,37 @@ def sample.packed(+x: F32) -> U32:
   +cut = float.cut(bits)
   int16((bits >= 2147483648 : U32), Bool.pick(U32, (cut > 24 : U32), 0, int.nearest(float.significand(bits), U32.max(U32.min(cut, 24), 1))))
 
+# The NEON window's conversion of a sum: half is added, the sum is truncated
+# toward zero, one is subtracted when that sum is negative (a negative zero
+# is not), and the result is saturated to an int16. A non-finite sum is 0
+# for a NaN and the saturated end for an infinity.
+def sample.neon.finite(+wide: Bool, +bits: U32) -> U32:
+  match wide:
+    case True{}: Bool.pick(U32, (bits > 2147483648 : U32), 32768, Bool.pick(U32, U32.is_eq(bits, 2147483648), 0, 32767))
+    case False{}:
+      +cut = float.cut(bits)
+      +magnitude = Bool.pick(U32, (cut > 23 : U32), 0, (float.significand(bits) >> U32.to_nat(U32.min(cut, 23)) : U32))
+      +negative = (bits > 2147483648 : U32)
+      +adjusted = (magnitude + Bool.to_u32(negative) : U32)
+      +kept = Bool.pick(U32, negative, U32.min(adjusted, 32768), U32.min(adjusted, 32767))
+      int16(negative && U32.is_ne(kept, 0), kept)
+
+def sample.neon.bits(special: Bool, +wide: Bool, +bits: U32) -> U32:
+  match special:
+    case True{}: Bool.pick(U32, U32.is_ne((bits .&. 8388607 : U32), 0), 0, Bool.pick(U32, (bits >= 2147483648 : U32), 32768, 32767))
+    case False{}: sample.neon.finite(wide, bits)
+
+def sample.neon(+x: F32) -> U32:
+  +bits = F32.bits((x + 0.5 : F32))
+  +exp = ((bits >> 23n) .&. 255 : U32)
+  sample.neon.bits(U32.is_eq(exp, 255), (exp >= 142 : U32), bits)
+
+# The window conversion of the build: SSE when `nearest`, NEON otherwise.
+def sample.chosen(+nearest: Bool, +x: F32) -> U32:
+  match nearest:
+    case True{}: sample.packed(x)
+    case False{}: sample.neon(x)
+
 # drmp3d_scale_pcm: 32767 from 32766.5 up and -32768 from -32767.5 down;
 # else half added (a float sum), truncated, and one less when negative.
 def sample.scaled(+x: F32) -> U32:
@@ -1328,27 +1372,27 @@ def pair.second(z: +List<U32>) -> F32:
 # vz = v[k], vy = r[k] and two weights: b grows by vz*w1 + vy*w0 and a by
 # vz*w0 - vy*w1, or by vy*w1 - vz*w0 at the odd steps. The result is the two
 # samples' 16 bits, a's above b's.
-def window.sums(n: Nat, v: +List<U32>, +r: +List<U32>, +w: +List<U32>, +odd: Bool, +a: F32, +b: F32) -> U32:
+def window.sums(+nearest: Bool, n: Nat, v: +List<U32>, +r: +List<U32>, +w: +List<U32>, +odd: Bool, +a: F32, +b: F32) -> U32:
   match n:
-    case 0n: ((sample.packed(a) << 16n) .|. sample.packed(b) : U32)
+    case 0n: ((sample.chosen(nearest, a) << 16n) .|. sample.chosen(nearest, b) : U32)
     case 1n+k:
       match v:
-        case Nil{}: ((sample.packed(a) << 16n) .|. sample.packed(b) : U32)
+        case Nil{}: ((sample.chosen(nearest, a) << 16n) .|. sample.chosen(nearest, b) : U32)
         case Con{+z, rest}:
           +vz = float(z)
           +vy = float(H.first(r))
           +w0 = float(H.first(w))
           +w1 = float(H.first(tail(w)))
-          window.sums(k, rest, tail(r), tail(tail(w)), Bool.not(odd),
+          window.sums(nearest, k, rest, tail(r), tail(tail(w)), Bool.not(odd),
             (a + Bool.pick(F32, odd, ((vy * w1) - (vz * w0) : F32), ((vz * w0) - (vy * w1) : F32)) : F32), (b + ((vz * w1) + (vy * w0)) : F32))
 
 # The first step sets the sums; seven more follow.
-def window(+v: +List<U32>, +r: +List<U32>, +w: +List<U32>) -> U32:
+def window(+nearest: Bool, +v: +List<U32>, +r: +List<U32>, +w: +List<U32>) -> U32:
   +vz = float(H.first(v))
   +vy = float(H.first(r))
   +w0 = float(H.first(w))
   +w1 = float(H.first(tail(w)))
-  window.sums(7n, tail(v), tail(r), tail(tail(w)), True{}, ((vz * w0) - (vy * w1) : F32), ((vz * w1) + (vy * w0) : F32))
+  window.sums(nearest, 7n, tail(v), tail(r), tail(tail(w)), True{}, ((vz * w0) - (vy * w1) : F32), ((vz * w1) + (vy * w0) : F32))
 
 # Rows of the synthesis buffer (zlin): 64 floats each. Entries 4i to 4i + 3,
 # for i below 15, are a subband's value for the left and right channels of
@@ -1405,7 +1449,7 @@ def onto.back(mono: Bool, +left: U32, +right: U32, acc: +List<U32>) -> +List<U32
 # The window over the rows, four entries at a time: entry 4i's sums are
 # samples 15 - i and 17 + i, with g_win's row 14 - i (`wins` is g_win the
 # last row first).
-def window.rows(n: Nat, wins: +List<+List<U32>>, +rows: +List<+List<U32>>, +mono: Bool, blocks: Blocks) -> Blocks:
+def window.rows(+nearest: Bool, n: Nat, wins: +List<+List<U32>>, +rows: +List<+List<U32>>, +mono: Bool, blocks: Blocks) -> Blocks:
   match n:
     case 0n: blocks
     case 1n+k:
@@ -1414,11 +1458,11 @@ def window.rows(n: Nat, wins: +List<+List<U32>>, +rows: +List<+List<U32>>, +mono
         case Con{+w, more}:
           Blocks{ax, bx, ay, by} = blocks
           +now = lanes(rows, Nil{}, Nil{}, Nil{}, Nil{}, Nil{})
-          +s0 = window(List.reverse(&2, U32, Lanes.l0(now)), Lanes.l0(now), w)
-          +s1 = window(List.reverse(&2, U32, Lanes.l1(now)), Lanes.l1(now), w)
-          +s2 = window(List.reverse(&2, U32, Lanes.l2(now)), Lanes.l2(now), w)
-          +s3 = window(List.reverse(&2, U32, Lanes.l3(now)), Lanes.l3(now), w)
-          window.rows(k, more, Lanes.rows(now), mono, Blocks{onto(mono, (s0 >> 16n : U32), (s1 >> 16n : U32), ax), onto.back(mono, (s0 .&. 65535 : U32), (s1 .&. 65535 : U32), bx),
+          +s0 = window(nearest, List.reverse(&2, U32, Lanes.l0(now)), Lanes.l0(now), w)
+          +s1 = window(nearest, List.reverse(&2, U32, Lanes.l1(now)), Lanes.l1(now), w)
+          +s2 = window(nearest, List.reverse(&2, U32, Lanes.l2(now)), Lanes.l2(now), w)
+          +s3 = window(nearest, List.reverse(&2, U32, Lanes.l3(now)), Lanes.l3(now), w)
+          window.rows(nearest, k, more, Lanes.rows(now), mono, Blocks{onto(mono, (s0 >> 16n : U32), (s1 >> 16n : U32), ax), onto.back(mono, (s0 .&. 65535 : U32), (s1 .&. 65535 : U32), bx),
             onto(mono, (s2 >> 16n : U32), (s3 >> 16n : U32), ay), onto.back(mono, (s2 .&. 65535 : U32), (s3 .&. 65535 : U32), by)})
 
 # Fifteen groups of four entries from four lists walked together (a missing
@@ -1486,8 +1530,8 @@ def call.samples(blocks: Blocks, +e: Lanes, +mono: Bool) -> +List<U32>:
       onto(mono, sample.scaled(pair.first(e0)), sample.scaled(pair.first(e1)), List.append(&2, U32, ay,
         onto(mono, sample.scaled(pair.second(e2)), sample.scaled(pair.second(e3)), List.reverse(&2, U32, by))))))))
 
-def call.rows(+rows: +List<+List<U32>>, +ly: +List<U32>, +ry: +List<U32>, +mono: Bool, +wins: +List<+List<U32>>) -> Call:
-  Call{call.samples(window.rows(15n, wins, rows, mono, Blocks{Nil{}, Nil{}, Nil{}, Nil{}}), rows.ends(rows, Nil{}, Nil{}, Nil{}, Nil{}), mono),
+def call.rows(+nearest: Bool, +rows: +List<+List<U32>>, +ly: +List<U32>, +ry: +List<U32>, +mono: Bool, +wins: +List<+List<U32>>) -> Call:
+  Call{call.samples(window.rows(nearest, 15n, wins, rows, mono, Blocks{Nil{}, Nil{}, Nil{}, Nil{}}), rows.ends(rows, Nil{}, Nil{}, Nil{}, Nil{}), mono),
     Con{row.made(tail(ly), tail(ry), Nil{}, Nil{}, H.nth(ly, 16), H.nth(ry, 16), H.first(ly), H.first(ry)), rows.newest(14n, rows, Nil{})}}
 
 # drmp3d_synth for two time slots: `lx`, `rx` are the first slot's 32 values
@@ -1497,11 +1541,11 @@ def call.rows(+rows: +List<+List<U32>>, +ly: +List<U32>, +ry: +List<U32>, +mono:
 # row is made of both slots' subbands 31 down to 17, with the first slot's
 # 16 and 0; the window and the pairs read those sixteen rows; and a row of
 # the second slot's subbands 1 to 15, with its 16 and 0, begins the next.
-def synth.call(history: +List<+List<U32>>, +lx: +List<U32>, +rx: +List<U32>, +ly: +List<U32>, +ry: +List<U32>, +mono: Bool, +wins: +List<+List<U32>>) -> Call:
+def synth.call(+nearest: Bool, history: +List<+List<U32>>, +lx: +List<U32>, +rx: +List<U32>, +ly: +List<U32>, +ry: +List<U32>, +mono: Bool, +wins: +List<+List<U32>>) -> Call:
   match history:
     case Nil{}: Call{Nil{}, Nil{}}
     case Con{+newest, +older}:
-      call.rows(Con{row.made(List.reverse(&2, U32, lx), List.reverse(&2, U32, rx), List.reverse(&2, U32, ly), List.reverse(&2, U32, ry), H.nth(lx, 16), H.nth(rx, 16), H.first(lx), H.first(rx)),
+      call.rows(nearest, Con{row.made(List.reverse(&2, U32, lx), List.reverse(&2, U32, rx), List.reverse(&2, U32, ly), List.reverse(&2, U32, ry), H.nth(lx, 16), H.nth(rx, 16), H.first(lx), H.first(rx)),
         Con{row.completed(15n, newest, tail(lx), tail(rx), Nil{}), older}}, ly, ry, mono, wins)
 
 # The loop of drmp3d_synth_granule: nine calls over a granule's eighteen
@@ -1514,14 +1558,14 @@ def blocks.joined(blocks: +List<+List<U32>>, acc: +List<U32>) -> +List<U32>:
     case Nil{}: acc
     case Con{+block, rest}: blocks.joined(rest, List.append(&2, U32, block, acc))
 
-def synth.calls(n: Nat, left: +List<+List<U32>>, +right: +List<+List<U32>>, +mono: Bool, +wins: +List<+List<U32>>, +history: +List<+List<U32>>, +blocks: +List<+List<U32>>) -> Synth:
+def synth.calls(+nearest: Bool, n: Nat, left: +List<+List<U32>>, +right: +List<+List<U32>>, +mono: Bool, +wins: +List<+List<U32>>, +history: +List<+List<U32>>, +blocks: +List<+List<U32>>) -> Synth:
   match n:
     case 0n: Synth{blocks.joined(blocks, Nil{}), history}
     case 1n+k:
       match left:
         case Con{+lx, Con{+ly, +later}}:
-          +done = synth.call(history, lx, row.first(right), ly, row.first(List.drop(&2, +List<U32>, right, 1n)), mono, wins)
-          synth.calls(k, later, List.drop(&2, +List<U32>, right, 2n), mono, wins, Call.history(done), Con{Call.pcm(done), blocks})
+          +done = synth.call(nearest, history, lx, row.first(right), ly, row.first(List.drop(&2, +List<U32>, right, 1n)), mono, wins)
+          synth.calls(nearest, k, later, List.drop(&2, +List<U32>, right, 2n), mono, wins, Call.history(done), Con{Call.pcm(done), blocks})
         case _: Synth{blocks.joined(blocks, Nil{}), history}
 
 # A mono frame's rows keep the entries of the right channel that the frames
@@ -1555,13 +1599,13 @@ def dct.right(n: Nat, mono: Bool, +left: +List<+List<U32>>, +values: +List<U32>,
 # next granule begins with.
 # drmp3d_synth_granule with nbands `n` (18 for Layer III, 12 for Layers I
 # and II): the DCT of each subband's first n samples and n/2 calls.
-def synth.granule.slots(+n: Nat, calls: Nat, +left: +List<U32>, +right: +List<U32>, +mono: Bool, +history: +List<+List<U32>>) -> Synth:
+def synth.granule.slots(+nearest: Bool, +n: Nat, calls: Nat, +left: +List<U32>, +right: +List<U32>, +mono: Bool, +history: +List<+List<U32>>) -> Synth:
   +sec = T.sec()
   +slots = dct.slots(n, subbands(32n, left, Nil{}), sec, Nil{})
-  synth.kept(mono, synth.calls(calls, slots, dct.right(n, mono, slots, right, sec), mono, List.reverse(&2, +List<U32>, T.win()), history, Nil{}), history)
+  synth.kept(mono, synth.calls(nearest, calls, slots, dct.right(n, mono, slots, right, sec), mono, List.reverse(&2, +List<U32>, T.win()), history, Nil{}), history)
 
-def synth.granule(+left: +List<U32>, +right: +List<U32>, +mono: Bool, +history: +List<+List<U32>>) -> Synth:
-  synth.granule.slots(18n, 9n, left, right, mono, history)
+def synth.granule(+nearest: Bool, +left: +List<U32>, +right: +List<U32>, +mono: Bool, +history: +List<+List<U32>>) -> Synth:
+  synth.granule.slots(nearest, 18n, 9n, left, right, mono, history)
 
 def Synth.pcm(synth: Synth) -> +List<U32>:
   Synth{pcm, _} = synth
@@ -1590,7 +1634,7 @@ def granules.pushed(mono: Bool, +left: +List<U32>, +right: +List<U32>, +out: +Li
 # `grs` is the side information's granules, a channel after a channel: one
 # or two granules of one or two channels. `limit` is the main data's bits
 # and `pos` the granule's first.
-def granules(n: Nat, grs: +List<H.Gr>, +mono: Bool, +main: +List<U32>, +limit: U32, +pos: U32, +h: U32, +ist0: +List<U32>, +ist1: +List<U32>, +scf: +List<U32>, +sh: U32, +overlap0: +List<U32>,
+def granules(+nearest: Bool, n: Nat, grs: +List<H.Gr>, +mono: Bool, +main: +List<U32>, +limit: U32, +pos: U32, +h: U32, +ist0: +List<U32>, +ist1: +List<U32>, +scf: +List<U32>, +sh: U32, +overlap0: +List<U32>,
     +overlap1: +List<U32>, +qmf: +List<+List<U32>>, +fine: Bool, +out: +List<+List<U32>>, +pcm: +List<+List<U32>>) -> Granules:
   match n:
     case 0n: Granules{pos, ist0, ist1, scf, overlap0, overlap1, qmf, fine, out, pcm}
@@ -1601,15 +1645,15 @@ def granules(n: Nat, grs: +List<H.Gr>, +mono: Bool, +main: +List<U32>, +limit: U
           +done = granule(mono, gr0, Gr.first(rest, gr0), main, limit, pos, h, ist0, ist1, scf, sh)
           +left = filter(Channels.left(done), overlap0, h, gr0)
           +right = filter.right(mono, Channels.right(done), overlap1, h, Gr.first(rest, gr0))
-          +made = synth.granule(Out.values(left), Out.values(right), mono, qmf)
-          granules(k, Bool.pick(+List<H.Gr>, mono, rest, List.drop(&2, H.Gr, rest, 1n)), mono, main, limit, Channels.pos(done), h, Channels.ist0(done), Channels.ist1(done), Channels.scf(done),
+          +made = synth.granule(nearest, Out.values(left), Out.values(right), mono, qmf)
+          granules(nearest, k, Bool.pick(+List<H.Gr>, mono, rest, List.drop(&2, H.Gr, rest, 1n)), mono, main, limit, Channels.pos(done), h, Channels.ist0(done), Channels.ist1(done), Channels.scf(done),
             sh, Out.overlap(left), Out.overlap(right), Synth.history(made), fine && Channels.fine(done), granules.pushed(mono, Out.values(left), Out.values(right), out), Con{Synth.pcm(made), pcm})
 
 # drmp3_L3_save_reservoir after the granules: what was not read of the main
 # data is the next frames' reservoir.
-def decoded.granules(grans: Granules, +h: U32, +free: U32, +main: +List<U32>, +len: U32, +array: +List<U32>, +bytes: U32, +compress: U32) -> Decoded:
+def decoded.granules(+nearest: Bool, grans: Granules, +h: U32, +free: U32, +main: +List<U32>, +len: U32, +array: +List<U32>, +bytes: U32, +compress: U32) -> Decoded:
   Granules{+pos, ist0, ist1, scf, overlap0, overlap1, qmf, +fine, spectra, pcm} = grans
-  Decoded{Decoder{H.Dec{h, free, H.layer3.kept(main, len, ((pos + 7) / 8 : U32))}, array, scf, ist0, ist1, compress, overlap0, overlap1, qmf}, H.hdr.samples(h), bytes, Bool.pick(U32, fine, 0, 1),
+  Decoded{Decoder{H.Dec{h, free, H.layer3.kept(main, len, ((pos + 7) / 8 : U32))}, array, scf, ist0, ist1, compress, overlap0, overlap1, qmf, nearest}, H.hdr.samples(h), bytes, Bool.pick(U32, fine, 0, 1),
     List.reverse(&2, +List<U32>, spectra), blocks.joined(pcm, Nil{})}
 
 # drmp3_L3_restore_reservoir: the frame's main data after the reservoir's
@@ -1630,7 +1674,7 @@ def Side.grs(side: H.Side) -> +List<H.Gr>:
 
 # The reservoir's bytes.
 def Decoder.reserv(decoder: Decoder) -> +List<U32>:
-  Decoder{H.Dec{_, _, reserv}, _, _, _, _, _, _, _, _} = decoder
+  Decoder{H.Dec{_, _, reserv}, _, _, _, _, _, _, _, _, _} = decoder
   reserv
 
 # scalefac_compress of the granule information's second slot once
@@ -1643,21 +1687,21 @@ def slot.compress(grs: +List<H.Gr>, +old: U32) -> U32:
     case Con{H.Gr{_, +big, _, +compress, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _}, _}: Bool.pick(U32, (big > 288 : U32), old, compress)
 
 def Decoder.slot(decoder: Decoder, +side: H.Side) -> Decoder:
-  Decoder{dec, main, scf, ist0, ist1, +compress, overlap0, overlap1, qmf} = decoder
-  Decoder{dec, main, scf, ist0, ist1, slot.compress(List.drop(&2, H.Gr, Side.grs(side), 1n), compress), overlap0, overlap1, qmf}
+  Decoder{dec, main, scf, ist0, ist1, +compress, overlap0, overlap1, qmf, nearest} = decoder
+  Decoder{dec, main, scf, ist0, ist1, slot.compress(List.drop(&2, H.Gr, Side.grs(side), 1n), compress), overlap0, overlap1, qmf, nearest}
 
 # A frame whose reservoir is short of main_data_begin: its main data is
 # written and kept for the next frames, and nothing is decoded.
 def frame.short(mained: +List<U32> & U32, +h: U32, +free: U32, +bytes: U32, decoder: Decoder) -> Decoded:
   (+main, +len) = mained
-  Decoder{_, +array, scf, ist0, ist1, +compress, overlap0, overlap1, qmf} = decoder
-  Decoded{Decoder{H.Dec{h, free, H.layer3.kept(main, len, 0)}, frame.array(main, len, array), scf, ist0, ist1, compress, overlap0, overlap1, qmf}, 0, bytes, 0, Nil{}, Nil{}}
+  Decoder{_, +array, scf, ist0, ist1, +compress, overlap0, overlap1, qmf, nearest} = decoder
+  Decoded{Decoder{H.Dec{h, free, H.layer3.kept(main, len, 0)}, frame.array(main, len, array), scf, ist0, ist1, compress, overlap0, overlap1, qmf, nearest}, 0, bytes, 0, Nil{}, Nil{}}
 
 def frame.full(mained: +List<U32> & U32, +grs: +List<H.Gr>, +h: U32, +free: U32, +bytes: U32, decoder: Decoder) -> Decoded:
   (+main, +len) = mained
-  Decoder{_, +array, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1, +qmf} = decoder
+  Decoder{_, +array, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1, +qmf, +nearest} = decoder
   +whole = frame.array(main, len, array)
-  decoded.granules(granules(2n, grs, H.hdr.mono(h), whole, (len * 8 : U32), 0, h, ist0, ist1, scf, (compress .&. 1 : U32), overlap0, overlap1, qmf, True{}, Nil{}, Nil{}), h, free, main, len, whole, bytes, compress)
+  decoded.granules(nearest, granules(nearest, 2n, grs, H.hdr.mono(h), whole, (len * 8 : U32), 0, h, ist0, ist1, scf, (compress .&. 1 : U32), overlap0, overlap1, qmf, True{}, Nil{}, Nil{}), h, free, main, len, whole, bytes, compress)
 
 # A Layer III frame by what its side information allows. 0: the side
 # information failed or the frame is too short for it, which clears the
@@ -1666,8 +1710,8 @@ def frame.full(mained: +List<U32> & U32, +grs: +List<H.Gr>, +h: U32, +free: U32,
 def frame.side(state: U32, +side: H.Side, +h: U32, +free: U32, +payload: +List<U32>, +limit: U32, +bytes: U32, +decoder: Decoder) -> Decoded:
   match state:
     case 0:
-      Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1, +qmf} = decoder
-      Decoded{Decoder{H.Dec{(h .&. 16777215 : U32), free, reserv}, array, scf, ist0, ist1, compress, overlap0, overlap1, qmf}, 0, bytes, 0, Nil{}, Nil{}}
+      Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1, +qmf, +nearest} = decoder
+      Decoded{Decoder{H.Dec{(h .&. 16777215 : U32), free, reserv}, array, scf, ist0, ist1, compress, overlap0, overlap1, qmf, nearest}, 0, bytes, 0, Nil{}, Nil{}}
     case 1: frame.short(frame.main(side, Decoder.reserv(decoder), payload, limit), h, free, bytes, decoder)
     case _: frame.full(frame.main(side, Decoder.reserv(decoder), payload, limit), Side.grs(side), h, free, bytes, decoder)
 
@@ -1685,12 +1729,12 @@ def frame.layer3(+at: +List<U32>, +size: U32, +skip: U32, +free: U32, +decoder: 
 # A Layer I or II frame's granule buffers through the synthesis, 384
 # samples a channel each, in order: the samples (the last first while
 # made) and the synthesis state after them.
-def layer12.synth(buffers: +List<L12.Buffer>, +mono: Bool, +history: +List<+List<U32>>, +pcm: +List<+List<U32>>) -> Synth:
+def layer12.synth(+nearest: Bool, buffers: +List<L12.Buffer>, +mono: Bool, +history: +List<+List<U32>>, +pcm: +List<+List<U32>>) -> Synth:
   match buffers:
     case Nil{}: Synth{blocks.joined(pcm, Nil{}), history}
     case Con{L12.Buffer{+left, +right}, rest}:
-      +made = synth.granule.slots(12n, 6n, left, right, mono, history)
-      layer12.synth(rest, mono, Synth.history(made), Con{Synth.pcm(made), pcm})
+      +made = synth.granule.slots(nearest, 12n, 6n, left, right, mono, history)
+      layer12.synth(nearest, rest, mono, Synth.history(made), Con{Synth.pcm(made), pcm})
 
 # drmp3dec_decode_frame's Layer I and II branch: the frame's samples, its
 # header kept. A reader past the frame clears the header's first byte
@@ -1700,9 +1744,9 @@ def layer12.synth(buffers: +List<L12.Buffer>, +mono: Bool, +history: +List<+List
 # reservoir and the Layer III state are left as they are.
 def frame.layer12.done(frame: L12.Frame, +h: U32, +free: U32, +bytes: U32, +decoder: Decoder) -> Decoded:
   L12.Frame{+buffers, +fine} = frame
-  Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1, +qmf} = decoder
-  +made = layer12.synth(buffers, H.hdr.mono(h), qmf, Nil{})
-  Decoded{Decoder{H.Dec{Bool.pick(U32, fine, h, (h .&. 16777215 : U32)), free, reserv}, array, scf, ist0, ist1, compress, overlap0, overlap1, Synth.history(made)},
+  Decoder{H.Dec{_, _, +reserv}, +array, +scf, +ist0, +ist1, +compress, +overlap0, +overlap1, +qmf, +nearest} = decoder
+  +made = layer12.synth(nearest, buffers, H.hdr.mono(h), qmf, Nil{})
+  Decoded{Decoder{H.Dec{Bool.pick(U32, fine, h, (h .&. 16777215 : U32)), free, reserv}, array, scf, ist0, ist1, compress, overlap0, overlap1, Synth.history(made), nearest},
     Bool.pick(U32, fine, H.hdr.samples(h), 0), bytes, 0, Nil{}, Synth.pcm(made)}
 
 def frame.layer12(+at: +List<U32>, +size: U32, +skip: U32, +free: U32, +decoder: Decoder) -> Decoded:
@@ -1718,18 +1762,20 @@ def frame.at(layer3: Bool, +at: +List<U32>, +size: U32, +skip: U32, +free: U32, 
 
 # The frame the search found in a zeroed decoder, or none: every byte
 # searched is used.
-def frame.found(found: H.Found, +window: +List<U32>) -> Decoded:
+def frame.found(+nearest: Bool, found: H.Found, +window: +List<U32>) -> Decoded:
   match found:
-    case H.Found{+skip, 0, +free}: Decoded{Decoder{H.Dec{0, free, Nil{}}, zeros.onto(2815n, Nil{}), zeros.onto(40n, Nil{}), zeros.onto(39n, Nil{}), zeros.onto(39n, Nil{}), 0, zeros.onto(288n, Nil{}), zeros.onto(288n, Nil{}), rows.zero(15n, Nil{})}, 0, skip, 0, Nil{}, Nil{}}
+    case H.Found{+skip, 0, +free}: Decoded{Decoder{H.Dec{0, free, Nil{}}, zeros.onto(2815n, Nil{}), zeros.onto(40n, Nil{}), zeros.onto(39n, Nil{}), zeros.onto(39n, Nil{}), 0, zeros.onto(288n, Nil{}), zeros.onto(288n, Nil{}), rows.zero(15n, Nil{}), nearest}, 0, skip, 0, Nil{}, Nil{}}
     case H.Found{+skip, +size, +free}:
       +at = List.drop(&2, U32, window, U32.to_nat(skip))
-      frame.at(U32.is_eq(H.hdr.layer(H.word(at)), 1), at, size, skip, free, Decoder.zero())
+      frame.at(U32.is_eq(H.hdr.layer(H.word(at)), 1), at, size, skip, free, Decoder.zeroed(nearest))
 
 def frame.next(follows: Bool, +decoder: Decoder, +window: +List<U32>, +bytes: U32) -> Decoded:
   match follows:
-    case False{}: frame.found(H.find(window, bytes, 0), window)
+    case False{}:
+      Decoder{_, _, _, _, _, _, _, _, _, +nearest} = decoder
+      frame.found(nearest, H.find(window, bytes, 0), window)
     case True{}:
-      Decoder{H.Dec{_, +free, _}, _, _, _, _, _, _, _, _} = decoder
+      Decoder{H.Dec{_, +free, _}, _, _, _, _, _, _, _, _, _} = decoder
       frame.at(U32.is_eq(H.hdr.layer(H.word(window)), 1), window, (H.hdr.bytes(H.word(window), free) + H.hdr.padding(H.word(window)) : U32), 0, free, decoder)
 
 # drmp3dec_decode_frame on `bytes` bytes, its samples wanted. A frame that
@@ -1737,5 +1783,5 @@ def frame.next(follows: Bool, +decoder: Decoder, +window: +List<U32>, +bytes: U3
 # where it stands (H.decode.follows); otherwise the decoder is zeroed, its
 # scratch too, and a frame is searched for.
 def decode(+decoder: Decoder, +window: +List<U32>, +bytes: U32) -> Decoded:
-  Decoder{H.Dec{+header, +free, _}, _, _, _, _, _, _, _, _} = decoder
+  Decoder{H.Dec{+header, +free, _}, _, _, _, _, _, _, _, _, _} = decoder
   frame.next(H.decode.follows(header, free, window, bytes), decoder, window, bytes)

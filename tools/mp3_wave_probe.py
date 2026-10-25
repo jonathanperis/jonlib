@@ -90,8 +90,10 @@ def main() -> IO(Unit):
 
 
 def render(selected, gpu):
+    import platform
+    nearest = 'False{}' if platform.machine() in ('arm64', 'aarch64') else 'True{}'
     return PROGRAM + ''.join(
-        f'    Unit <- IO.bind(Result<&1, &1, J.Wave.IOError, J.Wave>, Unit, J.Wave.load({json.dumps(path)}), result => loaded(result, J.AudioDevice.init(J.AudioDevice.none())))\n'
+        f'    Unit <- IO.bind(Result<&1, &1, J.Wave.IOError, J.Wave>, Unit, J.Wave.load_mp3({nearest}, {json.dumps(path)}), result => loaded(result, J.AudioDevice.init(J.AudioDevice.none())))\n'
         for _, path in selected) + '    IO.print("done")\n'
 
 

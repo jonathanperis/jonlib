@@ -77,13 +77,20 @@ Re-run green on this Mac after the contract fixes, same lanes and jobs:
   words; xm-pitch 524 frequencies; xm-player 11,460 ticks; xm-mixer 164,741
   frames; xm-music 15 cases, 10 compared, 278 steps, including `linear`
   and `apple-mini`.
+- `sound`: the mixer keeps subnormals on Darwin arm64 (`flush` false). 126
+  cases, 86 compared, 40 contracts, 1363 steps.
+- `mp3-layer3`, `mp3-stream`, `mp3-wave`: the window's int16 conversion is
+  NEON on arm64 (`Decoder.nearest` false: half added, truncated toward zero,
+  one less when that sum is negative) and SSE elsewhere. layer3 179 files,
+  1676 frames; stream 95 files, 224 streams; wave 95 files, 72 waves.
+- `ogg-music`: the same subnormal flag. 6 cases, 181 steps.
+- `examples-audio`: 11 examples, 208 frames, 135 compared, 73 refused.
+  `audio_mixed_processor-powers` compares frame 0. AppleLibm has no `powf`,
+  so the first update that owes a 10 ms period (frame 1) refuses that frame
+  and every later one.
 
-Still open from the `fa0755b` shard (not re-run on the current tree):
+Still open from the `fa0755b` shard:
 
-- `sound`: `stream-play-mono` step 8 (`mix`, 480) hashes differ;
-- `mp3-layer3`, `mp3-stream`, `mp3-wave`: sample hashes differ;
-- `ogg-music`: the first filled buffer's hash differs;
-- `examples-audio`: `audio_mixed_processor-powers` frame 1;
 - `examples-textures`: `textures_sprite_stacking-spin` frame 1.
 
 Each failure gets the same diagnosis as on Linux: raylib's semantics on

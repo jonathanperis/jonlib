@@ -55,6 +55,7 @@ import copy
 import hashlib
 import json
 import math
+import platform
 import struct
 
 import mp3_probe
@@ -101,8 +102,21 @@ def fnv(words):
 NAN = 0x7FC00000
 
 
+def keeps_subnormals():
+    """AArch64 miniaudio does not set denormals-are-zero, so the callback keeps subnormals."""
+    return platform.system() == 'Darwin' and platform.machine() in ('arm64', 'aarch64')
+
+
+def hosted_program(text=None):
+    """The sound-gate program with this host's subnormal flush flag filled in."""
+    source = PROGRAM if text is None else text
+    return source.replace('HOST_FLUSH', 'False{}' if keeps_subnormals() else 'True{}')
+
+
 def fz(x):
-    """A subnormal as the zero of its sign: the device callback runs with denormals-are-zero and flush-to-zero on x86."""
+    """A subnormal as the zero of its sign where the callback flushes, and the value itself where the host keeps it."""
+    if keeps_subnormals():
+        return x
     return math.copysign(0.0, x) if x != 0 and abs(x) < 2.0 ** -126 else x
 
 
@@ -1723,7 +1737,7 @@ def half(samples: +List<U32>, +n: U32) -> U32:
 def gained(samples: +List<U32>, acc: +List<U32>) -> +List<U32>:
   match samples:
     case Nil{}: List.reverse(&2, U32, acc)
-    case Con{+x, rest}: gained(rest, Con{F32.bits(Mixer.fmul(J.Wave.float_bits(x), 0.5)), acc})
+    case Con{+x, rest}: gained(rest, Con{F32.bits(Mixer.fmul.of(HOST_FLUSH, J.Wave.float_bits(x), 0.5)), acc})
 
 type Swapped is Data:
   Swapped{out: +List<U32>, count: U32}
@@ -1731,7 +1745,7 @@ type Swapped is Data:
 # Processor 2: the sides swapped, and (count % 5)/8 more on the right for each frame it has counted.
 def swapped(samples: +List<U32>, +count: U32, acc: +List<U32>) -> Swapped:
   match samples:
-    case Con{+l, Con{+r, rest}}: swapped(rest, (count + 1 : U32), Con{F32.bits(Mixer.fadd(J.Wave.float_bits(l), (U32.to_f32((count % 5 : U32)) / 8.0 : F32))), Con{r, acc}})
+    case Con{+l, Con{+r, rest}}: swapped(rest, (count + 1 : U32), Con{F32.bits(Mixer.fadd.of(HOST_FLUSH, J.Wave.float_bits(l), (U32.to_f32((count % 5 : U32)) / 8.0 : F32))), Con{r, acc}})
     case _: Swapped{List.reverse(&2, U32, acc), count}
 
 type Delayed is Data:
@@ -1791,11 +1805,11 @@ def clocked(result: J.AudioClock.Step & Asked, +sounds: +List<J.Sound>, +out: St
 def periods.run(processors: +List<J.AudioDevice.Processor>, +count: U32, +audio: J.AudioDevice, +sounds: +List<J.Sound>, +calls: Ext) -> J.AudioClock.Step & Asked:
   match processors:
     case Nil{}:
-      J.AudioClock.advance_answering(~Asked, ~(buffer => frames => state => answer.one(buffer, frames, state)), J.AudioClock.at(M.Float64{0, 0}), audio,
+      J.AudioClock.advance_answering.for(~Asked, ~(buffer => frames => state => answer.one(buffer, frames, state)), HOST_FLUSH, J.AudioClock.at(M.Float64{0, 0}), audio,
         M.Float64.from_f32(((U32.to_f32(count) / 100.0) + 0.005 : F32)), asked.of(sounds, calls, ""))
     case Con{+first, +rest}:
-      J.AudioClock.advance_processing(~Asked, ~(buffer => frames => state => answer.one(buffer, frames, state)), ~(tag => samples => state => process.one(tag, samples, state)),
-        J.AudioClock.at(M.Float64{0, 0}), audio, J.AudioProcessors{Con{first, rest}}, M.Float64.from_f32(((U32.to_f32(count) / 100.0) + 0.005 : F32)), asked.of(sounds, calls, ""))
+      J.AudioClock.advance_processing.for(~Asked, ~(buffer => frames => state => answer.one(buffer, frames, state)), ~(tag => samples => state => process.one(tag, samples, state)),
+        HOST_FLUSH, J.AudioClock.at(M.Float64{0, 0}), audio, J.AudioProcessors{Con{first, rest}}, M.Float64.from_f32(((U32.to_f32(count) / 100.0) + 0.005 : F32)), asked.of(sounds, calls, ""))
 
 def periods(+count: U32, +audio: J.AudioDevice, +sounds: +List<J.Sound>, +out: String, +calls: Ext) -> St:
   clocked(periods.run(ext.attached(calls), count, audio, sounds, calls), sounds, out, calls)
@@ -1810,10 +1824,10 @@ def mix.run(processors: +List<J.AudioDevice.Processor>, +audio: J.AudioDevice, +
   match processors:
     case Nil{}:
       Ext{_, _, +count, +left, +right, +musics} = before
-      mixed(J.AudioDevice.mix_answered(audio, frames, data), sounds, out, before, Ext{calls, Nil{}, count, left, right, musics}, text)
+      mixed(J.AudioDevice.mix_answered.for(HOST_FLUSH, audio, frames, data), sounds, out, before, Ext{calls, Nil{}, count, left, right, musics}, text)
     case Con{+first, +rest}:
       Ext{_, _, +count, +left, +right, _} = before
-      mix.processed(J.AudioDevice.mix_processed(~Asked, ~(tag => samples => state => process.one(tag, samples, state)), audio, J.AudioProcessors{Con{first, rest}}, frames, data,
+      mix.processed(J.AudioDevice.mix_processed.for(~Asked, ~(tag => samples => state => process.one(tag, samples, state)), HOST_FLUSH, audio, J.AudioProcessors{Con{first, rest}}, frames, data,
         Asked{sounds, calls, text, count, left, right, ""}), sounds, out, before)
 
 def mix.answered(answers: Answered, +audio: J.AudioDevice, +frames: U32, +sounds: +List<J.Sound>, +out: String, +before: Ext) -> St:
@@ -1928,7 +1942,7 @@ def step(+st: St, op: Op) -> IO(St):
     case OpTune{slot, code, bits}: IO.pure(St, after("-", tuned(code, audio, get(sounds, slot), J.Wave.float_bits(bits)), sounds, out, calls))
     case OpUpdate{slot, frames, data}: IO.pure(St, after("-", J.Sound.update(audio, get(sounds, slot), data, frames), sounds, out, calls))
     case OpMix{+frames}: IO.pure(St, mix.asked(J.AudioDevice.asks(audio, frames), audio, frames, sounds, out, calls))
-    case OpPlain{frames}: IO.pure(St, mixed(J.AudioDevice.mix(audio, frames), sounds, out, calls, calls, ""))
+    case OpPlain{frames}: IO.pure(St, mixed(J.AudioDevice.mix.for(HOST_FLUSH, audio, frames), sounds, out, calls, calls, ""))
     case OpPeriods{+count}: IO.pure(St, periods(count, audio, sounds, out, calls))
     case OpMusic{+slot, path}:
       do IO<St>:
@@ -2105,7 +2119,7 @@ def catalog_steps(table, order):
 
 def render_for(table, paths):
     def render(selected, gpu):
-        lines = [PROGRAM, 'def main() -> IO(Unit):\n  do IO<Unit>:']
+        lines = [hosted_program(), 'def main() -> IO(Unit):\n  do IO<Unit>:']
         for index, (_, case) in enumerate(selected):
             ops = ', '.join(bend_step(step, table, paths) for step in case['steps'])
             lines.append(f'    s{index} : String <- run([{ops}], start())\n    IO.print(s{index})')

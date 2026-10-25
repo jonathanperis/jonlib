@@ -15,7 +15,7 @@ class ProgramTests(unittest.TestCase):
 
     def test_the_candidate_loads_each_file(self):
         text = wp.render([('first12', 'x/first12.mp3'), ('upper', 'x/upper.MP3')], False)
-        self.assertEqual((text.count('J.Wave.load('), text.count('"x/upper.MP3"'), text.rstrip().endswith('IO.print("done")')), (2, 1, True))
+        self.assertEqual((text.count('J.Wave.load_mp3('), text.count('"x/upper.MP3"'), text.rstrip().endswith('IO.print("done")')), (2, 1, True))
         self.assertIn('J.Sound.load_from_wave(audio, J.Wave{frames, rate, size, channels, data})', text)
         self.assertNotIn('layer12', text)
 

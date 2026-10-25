@@ -300,14 +300,21 @@ channel. Both are equal to dr_mp3's bit for bit.
   takes two slots at a time, writes them into rows of 64 floats and sums
   sixteen rows under `g_win` for each sample; the fifteen newest rows stay
   in the decoder (`qmf_state`, `Decoder.qmf`). This is where raylib's build
-  matters: with SSE the DCT's last sums are associated differently from
-  the scalar code, and the window's sums are clamped and rounded by the
-  processor (`_mm_cvtps_epi32`: to nearest, a tie to the even integer),
-  while the two samples of each slot that `drmp3d_synth_pair` computes
-  alone go through `drmp3d_scale_pcm` (half added, truncated, one less
-  below zero). The port follows the SSE branches, a time slot at a time
-  (the vector code works on four slots that do not mix), and does the
-  rounding with integers on the float's bits.
+  matters: the SIMD DCT's last sums are associated differently from the
+  scalar code (SSE and NEON associate them the same way, a product added
+  after the multiply), and the window's sums are integers by the build.
+  SSE clamps and rounds with `_mm_cvtps_epi32` (to nearest, a tie to the
+  even integer). NEON, which is raylib's build on arm64, adds a half,
+  truncates toward zero, subtracts one when that sum is negative and
+  saturates to an int16. The two samples of each slot that
+  `drmp3d_synth_pair` computes alone go through `drmp3d_scale_pcm` on both
+  builds (half added, truncated, one less below zero). The port follows
+  the SIMD branches, a time slot at a time (the vector code works on four
+  slots that do not mix). `Decoder.nearest` selects the window:
+  `Decoder.zero` and `Mp3S.open` are the SSE conversion, and
+  `Decoder.zeroed(False{})`, `Mp3S.open.for(False{}, ...)` and
+  `Wave.load_mp3(False{}, ...)` are the NEON one. The probes pass the
+  host's. The rounding is integers on the float's bits.
 - **A mono frame** runs the stereo code with its one channel as both, and
   `drmp3d_synth_granule` then copies back every other float of the rows:
   the right channel's entries keep what the frames before left, in place.
@@ -2065,8 +2072,9 @@ that does not exist) and for a stream whose buffer is 0 or not tracked
 samples as it was given: otherwise the callback is refused, the device as
 it was. `process` is a template and closes over nothing, like `answer`. It
 runs inside the callback, so a program that wants raylib's bits there
-computes as the callback does (`Mixer.fadd`, `Mixer.fmul`, ...: on x86-64
-miniaudio disables denormals around it).
+computes as the callback does (`Mixer.fadd`, `Mixer.fmul`, and
+`Mixer.fadd.of` / `Mixer.fmul.of` with the same flush flag as the mix:
+x86-64 flushes subnormals and AArch64 keeps them).
 
 **`audio_stream_callback`.** The example keeps the last second its callback
 wrote in `static float buffer[SAMPLE_RATE]` and draws the last 10 ms as
@@ -2143,14 +2151,17 @@ channels (raudio's input buffer or miniaudio's temporary holds no frame of
 it); and a callback in which a NaN results (its bits are the host's).
 
 **Subnormals.** miniaudio runs the callback with denormals disabled
-(`ma_device_disable_denormals`). On x86-64, the reference here, that is
-MXCSR's denormals-are-zero and flush-to-zero: every operation of the
-callback takes a subnormal operand for the zero of its sign and gives a
-zero for a result that would be subnormal. Jonlib's callback computes that
-way on every host and target: a filter's tail decays to exact zeros, a
-subnormal volume is silence, and a subnormal sample is not heard. Hosts
-where miniaudio leaves subnormals alone (AArch64) are a different profile
-that is not ported.
+(`ma_device_disable_denormals`). On x86-64 that is MXCSR's
+denormals-are-zero and flush-to-zero: every operation of the callback
+takes a subnormal operand for the zero of its sign and gives a zero for a
+result that would be subnormal. `AudioDevice.mix` computes that way on
+every host and target: a filter's tail decays to exact zeros, a subnormal
+volume is silence, and a subnormal sample is not heard. On AArch64
+`ma_device_disable_denormals` is a no-op, so raylib's callback keeps
+subnormals. `AudioDevice.mix.for(False{}, ...)`, and the same flag on
+`mix_answered.for`, `mix_processed.for`, `AudioClock.advance_answering.for`
+and `advance_processing.for`, keeps them too. The sound probe selects that
+flag on Darwin arm64 and the flushing profile otherwise.
 
 ### Music streams
 
@@ -2389,7 +2400,8 @@ pixel are equal. The port computes the window's weights and the twiddle
 factors once, since they depend on their place alone; the example computes
 them again every frame, with the same result.
 
-Not yet available: the fused (FMA) profile of the mixer, the profile of
-hosts that keep subnormals in the callback, music from files other than
-WAV, QOA and MP3, and a host device (the clock is a model of its thread).
+Not yet available: the fused (FMA) profile of the mixer, music from files
+other than WAV, QOA, MP3, Ogg Vorbis, XM and MOD, and a host device (the
+clock is a model of its thread). AArch64's kept subnormals are
+`AudioDevice.mix.for(False{}, ...)`.
 No GPU evidence.

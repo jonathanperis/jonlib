@@ -96,7 +96,7 @@ def main():
     expected = [tagged(case, rows[case['id']]) for case in items]
 
     def render(selected, gpu):
-        lines = [sp.PROGRAM, 'def main() -> IO(Unit):\n  do IO<Unit>:']
+        lines = [sp.hosted_program(), 'def main() -> IO(Unit):\n  do IO<Unit>:']
         for index, (_, case) in enumerate(selected):
             ops = ', '.join(sp.bend_step(step, {}, paths) for step in case['steps'])
             lines.append(f'    s{index} : String <- run([{ops}], start())\n    IO.print(s{index})')

@@ -6528,7 +6528,7 @@
       "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
       "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
       "Undefined native behavior: a buffer that was unloaded leaves the state as it is (raylib uses freed memory)",
-      "The callback computes as on x86-64, where miniaudio disables denormals (a subnormal is a zero); the fused (FMA) profile and hosts that keep subnormals are not ported"
+      "AudioDevice.mix flushes subnormals (x86-64 MXCSR). mix.for(False) keeps them (AArch64); the sound probe selects that on Darwin arm64. Fused (FMA) mixing is not ported"
     ],
     "api_id": "raylib:function:PlaySound",
     "milestone": "audio-device"
@@ -6903,7 +6903,7 @@
       "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
       "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
       "A playing stream of more than 1024 channels makes AudioDevice.mix refuse (raudio's input buffer or miniaudio's temporary holds no frame of it)",
-      "The callback computes as on x86-64, where miniaudio disables denormals (a subnormal is a zero); the fused (FMA) profile and hosts that keep subnormals are not ported"
+      "AudioDevice.mix flushes subnormals (x86-64 MXCSR). mix.for(False) keeps them (AArch64); the sound probe selects that on Darwin arm64. Fused (FMA) mixing is not ported"
     ],
     "api_id": "raylib:function:PlayAudioStream",
     "milestone": "audio-stream"

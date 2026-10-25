@@ -38,7 +38,8 @@ class ScriptTests(unittest.TestCase):
         self.assertEqual((text.count('J.Files.load_data('), text.count('"x/b.mp3"'), text.rstrip().endswith('IO.print("done")')), (3, 1, True))
         # a file is opened as a file or from its bytes; a straight script is one read
         self.assertEqual((text.count('], False{}))'), text.count('], True{}))'), text.count('[114, 20000], True{}))')), (1, 2, 1))
-        self.assertIn('S.open.memory(bytes)', text)
+        self.assertIn('S.open.memory.for(', text)
+        self.assertIn('S.open.for(', text)
         self.assertIn('[99, 0, 114, 100, 102, 1000, 114, 2000, 107, 500, 114, 300, 101, 0, 98, 0, 102, 1200, 107, 3000, 114, 50, 99, 0, 114, 20000]', text)
         self.assertIn('99, 0, 114, 2500]', text)
         # the operation codes the program matches are the script's letters

@@ -142,7 +142,7 @@ def main():
         raise ProbeFailure(f'mod-music: the music that does not loop did not stop at its end: {playing}')
     expected = [tagged(case, rows[case['id']]) for case in items]
 
-    text = sp.PROGRAM
+    text = sp.hosted_program()
 
     def render(selected, gpu):
         lines = [text, 'def main() -> IO(Unit):\n  do IO<Unit>:']
