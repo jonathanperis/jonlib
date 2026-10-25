@@ -219,6 +219,11 @@ def integer(value, minimum, maximum):
     return type(value) is int and minimum <= value <= maximum
 
 
+def unsigned_thickness(value):
+    """ImageDrawLineEx and ImageDrawRectangleLinesEx take a C int. Bend stores that int as U32 two's complement."""
+    return value & 0xFFFFFFFF
+
+
 def rgba(value):
     if not isinstance(value, list) or len(value) != 4 or not all(integer(c, 0, 255) for c in value):
         raise ValueError(f"Invalid RGBA color: {value!r}")
@@ -562,8 +567,8 @@ def cases_from(document):
                 points = op.get('points')
                 if not isinstance(points, list) or any(not isinstance(p, list) or len(p)!=2 or any(not coordinate(v, True) for v in p) for p in points):
                     raise ValueError(f'{name}: expected finite bounded triangle points')
-            if kind in ('line_ex', 'rectangle_lines') and not integer(op.get('thickness'), 0, 32767):
-                raise ValueError(f'{name}: thickness must be 0..32767')
+            if kind in ('line_ex', 'rectangle_lines') and not integer(op.get('thickness'), -32767, 32767):
+                raise ValueError(f'{name}: thickness must be -32767..32767')
             if kind in ('line', 'line_v', 'line_ex', 'triangle_lines'):
                 points = [(op['x0'], op['y0']), (op['x1'], op['y1'])]
                 if kind == 'triangle_lines':
@@ -1366,7 +1371,7 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
             if kind in ('circle', 'circle_v', 'circle_lines', 'circle_lines_v'):
                 args += [str(op['radius'])]
             if kind in ('line_ex', 'rectangle_lines'):
-                args += [str(op['thickness'])]
+                args += [str(unsigned_thickness(op['thickness']))]
             if kind == 'blend_color':
                 args += [f'J.Color.alpha_blend({rgba(op["destination"])}, {rgba(op["color"])}, {rgba(op["tint"])})']
             elif kind == 'color_value':

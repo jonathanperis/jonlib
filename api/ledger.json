@@ -48891,9 +48891,8 @@
       "status": "partial",
       "jonlib": "Surface.draw_line_ex",
       "mapping_state": "implemented",
-      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite endpoints; add-half/truncate rounding; safe signed 16.16 deltas; thickness 0..32767. Every format 1..13 is compared with raylib on the surface-format profile.",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite endpoints; add-half/truncate rounding; safe signed 16.16 deltas. Thickness is the C int in two's complement, -32767..32767: values <= -2 draw nothing, and -1, 0 and 1 draw one stroke. Formats 1..13 are compared on the surface-format profile.",
       "gaps": [
-        "Negative thickness",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -49659,9 +49658,8 @@
       "status": "partial",
       "jonlib": "Surface.draw_rectangle_lines_ex",
       "mapping_state": "implemented",
-      "scope": "raylib 6.0's ImageDrawRectangleLines renamed by 6.2: every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite rectangle; thickness 0..32767; reference four-edge truncation and degenerate behavior. Every format 1..13 is compared with raylib on the surface-format profile.",
+      "scope": "raylib 6.0's ImageDrawRectangleLines renamed by 6.2: every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite rectangle. Thickness is the C int in two's complement, -32767..32767, cast to float for the four edge strips, including a negative thickness. Formats 1..13 are compared on the surface-format profile.",
       "gaps": [
-        "Negative thickness",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],

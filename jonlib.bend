@@ -2197,7 +2197,11 @@ def Rgba.draw_rectangle_rec(surface: Rgba, rect: Rectangle, color: U32) -> Rgba:
 
 def Rgba.draw_rectangle_lines_ex(surface: Rgba, rect: Rectangle, +thickness: U32, +color: U32) -> Rgba:
   Rectangle{+x, +y, +width, +height} = rect
-  +t = U32.to_f32(thickness)
+  # thickness is raylib's int in two's complement. ImageDrawRectangleLinesEx
+  # casts it to float before the four edge strips, so a negative thickness is a
+  # negative strip that ImageDrawRectangle clamps. A zero-size strip still paints
+  # its first pixel or row. |thick| above 1073741823 overflows thick*2 in C.
+  +t = Signed.to_f32(thickness)
   s0 = Rgba.draw_rectangle(surface, Signed.trunc(x), Signed.trunc(y), Signed.trunc(width), t, color)
   s1 = Rgba.draw_rectangle(s0, Signed.trunc(x), Signed.trunc((y + t : F32)), t, Signed.trunc((height - t * 2.0 : F32)), color)
   s2 = Rgba.draw_rectangle(s1, Signed.trunc((x + width - t : F32)), Signed.trunc((y + t : F32)), t, Signed.trunc((height - t * 2.0 : F32)), color)
@@ -2292,6 +2296,18 @@ def Rgba.thick_line.loop(n: Nat, +horizontal: Bool, +x0: F32, +y0: F32, +x1: F32
       Rgba.thick_line.loop(k, horizontal, x0, y0, x1, y1, (offset + step : F32), step, color,
         Rgba.draw_line(surface, (x0 + ox : F32), (y0 + oy : F32), (x1 + ox : F32), (y1 + oy : F32), color))
 
+# ImageDrawLineEx stores thickness as a C int. -1 is the single center stroke
+# that thick 0 and thick 1 also draw; every other high bit is thick <= -2.
+def Rgba.line.span(+thickness: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(thickness, 4294967295), 1, thickness)
+
+# Toward-zero division of (thick-1) leaves both half-loops empty for thick <= -2.
+# INT_MIN overflows thick-1 in C and is outside -32767..32767.
+def Rgba.line.strokes(+thickness: U32, +lower: Bool) -> U32:
+  +quiet = (thickness >= 2147483648 : U32) && Bool.not(U32.is_eq(thickness, 4294967295))
+  +span = Rgba.line.span(thickness)
+  Bool.pick(U32, quiet, 0, Bool.pick(U32, lower, (span / 2 + 1 : U32), ((U32.max(1, span) - 1) / 2 : U32)))
+
 def Rgba.draw_line_ex(surface: Rgba, start: M.Vector2, end: M.Vector2, +thickness: U32, +color: U32) -> Rgba:
   M.Vector2{x0, y0} = start
   M.Vector2{x1, y1} = end
@@ -2302,9 +2318,11 @@ def Rgba.draw_line_ex(surface: Rgba, start: M.Vector2, end: M.Vector2, +thicknes
   +horizontal = (F32.abs((by - ay : F32)) < F32.abs((bx - ax : F32)) : F32)
   # A zero-length segment takes neither of ImageDrawLineEx's branches: nothing
   # is drawn (ImageDrawLine itself draws the start pixel since raylib 6.2).
+  # A quiet thickness also draws nothing; the stroke count stays a U32 so the
+  # empty case does not build a Nat from a two's-complement magnitude.
   +point = F32.is_eq(ax, bx) && F32.is_eq(ay, by)
-  lower = Rgba.thick_line.loop(U32.to_nat(Bool.pick(U32, point, 0, (thickness / 2 + 1 : U32))), horizontal, ax, ay, bx, by, 0.0, 1.0, color, surface)
-  Rgba.thick_line.loop(U32.to_nat(Bool.pick(U32, point, 0, ((U32.max(1, thickness) - 1) / 2 : U32))), horizontal, ax, ay, bx, by, (0.0 - 1.0 : F32), (0.0 - 1.0 : F32), color, lower)
+  lower = Rgba.thick_line.loop(U32.to_nat(Bool.pick(U32, point, 0, Rgba.line.strokes(thickness, True{}))), horizontal, ax, ay, bx, by, 0.0, 1.0, color, surface)
+  Rgba.thick_line.loop(U32.to_nat(Bool.pick(U32, point, 0, Rgba.line.strokes(thickness, False{}))), horizontal, ax, ay, bx, by, (0.0 - 1.0 : F32), (0.0 - 1.0 : F32), color, lower)
 
 type Raster.Edge is Data:
   Edge{value: U32, dx: U32, dy: U32}

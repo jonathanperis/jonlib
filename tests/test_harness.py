@@ -10,7 +10,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from tools.conformance import BUILD, ROOT, cases_from, checkout, compare, parse_output, result_size, source_gate
+from tools.conformance import BUILD, ROOT, bend_source, c_source, cases_from, checkout, compare, parse_output, result_size, source_gate
 from tools.resize_conformance import verify_images
 from tools.byte_probe import parse_results
 
@@ -200,6 +200,15 @@ class HarnessTests(unittest.TestCase):
             cases_from(dict(schema=1, cases=[unsafe]))
         filtered = dict(case, width=2, operations=[dict(op='resize', width=512, height=1)])
         self.assertEqual(result_size(cases_from(dict(schema=1, cases=[filtered]))[0]), (512, 1))
+        for bad_thickness in (-32768, 32768, True):
+            with self.assertRaises(ValueError):
+                cases_from(dict(schema=1, cases=[dict(case, operations=[dict(
+                    op='rectangle_lines', x=0, y=0, width=1, height=1, thickness=bad_thickness, color=[0, 0, 0, 255])])]))
+        negative = dict(case, operations=[dict(op='line_ex', x0=0, y0=0, x1=1, y1=0, thickness=-1, color=[255, 0, 0, 255])])
+        loaded = cases_from(dict(schema=1, cases=[negative]))
+        self.assertEqual(loaded[0]['operations'][0]['thickness'], -1)
+        self.assertIn('4294967295', bend_source(loaded))
+        self.assertIn('-1,', c_source(loaded))
 
     def test_compiler_overlay_requires_exact_declared_sources(self):
         BUILD.mkdir(exist_ok=True)
