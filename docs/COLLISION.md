@@ -5,10 +5,11 @@
 `Collision.spheres(center, radius, other_center, other_radius)` compares the
 Vector3 squared distance inclusively with the squared sum of radii.
 `Collision.boxes(left, right)` accepts two `BoundingBox{min, max}` values and
-includes touching faces, edges and points. Bounds are not normalized, and
-negative radii retain raylib's squared-sum behavior. The same bounded finite
-input and numerical/platform limitations below apply. Fixtures compare the
-actual linked `rmodels.c` queries and include separation on the Z axis.
+includes touching faces, edges and points. X overlaps with `>=` and `<=`. Y and
+Z clear the hit only when a strict `<` or `>` separation is true, so a NaN on
+Y or Z is not a miss. Bounds are not normalized, and negative radii retain
+raylib's squared-sum behavior. Subnormal and non-finite box fields are compared
+with the linked query. Fixtures also include separation on the Z axis.
 
 `Collision.box_sphere(box, center, radius)` clamps each center component using
 raylib's `Clamp` ordering, then compares the closest-point squared distance
@@ -34,19 +35,23 @@ Pure Bend queries in `jonlib.bend`, adapted from pinned raylib `rshapes.c`:
 | `Collision.circle_line(center, radius, first, second)` | Closest point on the segment; near-zero segments use the reference epsilon fallback to the first endpoint. |
 | `Collision.point_poly(point, points)` | Reference odd/even ray crossings over an immutable `+List<Vector2>`; fewer than three vertices returns false. |
 
-Inputs are F32 values with finite fields in -32767..32767. The implementation
-retains the reference arithmetic and comparison order. Rectangles and radii are
-not normalized: zero/negative rectangle extents can satisfy `recs` while yielding
+`point_rec`, `recs` and `rectangle` take every F32 field, including subnormals
+and non-finite values. `recs` is additions and comparisons, so a contracted
+build does not change it. `rectangle` keeps the second operand when the two
+fields compare equal, including its signed-zero bit; this differs from the
+profiled `Vector2.min/max` operations. The other 2D queries in the shared
+fixtures use finite fields in -32767..32767. Rectangles and radii are not
+normalized: zero/negative rectangle extents can satisfy `recs` while yielding
 an empty `rectangle`, and signed radii retain the reference squared-sum behavior.
-Equal coordinate comparisons select the second operand in `rectangle`, including
-its signed-zero bit; this differs from the profiled `Vector2.min/max` operations.
 
 The shared conformance suite calls the actual linked raylib queries and compares
 every Boolean and all four rectangle result-bit fields. Fixtures include interior,
 disjoint, touching, one-ULP-inside/outside, signed-zero and degenerate inputs.
+`tools/collision_domain_probe.py` compares `point_rec`, `recs`, `boxes` and
+`rectangle` on subnormal and non-finite fields, including every result bit.
 Default predicate arithmetic is uncontracted F32; every predicate whose linked
-reference contracts multiply-adds also has a `_for` variant (below). These
-finite-input fixtures do not establish exceptional/subnormal inputs, nor
+reference contracts multiply-adds also has a `_for` variant (below). The
+remaining collision queries are not established on exceptional inputs, nor is
 performance parity. See [PROGRESS.md](PROGRESS.md) for remaining collision APIs.
 
 Polygon fixtures permit up to 4096 vertices. Boundary classification follows the

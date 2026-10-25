@@ -44095,9 +44095,8 @@
       "status": "partial",
       "jonlib": "Collision.recs",
       "mapping_state": "implemented",
-      "scope": "Finite bounded F32 rectangles; exact strict edge comparisons, including zero and signed extents.",
+      "scope": "CheckCollisionRecs: strict overlap on both axes. The predicate is additions and comparisons, so a contracted build does not change it. Subnormal and non-finite fields are compared on the collision-domain profile.",
       "gaps": [
-        "Exceptional/subnormal and contracted variants",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -44112,6 +44111,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/collision_domain_probe.py",
         "tests/fixtures/images.json",
         "docs/COLLISION.md"
       ],
@@ -44344,9 +44344,8 @@
       "status": "partial",
       "jonlib": "Collision.point_rec",
       "mapping_state": "implemented",
-      "scope": "Finite bounded F32 point/rectangle predicate; inclusive left/top and exclusive right/bottom edges.",
+      "scope": "CheckCollisionPointRec: inclusive left and top edges, exclusive right and bottom, for every F32 field including subnormals and non-finite values. A NaN comparison is false. Compared on the collision-domain profile.",
       "gaps": [
-        "Exceptional/subnormal inputs",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -44361,6 +44360,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/collision_domain_probe.py",
         "tests/fixtures/images.json",
         "docs/COLLISION.md"
       ],
@@ -44718,9 +44718,8 @@
       "status": "partial",
       "jonlib": "Collision.rectangle",
       "mapping_state": "implemented",
-      "scope": "Finite bounded F32 rectangle intersection; exact four-field result bits, signed-zero tie ordering and positive-zero empty results.",
+      "scope": "GetCollisionRec: the overlapping rectangle, or four positive zeros when an extent is not positive. Equal fields keep the second operand, including its signed zero. Subnormal and non-finite field bits are compared on the collision-domain profile.",
       "gaps": [
-        "Exceptional/subnormal behavior",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -44735,6 +44734,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/collision_domain_probe.py",
         "tests/fixtures/images.json",
         "docs/COLLISION.md"
       ],
@@ -60994,9 +60994,8 @@
       "status": "partial",
       "jonlib": "Collision.boxes",
       "mapping_state": "implemented",
-      "scope": "Finite bounded axis-aligned box predicate; inclusive contacts on all axes and unchanged supplied bounds.",
+      "scope": "raylib 6.2 CheckCollisionBoxes: X overlaps when max >= the other min and min <= the other max. Y and Z clear the hit only on a strict separation, so a NaN there is not a miss. Subnormal and non-finite fields are compared on the collision-domain profile.",
       "gaps": [
-        "Exceptional/subnormal domains",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -61011,6 +61010,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/collision_domain_probe.py",
         "tests/fixtures/images.json",
         "docs/COLLISION.md"
       ],

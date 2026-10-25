@@ -294,10 +294,18 @@ def Collision.spheres_for(+arithmetic: M.Contraction, left: M.Vector3, radius: F
 def Collision.spheres(left: M.Vector3, radius: F32, right: M.Vector3, other_radius: F32) -> Bool:
   Collision.spheres_for(M.Uncontracted{}, left, radius, right, other_radius)
 
+# CheckCollisionBoxes (raylib 6.2): X must overlap with >= and <=. Y and Z
+# clear the hit only when a strict < or > separation is true. A NaN on Y or Z
+# is not a separation, so the hit stays.
+def Collision.boxes.separated(+hi: F32, +lo: F32, +start: F32, +end: F32) -> Bool:
+  (hi < lo : F32) || (start > end : F32)
+
 def Collision.boxes(left: BoundingBox, right: BoundingBox) -> Bool:
   BoundingBox{M.Vector3{ax, ay, az}, M.Vector3{bx, by, bz}} = left
   BoundingBox{M.Vector3{cx, cy, cz}, M.Vector3{dx, dy, dz}} = right
-  ((bx >= cx) && (ax <= dx) && (by >= cy) && (ay <= dy) && (bz >= cz) && (az <= dz) : F32)
+  ((bx >= cx) && (ax <= dx) : F32)
+    && Bool.not(Collision.boxes.separated(by, cy, ay, dy))
+    && Bool.not(Collision.boxes.separated(bz, cz, az, dz))
 
 def Collision.box_sphere_for(+arithmetic: M.Contraction, box: BoundingBox, center: M.Vector3, +radius: F32) -> Bool:
   BoundingBox{M.Vector3{lx, ly, lz}, M.Vector3{ux, uy, uz}} = box
