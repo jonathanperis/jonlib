@@ -3564,9 +3564,8 @@
   "GenImageGradientRadial": {
     "jonlib": "Surface.create_gradient_radial",
     "status": "profile-covered",
-    "scope": "RGBA8; dimensions 1..4096; density 0..1 including the reference density-one behavior; balanced owned-array generation.",
+    "scope": "RGBA8; dimensions 1..4096; every F32 density. A non-finite density is the inner color (raylib fmax/fmin of a NaN factor). Density one is inner at and inside the radius. Other densities, including values outside 0..1, use the clamped hypot factor. Balanced owned-array generation.",
     "gaps": [
-      "Density values outside 0..1",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],
@@ -3576,9 +3575,8 @@
   "GenImageGradientSquare": {
     "jonlib": "Surface.create_gradient_square",
     "status": "profile-covered",
-    "scope": "RGBA8; dimensions 1..4096; density 0..1 with exact reference interpolation and density-one behavior.",
+    "scope": "RGBA8; dimensions 1..4096; every F32 density. Density one and any non-finite density are the inner color. Other densities, including values outside 0..1, use the clamped Manhattan factor.",
     "gaps": [
-      "Density values outside 0..1",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],
@@ -4431,7 +4429,6 @@
     "status": "profile-covered",
     "scope": "raylib 6.2's ImageDrawTextPro is an empty function (TODO: NEW: Implement ImageDrawTextPro()): the destination and font come back unchanged.",
     "gaps": [
-      "No reference comparison: the probes do not call it",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:ImageDrawTextPro",

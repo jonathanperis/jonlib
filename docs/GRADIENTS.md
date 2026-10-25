@@ -1,9 +1,13 @@
 # Gradient profiles and parallel generation
 
 The square, radial and linear generators return owned RGBA8 surfaces in the
-1..4096 size domain. Radial/square densities are 0..1. Linear directions are
-integral F32 values in **-360..360**, with a nonzero reference normalization
-extent. Invalid requests return `None`.
+1..4096 size domain. Radial and square densities are any F32 value. A density
+of one, and any non-finite density, is the inner color (raylib's `fmax`/`fmin`
+turn the resulting NaN factor into zero); a radial density of one stays inner
+at and inside the radius and outer outside it. Every other finite density uses
+the pinned factor and then clamps to 0..1, including densities below zero and
+above one. Linear directions are integral F32 values in **-360..360**, with a
+nonzero reference normalization extent. Invalid requests return `None`.
 
 `Surface.create_gradient_linear_for(reference, width, height, direction, start, end)`
 takes Jonmath's explicit `M.Libm`:

@@ -2029,9 +2029,17 @@ def Rgba.square_gradient.checked(valid: Bool, solid: Bool, +width: U32, +height:
         (U32.to_f32(width) / 2.0 : F32), (U32.to_f32(height) / 2.0 : F32), density, inner, outer,
         Array.new(U32, Storage.depth(count), inner))}}
 
+# A non-finite density makes raylib's factor NaN; fmax/fmin then yield 0, so
+# every pixel is the inner color. Bend's clamp does not match that NaN rule.
+def Rgba.density.finite(density: F32) -> Bool:
+  ((F32.bits(density) .&. 2147483647) < 2139095040 : U32)
+
+# GenImageGradientSquare. Density one divides by zero and clamps to the inner
+# color (normalized distance is at most one). Every other finite density uses
+# the clamped Manhattan factor, including values outside 0..1.
 def Rgba.create_gradient_square(+width: U32, +height: U32, +density: F32, inner: U32, outer: U32) -> Maybe<Rgba>:
-  Rgba.square_gradient.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
-    && ((density >= 0.0) && (density <= 1.0) : F32), F32.is_eq(density, 1.0), width, height, density, inner, outer)
+  Rgba.square_gradient.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32),
+    Bool.not(Rgba.density.finite(density)) || F32.is_eq(density, 1.0), width, height, density, inner, outer)
 
 def Rgba.radial.checked(valid: Bool, +width: U32, +height: U32, density: F32, inner: U32, outer: U32) -> Maybe<Rgba>:
   match valid:
@@ -2042,9 +2050,17 @@ def Rgba.radial.checked(valid: Bool, +width: U32, +height: U32, density: F32, in
         (U32.to_f32(U32.min(width, height)) / 2.0 : F32), density, inner, outer} : Gradients.Paint}
       Some{Rgba{width, height, Gradients.generate(Storage.depth(count), width, count, paint)}}
 
+# A non-finite radial density is the inner color, same as the square. Density
+# one stays in Gradients.radial.factor (inner at and inside the radius).
+def Rgba.radial.open(solid: Bool, valid: Bool, +width: U32, +height: U32, density: F32, inner: U32, outer: U32) -> Maybe<Rgba>:
+  match solid valid:
+    case True{} False{}: None{}
+    case True{} True{}: Rgba.create(width, height, inner)
+    case False{} other: Rgba.radial.checked(other, width, height, density, inner, outer)
+
 def Rgba.create_gradient_radial(+width: U32, +height: U32, +density: F32, inner: U32, outer: U32) -> Maybe<Rgba>:
-  Rgba.radial.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
-    && ((density >= 0.0) && (density <= 1.0) : F32), width, height, density, inner, outer)
+  Rgba.radial.open(Bool.not(Rgba.density.finite(density)),
+    ((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32), width, height, density, inner, outer)
 
 def Rgba.linear.ready(valid: Bool, +width: U32, +height: U32, cosine: F32, sine: F32, start: F32, extent: F32, inner: U32, outer: U32) -> Maybe<Rgba>:
   match valid:

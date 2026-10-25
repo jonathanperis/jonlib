@@ -110,6 +110,21 @@ def no_surface(result: Maybe<J.Surface>) -> Bool:
     case None{}: True{}
     case Some{_}: False{}
 
+def gradient_pixel(got: Array<U32> & U32, word: U32) -> Bool:
+  (_, pixel) = got
+  U32.is_eq(pixel, word)
+
+def gradient_word(result: Maybe<J.Surface>, word: U32) -> Bool:
+  match result:
+    case Some{J.Surface{_, _, _, J.Words{pixels}}}:
+      gradient_pixel(Array.get(U32, pixels, 0), word)
+    case _: False{}
+
+def gradient_present(result: Maybe<J.Surface>) -> Bool:
+  match result:
+    case Some{_}: True{}
+    case None{}: False{}
+
 def rotation_last(result: Array<U32> & U32) -> Bool:
   (_, pixel) = result
   U32.is_eq(pixel, 16909060)
@@ -305,9 +320,14 @@ def checks() -> Bool:
     && mask_sizes(J.Surface.create(2, 1, 16909060), J.Surface.create(1, 2, 16909060))
     && no_surface(J.Surface.create_checked(1, 1, 0, 1, 0, 4294967295))
     && no_surface(J.Surface.create_checked(0, 1, 1, 1, 0, 4294967295))
-    && no_surface(J.Surface.create_gradient_square(1, 1, 1.5, 0, 4294967295))
+    && gradient_word(J.Surface.create_gradient_square(1, 1, 1.5, 7, 9), 9)
+    && gradient_word(J.Surface.create_gradient_square(1, 1, (1.0 / 0.0 : F32), 7, 9), 7)
+    && gradient_word(J.Surface.create_gradient_square(1, 1, (0.0 / 0.0 : F32), 7, 9), 7)
     && no_surface(J.Surface.create_gradient_square(0, 1, 0.5, 0, 4294967295))
-    && no_surface(J.Surface.create_gradient_radial(1, 1, 1.5, 0, 4294967295))
+    && no_surface(J.Surface.create_gradient_square(0, 1, 1.5, 0, 4294967295))
+    && gradient_present(J.Surface.create_gradient_radial(1, 1, 1.5, 7, 9))
+    && gradient_word(J.Surface.create_gradient_radial(1, 1, (1.0 / 0.0 : F32), 7, 9), 7)
+    && gradient_word(J.Surface.create_gradient_radial(1, 1, (0.0 / 0.0 : F32), 7, 9), 7)
     && no_surface(J.Surface.create_gradient_linear(1, 1, 90.0, 0, 4294967295))
     && no_surface(J.Surface.create_gradient_linear(3, 2, 0.5, 0, 4294967295))
     && no_surface(J.Surface.create_gradient_linear(3, 2, 361.0, 0, 4294967295))

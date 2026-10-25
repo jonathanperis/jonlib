@@ -390,8 +390,8 @@ def cases_from(document):
             if kind == 'gradient_linear':
                 if not integer(gradient.get('direction'),-360,360) or min(case['width'],case['height']) < 2:
                     raise ValueError(f'{name}: linear fixtures require integral angles in -360..360 and dimensions at least 2')
-            elif not coordinate(gradient.get('density'), True) or not 0 <= gradient['density'] <= 1:
-                raise ValueError(f'{name}: gradient density must be in 0..1')
+            elif type(gradient.get('density')) not in (int, float) or not math.isfinite(gradient['density']):
+                raise ValueError(f'{name}: gradient density must be a finite number')
             rgba(gradient['outer'])
         if 'checked' in case:
             checked = case['checked']

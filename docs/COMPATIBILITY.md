@@ -96,8 +96,8 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | Image color/alpha operations, checkerboards | `Surface.color_*`, `alpha_*`, `create_checked` | Reference arithmetic, preserved mask ownership, checked generator inputs | `conformance` |
 | Alpha bounds/cropping | `Surface.alpha_border/alpha_crop` | Exact rectangles; empty selections leave the image unchanged | `conformance` |
 | Canvas resizing | `Surface.resize_canvas` | Raw RGBA copy/fill, clipping, same-size no-op; rejected requests return the original | `conformance` |
-| Square gradients | `Surface.create_gradient_square` | Odd/even sizes and density endpoints, including density one | `conformance` |
-| Radial/linear gradients | `Surface.create_gradient_radial/linear` | Radial density 0..1; integral linear directions -360..360 | `conformance`, `trig` |
+| Square gradients | `Surface.create_gradient_square` | Odd/even sizes, density one, and finite densities outside 0..1 | `conformance` |
+| Radial/linear gradients | `Surface.create_gradient_radial/linear` | Radial densities inside and outside 0..1, including a non-finite density; integral linear directions -360..360 | `conformance`, `trig` |
 | Random streams / white noise | `Random.seed/value`, `Surface.create_white_noise` | Exact rprand sequences, full pixels, fixed draw consumption, rejected-owner preservation | `random`, `conformance` |
 | Unique random sequences | `Random.load_sequence/unload_sequence` | Exact acceptance order and following state; explicit draw budget; owned incomplete/error results | `random` |
 | Cellular images | `Surface.create_cellular` | Seed order, full pixels, post-generation state; exhaustive integer-distance reduction | `random`, `conformance` |
