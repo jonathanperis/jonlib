@@ -173,7 +173,7 @@ jobs:
   results:
     name: Results ${{ matrix.runner }}
     needs: [plan, linux, macos]
-    if: ${{ always() && needs.plan.result == 'success' && matrix.active == 'yes' }}
+    if: ${{ always() && needs.plan.result == 'success' && (needs.plan.outputs.run_linux == 'yes' || needs.plan.outputs.run_macos == 'yes') }}
     strategy:
       fail-fast: false
       matrix:
@@ -189,16 +189,20 @@ jobs:
       actions: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ matrix.active == 'yes' }}
         with:
           persist-credentials: false
       - name: Download shard summaries
+        if: ${{ matrix.active == 'yes' }}
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           pattern: gate-results-${{ matrix.runner }}-*
           path: .build/shard-results
       - name: Merge shard summaries
+        if: ${{ matrix.active == 'yes' }}
         run: python3 tools/run_gates.py --merge-results .build/shard-results --results .build/gate-results.json
       - name: Upload host results
+        if: ${{ matrix.active == 'yes' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: gate-results-${{ matrix.runner }}
