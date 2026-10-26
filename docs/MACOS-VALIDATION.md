@@ -85,9 +85,14 @@ pads `malloc` through the default zone. It passed, 15 cases.
 `main` then moved to `5d01c4f` (gradient extents outside 32767, and
 exceptional box and rectangle queries). `conformance`, `surface-format` and
 the new `collision-domain` gate were rerun and passed: conformance 281
-scenarios, surface-format 2548 cases, collision-domain 1572 cases. The
-manifest is 212 gates. Nothing from this run remains open. `MERGE_HOSTS` is
-unchanged; section 1 is the remaining step.
+scenarios, surface-format 2548 cases, collision-domain 1572 cases.
+
+`main` then moved to `a8e579f` (exceptional collision predicates, polygon
+crossings, segment intersections, and normalized-byte casts). `collision-exceptional`,
+`collision-poly`, `collision-lines` and `color-normalized` were rerun and
+passed: 2594, 1145, 363 and 156 cases. The manifest is 216 gates. Nothing
+from this run remains open. `MERGE_HOSTS` is unchanged; section 1 is the
+remaining step.
 
 The 2026-10-24 shard (`fa0755b`) had passed 191 of 206 gates and supersedes
 the raylib 6.0 nightly of 2026-10-16. Gates the 6.0 note had never run, or
