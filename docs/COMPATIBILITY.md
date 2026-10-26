@@ -182,7 +182,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | Headless frame and 2D shapes | `Frame.*`, `Draw.*` (rcore.c frame, rlgl.h immediate path, rlsw.h, rshapes.c) | Every color-buffer byte of the memory-platform software renderer, scalar and uncontracted; host libm profile for `sinf`/`cosf`; undefined conversions, unverified arguments and unsupported segment counts mark the frame undefined ([FRAME.md](FRAME.md)) | `frame` |
 | 2D camera, render state, textures | `Frame.begin_mode_2d`/`begin_scissor_mode`/`begin_blend_mode`/`begin_texture_mode`, `Rlgl.*`, `Texture.*`, `RenderTexture.*`, `Draw.texture*` (rcore.c, rtextures.c, rlgl.h, rlsw.h) | Every color-buffer byte and the texture/framebuffer ids of the memory-platform software renderer; formats 1..7 sampled nearest or bilinear with REPEAT (raylib's CLAMP and blend modes do not reach rlsw); unverified rotations, undefined conversions and stack underflow mark the frame undefined ([TEXTURES.md](TEXTURES.md)) | `texture` |
 | Fonts and text drawing | `Font.*`, `Draw.text*`, `Draw.fps` (rtext.c, rtextures.c ImageText*) | Default-font glyph table and images, glyph queries, `MeasureText*` bits (uncontracted), every color-buffer byte of `DrawText*`/`DrawFPS` through rlsw, `LoadFontFromImage` fonts and `ImageText*`/`ImageDrawText*` bytes; undefined conversions, reads past the image and unverified rotations are refused ([FONTS.md](FONTS.md)) | `font` |
-| Linear/B-spline/Catmull-Rom/quadratic Bezier points | `Spline` functions | XY and coefficient order with explicit arithmetic profiles ([SPLINES.md](SPLINES.md)) | `spline` |
+| Linear/B-spline/Catmull-Rom/quadratic Bezier points | `Spline` functions | XY and coefficient order with explicit arithmetic profiles, including exceptional and extrapolated inputs ([SPLINES.md](SPLINES.md)) | `spline`, `spline-exceptional` |
 | GPU execution of image operations | Same Bend API | All corpus pixels and export bytes on forced Metal with the overlay | local `tools/conformance.py --gpu` |
 | GPU graphics-pipeline `Draw*` APIs | Future GPU presentation | Not a reference: `Draw.*` renders as raylib's software renderer does; driver-dependent OpenGL output and CPU `ImageDraw*` matches are other contracts | — |
 | TTF/OTF/BDF/BMFont fonts, further codecs, meshes, models, animation | Future modules | Not implemented | — |
@@ -196,7 +196,9 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
   `vector2-angle-profiles` pixel `(6,0)` gives legacy `3fc90fda` versus native
   `3fc90fdb`. The checked `*_for` route with `M.Glibc241Libm{}` matches.
   The arm64 Apple subnormal difference is described in [ANGLES.md](ANGLES.md).
-- Cubic Bezier spline points are blocked by native `powf` rounding.
+- Cubic Bezier spline points outside the Glibc239 `powf` domain, and the Apple
+  and glibc 2.41 kernels, remain open. In-range exceptional control points
+  match both contraction profiles ([SPLINES.md](SPLINES.md)).
 - Linear gradients outside integral -360..360 directions (wider-angle libm
   rounding) remain open ([GRADIENTS.md](GRADIENTS.md)).
 - Native byte-allocation ABI for pixel data, native array ABI/mutability for

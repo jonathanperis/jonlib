@@ -1,15 +1,27 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of raylib 6.2 rshapes.c spline formulas; LICENSES/raylib.txt.
 import Base
+import ./fma.bend as Fma
 import ./fused.bend as F
 
 type Weights is Data:
   Weights{a: F32, b: F32, c: F32, d: F32}
 
-def mad(fused: Bool, a: F32, b: F32, c: F32) -> F32:
+# Inf and NaN only. Subnormals stay on the finite-normal kernel.
+def nonfinite(+value: F32) -> Bool:
+  ((F32.bits(value) .&. 2147483647) >= 2139095040 : U32)
+
+# Finite normals use the exact integer significand path. A non-finite factor
+# or addend uses the total fma, which matches fmaf.
+def multiply_add(special: Bool, +a: F32, +b: F32, +c: F32) -> F32:
+  match special:
+    case True{}: Fma.multiply_add(a, b, c)
+    case False{}: F.multiply_add(a, b, c)
+
+def mad(fused: Bool, +a: F32, +b: F32, +c: F32) -> F32:
   match fused:
     case False{}: (a * b + c : F32)
-    case True{}: F.multiply_add(a, b, c)
+    case True{}: multiply_add(nonfinite(a) || nonfinite(b) || nonfinite(c), a, b, c)
 
 def linear(fused: Bool, a: F32, b: F32, +t: F32) -> F32:
   mad(fused, a, (1.0 - t : F32), (b * t : F32))

@@ -17,9 +17,14 @@ x86_64 the uncontracted profile; the harness selects `M.Fused{}` or
 arithmetic ([COLLISION.md](COLLISION.md)). The exact formulas remain separate
 from algebraically equivalent vector interpolation helpers.
 
-The initial profile covers coordinates in -32767..32767 and t in 0..1, with
-finite normal/zero intermediate values. Exceptional/subnormal inputs,
-extrapolation, other compiler contraction choices and full integration/target/
+The finite profile covers coordinates in -32767..32767 and t in 0..1, with
+finite normal/zero intermediate values. A non-finite fused multiply-add uses
+the total fma (`src/fma.bend`); finite normals stay on `src/fused.bend`, and
+the uncontracted profile remains `a*b+c`. Exceptional, subnormal and
+extrapolated inputs are compared for both declared profiles. Catmull-Rom
+matches every bit. Linear, B-spline and quadratic Bezier match every value;
+a CPU lane can flip a quiet-NaN sign, and JavaScript matches those bits.
+Undeclared fusion subsets are not a selected host. Integration, target and
 performance coverage remain gaps.
 
 ## How it is verified
@@ -28,6 +33,7 @@ performance coverage remain gaps.
 |---|---|---|
 | `conformance` | `tools/conformance.py` | both output components of the spline fixtures vs the linked raylib, with the host's arithmetic profile |
 | `spline` | `tools/spline_probe.py` | every point API on endpoints, non-dyadic coefficients, signed zero and seeded inputs vs linked raylib, with the host's arithmetic profile |
+| `spline-exceptional` | `tools/spline_exceptional_probe.py` | linear, basis, Catmull-Rom and quadratic points on subnormal, non-finite and extrapolated inputs; uncontracted against the pinned functions with `FP_CONTRACT OFF`, fused against those Bend nestings with `fmaf`. A CPU quiet-NaN sign is allowed on linear, basis and quadratic points. On a Glibc239 host, cubic points with t in {-0, 0, 0.5, 1} and exceptional control points are included |
 
 `tools/spline_probe.py --uncontracted-control` instead compiles the unchanged
 pinned spline functions from `rshapes.c` with `FP_CONTRACT OFF` and checks
@@ -63,7 +69,9 @@ profile (`M.Libm.pow`):
   control points `(0,0)`, `(0,0)`, `(0,0)`, `(1,0)`, t = `0x1.940af8p-2`,
   native X `3d7b9e4d`, cube `3d7b9e4e`), and its algorithm is not published.
 
-`None` also when t is outside [-0, 1], including NaN.
+`None` also when t is outside [-0, 1], including NaN. On a Glibc239 host,
+control points from the exceptional set with t in {-0, 0, 0.5, 1} match both
+contraction profiles, including quiet-NaN signs (`spline-exceptional`).
 
 `tools/spline_cubic_probe.py` (gate `spline-cubic`) compiles the unchanged
 pinned function with `powf` replaced by a C model of that algorithm,

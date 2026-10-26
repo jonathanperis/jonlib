@@ -43767,9 +43767,9 @@
       "status": "partial",
       "jonlib": "Spline.linear_for / Spline.linear",
       "mapping_state": "implemented",
-      "scope": "Finite bounded point interpolation with the original start*(1-t)+end*t expression and explicit fused/uncontracted reference arithmetic; t in 0..1.",
+      "scope": "Original start*(1-t)+end*t with explicit fused and uncontracted profiles, including exceptional, subnormal and extrapolated t. CPU quiet-NaN signs differ; JavaScript matches every bit.",
       "gaps": [
-        "Exceptional/subnormal, extrapolation and other contraction profiles",
+        "Quiet-NaN signs of a CPU point are not reproduced; JavaScript matches every bit",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
@@ -43787,6 +43787,7 @@
       "evidence": [
         "tests/fixtures/images.json",
         "tools/spline_probe.py",
+        "tools/spline_exceptional_probe.py",
         "docs/SPLINES.md"
       ],
       "gate_evidence": {},
@@ -43833,9 +43834,9 @@
       "status": "partial",
       "jonlib": "Spline.basis_for / Spline.basis",
       "mapping_state": "implemented",
-      "scope": "Reference B-spline coefficients, division by six and Horner order with explicit fused/uncontracted profiles and exact XY bits; t in 0..1.",
+      "scope": "Reference B-spline coefficients, division by six and Horner order with explicit fused and uncontracted profiles, including exceptional, subnormal and extrapolated t. A fused CPU quiet-NaN sign can differ; JavaScript matches every bit.",
       "gaps": [
-        "Exceptional/subnormal, extrapolation and other contraction profiles",
+        "Quiet-NaN signs of a fused CPU point are not reproduced; JavaScript matches every bit",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
@@ -43853,6 +43854,7 @@
       "evidence": [
         "tests/fixtures/images.json",
         "tools/spline_probe.py",
+        "tools/spline_exceptional_probe.py",
         "docs/SPLINES.md"
       ],
       "gate_evidence": {},
@@ -43899,9 +43901,8 @@
       "status": "partial",
       "jonlib": "Spline.catmull_rom_for / Spline.catmull_rom",
       "mapping_state": "implemented",
-      "scope": "Reference Catmull-Rom coefficient and weighted-point accumulation order with explicit fused/uncontracted profiles; t in 0..1.",
+      "scope": "Reference Catmull-Rom weights and half-scale accumulation with explicit fused and uncontracted profiles. Exceptional, subnormal and extrapolated t match both profiles on every lane.",
       "gaps": [
-        "Exceptional/subnormal, extrapolation and other contraction profiles",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
@@ -43919,6 +43920,7 @@
       "evidence": [
         "tests/fixtures/images.json",
         "tools/spline_probe.py",
+        "tools/spline_exceptional_probe.py",
         "docs/SPLINES.md"
       ],
       "gate_evidence": {},
@@ -43965,9 +43967,9 @@
       "status": "partial",
       "jonlib": "Spline.bezier_quad_for / Spline.bezier_quad",
       "mapping_state": "implemented",
-      "scope": "Reference quadratic Bezier weights and original product order with explicit fused/uncontracted profiles and exact endpoints/XY fields; t in 0..1.",
+      "scope": "Reference quadratic weights, with squares as products, and three-term accumulation under explicit fused and uncontracted profiles, including exceptional, subnormal and extrapolated t. CPU quiet-NaN signs differ; JavaScript matches every bit.",
       "gaps": [
-        "Exceptional/subnormal, extrapolation and other contraction profiles",
+        "Quiet-NaN signs of a CPU point are not reproduced; JavaScript matches every bit",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
@@ -43985,6 +43987,7 @@
       "evidence": [
         "tests/fixtures/images.json",
         "tools/spline_probe.py",
+        "tools/spline_exceptional_probe.py",
         "docs/SPLINES.md"
       ],
       "gate_evidence": {},
@@ -44031,7 +44034,7 @@
       "status": "partial",
       "jonlib": "Spline.bezier_cubic_for",
       "mapping_state": "implemented",
-      "scope": "Weights (1-t)^3, 3(1-t)^2 t, 3(1-t) t^2 and t^3 through the Glibc239Libm powf (glibc 2.39's x86_64 Arm powf on [-0, 1], exact binary64 steps) and the reference accumulation under M.Uncontracted or M.Fused; compared with the pinned rshapes.c function on the powf model (fused on arm64) and, on Linux x86_64 glibc 2.39, with linked raylib.",
+      "scope": "Weights (1-t)^3, 3(1-t)^2 t, 3(1-t) t^2 and t^3 through the Glibc239Libm powf (glibc 2.39's x86_64 Arm powf on [-0, 1], exact binary64 steps) and the reference accumulation under M.Uncontracted or M.Fused. In-range exceptional control points at t in {-0, 0, 0.5, 1} match both profiles.",
       "gaps": [
         "AppleLibm and Glibc241Libm powf (None)",
         "t outside [-0, 1] (including NaN) is None",
@@ -44049,6 +44052,7 @@
       },
       "evidence": [
         "tools/spline_cubic_probe.py",
+        "tools/spline_exceptional_probe.py",
         "docs/SPLINES.md"
       ],
       "gate_evidence": {},
