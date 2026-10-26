@@ -3261,9 +3261,8 @@
   "CheckCollisionCircles": {
     "jonlib": "Collision.circles_for / Collision.circles",
     "status": "profile-covered",
-    "scope": "Finite bounded F32 centers/radii, inclusive squared-distance tangency and reference signed-radius behavior. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
+    "scope": "F32 centers and radii, including signed zero, a subnormal, infinities and one quiet NaN. Inclusive squared-distance tangency and signed radii. Uncontracted and Apple-clang FMA profiles.",
     "gaps": [
-      "Exceptional/subnormal inputs and other contraction patterns",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],
@@ -3273,9 +3272,8 @@
   "CheckCollisionCircleRec": {
     "jonlib": "Collision.circle_rec_for / Collision.circle_rec",
     "status": "profile-covered",
-    "scope": "Finite bounded F32 circle/rectangle predicate preserving reference side and corner tests. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
+    "scope": "F32 circle and rectangle, including signed zero, a subnormal, infinities and one quiet NaN. Reference side and corner tests, including tangency. Uncontracted and Apple-clang FMA profiles.",
     "gaps": [
-      "Exceptional/subnormal inputs and other contraction patterns",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],
@@ -3285,9 +3283,8 @@
   "CheckCollisionCircleLine": {
     "jonlib": "Collision.circle_line_for / Collision.circle_line",
     "status": "profile-covered",
-    "scope": "Finite bounded F32 circle/segment closest-point predicate with reference epsilon-degenerate endpoint fallback. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
+    "scope": "F32 circle and segment, including signed zero, a subnormal, infinities and one quiet NaN. Reference epsilon-degenerate endpoint fallback. Uncontracted and Apple-clang FMA profiles.",
     "gaps": [
-      "Exceptional/subnormal inputs and other contraction patterns",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],
@@ -3308,9 +3305,8 @@
   "CheckCollisionPointCircle": {
     "jonlib": "Collision.point_circle_for / Collision.point_circle",
     "status": "profile-covered",
-    "scope": "Finite bounded F32 point/circle squared-distance predicate with inclusive tangency. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
+    "scope": "F32 point, center and radius, including signed zero, a subnormal, infinities and one quiet NaN. Inclusive squared-distance tangency. Uncontracted and Apple-clang FMA profiles.",
     "gaps": [
-      "Exceptional/subnormal inputs and other contraction patterns",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],
@@ -3320,9 +3316,8 @@
   "CheckCollisionPointTriangle": {
     "jonlib": "Collision.point_triangle_for / Collision.point_triangle",
     "status": "profile-covered",
-    "scope": "Finite bounded F32 point/triangle predicate; strict barycentric interior and false for tested degenerate triangles. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
+    "scope": "F32 point and triangle, including signed zero, a subnormal, infinities and one quiet NaN. Strictly positive barycentric weights; edges and degenerates are false. Uncontracted and Apple-clang FMA profiles.",
     "gaps": [
-      "Exceptional/subnormal inputs and other contraction patterns",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],
@@ -3332,9 +3327,9 @@
   "CheckCollisionPointLine": {
     "jonlib": "Collision.point_line_for / Collision.point_line",
     "status": "profile-covered",
-    "scope": "Finite bounded F32 point/segment predicate with the int threshold truncated toward zero, strict cross-product margin and inclusive dominant-axis interval. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
+    "scope": "F32 point and segment, including signed zero, a subnormal, infinities and one quiet NaN, with a threshold whose truncation fits in a C int. Strict cross-product margin. Uncontracted and Apple-clang FMA profiles.",
     "gaps": [
-      "Exceptional/subnormal inputs and other contraction patterns",
+      "Undefined native behavior: a non-finite threshold or one outside a C int is not the reference cast",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],
@@ -6221,9 +6216,8 @@
   "CheckCollisionSpheres": {
     "jonlib": "Collision.spheres_for / Collision.spheres",
     "status": "profile-covered",
-    "scope": "Finite bounded sphere predicate using inclusive squared distance and the reference squared sum of signed radii. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
+    "scope": "F32 centers and radii, including signed zero, a subnormal, infinities and one quiet NaN. Inclusive squared distance and the squared sum of signed radii. Uncontracted and Apple-clang FMA profiles.",
     "gaps": [
-      "Exceptional/subnormal inputs and other contraction patterns",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],
@@ -6244,9 +6238,8 @@
   "CheckCollisionBoxSphere": {
     "jonlib": "Collision.box_sphere_for / Collision.box_sphere",
     "status": "profile-covered",
-    "scope": "Finite bounded box/sphere predicate with reference component Clamp ordering and inclusive closest-point distance test. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
+    "scope": "F32 box, center and radius, including signed zero, a subnormal, infinities and one quiet NaN. Reference Clamp ordering and inclusive closest-point test. Uncontracted and Apple-clang FMA profiles.",
     "gaps": [
-      "Exceptional/subnormal inputs and other contraction patterns",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],

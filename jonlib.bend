@@ -271,10 +271,20 @@ def Signed.trunc(+x: F32) -> F32:
 def Signed.to_f32(+word: U32) -> F32:
   Bool.pick(F32, (word >= 2147483648 : U32), F32.neg(U32.to_f32((0 - word : U32))), U32.to_f32(word))
 
-def Collision.multiply_add(arithmetic: M.Contraction, a: F32, b: F32, c: F32) -> F32:
+# Fused.multiply_add is the finite-normal rounding. A non-finite factor or
+# addend uses the total fma, which matches fmaf on infinities and NaN.
+def Collision.nonfinite(+value: F32) -> Bool:
+  ((F32.bits(value) .&. 2147483647) >= 2139095040 : U32)
+
+def Collision.multiply_add.fused(special: Bool, +a: F32, +b: F32, +c: F32) -> F32:
+  match special:
+    case True{}: Fma.multiply_add(a, b, c)
+    case False{}: Fused.multiply_add(a, b, c)
+
+def Collision.multiply_add(arithmetic: M.Contraction, +a: F32, +b: F32, +c: F32) -> F32:
   match arithmetic:
     case M.Uncontracted{}: (a * b + c : F32)
-    case M.Fused{}: Fused.multiply_add(a, b, c)
+    case M.Fused{}: Collision.multiply_add.fused(Collision.nonfinite(a) || Collision.nonfinite(b) || Collision.nonfinite(c), a, b, c)
 
 # dx*dx + dy*dy as the linked reference evaluates it: fma(dx, dx, dy*dy) when fused.
 def Collision.square_sum(+arithmetic: M.Contraction, +dx: F32, +dy: F32) -> F32:

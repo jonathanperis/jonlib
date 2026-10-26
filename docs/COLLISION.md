@@ -14,7 +14,11 @@ with the linked query. Fixtures also include separation on the Z axis.
 `Collision.box_sphere(box, center, radius)` clamps each center component using
 raylib's `Clamp` ordering, then compares the closest-point squared distance
 inclusively against `radius*radius`. Reversed bounds and negative radii retain
-their reference behavior; they are not repaired or normalized.
+their reference behavior; they are not repaired or normalized. Sphere and
+box-sphere fields may be subnormal or non-finite. Both the uncontracted profile
+and the Apple-clang FMA profile match those inputs; a non-finite fused
+multiply-add uses the total fma, and finite normals keep the finite-normal
+rounding.
 
 ## 2D queries
 
@@ -39,10 +43,14 @@ Pure Bend queries in `jonlib.bend`, adapted from pinned raylib `rshapes.c`:
 and non-finite values. `recs` is additions and comparisons, so a contracted
 build does not change it. `rectangle` keeps the second operand when the two
 fields compare equal, including its signed-zero bit; this differs from the
-profiled `Vector2.min/max` operations. The other 2D queries in the shared
-fixtures use finite fields in -32767..32767. Rectangles and radii are not
-normalized: zero/negative rectangle extents can satisfy `recs` while yielding
-an empty `rectangle`, and signed radii retain the reference squared-sum behavior.
+profiled `Vector2.min/max` operations. `circles`, `point_circle`, `circle_rec`,
+`point_triangle`, `point_line` and `circle_line` do too, under both contraction
+profiles. `point_line` takes a threshold whose truncation fits in a C `int`; a
+non-finite threshold or one outside that range is undefined in C.
+Rectangles and radii are not normalized: zero/negative rectangle extents can
+satisfy `recs` while yielding an empty `rectangle`, and signed radii retain
+the reference squared-sum behavior. The shared fixtures still use finite
+fields in -32767..32767.
 
 The shared conformance suite calls the actual linked raylib queries and compares
 every Boolean and all four rectangle result-bit fields. Fixtures include interior,
@@ -114,13 +122,18 @@ declaration. The same declaration selects the spline and Perlin noise profiles
 
 The internal `src/fused.bend` keeps the exact F32 product, aligns integer limbs
 and rounds the sum directly to 24 bits. Rounding through a binary64 sum would
-lose tiny addends at an F32 halfway boundary.
+lose tiny addends at an F32 halfway boundary. A non-finite factor or addend
+does not take that path: `Collision.multiply_add` uses the total fma
+(`src/fma.bend`), which matches `fmaf` on infinities and NaN. Finite normals
+stay on `src/fused.bend`.
 
 ## How it is verified
 
 | Gate | Tool | Compares |
 |---|---|---|
 | `conformance` | `tools/conformance.py` | every Boolean and all rectangle/point result bits vs the linked raylib queries, with the host's arithmetic profile |
+| `collision-domain` | `tools/collision_domain_probe.py` | `point_rec`, `recs`, `boxes` and `rectangle` on subnormal and non-finite fields |
+| `collision-exceptional` | `tools/collision_exceptional_probe.py` | `circles`, `point_circle`, `circle_rec`, `point_triangle`, `point_line`, `circle_line`, `spheres` and `box_sphere` on subnormal and non-finite fields; uncontracted against linked raylib and fused against the Apple-clang fma shapes |
 | `fused` | `tools/fused_probe.py` | the internal finite-normal F32 multiply-add vs native `fmaf`, including double-rounding counterexamples, cancellation and signed zeros |
 | `ray` | `tools/ray_probe.py` | every ray-collision field bit vs the linked raylib with the host contraction and libm profiles; a C oracle repeating the box contract selects the expected `None` results |
 | `ray-uncontracted` | `tools/ray_probe.py --uncontracted-control` | the same cases against the pinned `rmodels.c` ray functions compiled without contraction, checking `M.Uncontracted{}` on every host |
@@ -131,5 +144,7 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 ```
 
 The original segment counterexample stays in the strict native-raylib corpus.
-NaN/infinity, subnormal intermediates/results, overflow, other contraction
-patterns and other compilers' contraction choices remain gaps.
+`lines`, `point_poly` and the ray queries are not established on exceptional
+inputs. A fused multiply-add whose factors and addend are finite stays on the
+finite-normal rounding. Compilers that fuse a different subset than the two
+declared profiles are not a selected host.
