@@ -80,8 +80,13 @@ While the shard ran, `main` moved to `b017d71` (negative line thickness,
 gradient densities outside 0..1, and one-level KTX export). `conformance`,
 `surface-format` and `image-export` were rerun on that tree and passed.
 `ktx-export` is the new gate: Apple ld rejects GNU `--wrap`, so the oracle
-pads `malloc` through the default zone. It passed, 15 cases. The manifest
-is 211 gates. Nothing from this run remains open. `MERGE_HOSTS` is
+pads `malloc` through the default zone. It passed, 15 cases.
+
+`main` then moved to `5d01c4f` (gradient extents outside 32767, and
+exceptional box and rectangle queries). `conformance`, `surface-format` and
+the new `collision-domain` gate were rerun and passed: conformance 281
+scenarios, surface-format 2548 cases, collision-domain 1572 cases. The
+manifest is 212 gates. Nothing from this run remains open. `MERGE_HOSTS` is
 unchanged; section 1 is the remaining step.
 
 The 2026-10-24 shard (`fa0755b`) had passed 191 of 206 gates and supersedes
