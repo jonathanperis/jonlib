@@ -29,8 +29,10 @@ the unsigned bit pattern returned by `ColorToInt`.
 - `Color.lerp(first, second, factor)`: straight RGBA interpolation with a finite
   factor clamped to 0..1; this does not perform alpha blending.
 - `Color.normalize(color) -> Vector4`: exact reference RGBA normalization by 255.
-- `Color.from_normalized(vector) -> U32`: finite RGBA components in 0..1,
-  multiplied by 255 in F32 and truncated to bytes.
+- `Color.from_normalized(vector) -> U32`: F32 components whose product with
+  255 is finite and in [0, 256), including signed zero, subnormals and values
+  outside 0..1, truncated to bytes. A negative, non-finite or larger product
+  is undefined in C.
 - `Color.to_hsv(color) -> Vector3`: hue in degrees, saturation and value in 0..1;
   ignores alpha and returns zero hue/saturation for achromatic colors.
 - `Color.from_hsv(hue, saturation, value) -> U32`: any finite hue and

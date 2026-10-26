@@ -4691,9 +4691,9 @@
   "ColorFromNormalized": {
     "jonlib": "Color.from_normalized",
     "status": "profile-covered",
-    "scope": "Finite normalized Vector4 components 0..1 converted with reference F32 multiplication and byte truncation.",
+    "scope": "F32 components whose product with 255 is finite and in [0, 256), including signed zero, subnormals and values outside 0..1. Byte truncation matches the reference cast.",
     "gaps": [
-      "Out-of-profile/exceptional/subnormal inputs",
+      "Undefined native behavior: a component whose product with 255 is negative, non-finite, or at least 256 is not the reference cast",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
