@@ -148,8 +148,8 @@ differences). Parser and host-field validation are unit-tested in
 `tests/test_native_math_profile.py`, which mocks all native execution.
 
 Gate `extrema` (`tools/extrema_probe.py`) compares Vector2/3/4 min and max and
-Vector2/3 component clamp with that volatile lowering. A 4-by-4 control compiled
-the same way, through the corpus load, selects the one declared profile the ties implement
+Vector2/3 component clamp with that volatile lowering. The corpus Vector2 min
+and max rows whose X operands are the control words select the one declared profile the ties implement
 (`Glibc239Libm` where the builtin keeps the first zero, `AppleLibm` where
 min takes the sign OR and max the sign AND). Two quiet NaNs keep the second
 operand on `Glibc239Libm` and the first on `AppleLibm`. Inputs are a table.

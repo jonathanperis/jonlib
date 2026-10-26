@@ -19,11 +19,31 @@ class ExtremaTieTests(unittest.TestCase):
         with self.assertRaisesRegex(probe.ProbeFailure, 'no declared profile'):
             probe.selected_profile(words)
 
-    def test_the_tie_control_uses_the_corpus_load(self):
-        text = probe.tie_source()
-        self.assertIn('sink+=u', text)
-        self.assertIn('(void)sink', text)
-        self.assertEqual(text.split('static Vector2 V2', 1)[0], '\n'.join(probe.reference_header()) + '\n')
+    def test_corpus_rows_select_the_profile_they_implement(self):
+        bits = native_profiles.CONTROL_BITS
+        for name in native_profiles.EXTREMA_PROFILES:
+            words = probe.tie_words(name)
+            rows, expected, cursor = [], [], 0
+            for op, function in (('v2_min', 'min'), ('v2_max', 'max')):
+                table = native_profiles.TABLES[name][function]
+                for i, left in enumerate(bits):
+                    for j, right in enumerate(bits):
+                        rows.append((op, (left, 0x3f800000, right, 0x3f800000)))
+                        expected.append([bits[table[i][j]], 0x3f800000])
+                        self.assertEqual(words[cursor], bits[table[i][j]])
+                        cursor += 1
+            self.assertEqual(probe.profile_from_corpus(rows, expected), name)
+
+    def test_a_second_operand_tie_matches_no_declared_profile(self):
+        zeros = {0x00000000, 0x80000000}
+        rows, expected = [], []
+        for op in ('v2_min', 'v2_max'):
+            for left in zeros:
+                for right in zeros:
+                    rows.append((op, (left, 0x3f800000, right, 0x3f800000)))
+                    expected.append([right, 0x3f800000])
+        with self.assertRaisesRegex(probe.ProbeFailure, 'no declared profile'):
+            probe.profile_from_corpus(rows, expected)
 
     def test_the_candidate_uses_the_selected_profile(self):
         text = probe.render([('v2_min', (0, 0, 0, 0x80000000))], False, 'M.AppleLibm{}')

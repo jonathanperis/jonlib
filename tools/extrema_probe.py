@@ -6,12 +6,11 @@ pinned raymath.h with contraction off (`clang -O2 -ffp-contract=off
 -fno-builtin-atan2f`, `FP_CONTRACT OFF`). Inputs live in a table and each word
 is loaded through a volatile, so clang lowers fminf/fmaxf instead of folding
 the literals and instead of calling the native library through a pointer (a
-different signed-zero tie). A 4-by-4 control of the same loads selects the one
-declared profile those ties implement: `Glibc239Libm` keeps the first zero
-(the Linux builtin) and `AppleLibm` takes the sign OR for min and the sign AND
-for max (Apple clang). The control uses the corpus `load`, including the sink
-that keeps each volatile read live, so the tie is that builtin rather than a
-folded literal. A NaN loses to a number in both. Two NaNs keep the
+different signed-zero tie). The corpus Vector2 min and max rows whose X
+operands are the control words select the one declared profile those ties
+implement: `Glibc239Libm` keeps the first zero (the Linux builtin) and
+`AppleLibm` takes the sign OR for min and the sign AND for max (Apple clang).
+A NaN loses to a number in both. Two NaNs keep the
 second operand under `Glibc239Libm` and the first under `AppleLibm`. CPU-1 and
 CPU-2 must match every
 result bit. JavaScript may quiet a returned negative quiet NaN to a positive
@@ -189,33 +188,44 @@ def selected_profile(observed):
     return matches[0]
 
 
-def tie_source():
-    """Vector2Min/Max zero ties, loaded the same way as the corpus."""
-    bits = ','.join(f'0x{word:08x}u' for word in native_profiles.CONTROL_BITS)
-    return '\n'.join(reference_header() + [
-        'static Vector2 V2(unsigned x,unsigned y){return (Vector2){load(x),load(y)};}',
-        f'static const unsigned vals[4]={{{bits}}};',
-        'int main(void){',
-        '  for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++)',
-        '    printf("%u\\n", bits(Vector2Min(V2(vals[i], 0x3f800000u), V2(vals[j], 0x3f800000u)).x));',
-        '  for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++)',
-        '    printf("%u\\n", bits(Vector2Max(V2(vals[i], 0x3f800000u), V2(vals[j], 0x3f800000u)).x));',
-        '  (void)sink; return 0;',
-        '}',
-        '',
-    ])
+def corpus_ties(rows, expected):
+    """X bits of Vector2 min/max rows whose X operands are control words."""
+    index = {bit: i for i, bit in enumerate(native_profiles.CONTROL_BITS)}
+    found = {}
+    for (name, args), value in zip(rows, expected):
+        if name not in ('v2_min', 'v2_max'):
+            continue
+        left, right = args[0], args[2]
+        if left not in index or right not in index:
+            continue
+        key = (name, index[left], index[right])
+        got = value[0]
+        if key in found and found[key] != got:
+            raise ProbeFailure(f'extrema: tie {name} {left:08x},{right:08x} produced both {found[key]:08x} and {got:08x}')
+        found[key] = got
+    return found
 
 
-def observe_ties(probe):
-    """Signed-zero ties of Vector2Min/Max under the corpus compiler and loads."""
-    source = probe.work / 'ties.c'
-    binary = probe.work / 'ties'
-    source.write_text(tie_source())
-    probekit.run(['clang', *REFERENCE_FLAGS, '-I' + str(probe.args.raylib_source / 'src'), source, '-lm', '-o', binary])
-    observed = [int(line) for line in probekit.run([binary]).splitlines() if line.strip()]
-    if len(observed) != 32:
-        raise ProbeFailure(f'extrema: tie control produced {len(observed)} words, expected 32')
-    return selected_profile(observed)
+# Ordered pairs that separate sign-OR/AND, first-operand, and second-operand ties.
+REQUIRED_TIES = (('v2_min', 1, 2), ('v2_min', 2, 1), ('v2_max', 1, 2), ('v2_max', 2, 1))
+
+
+def profile_from_corpus(rows, expected):
+    """The declared profile implemented by the corpus zero ties."""
+    found = corpus_ties(rows, expected)
+    missing = [key for key in REQUIRED_TIES if key not in found]
+    if missing:
+        raise ProbeFailure(f'extrema: corpus is missing zero ties {missing}')
+    matches = []
+    for name in native_profiles.EXTREMA_PROFILES:
+        table = native_profiles.TABLES[name]
+        if all(native_profiles.CONTROL_BITS[table['min' if op == 'v2_min' else 'max'][i][j]] == got
+               for (op, i, j), got in found.items()):
+            matches.append(name)
+    if len(matches) != 1:
+        shown = ','.join(f'{op}:{i}{j}={got:08x}' for (op, i, j), got in sorted(found.items()))
+        raise ProbeFailure(f'extrema: volatile fminf/fmaxf matched {matches or "no"} declared profile: {shown}')
+    return matches[0]
 
 
 PROGRAM = '''import Base
@@ -328,11 +338,11 @@ def main():
     rows = cases(built)
     if len(rows) > 40000:
         raise ProbeFailure(f'extrema: {len(rows)} cases is more than the probe budget')
-    profile = observe_ties(probe)
     text = native(probe, built)
     expected = [json.loads(line) for line in text.splitlines() if line.strip()]
     if len(expected) != len(rows):
         raise ProbeFailure(f'extrema: native produced {len(expected)} rows for {len(rows)} cases')
+    profile = profile_from_corpus(rows, expected)
     lanes = probe.candidates(lambda selected, gpu: render(selected, gpu, f'M.{profile}{{}}'), rows, batch=120, source_limit=48000)
     lanes = {lane: values for lane, values in lanes.items() if lane != 'gpu'}
     signs = compare(probe, expected, lanes, rows)
