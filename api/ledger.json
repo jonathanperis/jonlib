@@ -44656,9 +44656,8 @@
       "status": "partial",
       "jonlib": "Collision.lines_for / Collision.lines",
       "mapping_state": "implemented",
-      "scope": "Finite bounded segment intersections; Maybe hit coordinates, inclusive endpoints and reference FLT_EPSILON determinant gate. Explicit uncontracted and Apple-clang FMA profiles with direct-rounding Bend arithmetic.",
+      "scope": "F32 segment endpoints, including signed zero, a subnormal, infinities and one quiet NaN. Maybe hit coordinates, inclusive endpoints and the reference epsilon determinant gate. Uncontracted and Apple-clang FMA profiles.",
       "gaps": [
-        "Exceptional/subnormal/overflow and other contraction patterns",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -44673,8 +44672,9 @@
         "performance": "unverified"
       },
       "evidence": [
-        "tests/fixtures/images.json",
+        "tools/collision_lines_probe.py",
         "tools/fused_probe.py",
+        "tests/fixtures/images.json",
         "docs/COLLISION.md"
       ],
       "gate_evidence": {},

@@ -32,7 +32,7 @@ Pure Bend queries in `jonlib.bend`, adapted from pinned raylib `rshapes.c`:
 | `Collision.point_rec(point, rectangle)` | Includes left/top edges; excludes right/bottom edges. |
 | `Collision.point_circle(point, center, radius)` | Inclusive squared-distance test. |
 | `Collision.circle_rec(center, radius, rectangle)` | Reference side/corner distance test, including tangency. |
-| `Collision.lines(start, end, other_start, other_end)` | `Maybe<&2, Vector2>`; inclusive segment endpoints, `None` for parallel/collinear lines or intersections outside either segment. |
+| `Collision.lines(start, end, other_start, other_end)` | `Maybe<&2, Vector2>`; inclusive segment endpoints, `None` for parallel/collinear lines or intersections outside either segment. Subnormal and non-finite endpoints are included under both contraction profiles. |
 | `Collision.lines_for(arithmetic, start, end, other_start, other_end)` | Explicit `M.Contraction` selection described below. |
 | `Collision.point_triangle(point, first, second, third)` | Strictly positive barycentric weights; excludes edges and degenerate triangles. |
 | `Collision.point_line(point, first, second, threshold)` | Strict cross-product margin and inclusive dominant-axis bounds; F32 threshold truncated toward zero like the C `int`. |
@@ -61,9 +61,9 @@ disjoint, touching, one-ULP-inside/outside, signed-zero and degenerate inputs.
 `tools/collision_domain_probe.py` compares `point_rec`, `recs`, `boxes` and
 `rectangle` on subnormal and non-finite fields, including every result bit.
 Default predicate arithmetic is uncontracted F32; every predicate whose linked
-reference contracts multiply-adds also has a `_for` variant (below). `lines` and
-the ray queries are not established on exceptional inputs, nor is performance
-parity. See [PROGRESS.md](PROGRESS.md) for remaining collision APIs.
+reference contracts multiply-adds also has a `_for` variant (below). The ray
+queries are not established on exceptional inputs, nor is performance parity.
+See [PROGRESS.md](PROGRESS.md) for remaining collision APIs.
 
 Polygon fixtures permit up to 4096 vertices. Boundary classification follows the
 actual crossing comparisons and is not replaced by a generic “edge is inside”
@@ -138,6 +138,7 @@ stay on `src/fused.bend`.
 | `collision-domain` | `tools/collision_domain_probe.py` | `point_rec`, `recs`, `boxes` and `rectangle` on subnormal and non-finite fields |
 | `collision-exceptional` | `tools/collision_exceptional_probe.py` | `circles`, `point_circle`, `circle_rec`, `point_triangle`, `point_line`, `circle_line`, `spheres` and `box_sphere` on subnormal and non-finite fields; uncontracted against linked raylib and fused against the Apple-clang fma shapes |
 | `collision-poly` | `tools/collision_poly_probe.py` | `point_poly` on subnormal and non-finite coordinates |
+| `collision-lines` | `tools/collision_lines_probe.py` | `lines` on subnormal and non-finite endpoints; uncontracted against linked raylib and fused against the Apple-clang fma shapes |
 | `fused` | `tools/fused_probe.py` | the internal finite-normal F32 multiply-add vs native `fmaf`, including double-rounding counterexamples, cancellation and signed zeros |
 | `ray` | `tools/ray_probe.py` | every ray-collision field bit vs the linked raylib with the host contraction and libm profiles; a C oracle repeating the box contract selects the expected `None` results |
 | `ray-uncontracted` | `tools/ray_probe.py --uncontracted-control` | the same cases against the pinned `rmodels.c` ray functions compiled without contraction, checking `M.Uncontracted{}` on every host |
@@ -148,7 +149,7 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 ```
 
 The original segment counterexample stays in the strict native-raylib corpus.
-`lines` and the ray queries are not established on exceptional
-inputs. A fused multiply-add whose factors and addend are finite stays on the
-finite-normal rounding. Compilers that fuse a different subset than the two
-declared profiles are not a selected host.
+The ray queries are not established on exceptional inputs. A fused multiply-add
+whose factors and addend are finite stays on the finite-normal rounding.
+Compilers that fuse a different subset than the two declared profiles are not
+a selected host.
