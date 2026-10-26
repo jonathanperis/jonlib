@@ -6247,9 +6247,8 @@
   "GetRayCollisionSphere": {
     "jonlib": "Collision.ray_sphere_for / Collision.ray_sphere",
     "status": "profile-covered",
-    "scope": "Every result field bit for bit, including inside rays; misses and hits behind the origin are raylib 6.2's zero collision. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
+    "scope": "F32 ray, center and radius, including signed zero, a subnormal, infinities and one quiet NaN. Inside rays, misses and hits behind the origin are the zero collision. Uncontracted and Apple-clang FMA profiles; a non-finite fused multiply-add uses the total fma.",
     "gaps": [
-      "Exceptional/subnormal inputs and other contraction patterns",
       "NaN sign and payload are not reproduced",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
@@ -6260,10 +6259,9 @@
   "GetRayCollisionBox": {
     "jonlib": "Collision.ray_box_for / Collision.ray_box",
     "status": "profile-covered",
-    "scope": "Slab intersection with raylib's inside-ray reversal, signed-zero fmin/fmax ties by libm profile and the truncated-int normal; every field bit for bit. Explicit uncontracted and Apple-clang FMA profiles.",
+    "scope": "Slab intersection, including signed zero, a subnormal and infinities, with inside-ray reversal and signed-zero fmin/fmax by libm profile. NaN slabs and normals outside the int cast are None. Uncontracted and Apple-clang FMA profiles.",
     "gaps": [
       "Undefined native behavior: naN slab distances (raylib's arm64 build and C disagree) and normals outside the int cast (undefined in C) are None",
-      "Exceptional/subnormal inputs and other contraction patterns",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],
@@ -6285,9 +6283,8 @@
   "GetRayCollisionTriangle": {
     "jonlib": "Collision.ray_triangle_for / Collision.ray_triangle",
     "status": "profile-covered",
-    "scope": "Moller-Trumbore with raylib's 1e-6 epsilon, parallel/outside/behind misses as the zero result and hit fields bit for bit. Explicit uncontracted and Apple-clang FMA profiles.",
+    "scope": "Moller-Trumbore with raylib's 1e-6 epsilon. F32 vertices, including signed zero, a subnormal, infinities and one quiet NaN. Parallel, outside and behind misses are the zero result. Uncontracted and Apple-clang FMA profiles.",
     "gaps": [
-      "Exceptional/subnormal inputs and other contraction patterns",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],
@@ -6297,9 +6294,9 @@
   "GetRayCollisionQuad": {
     "jonlib": "Collision.ray_quad_for / Collision.ray_quad",
     "status": "profile-covered",
-    "scope": "Triangles (p1, p2, p4) then (p2, p3, p4), as raylib; planar and skewed quads bit for bit. Explicit uncontracted and Apple-clang FMA profiles.",
+    "scope": "Triangles (p1, p2, p4) then (p2, p3, p4). F32 corners, including signed zero, a subnormal, infinities and one quiet NaN. Uncontracted and Apple-clang FMA profiles.",
     "gaps": [
-      "Exceptional/subnormal inputs and other contraction patterns",
+      "Quiet-NaN signs of an uncontracted hit point are not reproduced",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],

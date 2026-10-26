@@ -61,9 +61,9 @@ disjoint, touching, one-ULP-inside/outside, signed-zero and degenerate inputs.
 `tools/collision_domain_probe.py` compares `point_rec`, `recs`, `boxes` and
 `rectangle` on subnormal and non-finite fields, including every result bit.
 Default predicate arithmetic is uncontracted F32; every predicate whose linked
-reference contracts multiply-adds also has a `_for` variant (below). The ray
-queries are not established on exceptional inputs, nor is performance parity.
-See [PROGRESS.md](PROGRESS.md) for remaining collision APIs.
+reference contracts multiply-adds also has a `_for` variant (below).
+Performance parity is not established. Exceptional ray inputs are in the ray
+section below. See [PROGRESS.md](PROGRESS.md) for remaining collision APIs.
 
 Polygon fixtures permit up to 4096 vertices. Boundary classification follows the
 actual crossing comparisons and is not replaced by a generic “edge is inside”
@@ -93,14 +93,21 @@ signed-zero ties differ between Apple libm and glibc (as in
 not defined: a NaN slab distance (an origin on a slab plane with a zero direction
 component; the arm64 build compiles the hit test as `max(near, 0) <= far`,
 which differs from the C expression for NaN) or a normal component outside the
-int range before the cast (undefined in C, such as degenerate boxes). Sphere
-misses compare NaN as one class, since NaN sign and payload are not portable.
+int range before the cast (undefined in C, such as degenerate boxes).
 
 The arm64 build fuses each inlined raymath helper: a dot product is
 `fma(z, w, fma(x, u, y*v))`, a cross-product component `fma(a, b, -(c*d))`,
 the sphere discriminant `fma(r, r, -fma(dist, dist, -(v*v)))` and the box
 center lerp `fma(0.5, max - min, min)`; `position + direction*t`, the normal
-scaling and divisions stay separate operations.
+scaling and divisions stay separate operations. A non-finite fused multiply-add
+uses the total fma (`Collision.fma`). Finite normals stay on the finite-normal
+rounding.
+
+Subnormal and non-finite fields are included for all four queries, under both
+contraction profiles. Triangle and box match every result bit. Sphere does not
+reproduce NaN signs or payloads of an uncontracted normal. A quad hit point can
+differ by a quiet-NaN sign on the CPU lanes; the fused profile and JavaScript
+match those bits.
 
 ## Linked-reference arithmetic
 
@@ -126,9 +133,10 @@ declaration. The same declaration selects the spline and Perlin noise profiles
 The internal `src/fused.bend` keeps the exact F32 product, aligns integer limbs
 and rounds the sum directly to 24 bits. Rounding through a binary64 sum would
 lose tiny addends at an F32 halfway boundary. A non-finite factor or addend
-does not take that path: `Collision.multiply_add` uses the total fma
-(`src/fma.bend`), which matches `fmaf` on infinities and NaN. Finite normals
-stay on `src/fused.bend`.
+does not take that path: `Collision.multiply_add` and `Collision.fma` use the
+total fma (`src/fma.bend`), which matches `fmaf` on infinities and NaN. Finite
+normals stay on `src/fused.bend`. The ray cross term, sphere discriminant and
+box-center lerp go through `Collision.fma`.
 
 ## How it is verified
 
@@ -140,6 +148,7 @@ stay on `src/fused.bend`.
 | `collision-poly` | `tools/collision_poly_probe.py` | `point_poly` on subnormal and non-finite coordinates |
 | `collision-lines` | `tools/collision_lines_probe.py` | `lines` on subnormal and non-finite endpoints; uncontracted against linked raylib and fused against the Apple-clang fma shapes |
 | `fused` | `tools/fused_probe.py` | the internal finite-normal F32 multiply-add vs native `fmaf`, including double-rounding counterexamples, cancellation and signed zeros |
+| `ray-exceptional` | `tools/ray_exceptional_probe.py` | `ray_sphere`, `ray_triangle`, `ray_quad` and `ray_box` on subnormal and non-finite fields; uncontracted against linked raylib and fused against the Apple-clang fma shapes, allowing a quiet-NaN sign on an uncontracted sphere normal or quad hit point |
 | `ray` | `tools/ray_probe.py` | every ray-collision field bit vs the linked raylib with the host contraction and libm profiles; a C oracle repeating the box contract selects the expected `None` results |
 | `ray-uncontracted` | `tools/ray_probe.py --uncontracted-control` | the same cases against the pinned `rmodels.c` ray functions compiled without contraction, checking `M.Uncontracted{}` on every host |
 | `mesh`, `mesh-uncontracted` | `tools/mesh_probe.py` | `GetRayCollisionMesh` (`Collision.ray_mesh_for`) and `GetModelBoundingBox` on generated and hand-built meshes under three transforms, every result bit ([MODELS.md](MODELS.md#collision)) |
@@ -149,7 +158,8 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 ```
 
 The original segment counterexample stays in the strict native-raylib corpus.
-The ray queries are not established on exceptional inputs. A fused multiply-add
-whose factors and addend are finite stays on the finite-normal rounding.
-Compilers that fuse a different subset than the two declared profiles are not
-a selected host.
+Triangle and box are established on exceptional inputs. Sphere and quad are
+established except for the quiet-NaN signs above. A fused multiply-add whose
+factors and addend are finite stays on the finite-normal rounding. Compilers
+that fuse a different subset than the two declared profiles are not a selected
+host.

@@ -286,6 +286,12 @@ def Collision.multiply_add(arithmetic: M.Contraction, +a: F32, +b: F32, +c: F32)
     case M.Uncontracted{}: (a * b + c : F32)
     case M.Fused{}: Collision.multiply_add.fused(Collision.nonfinite(a) || Collision.nonfinite(b) || Collision.nonfinite(c), a, b, c)
 
+# Fused ray cross terms, the sphere discriminant and the box-center lerp.
+# Finite normals stay on the finite-normal rounding. A non-finite factor or
+# addend uses the total fma, which matches fmaf on infinities and NaN.
+def Collision.fma(+a: F32, +b: F32, +c: F32) -> F32:
+  Collision.multiply_add.fused(Collision.nonfinite(a) || Collision.nonfinite(b) || Collision.nonfinite(c), a, b, c)
+
 # dx*dx + dy*dy as the linked reference evaluates it: fma(dx, dx, dy*dy) when fused.
 def Collision.square_sum(+arithmetic: M.Contraction, +dx: F32, +dy: F32) -> F32:
   Collision.multiply_add(arithmetic, dx, dx, (dy * dy : F32))
@@ -346,7 +352,7 @@ def Collision.ray.dot(+arithmetic: M.Contraction, left: M.Vector3, right: M.Vect
 def Collision.ray.difference(arithmetic: M.Contraction, +a: F32, +b: F32, +c: F32, +d: F32) -> F32:
   match arithmetic:
     case M.Uncontracted{}: (a * b - c * d : F32)
-    case M.Fused{}: Fused.multiply_add(a, b, F32.neg((c * d : F32)))
+    case M.Fused{}: Collision.fma(a, b, F32.neg((c * d : F32)))
 
 def Collision.ray.cross(+arithmetic: M.Contraction, left: M.Vector3, right: M.Vector3) -> M.Vector3:
   M.Vector3{+x, +y, +z} = left
@@ -384,7 +390,7 @@ def Collision.ray_sphere_for(+arithmetic: M.Contraction, +ray: Ray, +center: M.V
   +offset = M.Vector3.subtract(center, position)
   +along = Collision.ray.dot(arithmetic, offset, direction)
   +distance = F32.sqrt(Collision.ray.dot(arithmetic, offset, offset))
-  +d = Bool.pick(F32, M.Contraction.fused(arithmetic), Fused.multiply_add(radius, radius, F32.neg(Fused.multiply_add(distance, distance, F32.neg((along * along : F32))))),
+  +d = Bool.pick(F32, M.Contraction.fused(arithmetic), Collision.fma(radius, radius, F32.neg(Collision.fma(distance, distance, F32.neg((along * along : F32))))),
     (radius * radius - (distance * distance - along * along) : F32))
   +inside = (distance < radius : F32)
   +hit_distance = Bool.pick(F32, inside, (along + F32.sqrt(d) : F32), (along - F32.sqrt(d) : F32))
@@ -460,7 +466,7 @@ def Collision.ray.box.castable(+value: F32) -> Bool:
 def Collision.ray.box.lerp(arithmetic: M.Contraction, +low: F32, +high: F32) -> F32:
   match arithmetic:
     case M.Uncontracted{}: (low + 0.5 * (high - low) : F32)
-    case M.Fused{}: Fused.multiply_add(0.5, (high - low : F32), low)
+    case M.Fused{}: Collision.fma(0.5, (high - low : F32), low)
 
 def Collision.ray.box.normal(+arithmetic: M.Contraction, +inside: Bool, +normal: M.Vector3) -> M.Vector3:
   M.Vector3{+x, +y, +z} = normal
