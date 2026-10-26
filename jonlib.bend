@@ -15017,21 +15017,28 @@ def Mesh.box(pair: M.Vector3 & M.Vector3) -> BoundingBox:
   (low, high) = pair
   BoundingBox{low, high}
 
+# Signed vertexCount: a non-positive count still reads the first vertex.
+def Mesh.reads(+vc: U32) -> U32:
+  Bool.pick(U32, (vc > 0 : U32) && (vc < 2147483648 : U32), vc, 1)
+
+def Mesh.bounds.limited(found: Maybe<(M.Vector3 & M.Vector3)>) -> Maybe<BoundingBox>:
+  match found:
+    case None{}: None{}
+    case Some{pair}: Some{Mesh.box(pair)}
+
 def Mesh.bounds(vertices: Maybe<&2, +List<F32>>, +libm: M.Libm, +vc: U32) -> Maybe<BoundingBox>:
   match vertices:
     case None{}: Some{BoundingBox{Mesh.zero(), Mesh.zero()}}
-    case Some{+xs}: Bool.pick(Maybe<BoundingBox>, (vc >= 1 : U32), Some{Mesh.box(MeshCore.bbox(libm, xs))}, None{})
-
-def Mesh.bounding_box.checked(valid: Bool, +libm: M.Libm, +mesh: Mesh) -> Maybe<BoundingBox>:
-  match valid:
-    case False{}: None{}
-    case True{}: Mesh.bounds(Mesh.vertices(mesh), libm, Mesh.vertex_count(mesh))
+    case Some{+xs}: Mesh.bounds.limited(MeshCore.bbox.limited(libm, Mesh.reads(vc), xs))
 
 # GetMeshBoundingBox: Vector3Min/Vector3Max (fminf/fmaxf, the profile's
-# signed-zero ties) over the vertices; zero without vertices. None for
-# inconsistent lists or vertex_count 0 with vertices (raylib reads element 0).
+# signed-zero ties) over the vertices the signed count reads — one vertex
+# when the count is not positive, otherwise vertex_count. A null buffer is
+# the zero box. None when the buffer is shorter than that read. Other
+# attributes are not read.
 def Mesh.bounding_box_for(+libm: M.Libm, +mesh: Mesh) -> Maybe<BoundingBox>:
-  Mesh.bounding_box.checked(Mesh.consistent(mesh), libm, mesh)
+  Mesh{+vc, _, vertices, _, _, _, _, _, _, _} = mesh
+  Mesh.bounds(vertices, libm, vc)
 
 def Mesh.bounding_box(+mesh: Mesh) -> Maybe<BoundingBox>:
   Mesh.bounding_box_for(M.AppleLibm{}, mesh)
@@ -15369,26 +15376,79 @@ def Collision.mesh.loop(tris: +List<U32>, +arithmetic: M.Contraction, +ray: Ray,
       Collision.mesh.loop(rest, arithmetic, ray, d, positions, transform, Collision.mesh.closer(best, hit))
     case _: best
 
-def Collision.mesh.with(vertices: Maybe<&2, +List<F32>>, tris: Maybe<&2, +List<U32>>, +arithmetic: M.Contraction, +ray: Ray, +vc: U32, +transform: M.Matrix) -> Maybe<RayCollision>:
-  match vertices tris:
-    case None{} _: Some{RayCollision.none()}
-    case Some{+xs} Some{+ts}:
-      +d = MeshCore.depth(vc)
-      Some{Collision.mesh.loop(ts, arithmetic, ray, d, MeshCore.tree.of(d, MeshCore.vectors(xs)), transform, RayCollision.none())}
-    case _ None{}: None{}
-
-def Collision.mesh.checked(valid: Bool, +arithmetic: M.Contraction, +ray: Ray, +mesh: Mesh, +transform: M.Matrix) -> Maybe<RayCollision>:
-  match valid:
+def Collision.mesh.done(ok: Bool, +left: U32, +acc: +List<U32>) -> Maybe<&2, +List<U32>>:
+  match ok:
     case False{}: None{}
-    case True{}: Collision.mesh.with(Mesh.vertices(mesh), Mesh.triangles(Mesh.indices(mesh), Mesh.vertex_count(mesh), Mesh.triangle_count(mesh)),
-      arithmetic, ray, Mesh.vertex_count(mesh), transform)
+    case True{}:
+      match left:
+        case 0: Some{List.reverse(&2, U32, acc)}
+        case _: None{}
 
-# GetRayCollisionMesh(ray, mesh, transform): each triangle's vertices
+# The first `left` indices, each below `limit`, or None when the list is
+# shorter or an index is not. Indices past `left` are not read. `ok` is the
+# previous index's check (True at the start); a failed index stops the read.
+def Collision.mesh.indices(+xs: +List<U32>, ok: Bool, +left: U32, +limit: U32, +acc: +List<U32>) -> Maybe<&2, +List<U32>>:
+  match xs:
+    case Nil{}: Collision.mesh.done(ok, left, acc)
+    case Con{+x, rest}:
+      match ok:
+        case False{}: None{}
+        case True{}:
+          match left:
+            case 0: Some{List.reverse(&2, U32, acc)}
+            case _: Collision.mesh.indices(rest, (x < limit : U32), (left - 1 : U32), limit, Con{x, acc})
+
+def Collision.mesh.span(fits: Bool, +need: U32) -> Maybe<&2, +List<U32>>:
+  match fits:
+    case False{}: None{}
+    case True{}: Some{MeshCore.sequence(need)}
+
+def Collision.mesh.tris.of(indices: Maybe<&2, +List<U32>>, +n: U32, +need: U32) -> Maybe<&2, +List<U32>>:
+  match indices:
+    case None{}: Collision.mesh.span((need <= n : U32), need)
+    case Some{+xs}: Collision.mesh.indices(xs, True{}, need, n, Nil{})
+
+def Collision.mesh.tris.checked(ok: Bool, +indices: Maybe<&2, +List<U32>>, +n: U32, +tc: U32) -> Maybe<&2, +List<U32>>:
+  match ok:
+    case False{}: None{}
+    case True{}: Collision.mesh.tris.of(indices, n, (tc * 3 : U32))
+
+# 3*triangleCount vertex indices into a buffer of `n` vertices. None where
+# 3*triangleCount does not fit in a U32 or the read leaves the buffer.
+def Collision.mesh.tris(indices: Maybe<&2, +List<U32>>, +n: U32, +tc: U32) -> Maybe<&2, +List<U32>>:
+  Collision.mesh.tris.checked((tc <= 1431655765 : U32), indices, n, tc)
+
+def Collision.mesh.ready(tris: Maybe<&2, +List<U32>>, +vs: +List<M.Vector3>, +n: U32, +arithmetic: M.Contraction, +ray: Ray, +transform: M.Matrix) -> Maybe<RayCollision>:
+  match tris:
+    case None{}: None{}
+    case Some{+ts}:
+      +d = MeshCore.depth(n)
+      Some{Collision.mesh.loop(ts, arithmetic, ray, d, MeshCore.tree.of(d, vs), transform, RayCollision.none())}
+
+def Collision.mesh.vectors(pair: +List<M.Vector3> & U32, +indices: Maybe<&2, +List<U32>>, +arithmetic: M.Contraction, +ray: Ray, +tc: U32, +transform: M.Matrix) -> Maybe<RayCollision>:
+  (+vs, +n) = pair
+  Collision.mesh.ready(Collision.mesh.tris(indices, n, tc), vs, n, arithmetic, ray, transform)
+
+def Collision.mesh.prepared(+vertices: Maybe<&2, +List<F32>>, +indices: Maybe<&2, +List<U32>>, +arithmetic: M.Contraction, +ray: Ray, +tc: U32, +transform: M.Matrix) -> Maybe<RayCollision>:
+  match vertices:
+    case None{}: Some{RayCollision.none()}
+    case Some{+xs}: Collision.mesh.vectors(MeshCore.vectors.n(xs, Nil{}, 0), indices, arithmetic, ray, tc, transform)
+
+# A signed triangleCount that is not positive runs no iteration.
+def Collision.mesh.signed(positive: Bool, +vertices: Maybe<&2, +List<F32>>, +indices: Maybe<&2, +List<U32>>, +arithmetic: M.Contraction, +ray: Ray, +tc: U32, +transform: M.Matrix) -> Maybe<RayCollision>:
+  match positive:
+    case False{}: Some{RayCollision.none()}
+    case True{}: Collision.mesh.prepared(vertices, indices, arithmetic, ray, tc, transform)
+
+# GetRayCollisionMesh(ray, mesh, transform): each triangle the signed
+# triangle count selects, indexed or sequential in the vertex buffer,
 # transformed by Vector3Transform, GetRayCollisionTriangle, the nearest hit
-# kept (the first of equal distances). A mesh without vertices gives no hit;
-# None for inconsistent lists or a triangle index not below vertex_count.
+# kept (the first of equal distances). No hit without vertices or when the
+# signed count is not positive. None when an index or the sequential span
+# leaves the vertex buffer. vertex_count and the other attributes are not read.
 def Collision.ray_mesh_for(+arithmetic: M.Contraction, +ray: Ray, +mesh: Mesh, +transform: M.Matrix) -> Maybe<RayCollision>:
-  Collision.mesh.checked(Mesh.consistent(mesh), arithmetic, ray, mesh, transform)
+  Mesh{_, +tc, vertices, _, _, _, _, _, indices, _} = mesh
+  Collision.mesh.signed((tc > 0 : U32) && (tc < 2147483648 : U32), vertices, indices, arithmetic, ray, tc, transform)
 
 def Collision.ray_mesh(+ray: Ray, +mesh: Mesh, +transform: M.Matrix) -> Maybe<RayCollision>:
   Collision.ray_mesh_for(M.Uncontracted{}, ray, mesh, transform)

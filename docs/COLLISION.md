@@ -84,7 +84,7 @@ profile (below), and the convenience form uses `M.Uncontracted{}`:
 | `Collision.ray_triangle(ray, p1, p2, p3)` | Moller-Trumbore with raylib's `1e-6` epsilon; parallel rays, points outside the triangle and hits not ahead of the origin are the all-zero miss. |
 | `Collision.ray_quad(ray, p1, p2, p3, p4)` | Triangle `(p1, p2, p4)`, then `(p2, p3, p4)` when the first misses. |
 | `Collision.ray_box(ray, box)` | `Maybe<RayCollision>`. Slab intersection; a ray starting strictly inside is traced backwards and its distance and normal negated. The normal is the hit point scaled to the unit box by `2.01` and truncated like the C `int` cast. |
-| `Collision.ray_mesh_for(arithmetic, ray, mesh, transform)` | `Maybe<RayCollision>`. `GetRayCollisionMesh`: each triangle transformed, the nearest triangle hit; `None` for inconsistent meshes or indices beyond the vertex count ([MODELS.md](MODELS.md#collision)). |
+| `Collision.ray_mesh_for(arithmetic, ray, mesh, transform)` | `Maybe<RayCollision>`. `GetRayCollisionMesh`: each triangle the signed count selects, transformed, the nearest triangle hit; `None` when an index or the sequential span leaves the vertex buffer ([MODELS.md](MODELS.md#collision)). |
 
 `Collision.ray_box_for(arithmetic, libm, ray, box)` also takes the `M.Libm`
 profile, since raylib chooses slab distances with `fmin`/`fmax`, whose

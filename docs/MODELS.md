@@ -179,9 +179,11 @@ converted as C converts them; the generators take `U32` counts. Points of
   0.707f`) for tangents shorter than `0.0001f`, and the handedness from
   `dot(cross(n, t), bitangent) < 0`. A mesh without vertices, texcoords or
   normals is returned unchanged; existing tangents are replaced.
-- **GetMeshBoundingBox**: `Vector3Min`/`Vector3Max` from the first vertex;
-  a mesh without vertices has the zero box; `vertex_count` 0 with present
-  vertices reads element 0 (`None`).
+- **GetMeshBoundingBox**: `Vector3Min`/`Vector3Max` from the first vertex
+  over the vertices the signed count reads (one vertex when the count is
+  not positive, otherwise `vertex_count`); floats past that read and every
+  other attribute are ignored. A null vertex buffer is the zero box. A
+  buffer shorter than the read is `None`.
 
 ### par_shapes generators
 
@@ -878,13 +880,18 @@ the rows of gate `iqm`.
 - **GetRayCollisionMesh** transforms each triangle's vertices with
   `Vector3Transform` (profiled), runs `GetRayCollisionTriangle`
   ([COLLISION.md](COLLISION.md#ray-queries)) and keeps the nearest hit (a later
-  hit replaces it only when strictly nearer). A mesh without vertices has no
-  hit.
+  hit replaces it only when strictly nearer). The signed `triangleCount`
+  selects the triangles: a count that is not positive, or a null vertex
+  buffer, has no hit. Indexed triangles read `indices[3*i .. 3*i+2]` and
+  those vertices; a mesh without indices reads vertices `3*i .. 3*i+2`.
+  `vertexCount` and the other attributes are not read. An index or a
+  sequential span outside the vertex buffer is `None`.
 - **GetModelBoundingBox** starts from the first mesh's box and widens it with
   each further mesh using `rmodels.c`'s strict comparisons (`a < b ? a : b`,
   so NaN and equal values pick the other mesh's), then transforms both corners
-  with `Vector3Transform`. A model without meshes has the transformed zero
-  box.
+  with `Vector3Transform`. Each mesh is read as `GetMeshBoundingBox`. A model
+  without meshes has the transformed zero box. A mesh whose vertex read is
+  outside its buffer makes the model box `None`.
 
 ## BeginMode3D and the 3D shapes
 
@@ -951,9 +958,9 @@ rlsw's per-primitive alpha flag ([FRAME.md](FRAME.md#the-rendering-path)).
 |---|---|---|
 | `models` | `tools/models_probe.py` | 25 3D scenes (192 operations, 6 random orthographic scenes) byte for byte against the uncontracted memory-platform raylib with the host libm, with the projection/modelview matrices read back; contracts and unverified arguments must be refused (on macOS 15 compared, 10 refused) |
 | `models-gnu` | `tools/models_probe.py --gnu-libm` | the same scenes against the glibc-model reference: raylib built with `sinf`/`cosf` replaced by the Arm optimized-routines model (`tools/trig_probe.py`) and `qsort` by a stable merge sort (glibc's order), Jonlib with `M.Glibc239Libm{}`: spheres, cylinders and capsules (18 compared, 7 refused) |
-| `mesh` | `tools/mesh_probe.py` | every attribute word, bounding box, collision and exported byte of the generators, tangents, exports, ray and model queries against the linked raylib with the host contraction and libm (on macOS arm64 `M.Fused{}`: 244 cases, 198 compared, 46 refused, the `par_shapes` ones among them) |
+| `mesh` | `tools/mesh_probe.py` | every attribute word, bounding box, collision and exported byte of the generators, tangents, exports, ray and model queries against the linked raylib with the host contraction and libm, including a non-positive signed count and an index inside the buffer past `vertex_count`. Linux `M.Uncontracted{}` and `M.Glibc239Libm{}`: 263 cases, 249 compared, 14 refused. macOS arm64 runs the same corpus under `M.Fused{}`. |
 | `mesh-uncontracted` | `tools/mesh_probe.py --uncontracted-control` | the same cases against the raylib built with `-ffp-contract=off` (`M.Uncontracted{}`) |
-| `mesh-gnu` | `tools/mesh_probe.py --gnu-libm` | the same cases plus the `par_shapes` spheres, hemispheres (before and after a GenMeshSphere) and tori with their tangents, exports and ray queries (bounding boxes left out: their `fminf` is the host's), against the glibc-model build with `M.Uncontracted{}` and `M.Glibc239Libm{}` (232 cases, 220 compared, 12 refused) |
+| `mesh-gnu` | `tools/mesh_probe.py --gnu-libm` | the same cases plus the `par_shapes` spheres, hemispheres (before and after a GenMeshSphere) and tori with their tangents, exports and ray queries (bounding boxes left out: their `fminf` is the host's), against the glibc-model build with `M.Uncontracted{}` and `M.Glibc239Libm{}` |
 | `model-draw` | `tools/model_draw_probe.py` | 27 scenes (216 operations, 6 random orthographic scenes of custom meshes) byte for byte against the uncontracted memory-platform raylib with the host libm: `DrawMesh` of generated, empty and custom meshes (indexed or not, texcoords, colors, no vertices, leftover vertices, translucent materials, textures from the scene's slots), `DrawModel(Ex)`, `DrawModelWires(Ex)` (also after point mode), two-mesh models with `SetModelMeshMaterial` and a model transform, `DrawMeshInstanced`, `DrawBillboard(Rec, Pro)` (negative sizes, origins, rotations), and logged `IsMaterialValid`, `IsModelValid`, `LoadMaterialDefault`/`SetMaterialTexture` maps and `UnloadMaterial` (its ids reused by the next texture); contracts must be refused (on macOS 20 compared, 7 refused; on glibc 22 and 5) |
 | `obj` | `tools/obj_probe.py` | 40 OBJ/MTL loads (written by the probe with PNG textures) word for word against the linked raylib with the host contraction (on macOS arm64 the fused `tryParseDouble`, `M.Fused{}`): mesh and material counts, `IsModelValid`, every mesh's counts, material index and vertex, normal and texcoord word, every material map; 27 compared, 13 refused |
 | `obj-uncontracted` | `tools/obj_probe.py --uncontracted-control` | the same files against the raylib built with `-ffp-contract=off` (`M.Uncontracted{}`); the corpus includes literals whose fused and unfused parses round to different floats |

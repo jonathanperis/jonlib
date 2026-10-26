@@ -183,6 +183,11 @@ def cases(libm, gnu):
                        ('custom', custom), ('empty', ('poly', 2, 1.0))):
         add(f'bbox-{name}', mesh, 'bbox', fminf=True)
     add('bbox-zero-count', ('custom', 0, 0, [f32(1.0), f32(2.0), f32(3.0)][:0], [], [], [], []), 'bbox', contract=True, fminf=True)
+    # A non-positive signed count reads the first vertex and ignores the rest of the buffer and every other attribute.
+    add('bbox-signed-zero', ('custom', 0, 0, [f32(v) for v in (1, 2, 3, 9, 8, 7)], [], [], [], []), 'bbox')
+    add('bbox-negative-count', ('custom', 0xFFFFFFFF, 0, [f32(v) for v in (1, 2, 3, 9, 8, 7)], [], [], [], []), 'bbox')
+    add('bbox-extra-vertex', ('custom', 1, 0, [f32(v) for v in (1, 2, 3, 9, 8, 7)], [f32(0.0)], [], [], []), 'bbox')
+    add('bbox-short', ('custom', 2, 0, [f32(v) for v in (1, 2, 3)], [], [], [], []), 'bbox', contract=True)
     # OBJ and code export.
     for name, mesh in (('cube', ('cube', 1.0, 2.0, 3.0)), ('plane', ('plane', 2.0, 3.0, 2, 1)), ('heightmap', ('heightmap', 3, 3, 4.0, 2.0, 3.0, rgba(3, 3, 51))),
                        ('poly', ('poly', 4, f32(1.5))), ('custom', custom), ('cubicmap', ('cubicmap', 2, 2, 1.0, 1.0, 1.0, [255] * 16))):
@@ -205,9 +210,17 @@ def cases(libm, gnu):
                 words = [W(f32(v)) for v in position + direction] + [W(v) for v in transform]
                 add(f'ray-{mname}-{ri}-{ti}', mesh, 'ray', words, contract=(mesh[0] == 'poly' and poly_refused(8, 2.0, libm)))
     add('ray-bad-index', bad, 'ray', [W(f32(v)) for v in (0, 0, 5, 0, 0, -1)] + [W(v) for v in IDENTITY], contract=True)
+    ray0 = [W(f32(v)) for v in (0.2, 0.3, 5.0, 0.0, 0.0, -1.0)] + [W(v) for v in IDENTITY]
+    tri = [f32(v) for v in (0, 0, 0, 1, 0, 0, 0, 1, 0)]
+    # vertex_count is not the bound: indices 1 and 2 are inside a four-vertex buffer.
+    add('ray-index-past-count', ('custom', 1, 1, tri + [f32(v) for v in (0.2, 0.3, 0)], [], [], [], [0, 1, 2]), 'ray', ray0)
+    add('ray-short-span', ('custom', 1, 1, tri[:3], None, None, None, None), 'ray', ray0, contract=True)
+    add('ray-no-triangles', ('custom', 3, 0, tri, None, None, None, None), 'ray', ray0)
+    add('ray-negative-count', ('custom', 1, 0xFFFFFFFF, tri[:3], None, None, None, None), 'ray', ray0)
     # Model bounding boxes.
     for ti, transform in enumerate(transforms):
         add(f'model-{ti}', ('cube', 1.0, 2.0, 3.0), 'model', [W(v) for v in transform], fminf=True)
+    add('model-zero-count', ('custom', 0, 0, [f32(v) for v in (1, 2, 3)], [], [], [], []), 'model', [W(v) for v in IDENTITY], fminf=True)
     par_state(out, gnu)
     return out
 

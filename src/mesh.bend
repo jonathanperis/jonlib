@@ -450,6 +450,13 @@ def vectors.go(xs: +List<F32>, acc: +List<M.Vector3>) -> +List<M.Vector3>:
 def vectors(+xs: +List<F32>) -> +List<M.Vector3>:
   vectors.go(xs, Nil{})
 
+# The complete Vector3 values in a float buffer, and how many there are.
+# A trailing one or two floats are not a vertex.
+def vectors.n(xs: +List<F32>, acc: +List<M.Vector3>, +n: U32) -> +List<M.Vector3> & U32:
+  match xs:
+    case Con{+x, Con{+y, Con{+z, rest}}}: vectors.n(rest, Con{M.Vector3{x, y, z}, acc}, (n + 1 : U32))
+    case _: (vectors.reverse(acc, Nil{}), n)
+
 def pairs.uv.go(xs: +List<F32>, acc: +List<M.Vector3>) -> +List<M.Vector3>:
   match xs:
     case Con{+u, Con{+v, rest}}: pairs.uv.go(rest, Con{M.Vector3{u, v, 0.0}, acc})
@@ -612,6 +619,29 @@ def bbox(+libm: M.Libm, vs: +List<F32>) -> M.Vector3 & M.Vector3:
   match vs:
     case Con{+x, Con{+y, Con{+z, rest}}}: bbox.loop(rest, libm, M.Vector3{x, y, z}, M.Vector3{x, y, z})
     case _: (M.Vector3{0.0, 0.0, 0.0}, M.Vector3{0.0, 0.0, 0.0})
+
+# The first `count` vertices (3 floats each), or None when the buffer is shorter.
+# `count` must be at most 1431655765 so count*3 fits in a U32.
+def bbox.prefix(n: Nat, xs: +List<F32>, acc: +List<F32>) -> Maybe<+List<F32>>:
+  match n:
+    case 0n: Some{List.reverse(&2, F32, acc)}
+    case 1n+k:
+      match xs:
+        case Nil{}: None{}
+        case Con{+x, rest}: bbox.prefix(k, rest, Con{x, acc})
+
+def bbox.limited.taken(found: Maybe<+List<F32>>, +libm: M.Libm) -> Maybe<(M.Vector3 & M.Vector3)>:
+  match found:
+    case None{}: None{}
+    case Some{+taken}: Some{bbox(libm, taken)}
+
+def bbox.limited.checked(fits: Bool, +libm: M.Libm, +count: U32, +xs: +List<F32>) -> Maybe<(M.Vector3 & M.Vector3)>:
+  match fits:
+    case False{}: None{}
+    case True{}: bbox.limited.taken(bbox.prefix(U32.to_nat((count * 3 : U32)), xs, Nil{}), libm)
+
+def bbox.limited(+libm: M.Libm, +count: U32, +xs: +List<F32>) -> Maybe<(M.Vector3 & M.Vector3)>:
+  bbox.limited.checked((count <= 1431655765 : U32), libm, count, xs)
 
 # -----------------------------------------------------------------------------
 # Text: ExportMesh's OBJ and ExportMeshAsCode's file. The text is built as

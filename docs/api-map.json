@@ -5728,10 +5728,9 @@
   "GetModelBoundingBox": {
     "jonlib": "Model.bounding_box_for / Model.bounding_box",
     "status": "profile-covered",
-    "scope": "First mesh box widened with strict comparisons, corners transformed by Vector3Transform (contraction profiled); zero box transformed for no meshes.",
+    "scope": "First mesh box widened with strict comparisons, corners transformed by Vector3Transform (contraction profiled); zero box transformed for no meshes. Each mesh is read as GetMeshBoundingBox.",
     "gaps": [
-      "A mesh box that is None makes the model box None",
-      "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+      "Undefined native behavior: a mesh whose vertex read is outside its buffer makes the model box None",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured"
     ],
@@ -5889,10 +5888,9 @@
   "GetMeshBoundingBox": {
     "jonlib": "Mesh.bounding_box_for / Mesh.bounding_box",
     "status": "profile-covered",
-    "scope": "Vector3Min/Vector3Max (fminf/fmaxf signed-zero profile) over the vertices; zero box without vertices.",
+    "scope": "Vector3Min/Vector3Max (fminf/fmaxf signed-zero profile) over the vertices the signed count reads: one vertex when the count is not positive, otherwise vertex_count. A null buffer is the zero box. Other attributes are not read.",
     "gaps": [
-      "vertex_count 0 with vertices (raylib reads element 0) is None",
-      "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+      "Undefined native behavior: a vertex buffer shorter than the signed read (one vertex when the count is not positive, otherwise vertex_count vertices) is None",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured"
     ],
@@ -6268,9 +6266,9 @@
   "GetRayCollisionMesh": {
     "jonlib": "Collision.ray_mesh_for / Collision.ray_mesh",
     "status": "profile-covered",
-    "scope": "Each triangle transformed by Vector3Transform and tested with GetRayCollisionTriangle, the nearest hit kept; no hit without vertices. Contraction profiled.",
+    "scope": "Each triangle the signed count selects, indexed or sequential in the vertex buffer, transformed by Vector3Transform and tested with GetRayCollisionTriangle; the nearest hit kept. No hit without vertices or when the count is not positive. vertex_count is not read. Contraction profiled.",
     "gaps": [
-      "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+      "Undefined native behavior: an index or a non-indexed span outside the vertex buffer is None",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured"
     ],
