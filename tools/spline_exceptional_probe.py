@@ -5,10 +5,11 @@ Linear, B-spline, Catmull-Rom and quadratic Bezier. The uncontracted result
 is the pinned rshapes.c functions compiled with FP_CONTRACT OFF (the Linux
 linked library is that profile). The fused result is those Bend nestings
 with fmaf: finite normals stay on the integer kernel and a non-finite
-factor or addend uses the total fma. t is not clamped. A CPU lane may
-flip the sign of a quiet NaN on linear, basis or quadratic points;
-JavaScript matches every bit, and Catmull-Rom matches every bit on every
-lane. Cubic Bezier is included only on a Glibc239 host, for t in
+factor or addend uses the total fma. t is not clamped. A quiet-NaN sign
+on linear, basis or quadratic points is not compared: Apple clang's sign
+disagrees with both Bend lanes, and Linux clang agrees with JavaScript.
+Catmull-Rom matches every bit on every lane. Cubic Bezier is included only
+on a Glibc239 host, for t in
 {-0, 0, 0.5, 1} (the cubes stay inside the powf profile) with exceptional
 control points; its squares stay products and t is not swept.
 """
@@ -206,6 +207,11 @@ def point_diff(want, got):
     return 'sign' if sign else 'ok'
 
 
+def quiet_sign_uncompared(kind):
+    """Those queries' quiet-NaN signs are not stable across clang and Bend."""
+    return kind in ('linear', 'basis', 'quad')
+
+
 def main():
     probe = probekit.Probe('spline-exceptional', probekit.arguments(__doc__))
     libm = gradient_reference()
@@ -228,9 +234,8 @@ def main():
                 diff = point_diff(want[side], got[side])
                 if diff == 'ok':
                     continue
-                # Clang and the CPU lanes disagree on these quiet-NaN signs.
-                # JavaScript matches the reference bits, including the fused profile.
-                if diff == 'sign' and lane != 'javascript' and kind in ('linear', 'basis', 'quad'):
+                # Apple clang's quiet-NaN sign disagrees with both Bend lanes.
+                if diff == 'sign' and quiet_sign_uncompared(kind):
                     allowed.append((kind, slot, index))
                     continue
                 problems.append((kind, slot, diff, index))
