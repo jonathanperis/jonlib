@@ -96,9 +96,18 @@ passed: 2594, 1145, 363 and 156 cases.
 compared `M.Uncontracted{}` with the linked library, which Apple clang fuses,
 so a tangent sphere was a miss in the library and a hit in Jonlib. The
 uncontracted column is now the pinned `rmodels.c` functions compiled with
-contraction off. The gate passed: 833 cases. The manifest is 217 gates.
-Nothing from this run remains open. `MERGE_HOSTS` is unchanged; section 1
-is the remaining step.
+contraction off, in their own translation unit so the fused shapes keep
+their lowering. The gate passed: 833 cases.
+
+`main` then moved to `b807092` (exceptional spline points, then the
+directory-listing gap). `files-os` passed: 234 operations, 296 listed
+paths. `spline-exceptional` is the new gate. Apple clang's quiet-NaN sign
+on linear, basis and quadratic points disagrees with both Bend lanes, and
+JavaScript matches the Bend sign, so that sign is not compared.
+Catmull-Rom still matches every bit. The gate passed: 339 cases, four
+quiet-NaN sign rows on each lane; cubic is omitted because `AppleLibm` has
+no `powf`. The manifest is 218 gates. Nothing from this run remains open.
+`MERGE_HOSTS` is unchanged; section 1 is the remaining step.
 
 The 2026-10-24 shard (`fa0755b`) had passed 191 of 206 gates and supersedes
 the raylib 6.0 nightly of 2026-10-16. Gates the 6.0 note had never run, or
