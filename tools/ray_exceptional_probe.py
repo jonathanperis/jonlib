@@ -2,8 +2,9 @@
 """Compare ray queries on exceptional and subnormal inputs.
 
 Sphere, triangle, quad and box. The uncontracted result is the pinned
-rmodels.c ray functions compiled with contraction off. The linked library is
-not that result: Apple clang fuses it. The fused result uses the Apple-clang
+rmodels.c ray functions compiled with contraction off, in their own
+translation unit. The linked library is not that result: Apple clang fuses
+it. The fused result uses the Apple-clang
 shapes: dot products are
 fma(z, w, fma(x, u, y*v)), cross-product terms fma(a, b, -(c*d)), the
 sphere discriminant fma(r, r, -fma(dist, dist, -(v*v))) and the box
@@ -200,12 +201,29 @@ def uncontracted_excerpt(raylib_source):
 
 
 def native(probe, rows):
-    lines = ['#include "raylib.h"', '#include "raymath.h"', '#include <math.h>', '#include <stdio.h>', '#include <string.h>',
-             uncontracted_excerpt(probe.args.raylib_source), ORACLE,
+    """The pinned queries are their own translation unit.
+
+    A shared unit lets their `#define EPSILON` and their size change how the
+    fused shapes are lowered, including quiet-NaN signs.
+    """
+    flags = ['clang', '-std=c11', '-O2', '-fno-builtin-atan2f', '-ffp-contract=off',
+             '-I' + str(probe.args.raylib_source / 'src')]
+    queries = probe.work / 'uncontracted.c'
+    queries.write_text('#include "raylib.h"\n#include "raymath.h"\n#include <math.h>\n'
+                       '#include <stdio.h>\n#include <string.h>\n'
+                       + uncontracted_excerpt(probe.args.raylib_source) + '\n')
+    lines = ['#include "raylib.h"', '#include <math.h>', '#include <stdio.h>', '#include <string.h>', ORACLE,
              'int main(void){SetTraceLogLevel(LOG_NONE);']
     lines.extend(native_case(kind, args) for kind, args in rows)
     lines.append('(void)sink; return 0;}')
-    return probe.native('\n'.join(lines) + '\n', extra_flags=('-ffp-contract=off',))
+    oracle = probe.work / 'reference.c'
+    oracle.write_text('\n'.join(lines) + '\n')
+    objects = [probe.work / 'uncontracted.o', probe.work / 'reference.o']
+    probekit.run([*flags, '-c', queries, '-o', objects[0]])
+    probekit.run([*flags, '-c', oracle, '-o', objects[1]])
+    binary = probe.work / 'reference'
+    probekit.run([*flags, *objects, probe.library, '-lm', '-o', binary])
+    return probekit.run([binary])
 
 
 PROGRAM = '''import Base
