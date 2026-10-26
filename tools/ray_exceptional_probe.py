@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Compare ray queries on exceptional and subnormal inputs.
 
-Sphere, triangle, quad and box. The uncontracted result is the linked
-raylib. The fused result uses the Apple-clang shapes: dot products are
+Sphere, triangle, quad and box. The uncontracted result is the pinned
+rmodels.c ray functions compiled with contraction off. The linked library is
+not that result: Apple clang fuses it. The fused result uses the Apple-clang
+shapes: dot products are
 fma(z, w, fma(x, u, y*v)), cross-product terms fma(a, b, -(c*d)), the
 sphere discriminant fma(r, r, -fma(dist, dist, -(v*v))) and the box
 center fma(0.5, max-min, min). position + direction*t is not fused.
@@ -188,8 +190,18 @@ def native_case(kind, args):
             'printf("]\\n");}')
 
 
+def uncontracted_excerpt(raylib_source):
+    """The pinned ray queries, so the uncontracted column is not the host library."""
+    source = (raylib_source / 'src/rmodels.c').read_text()
+    begin = source.index('RayCollision GetRayCollisionSphere(')
+    end = source.index('//----------------------------------------------------------------------------------', begin)
+    return ('/* Unaltered ray collision functions from pinned raylib; zlib, LICENSES/raylib.txt. */\n'
+            + source[begin:end])
+
+
 def native(probe, rows):
-    lines = ['#include "raylib.h"', '#include <math.h>', '#include <stdio.h>', '#include <string.h>', ORACLE,
+    lines = ['#include "raylib.h"', '#include "raymath.h"', '#include <math.h>', '#include <stdio.h>', '#include <string.h>',
+             uncontracted_excerpt(probe.args.raylib_source), ORACLE,
              'int main(void){SetTraceLogLevel(LOG_NONE);']
     lines.extend(native_case(kind, args) for kind, args in rows)
     lines.append('(void)sink; return 0;}')

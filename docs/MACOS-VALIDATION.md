@@ -90,9 +90,15 @@ scenarios, surface-format 2548 cases, collision-domain 1572 cases.
 `main` then moved to `a8e579f` (exceptional collision predicates, polygon
 crossings, segment intersections, and normalized-byte casts). `collision-exceptional`,
 `collision-poly`, `collision-lines` and `color-normalized` were rerun and
-passed: 2594, 1145, 363 and 156 cases. The manifest is 216 gates. Nothing
-from this run remains open. `MERGE_HOSTS` is unchanged; section 1 is the
-remaining step.
+passed: 2594, 1145, 363 and 156 cases.
+
+`main` then moved to `f5569d5` (exceptional ray queries). `ray-exceptional`
+compared `M.Uncontracted{}` with the linked library, which Apple clang fuses,
+so a tangent sphere was a miss in the library and a hit in Jonlib. The
+uncontracted column is now the pinned `rmodels.c` functions compiled with
+contraction off. The gate passed: 833 cases. The manifest is 217 gates.
+Nothing from this run remains open. `MERGE_HOSTS` is unchanged; section 1
+is the remaining step.
 
 The 2026-10-24 shard (`fa0755b`) had passed 191 of 206 gates and supersedes
 the raylib 6.0 nightly of 2026-10-16. Gates the 6.0 note had never run, or
