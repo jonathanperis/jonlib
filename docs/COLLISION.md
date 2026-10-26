@@ -37,7 +37,7 @@ Pure Bend queries in `jonlib.bend`, adapted from pinned raylib `rshapes.c`:
 | `Collision.point_triangle(point, first, second, third)` | Strictly positive barycentric weights; excludes edges and degenerate triangles. |
 | `Collision.point_line(point, first, second, threshold)` | Strict cross-product margin and inclusive dominant-axis bounds; F32 threshold truncated toward zero like the C `int`. |
 | `Collision.circle_line(center, radius, first, second)` | Closest point on the segment; near-zero segments use the reference epsilon fallback to the first endpoint. |
-| `Collision.point_poly(point, points)` | Reference odd/even ray crossings over an immutable `+List<Vector2>`; fewer than three vertices returns false. |
+| `Collision.point_poly(point, points)` | Reference odd/even ray crossings over an immutable `+List<Vector2>`; fewer than three vertices returns false. Subnormal and non-finite coordinates are included. The crossing expression is a multiply, a divide and an add. |
 
 `point_rec`, `recs` and `rectangle` take every F32 field, including subnormals
 and non-finite values. `recs` is additions and comparisons, so a contracted
@@ -47,6 +47,9 @@ profiled `Vector2.min/max` operations. `circles`, `point_circle`, `circle_rec`,
 `point_triangle`, `point_line` and `circle_line` do too, under both contraction
 profiles. `point_line` takes a threshold whose truncation fits in a C `int`; a
 non-finite threshold or one outside that range is undefined in C.
+`point_poly` takes the same exceptional coordinates. Its crossing test multiplies,
+divides, then adds; the pinned Release build keeps those three operations, so a
+contracted build does not fuse it.
 Rectangles and radii are not normalized: zero/negative rectangle extents can
 satisfy `recs` while yielding an empty `rectangle`, and signed radii retain
 the reference squared-sum behavior. The shared fixtures still use finite
@@ -58,9 +61,9 @@ disjoint, touching, one-ULP-inside/outside, signed-zero and degenerate inputs.
 `tools/collision_domain_probe.py` compares `point_rec`, `recs`, `boxes` and
 `rectangle` on subnormal and non-finite fields, including every result bit.
 Default predicate arithmetic is uncontracted F32; every predicate whose linked
-reference contracts multiply-adds also has a `_for` variant (below). The
-remaining collision queries are not established on exceptional inputs, nor is
-performance parity. See [PROGRESS.md](PROGRESS.md) for remaining collision APIs.
+reference contracts multiply-adds also has a `_for` variant (below). `lines` and
+the ray queries are not established on exceptional inputs, nor is performance
+parity. See [PROGRESS.md](PROGRESS.md) for remaining collision APIs.
 
 Polygon fixtures permit up to 4096 vertices. Boundary classification follows the
 actual crossing comparisons and is not replaced by a generic “edge is inside”
@@ -134,6 +137,7 @@ stay on `src/fused.bend`.
 | `conformance` | `tools/conformance.py` | every Boolean and all rectangle/point result bits vs the linked raylib queries, with the host's arithmetic profile |
 | `collision-domain` | `tools/collision_domain_probe.py` | `point_rec`, `recs`, `boxes` and `rectangle` on subnormal and non-finite fields |
 | `collision-exceptional` | `tools/collision_exceptional_probe.py` | `circles`, `point_circle`, `circle_rec`, `point_triangle`, `point_line`, `circle_line`, `spheres` and `box_sphere` on subnormal and non-finite fields; uncontracted against linked raylib and fused against the Apple-clang fma shapes |
+| `collision-poly` | `tools/collision_poly_probe.py` | `point_poly` on subnormal and non-finite coordinates |
 | `fused` | `tools/fused_probe.py` | the internal finite-normal F32 multiply-add vs native `fmaf`, including double-rounding counterexamples, cancellation and signed zeros |
 | `ray` | `tools/ray_probe.py` | every ray-collision field bit vs the linked raylib with the host contraction and libm profiles; a C oracle repeating the box contract selects the expected `None` results |
 | `ray-uncontracted` | `tools/ray_probe.py --uncontracted-control` | the same cases against the pinned `rmodels.c` ray functions compiled without contraction, checking `M.Uncontracted{}` on every host |
@@ -144,7 +148,7 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 ```
 
 The original segment counterexample stays in the strict native-raylib corpus.
-`lines`, `point_poly` and the ray queries are not established on exceptional
+`lines` and the ray queries are not established on exceptional
 inputs. A fused multiply-add whose factors and addend are finite stays on the
 finite-normal rounding. Compilers that fuse a different subset than the two
 declared profiles are not a selected host.

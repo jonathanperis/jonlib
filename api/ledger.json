@@ -44594,9 +44594,8 @@
       "status": "partial",
       "jonlib": "Collision.point_poly",
       "mapping_state": "implemented",
-      "scope": "Immutable Vector2-list polygon predicate with reference crossing order, boundary comparisons and fewer-than-three-vertices behavior.",
+      "scope": "F32 point and vertices, including signed zero, a subnormal, infinities and one quiet NaN. Odd-even crossings; fewer than three vertices is false. The crossing test multiplies, divides, then adds, so a contracted build does not fuse it.",
       "gaps": [
-        "Exceptional/subnormal and contracted variants",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -44611,6 +44610,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/collision_poly_probe.py",
         "tests/fixtures/images.json",
         "docs/COLLISION.md"
       ],

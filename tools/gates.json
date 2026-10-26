@@ -391,6 +391,21 @@
    "minutes": 8
   },
   {
+   "id": "collision-poly",
+   "title": "Polygon point collision on exceptional and subnormal coordinates",
+   "run": [
+    "{python}",
+    "tools/collision_poly_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 8
+  },
+  {
    "id": "camera",
    "title": "Cameras (rcamera.h, rcore.c camera and screen-space queries) against the linked raylib with the host contraction and libm profiles, and the total FMA kernel against fmaf",
    "run": [
