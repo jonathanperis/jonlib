@@ -11,8 +11,8 @@ The reference is the linked raylib (PLATFORM_MEMORY). Python builds the same tre
 before the reference runs and before each candidate lane does: regular files of
 several extensions (one upper-case), an empty file, a link and a dangling one, a
 file without permissions and a directory without them (DirectoryExists cannot open
-it), nested directories, a file whose extension overflows IsFileExtension's
-16-byte buffer, a chain of directories whose deepest entries are 4096 bytes and
+it), nested directories, a file with a 17-byte extension (raylib 6.2's
+IsFileExtension keeps 15 bytes), a chain of directories whose deepest entries are 4096 bytes and
 more from the root (raylib skips them) and one whose entry is exactly 4095 bytes
 (snprintf cuts it to 4094), with fixed modification times; directories are
 made in the same order, so readdir gives the same order on every side. Then one
@@ -25,9 +25,9 @@ explorer "url"), and last ChangeDirectory and GetWorkingDirectory. Files the
 script writes are read back on each side. GetApplicationDirectory differs by
 lane (the reference, the native candidate and the JavaScript one are different
 programs): each side answers whether it ends with '/' and is a directory.
-Contracts (Jonlib answers None and the reference does not run them): a listing
-or count that meets IsFileExtension's overflow. CPU-1,
-CPU-2 and JavaScript lanes.
+LoadDirectoryFiles and GetDirectoryFileCount use the *.* filter, which never
+calls IsFileExtension, so the 17-byte name is listed in full; a `.png` filter
+compares its first 15 bytes. CPU-1, CPU-2 and JavaScript lanes.
 """
 import hashlib
 import json

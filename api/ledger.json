@@ -35150,7 +35150,6 @@
       "mapping_state": "implemented",
       "scope": "LoadDirectoryFilesEx with the *.* filter and without subdirectories.",
       "gaps": [
-        "IsFileExtension overflow (an extension of 16+ bytes) is None",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
       "adaptations": [],
@@ -35523,7 +35522,6 @@
       "mapping_state": "implemented",
       "scope": "GetDirectoryFileCountEx with the *.* filter and without subdirectories.",
       "gaps": [
-        "Undefined native behavior: isFileExtension overflow is None",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
       ],
       "adaptations": [],

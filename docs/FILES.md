@@ -111,7 +111,7 @@ swapped ([FRAME.md](FRAME.md#readback)).
 
 ## How it is verified
 
-`tools/files_os_probe.py` (gate `files-os`) runs one script of 206 operations
+`tools/files_os_probe.py` (gate `files-os`) runs one script of 234 operations
 over the file system functions, on a tree it builds afresh before the
 reference runs and before each lane does (files of several extensions, an
 empty, an unreadable and a linked one, a directory that cannot be opened,
@@ -122,7 +122,9 @@ subdirectories, renames, removals, directories made, copies and moves
 fake `explorer` that logs its arguments, and `ChangeDirectory` and
 `GetWorkingDirectory` last. `GetApplicationDirectory` is checked for its
 trailing `/` and for being a directory, the programs being different on each
-side. A 17-byte extension is compared: `IsFileExtension` reads its first 15
+side. `LoadDirectoryFiles` and `GetDirectoryFileCount` use the `*.*` filter
+and never call `IsFileExtension`, so a 17-byte extension is listed in full.
+A `.png` filter compares that extension: `IsFileExtension` reads its first 15
 bytes.
 
 
