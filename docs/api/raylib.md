@@ -585,7 +585,7 @@ Each row inherits its milestone verification recipe and the six completion gates
 | [`raylib:function:GetWorkingDirectory`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/raylib.h#L1160) | function | `RLAPI const char *GetWorkingDirectory(void)` | `Files.working_directory` (implemented) | partial | `files` |
 | [`raylib:function:GetApplicationDirectory`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/raylib.h#L1161) | function | `RLAPI const char *GetApplicationDirectory(void)` | `Files.application_directory` (implemented) | partial | `files` |
 | [`raylib:function:MakeDirectory`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/raylib.h#L1162) | function | `RLAPI int MakeDirectory(const char *dirPath)` | `Files.make_directory` (implemented) | partial | `files` |
-| [`raylib:function:ChangeDirectory`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/raylib.h#L1163) | function | `RLAPI int ChangeDirectory(const char *dirPath)` | `Files.change_directory` (implemented) | partial | `files` |
+| [`raylib:function:ChangeDirectory`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/raylib.h#L1163) | function | `RLAPI int ChangeDirectory(const char *dirPath)` | `Files.change_directory_with` (implemented) | partial | `files` |
 | [`raylib:function:IsPathFile`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/raylib.h#L1164) | function | `RLAPI bool IsPathFile(const char *path)` | `Files.is_path_file` (implemented) | partial | `files` |
 | [`raylib:function:IsPathDirectory`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/raylib.h#L1165) | function | `RLAPI bool IsPathDirectory(const char *path)` | `Files.is_path_directory` (implemented) | partial | `files` |
 | [`raylib:function:IsPathAbsolute`](https://github.com/raysan5/raylib/blob/02566453880e06bec97f5b8160fa6fe1e98397ca/src/raylib.h#L1166) | function | `RLAPI bool IsPathAbsolute(const char *path)` | `Files.is_path_absolute` (implemented) | partial | `files` |
@@ -1505,6 +1505,7 @@ C-to-Bend mappings with no behavior difference reachable through the API ([polic
 - `raylib:function:FileTextFindIndex`: Pointer/allocator ABI: owned values instead of raw pointers and allocators (language adaptation)
 - `raylib:function:FileExists`: Pointer/allocator ABI: owned values instead of raw pointers and allocators (language adaptation)
 - `raylib:function:GetFileLength`: Pointer/allocator ABI: owned values instead of raw pointers and allocators (language adaptation)
+- `raylib:function:ChangeDirectory`: Process-wide state replaced by explicit values (language adaptation)
 - `raylib:function:UnloadDirectoryFiles`: Pointer/allocator ABI
 - `raylib:function:CompressData`: Native pointer/allocator ABI: owned values and lists instead of pointers (language adaptation)
 - `raylib:function:DecompressData`: Native pointer/allocator ABI: owned values and lists instead of pointers (language adaptation)

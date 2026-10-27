@@ -1570,12 +1570,12 @@
     "milestone": "files"
   },
   "ChangeDirectory": {
-    "jonlib": "Files.change_directory",
+    "jonlib": "Files.change_directory_with",
     "status": "profile-covered",
-    "scope": "chdir(2)'s result as raylib 6.2 returns it: 0, or -1 where it fails.",
+    "scope": "chdir(2)'s result as raylib 6.2 returns it: 0, or -1 where it fails. The caller's logger emits the reference INFO line on success and the WARNING line on failure.",
     "gaps": [
-      "Its trace-log messages are not reproduced",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ChangeDirectory",
     "milestone": "files"

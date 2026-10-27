@@ -7177,6 +7177,28 @@ def Log.handled(~handler: U32 -> String -> IO(Unit), +kind: U32, +text: String, 
 def Log.trace_with(~handler: U32 -> String -> IO(Unit), logger: Log.Logger, +kind: U32, +text: String) -> IO(Unit):
   Log.handled(~handler, kind, text, Log.message(logger, kind, text))
 
+# ChangeDirectory's line. %s copies the path, so the text is not truncated to
+# TraceLog's format buffer: vprintf writes the path to standard output.
+def Files.change_line(+code: U32, +path: String) -> String:
+  Bool.pick(String, U32.is_eq(code, 0), "SYSTEM: Working Directory: " ++ path, "SYSTEM: Failed to change to directory: " ++ path)
+
+def Files.change_emit(below: Bool, line: String) -> IO(Unit):
+  match below:
+    case True{}: IO.pure(Unit, Unit{})
+    case False{}: IO.print(line)
+
+def Files.change_logged(logger: Log.Logger, +path: String, +code: U32) -> IO(U32):
+  Logger{+level} = logger
+  +kind = Bool.pick(U32, U32.is_eq(code, 0), 3, 4)
+  do IO<U32>:
+    Unit <- Files.change_emit((kind < level : U32), Log.prefix(kind) ++ Files.change_line(code, path))
+    IO.pure(U32, code)
+
+# ChangeDirectory through the caller's logger: chdir's result, then the INFO
+# line on success or the WARNING line on failure, when the level shows it.
+def Files.change_directory_with(logger: Log.Logger, +path: String) -> IO(U32):
+  IO.bind(Result<&1, &1, U32 & String, Unit>, U32, Dir.change(path), r => Files.change_logged(logger, path, Files.done(r)))
+
 # MemAlloc: size zero bytes (RL_CALLOC). MemRealloc keeps the first size bytes
 # and zero-fills growth (C leaves it uninitialized). MemFree consumes the bytes.
 def Memory.zeros(n: Nat, bytes: +List<U32>) -> +List<U32>:

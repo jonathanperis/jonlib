@@ -22,7 +22,7 @@ byte, on every lane.
 | `Files.copy(source, target) -> IO(Maybe<U32>)` | `FileCopy` | The source's bytes, the target's directory (`GetDirectoryPath`) made where it is missing, then the bytes saved when there are any: 0 once the directory is there, whether the save succeeds or not, -1 when `MakeDirectory` fails; `None` where `GetDirectoryPath` overflows. |
 | `Files.move(source, target) -> IO(Maybe<U32>)` | `FileMove` | -1 for a missing source; otherwise `FileCopy`'s result, and when it is 0 and the target exists with the source's `GetFileLength`, `FileRemove` of the source. |
 | `Files.make_directory(path) -> IO(U32)` | `MakeDirectory` | -1 for an empty path, 0 for an existing directory; otherwise every prefix before a `/` or `\` (a `:` passes the character after it) is made where it is missing, then the path with those separators turned into `/`, mode 0777 under the umask; 0 when the path given is a directory then, -1 otherwise. |
-| `Files.change_directory(path) -> IO(U32)`, `Files.working_directory() -> IO(Maybe<String>)` | `ChangeDirectory`, `GetWorkingDirectory` | `chdir(2)`'s result (0, or -1); `getcwd(3)` into raylib's 4096 bytes, `None` where it fails or the path does not fit. |
+| `Files.change_directory_with(logger, path) -> IO(U32)`, `Files.working_directory() -> IO(Maybe<String>)` | `ChangeDirectory`, `GetWorkingDirectory` | `chdir(2)`'s result (0, or -1). The caller's logger then emits `INFO: SYSTEM: Working Directory: ` plus the path when `chdir` succeeds, or `WARNING: SYSTEM: Failed to change to directory: ` plus the path when it fails, if that level is at or above the threshold. The path is copied literally (`%s`), including a `%`. `Files.change_directory(path)` is the same result without the line. `getcwd(3)` into raylib's 4096 bytes, `None` where it fails or the path does not fit. |
 | `Files.is_path_directory(path) -> IO(Bool)`, `Files.is_path_absolute(path)`, `Files.is_file_hidden(path)` | `IsPathDirectory`, `IsPathAbsolute`, `IsFileHidden` | raylib 6.2: not `IsPathFile` (a missing path is a directory too); the path starts with `/`; the name after the last `/` starts with `.` and is not `.` or `..` (the POSIX rules: Jonlib's targets are POSIX). |
 | `Files.application_directory() -> IO(String)` | `GetApplicationDirectory` | The running program's file (`/proc/self/exe`; the script on the JavaScript target) up to and with its last `/`, `"./"` where it is not found. |
 | `Files.load_directory_files(path)`, `Files.load_directory_files_ex(path, filter, subdirs) -> IO(Maybe<FilePathList>)`, `Files.unload_directory_files(files)` | `LoadDirectoryFiles(Ex)`, `UnloadDirectoryFiles` | The paths `path/name` of a directory's entries in `readdir`'s order, a subdirectory's (with `subdirs`) right after it. `filter` `None` (or empty) is `NULL`: every regular file. Otherwise a regular file is listed for the `*.*` or `FILES*` tag or an extension of the list (`IsFileExtension`), anything else (a directory, or a path `stat` fails on) for `*.*` or `DIRS*`. A path of 4096 bytes or more is skipped, as `snprintf` leaves it. No directory gives no paths. `LoadDirectoryFiles` is the `*.*` filter without subdirectories. |
@@ -120,7 +120,10 @@ fixed modification times: the queries, every listing filter with and without
 subdirectories, renames, removals, directories made, copies and moves
 (raylib's -1 after a successful move's copy included), `OpenURL` through a
 fake `explorer` that logs its arguments, and `ChangeDirectory` and
-`GetWorkingDirectory` last. `GetApplicationDirectory` is checked for its
+`GetWorkingDirectory` last. That script passes `Log.level(7)`, so the trace
+line stays quiet and the compared line is the result code.
+`tools/directory_log_probe.py` (gate `directory-log`) compares the INFO and
+WARNING lines at thresholds 3, 4 and 7. `GetApplicationDirectory` is checked for its
 trailing `/` and for being a directory, the programs being different on each
 side. `LoadDirectoryFiles` and `GetDirectoryFileCount` use the `*.*` filter
 and never call `IsFileExtension`, so a 17-byte extension is listed in full.

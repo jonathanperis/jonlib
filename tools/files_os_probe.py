@@ -365,7 +365,7 @@ def bend_op(op, args):
         'make': lambda: ('U32', f'J.Files.make_directory({s[0]})', 'U32.show(r)'),
         'copy': lambda: ('Maybe<U32>', f'J.Files.copy({s[0]}, {s[1]})', 'counted(r)'),
         'move': lambda: ('Maybe<U32>', f'J.Files.move({s[0]}, {s[1]})', 'counted(r)'),
-        'change': lambda: ('U32', f'J.Files.change_directory({s[0]})', 'int.text(r)'),
+        'change': lambda: ('U32', f'J.Files.change_directory_with(J.Log.level(7), {s[0]})', 'int.text(r)'),
         'is_dir': lambda: ('Bool', f'J.Files.is_path_directory({s[0]})', 'flag(r)'),
         'cwd': lambda: ('Maybe<String>', 'J.Files.working_directory()', 'directory(r)'),
     }

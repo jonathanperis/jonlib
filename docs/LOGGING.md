@@ -13,7 +13,11 @@ Bend does not have. Jonlib passes them explicitly (a language adaptation):
 | `Memory.realloc(bytes, size)` | `MemRealloc` | Keeps the first `size` bytes; growth is zero (C leaves it uninitialized). |
 | `Memory.free(bytes)` | `MemFree` | Consumes the bytes. |
 
-Jonlib emits no log line of its own: raylib's `TRACELOG` calls (InitWindow's
+`Files.change_directory_with` emits `ChangeDirectory`'s own lines through the
+caller's logger: `INFO: SYSTEM: Working Directory: ` plus the path when
+`chdir` succeeds, and `WARNING: SYSTEM: Failed to change to directory: ` plus
+the path when it fails, when that level is at or above the threshold. The
+path is copied literally, as `%s` does. Other `TRACELOG` calls (InitWindow's
 and CloseWindow's reports, a loader's warnings) are not reproduced, so a
 handler only receives what a program gives `Log.trace_with`.
 `core_custom_logging` installs a callback that only ever receives raylib's
@@ -24,6 +28,9 @@ Texts are preformatted: Bend has no variadic arguments, so a `%` prints
 literally, where raylib would interpret a conversion specifier. Formatting
 belongs to the text utilities (`TextFormat`).
 
+`tools/directory_log_probe.py` (gate `directory-log`) compares `ChangeDirectory`'s
+stdout at thresholds 3, 4 and 7 for a short success, a missing path, a `%` in
+the path and a path longer than `Log.message`'s 244 characters.
 `tools/log_probe.py` (gate `log`) compares the complete standard output of
 `SetTraceLogLevel`/`TraceLog` sequences (every type against thresholds 0, 3, 5
 and 7, empty and 300-character texts) with `Log.trace`, and checks that

@@ -34845,14 +34845,16 @@
       "phase": 1,
       "sequence": 4,
       "status": "partial",
-      "jonlib": "Files.change_directory",
+      "jonlib": "Files.change_directory_with",
       "mapping_state": "implemented",
-      "scope": "chdir(2)'s result as raylib 6.2 returns it: 0, or -1 where it fails.",
+      "scope": "chdir(2)'s result as raylib 6.2 returns it: 0, or -1 where it fails. The caller's logger emits the reference INFO line on success and the WARNING line on failure.",
       "gaps": [
-        "Its trace-log messages are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Performance: not measured against raylib"
       ],
-      "adaptations": [],
+      "adaptations": [
+        "Process-wide state replaced by explicit values (language adaptation)"
+      ],
       "blocker": null,
       "gates": {
         "availability": "partial",
@@ -34863,8 +34865,10 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/directory_log_probe.py",
         "tools/files_os_probe.py",
         "docs/FILES.md",
+        "docs/LOGGING.md",
         "jonlib.bend",
         "patches/bend-os-effects.md"
       ],
