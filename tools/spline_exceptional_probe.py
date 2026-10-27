@@ -207,9 +207,16 @@ def point_diff(want, got):
     return 'sign' if sign else 'ok'
 
 
-def quiet_sign_uncompared(kind):
-    """Those queries' quiet-NaN signs are not stable across clang and Bend."""
-    return kind in ('linear', 'basis', 'quad')
+def quiet_sign_uncompared(kind, slot, lane):
+    """Recorded CPU quiet-NaN signs: linear, quadratic, and fused basis.
+
+    JavaScript matches every bit, and an uncontracted basis point does too.
+    """
+    if lane == 'javascript':
+        return False
+    if kind in ('linear', 'quad'):
+        return True
+    return kind == 'basis' and slot == 'fused'
 
 
 def main():
@@ -234,8 +241,9 @@ def main():
                 diff = point_diff(want[side], got[side])
                 if diff == 'ok':
                     continue
-                # Apple clang's quiet-NaN sign disagrees with both Bend lanes.
-                if diff == 'sign' and quiet_sign_uncompared(kind):
+                # CPU lanes disagree with clang on the recorded quiet-NaN signs.
+                # JavaScript matches every bit, and an uncontracted basis point does too.
+                if diff == 'sign' and quiet_sign_uncompared(kind, slot, lane):
                     allowed.append((kind, slot, index))
                     continue
                 problems.append((kind, slot, diff, index))

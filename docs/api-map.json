@@ -3184,9 +3184,9 @@
   "GetSplinePointLinear": {
     "jonlib": "Spline.linear_for / Spline.linear",
     "status": "profile-covered",
-    "scope": "Original start*(1-t)+end*t with explicit fused and uncontracted profiles, including exceptional, subnormal and extrapolated t. Values match; a quiet-NaN sign is not compared.",
+    "scope": "Original start*(1-t)+end*t with explicit fused and uncontracted profiles, including exceptional, subnormal and extrapolated t. CPU quiet-NaN signs differ; JavaScript matches every bit.",
     "gaps": [
-      "Quiet-NaN signs are not reproduced",
+      "Quiet-NaN signs of a CPU point are not reproduced; JavaScript matches every bit",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
@@ -3197,9 +3197,9 @@
   "GetSplinePointBasis": {
     "jonlib": "Spline.basis_for / Spline.basis",
     "status": "profile-covered",
-    "scope": "Reference B-spline coefficients, division by six and Horner order with explicit fused and uncontracted profiles, including exceptional, subnormal and extrapolated t. Values match; a quiet-NaN sign is not compared.",
+    "scope": "Reference B-spline coefficients, division by six and Horner order with explicit fused and uncontracted profiles, including exceptional, subnormal and extrapolated t. A fused CPU quiet-NaN sign can differ; JavaScript matches every bit.",
     "gaps": [
-      "Quiet-NaN signs are not reproduced",
+      "Quiet-NaN signs of a fused CPU point are not reproduced; JavaScript matches every bit",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
@@ -3222,9 +3222,9 @@
   "GetSplinePointBezierQuadratic": {
     "jonlib": "Spline.bezier_quad_for / Spline.bezier_quad",
     "status": "profile-covered",
-    "scope": "Reference quadratic weights, with squares as products, and three-term accumulation under explicit fused and uncontracted profiles, including exceptional, subnormal and extrapolated t. Values match; a quiet-NaN sign is not compared.",
+    "scope": "Reference quadratic weights, with squares as products, and three-term accumulation under explicit fused and uncontracted profiles, including exceptional, subnormal and extrapolated t. CPU quiet-NaN signs differ; JavaScript matches every bit.",
     "gaps": [
-      "Quiet-NaN signs are not reproduced",
+      "Quiet-NaN signs of a CPU point are not reproduced; JavaScript matches every bit",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"

@@ -101,12 +101,14 @@ their lowering. The gate passed: 833 cases.
 
 `main` then moved to `b807092` (exceptional spline points, then the
 directory-listing gap). `files-os` passed: 234 operations, 296 listed
-paths. `spline-exceptional` is the new gate. Apple clang's quiet-NaN sign
-on linear, basis and quadratic points disagrees with both Bend lanes, and
-JavaScript matches the Bend sign, so that sign is not compared.
-Catmull-Rom still matches every bit. The gate passed: 339 cases, four
-quiet-NaN sign rows on each lane; cubic is omitted because `AppleLibm` has
-no `powf`. The manifest is 218 gates. Nothing from this run remains open.
+paths. `spline-exceptional` is the new gate. Catmull-Rom matches every
+bit. A CPU quiet-NaN sign on a linear or quadratic point, and a fused CPU
+quiet-NaN sign on a basis point, stay uncompared; JavaScript and an
+uncontracted basis point are compared on every bit. This Mac run counted
+339 cases and four quiet-NaN sign rows on each lane, JavaScript included,
+under the wider allowance then in the probe. Cubic is omitted because
+`AppleLibm` has no `powf`. The manifest is 218 gates. Nothing from this
+run remains open.
 `MERGE_HOSTS` is unchanged; section 1 is the remaining step.
 
 The 2026-10-24 shard (`fa0755b`) had passed 191 of 206 gates and supersedes

@@ -22,9 +22,10 @@ finite normal/zero intermediate values. A non-finite fused multiply-add uses
 the total fma (`src/fma.bend`); finite normals stay on `src/fused.bend`, and
 the uncontracted profile remains `a*b+c`. Exceptional, subnormal and
 extrapolated inputs are compared for both declared profiles. Catmull-Rom
-matches every bit. Linear, B-spline and quadratic Bezier match every value.
-A quiet-NaN sign on those three is not compared: Apple clang disagrees with
-both Bend lanes, and Linux clang agrees with JavaScript.
+matches every bit. Linear and quadratic Bezier match every value; a CPU
+quiet-NaN sign may differ, and JavaScript matches every bit. A basis point
+matches every value; a fused CPU quiet-NaN sign may differ, and the
+uncontracted profile and JavaScript match every bit.
 Undeclared fusion subsets are not a selected host. Integration, target and
 performance coverage remain gaps.
 
@@ -34,7 +35,7 @@ performance coverage remain gaps.
 |---|---|---|
 | `conformance` | `tools/conformance.py` | both output components of the spline fixtures vs the linked raylib, with the host's arithmetic profile |
 | `spline` | `tools/spline_probe.py` | every point API on endpoints, non-dyadic coefficients, signed zero and seeded inputs vs linked raylib, with the host's arithmetic profile |
-| `spline-exceptional` | `tools/spline_exceptional_probe.py` | linear, basis, Catmull-Rom and quadratic points on subnormal, non-finite and extrapolated inputs; uncontracted against the pinned functions with `FP_CONTRACT OFF`, fused against those Bend nestings with `fmaf`. A quiet-NaN sign is not compared on linear, basis and quadratic points. On a Glibc239 host, cubic points with t in {-0, 0, 0.5, 1} and exceptional control points are included |
+| `spline-exceptional` | `tools/spline_exceptional_probe.py` | linear, basis, Catmull-Rom and quadratic points on subnormal, non-finite and extrapolated inputs; uncontracted against the pinned functions with `FP_CONTRACT OFF`, fused against those Bend nestings with `fmaf`. A CPU quiet-NaN sign is not compared on linear and quadratic points. A fused CPU quiet-NaN sign is not compared on a basis point. JavaScript matches every bit. On a Glibc239 host, cubic points with t in {-0, 0, 0.5, 1} and exceptional control points are included |
 
 `tools/spline_probe.py --uncontracted-control` instead compiles the unchanged
 pinned spline functions from `rshapes.c` with `FP_CONTRACT OFF` and checks
