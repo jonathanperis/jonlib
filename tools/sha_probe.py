@@ -11,8 +11,14 @@ from probekit import ROOT, ProbeFailure
 
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
+import ../../src/sha.bend as Sha
 def calculate(+bytes: +List<U32>) -> Maybe<&2, +List<U32>> & Maybe<&2, +List<U32>>:
-  (J.Checksum.sha1(bytes), J.Checksum.sha256(bytes))
+  (J.Checksum.sha1_wide(bytes), J.Checksum.sha256_wide(bytes))
+def shown(words: U32 & U32) -> IO(Unit):
+  (high, low) = words
+  IO.print(List.show(~&1, ~U32, ~U32.show, [high, low]))
+def bits(+length: U32) -> IO(Unit):
+  shown(Sha.bit_length.words(length))
 def observed(result: Maybe<&2, +List<U32>> & Maybe<&2, +List<U32>>) -> IO(Unit):
   match result:
     case Tuple{Some{one}, Some{two}}: IO.print(List.show(~&2, ~U32, ~U32.show, List.append(&2, U32, one, two)))
@@ -27,11 +33,21 @@ def main() -> IO(Unit):
 '''
 
 
+# Lengths whose 8*length high word is zero, the first length that carries, and both
+# signed-size ends. These rows compare the stored halves, not a multi-gigabyte digest.
+BIT_LENGTHS = (0, 1, 55, 56, 63, 64, 1048576, 1048577, 536870911, 536870912, 2147483575, 2147483647)
+
+
 def fixtures():
     original = checksum_fixtures()
     return [c for c in original if c['valid']] + [
         dict(bytes=[(i*73+11) % 256 for i in range(n)], valid=True, file=True, profile_length=n) for n in range(128)
     ] + [c for c in original if not c['valid']]
+
+
+def bit_words(length):
+    bits = 8 * length
+    return [(bits >> 32) & 0xFFFFFFFF, bits & 0xFFFFFFFF]
 
 
 def reference_program(cases, work):
@@ -47,6 +63,8 @@ def reference_program(cases, work):
         lines += [f'{{int n=0;unsigned char *data=LoadFileData({path},&n);if(n!={len(case["bytes"])}||(!data&&n))return 2;',
                   'unsigned char *input=n?data:&empty;unsigned *one=ComputeSHA1(input,n);if(!one)return 3;putchar(\'[\');for(int j=0;j<5;j++)printf("%s%u",j?",":"",one[j]);',
                   'unsigned *two=ComputeSHA256(input,n);if(!two)return 4;for(int j=0;j<8;j++)printf(",%u",two[j]);puts("]");UnloadFileData(data);}']
+    for length in BIT_LENGTHS:
+        lines.append(f'{{unsigned long long bitsLen=8ULL*{length};printf("[%u,%u]\\n",(unsigned)(bitsLen>>32),(unsigned)bitsLen);}}')
     return '\n'.join(lines + ['}']) + '\n'
 
 
@@ -72,16 +90,23 @@ def main():
     probe = probekit.Probe('sha', probekit.arguments(__doc__))
     cases = fixtures()
     text = probe.native(reference_program(cases, probe.work))
-    expected = [json.loads(line) for line in text.splitlines()]
-    if len(expected) != len(cases):
+    rows = [json.loads(line) for line in text.splitlines()]
+    if len(rows) != len(cases) + len(BIT_LENGTHS):
         raise ProbeFailure('Incomplete native SHA output')
+    expected, bits = rows[:len(cases)], rows[len(cases):]
     check_reference(cases, expected)
-    indexed = list(enumerate(cases))
+    if bits != [bit_words(length) for length in BIT_LENGTHS]:
+        raise ProbeFailure('Native SHA bit-length words differ')
+    indexed = list(enumerate(cases)) + [('bits', length) for length in BIT_LENGTHS]
 
     def render(selected, gpu):
         bang = '!' if gpu else ''
         body = PROGRAM.replace('BANG', bang)
-        for i, case in selected:
+        for item in selected:
+            if item[0] == 'bits':
+                body += f'    bits({item[1]})\n'
+                continue
+            i, case = item
             if case['file']:
                 path = json.dumps(str((probe.work/f'{i}.dat').relative_to(ROOT)))
                 body += f'    IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Image.file.bytes({path}, 2097152), loaded)\n'
@@ -89,9 +114,10 @@ def main():
                 body += f'    observed(calculate{bang}({probekit.bend_list(case["bytes"])}))\n'
         return body
 
-    probe.compare(expected, probe.candidates(render, indexed, batch=64))
+    probe.compare(rows, probe.candidates(render, indexed, batch=64))
     probe.finish(native_cases=sum(c['valid'] for c in cases), invalid_controls=sum(not c['valid'] for c in cases),
-                 padding_edge_lengths=8, reference_sha256=hashlib.sha256(text.encode()).hexdigest())
+                 padding_edge_lengths=8, bit_lengths=len(BIT_LENGTHS),
+                 reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__ == '__main__':

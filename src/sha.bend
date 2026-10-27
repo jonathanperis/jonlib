@@ -169,9 +169,18 @@ def initial(sha256: Bool) -> Digest:
     case True{}: Digest{1779033703, 3144134277, 1013904242, 2773480762, 1359893119, 2600822924, 528734635, 1541459225}
 
 # The padded message in 32-bit words: the data, 0x80 and the 8-byte bit length,
-# rounded up to 64-byte blocks.
-def padded_words(+length: U32) -> U32:
+# rounded up to 64-byte blocks. Same count as raylib's signed SHA-1 newDataSize
+# and SHA-256's unsigned long long paddedSize, in words.
+def padded_words(length: U32) -> U32:
   ((((length + 8) / 64) + 1) * 16 : U32)
+
+# Big-endian halves of 8*length. The high word is zero below 536870912.
+def bit_length.words(+length: U32) -> U32 & U32:
+  ((length >> 29n : U32), (length << 3n : U32))
+
+def place.length(words: U32 & U32, +count: U32, input: Array<U32>) -> Array<U32>:
+  (high, low) = words
+  Array.set(U32, Array.set(U32, input, (count - 2 : U32), high), (count - 1 : U32), low)
 
 def checked(size: Maybe<&2, U32>, +sha256: Bool, bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
   match size:
@@ -180,8 +189,11 @@ def checked(size: Maybe<&2, U32>, +sha256: Bool, bytes: +List<U32>) -> Maybe<&2,
       +count = padded_words(length)
       depth = {1n+U32.log2((count - 1 : U32)) : Nat}
       input = message(bytes, 0, Array.new(U32, depth, 0))
-      padded = Array.set(U32, Array.set(U32, input, (count - 2 : U32), 0), (count - 1 : U32), (length * 8 : U32))
+      padded = place.length(bit_length.words(length), count, input)
       Some{blocks(U32.to_nat((count / 16 : U32)), 0, sha256, State{padded, Array.new(U32, 7n, 0), constants(sha256), initial(sha256)})}
 
 def hash(sha256: Bool, +bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
   checked(C.input_size(bytes, 0, True{}), sha256, bytes)
+
+def hash_until(+limit: U32, +sha256: Bool, +bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
+  checked(C.input_size_until(bytes, 0, True{}, limit), sha256, bytes)

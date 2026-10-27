@@ -143,6 +143,10 @@ def Base64.encoded(result: Maybe<&2, Base64Codec.Encoded>) -> Maybe<&2, Base64.E
 def Base64.encode(bytes: +List<U32>) -> Maybe<&2, Base64.Encoded>:
   Base64.encoded(Base64Codec.encode(bytes))
 
+# EncodeDataBase64 while 4*(paddedSize/3)+1 fits in a signed int.
+def Base64.encode_wide(bytes: +List<U32>) -> Maybe<&2, Base64.Encoded>:
+  Base64.encoded(Base64Codec.encode_wide(bytes))
+
 def Base64.decode(text: String) -> Maybe<&2, +List<U32>>:
   Base64Codec.decode(text)
 
@@ -169,6 +173,14 @@ def Checksum.sha1(bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
 
 def Checksum.sha256(bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
   Sha.hash(True{}, bytes)
+
+# ComputeSHA1 while signed int newDataSize = ((((dataSize + 8)/64) + 1)*64) fits.
+def Checksum.sha1_wide(bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
+  Sha.hash_until(2147483575, False{}, bytes)
+
+# ComputeSHA256 for every nonnegative int length. The bit length is 8ULL*dataSize.
+def Checksum.sha256_wide(bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
+  Sha.hash_until(2147483647, True{}, bytes)
 
 def Spline.linear_for(reference: M.Contraction, start: M.Vector2, end: M.Vector2, +t: F32) -> M.Vector2:
   M.Vector2{x, y} = start

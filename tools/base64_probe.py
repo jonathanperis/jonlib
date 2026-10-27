@@ -45,7 +45,7 @@ def decoded(result: Maybe<&2, +List<U32>>) -> IO(Unit):
 def observed(encode: Bool, result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Unit):
   match encode result:
     case _ Fail{_}: IO.die(Unit, 1, "Base64 fixture read failed")
-    case True{} Done{bytes}: encoded(J.Base64.encodeBANG(bytes))
+    case True{} Done{bytes}: encoded(J.Base64.encode_wideBANG(bytes))
     case False{} Done{bytes}: decoded(J.Base64.decodeBANG(input_text(bytes, "")))
 def main() -> IO(Unit):
   do IO<Unit>:
@@ -54,14 +54,15 @@ def main() -> IO(Unit):
 
 def fixtures():
     rng=random.Random(0x623634);cases=[]
-    for size in (0,1,2,3,4,5,6,255,256,257,65535,65536,1048576):
+    for size in (0,1,2,3,4,5,6,255,256,257,65535,65536,1048576,1048577):
         data=bytes(rng.randrange(256) for _ in range(size))
         cases.append(dict(encode=True,bytes=list(data),reject=False))
-        if size:cases.append(dict(encode=False,bytes=list(base64.b64encode(data)),reject=False))
+        if size and size<=1048576:cases.append(dict(encode=False,bytes=list(base64.b64encode(data)),reject=False))
     for text in (b'AB==',b'ABC=',b'/x==',b'AA==\x00ignored',b'AAAA\x00ignored'):
         cases.append(dict(encode=False,bytes=list(text),reject=False))
     controls=[dict(encode=False,bytes=list(text),reject=True) for text in (b'',b'A',b'AA',b'AAA',b'AA?=',b'AA=A',b'A===',b'AA==AAAA',b'AA\xff=',b'\x00AAAA')]
-    controls += [dict(encode=True,bytes=[0]*1048577,reject=True),dict(encode=False,bytes=[65]*1398104,reject=True)]
+    # A byte above 255 cannot live in a file; encode-256 covers that rejection.
+    controls += [dict(encode=False,bytes=[65]*1398104,reject=True)]
     return cases,controls
 
 
@@ -102,7 +103,7 @@ def main():
             if action[0]=='file':
                 path=json.dumps(str((probe.work/f'{action[1]}.dat').relative_to(ROOT)))
                 body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Image.file.bytes({path}, 2097152), observed({"True" if action[2] else "False"}{{}}))\n'
-            elif action[0]=='encode-256':body+=f'    encoded(J.Base64.encode{bang}([256]))\n'
+            elif action[0]=='encode-256':body+=f'    encoded(J.Base64.encode_wide{bang}([256]))\n'
             else:body+=f'    decoded(J.Base64.decode{bang}("AA" ++ SCon{{Char.from_u32(256), "="}}))\n'
         return body
 

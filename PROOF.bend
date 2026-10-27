@@ -3303,6 +3303,12 @@ def Laws.sha_padding_one_block():
 def Laws.sha_padding_length_spills():
   {==}
 
+def Laws.sha_bit_length_unit():
+  {==}
+
+def Laws.sha_bit_length_carry():
+  {==}
+
 def Laws.frame_interp_flag_set():
   {==}
 

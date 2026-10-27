@@ -35776,11 +35776,11 @@
       "phase": 1,
       "sequence": 4,
       "status": "partial",
-      "jonlib": "Base64.encode / Base64.Encoded",
+      "jonlib": "Base64.encode_wide / Base64.Encoded",
       "mapping_state": "implemented",
-      "scope": "Immutable byte lists of 0..1048576 bytes, including empty input. Exact native RFC 4648 text/alphabet/padding; Base64Encoded carries the native NUL-inclusive size while the Bend text excludes the terminator. Invalid bytes or oversized inputs return None.",
+      "scope": "Lists of 0..1610612733 bytes, including empty input. Native RFC 4648 text and the NUL-inclusive size. Values above 255 are None.",
       "gaps": [
-        "Larger input domains",
+        "Undefined native behavior: a dataSize whose 4*(paddedSize/3)+1 does not fit in a signed int",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -36024,11 +36024,11 @@
       "phase": 1,
       "sequence": 4,
       "status": "partial",
-      "jonlib": "Checksum.sha1",
+      "jonlib": "Checksum.sha1_wide",
       "mapping_state": "implemented",
-      "scope": "Immutable byte lists of 0..1048576 bytes, including empty input. Native big-endian padding/message schedule, modulo-U32 rounds and exactly five native-order hash words (standard SHA-1); invalid inputs return None before allocation.",
+      "scope": "Lists of 0..2147483575 bytes, including empty input: five native-order words and the big-endian 64-bit length 8*length. Values above 255 are None before allocation.",
       "gaps": [
-        "Larger domains and other native compiler profiles",
+        "Undefined native behavior: a dataSize past 0..2147483575 overflows the signed int newDataSize",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -36086,11 +36086,10 @@
       "phase": 1,
       "sequence": 4,
       "status": "partial",
-      "jonlib": "Checksum.sha256",
+      "jonlib": "Checksum.sha256_wide",
       "mapping_state": "implemented",
-      "scope": "Immutable byte lists of 0..1048576 bytes; exactly eight native-order U32 hash words with native schedules/rounds and standard padding (raylib 6.2 sizes it with the 8-byte bit length; 6.0's dataSize+4 rule differed at 56..59 mod 64). Invalid inputs return None before allocation.",
+      "scope": "Lists of 0..2147483647 bytes, including empty input: eight native-order words and the big-endian 64-bit length 8*length. Values above 255 are None before allocation.",
       "gaps": [
-        "Larger domains and other native integer-width/compiler profiles",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],

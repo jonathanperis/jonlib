@@ -4679,6 +4679,13 @@ law sha_padding_one_block:
 law sha_padding_length_spills:
   {ShaCore.padded_words(56) == 32 : U32}
 
+# 8*length as the two big-endian words raylib stores. The high word carries at 2^29.
+law sha_bit_length_unit:
+  {ShaCore.bit_length.words(1) == (0, 8) : U32 & U32}
+
+law sha_bit_length_carry:
+  {ShaCore.bit_length.words(536870912) == (1, 0) : U32 & U32}
+
 # rlsw 6.2's SW_STATE_COLOR_INTERP rides in bit 32 of a primitive's sampler
 # word: set only when its pushed colors differ, it leaves the texture kind
 # (bits 0..2), the depth test (8) and the minification mark (16) alone.

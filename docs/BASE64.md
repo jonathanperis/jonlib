@@ -6,13 +6,16 @@ decoded bytes.
 
 ## Encoding
 
-`Base64.encode(bytes: +List<U32>)` returns `Maybe<&2, Base64.Encoded>`.
+`Base64.encode_wide(bytes: +List<U32>)` returns `Maybe<&2, Base64.Encoded>`.
+`Base64.encode` is the same function limited to 1,048,576 bytes.
 `Base64Encoded{size, text}` contains the native RFC4648 encoded text and its
 reported byte count. **`size` includes the trailing C NUL; Bend `text` does
 not.** Empty input therefore returns size 1 and empty text.
 
-Input is limited to 1,048,576 bytes, each in 0..255; unsupported inputs return
-`None`. Padding and the `+/` alphabet match native `EncodeDataBase64`.
+`encode_wide` accepts 0..1,610,612,733 bytes, each in 0..255. That is every
+length whose rounded multiple of 3 keeps `4*(paddedSize/3)+1` inside a signed
+int. A longer list or a byte above 255 returns `None`. Padding and the `+/`
+alphabet match native `EncodeDataBase64`.
 
 ## Decoding
 
@@ -38,7 +41,7 @@ Both algorithms use tail-recursive accumulation.
 `tools/base64_probe.py` (gate `base64`) compares the actual native encoded
 text including its terminator and reported size, and every decoded byte, on
 CPU-1, CPU-2 and JavaScript (plus forced GPU with `--gpu`). Cases include every
-three-byte remainder, large inputs up to the 1 MiB input/output boundary,
+three-byte remainder, large inputs through 1,048,577 bytes, the 1 MiB decode boundary,
 padding/unused bits, embedded NUL suffixes and malformed/size boundaries.
 Malformed inputs whose native behavior is undefined serve only as Jonlib
 rejection controls.
@@ -49,5 +52,6 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 
 ## Known gaps
 
-Native permissive malformed-input recovery, pointer/allocator ownership, larger
-domains and complete resource/platform/performance parity.
+Native permissive malformed-input recovery, pointer/allocator ownership, a
+dataSize whose encoded size does not fit in a signed int, and complete
+resource/platform/performance parity.
