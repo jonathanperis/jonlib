@@ -52252,11 +52252,12 @@
       "status": "partial",
       "jonlib": "Color.from_hsv",
       "mapping_state": "implemented",
-      "scope": "Any finite hue and saturation/value 0..1; exact fmodf by 6, reference channel arithmetic and byte truncation; opaque output alpha.",
+      "scope": "Hues and saturation/value whose three channels (value - value*saturation*k)*255 are finite and in (-1, 256). k is fmodf(offset + hue/60, 6) then the reference clamps; a non-finite fmod yields k = 1. Bytes match the cast; alpha is 255.",
       "gaps": [
-        "Saturation/value outside 0..1 and non-finite hues",
-        "Hues beyond 32767 in magnitude are not in the corpus",
-        "Other arithmetic/target/performance coverage"
+        "Undefined native behavior: a channel whose (value - value*saturation*k)*255 lies outside (-1, 256) is not the reference cast",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Performance: not measured against raylib",
+        "Integration: not exercised beyond its gate"
       ],
       "adaptations": [],
       "blocker": null,
@@ -52269,9 +52270,10 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/color_hsv_probe.py",
+        "docs/API.md",
         "tests/fixtures/images.json",
-        "tests/test_harness.py",
-        "docs/API.md"
+        "tests/test_harness.py"
       ],
       "gate_evidence": {},
       "target_results": {},

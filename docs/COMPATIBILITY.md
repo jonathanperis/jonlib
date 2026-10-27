@@ -92,7 +92,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | `GetColor` / `ColorToInt` | `Color.rgba` / channel extractors | Packing with unsigned-byte truncation | `conformance` |
 | `ColorAlphaBlend` | `Color.alpha_blend` | Transparent/opaque/tinted reference vectors | `conformance` |
 | Color equality, alpha/Fade, tint, brightness, contrast, lerp | `Color` value operations | Exact packed bytes/Booleans in the finite-factor profiles | `conformance` |
-| Normalized/HSV colors | `Color.normalize/from_normalized/to_hsv/from_hsv` | Exact float bits or bytes, achromatic/sector boundaries; any finite hue, saturation/value 0..1; `from_normalized` where each product with 255 is finite and in [0, 256) | `conformance`, `color-normalized` |
+| Normalized/HSV colors | `Color.normalize/from_normalized/to_hsv/from_hsv` | Exact float bits or bytes, achromatic/sector boundaries; HSV where each channel product is finite and in (-1, 256), including hues past one turn; `from_normalized` where each product with 255 is finite and in [0, 256) | `conformance`, `color-normalized`, `color-hsv` |
 | Image color/alpha operations, checkerboards | `Surface.color_*`, `alpha_*`, `create_checked` | Reference arithmetic, preserved mask ownership, checked generator inputs | `conformance` |
 | Alpha bounds/cropping | `Surface.alpha_border/alpha_crop` | Exact rectangles; empty selections leave the image unchanged | `conformance` |
 | Canvas resizing | `Surface.resize_canvas` | Raw RGBA copy/fill, clipping, same-size no-op; rejected requests return the original | `conformance` |

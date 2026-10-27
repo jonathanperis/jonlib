@@ -421,6 +421,21 @@
    "minutes": 4
   },
   {
+   "id": "color-hsv",
+   "title": "ColorFromHSV where the unsigned-char cast is defined",
+   "run": [
+    "{python}",
+    "tools/color_hsv_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 4
+  },
+  {
    "id": "collision-poly",
    "title": "Polygon point collision on exceptional and subnormal coordinates",
    "run": [
