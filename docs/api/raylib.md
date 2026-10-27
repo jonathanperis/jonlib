@@ -1533,7 +1533,7 @@ C-to-Bend mappings with no behavior difference reachable through the API ([polic
 - `raylib:function:UnloadImageColors`: Native pointer/allocator ABI: owned values and lists instead of pointers (language adaptation)
 - `raylib:function:UnloadImagePalette`: Native pointer/allocator/null correspondence
 - `raylib:function:GetPixelColor`: Native pointer/allocator ABI: owned values and lists instead of pointers (language adaptation)
-- `raylib:function:SetPixelColor`: Native pointer/allocator ABI: owned values and lists instead of pointers (language adaptation)
+- `raylib:function:SetPixelColor`: Native pointer/allocator ABI: owned values and lists instead of pointers (language adaptation); Build option: the R5G5B5A1 alpha threshold stays at the pinned default of 50
 - `raylib:function:SetTextLineSpacing`: No global state: the spacing is passed per call (language adaptation)
 - `raylib:function:LoadUTF8`: Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)
 - `raylib:function:UnloadUTF8`: Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)

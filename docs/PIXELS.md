@@ -33,24 +33,33 @@ changed byte list: it replaces only the pixel prefix and preserves every
 trailing byte, adapting the C pointer mutation to an immutable value.
 
 - Formats 1..7: grayscale, gray-alpha, RGB565, RGB888, RGB5A1, RGBA4, RGBA8888.
-  Packed 16-bit words are little-endian bytes.
-- Every list value must be 0..255 and the list must contain the format's
-  required prefix.
-- Errors are `UnsupportedFormat`, `InvalidPixelByte` and
-  `TruncatedPixelData`, checked in that order (format, then byte validity, then
-  length).
+  Packed 16-bit words are little-endian bytes. Every list value must be 0..255
+  and the list must contain the format's prefix. `InvalidPixelByte` is checked
+  before `TruncatedPixelData`.
+- Formats 8..13: little-endian F32 or half-float channels. R32 and R16 replicate
+  the sample across RGB; a missing alpha is 255. Each channel uses
+  `(unsigned char)(sample*255)` when that product lies in `(-1, 256)`, the same
+  interval as `LoadImageColors`. A product outside the interval is
+  `OutOfDomain` (native undefined behavior). Invalid bytes and a short prefix
+  are the same typed failures as formats 1..7; a short native buffer would
+  overread.
+- Format 0 and every code outside 1..13, including compressed formats and the
+  bit patterns of negative C codes, return color 0 and do not read the list.
 
 Reads keep the exact `GetPixelColor` rules. Pinned RGB5A1 blue is computed from
 **`word & 31` without removing the alpha bit**: bytes `[1,0]` produce
 `0x000008ff`. This differs from the conventional bit layout, `GetImageColor`
 ([IMAGE-COLORS.md](IMAGE-COLORS.md)) and `ImageFormat`. Other packed reads expand
 channels with integer multiplication by 255 then division by 31/63/15.
+Format 8 replicates the sample, unlike `LoadImageColors`, which is red-only.
 
 Writes keep native grayscale luminance and nearest channel quantization. The
 integer quantizer is equivalent to the reference normalized F32/round
 calculation for all 768 byte-to-5/6/4-bit conversions. RGB5A1 alpha is one only
-for **alpha > 50**, the pinned default threshold, unlike the top-bit truncation
-used by dithering.
+for **alpha > 50**, the pinned default
+`PIXELFORMAT_UNCOMPRESSED_R5G5B5A1_ALPHA_THRESHOLD`, unlike the top-bit
+truncation used by dithering. Every format outside 1..7 leaves the list
+unchanged and does not read it, matching `SetPixelColor`'s default.
 
 ## Dithering
 
@@ -79,7 +88,7 @@ would hide an observable format detail.
 | Gate | Probe | Compares |
 |---|---|---|
 | `pixel` | `tools/pixel_probe.py` | `GetPixelDataSize` across all declared formats and selected unknown codes; complete dithered images (thin images, alpha thresholds, saturation) and rejected bit counts and retained owners of rejected requests |
-| `raw-pixel` | `tools/raw_pixel_probe.py` | Every two-byte word for each packed format against native `GetPixelColor`; complete write buffers and native readback; all RGB triples for grayscale writes; all packed-channel quantizers; typed failures for both APIs |
+| `raw-pixel` | `tools/raw_pixel_probe.py` | Every two-byte word for each packed format against native `GetPixelColor`; every R16 word; R32 bands around 0, 0.5, 1 and both cast boundaries; wide, default and short reads; complete write buffers and native readback; no-op writes outside formats 1..7; all RGB triples for grayscale writes; all packed-channel quantizers |
 
 Both run on CPU-1, CPU-2, JavaScript and, with `--gpu`, forced GPU. Rejected
 candidate reads carry status words, so they cannot match an expected zero or
@@ -93,8 +102,10 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 
 - Wider or signed dimensions and native integer-overflow domains in
   `data_size`.
-- Float/half/compressed formats, other configured thresholds, big-endian buffers
-  and the native pointer ABI in raw access.
+- A float or half channel whose `component*255` lies outside `(-1, 256)` is
+  `OutOfDomain` (native undefined behavior). Big-endian buffers and the native
+  pointer ABI remain outside raw access. The R5G5B5A1 alpha threshold stays at
+  the pinned default of 50.
 - Native 16-bit allocation size/ABI correspondence for dithered storage (Bend
   stores U32 array elements); other source formats and mipmaps.
 - Complete target/resource/performance coverage.

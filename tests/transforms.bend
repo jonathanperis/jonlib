@@ -286,7 +286,24 @@ def pixel_error(error: J.Surface.Error, expected: U32) -> Bool:
     case J.UnsupportedFormat{}: U32.is_eq(expected, 0)
     case J.InvalidPixelByte{}: U32.is_eq(expected, 1)
     case J.TruncatedPixelData{}: U32.is_eq(expected, 2)
+    case J.OutOfDomain{}: U32.is_eq(expected, 3)
     case _: False{}
+
+def lists_equal(left: +List<U32>, right: +List<U32>) -> Bool:
+  match left right:
+    case Nil{} Nil{}: True{}
+    case Con{a, as} Con{b, bs}: U32.is_eq(a, b) && lists_equal(as, bs)
+    case _ _: False{}
+
+def pixel_color(expected: U32, result: Result<&2, &2, J.Surface.Error, U32>) -> Bool:
+  match result:
+    case Fail{_}: False{}
+    case Done{color}: U32.is_eq(color, expected)
+
+def pixel_same(bytes: +List<U32>, result: Result<&2, &2, J.Surface.Error, +List<U32>>) -> Bool:
+  match result:
+    case Fail{_}: False{}
+    case Done{written}: lists_equal(bytes, written)
 
 def pixel_failed(-A: Data, result: Result<&2, &2, J.Surface.Error, A>, expected: U32) -> Bool:
   match result:
@@ -414,10 +431,18 @@ def checks() -> Bool:
     && dither_created(J.Surface.create(2, 1, 16909060), False{})
     && no_size(J.Pixel.data_size(4097, 1, 7))
     && no_size(J.Pixel.data_size(1, 1, 2147483648))
-    && pixel_failed(U32, J.Pixel.get_color([0], 0), 0)
+    && pixel_color(0, J.Pixel.get_color([0], 0))
+    && pixel_color(0, J.Pixel.get_color([256], 0))
+    && pixel_color(0, J.Pixel.get_color([1], 14))
+    && pixel_color(255, J.Pixel.get_color([0, 0, 0, 0], 8))
+    && pixel_failed(U32, J.Pixel.get_color([0, 0, 0, 64], 8), 3)
+    && pixel_failed(U32, J.Pixel.get_color([256, 0, 0, 0], 8), 1)
+    && pixel_failed(U32, J.Pixel.get_color([1, 2, 3], 8), 2)
     && pixel_failed(U32, J.Pixel.get_color([256], 1), 1)
     && pixel_failed(U32, J.Pixel.get_color([1], 3), 2)
-    && pixel_failed(+List<U32>, J.Pixel.set_color([0,0,0,0], 0, 8), 0)
+    && pixel_same([0, 0, 0, 0], J.Pixel.set_color([0, 0, 0, 0], 0, 8))
+    && pixel_same([256, 1], J.Pixel.set_color([256, 1], 0, 14))
+    && pixel_same([], J.Pixel.set_color([], 0, 24))
     && pixel_failed(+List<U32>, J.Pixel.set_color([0,0,0,0,256], 0, 7), 1)
     && pixel_failed(+List<U32>, J.Pixel.set_color([1,2], 0, 7), 2)
     && no_formatted(J.Surface.from_bytes(0, 1, 7, []))

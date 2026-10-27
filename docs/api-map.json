@@ -4806,9 +4806,9 @@
   "GetPixelColor": {
     "jonlib": "Pixel.get_color",
     "status": "profile-covered",
-    "scope": "Little-endian immutable byte lists for native formats 1..7; packed RGBA results preserve integer expansion, R5G5B5A1 blue from bits 1..5 (raylib 6.2). Unsupported formats, invalid bytes and truncated input produce typed failures.",
+    "scope": "Little-endian byte lists. Formats 1..7 keep integer expansion and R5G5B5A1 blue from bits 1..5. Formats 8..13 cast each float or half channel when component*255 lies in (-1, 256); R32 and R16 replicate across RGB and a missing alpha is 255. Format 0 and codes outside 1..13 return color 0 without reading. Invalid bytes and short buffers of formats 1..13 are typed failures.",
     "gaps": [
-      "Float/half/compressed profiles",
+      "Undefined native behavior: a float or half channel whose component*255 lies outside (-1, 256) is OutOfDomain",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
@@ -4819,9 +4819,8 @@
   "SetPixelColor": {
     "jonlib": "Pixel.set_color",
     "status": "profile-covered",
-    "scope": "Formats 1..7 with exact grayscale and nearest packed-channel quantization, strict alpha>50 threshold and little-endian words. Functional byte-list result replaces only the pixel prefix and preserves trailing bytes.",
+    "scope": "Formats 1..7 keep grayscale, nearest packed quantization, the pinned alpha>50 threshold and little-endian words, replacing only the pixel prefix. Every other format leaves the byte list unchanged.",
     "gaps": [
-      "Other formats/configured alpha thresholds",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"

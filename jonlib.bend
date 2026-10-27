@@ -1875,8 +1875,132 @@ def Pixel.read.format(valid: Bool, format: U32, +bytes: +List<U32>) -> Result<&2
     case False{}: Fail{UnsupportedFormat{}}
     case True{}: Pixel.read.valid(Codec.valid_bytes(bytes, True{}), format, bytes)
 
+# (unsigned char)(sample*255) is defined when the product lies in (-1, 256).
+# LoadImageColors and GetImageColor use the same interval.
+def Pixel.channel.color_valid(value: F32) -> Bool:
+  +scaled = (value * 255.0 : F32)
+  (scaled > F32.neg(1.0) : F32) && (scaled < 256.0 : F32)
+
+def Pixel.cast.kept(valid: Bool, +scaled: F32) -> Maybe<&2, U32>:
+  match valid:
+    case False{}: None{}
+    case True{}: Some{F32.to_u32(scaled)}
+
+def Pixel.cast.channel(+value: F32) -> Maybe<&2, U32>:
+  +scaled = (value * 255.0 : F32)
+  Pixel.cast.kept(Pixel.channel.color_valid(value), scaled)
+
+def Pixel.cast.chosen(half: Bool, +word: U32) -> Maybe<&2, U32>:
+  match half:
+    case False{}: Pixel.cast.channel(Formats.r32.value(word))
+    case True{}: Pixel.cast.channel(Formats.half.value(word))
+
+def Pixel.cast.sample(+format: U32, +word: U32) -> Maybe<&2, U32>:
+  Pixel.cast.chosen(((format >= 11) && (format <= 13) : U32), word)
+
+def Pixel.color.replicated(channel: Maybe<&2, U32>) -> Result<&2, &2, Surface.Error, U32>:
+  match channel:
+    case None{}: Fail{OutOfDomain{}}
+    case Some{+byte}: Done{Color.rgba(byte, byte, byte, 255)}
+
+def Pixel.color.rgb.b(blue: Maybe<&2, U32>, +red: U32, +green: U32) -> Result<&2, &2, Surface.Error, U32>:
+  match blue:
+    case None{}: Fail{OutOfDomain{}}
+    case Some{+byte}: Done{Color.rgba(red, green, byte, 255)}
+
+def Pixel.color.rgb.g(green: Maybe<&2, U32>, blue: Maybe<&2, U32>, +red: U32) -> Result<&2, &2, Surface.Error, U32>:
+  match green:
+    case None{}: Fail{OutOfDomain{}}
+    case Some{+byte}: Pixel.color.rgb.b(blue, red, byte)
+
+def Pixel.color.rgb(red: Maybe<&2, U32>, green: Maybe<&2, U32>, blue: Maybe<&2, U32>) -> Result<&2, &2, Surface.Error, U32>:
+  match red:
+    case None{}: Fail{OutOfDomain{}}
+    case Some{+byte}: Pixel.color.rgb.g(green, blue, byte)
+
+def Pixel.color.rgba.a(alpha: Maybe<&2, U32>, +red: U32, +green: U32, +blue: U32) -> Result<&2, &2, Surface.Error, U32>:
+  match alpha:
+    case None{}: Fail{OutOfDomain{}}
+    case Some{+byte}: Done{Color.rgba(red, green, blue, byte)}
+
+def Pixel.color.rgba.b(blue: Maybe<&2, U32>, alpha: Maybe<&2, U32>, +red: U32, +green: U32) -> Result<&2, &2, Surface.Error, U32>:
+  match blue:
+    case None{}: Fail{OutOfDomain{}}
+    case Some{+byte}: Pixel.color.rgba.a(alpha, red, green, byte)
+
+def Pixel.color.rgba.g(green: Maybe<&2, U32>, blue: Maybe<&2, U32>, alpha: Maybe<&2, U32>, +red: U32) -> Result<&2, &2, Surface.Error, U32>:
+  match green:
+    case None{}: Fail{OutOfDomain{}}
+    case Some{+byte}: Pixel.color.rgba.b(blue, alpha, red, byte)
+
+def Pixel.color.rgba(red: Maybe<&2, U32>, green: Maybe<&2, U32>, blue: Maybe<&2, U32>, alpha: Maybe<&2, U32>) -> Result<&2, &2, Surface.Error, U32>:
+  match red:
+    case None{}: Fail{OutOfDomain{}}
+    case Some{+byte}: Pixel.color.rgba.g(green, blue, alpha, byte)
+
+# Little-endian channel words. n shrinks; a short suffix is truncated data.
+def Pixel.words.collect(n: Nat, +width: Nat, bytes: +List<U32>, words: List<&2, U32>) -> Result<&2, &2, Surface.Error, List<&2, U32>>:
+  match n:
+    case 0n: Done{List.reverse(&2, U32, words)}
+    case 1n+rest:
+      match width bytes:
+        case 2n Con{a, Con{b, tail}}:
+          Pixel.words.collect(rest, width, tail, Con{(a .|. (b << 8n) : U32), words})
+        case 4n Con{a, Con{b, Con{c, Con{d, tail}}}}:
+          Pixel.words.collect(rest, width, tail, Con{(a .|. (b << 8n) .|. (c << 16n) .|. (d << 24n) : U32), words})
+        case _ _: Fail{TruncatedPixelData{}}
+
+def Pixel.color.words(+format: U32, words: List<&2, U32>) -> Result<&2, &2, Surface.Error, U32>:
+  match format words:
+    case 8 Con{+word, _}: Pixel.color.replicated(Pixel.cast.sample(8, word))
+    case 11 Con{+word, _}: Pixel.color.replicated(Pixel.cast.sample(11, word))
+    case 9 Con{+red, Con{+green, Con{+blue, _}}}:
+      Pixel.color.rgb(Pixel.cast.sample(9, red), Pixel.cast.sample(9, green), Pixel.cast.sample(9, blue))
+    case 12 Con{+red, Con{+green, Con{+blue, _}}}:
+      Pixel.color.rgb(Pixel.cast.sample(12, red), Pixel.cast.sample(12, green), Pixel.cast.sample(12, blue))
+    case 10 Con{+red, Con{+green, Con{+blue, Con{+alpha, _}}}}:
+      Pixel.color.rgba(Pixel.cast.sample(10, red), Pixel.cast.sample(10, green), Pixel.cast.sample(10, blue), Pixel.cast.sample(10, alpha))
+    case 13 Con{+red, Con{+green, Con{+blue, Con{+alpha, _}}}}:
+      Pixel.color.rgba(Pixel.cast.sample(13, red), Pixel.cast.sample(13, green), Pixel.cast.sample(13, blue), Pixel.cast.sample(13, alpha))
+    case _ _: Fail{TruncatedPixelData{}}
+
+def Pixel.read.assembled(+format: U32, result: Result<&2, &2, Surface.Error, List<&2, U32>>) -> Result<&2, &2, Surface.Error, U32>:
+  match result:
+    case Fail{error}: Fail{error}
+    case Done{words}: Pixel.color.words(format, words)
+
+def Pixel.read.samples.kind(+format: U32, +bytes: +List<U32>) -> Result<&2, &2, Surface.Error, U32>:
+  match format:
+    case 8: Pixel.read.assembled(format, Pixel.words.collect(1n, 4n, bytes, Nil{}))
+    case 9: Pixel.read.assembled(format, Pixel.words.collect(3n, 4n, bytes, Nil{}))
+    case 10: Pixel.read.assembled(format, Pixel.words.collect(4n, 4n, bytes, Nil{}))
+    case 11: Pixel.read.assembled(format, Pixel.words.collect(1n, 2n, bytes, Nil{}))
+    case 12: Pixel.read.assembled(format, Pixel.words.collect(3n, 2n, bytes, Nil{}))
+    case 13: Pixel.read.assembled(format, Pixel.words.collect(4n, 2n, bytes, Nil{}))
+    case _: Fail{TruncatedPixelData{}}
+
+def Pixel.read.samples(valid: Bool, +format: U32, +bytes: +List<U32>) -> Result<&2, &2, Surface.Error, U32>:
+  match valid:
+    case False{}: Fail{InvalidPixelByte{}}
+    case True{}: Pixel.read.samples.kind(format, bytes)
+
+# Formats 1..7 keep the packed readers. Format 0 and every code outside 1..13
+# are raylib's default: color 0, and the bytes are not read.
+def Pixel.read.packed(supported: Bool, +format: U32, +bytes: +List<U32>) -> Result<&2, &2, Surface.Error, U32>:
+  match supported:
+    case True{}: Pixel.read.format(True{}, format, bytes)
+    case False{}: Done{0}
+
+def Pixel.read.route(wide: Bool, +format: U32, +bytes: +List<U32>) -> Result<&2, &2, Surface.Error, U32>:
+  match wide:
+    case True{}: Pixel.read.samples(Codec.valid_bytes(bytes, True{}), format, bytes)
+    case False{}: Pixel.read.packed(((format >= 1) && (format <= 7) : U32), format, bytes)
+
+def Pixel.read.dispatch(+format: U32, +bytes: +List<U32>) -> Result<&2, &2, Surface.Error, U32>:
+  Pixel.read.route(((format >= 8) && (format <= 13) : U32), format, bytes)
+
 def Pixel.get_color(bytes: +List<U32>, +format: U32) -> Result<&2, &2, Surface.Error, U32>:
-  Pixel.read.format(((format >= 1) && (format <= 7) : U32), format, bytes)
+  Pixel.read.dispatch(format, bytes)
 
 def Pixel.quantize(channel: U32, maximum: U32) -> U32:
   ((2 * channel * maximum + 255) / 510 : U32)
@@ -1921,8 +2045,15 @@ def Pixel.write.format(valid: Bool, format: U32, color: U32, +bytes: +List<U32>)
     case False{}: Fail{UnsupportedFormat{}}
     case True{}: Pixel.write.bytes(Codec.valid_bytes(bytes, True{}), format, color, bytes)
 
+# SetPixelColor writes formats 1..7. Every other code, including float, half
+# and compressed, leaves the buffer unchanged and does not read it.
+def Pixel.write.chosen(supported: Bool, +format: U32, color: U32, +bytes: +List<U32>) -> Result<&2, &2, Surface.Error, +List<U32>>:
+  match supported:
+    case True{}: Pixel.write.format(True{}, format, color, bytes)
+    case False{}: Done{bytes}
+
 def Pixel.set_color(bytes: +List<U32>, color: U32, +format: U32) -> Result<&2, &2, Surface.Error, +List<U32>>:
-  Pixel.write.format(((format >= 1) && (format <= 7) : U32), format, color, bytes)
+  Pixel.write.chosen(((format >= 1) && (format <= 7) : U32), format, color, bytes)
 
 # -----------------------------------------------------------------------------
 # RGBA8 kernels: generation, color, drawing, geometry and resampling
@@ -3413,8 +3544,7 @@ def Surface.quad.valid(kind: U32, quad: Surface.Quad) -> Bool:
 
 # (unsigned char)(sample*255) is defined when the product lies in (-1, 256).
 def Surface.channel.color_valid(value: F32) -> Bool:
-  +scaled = (value * 255.0 : F32)
-  (scaled > F32.neg(1.0) : F32) && (scaled < 256.0 : F32)
+  Pixel.channel.color_valid(value)
 
 def Surface.normal.color_valid(sample: Formats.Normal) -> Bool:
   Formats.Normal{r, g, b, a} = sample
