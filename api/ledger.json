@@ -74274,9 +74274,9 @@
       "status": "partial",
       "jonlib": "jonmath.Matrix.translate",
       "mapping_state": "implemented",
-      "scope": "Finite F32 translation matrix in reference field order, including signed-zero inputs.",
+      "scope": "F32 translation matrix in reference field order. Signed zero, subnormals, infinities and NaN payloads are stored as bits, except that JavaScript stores every NaN as the canonical positive quiet NaN.",
       "gaps": [
-        "Exceptional/subnormal",
+        "JavaScript stores every NaN as the canonical positive quiet NaN",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
@@ -74292,6 +74292,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/matrix_place_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"
@@ -74712,9 +74713,9 @@
       "status": "partial",
       "jonlib": "jonmath.Matrix.scale",
       "mapping_state": "implemented",
-      "scope": "Finite F32 diagonal scaling matrix, retaining zero and negative axis scales.",
+      "scope": "F32 diagonal scaling matrix. Axis scales are stored as bits, including signed zero, subnormals, infinities and NaN payloads, except that JavaScript stores every NaN as the canonical positive quiet NaN.",
       "gaps": [
-        "Exceptional/subnormal",
+        "JavaScript stores every NaN as the canonical positive quiet NaN",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
@@ -74730,6 +74731,7 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/matrix_place_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend"

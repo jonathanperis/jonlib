@@ -294,8 +294,9 @@ the original Matrix; conformance separately checks the actual reference layout.
   finite supported intermediate/result values. Singular inverse results remain
   outside this profile. The public determinant and inversion denominator have
   different arithmetic orders and are not substituted for one another.
-- `Matrix.translate(x, y, z)` and `scale(x, y, z)` preserve the supplied finite
-  components, including negative and signed-zero values.
+- `Matrix.translate(x, y, z)` and `scale(x, y, z)` store the supplied components
+  as bits, including signed zero, subnormals, infinities and NaN payloads.
+  JavaScript stores every NaN as the canonical positive quiet NaN.
 - `Matrix.multiply_value(matrix, scalar)` multiplies every field independently.
 - `Matrix.look_at(eye, target, up)` retains the reference basis normalization and
   negative-dot translation. Coincident eye/target and parallel up vectors keep
