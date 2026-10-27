@@ -111,6 +111,47 @@ under the wider allowance then in the probe. Cubic is omitted because
 run remains open.
 `MERGE_HOSTS` is unchanged; section 1 is the remaining step.
 
+The 2026-10-27 nightly (run 40503400674, tree `079520d`) ran on
+`macos-15` with Apple clang 17.0.0. Shard 15 passed. The `extrema`
+failure belongs to that older tree, before the host `fminf` selection
+recorded above. On this Mac at `cec5d3d` (Apple clang 21.0.0, macOS
+27.2, arm64, `--jobs 1`, lanes cpu-1, cpu-2 and javascript)
+`ray-exceptional` passed (833 cases, `libm=AppleLibm`, no quiet-NaN
+sign rows) and `ktx-export` passed (15 cases).
+
+Twelve nightly compiles aborted in that clang's backend (`live register
+clobbered by inserted prologue instructions`): `rlgl`, `font`,
+`texture`, `models`, `models-gnu`, `model-draw`, `examples-core`,
+`examples-text`, `examples-textures`, `examples-shaders`,
+`examples-shapes` and `examples-models`. Clang 21 on this Mac already
+builds the CPU lane with `-fno-stack-check`. The same lanes passed
+`texture` (136 scenes, 120 compared, 16 contracts), `font` (69 scenes,
+64 compared, 5 contracts, `refused_operations=18`), `rlgl` (79 scenes,
+54 compared, 25 contracts), `models` (51 scenes, 22 compared, 29
+contracts), `models-gnu` (51 scenes, 41 compared, 10 contracts,
+`libm=Glibc239Libm`) and `model-draw` (27 scenes, 20 compared, 7
+contracts). The examples the nightly left uncompiled were rerun from
+the first missing example:
+
+- `examples-core` from `core_2d_camera`: 46 examples, 56 scripts, 1266
+  frames, 1041 compared, 225 refused.
+- `examples-text` from `text_unicode_emojis`: 12 examples, 14 scripts,
+  282 frames, 137 compared, 145 refused.
+- `examples-textures` from `textures_magnifying_glass`: 25 examples, 316
+  frames, 275 compared, 41 refused. `textures_sprite_stacking-spin`
+  refuses at frame 1.
+- `examples-shaders` from `shaders_fog_rendering`: 21 examples, 23
+  scripts, 119 frames, 54 compared, 65 refused.
+- `examples-shapes` from `shapes_pie_chart`: 10 examples, 11 scripts, 341
+  frames, 85 compared, 256 refused.
+- `examples-models` from `models_animation_timing`: 13 examples, 14
+  scripts, 233 frames, every frame refused under AppleLibm.
+
+`spline-exceptional` fails on this tree. CPU-1 has two quiet-NaN sign
+mismatches on an uncontracted basis point. The first row is reference
+word `0x7fc00000` and Jonlib word `0xffc00000` (339 rows). That sign is
+the open gap at `cec5d3d`. `MERGE_HOSTS` stays unchanged.
+
 The 2026-10-24 shard (`fa0755b`) had passed 191 of 206 gates and supersedes
 the raylib 6.0 nightly of 2026-10-16. Gates the 6.0 note had never run, or
 had failing, and that passed there include `macros`, `easings`, `lights`,
