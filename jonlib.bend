@@ -3411,6 +3411,23 @@ def Surface.normal.color(sample: Formats.Normal) -> U32:
 def Surface.quad.valid(kind: U32, quad: Surface.Quad) -> Bool:
   Surface.normal.valid(Surface.quad.normal(kind, quad))
 
+# (unsigned char)(sample*255) is defined when the product lies in (-1, 256).
+def Surface.channel.color_valid(value: F32) -> Bool:
+  +scaled = (value * 255.0 : F32)
+  (scaled > F32.neg(1.0) : F32) && (scaled < 256.0 : F32)
+
+def Surface.normal.color_valid(sample: Formats.Normal) -> Bool:
+  Formats.Normal{r, g, b, a} = sample
+  Surface.channel.color_valid(r) && Surface.channel.color_valid(g) && Surface.channel.color_valid(b) && Surface.channel.color_valid(a)
+
+# LoadImageColors and GetImageColor: R32 channels use the defined cast.
+# Half-float channels keep the finite [0, 1] check.
+def Surface.quad.color_valid(kind: U32, quad: Surface.Quad) -> Bool:
+  match kind:
+    case 9: Surface.normal.color_valid(Surface.quad.normal(kind, quad))
+    case 10: Surface.normal.color_valid(Surface.quad.normal(kind, quad))
+    case _: Surface.quad.valid(kind, quad)
+
 def Surface.quad.color(kind: U32, quad: Surface.Quad) -> U32:
   Surface.normal.color(Surface.quad.normal(kind, quad))
 
@@ -3492,6 +3509,17 @@ def Surface.rgba.quads(+width: U32, +height: U32, +format: U32, state: Array<Sur
 
 # LoadImageColors: one canonical Color per pixel. A wide owner with samples
 # outside [0, 1] is returned unchanged with OutOfDomain.
+def Surface.quads.color_checked.read(+kind: U32, result: Array<Surface.Quad> & Surface.Quad) -> Array<Surface.Quad> & Bool:
+  (values, +quad) = result
+  (values, Surface.quad.color_valid(kind, quad))
+
+def Surface.quads.color_checked(n: Nat, +index: U32, +kind: U32, state: Array<Surface.Quad> & Bool) -> Array<Surface.Quad> & Bool:
+  match n state:
+    case _ Tuple{values, False{}}: (values, False{})
+    case 0n _: state
+    case 1n+rest Tuple{values, True{}}:
+      Surface.quads.color_checked(rest, (index + 1 : U32), kind, Surface.quads.color_checked.read(kind, Array.get(Surface.Quad, values, index)))
+
 def Surface.rgba.load.selected(kind: U32, pixels: Surface.Pixels, +width: U32, +height: U32, +format: U32) -> Result<&1, &1, Surface & Surface.Error, Rgba>:
   match kind pixels:
     case 7 Words{values}: Done{Rgba{width, height, values}}
@@ -3499,9 +3527,21 @@ def Surface.rgba.load.selected(kind: U32, pixels: Surface.Pixels, +width: U32, +
     case _ Quads{values}:
       Surface.rgba.quads(width, height, format, Surface.quads.checked(U32.to_nat((width * height : U32)), 0, format, False{}, (values, True{})))
 
+def Surface.rgba.load.color_selected(kind: U32, pixels: Surface.Pixels, +width: U32, +height: U32, +format: U32) -> Result<&1, &1, Surface & Surface.Error, Rgba>:
+  match kind pixels:
+    case 7 Words{values}: Done{Rgba{width, height, values}}
+    case _ Words{values}: Done{Rgba{width, height, Formats.packed_colors(U32.to_nat((width * height : U32)), 0, format, values)}}
+    case _ Quads{values}:
+      Surface.rgba.quads(width, height, format, Surface.quads.color_checked(U32.to_nat((width * height : U32)), 0, format, (values, True{})))
+
 def Surface.rgba.load(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, Rgba>:
   Surface{width, height, +format, pixels} = surface
   Surface.rgba.load.selected(format, pixels, width, height, format)
+
+# LoadImageColors: R32 channels whose component*255 lies in (-1, 256).
+def Surface.rgba.load.colors(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, Rgba>:
+  Surface{width, height, +format, pixels} = surface
+  Surface.rgba.load.color_selected(format, pixels, width, height, format)
 
 # ImageFormat from R8G8B8A8, as raylib's color operations end.
 def Surface.rgba.store.quad(+format: U32, index: U32, result: Array<U32> & U32, output: Array<Surface.Quad>) -> Array<U32> & Array<Surface.Quad>:
@@ -4720,7 +4760,7 @@ def Surface.unload_colors(colors: List<U32>) -> Unit:
 
 # Consumes the owner; padding storage is excluded.
 def Surface.colors(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, List<U32>>:
-  Surface.colors.rgba(Surface.rgba.load(surface))
+  Surface.colors.rgba(Surface.rgba.load.colors(surface))
 
 def Surface.colors_image.rgba(result: Result<&1, &1, Surface & Surface.Error, Rgba>) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match result:
@@ -4739,7 +4779,7 @@ def Surface.get.words(+width: U32, height: U32, +format: U32, result: Array<U32>
 
 def Surface.get.quads(width: U32, height: U32, +format: U32, result: Array<Surface.Quad> & Surface.Quad) -> Surface & Maybe<&2, U32>:
   (values, +value) = result
-  (Surface{width, height, format, Quads{values}}, Bool.pick(Maybe<&2, U32>, Surface.quad.valid(format, value), Some{Surface.quad.color(format, value)}, None{}))
+  (Surface{width, height, format, Quads{values}}, Bool.pick(Maybe<&2, U32>, Surface.quad.color_valid(format, value), Some{Surface.quad.color(format, value)}, None{}))
 
 def Surface.get.checked(valid: Bool, +width: U32, height: U32, format: U32, pixels: Surface.Pixels, x: U32, y: U32) -> Surface & Maybe<&2, U32>:
   match valid pixels:
@@ -4747,8 +4787,8 @@ def Surface.get.checked(valid: Bool, +width: U32, height: U32, format: U32, pixe
     case True{} Words{values}: Surface.get.words(width, height, format, Array.get(U32, values, (y * width + x : U32)))
     case True{} Quads{values}: Surface.get.quads(width, height, format, Array.get(Surface.Quad, values, (y * width + x : U32)))
 
-# GetImageColor: out-of-bounds U32 coordinates and wide samples outside the
-# LoadImageColors domain return None; coordinates never wrap.
+# GetImageColor: out-of-bounds U32 coordinates and a selected sample outside
+# the LoadImageColors cast return None; coordinates never wrap.
 def Surface.get(surface: Surface, +x: U32, +y: U32) -> Surface & Maybe<&2, U32>:
   Surface{+width, +height, format, pixels} = surface
   Surface.get.checked(((x < width) && (y < height) : U32), width, height, format, pixels, x, y)

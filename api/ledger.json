@@ -48185,9 +48185,9 @@
       "status": "partial",
       "jonlib": "Surface.colors",
       "mapping_state": "implemented",
-      "scope": "Every Surface format to complete row-major RGBA color lists: native packed integer expansion, red-only R32 and truncated R32G32B32 samples (finite [0,1], otherwise OutOfDomain with the owner). Every format 1..13 is compared with raylib on the surface-format profile.",
+      "scope": "Every Surface format to complete row-major RGBA color lists: native packed integer expansion, red-only R32, and R32 channels whose component*255 lies in (-1, 256). A product outside that interval is OutOfDomain with the owner. Formats 1..13 are compared with raylib on the surface-format profile.",
       "gaps": [
-        "R32 samples outside finite [0,1]",
+        "Undefined native behavior: an R32 channel whose component*255 lies outside (-1, 256) is OutOfDomain",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -48512,9 +48512,9 @@
       "status": "partial",
       "jonlib": "Surface.get",
       "mapping_state": "implemented",
-      "scope": "Every Surface format; U32 coordinates are checked before access; out-of-bounds pixels and out-of-domain R32G32B32 samples return None with the original owner. Native packed integer expansion and red-only R32 colors remain distinct from low-level GetPixelColor. Every format 1..13 is compared with raylib on the surface-format profile.",
+      "scope": "Every Surface format; U32 coordinates are checked before access; out-of-bounds pixels return None with the owner. An R32 channel whose component*255 lies in (-1, 256) matches the defined cast; a product outside that interval is None. Red-only R32 colors stay distinct from GetPixelColor. Formats 1..13 are compared on the surface-format profile.",
       "gaps": [
-        "R32 samples outside finite [0,1]",
+        "Undefined native behavior: an R32 channel whose component*255 lies outside (-1, 256) is None",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],

@@ -12,13 +12,31 @@ import probekit
 from probekit import ROOT, ProbeFailure
 
 
+def defined_cast():
+    """R32 channels outside [0, 1] whose component*255 still lies in (-1, 256)."""
+    words=[0x3f808080,0x3f000000,0x00000000,
+           0xbb808080,0x80000001,0x3f800000,
+           0x3f800001,0xbb80807f,0x80000000]
+    return dict(width=3,height=1,format=9,bytes=list(struct.pack('<'+'I'*len(words),*words)))
+
+
+def defined_cast_alpha():
+    """Format 10, including an alpha channel outside [0, 1] inside the cast."""
+    words=[0x3f808080,0xbb808080,0x3f000000,0x80000001]
+    return dict(width=1,height=1,format=10,bytes=list(struct.pack('<'+'I'*len(words),*words)))
+
+
 def fixtures():
     cases=formatted_fixtures();words=boundaries()
     cases.append(dict(width=len(words)//3,height=1,format=9,bytes=list(struct.pack('<'+'I'*len(words),*words))))
-    invalid=dict(width=2,height=1,format=9,bytes=list(struct.pack('<6f',2,0.5,0.75,0.25,0.5,0.75)))
+    cases.append(defined_cast())
+    cases.append(defined_cast_alpha())
+    invalids=[dict(width=2,height=1,format=9,bytes=list(struct.pack('<6f',2,0.5,0.75,0.25,0.5,0.75))),
+              dict(width=1,height=1,format=9,bytes=list(struct.pack('<III',0x3f808081,0x3f000000,0x3f400000)))]
     controls=[dict(cases[4],x=x,y=y,found=False) for x,y in ((16,0),(0,16),(4294967295,0))]
-    controls += [dict(cases[-1],x=769,y=0,found=False),dict(invalid,x=0,y=0,found=False),dict(invalid,x=1,y=0,found=True)]
-    return cases,controls,invalid
+    controls += [dict(cases[-2],x=769,y=0,found=False),dict(invalids[0],x=0,y=0,found=False),dict(invalids[0],x=1,y=0,found=True),
+                 dict(defined_cast(),x=0,y=0,found=True),dict(invalids[1],x=0,y=0,found=False)]
+    return cases,controls,invalids
 
 
 PROGRAM='''import Base
@@ -125,12 +143,12 @@ def render(selected,gpu):
 
 def main():
     probe=probekit.Probe('image-colors',probekit.arguments(__doc__));work=probe.work
-    cases,controls,invalid=fixtures();lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
+    cases,controls,invalids=fixtures();lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
         C_EMITTER,
         'static void emit(Image image){if(!image.data)exit(2);word(image.width);word(image.height);word(image.format);',
         'int size=GetPixelDataSize(image.width,image.height,image.format);for(int i=0;i<size;i++)byte(((unsigned char*)image.data)[i]);end();}',
         'int main(void){SetTraceLogLevel(LOG_NONE);']
-    for i,case in enumerate([*cases,*controls,invalid]):
+    for i,case in enumerate([*cases,*controls,*invalids]):
         path=work/(str(i)+'.raw');path.write_bytes(bytes(case['bytes']))
         lines.append(f'{{Image image=LoadImageRaw({json.dumps(str(path.relative_to(ROOT)))},{case["width"]},{case["height"]},{case["format"]},0);if(!image.data)return 3;')
         if i<len(cases):
@@ -141,19 +159,19 @@ def main():
             lines.append(f'byte(1);word(ColorToInt(GetImageColor(image,{case["x"]},{case["y"]})));end();' if case['found'] else 'byte(0);end();')
         lines.append('emit(image);UnloadImage(image);}')
     text=probe.native('\n'.join(lines+['}'])+'\n');expected=parse_results(text)
-    if len(expected)!=3*len(cases)+2*len(controls)+1:raise ProbeFailure('Incomplete native color observations')
+    if len(expected)!=3*len(cases)+2*len(controls)+len(invalids):raise ProbeFailure('Incomplete native color observations')
     at=0
-    for i,case in enumerate([*cases,*controls,invalid]):
+    for i,case in enumerate([*cases,*controls,*invalids]):
         if i<len(cases):
             if len(expected[at])!=case['width']*case['height']*4 or expected[at]!=expected[at+1]:raise ProbeFailure('Native bulk/point colors differ')
             at+=2
         elif i<len(cases)+len(controls):at+=1
         if expected[at]!=list(struct.pack('<III',case['width'],case['height'],case['format']))+case['bytes']:raise ProbeFailure('Native color observation changed source')
         at+=1
-    actions=[('case',case) for case in cases]+[('control',case) for case in controls]+[('invalid',invalid)]
+    actions=[('case',case) for case in cases]+[('control',case) for case in controls]+[('invalid',case) for case in invalids]
     probe.compare(grouped(expected,actions),probe.candidates(render,actions,batch=len(actions),parse=lambda text,selected:grouped(parse_results(text),selected)))
-    probe.finish(source_formats=len(cases),pixels=sum(c['width']*c['height'] for c in cases),point_controls=len(controls),bulk_rejected_owners=1,
-                 inputs_sha256=hashlib.sha256(json.dumps([cases,controls,invalid]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest())
+    probe.finish(source_formats=len(cases),pixels=sum(c['width']*c['height'] for c in cases),point_controls=len(controls),bulk_rejected_owners=len(invalids),
+                 inputs_sha256=hashlib.sha256(json.dumps([cases,controls,invalids]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__=='__main__':

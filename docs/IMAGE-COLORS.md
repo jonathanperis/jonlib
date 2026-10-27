@@ -11,13 +11,16 @@ Surface.get(image, x: U32, y: U32) -> Surface & Maybe<&2, U32>
 ## Contract
 
 - `Surface.colors` consumes the image and returns every pixel as packed RGBA8 in
-  row-major order. Formats 1..8 always succeed. R32G32B32 truncates each finite
-  `[0,1]` sample through native F32 `component*255`, with opaque alpha; other
-  samples return the original owner with `OutOfDomain`.
+  row-major order. Formats 1..8 always succeed. R32G32B32 and R32G32B32A32
+  truncate each channel through native F32 `component*255` when that product
+  lies in `(-1, 256)`, including samples outside `[0, 1]`. R32G32B32 keeps an
+  opaque alpha. A product outside that interval returns the original owner
+  with `OutOfDomain`.
 - `get` returns the retained owner and the selected color. Bounds are checked
-  before array access; out-of-bounds coordinates return `None`. Float reads also
-  return `None` for an unsupported selected sample. Only the selected pixel is
-  validated, so an unsupported sample elsewhere does not prevent a valid read.
+  before array access; out-of-bounds coordinates return `None`. A selected
+  float sample whose `component*255` lies outside `(-1, 256)` returns `None`.
+  Only the selected pixel is validated, so an unsupported sample elsewhere
+  does not prevent a valid read.
 
 ## Per-format color rules
 
@@ -31,7 +34,7 @@ These match actual `LoadImageColors` / `GetImageColor`:
 | 6 RGBA4 | Each nibble ×17 |
 | 4 RGB888, 7 RGBA8888 | Bytes preserved (RGB888 opaque) |
 | 8 R32 | Red-only color with opaque alpha (see [R32.md](R32.md)) |
-| 9 R32G32B32 | Truncated `component*255` with opaque alpha |
+| 9 R32G32B32, 10 R32G32B32A32 | Truncated `component*255` when the product lies in `(-1, 256)`; R32G32B32 alpha is 255 |
 
 These deliberately differ from `ImageFormat`'s normalized reciprocal
 arithmetic and from the low-level `GetPixelColor` (`Pixel.get_color`, see
@@ -45,9 +48,10 @@ misleading universal color decoder.
 colors with native `LoadImageColors` / `GetImageColor` over every
 byte/packed layout and RGB float, on CPU-1, CPU-2, JavaScript and, with `--gpu`,
 forced GPU. After point reads every source word is compared with native
-storage. Controls cover out-of-bounds coordinates, rejected float samples, a
-valid pixel beside an unsupported sample and the unchanged owner of a failed
-bulk float export. R32 colors are compared in gate `r32-image`
+storage. Controls cover out-of-bounds coordinates, rejected float samples (a product
+outside `(-1, 256)`), a valid pixel beside an unsupported sample, defined
+casts of samples outside `[0, 1]`, and the unchanged owner of a failed bulk
+float export. R32 colors are compared in gate `r32-image`
 (`tools/r32_image_probe.py`).
 
 ```sh
@@ -56,5 +60,7 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 
 ## Known gaps
 
-Other source domains, float/half/compressed formats, mipmaps and complete
-native ABI/resource/platform/performance coverage.
+Half-float samples outside `[0, 1]`, compressed formats, mipmaps and complete
+native ABI/resource/platform/performance coverage. The undefined
+`(unsigned char)` cast of an R32 product outside `(-1, 256)` stays
+`OutOfDomain`.

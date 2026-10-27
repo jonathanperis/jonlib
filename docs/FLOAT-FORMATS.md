@@ -25,10 +25,11 @@ Format 9 is described in detail in [RGB float images](FLOAT-RGB.md); R32 in
   R32G32B32A32/R16G16B16A16 read their channels (R16 as red, alpha 1), and
   writes use `FloatToHalf` of the channel, R16 of the F32 luminance
   `(r*0.299 + g*0.587) + b*0.114`. Float sources must be in `[0,1]`.
-- **Color operations** (`LoadImageColors`, `GetImageColor`, `GetPixelColor`)
-  cast `v*255` to a byte: R16 fills red (`GetPixelColor` replicates it), the
-  wide formats map each channel, formats without alpha read 255. Samples
-  outside `[0,1]` return `OutOfDomain` (or `None`) with the owner.
+- **`LoadImageColors` and `GetImageColor`** cast `v*255` to a byte when the
+  product lies in `(-1, 256)`. R32 channels outside `[0, 1]` in that interval
+  match the defined cast; a product outside it is `OutOfDomain` (`None` for a
+  point read). Half-float channels, and the other color operations, still
+  require `[0, 1]`. R16 fills red and formats without alpha read 255.
 - **Drawing** stores `channel/255` as F32 or half floats (`ImageDrawPixel`);
   `SetPixelColor` does not write formats 8..13, so `ImageDrawImagePro` only changes
   them through an unblended same-format copy, and `resize_canvas` fills them
