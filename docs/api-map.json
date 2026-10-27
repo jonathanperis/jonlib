@@ -1461,11 +1461,10 @@
     "milestone": "files"
   },
   "GetFileLength": {
-    "jonlib": "Files.length",
+    "jonlib": "Files.length_with",
     "status": "profile-covered",
-    "scope": "File size in bytes; 0 when the file does not open.",
+    "scope": "fopen/ftell size when it fits in a signed int; 0 when open fails. A size past INT_MAX, a directory that opens, or File.size EOVERFLOW is 0 and the caller's WARNING.",
     "gaps": [
-      "Directories and sizes above INT_MAX",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],
@@ -1757,11 +1756,10 @@
     "milestone": "files"
   },
   "ComputeCRC32": {
-    "jonlib": "Checksum.crc32",
+    "jonlib": "Checksum.crc32_wide",
     "status": "profile-covered",
-    "scope": "Immutable byte lists of 0..1048576 bytes; native CRC32 initial/final complements over the shared PNG CRC recurrence, equal to standard CRC32. Unsupported bytes/lengths return None.",
+    "scope": "Immutable byte lists of 0..2147483647 bytes; native CRC32 initial/final complements, equal to standard CRC32. Empty input is zero. Values above 255 are None.",
     "gaps": [
-      "Larger domains",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],
@@ -1769,11 +1767,11 @@
     "milestone": "files"
   },
   "ComputeMD5": {
-    "jonlib": "Checksum.md5",
+    "jonlib": "Checksum.md5_wide",
     "status": "profile-covered",
-    "scope": "Immutable byte lists of 0..1048576 bytes, including empty input. Native little-endian padding/message words, modulo-U32 rounds and exactly four U32 words in native array order (standard MD5). Unsupported bytes/lengths return None before allocation.",
+    "scope": "Lists of 0..268435455 bytes, including empty input: four native-order U32 words and a little-endian length word. Values above 255 are None.",
     "gaps": [
-      "Larger domains",
+      "Undefined native behavior: a dataSize whose 8*dataSize product does not fit in a signed int is not the reference length word",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],

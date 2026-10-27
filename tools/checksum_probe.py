@@ -13,7 +13,7 @@ from probekit import ROOT, ProbeFailure
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
 def calculate(+bytes: +List<U32>) -> Maybe<&2, U32> & Maybe<&2, +List<U32>>:
-  (J.Checksum.crc32(bytes), J.Checksum.md5(bytes))
+  (J.Checksum.crc32_wide(bytes), J.Checksum.md5_wide(bytes))
 def observed(result: Maybe<&2, U32> & Maybe<&2, +List<U32>>) -> IO(Unit):
   match result:
     case Tuple{Some{crc}, Some{words}}: IO.print(List.show(~&2, ~U32, ~U32.show, Con{crc, words}))
@@ -36,7 +36,7 @@ def fixtures():
         messages.append(bytes(rng.randrange(256) for _ in range(size)))
     return [dict(bytes=list(data),valid=True,file=True) for data in messages]+[
         dict(bytes=[256],valid=False,file=False),dict(bytes=[0,4294967295],valid=False,file=False),
-        dict(bytes=[0]*1048577,valid=False,file=True)]
+        dict(bytes=[0]*1048577,valid=True,file=True)]
 
 
 def reference_program(cases, work):

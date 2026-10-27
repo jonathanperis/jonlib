@@ -158,7 +158,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | Raw DEFLATE | `Compression.decompress` | Stored/fixed/dynamic blocks, bounded copies; native empty-stored-block completion differs explicitly from the internal PNG-oriented path ([DEFLATE.md](DEFLATE.md)) | `inflate` |
 | Raw compression | `Compression.compress` | Quality-8 sdefl bytes, empty zero-byte output, bounded native sequence budget, also forced Metal ([COMPRESSION.md](COMPRESSION.md)) | `sdeflate`, `sdeflate-lz`, `sdeflate-huffman` |
 | Base64 | `Base64.encode/decode` | Alphabet/padding, NUL-inclusive encoded size, bounded decoded bytes ([BASE64.md](BASE64.md)) | `base64` |
-| CRC32 and MD5 | `Checksum.crc32/md5` | CRC value and four MD5 words, little-endian MD5 profile ([CHECKSUMS.md](CHECKSUMS.md)) | `checksum` |
+| CRC32 and MD5 | `Checksum.crc32_wide/md5_wide` | CRC value and four MD5 words, little-endian MD5 profile ([CHECKSUMS.md](CHECKSUMS.md)) | `checksum` |
 | SHA-1 and SHA-256 | `Checksum.sha1/sha256` | Five/eight native words, including the SHA-256 padding quirk ([SHA.md](SHA.md)) | `sha` |
 | Scalar/Vector2/Vector3/Vector4 raymath | Jonmath `Math` and vector functions | Explicit uncontracted-F32 profile ([MATH.md](MATH.md)) | `conformance`, `jonmath-example` |
 | Vector angle queries | `Vector2.angle/line_angle`, `Vector3.angle` and their checked `_for` forms | Unchecked Apple profile; checked angles per selected `M.Libm` ([ANGLES.md](ANGLES.md)) | `conformance`, `angle-kernels`, `angle-legacy`, `modern-angle-bounds` |

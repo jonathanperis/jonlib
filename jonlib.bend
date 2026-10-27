@@ -154,8 +154,15 @@ def Checksum.crc32.checked(size: Maybe<&2, U32>, bytes: +List<U32>) -> Maybe<&2,
 def Checksum.crc32(+bytes: +List<U32>) -> Maybe<&2, U32>:
   Checksum.crc32.checked(Checksums.input_size(bytes, 0, True{}), bytes)
 
+# ComputeCRC32 for a list of at most 2147483647 bytes (raylib's nonnegative int).
+def Checksum.crc32_wide(+bytes: +List<U32>) -> Maybe<&2, U32>:
+  Checksum.crc32.checked(Checksums.input_size_until(bytes, 0, True{}, 2147483647), bytes)
+
 def Checksum.md5(bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
   Checksums.md5(bytes)
+
+def Checksum.md5_wide(bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
+  Checksums.md5_wide(bytes)
 
 def Checksum.sha1(bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
   Sha.hash(False{}, bytes)
@@ -7198,6 +7205,55 @@ def Files.change_logged(logger: Log.Logger, +path: String, +code: U32) -> IO(U32
 # line on success or the WARNING line on failure, when the level shows it.
 def Files.change_directory_with(logger: Log.Logger, +path: String) -> IO(U32):
   IO.bind(Result<&1, &1, U32 & String, Unit>, U32, Dir.change(path), r => Files.change_logged(logger, path, Files.done(r)))
+
+# File.size reports EOVERFLOW as 75 on Linux and 84 on macOS, both past 4 GiB.
+def Files.length.overflow_code(+code: U32) -> Bool:
+  U32.is_eq(code, 75) || U32.is_eq(code, 84)
+
+def Files.length.warning(logger: Log.Logger, +path: String) -> IO(Unit):
+  Logger{+level} = logger
+  Files.change_emit((4 < level : U32), Log.prefix(4) ++ "[" ++ path ++ "] File size overflows expected limit, do not use GetFileLength()")
+
+def Files.length.warn_or(logger: Log.Logger, +path: String, over: Bool, +value: U32) -> IO(U32):
+  match over:
+    case False{}: IO.pure(U32, value)
+    case True{}:
+      do IO<U32>:
+        Unit <- Files.length.warning(logger, path)
+        IO.pure(U32, 0)
+
+def Files.length.after(logger: Log.Logger, +path: String, size: Result<&1, &1, U32 & String, U32>) -> IO(U32):
+  match size:
+    case Fail{Tuple{+code, _}}: Files.length.warn_or(logger, path, Files.length.overflow_code(code), 0)
+    case Done{+value}: Files.length.warn_or(logger, path, (value > 2147483647 : U32), value)
+
+def Files.length.measured(logger: Log.Logger, +path: String, result: File & Result<&1, &1, U32 & String, U32>) -> IO(U32):
+  (file, size) = result
+  do IO<U32>:
+    Unit <- File.close(file)
+    answer : U32 <- Files.length.after(logger, path, size)
+    IO.pure(U32, answer)
+
+# A directory open() can read has ftell at the maximum long on Linux, which is
+# past INT_MAX, so GetFileLength warns and returns 0. st_size is not that value.
+def Files.length.routed(logger: Log.Logger, +path: String, directory: Bool, file: File) -> IO(U32):
+  match directory:
+    case True{}:
+      do IO<U32>:
+        Unit <- File.close(file)
+        answer : U32 <- Files.length.warn_or(logger, path, True{}, 0)
+        IO.pure(U32, answer)
+    case False{}: IO.bind(File & Result<&1, &1, U32 & String, U32>, U32, File.size(file), r => Files.length.measured(logger, path, r))
+
+def Files.length.opened_with(logger: Log.Logger, +path: String, opened: Result<&1, &1, U32 & String, File>) -> IO(U32):
+  match opened:
+    case Fail{_}: IO.pure(U32, 0)
+    case Done{file}: IO.bind(Bool, U32, Files.directory_exists(path), dir => Files.length.routed(logger, path, dir, file))
+
+# GetFileLength through the caller's logger. fopen's failure is 0. A size past
+# INT_MAX, including a directory that opens, is 0 and the reference warning.
+def Files.length_with(logger: Log.Logger, +path: String) -> IO(U32):
+  IO.bind(Result<&1, &1, U32 & String, File>, U32, File.open(path, "r"), opened => Files.length.opened_with(logger, path, opened))
 
 # MemAlloc: size zero bytes (RL_CALLOC). MemRealloc keeps the first size bytes
 # and zero-fills growth (C leaves it uninitialized). MemFree consumes the bytes.

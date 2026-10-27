@@ -8,6 +8,13 @@ def input_size(bytes: +List<U32>, +count: U32, valid: Bool) -> Maybe<&2, U32>:
     case Nil{} True{}: Some{count}
     case Con{byte, rest} True{}: input_size(rest, (count + 1 : U32), ((byte <= 255) && (count < 1048576) : U32))
 
+# The same byte check up to `limit` (the count of bytes already accepted).
+def input_size_until(bytes: +List<U32>, +count: U32, valid: Bool, +limit: U32) -> Maybe<&2, U32>:
+  match bytes valid:
+    case _ False{}: None{}
+    case Nil{} True{}: Some{count}
+    case Con{byte, rest} True{}: input_size_until(rest, (count + 1 : U32), ((byte <= 255) && (count < limit) : U32), limit)
+
 type MD5 is Data:
   MD5{a: U32, b: U32, c: U32, d: U32}
 
@@ -112,6 +119,11 @@ def checked(size: Maybe<&2, U32>, bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
 
 def md5(+bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
   checked(input_size(bytes, 0, True{}), bytes)
+
+# ComputeMD5 for every length whose `8*dataSize` fits in a signed int.
+# 268435455 * 8 = 2147483640; the next length overflows that product.
+def md5_wide(+bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
+  checked(input_size_until(bytes, 0, True{}, 268435455), bytes)
 
 # Reflected CRC-32 (polynomial 0xEDB88320) register update, one bit at a time.
 def crc.bits(n: Nat, +value: U32) -> U32:

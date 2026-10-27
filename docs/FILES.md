@@ -28,7 +28,7 @@ byte, on every lane.
 | `Files.load_directory_files(path)`, `Files.load_directory_files_ex(path, filter, subdirs) -> IO(Maybe<FilePathList>)`, `Files.unload_directory_files(files)` | `LoadDirectoryFiles(Ex)`, `UnloadDirectoryFiles` | The paths `path/name` of a directory's entries in `readdir`'s order, a subdirectory's (with `subdirs`) right after it. `filter` `None` (or empty) is `NULL`: every regular file. Otherwise a regular file is listed for the `*.*` or `FILES*` tag or an extension of the list (`IsFileExtension`), anything else (a directory, or a path `stat` fails on) for `*.*` or `DIRS*`. A path of 4096 bytes or more is skipped, as `snprintf` leaves it. No directory gives no paths. `LoadDirectoryFiles` is the `*.*` filter without subdirectories. |
 | `Files.directory_file_count(path)`, `Files.directory_file_count_ex(path, filter, subdirs) -> IO(Maybe<U32>)` | `GetDirectoryFileCount(Ex)` | What the listing would hold, counted; the filter as given (an empty one counts nothing). |
 | `System.open_url(url) -> IO(Unit)` | `OpenURL` | The reference platform's (`rcore_memory.c`): `system()` of `explorer "url"` through `/bin/sh` (Base's `Process.shell`), its result unused; nothing for a URL with a `'`. |
-| `Files.length(path) -> IO(U32)` | `GetFileLength` | The size in bytes; 0 when the file does not open. |
+| `Files.length_with(logger, path) -> IO(U32)` | `GetFileLength` | `fopen`/`ftell`'s size when it fits in a signed int; 0 when the file does not open. A size past `INT_MAX` is 0, and the caller's logger emits `WARNING: [path] File size overflows expected limit, do not use GetFileLength()`. A directory that opens is that case on Linux (`ftell` is the maximum long; `st_size` is not). `Files.length(path)` is the `stat` size, 0 when the file does not open, without the warning. |
 | `Files.load_data(path)` / `unload_data` | `LoadFileData` / `UnloadFileData` | Every byte, up to raylib's `INT_MAX` size, as `Result<&1, &1, Surface.IOError, +List<U32>>`; an existing empty file is an empty list (raylib: `NULL` with size 0). |
 | `Files.save_data(path, bytes)` | `SaveFileData` | Writes every byte; values above 255 are `InvalidRequest` before opening. |
 | `Files.load_text(path)` / `unload_text` | `LoadFileText` / `UnloadFileText` | Every byte as a character, including NULs. |
@@ -123,7 +123,10 @@ fake `explorer` that logs its arguments, and `ChangeDirectory` and
 `GetWorkingDirectory` last. That script passes `Log.level(7)`, so the trace
 line stays quiet and the compared line is the result code.
 `tools/directory_log_probe.py` (gate `directory-log`) compares the INFO and
-WARNING lines at thresholds 3, 4 and 7. `GetApplicationDirectory` is checked for its
+WARNING lines at thresholds 3, 4 and 7. `tools/file_length_probe.py` (gate
+`file-length`) compares `GetFileLength` for a missing path, a small file, a
+directory, an unreadable directory, and sparse sizes at `INT_MAX`, just past
+it, and past 4 GiB, including the overflow warning. `GetApplicationDirectory` is checked for its
 trailing `/` and for being a directory, the programs being different on each
 side. `LoadDirectoryFiles` and `GetDirectoryFileCount` use the `*.*` filter
 and never call `IsFileExtension`, so a 17-byte extension is listed in full.

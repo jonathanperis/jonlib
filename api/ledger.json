@@ -34256,16 +34256,16 @@
       "phase": 1,
       "sequence": 4,
       "status": "partial",
-      "jonlib": "Files.length",
+      "jonlib": "Files.length_with",
       "mapping_state": "implemented",
-      "scope": "File size in bytes; 0 when the file does not open.",
+      "scope": "fopen/ftell size when it fits in a signed int; 0 when open fails. A size past INT_MAX, a directory that opens, or File.size EOVERFLOW is 0 and the caller's WARNING.",
       "gaps": [
-        "Directories and sizes above INT_MAX",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
-        "Pointer/allocator ABI: owned values instead of raw pointers and allocators (language adaptation)"
+        "Pointer/allocator ABI: owned values instead of raw pointers and allocators (language adaptation)",
+        "Process-wide state replaced by explicit values (language adaptation)"
       ],
       "blocker": null,
       "gates": {
@@ -34277,8 +34277,11 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/file_length_probe.py",
+        "docs/FILES.md",
         "tools/files_probe.py",
-        "docs/FILES.md"
+        "docs/LOGGING.md",
+        "jonlib.bend"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35897,11 +35900,10 @@
       "phase": 1,
       "sequence": 4,
       "status": "partial",
-      "jonlib": "Checksum.crc32",
+      "jonlib": "Checksum.crc32_wide",
       "mapping_state": "implemented",
-      "scope": "Immutable byte lists of 0..1048576 bytes; native CRC32 initial/final complements over the shared PNG CRC recurrence, equal to standard CRC32. Unsupported bytes/lengths return None.",
+      "scope": "Immutable byte lists of 0..2147483647 bytes; native CRC32 initial/final complements, equal to standard CRC32. Empty input is zero. Values above 255 are None.",
       "gaps": [
-        "Larger domains",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -35920,6 +35922,7 @@
       "evidence": [
         "tools/checksum_probe.py",
         "docs/CHECKSUMS.md",
+        "src/checksum.bend",
         "src/png_encode.bend"
       ],
       "gate_evidence": {},
@@ -35959,11 +35962,11 @@
       "phase": 1,
       "sequence": 4,
       "status": "partial",
-      "jonlib": "Checksum.md5",
+      "jonlib": "Checksum.md5_wide",
       "mapping_state": "implemented",
-      "scope": "Immutable byte lists of 0..1048576 bytes, including empty input. Native little-endian padding/message words, modulo-U32 rounds and exactly four U32 words in native array order (standard MD5). Unsupported bytes/lengths return None before allocation.",
+      "scope": "Lists of 0..268435455 bytes, including empty input: four native-order U32 words and a little-endian length word. Values above 255 are None.",
       "gaps": [
-        "Larger domains",
+        "Undefined native behavior: a dataSize whose 8*dataSize product does not fit in a signed int is not the reference length word",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -35980,9 +35983,9 @@
         "performance": "unverified"
       },
       "evidence": [
-        "src/checksum.bend",
         "tools/checksum_probe.py",
-        "docs/CHECKSUMS.md"
+        "docs/CHECKSUMS.md",
+        "src/checksum.bend"
       ],
       "gate_evidence": {},
       "target_results": {},
