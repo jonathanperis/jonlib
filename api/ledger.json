@@ -49084,11 +49084,9 @@
       "status": "partial",
       "jonlib": "Surface.draw_triangle_gradient",
       "mapping_state": "implemented",
-      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices with (int)-truncated bounds/edge steps; defined signed arithmetic and nonzero reference weight sum; reference byte-quantized barycentric color interpolation. Every format 1..13 is compared with raylib on the surface-format profile.",
+      "scope": "Every Surface format; covered pixels use ImageDrawPixel. Finite vertices whose (int) bounds, steps, seeds and increments fit in a C int, including magnitudes above 32767. Formats 1..13 are on the surface-format profile; wider coordinates are compared on format 7.",
       "gaps": [
-        "Degenerate/undefined reference gradients",
-        "Other formats",
-        "Wider coordinate domains",
+        "Undefined native behavior: a zero weight sum, a signed overflow of an edge word, or a byte weight outside the unsigned-char cast is not the reference result",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -49103,9 +49101,10 @@
         "performance": "unverified"
       },
       "evidence": [
-        "tests/fixtures/images.json",
+        "tools/triangle_gradient_probe.py",
+        "tools/surface_format_probe.py",
         "docs/API.md",
-        "tools/surface_format_probe.py"
+        "tests/fixtures/images.json"
       ],
       "gate_evidence": {},
       "target_results": {},

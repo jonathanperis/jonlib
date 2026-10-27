@@ -354,7 +354,7 @@ returns the original owner.
 | `Surface.draw_circle(surface, cx, cy, radius, color)` / `_v` / `draw_circle_lines` / `_lines_v` | Midpoint coverage and outlines, radius U32; vector centers truncate. |
 | `Surface.draw_line(surface, x0, y0, x1, y1, color)` / `_v` / `_ex` | Fixed-point stepping including the final endpoint, short axis rounded; `_v` adds a half then truncates; `_ex` draws dominant-axis strips. Thickness is the C `int` in two's complement, -32767..32767: a thickness `<= -2` draws nothing, and -1, 0 and 1 draw one stroke. `INT_MIN` overflows `thick-1` in C and is outside this profile. |
 | `Surface.draw_triangle(surface, v1, v2, v3, color)` / `draw_triangle_lines` / `draw_triangle_fan` / `draw_triangle_strip` | Truncated bounds and edge steps, both windings, inclusive edges; fans/strips with fewer than three points draw nothing. |
-| `Surface.draw_triangle_gradient(surface, v1, v2, v3, c1, c2, c3)` | `ImageDrawTriangleGradient`: byte-quantized barycentric colors, each stored as `ImageDrawPixel` encodes it. |
+| `Surface.draw_triangle_gradient(surface, v1, v2, v3, c1, c2, c3)` | `ImageDrawTriangleGradient`: byte-quantized barycentric colors, each stored as `ImageDrawPixel` encodes it. Finite vertices whose `(int)` bounds, edge steps, row seeds and increments fit in a C `int`, including magnitudes above 32767. |
 | `Surface.draw_rectangle_pro(surface, rectangle, origin, rotation, color)` / `draw_rectangle_pro_for(libm, ...)` | `ImageDrawRectanglePro`: every pixel of the turned rectangle's integer bounding box whose center, turned back about `rectangle + origin`, lies in `[-origin, size - origin)`. Bounded finite fields and a rotation whose `DEG2RAD` multiple the `M.Libm` profile verifies, otherwise `InvalidRequest`; nothing for a width or height `<= 0`. |
 | `Surface.draw_rectangle_gradient_ex(surface, rectangle, c1, c2, c3, c4)` | `ImageDrawRectangleGradientEx`: pixels `floorf(x)..ceilf(x + width)` (clipped), bilinear F32 weights of the clamped `tx`, `ty` on top-left, bottom-left, bottom-right and top-right colors, channels truncated. A width or height that compares `<= 0` draws nothing. Otherwise each `floor`/`ceil` must fit in a C `int`; a non-finite field or an out-of-range cast is `InvalidRequest`. |
 | `Surface.draw_circle_gradient(surface, center, radius, inner, outer)` | `ImageDrawCircleGradient`: pixels whose center lies within the radius, `inner + (outer - inner)*sqrtf(d²)/radius` per channel, truncated. A radius that compares `<= 0` draws nothing. Otherwise `floor(center - radius)` and `ceil(center + radius)` must fit in a C `int`; a non-finite field or an out-of-range cast is `InvalidRequest`. |
@@ -402,7 +402,7 @@ finite integers in -32767..32767**. Radius is **0..32767**. This permits negativ
 positions while Bend has no native signed integer type. The vector wrappers,
 `draw_rectangle_rec`, `draw_rectangle_lines_ex` and `draw_image_rect` accept bounded
 finite fractional fields with the conversion rules above, as do filled triangle
-vertices (truncated like raylib's `int` casts). `draw_rectangle_gradient_ex` and `draw_circle_gradient` accept finite fields whose `floor` and `ceil` results fit in a C `int`, and draw nothing when a side or the radius compares `<= 0`. A non-finite field or a cast outside that range is `InvalidRequest`. NaN, infinity and larger values are outside the rest of the drawing profile.
+vertices (truncated like raylib's `int` casts). `draw_rectangle_gradient_ex` and `draw_circle_gradient` accept finite fields whose `floor` and `ceil` results fit in a C `int`, and draw nothing when a side or the radius compares `<= 0`. `draw_triangle_gradient` accepts finite vertices whose `(int)` bounds, edge steps, row seeds and barycentric increments fit in a C `int`, including magnitudes above 32767. A non-finite field or a cast outside that range is `InvalidRequest`. NaN, infinity and larger values are outside the rest of the drawing profile.
 Surface operations do not promise successful allocation when the process runs
 out of memory; Bend's runtime treats allocation failure as fatal.
 
@@ -487,10 +487,10 @@ negative copy sizes or invalid pointer arithmetic and remain outside the profile
 
 Vertex-colored triangles quantize each barycentric weight to a byte before
 interpolating RGBA. This can darken interior pixels even when vertex colors are
-equal; use `draw_triangle` for the reference flat-color operation. Degenerate
-gradient triangles are excluded because the reference divides by zero and then
-converts non-finite weights to bytes. Flat triangles retain their existing
-degenerate behavior.
+equal; use `draw_triangle` for the reference flat-color operation. A zero weight
+sum is undefined in C: the reference divides by zero and then converts non-finite
+weights to bytes. Coordinates whose edge words fit, including magnitudes above
+32767, are compared. Flat triangles retain their existing degenerate behavior.
 
 ### Errors
 
