@@ -1,7 +1,7 @@
 # Compatibility ledger
 
 Reference: raylib **6.2** at `02566453880e06bec97f5b8160fa6fe1e98397ca`.
-Candidate: Bend **2.0.39+jonlib-metal.2.os-effects.2.apple-clang.1.js-constant.1**, base
+Candidate: Bend **2.0.39+jonlib-metal.2.os-effects.2.apple-clang.2.js-constant.1**, base
 `a3efe8a3801f423827424227172eed9802c5e6cb` plus the exact
 [compiler overlay](../patches/README.md) declared in `toolchain.json`.
 Profile: **rgba8-cpu-images-v1**, with domains defined in [API.md](API.md).

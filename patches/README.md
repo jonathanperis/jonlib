@@ -18,12 +18,13 @@ The overlay is four reviewed patches for the exact Bend revision in
    through one worker on Bun and Node); that def is left as upstream wrote it.
    `Process.shell` is the `/bin/sh -c` effect `OpenURL` needs.
 3. `bend-apple-clang.patch` passes `-fno-stack-check` on the CPU clang
-   line when the compiler is Apple clang 21 or newer. That clang's Darwin
+   line when the compiler is Apple clang 17 or newer. That compiler's Darwin
    default `-fstack-check` probes the stack with a scratch register that
    `preserve_none` still uses for a later argument, and the backend aborts
    (`live register clobbered by inserted prologue instructions`). The host
-   outline and musttail lanes use that calling convention. Linux builds are
-   unchanged.
+   outline and musttail lanes use that calling convention. The hosted
+   `macos-15` image is Apple clang 17.0.0 (Xcode 16.4); this Mac is 21.0.0.
+   Linux builds are unchanged.
 4. `bend-js-constant.patch` shares one JavaScript value for a nullary def
    whose body is a pure constructor literal. The C lane already keeps that
    tree in `STAT_IMG` and copies it once. The JavaScript lane was rebuilding
