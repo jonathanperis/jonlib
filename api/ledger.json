@@ -48706,7 +48706,6 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite Vector2 coordinates truncated before pixel clipping. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Other formats",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
