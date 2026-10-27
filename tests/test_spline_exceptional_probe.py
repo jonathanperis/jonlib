@@ -30,3 +30,10 @@ class SplineSignTests(unittest.TestCase):
             ('cubic', 'fused'),
         ):
             self.assertFalse(probe.quiet_sign_uncompared(kind, slot, 'javascript'))
+
+    def test_a_basis_sign_is_shared_only_when_every_lane_shows_it(self):
+        self.assertTrue(probe.shared_basis_sign('basis', ['sign', 'sign', 'sign']))
+        self.assertFalse(probe.shared_basis_sign('basis', ['sign', 'sign', 'ok']))
+        self.assertFalse(probe.shared_basis_sign('basis', ['sign', 'value', 'sign']))
+        self.assertFalse(probe.shared_basis_sign('linear', ['sign', 'sign', 'sign']))
+        self.assertFalse(probe.shared_basis_sign('basis', []))

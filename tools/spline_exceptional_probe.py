@@ -5,10 +5,12 @@ Linear, B-spline, Catmull-Rom and quadratic Bezier. The uncontracted result
 is the pinned rshapes.c functions compiled with FP_CONTRACT OFF (the Linux
 linked library is that profile). The fused result is those Bend nestings
 with fmaf: finite normals stay on the integer kernel and a non-finite
-factor or addend uses the total fma. t is not clamped. A quiet-NaN sign
-on linear, basis or quadratic points is not compared: Apple clang's sign
-disagrees with both Bend lanes, and Linux clang agrees with JavaScript.
-Catmull-Rom matches every bit on every lane. Cubic Bezier is included only
+factor or addend uses the total fma. t is not clamped. Recorded CPU
+quiet-NaN signs — linear, quadratic, and a fused basis point — are not
+compared. An uncontracted basis point and JavaScript match every bit,
+except a quiet-NaN sign that every lane shows on that same basis cell
+(Apple clang's reference sign on the recorded fused rows). Catmull-Rom
+matches every bit on every lane. Cubic Bezier is included only
 on a Glibc239 host, for t in
 {-0, 0, 0.5, 1} (the cubes stay inside the powf profile) with exceptional
 control points; its squares stay products and t is not swept.
@@ -219,6 +221,17 @@ def quiet_sign_uncompared(kind, slot, lane):
     return kind == 'basis' and slot == 'fused'
 
 
+def shared_basis_sign(kind, diffs):
+    """True when every lane's diff on this basis cell is a quiet-NaN sign.
+
+    Linux leaves this false: JavaScript matches the reference, so an
+    uncontracted basis point stays compared. Apple clang's reference sign
+    disagrees with every Bend lane on the rows whose fused CPU sign is
+    already the recorded gap.
+    """
+    return kind == 'basis' and bool(diffs) and all(diff == 'sign' for diff in diffs)
+
+
 def main():
     probe = probekit.Probe('spline-exceptional', probekit.arguments(__doc__))
     libm = gradient_reference()
@@ -231,32 +244,41 @@ def main():
         raise ProbeFailure(f'spline-exceptional: native produced {len(expected)} rows for {len(rows)} cases')
     lanes = probe.candidates(render(libm), rows, batch=160, timeout=900)
     sign_rows = {}
+    cell_diffs = {}
     for lane, actual in lanes.items():
         if len(actual) != len(expected):
             raise ProbeFailure(f'spline-exceptional: {lane} produced {len(actual)} rows, expected {len(expected)}')
-        allowed, problems = [], []
         for index, (want, got) in enumerate(zip(expected, actual)):
+            for side, slot in ((0, 'uncontracted'), (1, 'fused')):
+                cell_diffs.setdefault((index, slot), {})[lane] = point_diff(want[side], got[side])
+    first_problem = None
+    for lane, actual in lanes.items():
+        allowed, problems = [], []
+        for index, (_want, _got) in enumerate(zip(expected, actual)):
             kind, _args = rows[index]
             for side, slot in ((0, 'uncontracted'), (1, 'fused')):
-                diff = point_diff(want[side], got[side])
+                diff = cell_diffs[(index, slot)][lane]
                 if diff == 'ok':
                     continue
-                # CPU lanes disagree with clang on the recorded quiet-NaN signs.
-                # JavaScript matches every bit, and an uncontracted basis point does too.
-                if diff == 'sign' and quiet_sign_uncompared(kind, slot, lane):
+                # Recorded CPU gaps stay uncompared on their own lanes.
+                # A basis sign is also uncompared when every lane shows it.
+                cell = [cell_diffs[(index, slot)][name] for name in lanes]
+                if diff == 'sign' and (quiet_sign_uncompared(kind, slot, lane) or shared_basis_sign(kind, cell)):
                     allowed.append((kind, slot, index))
                     continue
-                problems.append((kind, slot, diff, index))
+                problems.append((kind, slot, diff, index, side))
         sign_rows[lane] = len(allowed)
         probe.report.setdefault('lanes', {})[lane] = dict(passed=not problems, rows=len(actual), sign_rows=len(allowed))
         probe.save()
-        if problems:
-            kind, slot, diff, index = problems[0]
-            side = 0 if slot == 'uncontracted' else 1
-            raise ProbeFailure(
-                f'spline-exceptional: {lane} has {len(problems)} {diff} mismatches; first {slot} {kind} '
-                f'{tuple(hex(word) for word in rows[index][1])}: reference={json.dumps(expected[index][side])} '
-                f'jonlib={json.dumps(actual[index][side])}')
+        if problems and first_problem is None:
+            first_problem = (lane, problems)
+    if first_problem is not None:
+        lane, problems = first_problem
+        kind, slot, diff, index, side = problems[0]
+        raise ProbeFailure(
+            f'spline-exceptional: {lane} has {len(problems)} {diff} mismatches; first {slot} {kind} '
+            f'{tuple(hex(word) for word in rows[index][1])}: reference={json.dumps(expected[index][side])} '
+            f'jonlib={json.dumps(lanes[lane][index][side])}')
     counts = {kind: sum(row_kind == kind for row_kind, _ in rows)
               for kind in ('linear', 'basis', 'catmull', 'quad', 'cubic')}
     probe.finish(cases=len(rows), libm=libm, sign_rows=sign_rows, **counts,

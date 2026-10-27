@@ -43832,9 +43832,9 @@
       "status": "partial",
       "jonlib": "Spline.basis_for / Spline.basis",
       "mapping_state": "implemented",
-      "scope": "Reference B-spline coefficients, division by six and Horner order with explicit fused and uncontracted profiles, including exceptional, subnormal and extrapolated t. A fused CPU quiet-NaN sign can differ; JavaScript matches every bit.",
+      "scope": "Reference B-spline coefficients, division by six and Horner order with explicit fused and uncontracted profiles, including exceptional, subnormal and extrapolated t. A fused CPU quiet-NaN sign can differ. A quiet-NaN sign that every lane shows on the same basis cell is that gap; JavaScript and an uncontracted point match every other bit.",
       "gaps": [
-        "Quiet-NaN signs of a fused CPU point are not reproduced; JavaScript matches every bit",
+        "Quiet-NaN signs of a fused CPU point are not reproduced. A basis quiet-NaN sign is uncompared when every lane shows it; JavaScript matches every other bit",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
