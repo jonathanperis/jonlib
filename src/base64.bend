@@ -23,6 +23,23 @@ def encoded(valid: Bool, size: U32, reversed: String) -> Maybe<&2, Encoded>:
     case False{}: None{}
     case True{}: Some{Encoded{(size + 1 : U32), String.reverse(reversed)}}
 
+def encoding(bytes: +List<U32>, +count: U32, +size: U32, reversed: String, valid: Bool) -> Maybe<&2, Encoded>:
+  match bytes valid:
+    case _ False{}: None{}
+    case Nil{} True{}: encoded(True{}, size, reversed)
+    case Con{+a, Nil{}} True{}:
+      encoded(((a <= 255) && (count + 1 <= 1048576) : U32), (size + 4 : U32), block(1, a, 0, 0, reversed))
+    case Con{+a, Con{+b, Nil{}}} True{}:
+      encoded(((a <= 255) && (b <= 255) && (count + 2 <= 1048576) : U32), (size + 4 : U32), block(2, a, b, 0, reversed))
+    case Con{+a, Con{+b, Con{+c, rest}}} True{}:
+      encoding(rest, (count + 3 : U32), (size + 4 : U32), block(3, a, b, c, reversed),
+        ((a <= 255) && (b <= 255) && (c <= 255) && (count + 3 <= 1048576) : U32))
+
+def encode(bytes: +List<U32>) -> Maybe<&2, Encoded>:
+  encoding(bytes, 0, 0, "", True{})
+
+# 1610612733 is the largest length whose rounded multiple of 3 keeps
+# 4*(paddedSize/3)+1 inside a signed int.
 def encoding_until(bytes: +List<U32>, +count: U32, +size: U32, reversed: String, valid: Bool, +limit: U32) -> Maybe<&2, Encoded>:
   match bytes valid:
     case _ False{}: None{}
@@ -35,11 +52,6 @@ def encoding_until(bytes: +List<U32>, +count: U32, +size: U32, reversed: String,
       encoding_until(rest, (count + 3 : U32), (size + 4 : U32), block(3, a, b, c, reversed),
         ((a <= 255) && (b <= 255) && (c <= 255) && (count + 3 <= limit) : U32), limit)
 
-def encode(bytes: +List<U32>) -> Maybe<&2, Encoded>:
-  encoding_until(bytes, 0, 0, "", True{}, 1048576)
-
-# 1610612733 is the largest length whose rounded multiple of 3 keeps
-# 4*(paddedSize/3)+1 inside a signed int.
 def encode_wide(bytes: +List<U32>) -> Maybe<&2, Encoded>:
   encoding_until(bytes, 0, 0, "", True{}, 1610612733)
 
