@@ -3,8 +3,9 @@
 
 Pure operations run on CPU/JS and optionally forced Metal. File IO runs only on
 CPU/JS. Packed memory PNG, raw loading and conversion to compressed format 14,
-out-of-domain R32G32B32->R32 and GetPixelColor remain
-explicit Jonlib rejection contracts, not assertions of native equivalence.
+and out-of-domain R32G32B32->R32 remain explicit Jonlib rejection contracts.
+GetPixelColor of a defined R32 sample is the native color; a sample whose
+component*255 lies outside (-1, 256) stays OutOfDomain.
 """
 import hashlib
 import json
@@ -78,7 +79,7 @@ def schemas(ops):
             'channel_reject': lambda:[owner],
             'independent': lambda:[owner,dict(kind='exact',value=list(struct.pack('<III',1,1,1))+[0])],
             'float_reject': lambda:[dict(kind='exact',value=list(struct.pack('<6I',1,1,9,0x80000000,0x80000001,0x3f400000)))],
-            'pixel_reject': lambda:[dict(kind='exact',value=[1])],
+            'pixel_reject': lambda:[dict(kind='bytes',size=5)],
         }[kind]()
         result.extend(dict(row,operation=index,operation_kind=kind) for row in rows)
     return result
@@ -240,7 +241,9 @@ def reference_program(ops, directory):
         elif kind == 'float_reject':
             lines.append('{unsigned words[]={0x80000000,0x80000001,0x3f400000};Image image={words,1,1,1,9};emit(image);}')
         elif kind == 'pixel_reject':
-            lines.append('byte(1);end();')
+            # Defined R32 sample 0.5, then the out-of-domain contract flag.
+            # The flag is not a native read: component*255 outside (-1, 256) is undefined.
+            lines.append('{unsigned char data[]={0,0,0,63};word((unsigned)ColorToInt(GetPixelColor(data,8)));byte(1);end();}')
         else:
             raise ValueError(f'Unknown R32 operation {kind}')
         if case:
@@ -424,12 +427,29 @@ def observe_float_reject(result: Result<&1, &1, J.Surface & J.Surface.Error, J.S
   match result:
     case Fail{Tuple{image, J.OutOfDomain{}}}: formatted(J.Surface.export(image))
     case _: IO.die(Unit, 1, "Out-of-domain R32G32B32 to format8 must retain owner")
-def pixel_result(result: Result<&2, &2, J.Surface.Error, U32>) -> Bool:
+def pixel.defined(result: Result<&2, &2, J.Surface.Error, U32>) -> Maybe<&2, U32>:
   match result:
-    case Fail{J.UnsupportedFormat{}}: True{}
+    case Done{+color}: Some{color}
+    case _: None{}
+def pixel.outside(result: Result<&2, &2, J.Surface.Error, U32>) -> Bool:
+  match result:
+    case Fail{J.OutOfDomain{}}: True{}
     case _: False{}
-def pixel_rejected() -> Bool:
-  pixel_result(J.Pixel.get_color([0,0,0,63], 8))
+# Little-endian ColorToInt bytes, then 1 when 2.0 (bytes 0,0,0,64) is OutOfDomain.
+def pixel.accepted(+color: U32, outside: Bool) -> Maybe<&1, List<&1, U32>>:
+  match outside:
+    case True{}: Some{List.append(&1, U32, List.reverse(&1, U32, word_bytes(~&1, 4n, color, Nil{})), [1])}
+    case False{}: None{}
+def pixel.contract.defined(defined: Maybe<&2, U32>, outside: Bool) -> Maybe<&1, List<&1, U32>>:
+  match defined:
+    case Some{+color}: pixel.accepted(color, outside)
+    case None{}: None{}
+def pixel.contract() -> Maybe<&1, List<&1, U32>>:
+  pixel.contract.defined(pixel.defined(J.Pixel.get_color([0, 0, 0, 63], 8)), pixel.outside(J.Pixel.get_color([0, 0, 0, 64], 8)))
+def observe_pixel(result: Maybe<&1, List<&1, U32>>) -> IO(Unit):
+  match result:
+    case Some{bytes}: emit_bytes(~&1, bytes)
+    case None{}: IO.die(Unit, 1, "R32 GetPixelColor contract differs")
 '''
 
 
@@ -492,7 +512,7 @@ def candidate_program(ops, gpu, directory, raw_load_controls=True):
         elif kind == 'float_reject':
             line = f'observe_float_reject(reject_float{bang}())'
         elif kind == 'pixel_reject':
-            line = f'emit_bytes(~&1, [Bool.to_u32(pixel_rejected{bang}())])'
+            line = f'observe_pixel(pixel.contract{bang}())'
         else:
             raise ValueError(f'Unknown R32 operation {kind}')
         body += '    '+line+'\n'
