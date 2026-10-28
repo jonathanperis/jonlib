@@ -26078,13 +26078,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "tools/frame_probe.py",
         "docs/FRAME.md",
         "src/frame.bend",
@@ -27811,13 +27812,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "docs/DRIVER.md",
         "src/core_state.bend",
         "LAWS.bend",
@@ -27872,13 +27874,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "docs/DRIVER.md",
         "src/core_state.bend",
         "LAWS.bend",
@@ -27933,13 +27936,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "docs/DRIVER.md",
         "src/core_state.bend",
         "LAWS.bend",
@@ -27994,13 +27998,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "docs/DRIVER.md",
         "src/core_state.bend",
         "LAWS.bend",
@@ -30000,7 +30005,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -30061,7 +30066,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -30553,13 +30558,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "partial",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "tools/vr_probe.py",
         "docs/VR.md"
       ],
@@ -30919,7 +30925,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -30980,7 +30986,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -31041,7 +31047,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -31103,7 +31109,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -31165,8 +31171,8 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"
@@ -32194,12 +32200,13 @@
       "mapping_state": "implemented",
       "scope": "U32 seed initializes an owned stream using pinned rprand SplitMix64 extraction and Xoshiro128** state, without implicit global mutation.",
       "gaps": [
-        "Implicit-global and libc fallback profiles",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
-      "adaptations": [],
+      "adaptations": [
+        "The libc rand path is the SUPPORT_RPRAND_GENERATOR=0 build; pinned raylib enables rprand and the seed is an owned stream"
+      ],
       "blocker": null,
       "gates": {
         "availability": "partial",
@@ -32741,7 +32748,7 @@
       "status": "partial",
       "jonlib": "Log.trace_with",
       "mapping_state": "implemented",
-      "scope": "The handler receives the log type and text of messages at or above the threshold instead of standard output.",
+      "scope": "The handler receives the log type and text of messages at or above the threshold instead of standard output. Each call consumes the logger.",
       "gaps": [],
       "adaptations": [
         "Process-wide state replaced by explicit values (language adaptation)",
@@ -32750,8 +32757,8 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -32927,13 +32934,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
-        "ownership": "partial",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "tests/transforms.bend",
         "docs/LOGGING.md"
       ],
@@ -32988,7 +32996,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "partial",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "partial"
@@ -33109,7 +33117,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "partial",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "partial"
@@ -33236,7 +33244,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "partial",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "partial"
@@ -33357,7 +33365,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "partial",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "partial"
@@ -33413,13 +33421,14 @@
         "Integration: font, audio, model and shader loaders are not ported, so their file callbacks are not exercised"
       ],
       "adaptations": [
-        "Process-wide state replaced by explicit values (language adaptation)"
+        "Process-wide state replaced by explicit values (language adaptation)",
+        "The bytes the callback returns are owned by the caller, which unloads them"
       ],
       "blocker": null,
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "unverified",
         "performance": "unverified"
@@ -33474,13 +33483,14 @@
         "Integration: font, audio, model and shader loaders are not ported, so their file callbacks are not exercised"
       ],
       "adaptations": [
-        "Process-wide state replaced by explicit values (language adaptation)"
+        "Process-wide state replaced by explicit values (language adaptation)",
+        "The bytes passed to the callback stay owned by the caller and are not retained"
       ],
       "blocker": null,
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "unverified",
         "performance": "unverified"
@@ -33535,13 +33545,14 @@
         "Integration: font, audio, model and shader loaders are not ported, so their file callbacks are not exercised"
       ],
       "adaptations": [
-        "Process-wide state replaced by explicit values (language adaptation)"
+        "Process-wide state replaced by explicit values (language adaptation)",
+        "The text the callback returns is owned by the caller, which unloads it"
       ],
       "blocker": null,
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "unverified",
         "performance": "unverified"
@@ -33596,13 +33607,14 @@
         "Integration: font, audio, model and shader loaders are not ported, so their file callbacks are not exercised"
       ],
       "adaptations": [
-        "Process-wide state replaced by explicit values (language adaptation)"
+        "Process-wide state replaced by explicit values (language adaptation)",
+        "The text passed to the callback stays owned by the caller and is not retained"
       ],
       "blocker": null,
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "unverified",
         "performance": "unverified"
@@ -36227,13 +36239,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "partial",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/automation.bend",
@@ -45301,13 +45314,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "partial",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "tests/transforms.bend",
         "docs/API.md",
         "tools/stored_probe.py"
@@ -45363,13 +45377,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
-        "ownership": "partial",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "tests/transforms.bend",
         "docs/API.md",
         "docs/IMAGE-FILES.md"
@@ -47281,9 +47296,9 @@
       "status": "partial",
       "jonlib": "Surface.resize_canvas",
       "mapping_state": "implemented",
-      "scope": "Every Surface format, dimensions 1..4096; bounded integral offsets with positive overlap for changed sizes. Exact sample movement, including NaN words, and same-size no-ops; the fill is stored with SetPixelColor, which leaves R32 and R32G32B32 canvases zero. A Surface is one level. Rejected requests retain original owners. Every format 1..13 is compared with raylib on the surface-format profile.",
+      "scope": "Every Surface format, dimensions 1..4096; bounded integral offsets. An empty copied span is that fill alone (SetPixelColor; R32 and R32G32B32 stay zero). A negative source width with a positive height is undefined. Exact sample movement, including NaN words, and same-size no-ops. A Surface is one level. Rejected requests retain original owners. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "No-overlap/unsafe reference copy domains",
+        "Undefined native behavior: a negative source width and a positive height make ImageResizeCanvas memcpy a negative length",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -48337,13 +48352,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
-        "ownership": "partial",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "tests/transforms.bend",
         "docs/API.md"
       ],
@@ -53482,13 +53498,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "partial",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "tools/ttf_probe.py",
         "tools/ttf_fonts.py",
         "docs/FONTS.md",
@@ -60818,13 +60835,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "partial",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "tools/gltf_anim_probe.py",
         "docs/MODELS.md",
         "src/gltf_anim.bend",
@@ -62317,13 +62335,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "partial",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/wave_release_probe.py",
         "tools/wav_probe.py",
         "docs/AUDIO.md"
       ],
@@ -63375,13 +63394,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/wave_release_probe.py",
         "tools/wav_probe.py",
         "docs/AUDIO.md"
       ],
@@ -98550,13 +98570,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "tools/rlgl_probe.py",
         "docs/RLGL.md",
         "src/frame.bend",
@@ -98611,13 +98632,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "tools/rlgl_probe.py",
         "docs/RLGL.md",
         "src/frame.bend",
@@ -101435,13 +101457,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "docs/RLGL.md",
         "jonlib.bend"
       ],
@@ -103520,13 +103543,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "tools/examples_probe.py",
         "docs/RLGL.md",
         "jonlib.bend"
@@ -103765,13 +103789,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/lifecycle_probe.py",
         "tools/rlgl_framebuffer_probe.py",
         "docs/RLGL.md",
         "jonlib.bend"

@@ -59,12 +59,12 @@ def pixels(width,height):
 def fixtures():
     cases=[]
     for fill in (0xff0000ff,0x11223300):
-        for width,height,x,y in ((5,4,1,1),(2,2,-1,-1),(2,1,0,0),(4,4,-1,1),(4,1,2,0),(3,2,100,-100)):
+        for width,height,x,y in ((5,4,1,1),(2,2,-1,-1),(2,1,0,0),(4,4,-1,1),(4,1,2,0),(3,2,100,-100),(4,3,-3,0),(4,3,0,5)):
             cases.append(dict(kind='canvas',width=3,height=2,target_width=width,target_height=height,x=x,y=y,fill=fill,bytes=pixels(3,2)))
     for width,height in ((1,1),(2,2),(3,2),(5,3),(17,1),(4096,1)):
         cases.append(dict(kind='pot',width=width,height=height,target_width=1<<(width-1).bit_length(),target_height=1<<(height-1).bit_length(),x=0,y=0,fill=0xffffffff,bytes=pixels(width,height)))
     controls=[dict(kind='canvas',width=3,height=2,target_width=w,target_height=h,x=x,y=y,fill=0xff0000ff,bytes=pixels(3,2),error=error)
-              for w,h,x,y,error in ((0,2,0,0,0),(2,4097,0,0,0),(5,4,0.5,0,1),(5,4,-3,0,1),(5,4,6,0,1),(3,2,32768,0,1))]
+              for w,h,x,y,error in ((0,2,0,0,0),(2,4097,0,0,0),(5,4,0.5,0,1),(5,4,6,0,1),(3,2,32768,0,1))]
     return cases,controls
 
 

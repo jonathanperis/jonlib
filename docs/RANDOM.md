@@ -14,8 +14,10 @@ low/high extraction order in `rprand.h`. Stream state is explicit and owned.
   word for library composition; it is not an additional raylib API mapping.
 
 Always create states with `Random.seed` and use the returned owner for the next
-operation. This adapts the C global state to Bend ownership. Implicit-global
-mutation and the alternative libc generator remain separate compatibility gaps.
+operation. This adapts the C global state to Bend ownership. The pinned raylib
+enables `SUPPORT_RPRAND_GENERATOR`, so `SetRandomSeed` is that stream. The libc
+`rand` path is the build with the switch off, recorded on
+`SUPPORT_RPRAND_GENERATOR`, not a second result of the pinned library.
 
 ## Unique sequences
 

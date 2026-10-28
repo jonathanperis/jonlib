@@ -14,6 +14,11 @@ def pixels_kept(result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) 
     case Done{values}: kept_values(values)
     case Fail{_}: False{}
 
+def canvas_filled(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>, +width: U32, +height: U32) -> Bool:
+  match result:
+    case Fail{_}: False{}
+    case Done{J.Surface{+w, +h, _, _}}: U32.is_eq(w, width) && U32.is_eq(h, height)
+
 def failed(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>, expected: U32) -> Bool:
   match result:
     case Done{_}:
@@ -50,7 +55,7 @@ def invalid(created: Maybe<J.Surface>, operation: U32) -> Bool:
         case 6:
           failed(J.Surface.resize_canvas(surface, 3, 2, 0.5, 0.0, 0), 1)
         case 7:
-          failed(J.Surface.resize_canvas(surface, 3, 2, 3.0, 0.0, 0), 1)
+          canvas_filled(J.Surface.resize_canvas(surface, 3, 2, 3.0, 0.0, 0), 3, 2)
         case 8:
           failed(J.Surface.rotate_degrees(surface, 361.0), 1)
         case _:

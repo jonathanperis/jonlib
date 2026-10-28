@@ -3934,6 +3934,29 @@ def Surface.canvas.storage(pixels: Surface.Pixels, +format: U32, fill: U32, dept
       Surface.pixels.quads(Raster.canvas.copy(~Surface.Quad, U32.to_nat(count), 0, cols, sw, dw, source_at, output_at,
         (values, Array.new(Surface.Quad, depth, Surface.quad.zero()))))
 
+# ImageResizeCanvas's source span after the offset clip, in the same order as
+# rtextures.c. Integral offsets in -32767..32767 make every step exact.
+def Surface.canvas.copy_span(+source: U32, +limit: U32, +offset: F32) -> F32:
+  +base = U32.to_f32(source)
+  +edge = U32.to_f32(limit)
+  +shifted = Bool.pick(F32, (offset < 0.0 : F32), (base + offset : F32),
+    Bool.pick(F32, ((offset + base) > edge : F32), (edge - offset : F32), base))
+  Bool.pick(F32, (edge < shifted : F32), edge, shifted)
+
+# A positive height and a negative width is the memcpy length raylib casts
+# from a negative int. Every other empty span copies nothing.
+def Surface.canvas.unsafe(+sw: U32, +sh: U32, +width: U32, +height: U32, +x: F32, +y: F32) -> Bool:
+  (Surface.canvas.copy_span(sh, height, y) > 0.0 : F32) && (Surface.canvas.copy_span(sw, width, x) < 0.0 : F32)
+
+def Surface.canvas.blank(+sw: U32, sh: U32, +format: U32, pixels: Surface.Pixels, +width: U32, +height: U32, fill: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Done{Surface.pixels.resampled(width, height, format, Surface.canvas.storage(pixels, format, fill, Storage.depth((width * height : U32)),
+    0, 0, sw, width, 0, 0))}
+
+def Surface.canvas.empty(unsafe: Bool, +sw: U32, sh: U32, +format: U32, pixels: Surface.Pixels, +width: U32, +height: U32, fill: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match unsafe:
+    case True{}: Fail{(Surface{sw, sh, format, pixels}, InvalidRectangle{})}
+    case False{}: Surface.canvas.blank(sw, sh, format, pixels, width, height, fill)
+
 def Surface.canvas.overlap(valid: Bool, +sw: U32, sh: U32, +format: U32, pixels: Surface.Pixels, +width: U32, +height: U32, sx: U32, sy: U32, dx: U32, dy: U32, +cols: U32, rows: U32, fill: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match valid:
     case False{}: Fail{(Surface{sw, sh, format, pixels}, InvalidRectangle{})}
@@ -3941,15 +3964,21 @@ def Surface.canvas.overlap(valid: Bool, +sw: U32, sh: U32, +format: U32, pixels:
       Done{Surface.pixels.resampled(width, height, format, Surface.canvas.storage(pixels, format, fill, Storage.depth((width * height : U32)),
         (cols * rows : U32), cols, sw, width, (sy * sw + sx : U32), (dy * width + dx : U32)))}
 
-def Surface.canvas.mapped(sw: U32, sh: U32, format: U32, pixels: Surface.Pixels, width: U32, height: U32, fill: U32, mapping: Raster.Canvas) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+def Surface.canvas.chosen(overlap: Bool, unsafe: Bool, +sw: U32, sh: U32, +format: U32, pixels: Surface.Pixels, +width: U32, +height: U32, sx: U32, sy: U32, dx: U32, dy: U32, +cols: U32, rows: U32, fill: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match overlap:
+    case True{}: Surface.canvas.overlap(True{}, sw, sh, format, pixels, width, height, sx, sy, dx, dy, cols, rows, fill)
+    case False{}: Surface.canvas.empty(unsafe, sw, sh, format, pixels, width, height, fill)
+
+def Surface.canvas.mapped(+sw: U32, +sh: U32, format: U32, pixels: Surface.Pixels, +width: U32, +height: U32, fill: U32, +x: F32, +y: F32, mapping: Raster.Canvas) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Canvas{sx, sy, dx, dy, +cols, +rows} = mapping
-  Surface.canvas.overlap(((cols >= 1) && (rows >= 1) : U32), sw, sh, format, pixels, width, height, sx, sy, dx, dy, cols, rows, fill)
+  Surface.canvas.chosen(((cols >= 1) && (rows >= 1) : U32), Surface.canvas.unsafe(sw, sh, width, height, x, y),
+    sw, sh, format, pixels, width, height, sx, sy, dx, dy, cols, rows, fill)
 
 def Surface.canvas.route(same: Bool, +sw: U32, +sh: U32, format: U32, pixels: Surface.Pixels, +width: U32, +height: U32, +x: F32, +y: F32, fill: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match same:
     case True{}: Done{Surface{sw, sh, format, pixels}}
     case False{}:
-      Surface.canvas.mapped(sw, sh, format, pixels, width, height, fill, Raster.canvas.mapping(sw, sh, width, height, x, y))
+      Surface.canvas.mapped(sw, sh, format, pixels, width, height, fill, x, y, Raster.canvas.mapping(sw, sh, width, height, x, y))
 
 def Surface.canvas.checked(size_ok: Bool, offsets_ok: Bool, surface: Surface, +width: U32, +height: U32, x: F32, y: F32, fill: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match size_ok offsets_ok:
@@ -3960,6 +3989,8 @@ def Surface.canvas.checked(size_ok: Bool, offsets_ok: Bool, surface: Surface, +w
       Surface.canvas.route(U32.is_eq(sw, width) && U32.is_eq(sh, height), sw, sh, format, pixels, width, height, x, y, fill)
 
 # ImageResizeCanvas: integral offsets; the fill color is stored with SetPixelColor.
+# An empty copied span is that fill alone. A negative width with a positive
+# height is the native memcpy of a negative length and stays InvalidRectangle.
 def Surface.resize_canvas(surface: Surface, +width: U32, +height: U32, +x: F32, +y: F32, fill: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Surface.canvas.checked(((width >= 1) && (height >= 1) && (width <= 4096) && (height <= 4096) : U32),
     ((F32.abs(x) <= 32767.0) && (F32.abs(y) <= 32767.0) : F32)

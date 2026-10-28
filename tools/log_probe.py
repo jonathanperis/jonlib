@@ -28,23 +28,32 @@ def bend_string(text):
 
 
 def native_log(probe):
-    lines = ['#include "raylib.h"', 'int main(void){']
+    lines = ['#include "raylib.h"', '#include <stdio.h>', '#include <stdarg.h>',
+             'static void on_trace(int type, const char *text, va_list args){(void)args;printf("cb %d %s\\n", type, text);}',
+             'int main(void){']
     for level, kind, text in CASES:
         lines.append(f'SetTraceLogLevel({level});TraceLog({kind},{c_string(text)});')
+    lines.append('SetTraceLogCallback(on_trace);SetTraceLogLevel(3);TraceLog(4,"hello");TraceLog(2,"hidden");')
     return probe.native('\n'.join(lines + ['return 0;}']) + '\n', 'log-reference')
 
 
 def render_log(selected, gpu):
     # level_owned consumes the logger Log.level returns. The printed line is the same.
+    # consumed_trace is SetTraceLogCallback: the handler gets the type and text.
     body = '''import Base
 import ../../jonlib.bend as J
 def level_owned(+level: U32, +kind: U32, text: String) -> IO(Unit):
   J.Log.trace(J.Log.level(level), kind, text)
+def on_trace(kind: U32, text: String) -> IO(Unit):
+  IO.print("cb " ++ U32.show(kind) ++ " " ++ text)
+def consumed_trace(+level: U32, +kind: U32, text: String) -> IO(Unit):
+  J.Log.trace_with(~on_trace, J.Log.level(level), kind, text)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
     for level, kind, text in CASES:
         body += f'    level_owned({level}, {kind}, {bend_string(text)})\n'
+    body += '    consumed_trace(3, 4, "hello")\n    consumed_trace(3, 2, "hidden")\n'
     body += '    IO.print("")\n'
     return body
 

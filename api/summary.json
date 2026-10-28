@@ -572,15 +572,15 @@
   "phase1_exit": {
     "total": 327,
     "implemented": 327,
-    "behavior_ownership_verified": 11,
-    "only_allowed_gaps": 188,
+    "behavior_ownership_verified": 20,
+    "only_allowed_gaps": 190,
     "forced_metal_witnesses": 0,
     "meeting": 0
   },
-  "open_gaps": 2729,
+  "open_gaps": 2728,
   "language_adaptations": {
-    "entries": 1018,
-    "items": 1039
+    "entries": 1019,
+    "items": 1044
   },
   "next_work": [
     {

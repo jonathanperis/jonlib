@@ -1481,6 +1481,36 @@
    "minutes": 1
   },
   {
+   "id": "wave-release",
+   "title": "UnloadWave and UnloadWaveSamples against raylib built with audio",
+   "run": [
+    "{python}",
+    "tools/wave_release_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 3
+  },
+  {
+   "id": "lifecycle",
+   "title": "Unload, free, validity, screen size and rlgl lifecycle calls against raylib",
+   "run": [
+    "{python}",
+    "tools/lifecycle_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 4
+  },
+  {
    "id": "log",
    "title": "TraceLog output and LOG_FATAL exit against raylib",
    "run": [

@@ -181,14 +181,22 @@ def source(found: Maybe<+List<U32>>) -> J.Surface:
   match found:
     case None{{}}: J.Surface{{1, 1, 7, J.Words{{[0 : U32^0n]}}}}
     case Some{{bytes}}: decoded(J.Surface.decode_image(".png", bytes))
+def consumed_load(path: String) -> IO({R}):
+  J.Files.load_data_with(~load_data, path)
+def consumed_save(path: String, bytes: +List<U32>) -> IO({U}):
+  J.Files.save_data_with(~save_data, path, bytes)
+def consumed_load_text(path: String) -> IO({TS}):
+  J.Files.load_text_with(~load_text, path)
+def consumed_save_text(path: String, text: String) -> IO({U}):
+  J.Files.save_text_with(~save_text, path, text)
 def main() -> IO(Unit):
   do IO<Unit>:
-    Unit <- IO.bind({R}, Unit, J.Files.load_data_with(~load_data, "v/data.bin"), data)
+    Unit <- IO.bind({R}, Unit, consumed_load("v/data.bin"), data)
     Unit <- IO.bind({R}, Unit, J.Files.load_data_with(~load_data, "v/missing.bin"), data)
-    Unit <- IO.bind({U}, Unit, J.Files.save_data_with(~save_data, "v/out.bin", [5, 6, 7]), status)
-    Unit <- IO.bind({TS}, Unit, J.Files.load_text_with(~load_text, "v/text.txt"), text)
+    Unit <- IO.bind({U}, Unit, consumed_save("v/out.bin", [5, 6, 7]), status)
+    Unit <- IO.bind({TS}, Unit, consumed_load_text("v/text.txt"), text)
     Unit <- IO.bind({TS}, Unit, J.Files.load_text_with(~load_text, "v/missing.txt"), text)
-    Unit <- IO.bind({U}, Unit, J.Files.save_text_with(~save_text, "v/out.txt", "saved text"), status)
+    Unit <- IO.bind({U}, Unit, consumed_save_text("v/out.txt", "saved text"), status)
     Unit <- IO.bind(Maybe<U32>, Unit, J.Files.text_find_index_with(~load_text, "v/text.txt", "loaders"), index)
     Unit <- IO.bind(Maybe<U32>, Unit, J.Files.text_find_index_with(~load_text, "{REAL}", "loaders"), index)
     Unit <- IO.bind(Maybe<U32>, Unit, J.Files.text_find_index_with(~load_text, "v/missing.txt", "x"), index)

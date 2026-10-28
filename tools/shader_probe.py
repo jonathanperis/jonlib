@@ -64,6 +64,8 @@ def words(xs: +List<U32>) -> String:
   match xs:
     case Nil{}: ""
     case Con{+x, rest}: " " ++ U32.show(x) ++ words(rest)
+def then_text(done: Unit, +text: String) -> String:
+  text
 def flag(b: Bool) -> String:
   match b:
     case True{}: "1"
@@ -71,12 +73,49 @@ def flag(b: Bool) -> String:
 def show(+s: J.Shader) -> String:
   J.Shader{+id, +locs} = s
   U32.show(id) ++ words(locs) ++ " " ++ flag(J.Shader.is_valid(s)) ++ " " ++ U32.show(J.Shader.get_location(s, "resolution")) ++ " " ++ U32.show(J.Shader.get_location_attrib(s, "vertexPosition"))
+def exercise(s: J.Shader) -> J.Shader:
+  J.Shader.set_value_texture(J.Shader.set_value_matrix(J.Shader.set_value_v(J.Shader.set_value(s, 0, [1065353216, 1073741824, 1077936128, 1082130432], 4), 3, [1065353216], 1, 4), 1, M.Matrix.identity()), 2, J.TextureInfo{1, 1, 1, 1, 7})
+def shown_pair(printed: J.Shader, freed: J.Shader) -> String:
+  then_text(J.Shader.unload(freed), show(printed))
+def paint(frame: J.Frame) -> J.Frame:
+  J.Draw.rectangle(J.Frame.clear_background(J.Frame.begin_drawing(frame), 4294967295), 2.0, 3.0, 9.0, 7.0, 4278190335)
+def same_bytes(left: List<U32>, right: List<U32>) -> Bool:
+  match left right:
+    case Nil{} Nil{}: True{}
+    case Con{a, ra} Con{b, rb}: U32.is_eq(a, b) && same_bytes(ra, rb)
+    case _ _: False{}
+def bytes_exported(data: (U32 & U32) & (U32 & List<U32>)) -> List<U32>:
+  ((_, _), (_, bytes)) = data
+  bytes
+def bytes_of(found: Maybe<J.Surface>) -> List<U32>:
+  match found:
+    case None{}: Nil{}
+    case Some{image}: bytes_exported(J.Surface.export(image))
+def read_frame(pair: J.Frame & Maybe<J.Surface>) -> J.Frame & List<U32>:
+  (kept, found) = pair
+  (kept, bytes_of(found))
+def shaded(frame: J.Frame, shader: J.Shader) -> J.Frame & List<U32>:
+  read_frame(J.Frame.framebuffer(paint(J.Frame.end_shader_mode(J.Frame.begin_shader_mode(frame, shader)))))
+def plain(frame: J.Frame) -> J.Frame & List<U32>:
+  read_frame(J.Frame.framebuffer(paint(frame)))
+def frames_shaded(pair: J.Frame & List<U32>, before: List<U32>) -> String:
+  (last, after) = pair
+  then_text(J.Frame.close_window(last), "frames " ++ flag(same_bytes(before, after)))
+def frames_open(pair: J.Frame & List<U32>) -> String:
+  (next, before) = pair
+  frames_shaded(shaded(next, J.Shader.load(None{}, None{})), before)
+def frames_of(opened: Maybe<J.Frame>) -> String:
+  match opened:
+    case None{}: "frames 0"
+    case Some{frame}: frames_open(plain(frame))
+def frames() -> String:
+  frames_of(J.Frame.init_window(16, 16))
 def main() -> IO(Unit):
   do IO<Unit>:
-    IO.print(show(J.Shader.load(Some{"missing.vs"}, Some{"missing.fs"})))
-    IO.print(show(J.Shader.load_from_memory(Some{"void main() {}"}, Some{"void main() {}"})))
-    IO.print(show(J.Shader.load(None{}, None{})))
-    IO.print("frames 1")
+    IO.print(shown_pair(exercise(J.Shader.load(Some{"missing.vs"}, Some{"missing.fs"})), exercise(J.Shader.load(Some{"missing.vs"}, Some{"missing.fs"}))))
+    IO.print(shown_pair(exercise(J.Shader.load_from_memory(Some{"void main() {}"}, Some{"void main() {}"})), exercise(J.Shader.load_from_memory(Some{"void main() {}"}, Some{"void main() {}"}))))
+    IO.print(shown_pair(exercise(J.Shader.load(None{}, None{})), exercise(J.Shader.load(None{}, None{}))))
+    IO.print(frames())
 '''
 
 

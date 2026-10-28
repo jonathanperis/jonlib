@@ -1099,7 +1099,6 @@
     "status": "profile-covered",
     "scope": "U32 seed initializes an owned stream using pinned rprand SplitMix64 extraction and Xoshiro128** state, without implicit global mutation.",
     "gaps": [
-      "Implicit-global and libc fallback profiles",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
@@ -1200,7 +1199,7 @@
   "SetTraceLogCallback": {
     "jonlib": "Log.trace_with",
     "status": "profile-covered",
-    "scope": "The handler receives the log type and text of messages at or above the threshold instead of standard output.",
+    "scope": "The handler receives the log type and text of messages at or above the threshold instead of standard output. Each call consumes the logger.",
     "gaps": [],
     "api_id": "raylib:function:SetTraceLogCallback",
     "milestone": "memory"
@@ -3830,9 +3829,9 @@
   "ImageResizeCanvas": {
     "jonlib": "Surface.resize_canvas",
     "status": "profile-covered",
-    "scope": "Every Surface format, dimensions 1..4096; bounded integral offsets with positive overlap for changed sizes. Exact sample movement, including NaN words, and same-size no-ops; the fill is stored with SetPixelColor, which leaves R32 and R32G32B32 canvases zero. A Surface is one level. Rejected requests retain original owners. Every format 1..13 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, dimensions 1..4096; bounded integral offsets. An empty copied span is that fill alone (SetPixelColor; R32 and R32G32B32 stay zero). A negative source width with a positive height is undefined. Exact sample movement, including NaN words, and same-size no-ops. A Surface is one level. Rejected requests retain original owners. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
-      "No-overlap/unsafe reference copy domains",
+      "Undefined native behavior: a negative source width and a positive height make ImageResizeCanvas memcpy a negative length",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],

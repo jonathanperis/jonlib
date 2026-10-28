@@ -1483,6 +1483,7 @@ C-to-Bend mappings with no behavior difference reachable through the API ([polic
 - `raylib:callback:LoadFileTextCallback`: Base Strings instead of NUL-terminated char buffers
 - `raylib:callback:SaveFileTextCallback`: Base Strings instead of NUL-terminated char buffers
 - `raylib:function:UnloadVrStereoConfig`: No native allocation ABI
+- `raylib:function:SetRandomSeed`: The libc rand path is the SUPPORT_RPRAND_GENERATOR=0 build; pinned raylib enables rprand and the seed is an owned stream
 - `raylib:function:UnloadRandomSequence`: Native pointer/allocator/null behavior
 - `raylib:function:SetTraceLogLevel`: Process-wide state replaced by explicit values (language adaptation)
 - `raylib:function:TraceLog`: No variadic formatting: the text is preformatted
@@ -1497,10 +1498,10 @@ C-to-Bend mappings with no behavior difference reachable through the API ([polic
 - `raylib:function:LoadFileText`: Pointer/allocator ABI: owned values instead of raw pointers and allocators (language adaptation)
 - `raylib:function:UnloadFileText`: Pointer/allocator ABI: owned values instead of raw pointers and allocators (language adaptation)
 - `raylib:function:SaveFileText`: Pointer/allocator ABI: owned values instead of raw pointers and allocators (language adaptation)
-- `raylib:function:SetLoadFileDataCallback`: Process-wide state replaced by explicit values (language adaptation)
-- `raylib:function:SetSaveFileDataCallback`: Process-wide state replaced by explicit values (language adaptation)
-- `raylib:function:SetLoadFileTextCallback`: Process-wide state replaced by explicit values (language adaptation)
-- `raylib:function:SetSaveFileTextCallback`: Process-wide state replaced by explicit values (language adaptation)
+- `raylib:function:SetLoadFileDataCallback`: Process-wide state replaced by explicit values (language adaptation); The bytes the callback returns are owned by the caller, which unloads them
+- `raylib:function:SetSaveFileDataCallback`: Process-wide state replaced by explicit values (language adaptation); The bytes passed to the callback stay owned by the caller and are not retained
+- `raylib:function:SetLoadFileTextCallback`: Process-wide state replaced by explicit values (language adaptation); The text the callback returns is owned by the caller, which unloads it
+- `raylib:function:SetSaveFileTextCallback`: Process-wide state replaced by explicit values (language adaptation); The text passed to the callback stays owned by the caller and is not retained
 - `raylib:function:FileTextReplace`: Pointer/allocator ABI: owned values instead of raw pointers and allocators (language adaptation)
 - `raylib:function:FileTextFindIndex`: Pointer/allocator ABI: owned values instead of raw pointers and allocators (language adaptation)
 - `raylib:function:FileExists`: Pointer/allocator ABI: owned values instead of raw pointers and allocators (language adaptation)
