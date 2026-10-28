@@ -316,7 +316,7 @@ compares every format-generic operation on formats 1..13 with raylib.
 | Operation | Contract |
 |---|---|
 | `Surface.flip_horizontal/flip_vertical(surface) -> Surface` | Reorders stored pixels. |
-| `Surface.rotate_cw/rotate_ccw(surface) -> Surface` | Quarter turns; width and height swap. |
+| `Surface.rotate_cw/rotate_ccw(surface) -> Surface` | Quarter turns; width and height swap. Stored words, including NaN payloads, move intact. |
 | `Surface.extract(surface, rectangle) -> Surface & Maybe<Surface>` | `ImageFromImage` (raylib 6.2 validation): keeps the original; `x, y >= 0`, `width, height >= 1` and `(int)x + (int)width <= image width` (same for y), fractional fields truncated; otherwise `None` (raylib's empty image; a width or height in (0, 1), which raylib turns into a 0-sized image, is `None` too). |
 | `Surface.crop(surface, rectangle)` | Clips an integral rectangle as raylib does; an origin strictly beyond the right/bottom edge is the reference no-op. |
 | `Surface.resize_canvas(surface, width, height, offset_x, offset_y, fill)` | Raw copy into a canvas filled with `SetPixelColor(fill)` (float canvases, formats 8..13, stay zero); dimensions 1..4096, bounded integral offsets, positive overlap for changed sizes; equal dimensions are a no-op. |
@@ -336,7 +336,7 @@ compares every format-generic operation on formats 1..13 with raylib.
 | `Surface.kernel_convolution(surface, kernel)` | Bounded square kernels; unsupported kernels/results are `InvalidKernel`. See [CONVOLUTION.md](CONVOLUTION.md). |
 | `Surface.resize(surface, width, height)` | Default filtered resize (Catmull-Rom up, Mitchell down); dimensions 1..4096. R8G8B8A8 is alpha-aware; GRAYSCALE, GRAY_ALPHA and R8G8B8 filter their own channels unweighted and keep their format; other formats go through RGBA8 and back. See [RESAMPLING.md](RESAMPLING.md). |
 | `Surface.resize_nn(surface, width, height)` | Exact fixed-point nearest mapping; refuses out-of-allocation reference mappings. |
-| `Surface.dither(surface, r, g, b, a)` | Floyd-Steinberg into R5G6B5 (5,6,5,0), R5G5B5A1 (5,5,5,1) or R4G4B4A4 (4,4,4,4); other bit counts are `InvalidDitherBits`. See [PIXELS.md](PIXELS.md). |
+| `Surface.dither(surface, r, g, b, a)` / `Surface.dither_native(...)` | Floyd-Steinberg into R5G6B5 (5,6,5,0), R5G5B5A1 (5,5,5,1) or R4G4B4A4 (4,4,4,4). `dither_native` leaves a compressed image and a channel-width sum above 16 unchanged; other bit counts stay `InvalidDitherBits` on both. See [PIXELS.md](PIXELS.md). |
 
 All return `Result<&1, &1, Surface & Surface.Error, Surface>`; a rejected request
 returns the original owner.

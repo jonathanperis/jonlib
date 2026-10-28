@@ -4108,6 +4108,27 @@ def Surface.dither.checked(valid: Bool, surface: Surface, r: U32, g: U32, b: U32
 def Surface.dither(surface: Surface, +r: U32, +g: U32, +b: U32, +a: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Surface.dither.checked((Dither.format(r, g, b, a) > 0 : U32), surface, r, g, b, a)
 
+# ImageDither returns before touching pixels when the image is compressed, and
+# when the four channel widths sum to more than 16. Named 16-bit layouts still
+# go through Surface.dither. A sum of at most 16 that names format 0 stays
+# InvalidDitherBits: that image is not a Surface.
+def Surface.dither.native.kept(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Done{surface}
+
+def Surface.dither.native.open(heavy: Bool, known: Bool, surface: Surface, r: U32, g: U32, b: U32, a: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match heavy:
+    case True{}: Surface.dither.native.kept(surface)
+    case False{}: Surface.dither.checked(known, surface, r, g, b, a)
+
+def Surface.dither.native.routed(compressed: Bool, surface: Surface, +r: U32, +g: U32, +b: U32, +a: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match compressed:
+    case True{}: Surface.dither.native.kept(surface)
+    case False{}: Surface.dither.native.open(((r + g + b + a) > 16 : U32), (Dither.format(r, g, b, a) > 0 : U32), surface, r, g, b, a)
+
+def Surface.dither_native(surface: Surface, +r: U32, +g: U32, +b: U32, +a: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface{width, height, +format, pixels} = surface
+  Surface.dither.native.routed((format >= 14 : U32), Surface{width, height, format, pixels}, r, g, b, a)
+
 # Drawing: covered pixels receive the color encoded as ImageDrawPixel stores it.
 # R32G32B32 owners mark coverage first, then write the vector.
 def Surface.draw.apply(draw: Surface.Draw, +word: U32, image: Rgba) -> Rgba:

@@ -5093,3 +5093,27 @@ def Laws.data_code_name_keeps_a_high_byte():
 
 def Laws.data_code_empty_payload():
   {==}
+
+def Laws.rotate_cw_keeps_quiet_nan():
+  {==}
+
+def Laws.rotate_ccw_keeps_negative_quiet_nan():
+  {==}
+
+def Laws.rotate_cw_keeps_signaling_nan():
+  {==}
+
+def Laws.rotate_cw_permutes_nan_words():
+  {==}
+
+def Laws.rotate_ccw_permutes_nan_words():
+  {==}
+
+def Laws.dither_native_matches_named_bits():
+  {==}
+
+def Laws.dither_native_keeps_a_wide_request():
+  {==}
+
+def Laws.dither_native_keeps_compressed():
+  {==}

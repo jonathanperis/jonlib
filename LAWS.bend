@@ -6683,3 +6683,28 @@ law data_code_name_keeps_a_high_byte:
 
 law data_code_empty_payload:
   {J.Files.data_as_code_wide(Nil{}, "a.h") == None{} : Maybe<String>}
+
+# Quarter turns copy stored words. A quiet NaN, its sign and a payload bit survive.
+law rotate_cw_keeps_quiet_nan:
+  {J.Surface.rotate_cw(J.Surface{1, 1, 8, J.Words{Array.new(U32, 0n, 2143289344)}}) == J.Surface{1, 1, 8, J.Words{Array.new(U32, 0n, 2143289344)}} : J.Surface}
+
+law rotate_ccw_keeps_negative_quiet_nan:
+  {J.Surface.rotate_ccw(J.Surface{1, 1, 8, J.Words{Array.new(U32, 0n, 4290772992)}}) == J.Surface{1, 1, 8, J.Words{Array.new(U32, 0n, 4290772992)}} : J.Surface}
+
+law rotate_cw_keeps_signaling_nan:
+  {J.Surface.rotate_cw(J.Surface{1, 1, 8, J.Words{Array.new(U32, 0n, 2139095041)}}) == J.Surface{1, 1, 8, J.Words{Array.new(U32, 0n, 2139095041)}} : J.Surface}
+
+law rotate_cw_permutes_nan_words:
+  {J.Surface.rotate_cw(J.Surface{2, 2, 8, J.Words{Array.set(U32, Array.set(U32, Array.set(U32, Array.set(U32, Array.new(U32, 2n, 0), 0, 2143289344), 1, 4290772992), 2, 2143289345), 3, 1065353216)}}) == J.Surface{2, 2, 8, J.Words{Array.set(U32, Array.set(U32, Array.set(U32, Array.set(U32, Array.new(U32, 2n, 0), 0, 2143289345), 1, 2143289344), 2, 1065353216), 3, 4290772992)}} : J.Surface}
+
+law rotate_ccw_permutes_nan_words:
+  {J.Surface.rotate_ccw(J.Surface{2, 2, 8, J.Words{Array.set(U32, Array.set(U32, Array.set(U32, Array.set(U32, Array.new(U32, 2n, 0), 0, 2143289344), 1, 4290772992), 2, 2143289345), 3, 1065353216)}}) == J.Surface{2, 2, 8, J.Words{Array.set(U32, Array.set(U32, Array.set(U32, Array.set(U32, Array.new(U32, 2n, 0), 0, 4290772992), 1, 1065353216), 2, 2143289344), 3, 2143289345)}} : J.Surface}
+
+law dither_native_matches_named_bits:
+  {J.Surface.dither_native(J.Surface{1, 1, 7, J.Words{Array.new(U32, 0n, 4294967295)}}, 5, 6, 5, 0) == J.Surface.dither(J.Surface{1, 1, 7, J.Words{Array.new(U32, 0n, 4294967295)}}, 5, 6, 5, 0) : Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>}
+
+law dither_native_keeps_a_wide_request:
+  {J.Surface.dither_native(J.Surface{1, 1, 7, J.Words{Array.new(U32, 0n, 1)}}, 8, 8, 8, 8) == Done{J.Surface{1, 1, 7, J.Words{Array.new(U32, 0n, 1)}}} : Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>}
+
+law dither_native_keeps_compressed:
+  {J.Surface.dither_native(J.Surface{1, 1, 14, J.Words{Array.new(U32, 0n, 1)}}, 5, 6, 5, 0) == Done{J.Surface{1, 1, 14, J.Words{Array.new(U32, 0n, 1)}}} : Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>}

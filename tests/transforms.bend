@@ -282,6 +282,25 @@ def dither_created(created: Maybe<J.Surface>, wide: Bool) -> Bool:
     case Some{surface} True{}: dither_rejected(J.Surface.dither(surface, 9, 0, 0, 0))
     case Some{surface} False{}: dither_rejected(J.Surface.dither(surface, 8, 8, 8, 8))
 
+def dither_native_kept(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Bool:
+  match result:
+    case Done{surface}: pixels_kept(J.Surface.colors(surface))
+    case Fail{_}: False{}
+
+def dither_native_created(created: Maybe<J.Surface>) -> Bool:
+  match created:
+    case None{}: False{}
+    case Some{surface}: dither_native_kept(J.Surface.dither_native(surface, 8, 8, 8, 8))
+
+def dither_compressed_word(got: Array<U32> & U32) -> Bool:
+  (_, word) = got
+  U32.is_eq(word, 9)
+
+def dither_compressed(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Bool:
+  match result:
+    case Done{J.Surface{1, 1, 14, J.Words{values}}}: dither_compressed_word(Array.get(U32, values, 0))
+    case _: False{}
+
 def no_size(result: Maybe<&2, U32>) -> Bool:
   match result:
     case None{}: True{}
@@ -436,6 +455,8 @@ def checks() -> Bool:
     && palette_created(J.Surface.create(2, 1, 16909060), False{})
     && dither_created(J.Surface.create(2, 1, 16909060), True{})
     && dither_created(J.Surface.create(2, 1, 16909060), False{})
+    && dither_native_created(J.Surface.create(2, 1, 16909060))
+    && dither_compressed(J.Surface.dither_native(J.Surface{1, 1, 14, J.Words{Array.new(U32, 0n, 9)}}, 5, 6, 5, 0))
     && no_size(J.Pixel.data_size(4097, 1, 7))
     && no_size(J.Pixel.data_size(1, 1, 2147483648))
     && pixel_color(0, J.Pixel.get_color([0], 0))

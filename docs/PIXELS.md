@@ -72,6 +72,9 @@ unchanged and does not read it, matching `SetPixelColor`'s default.
 (R5G6B5, format 3), 5/5/5/1 (R5G5B5A1, format 5) and 4/4/4/4 (R4G4B4A4, format
 6). Other counts return the unchanged source with `InvalidDitherBits{}`: raylib
 would produce an image with the invalid format 0, which no `Surface` can hold.
+`Surface.dither_native` is the same for those named layouts. A compressed
+image (format 14 or above) and a channel-width sum above 16 are returned
+unchanged, which is raylib's early return. A Surface is one level.
 The source may have any format; it is read through `LoadImageColors` (an
 R32G32B32 source needs samples in `[0, 1]`). Success consumes the source and
 returns a Surface with one 16-bit word per pixel.
@@ -112,5 +115,5 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
   pointer ABI remain outside raw access. The R5G5B5A1 alpha threshold stays at
   the pinned default of 50.
 - Native 16-bit allocation size/ABI correspondence for dithered storage (Bend
-  stores U32 array elements); other source formats and mipmaps.
+  stores U32 array elements).
 - Complete target/resource/performance coverage.

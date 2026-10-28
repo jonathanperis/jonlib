@@ -102,6 +102,8 @@ OPS = {
     'resize-nn': ('ImageResizeNN(&im,7,3);', 'image', 'J.Surface.resize_nn(s, 7, 3)'),
     'dither': ('ImageDither(&im,5,6,5,0);', 'image', 'J.Surface.dither(s, 5, 6, 5, 0)'),
     'dither-4444': ('ImageDither(&im,4,4,4,4);', 'image', 'J.Surface.dither(s, 4, 4, 4, 4)'),
+    # Channel widths summing past 16: raylib warns and leaves the image unchanged.
+    'dither-over': ('ImageDither(&im,8,8,8,8);', 'image', 'J.Surface.dither_native(s, 8, 8, 8, 8)'),
     'clear': (f'ImageClearBackground(&im,{c_color(DRAW)});', 'total', f'J.Surface.clear(s, {word(DRAW)})'),
     'pixel': (f'ImageDrawPixel(&im,2,1,{c_color(DRAW)});', 'total', f'J.Surface.draw_pixel(s, 2.0, 1.0, {word(DRAW)})'),
     'rectangle': (f'ImageDrawRectangle(&im,1,1,3,2,{c_color(DRAW)});', 'total',
@@ -200,7 +202,19 @@ OPS = {
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
 import ../../jonmath.bend as M
-''' + SURFACE_EMITTER + '''def color_bytes(colors: List<U32>, values: List<U32>) -> List<U32>:
+''' + SURFACE_EMITTER + '''def payload_words(second: Array<U32> & U32, +first: U32) -> List<U32>:
+  (_, word) = second
+  word_bytes(4n, word, word_bytes(4n, first, Nil{}))
+def payload_open(values: Array<U32>) -> List<U32>:
+  (rest, first) = Array.get(U32, values, 0)
+  payload_words(Array.get(U32, rest, 1), first)
+def payload_emit(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.print("null")
+    case Done{J.Surface{width, height, format, J.Words{values}}}:
+      emit_bytes(~&1, prepend(word_bytes(4n, height, word_bytes(4n, width, word_bytes(4n, format, Nil{}))), payload_open(values)))
+    case Done{_}: IO.print("null")
+def color_bytes(colors: List<U32>, values: List<U32>) -> List<U32>:
   match colors:
     case Nil{}: List.reverse(&1, U32, values)
     case Con{+color, rest}: color_bytes(rest, Con{J.Color.alpha(color), Con{J.Color.blue(color), Con{J.Color.green(color), Con{J.Color.red(color), values}}}})
@@ -301,8 +315,36 @@ def fixtures():
     return cases
 
 
+# Raw R32 words outside the owner domain. Quarter turns and canvas growth copy
+# them; a compressed dither and a channel sum above 16 leave the image alone.
+NAN, NEG, PAY, ONE = 2143289344, 4290772992, 2143289345, 1065353216
+SQUARE = (f'J.Surface{{2, 2, 8, J.Words{{Array.set(U32, Array.set(U32, Array.set(U32, Array.set(U32, '
+          f'Array.new(U32, 2n, 0), 0, {NAN}), 1, {NEG}), 2, {PAY}), 3, {ONE})}}}}')
+ROW = (f'J.Surface{{3, 1, 8, J.Words{{Array.set(U32, Array.set(U32, Array.set(U32, Array.new(U32, 2n, 0), '
+       f'0, {NAN}), 1, {NEG}), 2, {PAY})}}}}')
+COMPRESSED = ('J.Surface{1, 1, 14, J.Words{Array.set(U32, Array.set(U32, Array.new(U32, 1n, 0), 0, 67305985), 1, 134678021)}}')
+PAYLOADS = ('nan-cw', 'nan-ccw', 'nan-pot', 'nan-canvas', 'nan-dither')
+PAYLOAD_BEND = {
+    'nan-cw': f'image(done(J.Surface.rotate_cw({SQUARE})))',
+    'nan-ccw': f'image(done(J.Surface.rotate_ccw({SQUARE})))',
+    'nan-pot': f'image(J.Surface.to_pot({ROW}, 4294967295))',
+    'nan-canvas': f'image(J.Surface.resize_canvas({ROW}, 4, 1, 0.0, 0.0, 4294967295))',
+    'nan-dither': f'payload_emit(J.Surface.dither_native({COMPRESSED}, 5, 6, 5, 0))',
+}
+PAYLOAD_C = {
+    'nan-cw': f'{{unsigned bits[4]={{{NAN}u,{NEG}u,{PAY}u,{ONE}u}};Image im=nan_image(2,2,bits,4);ImageRotateCW(&im);image(im);UnloadImage(im);}}',
+    'nan-ccw': f'{{unsigned bits[4]={{{NAN}u,{NEG}u,{PAY}u,{ONE}u}};Image im=nan_image(2,2,bits,4);ImageRotateCCW(&im);image(im);UnloadImage(im);}}',
+    'nan-pot': f'{{unsigned bits[4]={{{NAN}u,{NEG}u,{PAY}u,0u}};Image im=nan_image(3,1,bits,3);ImageToPOT(&im,WHITE);image(im);UnloadImage(im);}}',
+    'nan-canvas': f'{{unsigned bits[4]={{{NAN}u,{NEG}u,{PAY}u,0u}};Image im=nan_image(3,1,bits,3);ImageResizeCanvas(&im,4,1,0,0,WHITE);image(im);UnloadImage(im);}}',
+    'nan-dither': ('{Image im={0};im.width=1;im.height=1;im.mipmaps=1;im.format=PIXELFORMAT_COMPRESSED_DXT1_RGB;'
+                   'unsigned char raw[8]={1,2,3,4,5,6,7,8};im.data=malloc(8);memcpy(im.data,raw,8);'
+                   'ImageDither(&im,5,6,5,0);word(im.format);word(im.width);word(im.height);'
+                   'unsigned char *p=im.data;for(int i=0;i<8;i++)byte(p[i]);end();UnloadImage(im);}'),
+}
+
+
 def actions(cases):
-    return [(i, op, fmt) for i in range(len(cases)) for op in OPS for fmt in FORMATS]
+    return [(i, op, fmt) for i in range(len(cases)) for op in OPS for fmt in FORMATS] + [(-1, op, 8) for op in PAYLOADS]
 
 
 def native(probe, cases, selected):
@@ -315,8 +357,15 @@ def native(probe, cases, selected):
         lines.append(f'static Image source{i}(int format){{Image im={{0}};im.width={case["width"]};im.height={case["height"]};'
                      f'im.mipmaps=1;im.format=7;im.data=malloc(sizeof fixture{i});memcpy(im.data,fixture{i},sizeof fixture{i});'
                      'ImageFormat(&im,format);if(im.format!=format)exit(4);return im;}')
+    if any(op in PAYLOAD_C for _, op, _ in selected):
+        lines.append('static Image nan_image(int width,int height,const unsigned *bits,int count){Image im={0};'
+                     'im.width=width;im.height=height;im.mipmaps=1;im.format=PIXELFORMAT_UNCOMPRESSED_R32;'
+                     'im.data=malloc((size_t)count*4);memcpy(im.data,bits,(size_t)count*4);return im;}')
     lines.append('int main(void){SetTraceLogLevel(LOG_NONE);')
     for i, op, fmt in selected:
+        if op in PAYLOAD_C:
+            lines.append(PAYLOAD_C[op])
+            continue
         statement, kind, _ = OPS[op]
         if (op, fmt) in UNSUPPORTED:
             lines.append('puts("null");')
@@ -339,21 +388,24 @@ def native(probe, cases, selected):
 def render(cases):
     def emit(selected, gpu):
         body = PROGRAM
-        used = sorted({op for _, op, _ in selected})
+        used = sorted(op for _, op, _ in selected if op in OPS)
         for op in used:
             _, kind, expression = OPS[op]
             call = {'total': f'image(done({expression}))', 'image': f'image({expression})',
                     'colors': f'colors({expression})', 'color': f'color({expression})',
                     'rect': f'rect({expression})', 'palette': f'palette({expression})'}[kind]
             body += f'def op_{op.replace("-", "_")}(s: J.Surface) -> IO(Unit):\n  {call}\n'
-        sources = {i for i, _, _ in selected}
+        sources = {i for i, _, _ in selected if i >= 0}
         for i in sorted(sources):
             case = cases[i]
             body += (f'def source{i}() -> Maybe<J.Surface>:\n  J.Surface.from_bytes({case["width"]}, {case["height"]}, 7, '
                      f'[{",".join(map(str, case["bytes"]))}])\n')
         body += 'def main() -> IO(Unit):\n  do IO<Unit>:\n'
         for i, op, fmt in selected:
-            body += f"    run(~op_{op.replace('-', '_')}, {fmt}, source{i}())\n"
+            if op in PAYLOAD_BEND:
+                body += f'    {PAYLOAD_BEND[op]}\n'
+            else:
+                body += f"    run(~op_{op.replace('-', '_')}, {fmt}, source{i}())\n"
         return body
     return emit
 
