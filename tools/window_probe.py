@@ -414,6 +414,11 @@ def time(t: M.Float64) -> String:
 def dropped(files: J.FilePathList) -> String:
   J.FilePathList{+count, _} = files
   u(count)
+# Book order: query calls these, so they are filled defs here, not forward laws.
+def file_dropped_owned(+core: J.Core) -> Bool:
+  J.Core.is_file_dropped(core)
+def dropped_files_owned(+core: J.Core) -> J.FilePathList:
+  J.Core.load_dropped_files(core)
 def query(+core: J.Core) -> String:
   num(J.Core.is_window_ready(core)) ++ num(J.Core.is_window_fullscreen(core)) ++ num(J.Core.is_window_hidden(core))
     ++ num(J.Core.is_window_minimized(core)) ++ num(J.Core.is_window_maximized(core)) ++ num(J.Core.is_window_focused(core))
@@ -452,11 +457,7 @@ def icons.done(r: J.Core & List<J.Surface>) -> J.Core:
 def mappings(+core: J.Core, +s: String) -> String:
   "M:" ++ U32.show(J.Input.set_gamepad_mappings(core, s)) ++ ";"
 # The Core is retained. The returned list is owned and then consumed by unload.
-def file_dropped_owned(+core: J.Core) -> Bool:
-  J.Core.is_file_dropped(core)
-def dropped_files_owned(+core: J.Core) -> J.FilePathList:
-  J.Core.load_dropped_files(core)
-def dropped_unload_owned(core: J.Core) -> J.Core:
+def dropped_unload_owned(+core: J.Core) -> J.Core:
   J.Core.unload_dropped_files(core, dropped_files_owned(core))
 # Core-only operations (Some core in, Maybe core out).
 def core.op(+kind: U32, +a: U32, +b: U32, +c: U32, +d: U32, +s: String, +core: J.Core) -> Maybe<J.Core>:
