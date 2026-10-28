@@ -48,6 +48,9 @@ import frame_probe as fp
 import probekit
 from probekit import ROOT, ProbeFailure
 
+# DrawTextureNPatch compares NPatchInfo, including C int truncation of its borders.
+WITNESSED = ('NPatchInfo',)
+
 C = fp.C
 f32 = fp.f32
 cf = fp.cf
@@ -282,8 +285,10 @@ def scenes(libm):
                                     ('end',)])
     add('npatch-unverified', 16, 12, [('load', 0, image(3, 3, 7, 1)), ('npatch', 0, ((0.0, 0.0, 3.0, 3.0), 1.0, 1.0, 1.0, 1.0, 0.0),
                                                                                     (1.0, 1.0, 8.0, 8.0), (0.0, 0.0), 103.0, white)])
-    add('npatch-noninteger', 16, 12, [('load', 0, image(3, 3, 7, 1)), ('npatch', 0, ((0.0, 0.0, 3.0, 3.0), 1.5, 1.0, 1.0, 1.0, 0.0),
-                                                                                     (1.0, 1.0, 8.0, 8.0), (0.0, 0.0), 0.0, white)], contract=True)
+    # Borders and layout are C ints: 1.9, 0.2, 0.6, 2.8 and layout 1.7 cast to 1, 0, 0, 2, 1.
+    add('npatch-noninteger', 16, 12, [('begin',), ('clear', black), ('load', 0, image(3, 3, 7, 1)),
+                                       ('npatch', 0, ((0.0, 0.0, 3.0, 3.0), 1.9, 0.2, 0.6, 2.8, 1.7),
+                                        (1.0, 1.0, 10.0, 8.0), (0.0, 0.0), 0.0, white), ('end',)])
 
     # UpdateTexture / UpdateTextureRec: raw copies keep the load-time alpha mode.
     add('update-opaque-with-alpha', 24, 16, [('begin',), ('clear', C(255, 255, 255, 120)), ('load', 0, image(4, 4, 7, 40, True)),

@@ -1126,6 +1126,7 @@ C-to-Bend mappings with no behavior difference reachable through the API ([polic
 - `raylib:type:Texture`: Fields are read through Texture.info (TextureInfo); no native struct layout
 - `raylib:alias:Texture2D`: No type alias declarations: the aliased type is used directly (language adaptation)
 - `raylib:alias:RenderTexture2D`: No type alias declarations: the aliased type is used directly (language adaptation)
+- `raylib:type:NPatchInfo`: C int fields are F32 values, truncated toward zero
 - `raylib:type:GlyphInfo`: No native struct layout or shared image pointer: GetGlyphInfo returns a copy
 - `raylib:type:Font`: No native struct layout: glyphCount is the glyph list length and recs live in the glyphs
 - `raylib:type:Camera3D`: C int field as U32 (enum value)
@@ -1526,6 +1527,7 @@ C-to-Bend mappings with no behavior difference reachable through the API ([polic
 - `raylib:function:ExportImageToMemory`: Native pointer/allocator ABI: owned values and lists instead of pointers (language adaptation)
 - `raylib:function:ExportImageAsCode`: Native pointer/allocator ABI: owned values and lists instead of pointers (language adaptation)
 - `raylib:function:ImageFromChannel`: Native pointer/allocator ABI: owned values and lists instead of pointers (language adaptation)
+- `raylib:function:ImageFormat`: Native pointer and allocator ABI: owned values instead of pointers
 - `raylib:function:ImageBlurGaussian`: Native pointer/allocator ABI: owned values and lists instead of pointers (language adaptation)
 - `raylib:function:ImageKernelConvolution`: Native pointer/allocator ABI: owned values and lists instead of pointers (language adaptation)
 - `raylib:function:ImageMipmaps`: Native pointer/allocator ABI: owned values and lists instead of pointers (language adaptation)

@@ -11667,7 +11667,7 @@ type Texture is Type:
 type RenderTexture is Type:
   RenderTexture{id: U32, texture: Texture, depth: U32}
 
-# NPatchInfo; left, top, right, bottom and layout hold C ints (integral F32).
+# NPatchInfo; left, top, right, bottom and layout hold C ints (F32 truncated toward zero).
 type NPatchInfo is Data:
   NPatchInfo{source: Rectangle, left: F32, top: F32, right: F32, bottom: F32, layout: F32}
 
@@ -12030,19 +12030,21 @@ def Draw.texture_rec(frame: Frame, texture: Texture, +source: Rectangle, positio
   M.Vector2{x, y} = position
   Draw.texture_pro_for(M.AppleLibm{}, frame, texture, source, Rectangle{x, y, F32.abs(sw), F32.abs(sh)}, M.Vector2{0.0, 0.0}, 0.0, tint)
 
+# C int parameters: finite values below 2^31 in magnitude, truncated toward zero.
 def Draw.npatch.int(+value: F32) -> Bool:
-  Shapes.int.valid(value) && F32.is_eq(F32.trunc(value), value)
+  Shapes.int.valid(value)
 
-# Layouts 0..2 as given; any other int draws no quad.
+# Layouts 0..2 after the C cast; any other int draws no quad.
 def Draw.npatch.layout(+layout: F32) -> U32:
-  Bool.pick(U32, (layout >= 0.0 : F32) && (layout <= 2.0 : F32), F32.to_u32(Bool.pick(F32, (layout >= 0.0 : F32) && (layout <= 2.0 : F32), layout, 0.0)), 3)
+  +n = Shapes.int.of(layout)
+  Bool.pick(U32, (n >= 0.0 : F32) && (n <= 2.0 : F32), F32.to_u32(Bool.pick(F32, (n >= 0.0 : F32), n, 0.0)), 3)
 
 def Draw.npatch.source(+gnu: Bool, +kind: U32, +tw: F32, +th: F32, source: Rectangle, +left: F32, +top: F32, +right: F32, +bottom: F32, +layout: F32, dest: Rectangle, origin: M.Vector2, +rotation: F32, +tint: U32) -> Shapes.Plan:
   Rectangle{sx, sy, sw, sh} = source
   Rectangle{dx, dy, dw, dh} = dest
   M.Vector2{ox, oy} = origin
   Shapes.Plan.require(Draw.npatch.int(left) && Draw.npatch.int(top) && Draw.npatch.int(right) && Draw.npatch.int(bottom) && Draw.npatch.int(layout),
-    TextureDraw.npatch(gnu, kind, tw, th, sx, sy, sw, sh, left, top, right, bottom, Draw.npatch.layout(layout), dx, dy, dw, dh, ox, oy, rotation, tint))
+    TextureDraw.npatch(gnu, kind, tw, th, sx, sy, sw, sh, Shapes.int.of(left), Shapes.int.of(top), Shapes.int.of(right), Shapes.int.of(bottom), Draw.npatch.layout(layout), dx, dy, dw, dh, ox, oy, rotation, tint))
 
 def Draw.npatch.plan(+gnu: Bool, +kind: U32, +tw: F32, +th: F32, info: NPatchInfo, dest: Rectangle, origin: M.Vector2, +rotation: F32, +tint: U32) -> Shapes.Plan:
   NPatchInfo{source, left, top, right, bottom, layout} = info
