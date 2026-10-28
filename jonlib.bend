@@ -7405,10 +7405,25 @@ def Files.length.measured(logger: Log.Logger, +path: String, result: File & Resu
     answer : U32 <- Files.length.after(logger, path, size)
     IO.pure(U32, answer)
 
-# A directory open() can read has ftell at the maximum long on Linux, which is
-# past INT_MAX, so GetFileLength warns and returns 0. st_size is not that value.
-def Files.length.routed(logger: Log.Logger, +path: String, directory: Bool, file: File) -> IO(U32):
-  match directory:
+# fopen + fseek(SEEK_END) + ftell. A directory's ftell is the maximum long on
+# Linux (past INT_MAX, and not st_size) and the directory's size on macOS
+# (the same value File.size reads). /proc exists on Linux, on every lane, and
+# not on macOS, so the two hosts take the result the C library just returned.
+def Files.length.directory_overflows(linux: Bool, directory: Bool) -> Bool:
+  match linux directory:
+    case False{} _: False{}
+    case True{} flag: flag
+
+def Files.proc_is_there(result: Result<&1, &1, U32 & String, U32 & Nat & Nat>) -> Bool:
+  match result:
+    case Fail{_}: False{}
+    case Done{_}: True{}
+
+def Files.on_linux() -> IO(Bool):
+  IO.bind(Result<&1, &1, U32 & String, U32 & Nat & Nat>, Bool, Path.stat("/proc"), r => IO.pure(Bool, Files.proc_is_there(r)))
+
+def Files.length.routed_on(logger: Log.Logger, +path: String, overflow: Bool, file: File) -> IO(U32):
+  match overflow:
     case True{}:
       do IO<U32>:
         Unit <- File.close(file)
@@ -7416,13 +7431,20 @@ def Files.length.routed(logger: Log.Logger, +path: String, directory: Bool, file
         IO.pure(U32, answer)
     case False{}: IO.bind(File & Result<&1, &1, U32 & String, U32>, U32, File.size(file), r => Files.length.measured(logger, path, r))
 
+def Files.length.routed(logger: Log.Logger, +path: String, directory: Bool, linux: Bool, file: File) -> IO(U32):
+  Files.length.routed_on(logger, path, Files.length.directory_overflows(linux, directory), file)
+
+def Files.length.opened_host(logger: Log.Logger, +path: String, file: File, linux: Bool) -> IO(U32):
+  IO.bind(Bool, U32, Files.directory_exists(path), dir => Files.length.routed(logger, path, dir, linux, file))
+
 def Files.length.opened_with(logger: Log.Logger, +path: String, opened: Result<&1, &1, U32 & String, File>) -> IO(U32):
   match opened:
     case Fail{_}: IO.pure(U32, 0)
-    case Done{file}: IO.bind(Bool, U32, Files.directory_exists(path), dir => Files.length.routed(logger, path, dir, file))
+    case Done{file}: IO.bind(Bool, U32, Files.on_linux(), linux => Files.length.opened_host(logger, path, file, linux))
 
 # GetFileLength through the caller's logger. fopen's failure is 0. A size past
-# INT_MAX, including a directory that opens, is 0 and the reference warning.
+# INT_MAX is 0 and the reference warning. A directory that opens is that
+# overflow on Linux and its own size on macOS.
 def Files.length_with(logger: Log.Logger, +path: String) -> IO(U32):
   IO.bind(Result<&1, &1, U32 & String, File>, U32, File.open(path, "r"), opened => Files.length.opened_with(logger, path, opened))
 

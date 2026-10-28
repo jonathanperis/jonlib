@@ -6678,8 +6678,17 @@ law base64_undefined_padding_only:
 law data_code_name_stops_at_nul:
   {J.Files.code_name_wide(SCon{Char.from_u32(97), SCon{Char.from_u32(98), SCon{Char.from_u32(0), "cd.h"}}}) == Some{"AB"} : Maybe<&2, String>}
 
+# U+00E9 is the UTF-8 bytes File.open writes, 0xC3 0xA9. The identifier keeps
+# them; only a-z is upper-cased.
 law data_code_name_keeps_a_high_byte:
-  {J.Files.code_name_wide(SCon{Char.from_u32(99), SCon{Char.from_u32(97), SCon{Char.from_u32(102), SCon{Char.from_u32(233), ".h"}}}}) == Some{SCon{Char.from_u32(67), SCon{Char.from_u32(65), SCon{Char.from_u32(70), SCon{Char.from_u32(233), ""}}}}} : Maybe<&2, String>}
+  {J.Files.code_name_wide(SCon{Char.from_u32(99), SCon{Char.from_u32(97), SCon{Char.from_u32(102), SCon{Char.from_u32(233), ".h"}}}}) == Some{SCon{Char.from_u32(67), SCon{Char.from_u32(65), SCon{Char.from_u32(70), SCon{Char.from_u32(195), SCon{Char.from_u32(169), ""}}}}}} : Maybe<&2, String>}
+
+# A Linux directory's ftell is past INT_MAX. On any other host it is the size.
+law file_length_linux_directory_overflows:
+  {J.Files.length.directory_overflows(True{}, True{}) == True{} : Bool}
+
+law file_length_other_directory_keeps_its_size:
+  {(J.Files.length.directory_overflows(False{}, True{}), J.Files.length.directory_overflows(True{}, False{})) == (False{}, False{}) : Bool & Bool}
 
 law data_code_empty_payload:
   {J.Files.data_as_code_wide(Nil{}, "a.h") == None{} : Maybe<String>}

@@ -5091,6 +5091,12 @@ def Laws.data_code_name_stops_at_nul():
 def Laws.data_code_name_keeps_a_high_byte():
   {==}
 
+def Laws.file_length_linux_directory_overflows():
+  {==}
+
+def Laws.file_length_other_directory_keeps_its_size():
+  {==}
+
 def Laws.data_code_empty_payload():
   {==}
 

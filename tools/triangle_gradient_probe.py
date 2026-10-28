@@ -12,15 +12,25 @@ undefined in C and is not a case. Formats 1..13 stay on the surface-format
 profile; this probe compares the shared raster on format 7.
 """
 import ctypes
+import ctypes.util
 import hashlib
 import json
 import math
 import struct
+import sys
 
 import probekit
 from probekit import ProbeFailure
 
-_fmaf = ctypes.CDLL('libm.so.6').fmaf
+
+def libm():
+    """The host libm. Linux stays libm.so.6; Darwin is find_library('m') or libSystem."""
+    if sys.platform == 'darwin':
+        return ctypes.util.find_library('m') or 'libSystem.B.dylib'
+    return 'libm.so.6'
+
+
+_fmaf = ctypes.CDLL(libm()).fmaf
 _fmaf.argtypes = (ctypes.c_float, ctypes.c_float, ctypes.c_float)
 _fmaf.restype = ctypes.c_float
 

@@ -4,11 +4,12 @@
 fopen/ftell: a file that does not open is 0; a size that fits in a signed int
 is that size; a larger size is 0 and a WARNING that names the path. On Linux a
 directory that opens seeks to the maximum long, so it takes the warning path.
-An unreadable directory does not open. The candidate takes the level as a
-Log.Logger. CPU-1, CPU-2 and JavaScript.
+On macOS that ftell is the directory's size. An unreadable directory does not
+open. The candidate takes the level as a Log.Logger. CPU-1, CPU-2 and JavaScript.
 """
 import json
 import os
+import platform
 
 import probekit
 from probekit import ProbeFailure
@@ -86,8 +87,12 @@ def main():
         lanes = probe.candidates(render(rows), ['all'], batch=1, parse=lambda text, selected: [text])
         lanes = {lane: values for lane, values in lanes.items() if lane != 'gpu'}
         probe.compare([expected], lanes, describe=lambda i: 'GetFileLength')
-        if 'File size overflows expected limit' not in expected or 'a%b' not in expected:
+        if 'File size overflows expected limit' not in expected:
             raise ProbeFailure('file-length: the reference dropped the overflow warning')
+        # Linux names the directory in that warning. macOS ftell fits, so the
+        # warning names the huge file instead; the directory size is in the row.
+        if platform.system() != 'Darwin' and 'a%b' not in expected:
+            raise ProbeFailure('file-length: the reference dropped the directory overflow warning')
         if f'\n{INT_MAX}\n' not in f'\n{expected}':
             raise ProbeFailure('file-length: the reference did not return INT_MAX')
         probe.finish(cases=len(rows), reference_lines=expected.count('\n'))

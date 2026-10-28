@@ -39,6 +39,12 @@ def c_string(text):
     return '"' + ''.join(c if 32 <= ord(c) < 127 and c not in '"\\?' else f'\\{ord(c):03o}' for c in text) + '"'
 
 
+def utf8_c_string(text):
+    """The UTF-8 bytes File.open writes. A code point is not a path byte: U+00E9 is c3 a9, not e9."""
+    raw = text.encode('utf-8')
+    return '"' + ''.join(chr(b) if 32 <= b < 127 and chr(b) not in '"\\?' else f'\\{b:03o}' for b in raw) + '"'
+
+
 def bend_string(text):
     """Runs of 8+ equal characters use String.repeat (long literals exhaust the JS stack)."""
     pieces, i = [], 0
@@ -128,7 +134,7 @@ static void readback(const char *path,int ok){int n=0;unsigned char *d=LoadFileD
 def native_source(acts, work):
     lines = ['#include "raylib.h"', '#include <stdio.h>', '#include <stdlib.h>', '#include <string.h>', C_EMITTER, NATIVE_HELPERS,
              'int main(void){SetTraceLogLevel(LOG_NONE);']
-    rel = lambda name: c_string(str((work / name).relative_to(ROOT)))
+    rel = lambda name: utf8_c_string(str((work / name).relative_to(ROOT)))
     for kind, arg in acts:
         if not defined(kind, arg):
             continue

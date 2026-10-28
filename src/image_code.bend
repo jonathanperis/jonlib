@@ -211,5 +211,28 @@ def data.wide(path: String, prep: NamePrep, +length: Nat, reversed: String) -> M
       +room = Nat.is_lt(length, 255n)
       data.wide(rest, data.next_prep(zero, fits), data.next_length(zero, sep, fits, room, length), data.push_name(zero, sep, fits, room, character, reversed))
 
+# File.open encodes the Bend path as UTF-8. ExportDataAsCode scans those bytes.
+def data.utf8_of(+code: U32) -> +List<U32>:
+  Bool.pick(+List<U32>, (code <= 127 : U32), [(code .&. 255 : U32)],
+  Bool.pick(+List<U32>, (code <= 2047 : U32), [(((code >> 6n) .&. 31) .|. 192 : U32), ((code .&. 63) .|. 128 : U32)],
+  Bool.pick(+List<U32>, (code <= 65535 : U32), [(((code >> 12n) .&. 15) .|. 224 : U32), (((code >> 6n) .&. 63) .|. 128 : U32), ((code .&. 63) .|. 128 : U32)],
+  Bool.pick(+List<U32>, (code <= 1114111 : U32), [(((code >> 18n) .&. 7) .|. 240 : U32), (((code >> 12n) .&. 63) .|. 128 : U32), (((code >> 6n) .&. 63) .|. 128 : U32), ((code .&. 63) .|. 128 : U32)],
+    []))))
+
+def data.append(left: +List<U32>, right: +List<U32>) -> +List<U32>:
+  match left:
+    case Nil{}: right
+    case Con{byte, rest}: Con{byte, data.append(rest, right)}
+
+def data.utf8_bytes(path: String) -> +List<U32>:
+  match path:
+    case SNil{}: Nil{}
+    case SCon{character, rest}: data.append(data.utf8_of(Char.to_u32(character)), data.utf8_bytes(rest))
+
+def data.utf8_chars(bytes: +List<U32>) -> String:
+  match bytes:
+    case Nil{}: ""
+    case Con{byte, rest}: SCon{Char.from_u32(byte), data.utf8_chars(rest)}
+
 def data.name_wide(path: String) -> Maybe<&2, String>:
-  data.wide(path, NameGo{}, 0n, "")
+  data.wide(data.utf8_chars(data.utf8_bytes(path)), NameGo{}, 0n, "")
