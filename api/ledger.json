@@ -33410,7 +33410,7 @@
       "mapping_state": "implemented",
       "scope": "The callback raylib would install is passed to the _with forms, which read through it exactly where raylib does: LoadFileData, LoadImage, LoadImageRaw and LoadImageAnim.",
       "gaps": [
-        "Font, audio, model and shader loaders arrive with their modules"
+        "Integration: font, audio, model and shader loaders are not ported, so their file callbacks are not exercised"
       ],
       "adaptations": [
         "Process-wide state replaced by explicit values (language adaptation)"
@@ -33418,9 +33418,9 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "unverified",
         "performance": "unverified"
       },
@@ -33471,7 +33471,7 @@
       "mapping_state": "implemented",
       "scope": "SaveFileData and ExportImage's PNG, raw and PEP branches write through the callback; BMP, TGA and QOI exports open the file themselves, as in raylib.",
       "gaps": [
-        "Font, audio, model and shader loaders arrive with their modules"
+        "Integration: font, audio, model and shader loaders are not ported, so their file callbacks are not exercised"
       ],
       "adaptations": [
         "Process-wide state replaced by explicit values (language adaptation)"
@@ -33479,9 +33479,9 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "unverified",
         "performance": "unverified"
       },
@@ -33532,7 +33532,7 @@
       "mapping_state": "implemented",
       "scope": "LoadFileText reads through the callback; FileTextFindIndex first checks that the file exists on disk, as raylib's FileExists does.",
       "gaps": [
-        "Font, audio, model and shader loaders arrive with their modules"
+        "Integration: font, audio, model and shader loaders are not ported, so their file callbacks are not exercised"
       ],
       "adaptations": [
         "Process-wide state replaced by explicit values (language adaptation)"
@@ -33540,9 +33540,9 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "unverified",
         "performance": "unverified"
       },
@@ -33593,7 +33593,7 @@
       "mapping_state": "implemented",
       "scope": "SaveFileText (text up to its first NUL), ExportImageAsCode and ExportDataAsCode write through the callback.",
       "gaps": [
-        "Font, audio, model and shader loaders arrive with their modules"
+        "Integration: font, audio, model and shader loaders are not ported, so their file callbacks are not exercised"
       ],
       "adaptations": [
         "Process-wide state replaced by explicit values (language adaptation)"
@@ -33601,9 +33601,9 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "unverified",
         "performance": "unverified"
       },
@@ -45355,10 +45355,8 @@
       "status": "partial",
       "jonlib": "Surface.unload / Image.Stored.unload",
       "mapping_state": "implemented",
-      "scope": "Consumes the Surface owner, releasing its storage; affine ownership rules out double unloads and use after unload.",
-      "gaps": [
-        "Resource accounting"
-      ],
+      "scope": "Consumes the Surface owner, releasing its storage; affine ownership rules out double unloads and use after unload. raylib 6.2 UnloadImage only frees the pixel pointer; it keeps no allocation counter.",
+      "gaps": [],
       "adaptations": [
         "Native pointer/allocator ABI: owned values and lists instead of pointers (language adaptation)"
       ],
@@ -48331,10 +48329,8 @@
       "status": "partial",
       "jonlib": "Surface.unload_colors",
       "mapping_state": "implemented",
-      "scope": "Consumes the color list returned by Surface.colors (LoadImageColors), releasing it; affine ownership rules out double unloads.",
-      "gaps": [
-        "Resource accounting"
-      ],
+      "scope": "Consumes the color list returned by Surface.colors (LoadImageColors), releasing it; affine ownership rules out double unloads. raylib 6.2 UnloadImageColors only frees that pointer; it keeps no allocation counter.",
+      "gaps": [],
       "adaptations": [
         "Native pointer/allocator ABI: owned values and lists instead of pointers (language adaptation)"
       ],
@@ -61386,7 +61382,7 @@
       "mapping_state": "implemented",
       "scope": "Triangles (p1, p2, p4) then (p2, p3, p4). F32 corners, including signed zero, a subnormal, infinities and one quiet NaN. Uncontracted and Apple-clang FMA profiles.",
       "gaps": [
-        "Quiet-NaN signs of an uncontracted hit point are not reproduced",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],

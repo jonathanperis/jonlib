@@ -122,7 +122,8 @@ component operations that hit it (`Normalize`, and Vector2/Vector3/Vector4
 and Quaternion add, subtract, scale, multiply and divide, including the
 `*_value` forms; dot, cross, distance, reflect and lerp; Hamilton product,
 conjugate invert and nlerp; and the C++ operators that call those functions
-or a left-associated transform or matrix product) compare a fresh quiet NaN
+or a left-associated transform or matrix product, and an uncontracted
+ray-quad hit point) compare a fresh quiet NaN
 by NaN-ness: any quiet NaN matches. The scalar, vector and matrix probes fold
 that NaN to one payload and then compare exactly. A non-NaN result stays
 bit-exact. One NaN operand is returned unchanged, which those builds do
