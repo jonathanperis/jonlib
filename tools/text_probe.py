@@ -316,8 +316,44 @@ def loaded(result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Unit):
   match result:
     case Fail{_}: IO.print("error")
     case Done{+bytes}: run(U32.to_nat(u32(bytes)), skip(bytes, 4))
+def drop_string(text: String) -> Unit:
+  Unit{}
+def drop_maybe(value: Maybe<String>) -> Unit:
+  match value:
+    case None{}: Unit{}
+    case Some{text}: drop_string(text)
+def drop_copy(value: Maybe<(String & U32)>) -> Unit:
+  match value:
+    case None{}: Unit{}
+    case Some{_}: Unit{}
+def drop_codes(codes: +List<U32>) -> Unit:
+  Unit{}
+def then_unit(done: Unit, more: Unit) -> Unit:
+  more
+def consumed_text() -> Unit:
+  then_unit(J.Text.unload_lines(J.Text.load_lines("a")),
+  then_unit(drop_copy(J.Text.copy("xxxx", "ab")),
+  then_unit(drop_copy(J.Text.append("xxxx", "ab", 0)),
+  then_unit(drop_maybe(J.Text.subtext("abcd", 1, 2)),
+  then_unit(drop_maybe(J.Text.remove_spaces("a b")),
+  then_unit(drop_string(J.Text.between("a[b]c", "[", "]")),
+  then_unit(drop_maybe(J.Text.replace("abab", "a", "c")),
+  then_unit(drop_maybe(J.Text.replace_alloc("abab", "a", "c")),
+  then_unit(drop_maybe(J.Text.replace_between("a[b]c", "[", "]", "z")),
+  then_unit(drop_maybe(J.Text.replace_between_alloc("a[b]c", "[", "]", "z")),
+  then_unit(drop_maybe(J.Text.insert("abcd", "z", 1)),
+  then_unit(drop_maybe(J.Text.insert_alloc("abcd", "z", 1)),
+  then_unit(drop_maybe(J.Text.join(["a", "b"], ",")),
+  then_unit(drop_string(J.Text.to_upper("ab")),
+  then_unit(drop_string(J.Text.to_lower("AB")),
+  then_unit(drop_maybe(J.Text.to_pascal("ab_cd")),
+  then_unit(drop_maybe(J.Text.to_snake("AbCd")),
+  then_unit(drop_maybe(J.Text.to_camel("ab_cd")),
+  then_unit(drop_string(J.UTF8.load([65])),
+  drop_codes(J.Codepoint.load("ab")))))))))))))))))))))
 def main() -> IO(Unit):
   do IO<Unit>:
+    Unit <- IO.pure(Unit, consumed_text())
     Unit <- IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Files.load_data("PATH"), loaded)
     IO.print("done")
 '''

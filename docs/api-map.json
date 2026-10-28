@@ -3072,9 +3072,8 @@
   "DrawSplineBasis": {
     "jonlib": "Draw.spline_basis_for / Draw.spline_basis",
     "status": "profile-covered",
-    "scope": "B-spline segments of 24 divisions per group of 4 points drawn as triangle-strip ribbons, with circle caps at the start and end.",
+    "scope": "B-spline segments of 24 divisions per group of 4 points drawn as triangle-strip ribbons, with circle caps at the start and end. Fewer than 4 points draw nothing.",
     "gaps": [
-      "Fewer than 4 points draw nothing",
       "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
       "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -3086,9 +3085,8 @@
   "DrawSplineCatmullRom": {
     "jonlib": "Draw.spline_catmull_rom_for / Draw.spline_catmull_rom",
     "status": "profile-covered",
-    "scope": "Catmull-Rom segments of 24 divisions drawn as triangle-strip ribbons, with circle caps at the start and end.",
+    "scope": "Catmull-Rom segments of 24 divisions drawn as triangle-strip ribbons, with circle caps at the start and end. Fewer than 4 points draw nothing.",
     "gaps": [
-      "Fewer than 4 points draw nothing",
       "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
       "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -3100,9 +3098,8 @@
   "DrawSplineBezierQuadratic": {
     "jonlib": "Draw.spline_bezier_quadratic",
     "status": "profile-covered",
-    "scope": "Points [p1, c2, p3, c4, p5, ...]: quadratic segments of 24 divisions as triangle-strip ribbons.",
+    "scope": "Points [p1, c2, p3, c4, p5, ...]: quadratic segments of 24 divisions as triangle-strip ribbons. Fewer than 3 points draw nothing.",
     "gaps": [
-      "Fewer than 3 points draw nothing",
       "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"

@@ -26079,7 +26079,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
@@ -32394,13 +32394,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
-        "ownership": "partial",
+        "behavior": "partial",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "tests/transforms.bend",
         "docs/RANDOM.md"
       ],
@@ -33057,12 +33058,13 @@
       "gates": {
         "availability": "partial",
         "behavior": "partial",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "tools/files_probe.py",
         "docs/FILES.md"
       ],
@@ -33305,12 +33307,13 @@
       "gates": {
         "availability": "partial",
         "behavior": "partial",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "tools/files_probe.py",
         "docs/FILES.md"
       ],
@@ -35308,12 +35311,13 @@
       "gates": {
         "availability": "partial",
         "behavior": "partial",
-        "ownership": "unverified",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "tools/files_os_probe.py",
         "docs/FILES.md",
         "jonlib.bend",
@@ -43181,9 +43185,8 @@
       "status": "partial",
       "jonlib": "Draw.spline_basis_for / Draw.spline_basis",
       "mapping_state": "implemented",
-      "scope": "B-spline segments of 24 divisions per group of 4 points drawn as triangle-strip ribbons, with circle caps at the start and end.",
+      "scope": "B-spline segments of 24 divisions per group of 4 points drawn as triangle-strip ribbons, with circle caps at the start and end. Fewer than 4 points draw nothing.",
       "gaps": [
-        "Fewer than 4 points draw nothing",
         "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -43200,6 +43203,7 @@
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "tools/rlgl_probe.py",
         "docs/RLGL.md",
         "src/frame.bend",
@@ -43250,9 +43254,8 @@
       "status": "partial",
       "jonlib": "Draw.spline_catmull_rom_for / Draw.spline_catmull_rom",
       "mapping_state": "implemented",
-      "scope": "Catmull-Rom segments of 24 divisions drawn as triangle-strip ribbons, with circle caps at the start and end.",
+      "scope": "Catmull-Rom segments of 24 divisions drawn as triangle-strip ribbons, with circle caps at the start and end. Fewer than 4 points draw nothing.",
       "gaps": [
-        "Fewer than 4 points draw nothing",
         "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -43269,6 +43272,7 @@
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "tools/rlgl_probe.py",
         "docs/RLGL.md",
         "src/frame.bend",
@@ -43319,9 +43323,8 @@
       "status": "partial",
       "jonlib": "Draw.spline_bezier_quadratic",
       "mapping_state": "implemented",
-      "scope": "Points [p1, c2, p3, c4, p5, ...]: quadratic segments of 24 divisions as triangle-strip ribbons.",
+      "scope": "Points [p1, c2, p3, c4, p5, ...]: quadratic segments of 24 divisions as triangle-strip ribbons. Fewer than 3 points draw nothing.",
       "gaps": [
-        "Fewer than 3 points draw nothing",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -43330,13 +43333,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "tools/rlgl_probe.py",
         "docs/RLGL.md",
         "src/frame.bend",
@@ -44132,7 +44136,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -44194,13 +44198,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/collision_finite_probe.py",
         "tools/collision_exceptional_probe.py",
         "tests/fixtures/images.json",
         "docs/COLLISION.md"
@@ -44256,13 +44261,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/collision_finite_probe.py",
         "tools/collision_exceptional_probe.py",
         "tests/fixtures/images.json",
         "docs/COLLISION.md"
@@ -44319,13 +44325,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/collision_finite_probe.py",
         "tools/collision_exceptional_probe.py",
         "tests/fixtures/images.json",
         "docs/COLLISION.md"
@@ -44381,7 +44388,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -44444,13 +44451,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/collision_finite_probe.py",
         "tools/collision_exceptional_probe.py",
         "tests/fixtures/images.json",
         "docs/COLLISION.md"
@@ -44506,13 +44514,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/collision_finite_probe.py",
         "tools/collision_exceptional_probe.py",
         "tests/fixtures/images.json",
         "docs/COLLISION.md"
@@ -44569,13 +44578,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/collision_finite_probe.py",
         "tools/collision_exceptional_probe.py",
         "tests/fixtures/images.json",
         "docs/COLLISION.md"
@@ -44756,7 +44766,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -45669,13 +45679,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "docs/API.md"
       ],
       "gate_evidence": {},
@@ -45796,13 +45807,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/gradient_checked_probe.py",
         "tests/fixtures/images.json",
         "docs/GRADIENTS.md"
       ],
@@ -45858,13 +45870,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/gradient_checked_probe.py",
         "tests/fixtures/images.json",
         "tests/transforms.bend",
         "docs/API.md"
@@ -45921,13 +45934,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/gradient_checked_probe.py",
         "tests/fixtures/images.json",
         "tests/transforms.bend",
         "docs/API.md"
@@ -48417,13 +48431,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
-        "ownership": "partial",
+        "behavior": "partial",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "tests/transforms.bend",
         "docs/PALETTES.md"
       ],
@@ -51905,13 +51920,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "tests/fixtures/images.json",
         "docs/API.md"
       ],
@@ -51968,13 +51984,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "tests/fixtures/images.json",
         "docs/API.md"
       ],
@@ -52029,13 +52046,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "docs/API.md"
       ],
       "gate_evidence": {},
@@ -52090,13 +52108,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "tests/fixtures/images.json",
         "docs/API.md"
       ],
@@ -52218,13 +52237,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "tests/fixtures/images.json",
         "docs/API.md"
       ],
@@ -52346,13 +52366,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "tests/fixtures/images.json",
         "docs/API.md"
       ],
@@ -52408,13 +52429,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "partial",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "tests/fixtures/images.json",
         "docs/API.md"
       ],
@@ -52470,13 +52492,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "partial",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "tests/fixtures/images.json",
         "docs/API.md"
       ],
@@ -52532,13 +52555,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "tests/fixtures/images.json",
         "docs/API.md"
       ],
@@ -52593,13 +52617,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "docs/API.md"
       ],
       "gate_evidence": {},
@@ -52654,13 +52679,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "tests/fixtures/images.json",
         "docs/API.md"
       ],
@@ -52715,13 +52741,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/color_words_probe.py",
         "docs/API.md"
       ],
       "gate_evidence": {},
@@ -54549,7 +54576,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -54667,7 +54694,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -55074,7 +55101,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -55133,7 +55160,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -55194,7 +55221,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -55432,7 +55459,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -55491,7 +55518,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -55550,7 +55577,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -55611,7 +55638,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -55672,7 +55699,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -55731,7 +55758,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -55790,7 +55817,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -55849,7 +55876,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -55908,7 +55935,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -55967,7 +55994,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -56087,7 +56114,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -56203,7 +56230,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -56262,7 +56289,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -56321,7 +56348,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -56380,7 +56407,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -56439,7 +56466,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -60963,13 +60990,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/collision_finite_probe.py",
         "tools/collision_exceptional_probe.py",
         "tests/fixtures/images.json",
         "docs/COLLISION.md"
@@ -61025,7 +61053,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -61087,13 +61115,14 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "unverified",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
+        "tools/collision_finite_probe.py",
         "tools/collision_exceptional_probe.py",
         "tests/fixtures/images.json",
         "docs/COLLISION.md"
@@ -63395,7 +63424,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -101458,7 +101487,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -103790,7 +103819,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"

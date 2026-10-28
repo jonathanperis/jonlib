@@ -43,10 +43,15 @@ def main() -> IO(Unit):
 '''
 
 
+def consumed_samples():
+    # The native program calls UnloadWaveSamples(sample); Jonlib drops the owned sample list.
+    return NATIVE
+
+
 def main():
     args = probekit.arguments(__doc__)
     probe = probekit.Probe('wave-release', args, raylib_options=('SUPPORT_MODULE_RAUDIO=ON',))
-    expected = [line for line in probe.native(NATIVE).splitlines() if line and not line.startswith('INFO:')]
+    expected = [line for line in probe.native(consumed_samples()).splitlines() if line and not line.startswith('INFO:')]
     lanes = probe.candidates(lambda selected, gpu: PROGRAM, ['wave'], batch=1,
                              parse=lambda text, selected: ['\n'.join(line for line in text.splitlines() if line.strip())])
     probe.compare(['\n'.join(expected)], lanes, describe=lambda index: 'wave release')

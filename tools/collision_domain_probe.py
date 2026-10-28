@@ -184,19 +184,7 @@ def main():
     if len(expected) != len(rows):
         raise ProbeFailure(f'collision-domain: native produced {len(expected)} rows for {len(rows)} cases')
     lanes = probe.candidates(render, rows, batch=300)
-    for lane, actual in lanes.items():
-        if len(actual) != len(expected):
-            raise ProbeFailure(f'collision-domain: {lane} produced {len(actual)} rows, expected {len(expected)}')
-        different = [index for index, (want, got) in enumerate(zip(expected, actual)) if want != got]
-        probe.report.setdefault('lanes', {})[lane] = dict(passed=not different, rows=len(actual), different=different[:12])
-        probe.save()
-        if different:
-            first = different[0]
-            name, args = rows[first]
-            raise ProbeFailure(
-                f'collision-domain: {lane} differs at {len(different)} rows; first {name} '
-                f'{tuple(hex(word) for word in args)}: raylib={json.dumps(expected[first])} '
-                f'jonlib={json.dumps(actual[first])}')
+    probe.compare(expected, lanes, describe=lambda index: rows[index][0])
     probe.finish(cases=len(rows), functions=len(FUNCTIONS),
                  inputs_sha256=hashlib.sha256(json.dumps(rows).encode()).hexdigest(),
                  reference_sha256=hashlib.sha256(text.encode()).hexdigest())

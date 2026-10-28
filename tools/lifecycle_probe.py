@@ -159,10 +159,13 @@ def unloaded_events() -> Unit:
 def unloaded_vr() -> Unit:
   J.Vr.unload_stereo_config(J.VrStereoConfig{M.Matrix.identity(), M.Matrix.identity(), M.Matrix.identity(), M.Matrix.identity(), M.Vector2{0.0, 0.0}, M.Vector2{0.0, 0.0}, M.Vector2{0.0, 0.0}, M.Vector2{0.0, 0.0}, M.Vector2{0.0, 0.0}, M.Vector2{0.0, 0.0}})
 
+def released_frame(frame: J.Frame) -> Unit:
+  J.Frame.close_window(frame)
+
 def closed_frame_of(found: Maybe<J.Frame>) -> Unit:
   match found:
     case None{}: Unit{}
-    case Some{frame}: J.Frame.close_window(frame)
+    case Some{frame}: released_frame(frame)
 
 def closed_frame() -> Unit:
   closed_frame_of(J.Frame.init_window(16, 9))
@@ -183,14 +186,20 @@ def closed_core_window(found: Maybe<J.Core>) -> Unit:
     case None{}: Unit{}
     case Some{core}: J.Core.close_window(core)
 
+def released_rlgl(frame: J.Frame) -> Unit:
+  J.Rlgl.gl_close(frame)
+
 def cube_line(pair: J.Frame & U32) -> String:
   (rest, +cube) = pair
-  then_text(J.Rlgl.gl_close(rest), "tex 1\ncube " ++ U32.show(cube))
+  then_text(released_rlgl(rest), "tex 1\ncube " ++ U32.show(cube))
+
+def released_texture(frame: J.Frame, texture: J.Texture) -> J.Frame:
+  J.Rlgl.unload_texture(frame, texture)
 
 def tex_finish(back: Maybe<J.Texture>, frame: J.Frame) -> String:
   match back:
     case None{}: "tex 0"
-    case Some{held}: cube_line(J.Rlgl.load_texture_cubemap(J.Rlgl.unload_texture(frame, held), Nil{}, 1, 7, 1))
+    case Some{held}: cube_line(J.Rlgl.load_texture_cubemap(released_texture(frame, held), Nil{}, 1, 7, 1))
 
 def tex_disabled(pair: J.Frame & Maybe<J.Texture>) -> String:
   (cleared, back) = pair

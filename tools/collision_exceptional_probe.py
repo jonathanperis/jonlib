@@ -289,20 +289,7 @@ def main():
     if len(expected) != len(rows):
         raise ProbeFailure(f'collision-exceptional: native produced {len(expected)} rows for {len(rows)} cases')
     lanes = probe.candidates(render, rows, batch=200)
-    for lane, actual in lanes.items():
-        if len(actual) != len(expected):
-            raise ProbeFailure(f'collision-exceptional: {lane} produced {len(actual)} rows, expected {len(expected)}')
-        different = [index for index, (want, got) in enumerate(zip(expected, actual)) if want != got]
-        probe.report.setdefault('lanes', {})[lane] = dict(passed=not different, rows=len(actual), different=different[:12])
-        probe.save()
-        if different:
-            first = different[0]
-            name, args = rows[first]
-            want, got = expected[first], actual[first]
-            profile = 'both' if want[0] != got[0] and want[1] != got[1] else ('uncontracted' if want[0] != got[0] else 'fused')
-            raise ProbeFailure(
-                f'collision-exceptional: {lane} differs at {len(different)} rows ({profile}); first {name} '
-                f'{tuple(hex(word) for word in args)}: reference={json.dumps(want)} jonlib={json.dumps(got)}')
+    probe.compare(expected, lanes, describe=lambda index: rows[index][0])
     counts = {name: sum(row_name == name for row_name, _ in rows) for name in FUNCTIONS}
     probe.finish(cases=len(rows), **counts,
                  inputs_sha256=hashlib.sha256(json.dumps(rows).encode()).hexdigest(),
