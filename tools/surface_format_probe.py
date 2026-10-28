@@ -202,18 +202,23 @@ OPS = {
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
 import ../../jonmath.bend as M
-''' + SURFACE_EMITTER + '''def payload_words(second: Array<U32> & U32, +first: U32) -> List<U32>:
-  (_, word) = second
+''' + SURFACE_EMITTER + '''def payload_second(+first: U32, got: Array<U32> & U32) -> List<U32>:
+  (_, word) = got
   word_bytes(4n, word, word_bytes(4n, first, Nil{}))
+def payload_first(got: Array<U32> & U32) -> List<U32>:
+  (rest, first) = got
+  payload_second(first, Array.get(U32, rest, 1))
 def payload_open(values: Array<U32>) -> List<U32>:
-  (rest, first) = Array.get(U32, values, 0)
-  payload_words(Array.get(U32, rest, 1), first)
+  payload_first(Array.get(U32, values, 0))
+def payload_surface(surface: J.Surface) -> IO(Unit):
+  match surface:
+    case J.Surface{width, height, format, J.Words{values}}:
+      emit_bytes(~&1, prepend(word_bytes(4n, height, word_bytes(4n, width, word_bytes(4n, format, Nil{}))), List.reverse(&1, U32, payload_open(values))))
+    case _: IO.print("null")
 def payload_emit(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.print("null")
-    case Done{J.Surface{width, height, format, J.Words{values}}}:
-      emit_bytes(~&1, prepend(word_bytes(4n, height, word_bytes(4n, width, word_bytes(4n, format, Nil{}))), payload_open(values)))
-    case Done{_}: IO.print("null")
+    case Done{surface}: payload_surface(surface)
 def color_bytes(colors: List<U32>, values: List<U32>) -> List<U32>:
   match colors:
     case Nil{}: List.reverse(&1, U32, values)
@@ -388,7 +393,7 @@ def native(probe, cases, selected):
 def render(cases):
     def emit(selected, gpu):
         body = PROGRAM
-        used = sorted(op for _, op, _ in selected if op in OPS)
+        used = sorted({op for _, op, _ in selected if op in OPS})
         for op in used:
             _, kind, expression = OPS[op]
             call = {'total': f'image(done({expression}))', 'image': f'image({expression})',
