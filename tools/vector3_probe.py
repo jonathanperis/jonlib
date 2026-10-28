@@ -6,18 +6,14 @@ Invert, plus Length, LengthSqr, Dot, Cross, Distance, DistanceSqr, Normalize,
 Reflect, Equals and Lerp, are compiled from the pinned raymath.h with
 contraction off (`clang -O2 -fno-builtin-atan2f`, `FP_CONTRACT OFF`). Inputs
 live in a table so clang emits the arithmetic instead of constant-folding the
-literals. The sign of a quiet NaN that arithmetic produces is not part of the
-comparison: clang's divss/mulss sign and Bend's runtime operation disagree,
-and the JavaScript sign is not stable. Negate, Invert, Length, LengthSqr and
-Equals matched every bit on this corpus, so a sign difference there still
-fails. Normalize scales by a reciprocal length, and that product's quiet-NaN
-sign is not reproduced. A payload change or a NaN where raylib returned a
-number fails on every lane. Min, max and clamp stay on the signed-zero
-profiles. Angle stays on atan2.
+literals. A fresh quiet NaN is folded to the canonical positive payload
+before an exact comparison. Every other bit stays exact on CPU-1, CPU-2 and
+JavaScript. A payload change or a NaN where raylib returned a number fails
+on every lane. Min, max and clamp stay on the signed-zero profiles. Angle
+stays on atan2.
 """
 import hashlib
 import json
-from collections import Counter
 from itertools import product
 
 import probekit
@@ -207,61 +203,8 @@ def render(selected, gpu):
     return body
 
 
-def sign_only(expected, actual):
-    """True when two results differ only by NaN signs."""
-    if type(expected) is int and type(actual) is int:
-        if (expected & 0x7fffffff) <= 0x7f800000 or (actual & 0x7fffffff) <= 0x7f800000:
-            return False
-        return (expected ^ actual) == 0x80000000
-    if type(expected) is list and type(actual) is list and len(expected) == len(actual):
-        changed = False
-        for left, right in zip(expected, actual):
-            if left == right:
-                continue
-            if not sign_only(left, right):
-                return False
-            changed = True
-        return changed
-    return False
-
-
-# These matched every bit of the corpus, including quiet-NaN signs.
-# Normalize is not in this set: scaling by the reciprocal length flips one
-# quiet-NaN sign on CPU.
-EXACT = frozenset({'negate', 'invert', 'length', 'length_sqr', 'equals'})
-
-
-def compare(probe, expected, lanes, rows):
-    """Exact bits, except the quiet-NaN sign of operations that do not reproduce it."""
-    signs = Counter()
-    for lane, actual in lanes.items():
-        if len(actual) != len(expected):
-            raise ProbeFailure(f'vector3: {lane} produced {len(actual)} rows, expected {len(expected)}')
-        real = []
-        for index, (want, got) in enumerate(zip(expected, actual)):
-            if want == got:
-                continue
-            name, args = rows[index]
-            if quiet_nan.modeled(name):
-                if quiet_nan.acceptable(name, want, got, args):
-                    signs[name] += 1
-                else:
-                    real.append(index)
-            elif name not in EXACT and sign_only(want, got):
-                signs[name] += 1
-            else:
-                real.append(index)
-        entry = dict(passed=not real, rows=len(actual), different=real[:20])
-        if lane == 'javascript':
-            entry['nan_sign'] = sum(signs.values())
-        probe.report['lanes'][lane] = entry
-        probe.save()
-        if real:
-            first = real[0]
-            raise ProbeFailure(f'vector3: {lane} differs at {len(real)} rows; first '
-                               f'{rows[first][0]} {tuple(hex(word) for word in rows[first][1])}: '
-                               f'raylib={json.dumps(expected[first])} jonlib={json.dumps(actual[first])}')
-    return signs
+def aligned(rows, values):
+    return [quiet_nan.canonical(name, args, value) for (name, args), value in zip(rows, values)]
 
 
 def main():
@@ -275,8 +218,11 @@ def main():
         raise ProbeFailure(f'vector3: native produced {len(expected)} rows for {len(rows)} cases')
     lanes = probe.candidates(render, rows, batch=140, source_limit=48000)
     lanes = {lane: values for lane, values in lanes.items() if lane != 'gpu'}
-    signs = compare(probe, expected, lanes, rows)
-    probe.finish(cases=len(rows), javascript_nan_sign=dict(signs),
+    expected_n = aligned(rows, expected)
+    lanes_n = {lane: aligned(rows, values) for lane, values in lanes.items()}
+    fresh = sum(before != after for before, after in zip(expected, expected_n))
+    probe.compare(expected_n, lanes_n, describe=lambda i: f'{rows[i][0]} {tuple(hex(word) for word in rows[i][1])}')
+    probe.finish(cases=len(rows), fresh_nan_rows=fresh,
                  inputs_sha256=hashlib.sha256(json.dumps(rows).encode()).hexdigest(),
                  reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 

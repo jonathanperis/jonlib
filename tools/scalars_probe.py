@@ -6,11 +6,10 @@ pinned raymath.h with contraction off, the same flags as the main corpus
 (`clang -O2 -fno-builtin-atan2f`, `FP_CONTRACT OFF`). Each input word is loaded
 through a volatile so `floorf`, `fabsf` and `fmaxf` run as they do for a
 non-constant call, not as a folded literal. Every result bit (and FloatEquals'
-boolean) is compared on CPU-1, CPU-2 and JavaScript. JavaScript does not
-reproduce the sign of a quiet NaN an arithmetic formula produces: the sign can
-differ from raylib and is not stable across runs. That sign is recorded and is
-not a value mismatch. A payload change, a NaN where raylib returned a number,
-or any difference on a CPU lane fails the probe.
+boolean) is compared on CPU-1, CPU-2 and JavaScript. A fresh quiet NaN is
+folded to the canonical positive payload before that exact comparison. Every
+other bit stays exact. A payload change, a NaN where raylib returned a
+number, or any other difference fails the probe.
 """
 import hashlib
 import json
@@ -125,43 +124,8 @@ def render(selected, gpu):
     return body
 
 
-def quiet_nan_sign(expected, actual):
-    """True when two words are NaNs that differ only in the sign bit."""
-    if type(expected) is not int or type(actual) is not int:
-        return False
-    if (expected & 0x7fffffff) <= 0x7f800000 or (actual & 0x7fffffff) <= 0x7f800000:
-        return False
-    return (expected ^ actual) == 0x80000000
-
-
-def compare(probe, expected, lanes, rows):
-    """Exact bits on every lane. JavaScript may use either sign for a produced NaN."""
-    signs = 0
-    for lane, actual in lanes.items():
-        if len(actual) != len(expected):
-            raise ProbeFailure(f'scalars: {lane} produced {len(actual)} rows, expected {len(expected)}')
-        real, flipped = [], []
-        for index, (want, got) in enumerate(zip(expected, actual)):
-            if want == got:
-                continue
-            if rows[index][0] == 'normalize':
-                if not quiet_nan.acceptable('normalize', want, got, rows[index][1]):
-                    real.append(index)
-            elif lane == 'javascript' and quiet_nan_sign(want, got):
-                flipped.append(index)
-            else:
-                real.append(index)
-        probe.report['lanes'][lane] = dict(passed=not real, rows=len(actual), different=real[:20])
-        if lane == 'javascript':
-            probe.report['lanes'][lane]['nan_sign'] = len(flipped)
-            signs = len(flipped)
-        probe.save()
-        if real:
-            first = real[0]
-            raise ProbeFailure(f'scalars: {lane} differs at {len(real)} rows; first '
-                               f'{rows[first][0]} {tuple(hex(word) for word in rows[first][1])}: '
-                               f'raylib={json.dumps(expected[first])} jonlib={json.dumps(actual[first])}')
-    return signs
+def aligned(rows, values):
+    return [quiet_nan.canonical(name, args, value) for (name, args), value in zip(rows, values)]
 
 
 def main():
@@ -175,8 +139,11 @@ def main():
         raise ProbeFailure(f'scalars: native produced {len(expected)} rows for {len(rows)} cases')
     lanes = probe.candidates(render, rows, batch=240)
     lanes = {lane: values for lane, values in lanes.items() if lane != 'gpu'}
-    signs = compare(probe, expected, lanes, rows)
-    probe.finish(cases=len(rows), javascript_nan_sign=signs,
+    expected_n = aligned(rows, expected)
+    lanes_n = {lane: aligned(rows, values) for lane, values in lanes.items()}
+    fresh = sum(before != after for before, after in zip(expected, expected_n))
+    probe.compare(expected_n, lanes_n, describe=lambda i: f'{rows[i][0]} {tuple(hex(word) for word in rows[i][1])}')
+    probe.finish(cases=len(rows), fresh_nan_rows=fresh,
                  inputs_sha256=hashlib.sha256(json.dumps(rows).encode()).hexdigest(),
                  reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 

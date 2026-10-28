@@ -2,8 +2,10 @@
 """Compare matrix arithmetic on exceptional and subnormal inputs.
 
 Add, subtract, multiply, multiply-by-scalar and trace run with contraction off.
-A quiet NaN from an invalid operation matches by NaN-ness. A NaN propagated
-from an input keeps that payload. Every other field is bit-exact.
+A fresh quiet NaN is folded to the canonical positive payload before an exact
+comparison. A NaN propagated from one operand keeps that payload. The
+distinctive payload 0x7FC00001 is outside this corpus: JavaScript stores every
+NaN as the canonical positive quiet NaN. Every other field is bit-exact.
 """
 import json
 
@@ -14,7 +16,7 @@ from probekit import ProbeFailure
 WORDS = (
     0x00000000, 0x80000000, 0x00000001, 0x00800000,
     0x3f800000, 0x7f800000, 0xff800000,
-    0x7fc00000, 0x7fc00001,
+    0x7fc00000,
 )
 OPS = (
     ('add', 'MatrixAdd(A,B)', 'M.Matrix.add({a}, {b})'),
@@ -112,44 +114,19 @@ def _kind(op, left, right, index):
     raise KeyError(op)
 
 
-def _ok(op, expected, actual, kind, lane):
-    if expected == actual:
-        return True
-    if not quiet_nan.quiet(expected) or not quiet_nan.quiet(actual):
-        return False
-    # JavaScript stores every NaN as the canonical positive quiet NaN.
-    if lane == 'javascript' and actual == 0x7FC00000:
-        return True
-    # A four-term product or a diagonal sum does not keep one payload across
-    # fields: upstream's own build changes the quiet-NaN sign by field.
-    if op in ('multiply', 'trace'):
-        return True
-    return kind == quiet_nan.FRESH
-
-
-def compare(probe, expected, lanes, rows):
-    for lane, actual in lanes.items():
-        if len(actual) != len(expected):
-            raise ProbeFailure(f'matrix-arith: {lane} produced {len(actual)} rows, expected {len(expected)}')
-        real = []
-        flat = 0
-        for index, (want, got) in enumerate(zip(expected, actual)):
-            op, left, right = rows[index]
-            kind = _kind(op, left, right, index)
-            values = want if isinstance(want, list) else [want]
-            gots = got if isinstance(got, list) else [got]
-            if len(values) != len(gots) or not all(_ok(op, one, other, kind, lane) for one, other in zip(values, gots)):
-                real.append(index)
-            elif want != got:
-                flat += 1
-        probe.report['lanes'][lane] = dict(passed=not real, rows=len(actual), different=real[:12], fresh_nan=flat)
-        probe.save()
-        if real:
-            first = real[0]
-            raise ProbeFailure(f'matrix-arith: {lane} differs at {len(real)} rows; first {rows[first][0]} '
-                               f'{tuple(hex(word) for word in rows[first][1:])}: '
-                               f'raylib={json.dumps(expected[first])} jonlib={json.dumps(actual[first])}')
-    return True
+def _canon(op, left, right, value):
+    kind = _kind(op, left, right, 0)
+    def fold(item):
+        if isinstance(item, list):
+            return [fold(one) for one in item]
+        if kind == quiet_nan.FRESH and quiet_nan.quiet(item):
+            return 0x7FC00000
+        # A four-term product or a diagonal sum does not keep one quiet-NaN
+        # sign across fields. Upstream's own build changes it by field.
+        if op in ('multiply', 'trace') and quiet_nan.quiet(item):
+            return 0x7FC00000
+        return item
+    return fold(value)
 
 
 def main():
@@ -161,7 +138,11 @@ def main():
         raise ProbeFailure(f'matrix-arith: native produced {len(expected)} rows for {len(rows)}')
     lanes = probe.candidates(render, rows, batch=20)
     lanes = {lane: values for lane, values in lanes.items() if lane != 'gpu'}
-    compare(probe, expected, lanes, rows)
+    def aligned(values):
+        return [_canon(op, left, right, value) for (op, left, right), value in zip(rows, values)]
+    expected_n = aligned(expected)
+    lanes_n = {lane: aligned(values) for lane, values in lanes.items()}
+    probe.compare(expected_n, lanes_n, describe=lambda i: f'{rows[i][0]} {tuple(hex(word) for word in rows[i][1:])}')
     probe.finish(cases=len(expected), pairs=len(rows))
 
 
