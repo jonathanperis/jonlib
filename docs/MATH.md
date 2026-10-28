@@ -544,6 +544,17 @@ contract of the pinned Bend compiler. The independent C reference includes the
 unmodified pinned `raymath.h` with `FP_CONTRACT OFF`. This choice is explicit:
 fused multiply-add/contracted build variants are separate, unverified contracts.
 
+Upstream's default build does contract on arm64 and does not on generic
+x86-64. The desktop Makefile release flags are `-O1 -std=c99` with no
+`-ffp-contract` and no `-mfma`. GCC's default is `-ffp-contract=fast` and
+Clang's is `-ffp-contract=on`, but an x86-64 target without `-mfma` still
+emits `mulss`/`addss` at `-O1` and `-O3` (measured gcc 13 and clang 18). The
+same `-O1 -std=c99` flags on aarch64 emit `fmadd` (clang `-target
+aarch64-linux-gnu`). CMake's top-level default is Debug; its Release flags
+are `-O3 -DNDEBUG` plus that same contraction default. A program built with
+`-mfma -ffp-contract=fast` changes `x*y + x*x` bits relative to
+`-ffp-contract=off`. `Contracted builds` stays a gap.
+
 The `conformance` gate (`tools/conformance.py` over `tests/fixtures/images.json`)
 compares exact returned F32 bit patterns and Boolean values with the linked
 pinned raylib on CPU-1, CPU-2 and JavaScript.
