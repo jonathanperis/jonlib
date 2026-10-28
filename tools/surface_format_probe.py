@@ -188,6 +188,7 @@ OPS = {
        for fmt_c in [f'ImageFormat(&m,{target});' if target else '']},
     **{f'to-{target}': (f'ImageFormat(&im,{target});', 'image', f'J.Surface.format(s, {target})') for target in range(1, 14)},
     'alpha-mask': ('{Image m=ImageCopy(im);ImageFlipHorizontal(&m);ImageAlphaMask(&im,m);UnloadImage(m);}', 'image', 'masked(0, J.Surface.copy(s))'),
+    'alpha-mask-mismatch': ('{Image m=GenImageColor(1,1,WHITE);ImageAlphaMask(&im,m);UnloadImage(m);}', 'image', 'mask_mismatch(s)'),
     'alpha-mask-rgb': ('{Image m=ImageCopy(im);ImageFlipHorizontal(&m);ImageFormat(&m,4);ImageAlphaMask(&im,m);UnloadImage(m);}', 'image',
                        'masked(4, J.Surface.copy(s))'),
     'alpha-border': ('', 'rect', 'J.Surface.alpha_border(s, 0.3)'),
@@ -234,7 +235,11 @@ def masked.result(result: Result<&1, &1, (J.Surface & J.Surface) & J.Surface.Err
 def masked.with(image: J.Surface, mask: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
   match mask:
     case Fail{Tuple{_, error}}: Fail{(image, error)}
-    case Done{alpha}: masked.result(J.Surface.alpha_mask(image, alpha))
+    case Done{alpha}: masked.result(J.Surface.alpha_mask_native(image, alpha))
+def mask_mismatch(image: J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  match J.Surface.create(1, 1, 4294967295):
+    case None{}: Fail{(image, J.InvalidRequest{})}
+    case Some{mask}: masked.result(J.Surface.alpha_mask_native(image, mask))
 def masked(+format: U32, pair: J.Surface & J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
   (image, copy) = pair
   masked.with(image, J.Surface.format(J.Surface.flip_horizontal(copy), format))

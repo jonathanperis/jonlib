@@ -46890,12 +46890,10 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.alpha_mask",
+      "jonlib": "Surface.alpha_mask_native",
       "mapping_state": "implemented",
-      "scope": "Same-size owners in formats 1..13: the mask is a GRAYSCALE copy (ImageFormat) of the source; a GRAYSCALE destination becomes GRAY_ALPHA, others become R8G8B8A8 through ImageFormat, with the mask as alpha. The original mask is retained; mismatched dimensions return both owners with InvalidSize; conversion domain failures return them with OutOfDomain.",
+      "scope": "Same-size owners in formats 1..13: the mask is a GRAYSCALE copy (ImageFormat) of the source; a GRAYSCALE destination becomes GRAY_ALPHA, others become R8G8B8A8 through ImageFormat, with the mask as alpha. The original mask is retained. A different size or a compressed destination is left unchanged. Conversion domain failures return both owners with OutOfDomain.",
       "gaps": [
-        "Reference warning/no-op adaptation on mismatched sizes",
-        "Pixel formats 10+",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -47814,7 +47812,8 @@
       "mapping_state": "implemented",
       "scope": "Any Surface format via LoadImageColors, integer tint multiplication and ImageFormat back (alpha discarded by formats without alpha). R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Other source domains/mipmaps and target/performance evidence"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
@@ -47878,7 +47877,8 @@
       "mapping_state": "implemented",
       "scope": "Any Surface format via LoadImageColors, RGB inversion and ImageFormat back. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Other source domains/mipmaps and target/performance evidence"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
@@ -48009,7 +48009,8 @@
       "mapping_state": "implemented",
       "scope": "Any Surface format via LoadImageColors and ImageFormat back; finite contrast clamped to -100..100 with native F32 arithmetic/truncation; non-finite amounts are InvalidRequest. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Other source domains/mipmaps and target/performance evidence"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
@@ -48136,7 +48137,8 @@
       "mapping_state": "implemented",
       "scope": "Any Surface format via LoadImageColors and exact four-byte matching; GRAYSCALE, R5G6B5, R8G8B8 and R32G32B32 convert back with ImageFormat, other formats stay R8G8B8A8 as in raylib. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Other source domains/mipmaps and target/performance evidence"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,

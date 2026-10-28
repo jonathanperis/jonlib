@@ -4732,6 +4732,29 @@ def Surface.alpha_mask(destination: Surface, source: Surface) -> Result<&1, &1, 
   Surface{+mw, +mh, mf, mp} = source
   Surface.mask.sized(U32.is_eq(dw, mw) && U32.is_eq(dh, mh), Surface{dw, dh, df, dp}, Surface{mw, mh, mf, mp})
 
+# raylib warns and leaves both images untouched when the sizes differ, and
+# when the destination format is compressed. Formats 1..13, including the
+# float and half formats, go through ImageFormat.
+def Surface.mask.kept(same: Bool, destination: Surface, source: Surface) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match same:
+    case False{}: Done{(destination, source)}
+    case True{}: Done{(destination, source)}
+
+def Surface.mask.open(valid: Bool, destination: Surface, source: Surface) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match valid:
+    case False{}: Surface.mask.kept(False{}, destination, source)
+    case True{}: Surface.mask.copied(destination, Surface.copy(source))
+
+def Surface.mask.routed(compressed: Bool, same: Bool, destination: Surface, source: Surface) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match compressed:
+    case True{}: Surface.mask.kept(same, destination, source)
+    case False{}: Surface.mask.open(same, destination, source)
+
+def Surface.alpha_mask_native(destination: Surface, source: Surface) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  Surface{+dw, +dh, +df, dp} = destination
+  Surface{+mw, +mh, mf, mp} = source
+  Surface.mask.routed((df >= 14 : U32), U32.is_eq(dw, mw) && U32.is_eq(dh, mh), Surface{dw, dh, df, dp}, Surface{mw, mh, mf, mp})
+
 # ImageAlphaClear on native words: GRAY_ALPHA compares its alpha byte and
 # stores (color.r, color.a); R5G5B5A1 and R4G4B4A4 compare their alpha bits.
 def Surface.alpha_clear.word(kind: U32, +cutoff: U32, +replacement: U32, +word: U32) -> U32:

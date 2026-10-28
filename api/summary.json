@@ -573,10 +573,10 @@
     "total": 327,
     "implemented": 327,
     "behavior_ownership_verified": 0,
-    "only_allowed_gaps": 139,
+    "only_allowed_gaps": 144,
     "meeting": 0
   },
-  "open_gaps": 2729,
+  "open_gaps": 2731,
   "language_adaptations": {
     "entries": 1018,
     "items": 1039

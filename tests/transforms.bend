@@ -95,15 +95,21 @@ def scaled(created: Maybe<J.Surface>, operation: U32) -> Bool:
     case None{}: False{}
     case Some{surface}: invalid_scaled(J.Surface.copy(surface), operation)
 
+# raylib warns and leaves both images untouched.
 def invalid_mask(result: Result<&1, &1, (J.Surface & J.Surface) & J.Surface.Error, J.Surface & J.Surface>) -> Bool:
   match result:
-    case Fail{Tuple{Tuple{destination, source}, J.InvalidSize{}}}:
+    case Done{Tuple{destination, source}}:
       pixels_kept(J.Surface.colors(destination)) && pixels_kept(J.Surface.colors(source))
+    case _: False{}
+
+def compressed_mask(result: Result<&1, &1, (J.Surface & J.Surface) & J.Surface.Error, J.Surface & J.Surface>) -> Bool:
+  match result:
+    case Done{Tuple{J.Surface{_, _, 14, _}, J.Surface{_, _, 1, _}}}: True{}
     case _: False{}
 
 def mask_sizes(destination: Maybe<J.Surface>, source: Maybe<J.Surface>) -> Bool:
   match destination source:
-    case Some{dst} Some{mask}: invalid_mask(J.Surface.alpha_mask(dst, mask))
+    case Some{dst} Some{mask}: invalid_mask(J.Surface.alpha_mask_native(dst, mask))
     case _ _: False{}
 
 def no_surface(result: Maybe<J.Surface>) -> Bool:
@@ -384,6 +390,7 @@ def checks() -> Bool:
     && scaled(J.Surface.create(2, 1, 16909060), 1)
     && scaled(J.Surface.create(2, 1, 16909060), 2)
     && mask_sizes(J.Surface.create(2, 1, 16909060), J.Surface.create(1, 2, 16909060))
+    && compressed_mask(J.Surface.alpha_mask_native(J.Surface{1, 1, 14, J.Words{Array.new(U32, 0n, 1)}}, J.Surface{1, 1, 1, J.Words{Array.new(U32, 0n, 2)}}))
     && no_surface(J.Surface.create_checked(1, 1, 0, 1, 0, 4294967295))
     && no_surface(J.Surface.create_checked(0, 1, 1, 1, 0, 4294967295))
     && gradient_word(J.Surface.create_gradient_square(1, 1, 1.5, 7, 9), 9)
