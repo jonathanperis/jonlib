@@ -67595,7 +67595,7 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 normalization, including a zero range, signed zero, a subnormal, infinities and one quiet NaN. CPU-1 and CPU-2 match every result bit of the corpus.",
       "gaps": [
-        "JavaScript does not reproduce the sign of a quiet NaN this formula produces; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -67613,7 +67613,8 @@
         "tools/scalars_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -67964,7 +67965,7 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 component addition. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -67982,7 +67983,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68027,7 +68029,7 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 scalar addition to both components. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68045,7 +68047,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68090,7 +68093,7 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 component subtraction. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68108,7 +68111,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68153,7 +68157,7 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 scalar subtraction from both components. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68171,7 +68175,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68746,7 +68751,7 @@
       "mapping_state": "implemented",
       "scope": "F32 scalar multiplication of both components. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68764,7 +68769,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68809,7 +68815,7 @@
       "mapping_state": "implemented",
       "scope": "F32 component multiplication. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68827,7 +68833,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68934,7 +68941,7 @@
       "mapping_state": "implemented",
       "scope": "F32 component division, including zero divisors. Non-NaN bits of the vector2 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -68952,7 +68959,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -69957,7 +69965,7 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 component addition. Non-NaN bits of the vector3 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -69975,7 +69983,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70020,7 +70029,7 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 scalar addition to all three components. Non-NaN bits of the vector3 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -70038,7 +70047,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70083,7 +70093,7 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 component subtraction. Non-NaN bits of the vector3 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -70101,7 +70111,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70146,7 +70157,7 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 scalar subtraction from all three components. Non-NaN bits of the vector3 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -70164,7 +70175,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70209,7 +70221,7 @@
       "mapping_state": "implemented",
       "scope": "F32 scalar multiplication of all three components. Non-NaN bits of the vector3 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -70227,7 +70239,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70272,7 +70285,7 @@
       "mapping_state": "implemented",
       "scope": "F32 component multiplication. Non-NaN bits of the vector3 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -70290,7 +70303,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70915,7 +70929,7 @@
       "mapping_state": "implemented",
       "scope": "F32 component division, including zero divisors. Non-NaN bits of the vector3 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -70934,7 +70948,8 @@
         "tests/fixtures/images.json",
         "tests/test_harness.py",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -72448,7 +72463,7 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 component addition. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
@@ -72466,7 +72481,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -72511,7 +72527,7 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 scalar addition to all four components. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
@@ -72529,7 +72545,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -72574,7 +72591,7 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 component subtraction. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
@@ -72592,7 +72609,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -72637,7 +72655,7 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 scalar subtraction from all four components. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
@@ -72655,7 +72673,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -73018,7 +73037,7 @@
       "mapping_state": "implemented",
       "scope": "F32 scalar multiplication of all four components. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
@@ -73036,7 +73055,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -73081,7 +73101,7 @@
       "mapping_state": "implemented",
       "scope": "F32 component multiplication. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
@@ -73099,7 +73119,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -73206,7 +73227,7 @@
       "mapping_state": "implemented",
       "scope": "F32 component division, including zero divisors. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
@@ -73225,7 +73246,8 @@
         "tests/fixtures/images.json",
         "tests/test_harness.py",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -73784,7 +73806,8 @@
       "mapping_state": "implemented",
       "scope": "Finite F32 diagonal sum in reference left-to-right order.",
       "gaps": [
-        "Exceptional/subnormal",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
+        "JavaScript stores every NaN as the canonical positive quiet NaN",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -73801,7 +73824,8 @@
       "evidence": [
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "tools/matrix_arith_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -74035,7 +74059,8 @@
       "mapping_state": "implemented",
       "scope": "Finite F32 component addition with all 16 result fields checked.",
       "gaps": [
-        "Exceptional/subnormal",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
+        "JavaScript stores every NaN as the canonical positive quiet NaN",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -74052,7 +74077,8 @@
       "evidence": [
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "tools/matrix_arith_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -74097,7 +74123,8 @@
       "mapping_state": "implemented",
       "scope": "Finite F32 component subtraction retaining operand order and signed-zero results.",
       "gaps": [
-        "Exceptional/subnormal",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
+        "JavaScript stores every NaN as the canonical positive quiet NaN",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -74114,7 +74141,8 @@
       "evidence": [
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "tools/matrix_arith_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -74159,7 +74187,9 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 four-term products in reference operand/field order (noncommutative).",
       "gaps": [
-        "Exceptional/subnormal and contracted variants",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
+        "JavaScript stores every NaN as the canonical positive quiet NaN",
+        "Contracted builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -74176,7 +74206,8 @@
       "evidence": [
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "tools/matrix_arith_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -74221,7 +74252,8 @@
       "mapping_state": "implemented",
       "scope": "Finite F32 scalar multiplication of all 16 matrix fields, including signed-zero products.",
       "gaps": [
-        "Exceptional/subnormal",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
+        "JavaScript stores every NaN as the canonical positive quiet NaN",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -74238,7 +74270,8 @@
       "evidence": [
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "tools/matrix_arith_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75113,7 +75146,7 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 component addition. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
@@ -75131,7 +75164,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75176,7 +75210,7 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 scalar addition to all four components. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
@@ -75194,7 +75228,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75239,7 +75274,7 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 component subtraction. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
@@ -75257,7 +75292,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75302,7 +75338,7 @@
       "mapping_state": "implemented",
       "scope": "Uncontracted F32 scalar subtraction from all four components. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
@@ -75320,7 +75356,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75683,7 +75720,7 @@
       "mapping_state": "implemented",
       "scope": "F32 scalar multiplication of all four components. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
@@ -75701,7 +75738,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75746,7 +75784,7 @@
       "mapping_state": "implemented",
       "scope": "F32 component division, including zero divisors; not a Hamilton inverse. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
-        "Quiet-NaN signs from this formula are not reproduced; other NaN payloads are outside the corpus",
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
@@ -75765,7 +75803,8 @@
         "tests/fixtures/images.json",
         "tests/test_harness.py",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/API-TRACKING.md"
       ],
       "gate_evidence": {},
       "target_results": {},

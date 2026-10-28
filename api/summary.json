@@ -573,11 +573,11 @@
     "total": 327,
     "implemented": 327,
     "behavior_ownership_verified": 11,
-    "only_allowed_gaps": 153,
+    "only_allowed_gaps": 181,
     "forced_metal_witnesses": 0,
     "meeting": 0
   },
-  "open_gaps": 2721,
+  "open_gaps": 2727,
   "language_adaptations": {
     "entries": 1018,
     "items": 1039

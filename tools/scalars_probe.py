@@ -16,6 +16,7 @@ import hashlib
 import json
 
 import probekit
+import quiet_nan
 from probekit import ProbeFailure, run
 
 # Signed zeros, a fraction, the 2^24 floor boundary, a subnormal, the least
@@ -143,7 +144,10 @@ def compare(probe, expected, lanes, rows):
         for index, (want, got) in enumerate(zip(expected, actual)):
             if want == got:
                 continue
-            if lane == 'javascript' and quiet_nan_sign(want, got):
+            if rows[index][0] == 'normalize':
+                if not quiet_nan.acceptable('normalize', want, got, rows[index][1]):
+                    real.append(index)
+            elif lane == 'javascript' and quiet_nan_sign(want, got):
                 flipped.append(index)
             else:
                 real.append(index)

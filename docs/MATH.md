@@ -29,10 +29,13 @@ and loads each input through a volatile. The corpus is signed zeros, one
 subnormal, the least normal, the 2^24 boundary, the largest finite value, both
 infinities and one quiet NaN (Remap sweeps one argument at a time and a
 four-word grid, so five-argument products stay bounded). CPU-1 and CPU-2 match
-every result bit, including equal bounds. JavaScript matches every non-NaN bit.
-The sign of a quiet NaN an arithmetic formula produces is not stable there, so
-the gate records it and does not require it. Clamp and FloatEquals do not
-produce a NaN that way, so they match on JavaScript as well.
+every result bit, including equal bounds. JavaScript matches every non-NaN
+bit. `Normalize` matches every propagated input NaN payload. A quiet NaN it
+produces from an invalid operation matches by NaN-ness: IEEE 754 clause 6.3
+leaves that sign unspecified, and upstream builds return either sign. The
+sign of a quiet NaN `Lerp`, `Remap` or `Wrap` produces is not stable on
+JavaScript, so that lane records it and does not require it. Clamp and
+FloatEquals do not produce a NaN that way, so they match on JavaScript as well.
 
 ## Vector2 API
 
@@ -56,9 +59,13 @@ wider edge (negative one, both infinities, the least normal, the 2^24 boundary,
 the largest finite) is swept one component at a time. `negate`, `invert`,
 `normalize`, `length`, `length_sqr` and `equals` match every result bit on
 CPU-1, CPU-2 and JavaScript, including zero divisors and a zero length.
-The other operations match every non-NaN bit. The sign of a quiet NaN their
-arithmetic produces is not reproduced. `min`, `max` and `clamp` are compared
-on the glibc builtin profile by gate `extrema`.
+`add`, `add_value`, `subtract`, `subtract_value`, `scale`, `multiply` and
+`divide` match every non-NaN bit and every propagated input NaN payload.
+A quiet NaN produced by an invalid operation matches by NaN-ness: IEEE 754
+clause 6.3 leaves its sign unspecified, and upstream builds return either
+sign for the same inputs. The other operations match every non-NaN bit. The
+sign of a quiet NaN their arithmetic produces is not reproduced. `min`,
+`max` and `clamp` are compared on the glibc builtin profile by gate `extrema`.
 
 `divide` takes two vectors; `invert` takes component reciprocals. `lerp` takes
 two vectors and a scalar amount. `reflect` takes a vector and the supplied normal;
@@ -282,6 +289,11 @@ signed-zero bits. `LAWS.bend`/`PROOF.bend` establish that transposing twice retu
 the original Matrix; conformance separately checks the actual reference layout.
 
 - `Matrix.add(left, right)` and `subtract(left, right)` operate component-wise.
+  Gate `matrix-arith` compares them, `multiply`, `multiply_value` and `trace`
+  on subnormals, infinities and quiet-NaN payloads with contraction off. One
+  NaN operand keeps that payload on CPU-1 and CPU-2. An invalid operation's
+  quiet NaN matches by NaN-ness. JavaScript stores every NaN as the canonical
+  positive quiet NaN.
 - `Matrix.multiply(left, right)` retains raylib's operand convention and exact
   four-term accumulation order. In ordinary column-vector notation its numeric
   result is `right × left`; do not reverse arguments based on another library's

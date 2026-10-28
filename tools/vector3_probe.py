@@ -21,6 +21,7 @@ from collections import Counter
 from itertools import product
 
 import probekit
+import quiet_nan
 from probekit import ProbeFailure, run
 
 # Two disjoint 3-word families. Six components of one family is 729 vectors;
@@ -240,8 +241,14 @@ def compare(probe, expected, lanes, rows):
         for index, (want, got) in enumerate(zip(expected, actual)):
             if want == got:
                 continue
-            if rows[index][0] not in EXACT and sign_only(want, got):
-                signs[rows[index][0]] += 1
+            name, args = rows[index]
+            if quiet_nan.modeled(name):
+                if quiet_nan.acceptable(name, want, got, args):
+                    signs[name] += 1
+                else:
+                    real.append(index)
+            elif name not in EXACT and sign_only(want, got):
+                signs[name] += 1
             else:
                 real.append(index)
         entry = dict(passed=not real, rows=len(actual), different=real[:20])

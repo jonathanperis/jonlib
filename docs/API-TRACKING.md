@@ -114,6 +114,20 @@ either is rejected; any other stored value is kept, and a missing key stays
    CI hosts, but the record has withdrawn one of them. A gap that only says
    the Metal lane is not verified does not block this gate.
 
+IEEE 754 clause 6.3 leaves the sign of a NaN produced by an invalid operation
+unspecified. Upstream builds of the pinned raymath return either quiet-NaN
+sign for the same inputs (`inf - inf`, `0/0`, `0*inf`) depending on
+instruction selection, so that sign is not a Jonlib behavior gap. The
+component operations that hit it (`Normalize`, and Vector2/Vector3/Vector4
+and Quaternion add, subtract, scale, multiply and divide, including the
+`*_value` forms) compare a fresh quiet NaN by NaN-ness: any quiet NaN
+matches. A non-NaN result stays bit-exact. One NaN operand is returned
+unchanged, which those builds do deterministically. When both operands are
+NaN, which payload survives varies the same way, so that result is also
+compared by NaN-ness. The gap is tagged `Undefined native behavior: sign of a
+NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in
+upstream builds`. The rule is not used for any other difference.
+
 An implemented record that cites such a probe but fails one of those conditions
 is `partial`. A record with no such probe is `unverified`.
 

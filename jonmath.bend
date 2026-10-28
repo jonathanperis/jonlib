@@ -13,6 +13,7 @@
 # raymath groups by type; Bend needs definitions before use, so later
 # sections may extend an earlier type (e.g. Vector3 helpers after Matrix).
 import Base
+import ./src/sse_float.bend as Sse
 import ./src/trig.bend as Trig
 import ./src/sincosf.bend as Sincosf
 import ./src/inverse_trig.bend as InverseTrig
@@ -158,7 +159,7 @@ def Math.lerp(+start: F32, end: F32, amount: F32) -> F32:
   (start + amount * (end - start) : F32)
 
 def Math.normalize(value: F32, +start: F32, end: F32) -> F32:
-  ((value - start) / (end - start) : F32)
+  Sse.div(Sse.sub(value, start), Sse.sub(end, start))
 
 def Math.remap(value: F32, +input_start: F32, input_end: F32, +output_start: F32, output_end: F32) -> F32:
   ((value - input_start) / (input_end - input_start) * (output_end - output_start) + output_start : F32)
@@ -188,29 +189,29 @@ def Vector2.unit_y() -> Vector2:
 def Vector2.add(left: Vector2, right: Vector2) -> Vector2:
   Vector2{x, y} = left
   Vector2{u, v} = right
-  Vector2{(x + u : F32), (y + v : F32)}
+  Vector2{Sse.add(x, u), Sse.add(y, v)}
 
 def Vector2.add_value(vector: Vector2, +value: F32) -> Vector2:
   Vector2{x, y} = vector
-  Vector2{(x + value : F32), (y + value : F32)}
+  Vector2{Sse.add(x, value), Sse.add(y, value)}
 
 def Vector2.subtract(left: Vector2, right: Vector2) -> Vector2:
   Vector2{x, y} = left
   Vector2{u, v} = right
-  Vector2{(x - u : F32), (y - v : F32)}
+  Vector2{Sse.sub(x, u), Sse.sub(y, v)}
 
 def Vector2.subtract_value(vector: Vector2, +value: F32) -> Vector2:
   Vector2{x, y} = vector
-  Vector2{(x - value : F32), (y - value : F32)}
+  Vector2{Sse.sub(x, value), Sse.sub(y, value)}
 
 def Vector2.scale(vector: Vector2, +value: F32) -> Vector2:
   Vector2{x, y} = vector
-  Vector2{(x * value : F32), (y * value : F32)}
+  Vector2{Sse.mul(x, value), Sse.mul(y, value)}
 
 def Vector2.multiply(left: Vector2, right: Vector2) -> Vector2:
   Vector2{x, y} = left
   Vector2{u, v} = right
-  Vector2{(x * u : F32), (y * v : F32)}
+  Vector2{Sse.mul(x, u), Sse.mul(y, v)}
 
 def Vector2.negate(vector: Vector2) -> Vector2:
   Vector2{x, y} = vector
@@ -219,7 +220,7 @@ def Vector2.negate(vector: Vector2) -> Vector2:
 def Vector2.divide(left: Vector2, right: Vector2) -> Vector2:
   Vector2{x, y} = left
   Vector2{u, v} = right
-  Vector2{(x / u : F32), (y / v : F32)}
+  Vector2{Sse.div(x, u), Sse.div(y, v)}
 
 def Vector2.invert(vector: Vector2) -> Vector2:
   Vector2{x, y} = vector
@@ -422,21 +423,21 @@ def Matrix.to_float_v(matrix: Matrix) -> +List<F32>:
 def Matrix.add(left: Matrix, right: Matrix) -> Matrix:
   Matrix{a0, a4, a8, a12, a1, a5, a9, a13, a2, a6, a10, a14, a3, a7, a11, a15} = left
   Matrix{b0, b4, b8, b12, b1, b5, b9, b13, b2, b6, b10, b14, b3, b7, b11, b15} = right
-  Matrix{(a0 + b0 : F32), (a4 + b4 : F32), (a8 + b8 : F32), (a12 + b12 : F32),
-    (a1 + b1 : F32), (a5 + b5 : F32), (a9 + b9 : F32), (a13 + b13 : F32),
-    (a2 + b2 : F32), (a6 + b6 : F32), (a10 + b10 : F32), (a14 + b14 : F32),
-    (a3 + b3 : F32), (a7 + b7 : F32), (a11 + b11 : F32), (a15 + b15 : F32)}
+  Matrix{Sse.add(a0, b0), Sse.add(a4, b4), Sse.add(a8, b8), Sse.add(a12, b12),
+    Sse.add(a1, b1), Sse.add(a5, b5), Sse.add(a9, b9), Sse.add(a13, b13),
+    Sse.add(a2, b2), Sse.add(a6, b6), Sse.add(a10, b10), Sse.add(a14, b14),
+    Sse.add(a3, b3), Sse.add(a7, b7), Sse.add(a11, b11), Sse.add(a15, b15)}
 
 def Matrix.subtract(left: Matrix, right: Matrix) -> Matrix:
   Matrix{a0, a4, a8, a12, a1, a5, a9, a13, a2, a6, a10, a14, a3, a7, a11, a15} = left
   Matrix{b0, b4, b8, b12, b1, b5, b9, b13, b2, b6, b10, b14, b3, b7, b11, b15} = right
-  Matrix{(a0 - b0 : F32), (a4 - b4 : F32), (a8 - b8 : F32), (a12 - b12 : F32),
-    (a1 - b1 : F32), (a5 - b5 : F32), (a9 - b9 : F32), (a13 - b13 : F32),
-    (a2 - b2 : F32), (a6 - b6 : F32), (a10 - b10 : F32), (a14 - b14 : F32),
-    (a3 - b3 : F32), (a7 - b7 : F32), (a11 - b11 : F32), (a15 - b15 : F32)}
+  Matrix{Sse.sub(a0, b0), Sse.sub(a4, b4), Sse.sub(a8, b8), Sse.sub(a12, b12),
+    Sse.sub(a1, b1), Sse.sub(a5, b5), Sse.sub(a9, b9), Sse.sub(a13, b13),
+    Sse.sub(a2, b2), Sse.sub(a6, b6), Sse.sub(a10, b10), Sse.sub(a14, b14),
+    Sse.sub(a3, b3), Sse.sub(a7, b7), Sse.sub(a11, b11), Sse.sub(a15, b15)}
 
-def Matrix.product.cell(a: F32, b: F32, c: F32, d: F32, e: F32, f: F32, g: F32, h: F32) -> F32:
-  (a * e + b * f + c * g + d * h : F32)
+def Matrix.product.cell(+a: F32, +b: F32, +c: F32, +d: F32, +e: F32, +f: F32, +g: F32, +h: F32) -> F32:
+  Sse.add(Sse.add(Sse.mul(a, e), Sse.mul(b, f)), Sse.add(Sse.mul(c, g), Sse.mul(d, h)))
 
 def Matrix.multiply(left: Matrix, right: Matrix) -> Matrix:
   Matrix{+a0, +a4, +a8, +a12, +a1, +a5, +a9, +a13, +a2, +a6, +a10, +a14, +a3, +a7, +a11, +a15} = left
@@ -461,7 +462,7 @@ def Matrix.multiply(left: Matrix, right: Matrix) -> Matrix:
 
 def Matrix.trace(matrix: Matrix) -> F32:
   Matrix{m0, _, _, _, _, m5, _, _, _, _, m10, _, _, _, _, m15} = matrix
-  (m0 + m5 + m10 + m15 : F32)
+  Sse.add(Sse.add(m0, m5), Sse.add(m10, m15))
 
 def Matrix.determinant(matrix: Matrix) -> F32:
   Matrix{m0, m4, m8, m12, +m1, +m5, +m9, +m13, +m2, +m6, +m10, +m14, +m3, +m7, +m11, +m15} = matrix
@@ -511,10 +512,10 @@ def Matrix.scale(x: F32, y: F32, z: F32) -> Matrix:
 
 def Matrix.multiply_value(matrix: Matrix, +value: F32) -> Matrix:
   Matrix{m0, m4, m8, m12, m1, m5, m9, m13, m2, m6, m10, m14, m3, m7, m11, m15} = matrix
-  Matrix{(m0 * value : F32), (m4 * value : F32), (m8 * value : F32), (m12 * value : F32),
-    (m1 * value : F32), (m5 * value : F32), (m9 * value : F32), (m13 * value : F32),
-    (m2 * value : F32), (m6 * value : F32), (m10 * value : F32), (m14 * value : F32),
-    (m3 * value : F32), (m7 * value : F32), (m11 * value : F32), (m15 * value : F32)}
+  Matrix{Sse.mul(m0, value), Sse.mul(m4, value), Sse.mul(m8, value), Sse.mul(m12, value),
+    Sse.mul(m1, value), Sse.mul(m5, value), Sse.mul(m9, value), Sse.mul(m13, value),
+    Sse.mul(m2, value), Sse.mul(m6, value), Sse.mul(m10, value), Sse.mul(m14, value),
+    Sse.mul(m3, value), Sse.mul(m7, value), Sse.mul(m11, value), Sse.mul(m15, value)}
 
 def Matrix.frustum(+left: Float64, +right: Float64, +bottom: Float64, +top: Float64, +near: Float64, +far: Float64) -> Matrix:
   +rl = Float64.internal.difference(right, left)
@@ -709,29 +710,29 @@ def Vector3.to_float_v(vector: Vector3) -> +List<F32>:
 def Vector3.add(left: Vector3, right: Vector3) -> Vector3:
   Vector3{x, y, z} = left
   Vector3{u, v, w} = right
-  Vector3{(x + u : F32), (y + v : F32), (z + w : F32)}
+  Vector3{Sse.add(x, u), Sse.add(y, v), Sse.add(z, w)}
 
 def Vector3.subtract(left: Vector3, right: Vector3) -> Vector3:
   Vector3{x, y, z} = left
   Vector3{u, v, w} = right
-  Vector3{(x - u : F32), (y - v : F32), (z - w : F32)}
+  Vector3{Sse.sub(x, u), Sse.sub(y, v), Sse.sub(z, w)}
 
 def Vector3.scale(vector: Vector3, +scale: F32) -> Vector3:
   Vector3{x, y, z} = vector
-  Vector3{(x * scale : F32), (y * scale : F32), (z * scale : F32)}
+  Vector3{Sse.mul(x, scale), Sse.mul(y, scale), Sse.mul(z, scale)}
 
 def Vector3.multiply(left: Vector3, right: Vector3) -> Vector3:
   Vector3{x, y, z} = left
   Vector3{u, v, w} = right
-  Vector3{(x * u : F32), (y * v : F32), (z * w : F32)}
+  Vector3{Sse.mul(x, u), Sse.mul(y, v), Sse.mul(z, w)}
 
 def Vector3.add_value(vector: Vector3, +value: F32) -> Vector3:
   Vector3{x, y, z} = vector
-  Vector3{(x + value : F32), (y + value : F32), (z + value : F32)}
+  Vector3{Sse.add(x, value), Sse.add(y, value), Sse.add(z, value)}
 
 def Vector3.subtract_value(vector: Vector3, +value: F32) -> Vector3:
   Vector3{x, y, z} = vector
-  Vector3{(x - value : F32), (y - value : F32), (z - value : F32)}
+  Vector3{Sse.sub(x, value), Sse.sub(y, value), Sse.sub(z, value)}
 
 def Vector3.negate(vector: Vector3) -> Vector3:
   Vector3{x, y, z} = vector
@@ -740,7 +741,7 @@ def Vector3.negate(vector: Vector3) -> Vector3:
 def Vector3.divide(left: Vector3, right: Vector3) -> Vector3:
   Vector3{x, y, z} = left
   Vector3{u, v, w} = right
-  Vector3{(x / u : F32), (y / v : F32), (z / w : F32)}
+  Vector3{Sse.div(x, u), Sse.div(y, v), Sse.div(z, w)}
 
 def Vector3.cross_product(left: Vector3, right: Vector3) -> Vector3:
   Vector3{+x, +y, +z} = left
@@ -1048,29 +1049,29 @@ def Vector4.unit_w() -> Vector4:
 def Vector4.add(left: Vector4, right: Vector4) -> Vector4:
   Vector4{x, y, z, w} = left
   Vector4{a, b, c, d} = right
-  Vector4{(x + a : F32), (y + b : F32), (z + c : F32), (w + d : F32)}
+  Vector4{Sse.add(x, a), Sse.add(y, b), Sse.add(z, c), Sse.add(w, d)}
 
 def Vector4.subtract(left: Vector4, right: Vector4) -> Vector4:
   Vector4{x, y, z, w} = left
   Vector4{a, b, c, d} = right
-  Vector4{(x - a : F32), (y - b : F32), (z - c : F32), (w - d : F32)}
+  Vector4{Sse.sub(x, a), Sse.sub(y, b), Sse.sub(z, c), Sse.sub(w, d)}
 
 def Vector4.scale(vector: Vector4, +factor: F32) -> Vector4:
   Vector4{x, y, z, w} = vector
-  Vector4{(x * factor : F32), (y * factor : F32), (z * factor : F32), (w * factor : F32)}
+  Vector4{Sse.mul(x, factor), Sse.mul(y, factor), Sse.mul(z, factor), Sse.mul(w, factor)}
 
 def Vector4.multiply(left: Vector4, right: Vector4) -> Vector4:
   Vector4{x, y, z, w} = left
   Vector4{a, b, c, d} = right
-  Vector4{(x * a : F32), (y * b : F32), (z * c : F32), (w * d : F32)}
+  Vector4{Sse.mul(x, a), Sse.mul(y, b), Sse.mul(z, c), Sse.mul(w, d)}
 
 def Vector4.add_value(vector: Vector4, +value: F32) -> Vector4:
   Vector4{x, y, z, w} = vector
-  Vector4{(x + value : F32), (y + value : F32), (z + value : F32), (w + value : F32)}
+  Vector4{Sse.add(x, value), Sse.add(y, value), Sse.add(z, value), Sse.add(w, value)}
 
 def Vector4.subtract_value(vector: Vector4, +value: F32) -> Vector4:
   Vector4{x, y, z, w} = vector
-  Vector4{(x - value : F32), (y - value : F32), (z - value : F32), (w - value : F32)}
+  Vector4{Sse.sub(x, value), Sse.sub(y, value), Sse.sub(z, value), Sse.sub(w, value)}
 
 def Vector4.negate(vector: Vector4) -> Vector4:
   Vector4{x, y, z, w} = vector
@@ -1079,7 +1080,7 @@ def Vector4.negate(vector: Vector4) -> Vector4:
 def Vector4.divide(left: Vector4, right: Vector4) -> Vector4:
   Vector4{x, y, z, w} = left
   Vector4{a, b, c, d} = right
-  Vector4{(x / a : F32), (y / b : F32), (z / c : F32), (w / d : F32)}
+  Vector4{Sse.div(x, a), Sse.div(y, b), Sse.div(z, c), Sse.div(w, d)}
 
 def Vector4.invert(vector: Vector4) -> Vector4:
   Vector4{x, y, z, w} = vector
