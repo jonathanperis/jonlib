@@ -77,6 +77,86 @@ actual Bend symbols for functions/operators, and a result for every target ID.
 A `reference-not-supported` target requires a reason and reference evidence.
 Language adaptations still need behavior/ownership/integration justification.
 
+### What verified means
+
+`tools/gate_evidence.py` derives `behavior`, `ownership`, `integration` and
+`performance` from the progress record and the repository.
+`python3 tools/api_plan.py check` rejects a record whose stored gates disagree,
+so a gate cannot be marked `verified` by editing `api/progress.json` alone.
+`python3 tools/gate_evidence.py --apply` rewrites only the `gates` objects.
+`availability` and `targets` are not derived. A stored `verified` claim for
+either is rejected; any other stored value is kept, and a missing key stays
+`unverified`.
+
+**behavior = `verified`** when all of the following hold:
+
+1. The record is implemented: `status` is `partial` or `complete` and `jonlib`
+   names a mapping.
+2. No gap is open behavior work. A gap is open behavior work unless it starts
+   with `Targets:`, `Integration:`, `Performance:` or
+   `Undefined native behavior:`. A `Libm:` gap is open behavior work: a host
+   libm profile is not bit-exact parity, and a diagnostic libm gate is not a
+   parity claim. Any other untagged gap is open behavior work.
+3. `evidence` includes a parity probe: a non-diagnostic gate in
+   `tools/gates.json` whose hosts are both `linux` and `macos`, whose command
+   compares against the pinned raylib, and whose program compares exactly on
+   `cpu-1`, `cpu-2` and `javascript` (`probekit.Probe.compare`, or
+   `tools/conformance.py`). Hosted CI does not pass `--gpu`, so those three
+   lanes are the CI lanes. The examples suite is not a behavior witness.
+4. That probe covers this entry. Coverage is the Bend symbol used as a dotted
+   name in the program the probe runs, or the C name as a string in that
+   program (a case table). A bare C call is not coverage: generated oracles
+   call raylib for setup and teardown. A probe that selects catalog rows
+   covers exactly the rows its own selector returns (`enums_probe.enumerators`,
+   `macros_probe.macros` and `macros_probe.shared_options`).
+5. No gap says that Linux or macOS is not verified. A `Targets:` gap may
+   record that, and it still blocks this gate: the probe is scheduled on both
+   CI hosts, but the record has withdrawn one of them. A gap that only says
+   the Metal lane is not verified does not block this gate.
+
+An implemented record that cites such a probe but fails one of those conditions
+is `partial`. A record with no such probe is `unverified`.
+
+**ownership = `verified`** when all of the following hold:
+
+1. The record is implemented, as for behavior.
+2. The scope or a language adaptation states the owner mapping. The statement
+   uses owner, ownership, consume, consumed, owned, affine, retain, retained,
+   unload, unloaded, dispose, disposed, clone, freed or pool. Saying that a
+   function returns a number is not an owner mapping.
+3. An affine test or proof that a cited parity probe actually runs names the
+   Bend symbol or calls the C function. The test is a definition whose name
+   carries `ownership`, `owned`, `unloaded`, `disposed`, `retained`, `released`
+   or `consumed`, a definition that test calls directly, or a call of
+   `unload`, `unload_colors` or `free`. A law counts only when its own
+   statement is about ownership. A sentence in a document is not a test.
+
+One of those two conditions, but not both, is `partial`. Neither is
+`unverified`. A behavior comparison that happens to return a value is not an
+ownership test.
+
+**integration** is `partial` when a gap starts with `Integration:` or evidence
+includes an examples replay, and `unverified` otherwise. It is not `verified`:
+a headless examples replay is not desktop integration.
+
+**performance** is `partial` when a gap starts with `Performance:` or evidence
+includes `docs/PERFORMANCE.md`, `tools/gradient_bench.py` or
+`tools/perf_examples.py`, and `unverified` otherwise. It is not `verified`:
+those benchmarks are not parity gates.
+
+Forced Metal is not inferred from the CPU or JavaScript lanes. Hosted runners
+have no GPU, and the current compiler overlay's Metal rebase has not been
+re-run ([METAL-INVESTIGATION.md](METAL-INVESTIGATION.md)). A local `--gpu` pass
+on the current Bend pin is recorded by a line in a file the entry lists as
+evidence:
+
+```
+Metal witness: raylib:function:ImageResize a3efe8a3801f423827424227172eed9802c5e6cb pass
+```
+
+The revision is the `bend` revision in `toolchain.json`. Copying a CPU result
+into that line is not a witness.
+
 ## Language adaptations
 
 Some differences from the C declaration are permanent consequences of porting C
@@ -108,9 +188,10 @@ affect the Phase 1 exit measure, and are never sufficient for completion:
 `complete` still needs all six gates verified (including targets on Linux and
 macOS), every target result, per-gate evidence and no gaps.
 
-Validation checks structure, references and evidence presence; reviewers must
-check that the evidence actually proves the claim. A URL or existing document
-is not automatically proof of parity. Existing `profile-covered` and
+Validation checks structure, references, evidence presence and, for the four
+derived gates, that the stored value is the one `tools/gate_evidence.py`
+derives. Reviewers must still check that a probe's comparison really exercises
+the contract it names. A URL or existing document is not proof of parity. Existing `profile-covered` and
 `contract-checked` statuses survive only in the legacy conformance view; both
 mean `partial` in the authoritative ledger.
 
@@ -122,9 +203,11 @@ listed in [ROADMAP.md](ROADMAP.md#delivery-phases)). The Phase 1
 exit measure is reported alongside it by `tools/api_plan.py` (dashboard,
 `api/summary.json` `phase1_exit`): a Phase 1 function meets it when it is
 `partial` or `complete`, its `behavior` and `ownership` gates are `verified`
-(CI hosts' CPU and JavaScript lanes plus forced Metal), and every remaining
-gap starts with `Targets:`, `Integration:`, `Performance:` or
-`Undefined native behavior:`. Untagged gaps count as open behavior work.
+under the rules above, every remaining gap starts with `Targets:`,
+`Integration:`, `Performance:` or `Undefined native behavior:`, and its
+evidence contains a forced-Metal witness for the current Bend pin. Untagged
+gaps, including `Libm:` gaps, count as open behavior work. A CPU or JavaScript
+pass does not satisfy the Metal witness.
 
 ## Work through one batch
 
@@ -140,8 +223,11 @@ gap starts with `Targets:`, `Integration:`, `Performance:` or
 3. Implement and run the applicable reference comparisons, ownership checks,
    integration examples, targets and performance measurements.
 4. Update scope, gaps, evidence and gate results following the record rules
-   below. Case/lane counts, hashes and timings belong in gate results
-   (`.build/gates/`), not in progress records. Then regenerate and check:
+   below. `behavior`, `ownership`, `integration` and `performance` are not
+   edited by hand: `python3 tools/gate_evidence.py --apply` rewrites those
+   gates from the evidence. Case/lane counts, hashes and timings belong in
+   gate results (`.build/gates/`), not in progress records. Then regenerate
+   and check:
 
    ```sh
    python3 tools/api_plan.py build

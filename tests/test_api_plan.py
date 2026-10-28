@@ -141,14 +141,15 @@ inline Vec operator + (const Vec& lhs, const float& rhs) { return lhs; }
                     plan.make_ledger(self.reference, self.policy, bad)
 
     def test_phase1_exit_measure_requires_verified_gates_and_tagged_gaps(self):
-        def row(status='partial', behavior='verified', ownership='verified', gaps=(), phase=1, kind='function'):
+        def row(status='partial', behavior='verified', ownership='verified', gaps=(), phase=1, kind='function', metal=False):
             return dict(status=status, phase=phase, kind=kind, gaps=list(gaps),
-                        gates=dict(behavior=behavior, ownership=ownership))
-        rows = [row(), row(gaps=['Targets: Android', 'Undefined native behavior: int overflow']),
+                        gates=dict(behavior=behavior, ownership=ownership), metal_witness=metal)
+        rows = [row(metal=True), row(gaps=['Targets: Android', 'Undefined native behavior: int overflow'], metal=True),
                 row(gaps=['Exceptional inputs']), row(behavior='partial'), row(status='not-started'),
                 row(phase=2), row(kind='type')]
         self.assertEqual(plan.phase1_exit(rows), dict(total=5, implemented=4, behavior_ownership_verified=3,
-                                                      only_allowed_gaps=3, meeting=2))
+                                                      only_allowed_gaps=3, forced_metal_witnesses=2, meeting=2))
+        self.assertEqual(plan.phase1_exit([row()])['meeting'], 0)
 
     def test_dashboard_links_the_exit_measure_definition(self):
         outputs, report = plan.generated(self.reference, self.policy, self.progress)
@@ -230,7 +231,8 @@ inline Vec operator + (const Vec& lhs, const float& rhs) { return lhs; }
         self.assertIn('\n## Language adaptations\n', (plan.ROOT / 'docs/API-TRACKING.md').read_text())
         # Adaptations neither block nor satisfy the Phase 1 exit measure's gap rule.
         rows = [dict(status='partial', phase=1, kind='function', gaps=gaps, adaptations=['Lists instead of pointers'],
-                     gates=dict(behavior='verified', ownership='verified')) for gaps in ([], ['Exceptional inputs'])]
+                     gates=dict(behavior='verified', ownership='verified'), metal_witness=True)
+                for gaps in ([], ['Exceptional inputs'])]
         self.assertEqual(plan.phase1_exit(rows)['meeting'], 1)
         # Adaptations alone never complete an item: every gate, target and gap rule still applies.
         evidence = ['tests/test_api_plan.py']

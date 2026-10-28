@@ -9,8 +9,10 @@ import subprocess
 
 if __package__:
     from .api_catalog import HEADERS, clang_audit, extract_catalog
+    from .gate_evidence import check as check_gates, metal_proven
 else:
     from api_catalog import HEADERS, clang_audit, extract_catalog
+    from gate_evidence import check as check_gates, metal_proven
 
 ROOT = Path(__file__).resolve().parents[1]
 API = ROOT / 'api'
@@ -326,14 +328,24 @@ def make_ledger(reference, plan, progress):
 
 
 def phase1_exit(rows):
-    """Phase 1 functions against the exit measure: partial or complete, behavior
-    and ownership verified, and every remaining gap tagged as allowed."""
+    """Phase 1 functions against the exit measure.
+
+    Behavior and ownership must be verified (bit-exact cpu-1, cpu-2 and
+    JavaScript on both CI hosts, and an ownership test). Every remaining gap
+    must be tagged as allowed. Meeting the measure also requires a forced-Metal
+    witness for the current Bend pin: a CPU result is not GPU evidence.
+    A row may set `metal_witness` for a unit test; repository rows are read
+    from their evidence files.
+    """
     functions = [r for r in rows if r['phase'] == 1 and r['kind'] == 'function']
     implemented = [r for r in functions if r['status'] in ('partial', 'complete')]
     verified = [r for r in implemented if r['gates']['behavior'] == 'verified' and r['gates']['ownership'] == 'verified']
     allowed = lambda r: all(gap.startswith(EXIT_GAP_PREFIXES) for gap in r['gaps'])
+    metal = [r for r in functions if metal_proven(r)]
     return dict(total=len(functions), implemented=len(implemented), behavior_ownership_verified=len(verified),
-                only_allowed_gaps=sum(allowed(r) for r in implemented), meeting=sum(allowed(r) for r in verified))
+                only_allowed_gaps=sum(allowed(r) for r in implemented),
+                forced_metal_witnesses=len(metal),
+                meeting=sum(allowed(r) and metal_proven(r) for r in verified))
 
 
 def summary(ledger, plan):
@@ -392,7 +404,7 @@ def generated(reference, plan, progress):
                  f'- **{report["function_declarations"]["total"]} C function declarations**, representing **{report["unique_c_function_names"]} unique names**.',
                   f'- Jonlib (`raylib.h` reference): **{report["core_functions"]["total"]} functions**, **{report["core_functions"]["partial"]} partial**, **{report["core_functions"]["complete"]} complete**.',
                   f'- Jonmath (`raymath.h` reference): **{report["math_functions"]["total"]} functions**, **{report["math_functions"]["partial"]} partial**, **{report["math_functions"]["complete"]} complete**.',
-                 f'- [Phase 1 exit measure](API-TRACKING.md#phase-1-exit-measure): **{report["phase1_exit"]["meeting"]} of {report["phase1_exit"]["total"]}** Phase 1 functions meet it; {report["phase1_exit"]["implemented"]} are partial or complete, {report["phase1_exit"]["behavior_ownership_verified"]} have behavior and ownership verified, and {report["phase1_exit"]["only_allowed_gaps"]} have only exit-allowed gaps.',
+                 f'- [Phase 1 exit measure](API-TRACKING.md#phase-1-exit-measure): **{report["phase1_exit"]["meeting"]} of {report["phase1_exit"]["total"]}** Phase 1 functions meet it; {report["phase1_exit"]["implemented"]} are partial or complete, {report["phase1_exit"]["behavior_ownership_verified"]} have behavior and ownership verified, and {report["phase1_exit"]["only_allowed_gaps"]} have only exit-allowed gaps. Meeting it also requires a forced-Metal witness for the current Bend pin ({report["phase1_exit"]["forced_metal_witnesses"]} recorded).',
                  f'- **{report["open_gaps"]} open gaps** are recorded; separately, {report["language_adaptations"]["entries"]} entries record {report["language_adaptations"]["items"]} [language adaptations](API-TRACKING.md#language-adaptations), which are not gaps and never complete an item on their own.',
                  '- Catalog coverage is not implementation completeness. Operators, constants, types and configuration controls have separate rows.',
                  '- Conditional variants and duplicate declarations are retained. Related IDs can share work, but do not automatically inherit completion.', '',
@@ -475,6 +487,7 @@ def main():
         problems = lint_progress(progress)
         if problems:
             raise ValueError('api/progress.json records must state contracts:\n  ' + '\n  '.join(problems))
+        check_gates(progress)
         if args.raylib_source and source_catalog(args.raylib_source) != reference:
             raise ValueError('Pinned upstream source and committed reference catalog differ; review and sync explicitly')
         stale = [relative for relative, text in outputs.items() if not (ROOT / relative).is_file() or (ROOT / relative).read_text() != text]

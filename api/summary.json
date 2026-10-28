@@ -574,6 +574,7 @@
     "implemented": 327,
     "behavior_ownership_verified": 0,
     "only_allowed_gaps": 144,
+    "forced_metal_witnesses": 0,
     "meeting": 0
   },
   "open_gaps": 2731,
