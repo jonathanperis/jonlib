@@ -116,7 +116,7 @@ FORMAT = 'import probekit\nfrom conformance import gradient_reference\n'
 JONMATH = 'import Base\n\n# Sines.\ndef sin(x: F32) -> F32:\n  x\n\ntype Libm:\n  Apple{}\n  Glibc{}\n'
 TREE = {
     'tools/gates.json': json.dumps(dict(description='gates', gates=GATES)),
-    'tools/conformance.py': "import probekit\nPROOFS = [ROOT / 'LAWS.bend', ROOT / 'PROOF.bend']\nrun([sys.executable, ROOT / 'tools/api_plan.py', 'check'])\n",
+    'tools/conformance.py': "import probekit\nPROOFS = [ROOT / 'LAWS.bend', ROOT / 'PROOF.bend', ROOT / 'tests/transforms.bend']\nrun([sys.executable, ROOT / 'tools/api_plan.py', 'check'])\n",
     'tools/probekit.py': 'import os\n', 'tools/api_plan.py': 'import json\n', 'tools/examples_probe.py': PROBE,
     'tools/rand_probe.py': "import probekit\nMODEL = ROOT / 'tools/reference/glibc_rand/model.c'\n",
     'tools/png_file_probe.py': FORMAT, 'tools/bmp_file_probe.py': FORMAT, 'tools/pic_file_probe.py': FORMAT, 'tools/tga_format_probe.py': FORMAT,
@@ -168,6 +168,10 @@ class ScopeTests(unittest.TestCase):
 
     def test_the_proofs_run_the_gate_that_checks_them(self):
         self.assertEqual(scope({'LAWS.bend': 'law', 'PROOF.bend': 'proof'})['gates'], ['conformance'])
+
+    def test_the_transform_corpus_runs_the_gate_that_checks_it(self):
+        self.assertEqual(ci_scope.kind('tests/transforms.bend'), 'named')
+        self.assertEqual(scope({'tests/transforms.bend': 'def kept_values'})['gates'], ['conformance'])
 
     def test_a_ledger_runs_the_gates_that_run_the_api_plan(self):
         self.assertEqual(scope({'api/progress.json': '{}'})['gates'], ['api-audit', 'conformance'])

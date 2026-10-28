@@ -13,7 +13,8 @@ a push or pull request changed and picks one of three scopes:
   - a library file that only gained whole top-level definitions (every
     existing definition is byte for byte where it was) runs the main corpus
     with `PROOF.bend` and the core examples, besides the gates below;
-  - `LAWS.bend` and `PROOF.bend` run the gates whose tool names them, an API
+  - `LAWS.bend`, `PROOF.bend` and `tests/transforms.bend` run the gates whose
+    tool names them, an API
     ledger the gates that run the API plan, and a file under
     `tools/reference/` every gate that can reach a tool naming it;
   - a tool runs the gates that reach it (the tool a gate runs, the tools its
@@ -101,7 +102,7 @@ def kind(path):
         return 'example'
     if re.fullmatch(r'jon[a-z]+\.bend', path) or re.fullmatch(r'src/(lgpl/)?[a-z0-9_]+\.bend', path):
         return 'library'
-    if path in ('LAWS.bend', 'PROOF.bend') or re.fullmatch(r'api/[a-z0-9_]+\.json', path) or path.startswith('tools/reference/'):
+    if path in ('LAWS.bend', 'PROOF.bend', 'tests/transforms.bend') or re.fullmatch(r'api/[a-z0-9_]+\.json', path) or path.startswith('tools/reference/'):
         return 'named'
     if path == MANIFEST:
         return 'manifest'

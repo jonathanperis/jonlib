@@ -45,7 +45,7 @@ What a `scoped` run selects, per changed file:
 | Changed file | Gates and examples |
 | --- | --- |
 | `jonlib.bend`, `jonmath.bend`, `jongui.bend`, `src/*.bend`, when the file only gained whole top-level definitions (every existing definition byte for byte where it was) | `conformance` (the main corpus with `PROOF.bend`) and `examples-core` |
-| `LAWS.bend`, `PROOF.bend` | the gates whose tool names them (`conformance`) |
+| `LAWS.bend`, `PROOF.bend`, `tests/transforms.bend` | the gates whose tool names them (`conformance`) |
 | `api/*.json` ledgers | the gates that run `tools/api_plan.py` (`api-audit`, `conformance`) |
 | a tool under `tools/` | the gates that reach it: the tool a gate runs, the tools that tool's source names, and what those import, transitively |
 | `tools/gates.json` | the gates whose command or hosts changed (new gates included) |
