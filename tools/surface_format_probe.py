@@ -236,10 +236,12 @@ def masked.with(image: J.Surface, mask: Result<&1, &1, J.Surface & J.Surface.Err
   match mask:
     case Fail{Tuple{_, error}}: Fail{(image, error)}
     case Done{alpha}: masked.result(J.Surface.alpha_mask_native(image, alpha))
-def mask_mismatch(image: J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
-  match J.Surface.create(1, 1, 4294967295):
+def mask_created(image: J.Surface, created: Maybe<J.Surface>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  match created:
     case None{}: Fail{(image, J.InvalidRequest{})}
     case Some{mask}: masked.result(J.Surface.alpha_mask_native(image, mask))
+def mask_mismatch(image: J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  mask_created(image, J.Surface.create(1, 1, 4294967295))
 def masked(+format: U32, pair: J.Surface & J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
   (image, copy) = pair
   masked.with(image, J.Surface.format(J.Surface.flip_horizontal(copy), format))
