@@ -101,3 +101,199 @@ def decoding(text: String, state: Step) -> Maybe<&2, +List<U32>>:
 
 def decode(text: String) -> Maybe<&2, +List<U32>>:
   decoding(text, Step{0, Nil{}, True{}, False{}})
+
+# DecodeDataBase64 for a C string whose length fits in a signed int.
+# Unknown bytes are sextet 0. The size is 3*(length/4) minus the trailing
+# padding and may be negative; the bytes are the positive prefix of that size.
+type Decoded is Data:
+  Decoded{size: U32, bytes: +List<U32>}
+
+type WideScan is Data:
+  WideReady{count: U32, padding: U32, reversed: +List<U32>}
+  WideRefused{}
+
+type Prep is Data:
+  WideGo{}
+  WideStop{code: U32}
+  WideReject{}
+
+def sextet(+code: U32) -> U32:
+  Bool.pick(U32, ((code >= 65) && (code <= 90) : U32), (code - 65 : U32),
+    Bool.pick(U32, ((code >= 97) && (code <= 122) : U32), (code - 71 : U32),
+      Bool.pick(U32, ((code >= 48) && (code <= 57) : U32), (code + 4 : U32),
+        Bool.pick(U32, U32.is_eq(code, 43), 62, Bool.pick(U32, U32.is_eq(code, 47), 63, 0)))))
+
+def dropped(same: Bool) -> WideScan:
+  match same:
+    case True{}: WideRefused{}
+    case False{}: WideRefused{}
+
+def refuse(text: String, bytes: +List<U32>, seen: Bool, +mixed: U32) -> WideScan:
+  match text bytes seen:
+    case _ _ _: dropped(U32.is_eq((mixed .&. 0 : U32), 0))
+
+def finished(seen: Bool, +count: U32, +padding: U32, reversed: +List<U32>, +code: U32) -> WideScan:
+  match seen:
+    case False{}: refuse("", reversed, False{}, (count .|. (padding .|. (code .&. 0) : U32) : U32))
+    case True{}: WideReady{(count .|. (code .&. 0) : U32), padding, reversed}
+
+def swallow3(a: Bool, b: Bool, c: Bool, +value: U32) -> U32:
+  match a b c:
+    case _ _ _: value
+
+def swallow2(a: Bool, b: Bool, +value: U32) -> U32:
+  match a b:
+    case _ _: value
+
+def swallow1(a: Bool, +value: U32) -> U32:
+  match a:
+    case _: value
+
+def next_count(zero: Bool, foreign: Bool, room: Bool, +count: U32) -> U32:
+  match zero:
+    case True{}: swallow2(foreign, room, count)
+    case False{}:
+      match foreign:
+        case True{}: swallow1(room, count)
+        case False{}:
+          match room:
+            case False{}: count
+            case True{}: (count + 1 : U32)
+
+def next_padding(zero: Bool, foreign: Bool, equals: Bool, room: Bool, +padding: U32) -> U32:
+  match zero:
+    case True{}: swallow3(foreign, equals, room, padding)
+    case False{}:
+      match foreign:
+        case True{}: swallow2(equals, room, padding)
+        case False{}:
+          match equals:
+            case True{}:
+              match room:
+                case True{}: (padding + 1 : U32)
+                case False{}: padding
+            case False{}:
+              match room:
+                case True{}: (padding .&. 0 : U32)
+                case False{}: padding
+
+def keep_list(same: Bool, +code: U32, reversed: +List<U32>) -> +List<U32>:
+  match same:
+    case True{}: reversed
+    case False{}: reversed
+
+def next_list(zero: Bool, foreign: Bool, room: Bool, +code: U32, reversed: +List<U32>) -> +List<U32>:
+  match zero:
+    case True{}: keep_list(U32.is_eq((code .&. 0 : U32), 0), code, reversed)
+    case False{}:
+      match foreign:
+        case True{}: keep_list(U32.is_eq((code .&. 0 : U32), 0), code, reversed)
+        case False{}:
+          match room:
+            case False{}: keep_list(U32.is_eq((code .&. 0 : U32), 0), code, reversed)
+            case True{}: Con{code, reversed}
+
+def next_seen(zero: Bool, foreign: Bool, equals: Bool, room: Bool, seen: Bool) -> Bool:
+  match zero:
+    case True{}:
+      match foreign equals room seen:
+        case _ _ _ flag: flag
+    case False{}:
+      match foreign:
+        case True{}:
+          match equals room seen:
+            case _ _ flag: flag
+        case False{}:
+          match equals:
+            case True{}:
+              match room seen:
+                case _ flag: flag
+            case False{}:
+              match room:
+                case True{}: True{}
+                case False{}: seen
+
+def reject_code(same: Bool) -> Prep:
+  match same:
+    case True{}: WideReject{}
+    case False{}: WideReject{}
+
+def go_code(same: Bool) -> Prep:
+  match same:
+    case True{}: WideGo{}
+    case False{}: WideGo{}
+
+def next_prep(zero: Bool, foreign: Bool, room: Bool, +code: U32) -> Prep:
+  match zero:
+    case True{}: WideStop{swallow2(foreign, room, code)}
+    case False{}:
+      match foreign:
+        case True{}: reject_code(U32.is_eq(swallow1(room, (code .&. 0 : U32)), 0))
+        case False{}:
+          match room:
+            case False{}: reject_code(U32.is_eq((code .&. 0 : U32), 0))
+            case True{}: go_code(U32.is_eq((code .&. 0 : U32), 0))
+
+def ignore_text(text: String, scan: WideScan) -> WideScan:
+  match text:
+    case _: scan
+
+def scanning(text: String, prep: Prep, +count: U32, +padding: U32, reversed: +List<U32>, seen: Bool) -> WideScan:
+  match text prep:
+    case leftover WideStop{code}: ignore_text(leftover, finished(seen, count, padding, reversed, code))
+    case leftover WideReject{}: refuse(leftover, reversed, seen, (count .|. padding : U32))
+    case SNil{} WideGo{}: finished(seen, count, padding, reversed, 0)
+    case SCon{character, rest} WideGo{}:
+      +code = Char.to_u32(character)
+      +zero = U32.is_eq(code, 0)
+      +foreign = (code > 255 : U32)
+      +equals = U32.is_eq(code, 61)
+      +room = (count < 2147483647 : U32)
+      scanning(rest, next_prep(zero, foreign, room, code), next_count(zero, foreign, room, count), next_padding(zero, foreign, equals, room, padding), next_list(zero, foreign, room, code, reversed), next_seen(zero, foreign, equals, room, seen))
+
+def packed(+a: U32, +b: U32, +c: U32, +d: U32) -> U32:
+  ((a << 18n) .|. (b << 12n) .|. (c << 6n) .|. d : U32)
+
+def emit3(+word: U32, reversed: +List<U32>) -> +List<U32>:
+  Con{(word .&. 255 : U32), Con{((word >> 8n) .&. 255 : U32), Con{((word >> 16n) .&. 255 : U32), reversed}}}
+
+def keep_groups(bytes: +List<U32>, reversed: +List<U32>) -> +List<U32>:
+  match bytes:
+    case _: reversed
+
+def groups(bytes: +List<U32>, reversed: +List<U32>) -> +List<U32>:
+  match bytes:
+    case Con{+a, Con{+b, Con{+c, Con{+d, rest}}}}:
+      groups(rest, emit3(packed(sextet(a), sextet(b), sextet(c), sextet(d)), reversed))
+    case other: keep_groups(other, reversed)
+
+def visible(+bits: U32) -> U32:
+  Bool.pick(U32, U32.is_eq((bits >> 31n : U32), 0), bits, 0)
+
+def limited(+max_out: U32, +padding: U32) -> U32 & U32:
+  +bits = (max_out - padding : U32)
+  (bits, visible(bits))
+
+def reverse_using(same: Bool, reversed: +List<U32>) -> +List<U32>:
+  match same:
+    case True{}: List.reverse(&2, U32, reversed)
+    case False{}: List.reverse(&2, U32, reversed)
+
+def shown_prefix(bytes: +List<U32>, done: Bool, +shown: U32, reversed: +List<U32>) -> +List<U32>:
+  match bytes done:
+    case _ True{}: reverse_using(U32.is_eq((shown .&. 0 : U32), 0), reversed)
+    case Nil{} False{}: reverse_using(U32.is_eq((shown .&. 0 : U32), 0), reversed)
+    case Con{byte, rest} False{}: shown_prefix(rest, U32.is_eq(shown, 1), (shown - 1 : U32), Con{byte, reversed})
+
+def assemble(limits: U32 & U32, bytes: +List<U32>) -> Maybe<&2, Decoded>:
+  (bits, +shown) = limits
+  Some{Decoded{bits, shown_prefix(List.reverse(&2, U32, groups(bytes, Nil{})), U32.is_eq(shown, 0), shown, Nil{})}}
+
+def decoded_wide(scan: WideScan) -> Maybe<&2, Decoded>:
+  match scan:
+    case WideRefused{}: None{}
+    case WideReady{+count, +padding, reversed}:
+      assemble(limited(((count / 4 : U32) * 3 : U32), padding), List.reverse(&2, U32, reversed))
+
+def decode_wide(text: String) -> Maybe<&2, Decoded>:
+  decoded_wide(scanning(text, WideGo{}, 0, 0, Nil{}, False{}))

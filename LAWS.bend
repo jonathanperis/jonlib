@@ -6656,3 +6656,21 @@ law music_ogg_read_padded_with_zeros:
 
 law music_ogg_read_cut_to_the_frames_asked:
   {J.Music.ogg.padded(2n, [7, 8, 9], Nil{}) == [7, 8] : +List<U32>}
+
+law base64_standard_text:
+  {J.Base64.decode_wide("aGVsbG8=") == Some{J.Base64Decoded{5, [104, 101, 108, 108, 111]}} : Maybe<&2, J.Base64.Decoded>}
+
+law base64_permissive_high_sextet:
+  {J.Base64.decode_wide("BA==") == Some{J.Base64Decoded{1, [4]}} : Maybe<&2, J.Base64.Decoded>}
+
+law base64_short_input:
+  {J.Base64.decode_wide("AAA") == Some{J.Base64Decoded{0, Nil{}}} : Maybe<&2, J.Base64.Decoded>}
+
+law base64_negative_estimate:
+  {J.Base64.decode_wide("A=") == Some{J.Base64Decoded{4294967295, Nil{}}} : Maybe<&2, J.Base64.Decoded>}
+
+law base64_undefined_empty:
+  {J.Base64.decode_wide("") == None{} : Maybe<&2, J.Base64.Decoded>}
+
+law base64_undefined_padding_only:
+  {J.Base64.decode_wide("====") == None{} : Maybe<&2, J.Base64.Decoded>}

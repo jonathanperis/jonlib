@@ -135,6 +135,9 @@ def Compression.compress(bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
 type Base64.Encoded is Data:
   Base64Encoded{size: U32, text: String}
 
+type Base64.Decoded is Data:
+  Base64Decoded{size: U32, bytes: +List<U32>}
+
 def Base64.encoded(result: Maybe<&2, Base64Codec.Encoded>) -> Maybe<&2, Base64.Encoded>:
   match result:
     case None{}: None{}
@@ -149,6 +152,15 @@ def Base64.encode_wide(bytes: +List<U32>) -> Maybe<&2, Base64.Encoded>:
 
 def Base64.decode(text: String) -> Maybe<&2, +List<U32>>:
   Base64Codec.decode(text)
+
+def Base64.decoded(result: Maybe<&2, Base64Codec.Decoded>) -> Maybe<&2, Base64.Decoded>:
+  match result:
+    case None{}: None{}
+    case Some{Base64Codec.Decoded{size, bytes}}: Some{Base64Decoded{size, bytes}}
+
+# DecodeDataBase64 for every C string whose length fits in a signed int.
+def Base64.decode_wide(text: String) -> Maybe<&2, Base64.Decoded>:
+  Base64.decoded(Base64Codec.decode_wide(text))
 
 def Checksum.crc32.checked(size: Maybe<&2, U32>, bytes: +List<U32>) -> Maybe<&2, U32>:
   match size:

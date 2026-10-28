@@ -5066,3 +5066,21 @@ def Laws.music_ogg_read_padded_with_zeros():
 
 def Laws.music_ogg_read_cut_to_the_frames_asked():
   {==}
+
+def Laws.base64_standard_text():
+  {==}
+
+def Laws.base64_permissive_high_sextet():
+  {==}
+
+def Laws.base64_short_input():
+  {==}
+
+def Laws.base64_negative_estimate():
+  {==}
+
+def Laws.base64_undefined_empty():
+  {==}
+
+def Laws.base64_undefined_padding_only():
+  {==}

@@ -25,10 +25,6 @@ def input_text(bytes: +List<U32>, reversed: String) -> String:
   match bytes:
     case Nil{}: String.reverse(reversed)
     case Con{byte, rest}: input_text(rest, SCon{Char.from_u32(byte), reversed})
-def byte_count(bytes: +List<U32>, +count: U32) -> U32:
-  match bytes:
-    case Nil{}: count
-    case Con{_, rest}: byte_count(rest, (count + 1 : U32))
 def decoded_bytes(bytes: +List<U32>, reversed: List<U32>) -> List<U32>:
   match bytes:
     case Nil{}: List.reverse(&1, U32, reversed)
@@ -38,15 +34,15 @@ def encoded(result: Maybe<&2, J.Base64.Encoded>) -> IO(Unit):
   match result:
     case None{}: IO.print("null")
     case Some{J.Base64Encoded{size, text}}: emit_bytes(~&1, encoded_bytes(text, word_bytes(4n, size, Nil{})))
-def decoded(result: Maybe<&2, +List<U32>>) -> IO(Unit):
+def decoded(result: Maybe<&2, J.Base64.Decoded>) -> IO(Unit):
   match result:
     case None{}: IO.print("null")
-    case Some{+bytes}: emit_bytes(~&1, decoded_bytes(bytes, word_bytes(4n, byte_count(bytes, 0), Nil{})))
+    case Some{J.Base64Decoded{size, +bytes}}: emit_bytes(~&1, decoded_bytes(bytes, word_bytes(4n, size, Nil{})))
 def observed(encode: Bool, result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Unit):
   match encode result:
     case _ Fail{_}: IO.die(Unit, 1, "Base64 fixture read failed")
     case True{} Done{bytes}: encoded(J.Base64.encode_wideBANG(bytes))
-    case False{} Done{bytes}: decoded(J.Base64.decodeBANG(input_text(bytes, "")))
+    case False{} Done{bytes}: decoded(J.Base64.decode_wideBANG(input_text(bytes, "")))
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -58,18 +54,22 @@ def fixtures():
         data=bytes(rng.randrange(256) for _ in range(size))
         cases.append(dict(encode=True,bytes=list(data),reject=False))
         if size and size<=1048576:cases.append(dict(encode=False,bytes=list(base64.b64encode(data)),reject=False))
-    for text in (b'AB==',b'ABC=',b'/x==',b'AA==\x00ignored',b'AAAA\x00ignored'):
+    for text in (b'AB==',b'ABC=',b'/x==',b'AA==\x00ignored',b'AAAA\x00ignored',
+                 b'A',b'AA',b'AAA',b'AA?=',b'AA=A',b'A===',b'AA==AAAA',b'AA\xff=',
+                 b'A=',b'A==',b'A====',b'BA==',b'/A==',b'====A',b'AA\x00BBBB'):
         cases.append(dict(encode=False,bytes=list(text),reject=False))
-    controls=[dict(encode=False,bytes=list(text),reject=True) for text in (b'',b'A',b'AA',b'AAA',b'AA?=',b'AA=A',b'A===',b'AA==AAAA',b'AA\xff=',b'\x00AAAA')]
-    # A byte above 255 cannot live in a file; encode-256 covers that rejection.
-    controls += [dict(encode=False,bytes=[65]*1398104,reject=True)]
+    # 1,398,104 'A' bytes decode to 1,048,578 bytes, past the old 1 MiB cap.
+    cases.append(dict(encode=False,bytes=[65]*1398104,reject=False))
+    # Empty input and only '=' read before the native buffer. A leading NUL is that empty string.
+    controls=[dict(encode=False,bytes=list(text),reject=True) for text in (b'',b'=',b'====',b'=====',b'\x00AAAA')]
     return cases,controls
 
 
 def reference_program(all_cases, work):
     lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>','#include <string.h>',
            C_EMITTER,
-           'static void emit(unsigned char *data,int size){if(!data||size<0)exit(3);word(size);for(int i=0;i<size;i++)byte(data[i]);end();MemFree(data);}',
+           'static void emit(unsigned char *data,int size){if(!data||size<1||data[size-1])exit(3);word(size);for(int i=0;i<size;i++)byte(data[i]);end();MemFree(data);}',
+           'static void emit_decode(unsigned char *data,int size){if(!data&&size>0)exit(3);word((unsigned)size);int n=size>0?size:0;for(int i=0;i<n;i++)byte(data[i]);end();if(data)MemFree(data);}',
            'int main(void){SetTraceLogLevel(LOG_NONE);']
     for i,case in enumerate(all_cases):
         path=work/f'{i}.dat';path.write_bytes(bytes(case['bytes']))
@@ -78,7 +78,7 @@ def reference_program(all_cases, work):
         if case['encode']:
             lines.append('char *text=EncodeDataBase64(data,n,&size);if(!text||size<1||text[size-1]!=0)return 4;emit((unsigned char*)text,size);')
         else:
-            lines.append('char *text=calloc(n+1,1);memcpy(text,data,n);unsigned char *decoded=DecodeDataBase64(text,&size);emit(decoded,size);free(text);')
+            lines.append('char *text=calloc(n+1,1);memcpy(text,data,n);unsigned char *decoded=DecodeDataBase64(text,&size);emit_decode(decoded,size);free(text);')
         lines.append('UnloadFileData(data);}')
     return '\n'.join(lines+['}'])+'\n'
 
@@ -91,8 +91,12 @@ def main():
     if len(expected)!=len(cases):raise ProbeFailure('Incomplete native Base64 output')
     for case,row in zip(cases,expected):
         size=struct.unpack('<I',bytes(row[:4]))[0]
-        if size!=len(row)-4:raise ProbeFailure('Native Base64 size differs')
-        if case['encode'] and row[-1]!=0:raise ProbeFailure('Native Base64 terminator missing')
+        payload=row[4:]
+        if case['encode']:
+            if size!=len(payload) or not payload or payload[-1]!=0:raise ProbeFailure('Native Base64 encoding differs')
+        else:
+            logical=size-4294967296 if size>=2147483648 else size
+            if (logical>0 and logical!=len(payload)) or (logical<=0 and payload):raise ProbeFailure('Native Base64 decoding differs')
     # Every rejected fixture prints null, then two out-of-range code-unit controls.
     wanted=expected+[None]*(len(controls)+2)
     actions=[('file',i,case['encode']) for i,case in enumerate(all_cases)]+[('encode-256',),('decode-256',)]
@@ -104,7 +108,7 @@ def main():
                 path=json.dumps(str((probe.work/f'{action[1]}.dat').relative_to(ROOT)))
                 body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Image.file.bytes({path}, 2097152), observed({"True" if action[2] else "False"}{{}}))\n'
             elif action[0]=='encode-256':body+=f'    encoded(J.Base64.encode_wide{bang}([256]))\n'
-            else:body+=f'    decoded(J.Base64.decode{bang}("AA" ++ SCon{{Char.from_u32(256), "="}}))\n'
+            else:body+=f'    decoded(J.Base64.decode_wide{bang}("AA" ++ SCon{{Char.from_u32(256), "="}}))\n'
         return body
 
     probe.compare(wanted,probe.candidates(render,actions,batch=len(actions),parse=lambda out,selected:parse_results(out)))

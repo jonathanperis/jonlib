@@ -1744,11 +1744,11 @@
     "milestone": "files"
   },
   "DecodeDataBase64": {
-    "jonlib": "Base64.decode",
+    "jonlib": "Base64.decode_wide",
     "status": "profile-covered",
-    "scope": "Nonempty ASCII alphabet groups of four with zero/one/two final padding characters, first-NUL termination and ignored unused padding bits. Exact native logical bytes, capped at 1048576, as an immutable list. Malformed/empty/oversized requests return None; the native empty-input before-buffer read is not reproduced.",
+    "scope": "C strings of 1..2147483647 bytes that contain a byte other than '='. Unknown bytes are sextet 0. The size is 3*(length/4) minus trailing padding and may be negative; the bytes are the positive prefix. Empty input, only '=', or a code unit above 255 is None.",
     "gaps": [
-      "Native permissive malformed recovery, empty-input undefined behavior and larger outputs",
+      "Undefined native behavior: empty input and a string of only '=' read before the buffer",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
       "Performance: not measured against raylib"
     ],
