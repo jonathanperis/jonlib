@@ -607,9 +607,8 @@
   "ClearBackground": {
     "jonlib": "Frame.clear_background",
     "status": "profile-covered",
-    "scope": "rlClearColor(byte/255) stored to every pixel with rlsw truncation (each byte round-trips); alpha kept.",
+    "scope": "rlClearColor(byte/255) stored with rlsw truncation (each byte round-trips); alpha kept. An active scissor fills only that rectangle.",
     "gaps": [
-      "Scissor mode (slice 2) is not modeled",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:ClearBackground",
@@ -770,7 +769,7 @@
     "status": "profile-covered",
     "scope": "The frame as it is: raylib's software renderer has no stereo rendering (rlEnableStereoRender and the stereo matrices exist on OpenGL 3.3 and ES 2 only), so the scene is drawn once.",
     "gaps": [
-      "No stereo rendering: no renderer Jonlib reproduces has it"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:BeginVrStereoMode",
     "milestone": "vr"
@@ -780,7 +779,7 @@
     "status": "profile-covered",
     "scope": "The frame as it is.",
     "gaps": [
-      "No stereo rendering: no renderer Jonlib reproduces has it"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:EndVrStereoMode",
     "milestone": "vr"
@@ -4431,7 +4430,6 @@
     "status": "profile-covered",
     "scope": "rlLoadTextureCubemap is OpenGL 3.3/ES2 only: under the software renderer the cubemap keeps id 0, mipmaps 0 and format 0, width = height = the face size of the layout (auto-detected from the aspect, else 0). The image stays the caller's.",
     "gaps": [
-      "No Jonlib renderer samples cubemaps",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:LoadTextureCubemap",
@@ -5679,9 +5677,8 @@
   "LoadModelFromMesh": {
     "jonlib": "Model.from_mesh",
     "status": "profile-covered",
-    "scope": "A Model holding the mesh with an identity transform, Material.load_default() and mesh material 0.",
+    "scope": "A Model holding the mesh with an identity transform, Material.load_default() and mesh material 0. raylib leaves boneCount 0 and bones NULL.",
     "gaps": [
-      "Bones and animation are not modeled",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:LoadModelFromMesh",
@@ -5818,7 +5815,6 @@
     "status": "profile-covered",
     "scope": "The OpenGL 1.1 branch: no vertex buffer exists, the ids stay 0 and the mesh's arrays are untouched (DrawMesh reads them directly).",
     "gaps": [
-      "GPU buffers are not modeled",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:UploadMesh",
@@ -5829,7 +5825,6 @@
     "status": "profile-covered",
     "scope": "The software renderer: rlUpdateVertexBuffer on vboId[index], which UploadMesh leaves 0, does nothing; the mesh is unchanged and the data is not read. An index outside the 7 vertex buffers UploadMesh allocates (raylib's build, without GPU skinning) reads past vboId and is None.",
     "gaps": [
-      "GPU buffers are not modeled",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:UpdateMeshBuffer",
@@ -5849,10 +5844,9 @@
   "DrawMesh": {
     "jonlib": "Draw.mesh",
     "status": "profile-covered",
-    "scope": "The OpenGL 1.1 branch through rlsw's swDrawArrays/swDrawElements: diffuse texture bound for meshes with texcoords and a positive id (from the given textures), push, rlMultMatrixf, diffuse color, per-vertex texcoord/color/position (the mesh's animVertices once UpdateModelAnimation has skinned it, as raylib 6.2 draws them) as GL_TRIANGLES, pop, texture disabled; byte for byte against the memory platform.",
+    "scope": "The OpenGL 1.1 branch through rlsw's swDrawArrays/swDrawElements: diffuse texture bound for meshes with texcoords and a positive id (from the given textures), push, rlMultMatrixf, diffuse color, per-vertex texcoord/color/position (the mesh's animVertices once UpdateModelAnimation has skinned it, as raylib 6.2 draws them) as GL_TRIANGLES, pop, texture disabled; byte for byte against the memory platform. rlsw's normal pointer is a no-op; tangents and texcoords2 are not read.",
     "gaps": [
       "Inconsistent lists, indices not below the vertex count, color values above 255, a diffuse id missing from the textures and a primitive being recorded are refused",
-      "Normals, tangents and texcoords2 are not used by the software renderer",
       "Performance: a models_loading_gltf frame (model, grid, text) is about 50x raylib's on native CPU-1, single-threaded (docs/PERFORMANCE.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
@@ -6085,7 +6079,6 @@
     "status": "profile-covered",
     "scope": "False on the software renderer: it needs shader.id > 0 and every shader id is 0 there (checked natively).",
     "gaps": [
-      "Shaders are not modeled",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsMaterialValid",
@@ -6097,7 +6090,6 @@
     "scope": "Unloads, in map order, every map texture with a nonzero id, taken from the given textures (ids return to the pool; others handed back); a repeated id is an rlsw no-op.",
     "gaps": [
       "An id missing from the textures (raylib would unload a texture Jonlib does not hold) or a primitive being recorded is refused",
-      "Shaders are not modeled",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:UnloadMaterial",

@@ -3998,20 +3998,20 @@
       "mapping_state": "implemented",
       "scope": "raylib's TextureCubemap is Texture; LoadTextureCubemap answers one with id 0 on the software renderer (rlLoadTextureCubemap has no OpenGL 1.1 body).",
       "gaps": [
-        "The cubemap faces are not uploaded under the software renderer",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/state_gap_probe.py",
         "tools/window_probe.py",
         "docs/TEXTURES.md",
         "jonlib.bend"
@@ -29417,22 +29417,22 @@
       "status": "partial",
       "jonlib": "Frame.clear_background",
       "mapping_state": "implemented",
-      "scope": "rlClearColor(byte/255) stored to every pixel with rlsw truncation (each byte round-trips); alpha kept.",
+      "scope": "rlClearColor(byte/255) stored with rlsw truncation (each byte round-trips); alpha kept. An active scissor fills only that rectangle.",
       "gaps": [
-        "Scissor mode (slice 2) is not modeled",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/state_gap_probe.py",
         "tools/frame_probe.py",
         "docs/FRAME.md",
         "src/frame.bend",
@@ -30369,19 +30369,20 @@
       "mapping_state": "implemented",
       "scope": "The frame as it is: raylib's software renderer has no stereo rendering (rlEnableStereoRender and the stereo matrices exist on OpenGL 3.3 and ES 2 only), so the scene is drawn once.",
       "gaps": [
-        "No stereo rendering: no renderer Jonlib reproduces has it"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/state_gap_probe.py",
         "tools/vr_probe.py",
         "docs/VR.md",
         "LAWS.bend"
@@ -30430,19 +30431,20 @@
       "mapping_state": "implemented",
       "scope": "The frame as it is.",
       "gaps": [
-        "No stereo rendering: no renderer Jonlib reproduces has it"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/state_gap_probe.py",
         "tools/vr_probe.py",
         "docs/VR.md",
         "LAWS.bend"
@@ -50745,14 +50747,13 @@
       "mapping_state": "implemented",
       "scope": "rlLoadTextureCubemap is OpenGL 3.3/ES2 only: under the software renderer the cubemap keeps id 0, mipmaps 0 and format 0, width = height = the face size of the layout (auto-detected from the aspect, else 0). The image stays the caller's.",
       "gaps": [
-        "No Jonlib renderer samples cubemaps",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -58139,16 +58140,15 @@
       "status": "partial",
       "jonlib": "Model.from_mesh",
       "mapping_state": "implemented",
-      "scope": "A Model holding the mesh with an identity transform, Material.load_default() and mesh material 0.",
+      "scope": "A Model holding the mesh with an identity transform, Material.load_default() and mesh material 0. raylib leaves boneCount 0 and bones NULL.",
       "gaps": [
-        "Bones and animation are not modeled",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -58947,14 +58947,13 @@
       "mapping_state": "implemented",
       "scope": "The OpenGL 1.1 branch: no vertex buffer exists, the ids stay 0 and the mesh's arrays are untouched (DrawMesh reads them directly).",
       "gaps": [
-        "GPU buffers are not modeled",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -59012,14 +59011,13 @@
       "mapping_state": "implemented",
       "scope": "The software renderer: rlUpdateVertexBuffer on vboId[index], which UploadMesh leaves 0, does nothing; the mesh is unchanged and the data is not read. An index outside the 7 vertex buffers UploadMesh allocates (raylib's build, without GPU skinning) reads past vboId and is None.",
       "gaps": [
-        "GPU buffers are not modeled",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -59138,10 +59136,9 @@
       "status": "partial",
       "jonlib": "Draw.mesh",
       "mapping_state": "implemented",
-      "scope": "The OpenGL 1.1 branch through rlsw's swDrawArrays/swDrawElements: diffuse texture bound for meshes with texcoords and a positive id (from the given textures), push, rlMultMatrixf, diffuse color, per-vertex texcoord/color/position (the mesh's animVertices once UpdateModelAnimation has skinned it, as raylib 6.2 draws them) as GL_TRIANGLES, pop, texture disabled; byte for byte against the memory platform.",
+      "scope": "The OpenGL 1.1 branch through rlsw's swDrawArrays/swDrawElements: diffuse texture bound for meshes with texcoords and a positive id (from the given textures), push, rlMultMatrixf, diffuse color, per-vertex texcoord/color/position (the mesh's animVertices once UpdateModelAnimation has skinned it, as raylib 6.2 draws them) as GL_TRIANGLES, pop, texture disabled; byte for byte against the memory platform. rlsw's normal pointer is a no-op; tangents and texcoords2 are not read.",
       "gaps": [
         "Inconsistent lists, indices not below the vertex count, color values above 255, a diffuse id missing from the textures and a primitive being recorded are refused",
-        "Normals, tangents and texcoords2 are not used by the software renderer",
         "Performance: a models_loading_gltf frame (model, grid, text) is about 50x raylib's on native CPU-1, single-threaded (docs/PERFORMANCE.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
@@ -60396,14 +60393,13 @@
       "mapping_state": "implemented",
       "scope": "False on the software renderer: it needs shader.id > 0 and every shader id is 0 there (checked natively).",
       "gaps": [
-        "Shaders are not modeled",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -60460,7 +60456,6 @@
       "scope": "Unloads, in map order, every map texture with a nonzero id, taken from the given textures (ids return to the pool; others handed back); a repeated id is an rlsw no-op.",
       "gaps": [
         "An id missing from the textures (raylib would unload a texture Jonlib does not hold) or a primitive being recorded is refused",
-        "Shaders are not modeled",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
@@ -97302,22 +97297,22 @@
       "status": "partial",
       "jonlib": "Rlgl.begin",
       "mapping_state": "implemented",
-      "scope": "swBegin for RL_LINES, RL_TRIANGLES and RL_QUADS: latches the MVP, the bound texture (when enabled) and the blend and depth states; other modes do nothing.",
+      "scope": "swBegin for RL_LINES, RL_TRIANGLES and RL_QUADS: latches the MVP, the bound texture (when enabled) and the blend and depth states; other modes do nothing. A second begin while a primitive is active is an rlsw error and keeps that primitive.",
       "gaps": [
-        "A begin while a primitive is active keeps the active one (rlsw error)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/state_gap_probe.py",
         "tools/rlgl_probe.py",
         "docs/RLGL.md",
         "src/frame.bend",
@@ -102518,22 +102513,22 @@
       "status": "partial",
       "jonlib": "Rlgl.set_texture",
       "mapping_state": "implemented",
-      "scope": "rlEnableTexture(id) or rlDisableTexture() for id 0: the frame holds the texture until released and hands back the previous one.",
+      "scope": "rlEnableTexture(id) or rlDisableTexture() for id 0: the frame holds the texture until released and hands back the previous one. A bind while a primitive is active is refused and that texture is handed back.",
       "gaps": [
-        "A bind while a primitive is active is refused by swBindTexture (the texture is handed back)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/state_gap_probe.py",
         "tools/rlgl_probe.py",
         "docs/RLGL.md",
         "src/frame.bend",
