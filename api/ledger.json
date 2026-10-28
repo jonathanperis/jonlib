@@ -32200,7 +32200,7 @@
       "mapping_state": "implemented",
       "scope": "U32 seed initializes an owned stream using pinned rprand SplitMix64 extraction and Xoshiro128** state, without implicit global mutation.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -32210,7 +32210,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "partial",
         "targets": "partial",
@@ -32384,7 +32384,7 @@
       "mapping_state": "implemented",
       "scope": "Consumes the owned sequence and returns Unit; Bend ownership adapts the explicit C allocation/free lifecycle.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -32394,7 +32394,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
@@ -33790,13 +33790,13 @@
       "scope": "LoadFileData, the target's directory made where DirectoryExists does not see it, then SaveFileData when there are bytes: 0 once the directory is there (whether the save succeeds or not, as raylib 6.2 has it), MakeDirectory's -1 otherwise.",
       "gaps": [
         "Undefined native behavior: getDirectoryPath overflow is None",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -33850,13 +33850,13 @@
       "scope": "-1 for a missing source; otherwise FileCopy's result, and when it is 0 and the target exists with the source's GetFileLength, FileRemove's result.",
       "gaps": [
         "Undefined native behavior: getDirectoryPath overflow is None",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -34216,13 +34216,13 @@
       "mapping_state": "implemented",
       "scope": "The POSIX rule: the name after the last '/' starts with '.' and is neither '.' nor '..'.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -34873,7 +34873,7 @@
       "mapping_state": "implemented",
       "scope": "chdir(2)'s result as raylib 6.2 returns it: 0, or -1 where it fails. The caller's logger emits the reference INFO line on success and the WARNING line on failure.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -34882,7 +34882,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -34999,13 +34999,13 @@
       "mapping_state": "implemented",
       "scope": "Not IsPathFile, as raylib 6.2 has it: a missing path and anything that is not a regular file is a directory.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -35059,13 +35059,13 @@
       "mapping_state": "implemented",
       "scope": "The POSIX rule: the path starts with '/'.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -35179,13 +35179,13 @@
       "mapping_state": "implemented",
       "scope": "LoadDirectoryFilesEx with the *.* filter and without subdirectories.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -35240,13 +35240,13 @@
       "mapping_state": "implemented",
       "scope": "Each entry's path/name in readdir order, a subdirectory's entries right after it; the NULL or empty filter, the *.*, FILES* and DIRS* tags and extension lists as ScanDirectoryFiles applies them; paths from 4096 bytes skipped.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -35302,7 +35302,7 @@
       "mapping_state": "implemented",
       "scope": "Consuming the list frees it.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [
         "Pointer/allocator ABI"
@@ -35310,7 +35310,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -35552,13 +35552,13 @@
       "mapping_state": "implemented",
       "scope": "GetDirectoryFileCountEx with the *.* filter and without subdirectories.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -35611,13 +35611,13 @@
       "mapping_state": "implemented",
       "scope": "What the listing would hold, counted, the filter as given (an empty one counts nothing).",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -35804,7 +35804,7 @@
       "scope": "Lists of 0..1610612733 bytes, including empty input. Native RFC 4648 text and the NUL-inclusive size. Values above 255 are None.",
       "gaps": [
         "Undefined native behavior: a dataSize whose 4*(paddedSize/3)+1 does not fit in a signed int",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -35813,7 +35813,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -35866,7 +35866,7 @@
       "scope": "C strings of 1..2147483647 bytes that contain a byte other than '='. Unknown bytes are sextet 0. The size is 3*(length/4) minus trailing padding and may be negative; the bytes are the positive prefix. Empty input, only '=', or a code unit above 255 is None.",
       "gaps": [
         "Undefined native behavior: empty input and a string of only '=' read before the buffer",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -35875,7 +35875,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -35927,7 +35927,7 @@
       "mapping_state": "implemented",
       "scope": "Immutable byte lists of 0..2147483647 bytes; native CRC32 initial/final complements, equal to standard CRC32. Empty input is zero. Values above 255 are None.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -35936,7 +35936,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -35990,7 +35990,7 @@
       "scope": "Lists of 0..268435455 bytes, including empty input: four native-order U32 words and a little-endian length word. Values above 255 are None.",
       "gaps": [
         "Undefined native behavior: a dataSize whose 8*dataSize product does not fit in a signed int is not the reference length word",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -35999,7 +35999,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -36052,7 +36052,7 @@
       "scope": "Lists of 0..2147483575 bytes, including empty input: five native-order words and the big-endian 64-bit length 8*length. Values above 255 are None before allocation.",
       "gaps": [
         "Undefined native behavior: a dataSize past 0..2147483575 overflows the signed int newDataSize",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -36061,7 +36061,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -36113,7 +36113,7 @@
       "mapping_state": "implemented",
       "scope": "Lists of 0..2147483647 bytes, including empty input: eight native-order words and the big-endian 64-bit length 8*length. Values above 255 are None before allocation.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -36122,7 +36122,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -43931,7 +43931,7 @@
       "mapping_state": "implemented",
       "scope": "Reference Catmull-Rom weights and half-scale accumulation with explicit fused and uncontracted profiles. Exceptional, subnormal and extrapolated t match both profiles on every lane.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -43939,7 +43939,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
@@ -44129,14 +44129,14 @@
       "mapping_state": "implemented",
       "scope": "CheckCollisionRecs: strict overlap on both axes. The predicate is additions and comparisons, so a contracted build does not change it. Subnormal and non-finite fields are compared on the collision-domain profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -44191,14 +44191,14 @@
       "mapping_state": "implemented",
       "scope": "F32 centers and radii, including signed zero, a subnormal, infinities and one quiet NaN. Inclusive squared-distance tangency and signed radii. Uncontracted and Apple-clang FMA profiles.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -44254,14 +44254,14 @@
       "mapping_state": "implemented",
       "scope": "F32 circle and rectangle, including signed zero, a subnormal, infinities and one quiet NaN. Reference side and corner tests, including tangency. Uncontracted and Apple-clang FMA profiles.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -44318,14 +44318,14 @@
       "mapping_state": "implemented",
       "scope": "F32 circle and segment, including signed zero, a subnormal, infinities and one quiet NaN. Reference epsilon-degenerate endpoint fallback. Uncontracted and Apple-clang FMA profiles.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -44381,14 +44381,14 @@
       "mapping_state": "implemented",
       "scope": "CheckCollisionPointRec: inclusive left and top edges, exclusive right and bottom, for every F32 field including subnormals and non-finite values. A NaN comparison is false. Compared on the collision-domain profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -44444,14 +44444,14 @@
       "mapping_state": "implemented",
       "scope": "F32 point, center and radius, including signed zero, a subnormal, infinities and one quiet NaN. Inclusive squared-distance tangency. Uncontracted and Apple-clang FMA profiles.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -44507,14 +44507,14 @@
       "mapping_state": "implemented",
       "scope": "F32 point and triangle, including signed zero, a subnormal, infinities and one quiet NaN. Strictly positive barycentric weights; edges and degenerates are false. Uncontracted and Apple-clang FMA profiles.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -44571,14 +44571,14 @@
       "scope": "F32 point and segment, including signed zero, a subnormal, infinities and one quiet NaN, with a threshold whose truncation fits in a C int. Strict cross-product margin. Uncontracted and Apple-clang FMA profiles.",
       "gaps": [
         "Undefined native behavior: a non-finite threshold or one outside a C int is not the reference cast",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -44634,14 +44634,14 @@
       "mapping_state": "implemented",
       "scope": "F32 point and vertices, including signed zero, a subnormal, infinities and one quiet NaN. Odd-even crossings; fewer than three vertices is false. The crossing test multiplies, divides, then adds, so a contracted build does not fuse it.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -44696,14 +44696,14 @@
       "mapping_state": "implemented",
       "scope": "F32 segment endpoints, including signed zero, a subnormal, infinities and one quiet NaN. Maybe hit coordinates, inclusive endpoints and the reference epsilon determinant gate. Uncontracted and Apple-clang FMA profiles.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -44759,14 +44759,14 @@
       "mapping_state": "implemented",
       "scope": "GetCollisionRec: the overlapping rectangle, or four positive zeros when an extent is not positive. Equal fields keep the second operand, including its signed zero. Subnormal and non-finite field bits are compared on the collision-domain profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -45672,14 +45672,14 @@
       "mapping_state": "implemented",
       "scope": "R8G8B8A8 Surface filled with one packed color; dimensions 1..4096 per axis, otherwise None. Power-of-two storage padding is excluded from exports.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -45800,14 +45800,14 @@
       "mapping_state": "implemented",
       "scope": "RGBA8; dimensions 1..4096; every F32 density. A non-finite density is the inner color (raylib fmax/fmin of a NaN factor). Density one is inner at and inside the radius. Other densities, including values outside 0..1, use the clamped hypot factor. Balanced owned-array generation.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -45863,14 +45863,14 @@
       "mapping_state": "implemented",
       "scope": "RGBA8; dimensions 1..4096; every F32 density. Density one and any non-finite density are the inner color. Other densities, including values outside 0..1, use the clamped Manhattan factor.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -45927,14 +45927,14 @@
       "mapping_state": "implemented",
       "scope": "RGBA8; Surface dimensions 1..4096; positive signed-int checker sizes; invalid dimensions/checker sizes return None.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -46251,14 +46251,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format; returns the source and an independent clone with exact stored samples. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
@@ -46662,14 +46662,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format, dimensions 1..4096; canvas expansion to next power-of-two dimensions with SetPixelColor fill (R32 and R32G32B32 stay zero) and the native no-op for POT sizes. Stored words, including NaN payloads, are copied. A Surface is one level. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -46728,14 +46728,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format; integral crops with positive clipped results or native strictly-outside-origin no-ops; exact samples and returned owners on rejection. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -46792,14 +46792,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format; reference alpha bounds then a byte-level crop for threshold 0..1; empty selections preserve the original image unchanged. A Surface is one level. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -46855,14 +46855,14 @@
       "scope": "Formats 1..13, finite threshold 0..1: raylib's per-format switch. GRAY_ALPHA, R5G5B5A1 and R4G4B4A4 compare alpha bytes/bits and store raylib's replacement words; R8G8B8A8 replaces all channels at or below the byte cutoff; R32G32B32A32/R16G16B16A16 compare float alpha and store channel/255 floats; formats without alpha are unchanged. R5G5B5A1/R4G4B4A4 colors whose unscaled round(c*31)/round(c*15) byte casts are undefined (channels above 8, or above 17) are InvalidRequest, as are other thresholds. A Surface is one level.",
       "gaps": [
         "Undefined native behavior: brighter R5G5B5A1/R4G4B4A4 colors cast round(channel*31) or round(channel*15) through an unsigned char",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -46918,14 +46918,14 @@
       "mapping_state": "implemented",
       "scope": "Same-size owners in formats 1..13: the mask is a GRAYSCALE copy (ImageFormat) of the source; a GRAYSCALE destination becomes GRAY_ALPHA, others become R8G8B8A8 through ImageFormat, with the mask as alpha. The original mask is retained. A different size or a compressed destination is left unchanged. Conversion domain failures return both owners with OutOfDomain.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -46981,14 +46981,14 @@
       "mapping_state": "implemented",
       "scope": "RGBA8; reference F32 alpha division and RGB multiplication with byte truncation; alpha retained. A Surface is one level: LoadImageColors of width*height, then ImageFormat. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -47249,14 +47249,14 @@
       "mapping_state": "implemented",
       "scope": "Any Surface format via LoadImageColors, the plus-one fixed-point mapping and ImageFormat back, dimensions 1..4096; unsafe mappings return the original owner. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -47313,14 +47313,14 @@
       "scope": "Every Surface format, dimensions 1..4096; bounded integral offsets. An empty copied span is that fill alone (SetPixelColor; R32 and R32G32B32 stay zero). A negative source width with a positive height is undefined. Exact sample movement, including NaN words, and same-size no-ops. A Surface is one level. Rejected requests retain original owners. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Undefined native behavior: a negative source width and a positive height make ImageResizeCanvas memcpy a negative length",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -47445,7 +47445,7 @@
       "mapping_state": "implemented",
       "scope": "Any Surface format via LoadImageColors to Floyd-Steinberg R5G6B5 (5,6,5,0), R5G5B5A1 (5,5,5,1) or R4G4B4A4 (4,4,4,4). Preserves raster order, truncation, neighbor saturation and alpha handling; other bit counts (native format 0) return the original with InvalidDitherBits. dither_native leaves a compressed image and a channel sum above 16 unchanged. A Surface is one level. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -47455,7 +47455,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "partial",
         "targets": "partial",
@@ -47512,14 +47512,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format; vertical flipping with exact stored samples and preserved dimensions. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -47575,14 +47575,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format; horizontal flipping with exact stored samples and preserved dimensions. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -47704,14 +47704,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format; 90-degree clockwise rotation copies each stored sample word, including NaN payloads, and swaps dimensions. A Surface is one level. Every format 1..13 is compared with raylib on the surface-format profile, and quiet-NaN R32 words are compared as raw bytes.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -47769,14 +47769,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format; 90-degree counterclockwise rotation copies each stored sample word, including NaN payloads, and swaps dimensions. A Surface is one level. Every format 1..13 is compared with raylib on the surface-format profile, and quiet-NaN R32 words are compared as raw bytes.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -47834,14 +47834,14 @@
       "mapping_state": "implemented",
       "scope": "Any Surface format via LoadImageColors, integer tint multiplication and ImageFormat back (alpha discarded by formats without alpha). R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -47899,14 +47899,14 @@
       "mapping_state": "implemented",
       "scope": "Any Surface format via LoadImageColors, RGB inversion and ImageFormat back. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -48031,14 +48031,14 @@
       "mapping_state": "implemented",
       "scope": "Any Surface format via LoadImageColors and ImageFormat back; finite contrast clamped to -100..100 with native F32 arithmetic/truncation; non-finite amounts are InvalidRequest. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -48095,14 +48095,14 @@
       "mapping_state": "implemented",
       "scope": "Any Surface format via LoadImageColors and ImageFormat back; finite amounts below 2^31 in magnitude truncated toward zero (C int) then clamped to -255..255, native underflow-to-one; other amounts are InvalidRequest. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -48159,14 +48159,14 @@
       "mapping_state": "implemented",
       "scope": "Any Surface format via LoadImageColors and exact four-byte matching; GRAYSCALE, R5G6B5, R8G8B8 and R32G32B32 convert back with ImageFormat, other formats stay R8G8B8A8 as in raylib. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -48225,14 +48225,14 @@
       "scope": "Every Surface format to complete row-major RGBA color lists: native packed integer expansion, red-only R32, and R32 channels whose component*255 lies in (-1, 256). A product outside that interval is OutOfDomain with the owner. Formats 1..13 are compared with raylib on the surface-format profile.",
       "gaps": [
         "Undefined native behavior: an R32 channel whose component*255 lies outside (-1, 256) is OutOfDomain",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -48292,7 +48292,7 @@
       "mapping_state": "implemented",
       "scope": "Preserves the source owner and returns an owned RGBA palette for capacity 1..4096: first-occurrence order, alpha-zero exclusion, alpha-sensitive uniqueness, native count and BLANK padding to full capacity. A Surface is one level. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -48302,7 +48302,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "partial",
         "targets": "partial",
@@ -48421,7 +48421,7 @@
       "mapping_state": "implemented",
       "scope": "Consumes the owned palette and returns Unit while the separately retained source surface remains usable.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -48431,7 +48431,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
@@ -48486,14 +48486,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format; threshold 0..1; strict comparison of the LoadImageColors alpha byte (255 for formats without alpha) and exact zero rectangle for empty selections; original owner returned. A Surface is one level, the base width*height that read uses. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -48550,14 +48550,14 @@
       "scope": "Every Surface format; U32 coordinates are checked before access; out-of-bounds pixels return None with the owner. An R32 channel whose component*255 lies in (-1, 256) matches the defined cast; a product outside that interval is None. Red-only R32 colors stay distinct from GetPixelColor. Formats 1..13 are compared on the surface-format profile.",
       "gaps": [
         "Undefined native behavior: an R32 channel whose component*255 lies outside (-1, 256) is None",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -48617,14 +48617,14 @@
       "mapping_state": "implemented",
       "scope": "Consumes a Surface of any format and stores one color in every pixel with ImageDrawPixel's per-format encoding; dimensions preserved. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "unverified",
         "targets": "partial",
@@ -48679,14 +48679,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format; stores one in-bounds pixel with ImageDrawPixel's per-format encoding (no blending); outside coordinates are clipped. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -48741,14 +48741,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite Vector2 coordinates truncated before pixel clipping. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -48805,14 +48805,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; integral coordinates; pinned 16.16 stepping from one half and both endpoints (raylib 6.2). Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -48867,14 +48867,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite Vector2 inputs and raylib add-half/truncate rounding. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -48930,14 +48930,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite endpoints; add-half/truncate rounding; safe signed 16.16 deltas. Thickness is the C int in two's complement, -32767..32767: values <= -2 draw nothing, and -1, 0 and 1 draw one stroke. Formats 1..13 are compared on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -48994,14 +48994,14 @@
       "mapping_state": "implemented",
       "scope": "raylib 6.2: ImageDrawLineV between consecutive points of a List<Vector2>; fewer than two points draw nothing. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -49058,14 +49058,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices with raylib's (int) truncation of bounds and edge steps; defined reference signed-edge arithmetic. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -49187,14 +49187,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite vertices truncated before line rasterization. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -49250,14 +49250,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; List<Vector2> with finite bounded vertices (each triangle as ImageDrawTriangle); reference fan order; fewer than three points is a no-op. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -49314,14 +49314,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices (each triangle as ImageDrawTriangle); alternating reference winding; fewer than three points is a no-op. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -49378,14 +49378,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; integral-coordinate profile of the CPU ImageDrawRectangle, clipped to the image. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -49440,14 +49440,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite position and size truncated before reference rectangle drawing. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -49504,14 +49504,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite rectangle; clipping precedes coordinate/extent truncation. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -49634,14 +49634,14 @@
       "mapping_state": "implemented",
       "scope": "raylib 6.2's ImageDrawRectangleLines(dst, int posX, int posY, int width, int height): ImageDrawRectangleLinesEx of that rectangle with thickness 1, each covered pixel stored with ImageDrawPixel's per-format encoding; integral coordinates in -32767..32767. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -49696,14 +49696,14 @@
       "mapping_state": "implemented",
       "scope": "raylib 6.0's ImageDrawRectangleLines renamed by 6.2: every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite rectangle. Thickness is the C int in two's complement, -32767..32767, cast to float for the four edge strips, including a negative thickness. Formats 1..13 are compared on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -49824,14 +49824,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; reference midpoint filled-circle coverage with U32 radius, clipped to the image. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -49886,14 +49886,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded center truncated to integers; radius 0..32767. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -49950,14 +49950,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; integral bounded center; radius 0..32767; reference midpoint outline. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -50013,14 +50013,14 @@
       "mapping_state": "implemented",
       "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite center truncated before midpoint outline; radius 0..32767. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -51912,7 +51912,7 @@
       "mapping_state": "implemented",
       "scope": "Exact packed RGBA equality, including alpha.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -51920,7 +51920,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
@@ -51976,7 +51976,7 @@
       "mapping_state": "implemented",
       "scope": "Same finite-factor alpha replacement as ColorAlpha (Color.with_alpha).",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -51984,7 +51984,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
@@ -52039,14 +52039,14 @@
       "mapping_state": "implemented",
       "scope": "Packs four channels as 0xRRGGBBAA keeping the low eight bits of each (C unsigned-byte conversion), the unsigned bit pattern of ColorToInt.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -52100,7 +52100,7 @@
       "mapping_state": "implemented",
       "scope": "RGBA8 packed color to exact reference normalized RGBA Vector4 components.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52108,7 +52108,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
@@ -52165,7 +52165,7 @@
       "scope": "F32 components whose product with 255 is finite and in [0, 256), including signed zero, subnormals and values outside 0..1. Byte truncation matches the reference cast.",
       "gaps": [
         "Undefined native behavior: a component whose product with 255 is negative, non-finite, or at least 256 is not the reference cast",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52173,7 +52173,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
@@ -52229,7 +52229,7 @@
       "mapping_state": "implemented",
       "scope": "RGBA8 to HSV Vector3 with exact reference float bits, max-channel ties, achromatic results and ignored alpha.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52237,7 +52237,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
@@ -52294,7 +52294,7 @@
       "scope": "Hues and saturation/value whose three channels (value - value*saturation*k)*255 are finite and in (-1, 256). k is fmodf(offset + hue/60, 6) then the reference clamps; a non-finite fmod yields k = 1. Bytes match the cast; alpha is 255.",
       "gaps": [
         "Undefined native behavior: a channel whose (value - value*saturation*k)*255 lies outside (-1, 256) is not the reference cast",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52302,7 +52302,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
@@ -52358,7 +52358,7 @@
       "mapping_state": "implemented",
       "scope": "Integer RGBA channel multiplication divided by 255; distinct from alpha-blending's internal tint.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52366,7 +52366,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
@@ -52421,7 +52421,7 @@
       "mapping_state": "implemented",
       "scope": "Finite factor clamped to -1..1; reference darkening/lightening formulas and byte truncation; alpha retained.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52429,7 +52429,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "partial",
         "targets": "partial",
@@ -52484,7 +52484,7 @@
       "mapping_state": "implemented",
       "scope": "Finite factor clamped to -1..1; reference F32 arithmetic and byte truncation; alpha retained.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52492,7 +52492,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "partial",
         "targets": "partial",
@@ -52547,7 +52547,7 @@
       "mapping_state": "implemented",
       "scope": "Packed RGBA; finite F32 alpha clamped to 0..1 and truncated after multiplying by 255.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52555,7 +52555,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
@@ -52610,14 +52610,14 @@
       "mapping_state": "implemented",
       "scope": "Integer ColorAlphaBlend on packed RGBA, including 256-based tint and alpha rounding.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -52671,7 +52671,7 @@
       "mapping_state": "implemented",
       "scope": "Finite factor clamped to 0..1; independent straight RGBA interpolation and byte truncation.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52679,7 +52679,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
@@ -52734,14 +52734,14 @@
       "mapping_state": "implemented",
       "scope": "Packed 0xRRGGBBAA U32 words in GetColor byte order; Color.red/green/blue/alpha extract 8-bit channels.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -52796,7 +52796,7 @@
       "scope": "Little-endian byte lists. Formats 1..7 keep integer expansion and R5G5B5A1 blue from bits 1..5. Formats 8..13 cast each float or half channel when component*255 lies in (-1, 256); R32 and R16 replicate across RGB and a missing alpha is 255. Format 0 and codes outside 1..13 return color 0 without reading. Invalid bytes and short buffers of formats 1..13 are typed failures.",
       "gaps": [
         "Undefined native behavior: a float or half channel whose component*255 lies outside (-1, 256) is OutOfDomain",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52806,7 +52806,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "partial",
         "targets": "partial",
@@ -52861,7 +52861,7 @@
       "mapping_state": "implemented",
       "scope": "Formats 1..7 keep grayscale, nearest packed quantization, the pinned alpha>50 threshold and little-endian words, replacing only the pixel prefix. Every other format leaves the byte list unchanged.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52872,7 +52872,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "partial",
         "integration": "partial",
         "targets": "partial",
@@ -52927,7 +52927,7 @@
       "mapping_state": "implemented",
       "scope": "Nonnegative int dimensions and format codes 0..2147483647. The unsigned 64-bit product width*height*bpp shifted by 3; a result that does not fit in a signed int is 0. An empty side is 0. Compressed formats 14..15 and 16..23 are 8 and 16 bytes when both sides are below 4. A word above the signed int is None.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52935,7 +52935,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "partial",
         "targets": "partial",
@@ -60983,14 +60983,14 @@
       "mapping_state": "implemented",
       "scope": "F32 centers and radii, including signed zero, a subnormal, infinities and one quiet NaN. Inclusive squared distance and the squared sum of signed radii. Uncontracted and Apple-clang FMA profiles.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -61046,14 +61046,14 @@
       "mapping_state": "implemented",
       "scope": "raylib 6.2 CheckCollisionBoxes: X overlaps when max >= the other min and min <= the other max. Y and Z clear the hit only on a strict separation, so a NaN there is not a miss. Subnormal and non-finite fields are compared on the collision-domain profile.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -61108,14 +61108,14 @@
       "mapping_state": "implemented",
       "scope": "F32 box, center and radius, including signed zero, a subnormal, infinities and one quiet NaN. Reference Clamp ordering and inclusive closest-point test. Uncontracted and Apple-clang FMA profiles.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -61237,14 +61237,14 @@
       "scope": "Slab intersection, including signed zero, a subnormal and infinities, with inside-ray reversal and signed-zero fmin/fmax by libm profile. NaN slabs and normals outside the int cast are None. Uncontracted and Apple-clang FMA profiles.",
       "gaps": [
         "Undefined native behavior: naN slab distances (raylib's arm64 build and C disagree) and normals outside the int cast (undefined in C) are None",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -61366,14 +61366,14 @@
       "mapping_state": "implemented",
       "scope": "Moller-Trumbore with raylib's 1e-6 epsilon. F32 vertices, including signed zero, a subnormal, infinities and one quiet NaN. Parallel, outside and behind misses are the zero result. Uncontracted and Apple-clang FMA profiles.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
@@ -61430,14 +61430,14 @@
       "scope": "Triangles (p1, p2, p4) then (p2, p3, p4). F32 corners, including signed zero, a subnormal, infinities and one quiet NaN. Uncontracted and Apple-clang FMA profiles.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "partial",
