@@ -6674,3 +6674,12 @@ law base64_undefined_empty:
 
 law base64_undefined_padding_only:
   {J.Base64.decode_wide("====") == None{} : Maybe<&2, J.Base64.Decoded>}
+
+law data_code_name_stops_at_nul:
+  {J.Files.code_name_wide(SCon{Char.from_u32(97), SCon{Char.from_u32(98), SCon{Char.from_u32(0), "cd.h"}}}) == Some{"AB"} : Maybe<&2, String>}
+
+law data_code_name_keeps_a_high_byte:
+  {J.Files.code_name_wide(SCon{Char.from_u32(99), SCon{Char.from_u32(97), SCon{Char.from_u32(102), SCon{Char.from_u32(233), ".h"}}}}) == Some{SCon{Char.from_u32(67), SCon{Char.from_u32(65), SCon{Char.from_u32(70), SCon{Char.from_u32(233), ""}}}}} : Maybe<&2, String>}
+
+law data_code_empty_payload:
+  {J.Files.data_as_code_wide(Nil{}, "a.h") == None{} : Maybe<String>}

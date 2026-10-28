@@ -33158,11 +33158,11 @@
       "phase": 1,
       "sequence": 4,
       "status": "partial",
-      "jonlib": "Files.data_as_code / Files.export_data_as_code / Files.export_data_as_code_with",
+      "jonlib": "Files.data_as_code_wide / Files.export_data_as_code_wide",
       "mapping_state": "implemented",
-      "scope": "raylib's generated header (banner, NAME_DATA_SIZE, 20 lower-case hex bytes per line) for 1..1048576 bytes and an ASCII basename of 1..200 characters; the name drops its last extension, upper-cases a-z and maps '.-?!+' to '_'.",
+      "scope": "Header text for 1..357913607 bytes. The basename stops at the first NUL, keeps bytes 1..255, drops the last extension and bytes past 255, upper-cases a-z and maps .-?!+ to _. Empty data is None. A code unit above 255 is None.",
       "gaps": [
-        "Empty data (raylib reads data[-1]), larger payloads and longer/non-ASCII names",
+        "Undefined native behavior: empty data reads before the buffer",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib"
       ],
@@ -34139,9 +34139,10 @@
       "status": "partial",
       "jonlib": "Files.has_extension",
       "mapping_state": "implemented",
-      "scope": "ASCII-case-insensitive match of GetFileExtension's first 15 bytes against a ';'-separated list's first 32 entries; entries without a leading '.' compare without it.",
+      "scope": "ASCII-case-insensitive match of GetFileExtension's first 15 bytes against a ';'-separated list's first 32 entries; entries without a leading '.' compare without it. Each character is one path byte, including 128..255.",
       "gaps": [
-        "Non-ASCII byte paths compare per character, not per byte"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
@@ -34382,9 +34383,10 @@
       "status": "partial",
       "jonlib": "Files.extension",
       "mapping_state": "implemented",
-      "scope": "From the last '.' of the whole path; None when there is none or it is the first character (raylib NULL).",
+      "scope": "From the last '.' of the whole path; None when there is none or it is the first character (raylib NULL). Each character is one path byte, including 128..255.",
       "gaps": [
-        "Non-ASCII byte paths compare per character, not per byte"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
@@ -34439,9 +34441,10 @@
       "status": "partial",
       "jonlib": "Files.name",
       "mapping_state": "implemented",
-      "scope": "The text after the last '/' or '\\\\' separator, or the whole path.",
+      "scope": "The text after the last '/' or '\\\\' separator, or the whole path. Each character is one path byte, including 128..255.",
       "gaps": [
-        "Non-ASCII byte paths compare per character, not per byte"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
@@ -34496,9 +34499,10 @@
       "status": "partial",
       "jonlib": "Files.name_without_ext",
       "mapping_state": "implemented",
-      "scope": "GetFileName truncated to 255 bytes, cut at its last '.' past the first character.",
+      "scope": "GetFileName truncated to 255 bytes, cut at its last '.' past the first character. Each character is one path byte, including 128..255.",
       "gaps": [
-        "Non-ASCII byte paths compare per character, not per byte"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
@@ -34553,10 +34557,11 @@
       "status": "partial",
       "jonlib": "Files.directory",
       "mapping_state": "implemented",
-      "scope": "'./' before paths without a drive letter or leading separator, then the path up to its last separator ('/' or '\\\\' alone for a root file); paths of 1..4093 bytes, None otherwise (raylib reads past an empty path or overflows its 4096-byte buffer).",
+      "scope": "'./' before paths without a drive letter or leading separator, then the path up to its last separator ('/' or '\\\\' alone for a root file); paths of 1..4093 bytes, each character one byte including 128..255. None otherwise.",
       "gaps": [
-        "Non-ASCII byte paths compare per character, not per byte",
-        "Paths outside 1..4093 bytes"
+        "Undefined native behavior: an empty path reads past the string and a longer path overflows the 4096-byte buffer",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
@@ -34611,10 +34616,11 @@
       "status": "partial",
       "jonlib": "Files.previous_directory",
       "mapping_state": "implemented",
-      "scope": "raylib 6.2's walk back from the end: a trailing separator is passed, a file's own name is passed (IsPathFile), the root '/' or 'C:\\\\' is kept, otherwise the path up to the separator; empty without one. Files.previous_directory_given takes IsPathFile's answer for pure callers. Paths up to 4096 bytes, None beyond (raylib buffer overflow).",
+      "scope": "raylib 6.2's walk back from the end: a trailing separator is passed, a file's own name is passed (IsPathFile), the root '/' or 'C:\\\\' is kept, otherwise the path up to the separator; empty without one. Files.previous_directory_given takes IsPathFile's answer for pure callers. Paths up to 4096 bytes, each character one byte including 128..255.",
       "gaps": [
-        "Non-ASCII byte paths compare per character, not per byte",
-        "Paths above 4096 bytes"
+        "Undefined native behavior: a path above 4096 bytes overflows the static buffer",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
@@ -35096,9 +35102,10 @@
       "status": "partial",
       "jonlib": "Files.valid_name",
       "mapping_state": "implemented",
-      "scope": "Empty names are valid; '<>:\"/\\\\|?*', control characters and all-period names are invalid.",
+      "scope": "Empty names are valid; '<>:\"/\\\\|?*', control characters and all-period names are invalid. Each character is one path byte, including 128..255.",
       "gaps": [
-        "Non-ASCII byte paths compare per character, not per byte"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,

@@ -6754,6 +6754,15 @@ def Files.data_as_code(+bytes: +List<U32>, path: String) -> Maybe<String>:
   Bool.pick(Maybe<String>, ((size >= 1) && (size <= 1048576) : U32) && Codec.valid_bytes(bytes, True{}),
     Files.code.text(ImageCode.data.name(path), size, bytes), None{})
 
+# 357913607 is the last dataSize whose 6*dataSize+2000 text allocation fits in a signed int.
+def Files.data_as_code_wide(+bytes: +List<U32>, path: String) -> Maybe<String>:
+  +size = U32.from_nat(Codec.byte_count(bytes, 0n))
+  Bool.pick(Maybe<String>, ((size >= 1) && (size <= 357913607) : U32) && Codec.valid_bytes(bytes, True{}),
+    Files.code.text(ImageCode.data.name_wide(path), size, bytes), None{})
+
+def Files.code_name_wide(path: String) -> Maybe<&2, String>:
+  ImageCode.data.name_wide(path)
+
 def Files.export.text(path: String, text: Maybe<String>) -> IO(Result<&1, &1, Surface.IOError, Unit>):
   match text:
     case None{}: IO.pure(Result<&1, &1, Surface.IOError, Unit>, Fail{DataError{InvalidRequest{}}})
@@ -6770,6 +6779,9 @@ def Files.export.text_with(~save: String -> String -> IO(Result<&1, &1, Surface.
 
 def Files.export_data_as_code_with(~save: String -> String -> IO(Result<&1, &1, Surface.IOError, Unit>), bytes: +List<U32>, +path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
   Files.export.text_with(~save, path, Files.data_as_code(bytes, path))
+
+def Files.export_data_as_code_wide(bytes: +List<U32>, +path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  Files.export.text(path, Files.data_as_code_wide(bytes, path))
 
 # FilePathList: the entries count and the paths.
 type FilePathList is Data:

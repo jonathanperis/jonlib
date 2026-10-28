@@ -1,9 +1,9 @@
 # Files and paths
 
 Jonlib adapts raylib 6.2's `rcore.c` path and file-data utilities as `Files.*`
-in `jonlib.bend`. Paths and text are raylib byte strings: ASCII paths compare
-byte for byte, and file text is read and written as characters 0..255, one per
-byte, on every lane.
+in `jonlib.bend`. Paths and text are raylib byte strings: each character is one
+byte, including bytes 128..255, and file text is read and written as characters
+0..255, one per byte, on every lane.
 
 | Function | raylib | Contract |
 |---|---|---|
@@ -36,7 +36,7 @@ byte, on every lane.
 | `Files.text_find_index(path, search) -> IO(Maybe<U32>)` | `FileTextFindIndex` | Byte index of the first occurrence in the text up to its first NUL; `None` when absent or the file is missing. An empty file, which raylib scans through a `NULL` text, is `None`. |
 | `Files.text_replace(path, search, replacement) -> IO(Maybe<U32>)` | `FileTextReplace` | -1 when the file does not exist, is empty or unreadable, or the search is empty; otherwise `LoadFileText`, `TextReplaceAlloc` of its text up to the first NUL and `SaveFileText` of the result (so the file is rewritten even without a match, ending at the first NUL), answering 0 when saved and -1 when not. `None` for characters above 255 in the result and `TextReplaceAlloc`'s int overflow. |
 | `Core.is_file_dropped(core) -> Bool`, `Core.load_dropped_files(core) -> FilePathList`, `Core.unload_dropped_files(core, files)` | `IsFileDropped`, `LoadDroppedFiles`, `UnloadDroppedFiles` | `CORE.Window.dropFileCount` stays 0: the memory platform has no drop events and Base's windows report none, so `IsFileDropped` is false, `LoadDroppedFiles` is `FilePathList{0, []}` and unloading it frees nothing. A desktop platform with drop events would fill the list (Base gap, [DRIVER.md](DRIVER.md#gaps)). |
-| `Files.data_as_code(bytes, path)` / `export_data_as_code(bytes, path)` | `ExportDataAsCode` | raylib's header text (banner, `NAME_DATA_SIZE`, 20 lower-case hex bytes per line) for 1..1048576 bytes and an ASCII basename of 1..200 characters; the name drops its last extension, upper-cases a-z and maps `.-?!+` to `_`. |
+| `Files.data_as_code_wide(bytes, path)` / `export_data_as_code_wide(bytes, path)` | `ExportDataAsCode` | raylib's header text (banner, `NAME_DATA_SIZE`, 20 lower-case hex bytes per line) for 1..357913607 bytes. The basename stops at the first NUL, keeps bytes 1..255, drops the last extension and the bytes past 255, upper-cases a-z and maps `.-?!+` to `_`. Empty data is `None` (raylib reads `data[-1]`). `data_as_code` remains the 1 MiB ASCII-name form. |
 
 Writers open with Base's create/truncate mode and close their handle; errors are
 `Surface.IOError` values (`FileError{code, message}`, `DataError{InvalidRequest}`).

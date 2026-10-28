@@ -119,3 +119,97 @@ def data.encode(~q: Quant, +name: String, size: U32, bytes: List<q, U32>) -> Str
   header = data.banner() ++ "#define " ++ name ++ "_DATA_SIZE     " ++ U32.show(size) ++ "\n\n"
     ++ "static unsigned char " ++ name ++ "_DATA[" ++ name ++ "_DATA_SIZE] = { "
   body(~q, bytes, 0, prepend(header, ""))
+
+# ExportDataAsCode's basename: stop at the first NUL, keep bytes 1..255, reset at
+# '/' or '\\', then keep the first 255 bytes (snprintf into the 256-byte name).
+type NamePrep is Data:
+  NameGo{}
+  NameDone{}
+  NameBad{}
+
+def data.done_prep(fits: Bool) -> NamePrep:
+  match fits:
+    case True{}: NameDone{}
+    case False{}: NameDone{}
+
+def data.next_prep(zero: Bool, fits: Bool) -> NamePrep:
+  match zero:
+    case True{}: data.done_prep(fits)
+    case False{}:
+      match fits:
+        case False{}: NameBad{}
+        case True{}: NameGo{}
+
+def data.same_length(a: Bool, b: Bool, c: Bool, +length: Nat) -> Nat:
+  match a b c:
+    case _ _ _: length
+
+def data.next_length(zero: Bool, sep: Bool, fits: Bool, room: Bool, +length: Nat) -> Nat:
+  match zero:
+    case True{}: data.same_length(sep, fits, room, length)
+    case False{}:
+      match sep:
+        case True{}: data.same_length(fits, room, False{}, 0n)
+        case False{}:
+          match fits:
+            case False{}: data.same_length(room, False{}, False{}, length)
+            case True{}:
+              match room:
+                case True{}: 1n+length
+                case False{}: length
+
+def data.hold(a: Bool, b: Bool, c: Bool, +character: Char, reversed: String) -> String:
+  match a b c character:
+    case _ _ _ _: reversed
+
+def data.clear_name(a: Bool, b: Bool, +character: Char, reversed: String) -> String:
+  match a b character reversed:
+    case _ _ _ _: ""
+
+def data.push_name(zero: Bool, sep: Bool, fits: Bool, room: Bool, +character: Char, reversed: String) -> String:
+  match zero:
+    case True{}: data.hold(sep, fits, room, character, reversed)
+    case False{}:
+      match sep:
+        case True{}: data.clear_name(fits, room, character, reversed)
+        case False{}:
+          match fits:
+            case False{}: data.hold(room, False{}, False{}, character, reversed)
+            case True{}:
+              match room:
+                case False{}: data.hold(False{}, False{}, False{}, character, reversed)
+                case True{}: SCon{character, reversed}
+
+def data.sized(ok: Bool, reversed: String) -> String:
+  match ok:
+    case True{}: reversed
+    case False{}: reversed
+
+def data.finish(path: String, +length: Nat, reversed: String) -> Maybe<&2, String>:
+  match path:
+    case _: Some{data.stem(String.reverse(data.sized(Nat.is_le(length, 255n), reversed)))}
+
+def data.none_length(ok: Bool) -> Maybe<&2, String>:
+  match ok:
+    case True{}: None{}
+    case False{}: None{}
+
+def data.abandon(path: String, +length: Nat, reversed: String) -> Maybe<&2, String>:
+  match path reversed:
+    case _ _: data.none_length(Nat.is_le(length, 255n))
+
+def data.wide(path: String, prep: NamePrep, +length: Nat, reversed: String) -> Maybe<&2, String>:
+  match path prep:
+    case leftover NameDone{}: data.finish(leftover, length, reversed)
+    case leftover NameBad{}: data.abandon(leftover, length, reversed)
+    case SNil{} NameGo{}: data.finish("", length, reversed)
+    case SCon{+character, rest} NameGo{}:
+      +code = Char.to_u32(character)
+      +zero = U32.is_eq(code, 0)
+      +sep = U32.is_eq(code, 47) || U32.is_eq(code, 92)
+      +fits = (code <= 255 : U32)
+      +room = Nat.is_lt(length, 255n)
+      data.wide(rest, data.next_prep(zero, fits), data.next_length(zero, sep, fits, room, length), data.push_name(zero, sep, fits, room, character, reversed))
+
+def data.name_wide(path: String) -> Maybe<&2, String>:
+  data.wide(path, NameGo{}, 0n, "")

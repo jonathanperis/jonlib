@@ -22,14 +22,16 @@ PATHS = ['', '.', '..', 'a', 'ab', 'abc', 'abcd', 'a.b', '.hidden', 'file.png', 
          'dir.d/file.tar.gz', 'C:\\x\\y.txt', 'C:file.txt', 'C:\\', 'C:\\a', 'C:\\a\\b', '/', '/ab', '/abs',
          '/abs/path/', '/abc/d', '\\', 'a/b/c/', 'a\\b', 'x.', 'noext/', './rel/x.y', '../up.png', 'a/b.c/d',
          'dir/.git', '/a.b', 'a/.b.c', 'name.with.many.dots', 'd/' + 'n' * 300 + '.ext', 'p' * 4093,
-         'p' * 4094, '/' + 'q' * 4095, 'r' * 4096 + '/s']
+         'p' * 4094, '/' + 'q' * 4095, 'r' * 4096 + '/s',
+         'caf\xe9.png', 'dir\xff/file\x80.txt', '\xe9\xe9.H', 'a.\xff\xfe']
 EXTENSIONS = [('image.PNG', '.png;.jpg'), ('a.png', 'png'), ('a.png', '.PNG'), ('a', '.png'), ('a.tar.gz', '.gz'),
               ('a.tar.gz', '.tar.gz'), ('.png', '.png'), ('x.', ''), ('x.', '.'), ('x.y', ';.y'), ('x.y', 'Y'),
               ('dir.d/file', '.d/file'), ('x.abcdefghijklmn', '.ABCDEFGHIJKLMN'), ('x.abcdefghijklmno', '.abcdefghijklmno'),
               ('a.e30', ';'.join(f'.e{i}' for i in range(40))), ('a.e31', ';'.join(f'.e{i}' for i in range(40))),
-              ('a.e32', ';'.join(f'.e{i}' for i in range(40)))]
+              ('a.e32', ';'.join(f'.e{i}' for i in range(40))),
+              ('a.\xff\xfe', '.\xff\xfe'), ('a.\xff\xfe', '.\xfe')]
 NAMES = ['', 'a', 'a.txt', '...', '.', '..', '. .', 'a<b', 'a>b', 'a:b', 'a"b', 'a/b', 'a\\b', 'a|b', 'a?b', 'a*b',
-         'a\tb', 'a\x01b', 'CON', ' ', 'a b', 'end.']
+         'a\tb', 'a\x01b', 'CON', ' ', 'a b', 'end.', '\xe9', '\x7f', 'a\xe9b']
 SEARCHES = ['', 'abc', 'zz', 'tail', 'x']
 
 
@@ -89,7 +91,11 @@ def actions(work):
     out += [('find', (rel('text.txt'), search)) for search in SEARCHES]
     out += [('find', (rel('missing.bin'), 'abc')), ('find', (rel('empty.bin'), 'abc'))]
     out += [('save-data', ('saved.bin', list(data[:40]))), ('save-text', ('saved.txt', 'line one\nsecond\0hidden')),
-            ('export-code', ('my-data.v2+x.h', list(data[:47])))]
+            ('export-code', ('my-data.v2+x.h', list(data[:47]))),
+            ('export-code', ('caf\xe9.h', [0, 16, 255])),
+            ('export-code', ('a' * 201 + '.h', [1, 2])),
+            ('export-code', ('n' * 255, [9])),
+            ('export-ramp', 'ramp.h')]
     # FileTextReplace on a fresh copy of a fixture (None: the file is missing):
     # (copy name, fixture bytes, search, replacement).
     replaced = b'abc abcabc ab\nabc\0abc after'
@@ -120,7 +126,7 @@ static void readback(const char *path,int ok){int n=0;unsigned char *d=LoadFileD
 
 
 def native_source(acts, work):
-    lines = ['#include "raylib.h"', '#include <stdio.h>', '#include <string.h>', C_EMITTER, NATIVE_HELPERS,
+    lines = ['#include "raylib.h"', '#include <stdio.h>', '#include <stdlib.h>', '#include <string.h>', C_EMITTER, NATIVE_HELPERS,
              'int main(void){SetTraceLogLevel(LOG_NONE);']
     rel = lambda name: c_string(str((work / name).relative_to(ROOT)))
     for kind, arg in acts:
@@ -162,6 +168,9 @@ def native_source(acts, work):
         elif kind == 'export-code':
             name, data = arg
             lines.append(f'{{static unsigned char d[]={{{",".join(map(str, data))}}};readback({rel("c/" + name)},ExportDataAsCode(d,sizeof d,{rel("c/" + name)}));}}')
+        elif kind == 'export-ramp':
+            lines.append(f'{{unsigned char *d=malloc(1048577);if(!d)return 2;for(int i=0;i<1048577;i++)d[i]=(unsigned char)i;'
+                         f'readback({rel("c/" + arg)},ExportDataAsCode(d,1048577,{rel("c/" + arg)}));free(d);}}')
         elif kind == 'replace':
             # One result: the int FileTextReplace returns, then the file's bytes.
             name, fixture, search, replacement = arg
@@ -218,6 +227,10 @@ def readback.ok(saved: Result<&1, &1, J.Surface.IOError, Unit>) -> Bool:
   match saved:
     case Fail{_}: False{}
     case Done{_}: True{}
+def Files.ramp(n: Nat, reversed: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: reversed
+    case 1n++k: Files.ramp(k, Con{(U32.from_nat(k) .&. 255 : U32), reversed})
 def readback(path: String, saved: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Files.load_data(path), readback.bytes(readback.ok(saved)))
 def replaced.bytes(+r: U32, result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Unit):
@@ -269,6 +282,10 @@ def render(acts, work):
                 name, value = arg
                 line = (f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Files.save_text({rel("bend/" + name)}, '
                         f'{bend_string(value)}), readback({rel("bend/" + name)}))')
+            elif kind == 'export-ramp':
+                path = bend_string(str((work / 'bend' / arg).relative_to(ROOT)))
+                line = (f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Files.export_data_as_code_wide(Files.ramp(1048577n, Nil{{}}), '
+                        f'{path}), readback({path}))')
             elif kind == 'replace':
                 name, fixture, search, replacement = arg
                 path = rel('bend/' + name)
@@ -278,8 +295,9 @@ def render(acts, work):
                                                         f'J.Files.save_data({path}, [{",".join(map(str, fixture))}]), u => {replace})')
             else:
                 name, values = arg
-                line = (f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Files.export_data_as_code([{",".join(map(str, values))}], '
-                        f'{rel("bend/" + name)}), readback({rel("bend/" + name)}))')
+                path = bend_string(str((work / 'bend' / name).relative_to(ROOT)))
+                line = (f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Files.export_data_as_code_wide([{",".join(map(str, values))}], '
+                        f'{path}), readback({path}))')
             body += '    ' + line + '\n'
         return body
     return emit

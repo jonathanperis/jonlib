@@ -5084,3 +5084,12 @@ def Laws.base64_undefined_empty():
 
 def Laws.base64_undefined_padding_only():
   {==}
+
+def Laws.data_code_name_stops_at_nul():
+  {==}
+
+def Laws.data_code_name_keeps_a_high_byte():
+  {==}
+
+def Laws.data_code_empty_payload():
+  {==}
