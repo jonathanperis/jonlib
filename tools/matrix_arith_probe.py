@@ -91,7 +91,7 @@ def render(selected, gpu):
 
 def _cell(left, right):
     product = quiet_nan.reduce_binary('mul', left, right)
-    return quiet_nan.reduce('add', quiet_nan.reduce('add', product, product), quiet_nan.reduce('add', product, product))
+    return quiet_nan.reduce('add', quiet_nan.reduce('add', quiet_nan.reduce('add', product, product), product), product)
 
 
 def _trace(left):

@@ -436,8 +436,10 @@ def Matrix.subtract(left: Matrix, right: Matrix) -> Matrix:
     Sse.sub(a2, b2), Sse.sub(a6, b6), Sse.sub(a10, b10), Sse.sub(a14, b14),
     Sse.sub(a3, b3), Sse.sub(a7, b7), Sse.sub(a11, b11), Sse.sub(a15, b15)}
 
+# Left-associated, as in raymath's `a*e + b*f + c*g + d*h`. A balanced sum
+# rounds finite results differently.
 def Matrix.product.cell(+a: F32, +b: F32, +c: F32, +d: F32, +e: F32, +f: F32, +g: F32, +h: F32) -> F32:
-  Sse.add(Sse.add(Sse.mul(a, e), Sse.mul(b, f)), Sse.add(Sse.mul(c, g), Sse.mul(d, h)))
+  Sse.add(Sse.add(Sse.add(Sse.mul(a, e), Sse.mul(b, f)), Sse.mul(c, g)), Sse.mul(d, h))
 
 def Matrix.multiply(left: Matrix, right: Matrix) -> Matrix:
   Matrix{+a0, +a4, +a8, +a12, +a1, +a5, +a9, +a13, +a2, +a6, +a10, +a14, +a3, +a7, +a11, +a15} = left

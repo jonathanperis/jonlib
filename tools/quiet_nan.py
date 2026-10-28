@@ -56,7 +56,9 @@ def reduce_binary(op, left, right):
     if op == 'mul' and ((_zero(left) and _inf(right)) or (_inf(left) and _zero(right))):
         return FRESH
     if op == 'div' and _zero(right):
-        if _zero(left) or _inf(left):
+        # 0/0 is an invalid operation. A nonzero dividend over zero, including
+        # infinity, is a signed infinity (IEEE 754), not a NaN.
+        if _zero(left):
             return FRESH
         return ((left ^ right) & SIGN) | QUIET
     if op == 'div' and _inf(left) and _inf(right):

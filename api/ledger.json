@@ -77106,15 +77106,15 @@
       "status": "partial",
       "jonlib": "(a + b : M.Vector2)",
       "mapping_state": "implemented",
-      "scope": "Computed as `(a + b : M.Vector2)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "Computed as `(a + b : M.Vector2)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -77165,9 +77165,9 @@
       "status": "partial",
       "jonlib": "(a + b : M.Vector2)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `(a + b : M.Vector2)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `(a + b : M.Vector2)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "Immutable values: the compound assignment returns a new value instead of updating its operand"
@@ -77175,7 +77175,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -77226,15 +77226,15 @@
       "status": "partial",
       "jonlib": "(a - b : M.Vector2)",
       "mapping_state": "implemented",
-      "scope": "Computed as `(a - b : M.Vector2)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "Computed as `(a - b : M.Vector2)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -77285,9 +77285,9 @@
       "status": "partial",
       "jonlib": "(a - b : M.Vector2)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `(a - b : M.Vector2)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `(a - b : M.Vector2)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "Immutable values: the compound assignment returns a new value instead of updating its operand"
@@ -77295,7 +77295,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -77346,9 +77346,9 @@
       "status": "partial",
       "jonlib": "M.Vector2.scale(b, a)",
       "mapping_state": "implemented",
-      "scope": "Computed as `M.Vector2.scale(b, a)` (Vector2Scale of the vector by the scalar); every result bit matches the C++ operator.",
+      "scope": "Computed as `M.Vector2.scale(b, a)` (Vector2Scale of the vector by the scalar); non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
@@ -77356,7 +77356,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -77407,9 +77407,9 @@
       "status": "partial",
       "jonlib": "M.Vector2.scale(a, b)",
       "mapping_state": "implemented",
-      "scope": "Computed as `M.Vector2.scale(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "Computed as `M.Vector2.scale(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
@@ -77417,7 +77417,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -77468,9 +77468,9 @@
       "status": "partial",
       "jonlib": "M.Vector2.scale(a, b)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `M.Vector2.scale(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `M.Vector2.scale(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)",
@@ -77479,7 +77479,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -77530,15 +77530,15 @@
       "status": "partial",
       "jonlib": "(a * b : M.Vector2)",
       "mapping_state": "implemented",
-      "scope": "Computed as `(a * b : M.Vector2)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "Computed as `(a * b : M.Vector2)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -77589,9 +77589,9 @@
       "status": "partial",
       "jonlib": "(a * b : M.Vector2)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `(a * b : M.Vector2)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `(a * b : M.Vector2)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "Immutable values: the compound assignment returns a new value instead of updating its operand"
@@ -77599,7 +77599,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -77650,9 +77650,9 @@
       "status": "partial",
       "jonlib": "M.Vector2.transform(a, b)",
       "mapping_state": "implemented",
-      "scope": "Computed as `M.Vector2.transform(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "Computed as `M.Vector2.transform(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
@@ -77660,7 +77660,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -77712,9 +77712,9 @@
       "status": "partial",
       "jonlib": "M.Vector2.transform(a, b)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `M.Vector2.transform(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `M.Vector2.transform(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)",
@@ -77723,7 +77723,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -77775,9 +77775,9 @@
       "status": "partial",
       "jonlib": "M.Vector2.scale(a, (1.0 / b : F32))",
       "mapping_state": "implemented",
-      "scope": "Computed as `M.Vector2.scale(a, (1.0 / b : F32))`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "Computed as `M.Vector2.scale(a, (1.0 / b : F32))`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
@@ -77785,7 +77785,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -77836,9 +77836,9 @@
       "status": "partial",
       "jonlib": "M.Vector2.scale(a, (1.0 / b : F32))",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `M.Vector2.scale(a, (1.0 / b : F32))`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `M.Vector2.scale(a, (1.0 / b : F32))`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)",
@@ -77847,7 +77847,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -77898,15 +77898,15 @@
       "status": "partial",
       "jonlib": "(a / b : M.Vector2)",
       "mapping_state": "implemented",
-      "scope": "Computed as `(a / b : M.Vector2)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "Computed as `(a / b : M.Vector2)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -77957,9 +77957,9 @@
       "status": "partial",
       "jonlib": "(a / b : M.Vector2)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `(a / b : M.Vector2)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `(a / b : M.Vector2)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "Immutable values: the compound assignment returns a new value instead of updating its operand"
@@ -77967,7 +77967,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -78019,16 +78019,14 @@
       "jonlib": "M.Vector2.equals(a, b)",
       "mapping_state": "implemented",
       "scope": "Computed as `M.Vector2.equals(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
-      "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
-      ],
+      "gaps": [],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
       ],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -78081,16 +78079,14 @@
       "jonlib": "Bool.not(M.Vector2.equals(a, b))",
       "mapping_state": "implemented",
       "scope": "Computed as `Bool.not(M.Vector2.equals(a, b))`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
-      "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
-      ],
+      "gaps": [],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
       ],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -78442,15 +78438,15 @@
       "status": "partial",
       "jonlib": "(a + b : M.Vector3)",
       "mapping_state": "implemented",
-      "scope": "Computed as `(a + b : M.Vector3)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "Computed as `(a + b : M.Vector3)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -78501,9 +78497,9 @@
       "status": "partial",
       "jonlib": "(a + b : M.Vector3)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `(a + b : M.Vector3)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `(a + b : M.Vector3)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "Immutable values: the compound assignment returns a new value instead of updating its operand"
@@ -78511,7 +78507,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -78562,15 +78558,15 @@
       "status": "partial",
       "jonlib": "(a - b : M.Vector3)",
       "mapping_state": "implemented",
-      "scope": "Computed as `(a - b : M.Vector3)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "Computed as `(a - b : M.Vector3)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -78621,9 +78617,9 @@
       "status": "partial",
       "jonlib": "(a - b : M.Vector3)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `(a - b : M.Vector3)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `(a - b : M.Vector3)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "Immutable values: the compound assignment returns a new value instead of updating its operand"
@@ -78631,7 +78627,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -78682,9 +78678,9 @@
       "status": "partial",
       "jonlib": "M.Vector3.scale(b, a)",
       "mapping_state": "implemented",
-      "scope": "Computed as `M.Vector3.scale(b, a)` (Vector3Scale of the vector by the scalar); every result bit matches the C++ operator.",
+      "scope": "Computed as `M.Vector3.scale(b, a)` (Vector3Scale of the vector by the scalar); non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
@@ -78692,7 +78688,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -78743,9 +78739,9 @@
       "status": "partial",
       "jonlib": "M.Vector3.scale(a, b)",
       "mapping_state": "implemented",
-      "scope": "Computed as `M.Vector3.scale(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "Computed as `M.Vector3.scale(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
@@ -78753,7 +78749,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -78804,9 +78800,9 @@
       "status": "partial",
       "jonlib": "M.Vector3.scale(a, b)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `M.Vector3.scale(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `M.Vector3.scale(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)",
@@ -78815,7 +78811,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -78866,15 +78862,15 @@
       "status": "partial",
       "jonlib": "(a * b : M.Vector3)",
       "mapping_state": "implemented",
-      "scope": "Computed as `(a * b : M.Vector3)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "Computed as `(a * b : M.Vector3)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -78925,9 +78921,9 @@
       "status": "partial",
       "jonlib": "(a * b : M.Vector3)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `(a * b : M.Vector3)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `(a * b : M.Vector3)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "Immutable values: the compound assignment returns a new value instead of updating its operand"
@@ -78935,7 +78931,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -78986,9 +78982,9 @@
       "status": "partial",
       "jonlib": "M.Vector3.transform(a, b)",
       "mapping_state": "implemented",
-      "scope": "Computed as `M.Vector3.transform(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "Computed as `M.Vector3.transform(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
@@ -78996,7 +78992,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -79048,9 +79044,9 @@
       "status": "partial",
       "jonlib": "M.Vector3.transform(a, b)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `M.Vector3.transform(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `M.Vector3.transform(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)",
@@ -79059,7 +79055,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -79111,9 +79107,9 @@
       "status": "partial",
       "jonlib": "M.Vector3.scale(a, (1.0 / b : F32))",
       "mapping_state": "implemented",
-      "scope": "Computed as `M.Vector3.scale(a, (1.0 / b : F32))`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "Computed as `M.Vector3.scale(a, (1.0 / b : F32))`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
@@ -79121,7 +79117,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -79172,9 +79168,9 @@
       "status": "partial",
       "jonlib": "M.Vector3.scale(a, (1.0 / b : F32))",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `M.Vector3.scale(a, (1.0 / b : F32))`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `M.Vector3.scale(a, (1.0 / b : F32))`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)",
@@ -79183,7 +79179,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -79234,15 +79230,15 @@
       "status": "partial",
       "jonlib": "(a / b : M.Vector3)",
       "mapping_state": "implemented",
-      "scope": "Computed as `(a / b : M.Vector3)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "Computed as `(a / b : M.Vector3)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -79293,9 +79289,9 @@
       "status": "partial",
       "jonlib": "(a / b : M.Vector3)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `(a / b : M.Vector3)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `(a / b : M.Vector3)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "Immutable values: the compound assignment returns a new value instead of updating its operand"
@@ -79303,7 +79299,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -79355,16 +79351,14 @@
       "jonlib": "M.Vector3.equals(a, b)",
       "mapping_state": "implemented",
       "scope": "Computed as `M.Vector3.equals(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
-      "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
-      ],
+      "gaps": [],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
       ],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -79417,16 +79411,14 @@
       "jonlib": "Bool.not(M.Vector3.equals(a, b))",
       "mapping_state": "implemented",
       "scope": "Computed as `Bool.not(M.Vector3.equals(a, b))`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
-      "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
-      ],
+      "gaps": [],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
       ],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -79838,15 +79830,15 @@
       "status": "partial",
       "jonlib": "(a + b : M.Vector4)",
       "mapping_state": "implemented",
-      "scope": "Computed as `(a + b : M.Vector4)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "Computed as `(a + b : M.Vector4)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -79897,9 +79889,9 @@
       "status": "partial",
       "jonlib": "(a + b : M.Vector4)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `(a + b : M.Vector4)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `(a + b : M.Vector4)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "Immutable values: the compound assignment returns a new value instead of updating its operand"
@@ -79907,7 +79899,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -79958,15 +79950,15 @@
       "status": "partial",
       "jonlib": "(a - b : M.Vector4)",
       "mapping_state": "implemented",
-      "scope": "Computed as `(a - b : M.Vector4)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "Computed as `(a - b : M.Vector4)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -80017,9 +80009,9 @@
       "status": "partial",
       "jonlib": "(a - b : M.Vector4)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `(a - b : M.Vector4)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `(a - b : M.Vector4)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "Immutable values: the compound assignment returns a new value instead of updating its operand"
@@ -80027,7 +80019,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -80078,9 +80070,9 @@
       "status": "partial",
       "jonlib": "M.Vector4.scale(b, a)",
       "mapping_state": "implemented",
-      "scope": "Computed as `M.Vector4.scale(b, a)` (Vector4Scale of the vector by the scalar); every result bit matches the C++ operator.",
+      "scope": "Computed as `M.Vector4.scale(b, a)` (Vector4Scale of the vector by the scalar); non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
@@ -80088,7 +80080,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -80139,9 +80131,9 @@
       "status": "partial",
       "jonlib": "M.Vector4.scale(a, b)",
       "mapping_state": "implemented",
-      "scope": "Computed as `M.Vector4.scale(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "Computed as `M.Vector4.scale(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
@@ -80149,7 +80141,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -80200,9 +80192,9 @@
       "status": "partial",
       "jonlib": "M.Vector4.scale(a, b)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `M.Vector4.scale(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `M.Vector4.scale(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)",
@@ -80211,7 +80203,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -80262,15 +80254,15 @@
       "status": "partial",
       "jonlib": "(a * b : M.Vector4)",
       "mapping_state": "implemented",
-      "scope": "Computed as `(a * b : M.Vector4)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "Computed as `(a * b : M.Vector4)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -80321,9 +80313,9 @@
       "status": "partial",
       "jonlib": "(a * b : M.Vector4)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `(a * b : M.Vector4)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `(a * b : M.Vector4)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "Immutable values: the compound assignment returns a new value instead of updating its operand"
@@ -80331,7 +80323,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -80382,9 +80374,9 @@
       "status": "partial",
       "jonlib": "M.Vector4.scale(a, (1.0 / b : F32))",
       "mapping_state": "implemented",
-      "scope": "Computed as `M.Vector4.scale(a, (1.0 / b : F32))`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "Computed as `M.Vector4.scale(a, (1.0 / b : F32))`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
@@ -80392,7 +80384,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -80443,9 +80435,9 @@
       "status": "partial",
       "jonlib": "M.Vector4.scale(a, (1.0 / b : F32))",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `M.Vector4.scale(a, (1.0 / b : F32))`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `M.Vector4.scale(a, (1.0 / b : F32))`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)",
@@ -80454,7 +80446,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -80505,15 +80497,15 @@
       "status": "partial",
       "jonlib": "(a / b : M.Vector4)",
       "mapping_state": "implemented",
-      "scope": "Computed as `(a / b : M.Vector4)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "Computed as `(a / b : M.Vector4)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -80564,9 +80556,9 @@
       "status": "partial",
       "jonlib": "(a / b : M.Vector4)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `(a / b : M.Vector4)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `(a / b : M.Vector4)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "Immutable values: the compound assignment returns a new value instead of updating its operand"
@@ -80574,7 +80566,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -80626,16 +80618,14 @@
       "jonlib": "M.Vector4.equals(a, b)",
       "mapping_state": "implemented",
       "scope": "Computed as `M.Vector4.equals(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
-      "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
-      ],
+      "gaps": [],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
       ],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -80688,16 +80678,14 @@
       "jonlib": "Bool.not(M.Vector4.equals(a, b))",
       "mapping_state": "implemented",
       "scope": "Computed as `Bool.not(M.Vector4.equals(a, b))`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
-      "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
-      ],
+      "gaps": [],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
       ],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -80929,9 +80917,9 @@
       "status": "partial",
       "jonlib": "M.Quaternion.add_value(a, b)",
       "mapping_state": "implemented",
-      "scope": "Computed as `M.Quaternion.add_value(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "Computed as `M.Quaternion.add_value(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
@@ -80939,7 +80927,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -80990,9 +80978,9 @@
       "status": "partial",
       "jonlib": "M.Quaternion.add_value(a, b)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `M.Quaternion.add_value(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `M.Quaternion.add_value(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)",
@@ -81001,7 +80989,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -81052,9 +81040,9 @@
       "status": "partial",
       "jonlib": "M.Quaternion.subtract_value(a, b)",
       "mapping_state": "implemented",
-      "scope": "Computed as `M.Quaternion.subtract_value(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "Computed as `M.Quaternion.subtract_value(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
@@ -81062,7 +81050,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -81113,9 +81101,9 @@
       "status": "partial",
       "jonlib": "M.Quaternion.subtract_value(a, b)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `M.Quaternion.subtract_value(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `M.Quaternion.subtract_value(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)",
@@ -81124,7 +81112,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -81175,9 +81163,9 @@
       "status": "partial",
       "jonlib": "M.Quaternion.transform(a, b)",
       "mapping_state": "implemented",
-      "scope": "Computed as `M.Quaternion.transform(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "Computed as `M.Quaternion.transform(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
@@ -81185,7 +81173,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -81237,9 +81225,9 @@
       "status": "partial",
       "jonlib": "M.Quaternion.transform(a, b)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `M.Quaternion.transform(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `M.Quaternion.transform(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)",
@@ -81248,7 +81236,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -81360,15 +81348,15 @@
       "status": "partial",
       "jonlib": "(a + b : M.Matrix)",
       "mapping_state": "implemented",
-      "scope": "Computed as `(a + b : M.Matrix)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "Computed as `(a + b : M.Matrix)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -81419,9 +81407,9 @@
       "status": "partial",
       "jonlib": "(a + b : M.Matrix)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `(a + b : M.Matrix)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `(a + b : M.Matrix)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "Immutable values: the compound assignment returns a new value instead of updating its operand"
@@ -81429,7 +81417,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -81480,15 +81468,15 @@
       "status": "partial",
       "jonlib": "(a - b : M.Matrix)",
       "mapping_state": "implemented",
-      "scope": "Computed as `(a - b : M.Matrix)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "Computed as `(a - b : M.Matrix)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -81539,9 +81527,9 @@
       "status": "partial",
       "jonlib": "(a - b : M.Matrix)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `(a - b : M.Matrix)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `(a - b : M.Matrix)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "Immutable values: the compound assignment returns a new value instead of updating its operand"
@@ -81549,7 +81537,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -81600,15 +81588,15 @@
       "status": "partial",
       "jonlib": "(a * b : M.Matrix)",
       "mapping_state": "implemented",
-      "scope": "Computed as `(a * b : M.Matrix)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "Computed as `(a * b : M.Matrix)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -81659,9 +81647,9 @@
       "status": "partial",
       "jonlib": "(a * b : M.Matrix)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `(a * b : M.Matrix)`, Bend's typed operator calling Jonmath's same-type function; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `(a * b : M.Matrix)`, Bend's typed operator calling Jonmath's same-type function; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "Immutable values: the compound assignment returns a new value instead of updating its operand"
@@ -81669,7 +81657,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -81720,9 +81708,9 @@
       "status": "partial",
       "jonlib": "M.Matrix.multiply_value(a, b)",
       "mapping_state": "implemented",
-      "scope": "Computed as `M.Matrix.multiply_value(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "Computed as `M.Matrix.multiply_value(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)"
@@ -81730,7 +81718,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
@@ -81781,9 +81769,9 @@
       "status": "partial",
       "jonlib": "M.Matrix.multiply_value(a, b)",
       "mapping_state": "implemented",
-      "scope": "The updated left operand is `M.Matrix.multiply_value(a, b)`, the Jonmath function the operator calls; every result bit matches the C++ operator.",
+      "scope": "The updated left operand is `M.Matrix.multiply_value(a, b)`, the Jonmath function the operator calls; non-NaN bits and one propagated canonical NaN match the C++ operator; a fresh quiet NaN matches by NaN-ness.",
       "gaps": [
-        "Uncontracted profile only; exceptional/subnormal inputs"
+        "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds"
       ],
       "adaptations": [
         "No operator overloading by operand type: scalar/matrix overloads are named calls (language adaptation)",
@@ -81792,7 +81780,7 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
+        "behavior": "verified",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",

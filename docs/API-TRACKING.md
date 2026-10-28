@@ -120,13 +120,15 @@ sign for the same inputs (`inf - inf`, `0/0`, `0*inf`) depending on
 instruction selection, so that sign is not a Jonlib behavior gap. The
 component operations that hit it (`Normalize`, and Vector2/Vector3/Vector4
 and Quaternion add, subtract, scale, multiply and divide, including the
-`*_value` forms) compare a fresh quiet NaN by NaN-ness: any quiet NaN
-matches. A non-NaN result stays bit-exact. One NaN operand is returned
-unchanged, which those builds do deterministically. When both operands are
-NaN, which payload survives varies the same way, so that result is also
-compared by NaN-ness. The gap is tagged `Undefined native behavior: sign of a
-NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in
-upstream builds`. The rule is not used for any other difference.
+`*_value` forms, and the C++ operators that call those functions or a
+left-associated transform or matrix product) compare a fresh quiet NaN by
+NaN-ness: any quiet NaN matches. A non-NaN result stays bit-exact. One NaN
+operand is returned unchanged, which those builds do deterministically. When
+both operands are NaN, which payload survives varies the same way, so that
+result is also compared by NaN-ness. The gap is tagged `Undefined native
+behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754
+6.3) and varies in upstream builds`. The rule is not used for any other
+difference. Equality operators stay exact.
 
 An implemented record that cites such a probe but fails one of those conditions
 is `partial`. A record with no such probe is `unverified`.

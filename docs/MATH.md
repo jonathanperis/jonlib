@@ -528,9 +528,14 @@ A compound assignment (`a += b`) returns its updated left operand; Bend values
 are immutable, so it is the same expression bound to a new name. raylib 6.2's
 `float * vector` (Vector2, Vector3 and Vector4) calls `Vector*Scale(vector, scalar)`,
 the same function as `vector * scalar`, and has no compound form. The
-`operators` gate compiles the pinned raymath.h as C++ with contraction off and
-compares every operator and compound assignment bit for bit, including zero
-divisors and nearly equal pairs.
+`operators` gate compiles the pinned raymath.h as C++ with contraction off.
+Every operator and compound assignment runs on finite inputs, zero divisors,
+nearly equal pairs, subnormals, both infinities and the canonical quiet-NaN
+payload. Non-NaN results and one propagated canonical NaN stay bit-exact.
+A quiet NaN from an invalid operation, or from two NaN operands, matches by
+NaN-ness. `==` and `!=` stay exact, including NaN inputs. A negative quiet
+NaN and a distinctive payload are outside this corpus: the JavaScript lane
+stores every NaN as the canonical positive quiet NaN.
 
 ## Floating-point contract and evidence
 
