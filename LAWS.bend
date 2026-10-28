@@ -4661,6 +4661,15 @@ law files_previous_trailing:
 law pixel_size_empty:
   {J.Pixel.data_size(0, 2, 14) == Some{0} : Maybe<&2, U32>}
 
+law pixel_size_last_fit:
+  {J.Pixel.data_size_wide(2147483646, 1, 1) == Some{2147483646} : Maybe<&2, U32>}
+
+law pixel_size_limit:
+  {J.Pixel.data_size_wide(2147483647, 1, 1) == Some{0} : Maybe<&2, U32>}
+
+law pixel_size_wrap:
+  {J.Pixel.data_size_wide(67108865, 2147483617, 10) == Some{1073741328} : Maybe<&2, U32>}
+
 law pixel_rgb5a1_blue:
   {J.Pixel.packed_color(5, 62) == 65280 : U32}
 

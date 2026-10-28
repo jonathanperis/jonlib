@@ -1864,6 +1864,66 @@ def Pixel.size.checked(valid: Bool, +width: U32, +height: U32, +format: U32) -> 
 def Pixel.data_size(+width: U32, +height: U32, +format: U32) -> Maybe<&2, U32>:
   Pixel.size.checked(((width <= 4096) && (height <= 4096) && (format <= 2147483647) : U32), width, height, format)
 
+# a*b as a 64-bit pair, through 16-bit halves. The same reduction as the
+# sine kernel: each half-product fits in a U32, and the high word fits too.
+def Pixel.mul.low(+a: U32, +b: U32) -> U32 & U32:
+  +al = (a .&. 65535 : U32)
+  +ah = (a >> 16n : U32)
+  +bl = (b .&. 65535 : U32)
+  +bh = (b >> 16n : U32)
+  +p0 = (al * bl : U32)
+  +p1 = (al * bh : U32)
+  +p2 = (ah * bl : U32)
+  +p3 = (ah * bh : U32)
+  +mid = ((p0 >> 16n) + (p1 .&. 65535) + (p2 .&. 65535) : U32)
+  ((p3 + (p1 >> 16n) + (p2 >> 16n) + (mid >> 16n) : U32), ((p0 .&. 65535) .|. (mid << 16n) : U32))
+
+# Combine the two half-products. Each pair is a parameter, so it can be split.
+def Pixel.mul.joined(low_words: U32 & U32, high_words: U32 & U32) -> U32 & U32:
+  (lh, ll) = low_words
+  (hh, hl) = high_words
+  ((hl + lh + (hh .&. 0) : U32), ll)
+
+# (high, low) * factor, modulo 2^64. factor is a bit count, at most 128.
+def Pixel.mul.wide(words: U32 & U32, +factor: U32) -> U32 & U32:
+  (high, low) = words
+  Pixel.mul.joined(Pixel.mul.low(low, factor), Pixel.mul.low(high, factor))
+
+# (unsigned long long)width * height * bpp, wrapped at 2^64.
+def Pixel.product(+width: U32, +height: U32, +bpp: U32) -> U32 & U32:
+  Pixel.mul.wide(Pixel.mul.low(width, height), bpp)
+
+def Pixel.shifted(words: U32 & U32) -> U32 & U32:
+  (+high, low) = words
+  ((high >> 3n : U32), ((low >> 3n) .|. ((high .&. 7) << 29n) : U32))
+
+def Pixel.minimum(+small: Bool, +format: U32, +size: U32) -> U32:
+  Bool.pick(U32, small && ((format >= 14) && (format < 16) : U32), 8,
+    Bool.pick(U32, small && ((format >= 16) && (format < 24) : U32), 16, size))
+
+# The int result: 0 when the shifted product does not fit below 2^31-1.
+def Pixel.accepted(fits: Bool, +low: U32, +width: U32, +height: U32, +format: U32) -> U32:
+  match fits:
+    case False{}: 0
+    case True{}: Pixel.minimum(((width < 4) && (height < 4) : U32), format, low)
+
+def Pixel.kept(words: U32 & U32, +width: U32, +height: U32, +format: U32) -> U32:
+  (high, +low) = words
+  Pixel.accepted(U32.is_eq(high, 0) && (low < 2147483647 : U32), low, width, height, format)
+
+def Pixel.measured(+width: U32, +height: U32, +format: U32) -> U32:
+  Bool.pick(U32, (U32.is_eq(width, 0) || U32.is_eq(height, 0)), 0,
+    Pixel.kept(Pixel.shifted(Pixel.product(width, height, Pixel.bits_per_pixel(format))), width, height, format))
+
+def Pixel.sized(valid: Bool, +width: U32, +height: U32, +format: U32) -> Maybe<&2, U32>:
+  match valid:
+    case False{}: None{}
+    case True{}: Some{Pixel.measured(width, height, format)}
+
+# GetPixelDataSize for every nonnegative int. A word above that is None.
+def Pixel.data_size_wide(+width: U32, +height: U32, +format: U32) -> Maybe<&2, U32>:
+  Pixel.sized(((width <= 2147483647) && (height <= 2147483647) && (format <= 2147483647) : U32), width, height, format)
+
 def Pixel.packed_color(format: U32, +word: U32) -> U32:
   match format:
     case 3:

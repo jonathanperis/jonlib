@@ -103,7 +103,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | Cellular images | `Surface.create_cellular` | Seed order, full pixels, post-generation state; exhaustive integer-distance reduction | `random`, `conformance` |
 | Perlin images | `Surface.create_perlin/create_perlin_for` | Six seeded octaves with explicit arithmetic profiles; tables, raw octave values and pixels | `perlin` |
 | Text data / grayscale / palettes | `Surface.create_text_bytes/color_grayscale/load_palette`, `Image.Palette` | Opaque data images; exhaustive luminance; ordered/padded palettes with source preservation | `conformance` |
-| Pixel sizes / raw dithering | `Pixel.data_size`, `Surface.dither`, `Surface` | All-format size boundaries; raw packed words and metadata | `pixel` |
+| Pixel sizes / raw dithering | `Pixel.data_size_wide`, `Surface.dither`, `Surface` | All-format size boundaries, including the signed-int ends and a uint64 wrap; raw packed words and metadata | `pixel` |
 | Byte/integer pixel access | `Pixel.get_color/set_color` | Exhaustive packed and R16 reads, R32 cast boundaries, wide and default formats, full write buffers, no-op writes outside formats 1..7, strict alpha threshold, native RGB5A1 read quirk | `raw-pixel` |
 | Byte/integer image-format conversion | `Surface` and Surface bridges | All 49 format pairs, no-ops and chains as native-order bytes | `image-format` |
 | Bounded R32 image format | `Surface` format 8 | Finite `[0,1]` words, signed-zero/subnormal storage, uncontracted luminance, red-only normalization; raw-bit memory PNG vs normalized file PNG ([R32.md](R32.md)) | `r32-image`, `r32-raw-file`, `float-rgb-r32` |

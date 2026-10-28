@@ -3285,6 +3285,15 @@ def Laws.files_previous_trailing():
 def Laws.pixel_size_empty():
   {==}
 
+def Laws.pixel_size_last_fit():
+  {==}
+
+def Laws.pixel_size_limit():
+  {==}
+
+def Laws.pixel_size_wrap():
+  {==}
+
 def Laws.pixel_rgb5a1_blue():
   {==}
 

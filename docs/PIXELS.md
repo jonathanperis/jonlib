@@ -13,10 +13,15 @@ Surface.export(image) -> (width, height) & (format, bytes)
 
 ## Data sizes
 
-`Pixel.data_size` follows the pinned `GetPixelDataSize`. Dimensions are
-0..4096 and format codes 0..2147483647; outside this profile it returns `None`.
+`Pixel.data_size_wide` follows the pinned `GetPixelDataSize` for every
+nonnegative int dimension and format code, `0..2147483647`. A larger word is
+`None`. `Pixel.data_size` is the same function limited to dimensions 0..4096.
 Codes are the native `PixelFormat` values listed in the
 [API catalog](api/raylib.md).
+
+The byte count is `((unsigned long long)width*height*bpp) >> 3`, wrapped at
+2^64. A result that is not strictly below 2^31-1 is 0, which is the path
+raylib takes when the image would be 2 GiB or larger.
 
 Exact bit rates and truncation are retained. A zero dimension returns zero
 (raylib 6.2 returns before any other rule). When **both** dimensions are below

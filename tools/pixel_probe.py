@@ -19,7 +19,7 @@ def size_value(value: Maybe<&2, U32>) -> U32:
 def sizes(input: +List<Size>, values: List<U32>) -> List<U32>:
   match input:
     case Nil{}: List.reverse(&1, U32, values)
-    case Con{Size{w, h, format}, rest}: sizes(rest, Con{size_value(J.Pixel.data_size(w, h, format)), values})
+    case Con{Size{w, h, format}, rest}: sizes(rest, Con{size_value(J.Pixel.data_size_wide(w, h, format)), values})
 def fill(values: +List<U32>, +index: U32, +width: U32, surface: J.Surface) -> J.Surface:
   match values:
     case Nil{}: surface
@@ -54,7 +54,13 @@ def main() -> IO(Unit):
 
 def fixtures():
     dimensions = [0,1,2,3,4,5,7,8,9,16,31,256,4096]
-    sizes = [(w,h,f) for w in dimensions for h in dimensions for f in [*range(26),2147483647]]
+    # Edges of the signed-int domain: the last size that fits, the first that
+    # does not, an empty side, and a product that wraps uint64 into a small int.
+    edges = [(4097,1,7),(1,4097,7),(2147483646,1,1),(2147483647,1,1),
+             (536870911,1,7),(536870912,1,7),(0,2147483647,9),(2147483647,0,14),
+             (46340,46340,1),(46341,46341,1),(65536,65536,7),
+             (67108865,2147483617,10),(100000000,1441151881,10)]
+    sizes = [(w,h,f) for w in dimensions for h in dimensions for f in [*range(26),2147483647]] + edges
     rng = random.Random(0xD17E)
     patterns = [(1,1,[0xffffffff]),(4,1,[0x12345600,0x1234567f,0x12345680,0x123456ff]),
                 (1,5,[rng.getrandbits(32) for _ in range(5)]),

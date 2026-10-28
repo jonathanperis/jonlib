@@ -52882,11 +52882,10 @@
       "phase": 1,
       "sequence": 6,
       "status": "partial",
-      "jonlib": "Pixel.data_size",
+      "jonlib": "Pixel.data_size_wide",
       "mapping_state": "implemented",
-      "scope": "U32 dimensions 0..4096 and nonnegative signed-int format codes; exact pinned bit rates and truncation, zero for an empty side (raylib 6.2), compressed minimum sizes below 4x4, including ASTC8x8 and unknown formats.",
+      "scope": "Nonnegative int dimensions and format codes 0..2147483647. The unsigned 64-bit product width*height*bpp shifted by 3; a result that does not fit in a signed int is 0. An empty side is 0. Compressed formats 14..15 and 16..23 are 8 and 16 bytes when both sides are below 4. A word above the signed int is None.",
       "gaps": [
-        "Wider/signed dimension domains and native integer-overflow behavior",
         "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
