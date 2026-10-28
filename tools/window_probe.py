@@ -423,7 +423,7 @@ def query(+core: J.Core) -> String:
     ++ u(J.Core.get_monitor_width(core, 0)) ++ u(J.Core.get_monitor_height(core, 0)) ++ u(J.Core.get_monitor_physical_width(core, 0))
     ++ u(J.Core.get_monitor_physical_height(core, 0)) ++ u(J.Core.get_monitor_refresh_rate(core, 0)) ++ "s:" ++ J.Core.get_monitor_name(core, 0) ++ ","
     ++ fv(J.Core.get_window_position(core)) ++ fv(J.Core.get_window_scale_dpi(core)) ++ none.string(J.Core.get_clipboard_text(core))
-    ++ none.surface(J.Core.get_clipboard_image(core)) ++ num(J.Core.is_file_dropped(core)) ++ dropped(J.Core.load_dropped_files(core))
+    ++ none.surface(J.Core.get_clipboard_image(core)) ++ num(file_dropped_owned(core)) ++ dropped(dropped_files_owned(core))
     ++ "s:" ++ J.Input.get_key_name(core, 65) ++ "," ++ time(J.Core.get_time(core)) ++ none.handle(J.Core.get_window_handle(core))
 type Op is Data:
   Op{kind: U32, a: U32, b: U32, c: U32, d: U32, s: String}
@@ -451,6 +451,13 @@ def icons.done(r: J.Core & List<J.Surface>) -> J.Core:
   core
 def mappings(+core: J.Core, +s: String) -> String:
   "M:" ++ U32.show(J.Input.set_gamepad_mappings(core, s)) ++ ";"
+# The Core is retained. The returned list is owned and then consumed by unload.
+def file_dropped_owned(+core: J.Core) -> Bool:
+  J.Core.is_file_dropped(core)
+def dropped_files_owned(+core: J.Core) -> J.FilePathList:
+  J.Core.load_dropped_files(core)
+def dropped_unload_owned(core: J.Core) -> J.Core:
+  J.Core.unload_dropped_files(core, dropped_files_owned(core))
 # Core-only operations (Some core in, Maybe core out).
 def core.op(+kind: U32, +a: U32, +b: U32, +c: U32, +d: U32, +s: String, +core: J.Core) -> Maybe<J.Core>:
   match kind:
@@ -475,7 +482,7 @@ def core.op(+kind: U32, +a: U32, +b: U32, +c: U32, +d: U32, +s: String, +core: J
     case 19: Some{J.Core.disable_event_waiting(core)}
     case 20: Some{J.Input.set_mouse_cursor(core, a)}
     case 22: Some{J.Input.set_gamepad_vibration(core, a, float(b), float(c), float(d))}
-    case 23: Some{J.Core.unload_dropped_files(core, J.Core.load_dropped_files(core))}
+    case 23: Some{dropped_unload_owned(core)}
     case 24: Some{icon.set(core, J.Surface.create(a, b, 3861460991))}
     case 25: Some{icons.done(J.Core.set_window_icons(core, icons(U32.to_nat(a), 0)))}
     case 30: J.Core.wait_time(core, f64(a, b))

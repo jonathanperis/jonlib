@@ -572,7 +572,7 @@
   "phase1_exit": {
     "total": 327,
     "implemented": 327,
-    "behavior_ownership_verified": 0,
+    "behavior_ownership_verified": 11,
     "only_allowed_gaps": 144,
     "forced_metal_witnesses": 0,
     "meeting": 0

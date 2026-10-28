@@ -583,17 +583,23 @@ def model.plane.of(m: Maybe<J.Mesh>) -> J.Mesh:
 def model.plane() -> J.Mesh:
   model.plane.of(J.Mesh.gen_plane(2.0, F32.neg(3.0), 2, 2))
 
+def mesh_box_owned(+libm: M.Libm, +mesh: J.Mesh) -> Maybe<J.BoundingBox>:
+  J.Mesh.bounding_box_for(libm, mesh)
+def model_box_owned(+arithmetic: M.Contraction, +libm: M.Libm, model: J.Model) -> Maybe<J.BoundingBox>:
+  J.Model.bounding_box_for(arithmetic, libm, model)
+def ray_mesh_owned(+arithmetic: M.Contraction, +ray: J.Ray, +mesh: J.Mesh, +transform: M.Matrix) -> Maybe<J.RayCollision>:
+  J.Collision.ray_mesh_for(arithmetic, ray, mesh, transform)
 def act(action: U32, +aw: +List<U32>, +path: String, +mesh: J.Mesh) -> String:
   match action:
     case 0: show(mesh)
     case 1: show.maybe(J.Mesh.gen_tangents_for(arith(), mesh))
-    case 2: box.text(J.Mesh.bounding_box_for(libm(), mesh))
+    case 2: box.text(mesh_box_owned(libm(), mesh))
     case 3: file.text(J.Mesh.obj_text(mesh))
     case 4: file.text(code.of(U32.is_eq(wu(0n, aw), 1), mesh, path))
-    case 5: ray.text(J.Collision.ray_mesh_for(arith(), J.Ray{wv3(0n, aw), wv3(3n, aw)}, mesh, wmatrix(word.drop(6n, aw))))
+    case 5: ray.text(ray_mesh_owned(arith(), J.Ray{wv3(0n, aw), wv3(3n, aw)}, mesh, wmatrix(word.drop(6n, aw))))
     case 7: show(J.Mesh.upload(mesh, U32.is_eq(wu(0n, aw), 1)))
     case 8: show.maybe(J.Mesh.update_buffer(J.Mesh.upload(mesh, False{}), wu(0n, aw), wu(1n, aw), wu(2n, aw)))
-    case _: box.text(J.Model.bounding_box_for(arith(), libm(), J.Model{wmatrix(aw), [mesh, model.plane()], [J.Material.load_default()], [0, 0]}))
+    case _: box.text(model_box_owned(arith(), libm(), J.Model{wmatrix(aw), [mesh, model.plane()], [J.Material.load_default()], [0, 0]}))
 
 def run.with(+action: U32, +aw: +List<U32>, +path: String, m: Maybe<J.Mesh>) -> String:
   match m:

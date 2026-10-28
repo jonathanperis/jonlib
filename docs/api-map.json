@@ -1182,7 +1182,7 @@
   "SetTraceLogLevel": {
     "jonlib": "Log.level / Log.default",
     "status": "profile-covered",
-    "scope": "A Log.Logger value carries the threshold (default LOG_INFO) instead of process-wide state.",
+    "scope": "Returns an owned logger. A Log.Logger value carries the threshold (default LOG_INFO) instead of process-wide state.",
     "gaps": [],
     "api_id": "raylib:function:SetTraceLogLevel",
     "milestone": "memory"
@@ -1660,7 +1660,7 @@
   "IsFileDropped": {
     "jonlib": "Core.is_file_dropped",
     "status": "profile-covered",
-    "scope": "False: no platform Jonlib runs on delivers dropped files (the memory platform has no events, Base no drop event).",
+    "scope": "False: no platform Jonlib runs on delivers dropped files (the memory platform has no events, Base no drop event). The Core is retained.",
     "gaps": [
       "Integration: Base has no drop event (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -1671,7 +1671,7 @@
   "LoadDroppedFiles": {
     "jonlib": "Core.load_dropped_files",
     "status": "profile-covered",
-    "scope": "The internal list: FilePathList{0, []}.",
+    "scope": "Returns an owned empty path list (FilePathList{0, []}); the Core is retained.",
     "gaps": [
       "Integration: Base has no drop event (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -1682,7 +1682,7 @@
   "UnloadDroppedFiles": {
     "jonlib": "Core.unload_dropped_files",
     "status": "profile-covered",
-    "scope": "Nothing to free for the empty internal list; the Core comes back.",
+    "scope": "Consumes the empty path list and returns the Core owner; nothing is freed.",
     "gaps": [
       "Integration: Base has no drop event (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -1907,7 +1907,7 @@
     "status": "profile-covered",
     "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
     "gaps": [
-      "Key repeats come only from the desktop key callback (laws, no native GLFW reference)",
+      "Integration: Key repeats come only from the desktop key callback (laws, no native GLFW reference)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsKeyPressedRepeat",
@@ -2325,7 +2325,7 @@
     "status": "profile-covered",
     "scope": "The enabled-gestures mask.",
     "gaps": [
-      "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+      "Integration: Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:SetGesturesEnabled",
@@ -2336,7 +2336,7 @@
     "status": "profile-covered",
     "scope": "(enabled & current) == gesture.",
     "gaps": [
-      "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+      "Integration: Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsGestureDetected",
@@ -2347,7 +2347,7 @@
     "status": "profile-covered",
     "scope": "enabled & current.",
     "gaps": [
-      "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+      "Integration: Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetGestureDetected",
@@ -2358,7 +2358,7 @@
     "status": "profile-covered",
     "scope": "At time now: (float)(now - hold start) in binary64 while GESTURE_HOLD, else 0.",
     "gaps": [
-      "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+      "Integration: Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetGestureHoldDuration",
@@ -2369,7 +2369,7 @@
     "status": "profile-covered",
     "scope": "The drag vector from the down position.",
     "gaps": [
-      "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+      "Integration: Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetGestureDragVector",
@@ -2380,7 +2380,7 @@
     "status": "profile-covered",
     "scope": "360 - angle of the swipe, atan2f through the M.Libm profile times 180.0f/PI in binary64.",
     "gaps": [
-      "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+      "Integration: Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetGestureDragAngle",
@@ -2391,7 +2391,7 @@
     "status": "profile-covered",
     "scope": "The vector between the two touch points.",
     "gaps": [
-      "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+      "Integration: Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetGesturePinchVector",
@@ -2402,7 +2402,7 @@
     "status": "profile-covered",
     "scope": "360 - angle between the two touch points, atan2f through the M.Libm profile.",
     "gaps": [
-      "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+      "Integration: Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetGesturePinchAngle",
@@ -2557,7 +2557,7 @@
     "status": "profile-covered",
     "scope": "Dashes and spaces of C int sizes along the line, each dash an RL_LINES segment, the last one clipped to the end.",
     "gaps": [
-      "C int sizes beyond 2^24, NaN geometry, more than 4096 dashes or a loop that never reaches the end mark the frame undefined",
+      "Undefined native behavior: C int sizes beyond 2^24, NaN geometry, more than 4096 dashes or a loop that never reaches the end mark the frame undefined",
       "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -3417,7 +3417,7 @@
     "status": "profile-covered",
     "scope": "Exact .gif/.GIF tokens decode owned GIF RGBA8 frame sequences; other supported tokens use profiled single-image fallback and return one owned frame. GIF preserves canvas dimensions, frame order/count, offsets/interlacing, palette/control persistence and disposal 0/1 retain or 2 restoration. Explicit frame/pixel budgets bound retained output, entries/unload consume ownership, and convenience arithmetic is uncontracted. Native delays are discarded.",
     "gaps": [
-      "Disposal 3: pinned native two_back points before its allocated frame buffer",
+      "Undefined native behavior: Disposal 3: pinned native two_back points before its allocated frame buffer",
       "Remaining image-codec/profile gaps",
       "Permissive malformed recovery, original metadata",
       "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
@@ -4273,7 +4273,7 @@
   "ImageDrawRectangleGradientEx": {
     "jonlib": "Surface.draw_rectangle_gradient_ex",
     "status": "profile-covered",
-    "scope": "raylib 6.2: pixels (int)floorf(rec.x) .. (int)ceilf(rec.x + rec.width) (and y) clipped, bilinear F32 weights of tx = (x - rec.x)/width and ty = (y - rec.y)/height clamped to 0..1 on col1..col4, each channel truncated and stored with ImageDrawPixel; nothing for a width or height <= 0. Finite fields whose floor and ceil fit in a C int. Formats 1..13 on the surface-format profile.",
+    "scope": "raylib 6.2: pixels (int)floorf(rec.x) .. (int)ceilf(rec.x + rec.width) (and y) clipped, bilinear F32 weights of tx = (x - rec.x)/width and ty = (y - rec.y)/height clamped to 0..1 on col1..col4, each channel truncated and stored with ImageDrawPixel; nothing for a width or height <= 0. Finite fields whose floor and ceil fit in a C int. Formats 1..13 on the surface-format profile. Consumes the surface and returns that owner, or the original owner with InvalidRequest.",
     "gaps": [
       "Undefined native behavior: a non-finite field or a floor/ceil outside a C int is InvalidRequest",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -4328,7 +4328,7 @@
   "ImageDrawCircleGradient": {
     "jonlib": "Surface.draw_circle_gradient",
     "status": "profile-covered",
-    "scope": "raylib 6.2: pixels (int)floorf(center - radius) .. (int)ceilf(center + radius) clipped, those whose center (x + 0.5) lies within radius*radius, colored inner + (outer - inner)*sqrtf(distSq)/radius per channel (truncated) and stored with ImageDrawPixel; nothing for a radius <= 0. Finite center and radius whose floor and ceil fit in a C int. Formats 1..13 on the surface-format profile.",
+    "scope": "raylib 6.2: pixels (int)floorf(center - radius) .. (int)ceilf(center + radius) clipped, those whose center (x + 0.5) lies within radius*radius, colored inner + (outer - inner)*sqrtf(distSq)/radius per channel (truncated) and stored with ImageDrawPixel; nothing for a radius <= 0. Finite center and radius whose floor and ceil fit in a C int. Formats 1..13 on the surface-format profile. Consumes the surface and returns that owner, or the original owner with InvalidRequest.",
     "gaps": [
       "Undefined native behavior: a non-finite field or a floor/ceil outside a C int is InvalidRequest",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -4415,7 +4415,7 @@
   "ImageDrawTextPro": {
     "jonlib": "Font.image_draw_text_pro",
     "status": "profile-covered",
-    "scope": "raylib 6.2's ImageDrawTextPro is an empty function (TODO: NEW: Implement ImageDrawTextPro()): the destination and font come back unchanged.",
+    "scope": "raylib 6.2's ImageDrawTextPro is an empty function (TODO: NEW: Implement ImageDrawTextPro()): both owners come back unchanged.",
     "gaps": [
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
@@ -5671,7 +5671,7 @@
     "status": "profile-covered",
     "scope": "Lines for i = -slices/2 .. slices/2 (C division), rlColor3f gray 0.5 on the axes and 0.75 elsewhere.",
     "gaps": [
-      "Grids above 4097 lines mark the frame undefined",
+      "Undefined native behavior: Grids above 4097 lines mark the frame undefined",
       "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: a models_loading_gltf frame (model, grid, text) is about 50x raylib's on native CPU-1, single-threaded (docs/PERFORMANCE.md)"
@@ -5710,7 +5710,7 @@
     "status": "profile-covered",
     "scope": "Meshes, materials and mesh materials present and no mesh attribute without a GPU buffer: on the software renderer (no buffers) only models whose meshes have no attributes are valid.",
     "gaps": [
-      "Meshes are assumed uploaded (raylib dereferences a NULL vboId otherwise)",
+      "Undefined native behavior: Meshes are assumed uploaded (raylib dereferences a NULL vboId otherwise)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsModelValid",
@@ -5730,7 +5730,7 @@
   "GetModelBoundingBox": {
     "jonlib": "Model.bounding_box_for / Model.bounding_box",
     "status": "profile-covered",
-    "scope": "First mesh box widened with strict comparisons, corners transformed by Vector3Transform (contraction profiled); zero box transformed for no meshes. Each mesh is read as GetMeshBoundingBox.",
+    "scope": "First mesh box widened with strict comparisons, corners transformed by Vector3Transform (contraction profiled); zero box transformed for no meshes. Each mesh is read as GetMeshBoundingBox. Consumes the model; the box is owned.",
     "gaps": [
       "Undefined native behavior: a mesh whose vertex read is outside its buffer makes the model box None",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -5890,7 +5890,7 @@
   "GetMeshBoundingBox": {
     "jonlib": "Mesh.bounding_box_for / Mesh.bounding_box",
     "status": "profile-covered",
-    "scope": "Vector3Min/Vector3Max (fminf/fmaxf signed-zero profile) over the vertices the signed count reads: one vertex when the count is not positive, otherwise vertex_count. A null buffer is the zero box. Other attributes are not read.",
+    "scope": "Vector3Min/Vector3Max (fminf/fmaxf signed-zero profile) over the vertices the signed count reads: one vertex when the count is not positive, otherwise vertex_count. A null buffer is the zero box. Other attributes are not read. The mesh is retained; the box is owned.",
     "gaps": [
       "Undefined native behavior: a vertex buffer shorter than the signed read (one vertex when the count is not positive, otherwise vertex_count vertices) is None",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -5904,7 +5904,7 @@
     "status": "profile-covered",
     "scope": "Per-triangle sdir/tdir accumulated per vertex, Gram-Schmidt, perpendicular fallbacks below 0.0001f and handedness; contraction profiled.",
     "gaps": [
-      "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+      "Undefined native behavior: Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured"
     ],
@@ -5917,7 +5917,7 @@
     "scope": "OBJ text with raylib banner, counts, v/vt (%.6f), vn (%.4f) and f lines, exact C %.Nf formatting; written for .obj paths.",
     "gaps": [
       "Meshes without texcoords or normals, NaN values and text beyond the estimated buffer are None; other extensions write nothing (InvalidRequest)",
-      "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+      "Undefined native behavior: Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured"
     ],
@@ -5930,7 +5930,7 @@
     "scope": "Header with banner, counts and one array per present attribute (%.3ff floats, 0x%x colors, %i indices), names from GetFileNameWithoutExt upper-cased.",
     "gaps": [
       "Empty present arrays (raylib reads element -1), NaN values and text beyond 64 MB are None",
-      "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+      "Undefined native behavior: Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured"
     ],
@@ -6137,7 +6137,7 @@
     "status": "profile-covered",
     "scope": "Mesh ids at or beyond the mesh count and non-negative material ids at or beyond the material count change nothing; negative material ids are stored (drawing that mesh is refused).",
     "gaps": [
-      "Negative mesh ids (raylib writes before the array) are None",
+      "Undefined native behavior: Negative mesh ids (raylib writes before the array) are None",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:SetModelMeshMaterial",
@@ -6268,7 +6268,7 @@
   "GetRayCollisionMesh": {
     "jonlib": "Collision.ray_mesh_for / Collision.ray_mesh",
     "status": "profile-covered",
-    "scope": "Each triangle the signed count selects, indexed or sequential in the vertex buffer, transformed by Vector3Transform and tested with GetRayCollisionTriangle; the nearest hit kept. No hit without vertices or when the count is not positive. vertex_count is not read. Contraction profiled.",
+    "scope": "Each triangle the signed count selects, indexed or sequential in the vertex buffer, transformed by Vector3Transform and tested with GetRayCollisionTriangle; the nearest hit kept. No hit without vertices or when the count is not positive. vertex_count is not read. Contraction profiled. The mesh is retained; the hit is owned.",
     "gaps": [
       "Undefined native behavior: an index or a non-indexed span outside the vertex buffer is None",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -6337,7 +6337,7 @@
     "status": "profile-covered",
     "scope": "miniaudio's master volume factor: any volume that is not below 0 is kept (NaN included), on a ready device or not.",
     "gaps": [
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
     ],
     "api_id": "raylib:function:SetMasterVolume",
     "milestone": "audio-device"
@@ -6393,7 +6393,7 @@
       "SoundWaveError where raylib returns the zero sound (missing or bad files)",
       "FLAC, XM and MOD files",
       "SoundDeviceNotReady on an unready device",
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
     ],
     "api_id": "raylib:function:LoadSound",
     "milestone": "audio-device"
@@ -6406,7 +6406,7 @@
       "SoundDeviceNotReady on an unready device (raylib converts to the zeroed device rate)",
       "SoundWaveError for the waves WaveFormat refuses",
       "A wave without frames has no NULL/non-NULL data distinction beyond the zero wave",
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
     ],
     "api_id": "raylib:function:LoadSoundFromWave",
     "milestone": "audio-device"
@@ -6418,7 +6418,7 @@
     "gaps": [
       "The zero sound where raylib reads freed memory: an unloaded buffer, a freed block",
       "The zero sound on an unready device",
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
     ],
     "api_id": "raylib:function:LoadSoundAlias",
     "milestone": "audio-device"
@@ -6501,7 +6501,7 @@
     "status": "profile-covered",
     "scope": "The buffer plays from its first frame, unpaused; AudioDevice.mix then mixes it as raudio's device callback does (its resampler one frame late, volume and pan levels, master volume, clip) until its end, every sample compared with raylib.",
     "gaps": [
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
       "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
       "Undefined native behavior: a buffer that was unloaded leaves the state as it is (raylib uses freed memory)",
       "AudioDevice.mix flushes subnormals (x86-64 MXCSR). mix.for(False) keeps them (AArch64); the sound probe selects that on Darwin arm64. Fused (FMA) mixing is not ported"
@@ -6514,7 +6514,7 @@
     "status": "profile-covered",
     "scope": "A playing buffer stops; a paused buffer stays as it is, as raylib only stops buffers that are playing and not paused.",
     "gaps": [
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
       "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
       "Undefined native behavior: a buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
     ],
@@ -6526,7 +6526,7 @@
     "status": "profile-covered",
     "scope": "The buffer is paused, playing or not.",
     "gaps": [
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
       "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
       "Undefined native behavior: a buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
     ],
@@ -6538,7 +6538,7 @@
     "status": "profile-covered",
     "scope": "The buffer is not paused.",
     "gaps": [
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
       "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
       "Undefined native behavior: a buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
     ],
@@ -6561,7 +6561,7 @@
     "status": "profile-covered",
     "scope": "The buffer's volume: any float.",
     "gaps": [
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
       "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
       "Undefined native behavior: a buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
     ],
@@ -6586,7 +6586,7 @@
     "status": "profile-covered",
     "scope": "The buffer's pan, clamped to -1..1 (NaN stays).",
     "gaps": [
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
       "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
       "Undefined native behavior: a buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
     ],
@@ -6826,7 +6826,7 @@
     "scope": "A tracked buffer of two zeroed halves in the stream's format (the default size, raylib's 12800 frames, at least the 480-frame period) with a converter from the stream's rate on min(channels, 2) channels; a stream without a buffer where miniaudio makes no converter (unready device, rate 0, no channels); buffer, converter state and fields compared with raylib.",
     "gaps": [
       "No buffer for sample sizes other than 8, 16 and 32, a negative default size, or more than 2^22 samples",
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device"
     ],
     "api_id": "raylib:function:LoadAudioStream",
     "milestone": "audio-stream"
@@ -6876,7 +6876,7 @@
     "status": "profile-covered",
     "scope": "Playing from the first frame, unpaused, both halves processed; AudioDevice.mix then plays it as raudio's device callback does (the two halves read in turn and marked processed, silence where the program did not feed it, the data converter from the stream's format, channels and rate with miniaudio's passes and raudio's residual), every sample compared with raylib.",
     "gaps": [
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
       "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)",
       "A playing stream of more than 1024 channels makes AudioDevice.mix refuse (raudio's input buffer or miniaudio's temporary holds no frame of it)",
       "AudioDevice.mix flushes subnormals (x86-64 MXCSR). mix.for(False) keeps them (AArch64); the sound probe selects that on Darwin arm64. Fused (FMA) mixing is not ported"
@@ -6889,7 +6889,7 @@
     "status": "profile-covered",
     "scope": "The buffer is paused.",
     "gaps": [
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
       "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:PauseAudioStream",
@@ -6900,7 +6900,7 @@
     "status": "profile-covered",
     "scope": "The buffer is not paused.",
     "gaps": [
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
       "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:ResumeAudioStream",
@@ -6921,7 +6921,7 @@
     "status": "profile-covered",
     "scope": "A playing stream stops, back at its first frame with both halves processed; a paused one stays as it is.",
     "gaps": [
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
       "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:StopAudioStream",
@@ -6932,7 +6932,7 @@
     "status": "profile-covered",
     "scope": "The buffer's volume: any float.",
     "gaps": [
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
       "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:SetAudioStreamVolume",
@@ -6944,7 +6944,7 @@
     "scope": "The buffer's pitch and its converter's output rate (unsigned int)(48000/pitch) against the stream's own rate: the reduced rates, the timer and the filter's coefficient compared with raylib.",
     "gaps": [
       "A pitch whose rate does not fit an unsigned int changes nothing (the cast is undefined)",
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
       "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:SetAudioStreamPitch",
@@ -6955,7 +6955,7 @@
     "status": "profile-covered",
     "scope": "The buffer's pan, clamped to -1..1 (NaN stays).",
     "gaps": [
-      "Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
+      "Integration: Heard only through AudioDevice.mix, a device callback the program asks for itself or through an AudioClock (one a period of its time): no device thread and no host device",
       "Undefined native behavior: an unready device leaves the state as it is (raylib locks a mutex that does not exist)"
     ],
     "api_id": "raylib:function:SetAudioStreamPan",
@@ -6989,7 +6989,7 @@
     "scope": "The processor becomes the last of the stream's (or sound's) buffer: in a device callback it is called, after those attached before it, on each run of at most 512 frames the buffer gives (stereo f32, after the converter and before the volume and pan); the calls, their order and every sample compared with raylib.",
     "gaps": [
       "Undefined native behavior: an unready device leaves the list as it is (raylib locks a mutex that does not exist)",
-      "A stream without a tracked buffer leaves the list as it is (raylib reads through the pointer)"
+      "Undefined native behavior: A stream without a tracked buffer leaves the list as it is (raylib reads through the pointer)"
     ],
     "api_id": "raylib:function:AttachAudioStreamProcessor",
     "milestone": "audio-stream"
@@ -7000,7 +7000,7 @@
     "scope": "Every processor of the buffer with the tag goes; the others keep their order.",
     "gaps": [
       "Undefined native behavior: an unready device leaves the list as it is (raylib locks a mutex that does not exist)",
-      "A stream without a tracked buffer leaves the list as it is (raylib reads through the pointer)"
+      "Undefined native behavior: A stream without a tracked buffer leaves the list as it is (raylib reads through the pointer)"
     ],
     "api_id": "raylib:function:DetachAudioStreamProcessor",
     "milestone": "audio-stream"

@@ -193,11 +193,13 @@ def repeat_bytes(n: Nat, +chunk: +List<U32>, values: +List<U32>) -> +List<U32>:
   match n:
     case 0n: List.reverse(&2, U32, values)
     case 1n+rest: repeat_bytes(rest, chunk, reverse_into(chunk, values))
+def format_owned(image: J.Surface, +target: U32) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.format(image, target)
 def chain(targets: +List<U32>, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Maybe<J.Surface>:
   match targets result:
     case _ Fail{_}: None{}
     case Nil{} Done{image}: Some{image}
-    case Con{target, rest} Done{image}: chain(rest, J.Surface.format(image, target))
+    case Con{target, rest} Done{image}: chain(rest, format_owned(image, target))
 def created(result: Maybe<J.Surface>, targets: +List<U32>) -> Maybe<J.Surface>:
   match result:
     case None{}: None{}

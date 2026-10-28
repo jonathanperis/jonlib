@@ -808,10 +808,13 @@ def image.pro.out(frame: J.Frame, r: J.Surface & J.Font) -> (J.Frame & J.Font) &
   (dst, font) = r
   ((frame, font), image.out(dst))
 
+# Both owners come back: the empty raylib 6.2 body returns the destination and the font.
+def image_pro_owned(dst: J.Surface, font: J.Font, text: String, +x: F32, +y: F32, +ox: F32, +oy: F32, +rotation: F32, +size: F32, +spacing: F32, +tint: U32) -> J.Surface & J.Font:
+  J.Font.image_draw_text_pro(dst, font, text, M.Vector2{x, y}, M.Vector2{ox, oy}, rotation, size, spacing, tint)
 def image.draw_pro(frame: J.Frame, font: J.Font, target: Maybe<J.Surface>, text: +List<U32>, +x: F32, +y: F32, +ox: F32, +oy: F32, +rotation: F32, +size: F32, +spacing: F32, +tint: U32) -> (J.Frame & J.Font) & String:
   match target:
     case None{}: ((frame, font), " no-image")
-    case Some{dst}: image.pro.out(frame, J.Font.image_draw_text_pro(dst, font, TC.string(text), M.Vector2{x, y}, M.Vector2{ox, oy}, rotation, size, spacing, tint))
+    case Some{dst}: image.pro.out(frame, image_pro_owned(dst, font, TC.string(text), x, y, ox, oy, rotation, size, spacing, tint))
 
 def fontop(call: FontOp, +line: U32, frame: J.Frame, font: J.Font) -> (J.Frame & J.Font) & String:
   match call:

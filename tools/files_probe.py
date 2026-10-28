@@ -237,6 +237,8 @@ def replaced.bytes(+r: U32, result: Result<&1, &1, J.Surface.IOError, +List<U32>
   match result:
     case Fail{_}: emit_bytes(~&1, word_bytes(r))
     case Done{bytes}: emit_bytes(~&2, Con{(r .&. 255 : U32), Con{((r >> 8n) .&. 255 : U32), Con{((r >> 16n) .&. 255 : U32), Con{(r >> 24n : U32), bytes}}}})
+def text_replace_owned(+path: String, search: String, replacement: String) -> IO(Maybe<U32>):
+  J.Files.text_replace(path, search, replacement)
 def replaced(path: String, result: Maybe<U32>) -> IO(Unit):
   match result:
     case None{}: IO.print("null")
@@ -289,7 +291,7 @@ def render(acts, work):
             elif kind == 'replace':
                 name, fixture, search, replacement = arg
                 path = rel('bend/' + name)
-                replace = (f'IO.bind(Maybe<U32>, Unit, J.Files.text_replace({path}, {bend_string(search)}, {bend_string(replacement)}), '
+                replace = (f'IO.bind(Maybe<U32>, Unit, text_replace_owned({path}, {bend_string(search)}, {bend_string(replacement)}), '
                            f'replaced({path}))')
                 line = replace if fixture is None else (f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, '
                                                         f'J.Files.save_data({path}, [{",".join(map(str, fixture))}]), u => {replace})')

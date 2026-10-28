@@ -98,6 +98,21 @@ class DerivationTests(unittest.TestCase):
         self.assertTrue(bools)
         self.assertFalse(bools & keys['enumerator'])
 
+    def test_phase1_functions_with_proved_behavior_have_ownership_too(self):
+        progress = json.loads((api_plan.ROOT / 'api/progress.json').read_text())
+        reference = {row['id']: row for row in api_plan.read('reference.json')['entries']}
+        phases = {item['id']: item['phase'] for item in api_plan.read('milestones.json')['milestones']}
+        rows = gate_evidence.assessments(gate_evidence.EvidenceIndex.load(), progress)
+        proved = [row['id'] for row in rows
+                  if reference[row['id']]['kind'] == 'function'
+                  and phases[api_plan.classify(reference[row['id']])] == 1
+                  and row['gates']['behavior'] == 'verified' and row['gates']['ownership'] == 'verified']
+        self.assertGreaterEqual(len(proved), 11)
+        for api_id in ('raylib:function:ImageDrawTextPro', 'raylib:function:SetTraceLogLevel',
+                       'raylib:function:FileTextReplace', 'raylib:function:UnloadDroppedFiles',
+                       'raylib:function:ImageDrawCircleGradient', 'raylib:function:GetMeshBoundingBox'):
+            self.assertIn(api_id, proved)
+
     def test_metal_witness_is_the_current_bend_pin(self):
         self.assertFalse(gate_evidence.metal_proven(dict(id='raylib:function:ImageCopy', evidence=['docs/API.md'])))
         self.assertTrue(gate_evidence.metal_proven(dict(metal_witness=True)))

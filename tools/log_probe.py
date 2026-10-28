@@ -35,9 +35,16 @@ def native_log(probe):
 
 
 def render_log(selected, gpu):
-    body = 'import Base\nimport ../../jonlib.bend as J\ndef main() -> IO(Unit):\n  do IO<Unit>:\n'
+    # level_owned consumes the logger Log.level returns. The printed line is the same.
+    body = '''import Base
+import ../../jonlib.bend as J
+def level_owned(+level: U32, +kind: U32, text: String) -> IO(Unit):
+  J.Log.trace(J.Log.level(level), kind, text)
+def main() -> IO(Unit):
+  do IO<Unit>:
+'''
     for level, kind, text in CASES:
-        body += f'    J.Log.trace(J.Log.level({level}), {kind}, {bend_string(text)})\n'
+        body += f'    level_owned({level}, {kind}, {bend_string(text)})\n'
     body += '    IO.print("")\n'
     return body
 

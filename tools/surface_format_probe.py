@@ -131,21 +131,21 @@ OPS = {
     'rectangle-pro-flat': (f'ImageDrawRectanglePro(&im,(Rectangle){{0.5f,-0.5f,3.25f,2.5f}},(Vector2){{0,0}},0.0f,{c_color(FILL)});', 'image',
                            f'J.Surface.draw_rectangle_pro_for(M.{LIBM}{{}}, s, J.Rectangle{{0.5, F32.neg(0.5), 3.25, 2.5}}, M.Vector2{{0.0, 0.0}}, 0.0, {word(FILL)})'),
     'rectangle-gradient': ('ImageDrawRectangleGradientEx(&im,(Rectangle){0.5f,0.25f,4,2.5f},' + ','.join(map(c_color, GRADIENT)) + ');', 'image',
-                           'J.Surface.draw_rectangle_gradient_ex(s, J.Rectangle{0.5, 0.25, 4.0, 2.5}, ' + ', '.join(str(word(c)) for c in GRADIENT) + ')'),
+                           'rectangle_gradient_owned(s, J.Rectangle{0.5, 0.25, 4.0, 2.5}, ' + ', '.join(str(word(c)) for c in GRADIENT) + ')'),
     'circle-gradient': (f'ImageDrawCircleGradient(&im,(Vector2){{2.5f,1.5f}},2.25f,{c_color(GRADIENT[0])},{c_color(GRADIENT[2])});', 'image',
-                        f'J.Surface.draw_circle_gradient(s, M.Vector2{{2.5, 1.5}}, 2.25, {word(GRADIENT[0])}, {word(GRADIENT[2])})'),
+                        f'circle_gradient_owned(s, M.Vector2{{2.5, 1.5}}, 2.25, {word(GRADIENT[0])}, {word(GRADIENT[2])})'),
     'rectangle-gradient-far': ('ImageDrawRectangleGradientEx(&im,(Rectangle){40000.0f,40000.0f,10.0f,10.0f},' + ','.join(map(c_color, GRADIENT)) + ');', 'image',
-                               'J.Surface.draw_rectangle_gradient_ex(s, J.Rectangle{40000.0, 40000.0, 10.0, 10.0}, ' + ', '.join(str(word(c)) for c in GRADIENT) + ')'),
+                               'rectangle_gradient_owned(s, J.Rectangle{40000.0, 40000.0, 10.0, 10.0}, ' + ', '.join(str(word(c)) for c in GRADIENT) + ')'),
     'rectangle-gradient-wide': ('ImageDrawRectangleGradientEx(&im,(Rectangle){-40000.0f,-1.0f,40002.0f,4.0f},' + ','.join(map(c_color, GRADIENT)) + ');', 'image',
-                                'J.Surface.draw_rectangle_gradient_ex(s, J.Rectangle{F32.neg(40000.0), F32.neg(1.0), 40002.0, 4.0}, ' + ', '.join(str(word(c)) for c in GRADIENT) + ')'),
+                                'rectangle_gradient_owned(s, J.Rectangle{F32.neg(40000.0), F32.neg(1.0), 40002.0, 4.0}, ' + ', '.join(str(word(c)) for c in GRADIENT) + ')'),
     'rectangle-gradient-neg': ('ImageDrawRectangleGradientEx(&im,(Rectangle){1.0f,1.0f,-50000.0f,2.0f},' + ','.join(map(c_color, GRADIENT)) + ');', 'image',
-                               'J.Surface.draw_rectangle_gradient_ex(s, J.Rectangle{1.0, 1.0, F32.neg(50000.0), 2.0}, ' + ', '.join(str(word(c)) for c in GRADIENT) + ')'),
+                               'rectangle_gradient_owned(s, J.Rectangle{1.0, 1.0, F32.neg(50000.0), 2.0}, ' + ', '.join(str(word(c)) for c in GRADIENT) + ')'),
     'circle-gradient-far': (f'ImageDrawCircleGradient(&im,(Vector2){{80000.0f,80000.0f}},4.0f,{c_color(GRADIENT[0])},{c_color(GRADIENT[2])});', 'image',
-                            f'J.Surface.draw_circle_gradient(s, M.Vector2{{80000.0, 80000.0}}, 4.0, {word(GRADIENT[0])}, {word(GRADIENT[2])})'),
+                            f'circle_gradient_owned(s, M.Vector2{{80000.0, 80000.0}}, 4.0, {word(GRADIENT[0])}, {word(GRADIENT[2])})'),
     'circle-gradient-wide': (f'ImageDrawCircleGradient(&im,(Vector2){{-30000.0f,1.5f}},30002.0f,{c_color(GRADIENT[0])},{c_color(GRADIENT[2])});', 'image',
-                             f'J.Surface.draw_circle_gradient(s, M.Vector2{{F32.neg(30000.0), 1.5}}, 30002.0, {word(GRADIENT[0])}, {word(GRADIENT[2])})'),
+                             f'circle_gradient_owned(s, M.Vector2{{F32.neg(30000.0), 1.5}}, 30002.0, {word(GRADIENT[0])}, {word(GRADIENT[2])})'),
     'circle-gradient-cover': (f'ImageDrawCircleGradient(&im,(Vector2){{1.0f,1.0f}},100000.0f,{c_color(GRADIENT[0])},{c_color(GRADIENT[2])});', 'image',
-                              f'J.Surface.draw_circle_gradient(s, M.Vector2{{1.0, 1.0}}, 100000.0, {word(GRADIENT[0])}, {word(GRADIENT[2])})'),
+                              f'circle_gradient_owned(s, M.Vector2{{1.0, 1.0}}, 100000.0, {word(GRADIENT[0])}, {word(GRADIENT[2])})'),
     'circle-v': (f'ImageDrawCircleV(&im,(Vector2){{2,2}},2,{c_color(DRAW)});', 'total', f'J.Surface.draw_circle_v(s, M.Vector2{{2.0, 2.0}}, 2, {word(DRAW)})'),
     'circle-lines': (f'ImageDrawCircleLines(&im,2,2,2,{c_color(DRAW)});', 'total', f'J.Surface.draw_circle_lines(s, 2.0, 2.0, 2, {word(DRAW)})'),
     'circle-lines-v': (f'ImageDrawCircleLinesV(&im,(Vector2){{2,2}},2,{c_color(DRAW)});', 'total',
@@ -267,6 +267,10 @@ def drawn(kind: U32, +format: U32, pair: J.Surface & J.Surface) -> Result<&1, &1
   drawn.with(kind, image, J.Surface.format(J.Surface.flip_vertical(copy), format))
 def done(surface: J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
   Done{surface}
+def circle_gradient_owned(surface: J.Surface, center: M.Vector2, +radius: F32, +inner: U32, +outer: U32) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.draw_circle_gradient(surface, center, radius, inner, outer)
+def rectangle_gradient_owned(surface: J.Surface, rect: J.Rectangle, +c1: U32, +c2: U32, +c3: U32, +c4: U32) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.draw_rectangle_gradient_ex(surface, rect, c1, c2, c3, c4)
 def second(result: J.Surface & Maybe<J.Surface>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
   match result:
     case Tuple{original, None{}}: Fail{(original, J.InvalidRequest{})}
