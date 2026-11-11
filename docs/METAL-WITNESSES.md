@@ -154,3 +154,17 @@ Metal witness: raymath:function:QuaternionEquals a3efe8a3801f423827424227172eed9
 Metal witness: raymath:function:Clamp a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raymath:function:Normalize a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raymath:function:FloatEquals a3efe8a3801f423827424227172eed9802c5e6cb pass
+
+## Ray and stored-image GPU lanes, 2026-11-11
+
+`ray` and `ray-uncontracted` (442 queries each) and `stored` (57 cases) had
+dropped their GPU lane; they now compare it, and with `--gpu` every lane
+matched. `ray-exceptional` (833 cases, no quiet-NaN sign rows on any lane)
+passed with `--gpu` on the same tree. `ImageCopy` and `IsImageValid` were
+missing only the `stored` GPU lane.
+
+Metal witness: raylib:function:GetRayCollisionBox a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GetRayCollisionTriangle a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GetRayCollisionQuad a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageCopy a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:IsImageValid a3efe8a3801f423827424227172eed9802c5e6cb pass

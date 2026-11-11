@@ -243,7 +243,6 @@ def main():
         raise ProbeFailure('ray: incomplete native output')
     lanes = probe.candidates(render(profile, libm), rows, batch=64,
                              parse=lambda text, selected: [canonical(json.loads(line)) for line in text.splitlines()])
-    lanes = {lane: values for lane, values in lanes.items() if lane != 'gpu'}
     probe.compare(expected, lanes, describe=lambda i: f'{rows[i][0]} #{i} {rows[i][1]}')
     counts = {kind: sum(k == kind for k, _ in rows) for kind in SIGNATURES}
     probe.finish(reference='uncontracted source control' if control else 'linked raylib', profile=profile, libm=libm,

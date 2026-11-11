@@ -320,7 +320,6 @@ def main():
         actions.append(('file', path))
         expected.append(by_id[name]['expected'])
     lanes = probe.candidates(render, actions, batch=40, parse=parse)
-    lanes = {lane: rows for lane, rows in lanes.items() if lane != 'gpu'}
     probe.compare(expected, lanes, describe=lambda i: cases[i]['id'] if i < len(cases) else actions[i][0])
     probe.finish(cases=len(cases), stored=sum(case['kind'] == 'stored' for case in cases),
                  refused=sum(case['kind'] == 'refused' for case in cases), operations=len(actions) - len(cases),
