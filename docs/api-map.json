@@ -1135,7 +1135,7 @@
     "status": "profile-covered",
     "scope": "Consumes the owned sequence and returns Unit; Bend ownership adapts the explicit C allocation/free lifecycle.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -4021,7 +4021,7 @@
     "status": "profile-covered",
     "scope": "Consumes the owned palette and returns Unit while the separately retained source surface remains usable.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -4257,7 +4257,7 @@
     "scope": "raylib 6.2: pixels (int)floorf(rec.x) .. (int)ceilf(rec.x + rec.width) (and y) clipped, bilinear F32 weights of tx = (x - rec.x)/width and ty = (y - rec.y)/height clamped to 0..1 on col1..col4, each channel truncated and stored with ImageDrawPixel; nothing for a width or height <= 0. Finite fields whose floor and ceil fit in a C int. Formats 1..13 on the surface-format profile. Consumes the surface and returns that owner, or the original owner with InvalidRequest.",
     "gaps": [
       "Undefined native behavior: a non-finite field or a floor/ceil outside a C int is InvalidRequest",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host"
     ],
     "api_id": "raylib:function:ImageDrawRectangleGradientEx",
     "milestone": "images"
@@ -4312,7 +4312,7 @@
     "scope": "raylib 6.2: pixels (int)floorf(center - radius) .. (int)ceilf(center + radius) clipped, those whose center (x + 0.5) lies within radius*radius, colored inner + (outer - inner)*sqrtf(distSq)/radius per channel (truncated) and stored with ImageDrawPixel; nothing for a radius <= 0. Finite center and radius whose floor and ceil fit in a C int. Formats 1..13 on the surface-format profile. Consumes the surface and returns that owner, or the original owner with InvalidRequest.",
     "gaps": [
       "Undefined native behavior: a non-finite field or a floor/ceil outside a C int is InvalidRequest",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host"
     ],
     "api_id": "raylib:function:ImageDrawCircleGradient",
     "milestone": "images"
@@ -4398,7 +4398,7 @@
     "status": "profile-covered",
     "scope": "raylib 6.2's ImageDrawTextPro is an empty function (TODO: NEW: Implement ImageDrawTextPro()): both owners come back unchanged.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host"
     ],
     "api_id": "raylib:function:ImageDrawTextPro",
     "milestone": "images"
@@ -5711,7 +5711,7 @@
     "scope": "First mesh box widened with strict comparisons, corners transformed by Vector3Transform (contraction profiled); zero box transformed for no meshes. Each mesh is read as GetMeshBoundingBox. Consumes the model; the box is owned.",
     "gaps": [
       "Undefined native behavior: a mesh whose vertex read is outside its buffer makes the model box None",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured"
     ],
     "api_id": "raylib:function:GetModelBoundingBox",
@@ -5868,7 +5868,7 @@
     "scope": "Vector3Min/Vector3Max (fminf/fmaxf signed-zero profile) over the vertices the signed count reads: one vertex when the count is not positive, otherwise vertex_count. A null buffer is the zero box. Other attributes are not read. The mesh is retained; the box is owned.",
     "gaps": [
       "Undefined native behavior: a vertex buffer shorter than the signed read (one vertex when the count is not positive, otherwise vertex_count vertices) is None",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured"
     ],
     "api_id": "raylib:function:GetMeshBoundingBox",
@@ -6244,7 +6244,7 @@
     "scope": "Each triangle the signed count selects, indexed or sequential in the vertex buffer, transformed by Vector3Transform and tested with GetRayCollisionTriangle; the nearest hit kept. No hit without vertices or when the count is not positive. vertex_count is not read. Contraction profiled. The mesh is retained; the hit is owned.",
     "gaps": [
       "Undefined native behavior: an index or a non-indexed span outside the vertex buffer is None",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured"
     ],
     "api_id": "raylib:function:GetRayCollisionMesh",

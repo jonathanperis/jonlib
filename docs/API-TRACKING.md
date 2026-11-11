@@ -175,6 +175,7 @@ Metal witness: raylib:function:ImageResize a3efe8a3801f423827424227172eed9802c5e
 
 The revision is the `bend` revision in `toolchain.json`. Copying a CPU result
 into that line is not a witness.
+The runs and their witness lines are in [METAL-WITNESSES.md](METAL-WITNESSES.md).
 
 ## Language adaptations
 

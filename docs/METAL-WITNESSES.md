@@ -1,0 +1,51 @@
+# Forced-Metal witnesses
+
+Hosted runners have no GPU, so the Metal lane is local evidence
+([API-TRACKING.md](API-TRACKING.md#phase-1-exit-measure)). This page records
+the forced-Metal runs on the current Bend pin and the entries they witness.
+A witness line names an entry only when every probe the entry lists as
+evidence compared a `gpu` lane and passed; a probe that leaves the GPU lane
+out of its comparison is not a witness.
+
+## Run of 2026-11-11
+
+- Tree `71b4d70` (the library of `f8bee06` plus a longer GPU compile budget
+  in `tools/conformance.py`), Bend `a3efe8a3801f423827424227172eed9802c5e6cb`
+  with the declared overlay, raylib 6.2 `02566453`, Bun 1.3.12.
+- Host: Apple M1 (arm64, 8 cores, 16 GiB), macOS 27.2, Apple clang 21.0.0.
+- `tools/conformance.py --gpu`: lanes cpu-1, cpu-2, javascript and
+  gpu-forced each matched 281 scenarios and 40963 pixels exactly; the
+  transform and decode contracts passed on forced GPU.
+- Each gate of `tools/gates.json` below ran with `--gpu` appended:
+
+| Gate | Lanes compared | Result |
+|---|---|---|
+| `lifecycle` | cpu-1, cpu-2, javascript, gpu | pass (16 lines, 22 calls) |
+| `color-words` | cpu-1, cpu-2, javascript, gpu | pass (339 lines) |
+| `float-rgb-transform` | cpu-1, cpu-2, javascript, gpu | pass (43 cases, 14953 pixels) |
+| `mesh` | cpu-1, cpu-2, javascript, gpu | pass (263 cases, 213 compared, `Fused`, `AppleLibm`) |
+| `font` | cpu-1, cpu-2, javascript, gpu | pass (69 scenes, 64 compared) |
+| `surface-format` | cpu-1, cpu-2, javascript, gpu | pass (2605 cases, 13 formats) |
+| `log` | cpu-1, cpu-2, javascript | pass; trace output is a host effect, no GPU lane |
+| `files` | cpu-1, cpu-2, javascript | pass; host file effects, no GPU lane |
+| `loaders` | cpu-1, cpu-2, javascript | pass; host file effects, no GPU lane |
+| `stored` | cpu-1, cpu-2, javascript | pass; no GPU lane |
+| `window` | cpu-1, cpu-2, javascript | pass; no GPU lane |
+
+Entries whose evidence includes `files`, `loaders`, `log`, `stored` or
+`window` probes (the file, trace-log and callback functions, `ImageCopy`,
+`IsImageValid`, the dropped-file calls) have no witness here.
+
+## Witnesses
+
+Metal witness: raylib:function:UnloadRandomSequence a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:UnloadImagePalette a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:MemFree a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:UnloadImage a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:UnloadImageColors a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawRectangleGradientEx a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawCircleGradient a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawTextPro a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GetModelBoundingBox a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GetMeshBoundingBox a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GetRayCollisionMesh a3efe8a3801f423827424227172eed9802c5e6cb pass

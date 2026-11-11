@@ -73,8 +73,12 @@ above is the device evidence from the 2.0.27 pin. Upstream's fix for non-tail
 recursion under `!` past 1023 frames is a different defect.
 
 Bend 2.0.39 (`a3efe8a3`) removes the 2.0.38 Metal lane spill. The dispatch
-patch was rebased onto that commit with the same inserted text. That rebase
-has not been re-run on Metal or on the regression binary.
+patch was rebased onto that commit with the same inserted text. On
+2026-11-11 the rebase was re-run on an Apple M1 (macOS 27.2): `tools/verify_bend.py --gpu`
+passed its 18 regressions, seven of them on forced Metal including
+`run/metal_inline_budget`, and `tools/conformance.py --gpu` matched the 281
+scenarios (40963 pixels) on the forced-GPU lane. The gate runs and witnesses
+are in [METAL-WITNESSES.md](METAL-WITNESSES.md).
 
 The overlay is general compiler code: it does not recognize Jonlib names, shapes
 or fixtures. It modifies `bend2/comp.ts` (which carries a modification notice),
