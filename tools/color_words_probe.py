@@ -232,28 +232,61 @@ def spline_lines(kind: U32, +label: String, +limit: Nat, opened: Maybe<J.Frame>)
   match opened:
     case None{}: label ++ " missing"
     case Some{frame}: short_run(kind, label, limit, cleared(frame))
+# Ownership: each color call consumes its value arguments, borrows what the
+# library borrows (+) and returns a value the caller owns; GenImageColor
+# returns an owned Surface. The affine checker enforces these signatures.
+def color_is_equal_owned(left: U32, right: U32) -> Bool:
+  J.Color.is_equal(left, right)
+def color_rgba_owned(r: U32, g: U32, b: U32, a: U32) -> U32:
+  J.Color.rgba(r, g, b, a)
+def color_red_owned(c: U32) -> U32:
+  J.Color.red(c)
+def color_green_owned(c: U32) -> U32:
+  J.Color.green(c)
+def color_blue_owned(c: U32) -> U32:
+  J.Color.blue(c)
+def color_alpha_owned(c: U32) -> U32:
+  J.Color.alpha(c)
+def color_normalize_owned(+color: U32) -> M.Vector4:
+  J.Color.normalize(color)
+def color_to_hsv_owned(+color: U32) -> M.Vector3:
+  J.Color.to_hsv(color)
+def color_with_alpha_owned(color: U32, alpha: F32) -> U32:
+  J.Color.with_alpha(color, alpha)
+def color_brightness_owned(+color: U32, factor: F32) -> U32:
+  J.Color.brightness(color, factor)
+def color_contrast_owned(color: U32, factor: F32) -> U32:
+  J.Color.contrast(color, factor)
+def color_lerp_owned(+left: U32, +right: U32, factor: F32) -> U32:
+  J.Color.lerp(left, right, factor)
+def color_multiply_owned(color: U32, tint: U32) -> U32:
+  J.Color.multiply(color, tint)
+def color_alpha_blend_owned(dst: U32, src: U32, tint: U32) -> U32:
+  J.Color.alpha_blend(dst, src, tint)
+def surface_create_owned(w: U32, h: U32, color: U32) -> Maybe<J.Surface>:
+  J.Surface.create(w, h, color)
 '''
 
 
 def program():
     body = [HEADER, 'def main() -> IO(Unit):', '  do IO<Unit>:']
     for left, right in PAIRS:
-        body.append(f'    IO.print("eq " ++ flag(J.Color.is_equal({left}, {right})))')
+        body.append(f'    IO.print("eq " ++ flag(color_is_equal_owned({left}, {right})))')
     for word in COLORS:
-        body.append(f'    IO.print("int " ++ U32.show(J.Color.rgba(J.Color.red({word}), J.Color.green({word}), J.Color.blue({word}), J.Color.alpha({word}))))')
+        body.append(f'    IO.print("int " ++ U32.show(color_rgba_owned(color_red_owned({word}), color_green_owned({word}), color_blue_owned({word}), color_alpha_owned({word}))))')
         body.append(f'    IO.print("get " ++ U32.show({word}))')
-        body.append(f'    IO.print("norm " ++ v4(J.Color.normalize({word})))')
-        body.append(f'    IO.print("hsv " ++ v3(J.Color.to_hsv({word})))')
+        body.append(f'    IO.print("norm " ++ v4(color_normalize_owned({word})))')
+        body.append(f'    IO.print("hsv " ++ v3(color_to_hsv_owned({word})))')
         for factor in FACTORS:
             f = bend_factor(factor)
-            body.append(f'    IO.print("alpha " ++ U32.show(J.Color.with_alpha({word}, {f})))')
-            body.append(f'    IO.print("fade " ++ U32.show(J.Color.with_alpha({word}, {f})))')
-            body.append(f'    IO.print("bright " ++ U32.show(J.Color.brightness({word}, {f})))')
-            body.append(f'    IO.print("contrast " ++ U32.show(J.Color.contrast({word}, {f})))')
-            body.append(f'    IO.print("lerp " ++ U32.show(J.Color.lerp({word}, 4294967295, {f})))')
-        body.append(f'    IO.print("tint " ++ U32.show(J.Color.multiply({word}, 2155905152)))')
-        body.append(f'    IO.print("blend " ++ U32.show(J.Color.alpha_blend({word}, 4278190208, 4294967295)))')
-        body.append(f'    IO.print(image_of(J.Surface.create(2, 1, {word})))')
+            body.append(f'    IO.print("alpha " ++ U32.show(color_with_alpha_owned({word}, {f})))')
+            body.append(f'    IO.print("fade " ++ U32.show(color_with_alpha_owned({word}, {f})))')
+            body.append(f'    IO.print("bright " ++ U32.show(color_brightness_owned({word}, {f})))')
+            body.append(f'    IO.print("contrast " ++ U32.show(color_contrast_owned({word}, {f})))')
+            body.append(f'    IO.print("lerp " ++ U32.show(color_lerp_owned({word}, 4294967295, {f})))')
+        body.append(f'    IO.print("tint " ++ U32.show(color_multiply_owned({word}, 2155905152)))')
+        body.append(f'    IO.print("blend " ++ U32.show(color_alpha_blend_owned({word}, 4278190208, 4294967295)))')
+        body.append(f'    IO.print(image_of(surface_create_owned(2, 1, {word})))')
     body += [
         '    Unit <- IO.pure(Unit, released_data())',
         '    IO.print("data 1")',

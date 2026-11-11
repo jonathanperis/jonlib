@@ -92,6 +92,10 @@ import ../../jonmath.bend as M
 def word(bits: U32) -> F32:
   U32{b} = bits
   F32{b}
+# Ownership: consumes or borrows (+) as the library does and returns a
+# U32 the caller owns; the affine checker enforces the signature.
+def color_from_normalized_owned(value: M.Vector4) -> U32:
+  J.Color.from_normalized(value)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -101,7 +105,7 @@ def render(selected, gpu):
     body = PROGRAM
     for words in selected:
         fields = ', '.join(f'word({word})' for word in words)
-        body += f'    IO.print(U32.show(J.Color.from_normalized(M.Vector4{{{fields}}})))\n'
+        body += f'    IO.print(U32.show(color_from_normalized_owned(M.Vector4{{{fields}}})))\n'
     return body
 
 

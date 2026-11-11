@@ -117,6 +117,10 @@ import ../../jonlib.bend as J
 def word(bits: U32) -> F32:
   U32{b} = bits
   F32{b}
+# Ownership: consumes or borrows (+) as the library does and returns a
+# U32 the caller owns; the affine checker enforces the signature.
+def color_from_hsv_owned(+hue: F32, +saturation: F32, +value: F32) -> U32:
+  J.Color.from_hsv(hue, saturation, value)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -125,7 +129,7 @@ def main() -> IO(Unit):
 def render(selected, gpu):
     body = PROGRAM
     for (hue, saturation, value), _color in selected:
-        body += f'    IO.print(U32.show(J.Color.from_hsv(word({hue}), word({saturation}), word({value}))))\n'
+        body += f'    IO.print(U32.show(color_from_hsv_owned(word({hue}), word({saturation}), word({value}))))\n'
     return body
 
 

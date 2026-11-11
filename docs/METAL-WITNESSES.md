@@ -81,3 +81,25 @@ compares no GPU lane, so the ray queries have no witness.
 
 Metal witness: raylib:function:CheckCollisionPointPoly a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:CheckCollisionLines a3efe8a3801f423827424227172eed9802c5e6cb pass
+
+## Color ownership batch, 2026-11-11
+
+`color-words` (339 lines), `color-normalized` (156 cases) and `color-hsv`
+(664 cases) with `--gpu`, after their calls were routed through ownership
+defs: every lane, gpu included, matched.
+
+Metal witness: raylib:function:ColorIsEqual a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:Fade a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ColorAlpha a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ColorToInt a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GetColor a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ColorNormalize a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ColorToHSV a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ColorTint a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ColorBrightness a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ColorContrast a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ColorAlphaBlend a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ColorLerp a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ColorFromNormalized a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ColorFromHSV a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GenImageColor a3efe8a3801f423827424227172eed9802c5e6cb pass

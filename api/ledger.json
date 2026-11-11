@@ -45686,9 +45686,9 @@
       "status": "partial",
       "jonlib": "Surface.create",
       "mapping_state": "implemented",
-      "scope": "R8G8B8A8 Surface filled with one packed color; dimensions 1..4096 per axis, otherwise None. Power-of-two storage padding is excluded from exports.",
+      "scope": "R8G8B8A8 Surface filled with one packed color; dimensions 1..4096 per axis, otherwise None. Power-of-two storage padding is excluded from exports. Ownership: consumes the size and the color; the created Surface is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -45696,14 +45696,15 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
         "tools/color_words_probe.py",
-        "docs/API.md"
+        "docs/API.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -51931,9 +51932,9 @@
       "status": "partial",
       "jonlib": "Color.is_equal",
       "mapping_state": "implemented",
-      "scope": "Exact packed RGBA equality, including alpha.",
+      "scope": "Exact packed RGBA equality, including alpha. Ownership: consumes both packed colors; the Bool is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -51942,7 +51943,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -51950,7 +51951,8 @@
       "evidence": [
         "tools/color_words_probe.py",
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -51995,9 +51997,9 @@
       "status": "partial",
       "jonlib": "Color.with_alpha",
       "mapping_state": "implemented",
-      "scope": "Same finite-factor alpha replacement as ColorAlpha (Color.with_alpha).",
+      "scope": "Same finite-factor alpha replacement as ColorAlpha (Color.with_alpha). Ownership: consumes the packed color and the alpha; the packed result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52006,7 +52008,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -52014,7 +52016,8 @@
       "evidence": [
         "tools/color_words_probe.py",
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -52058,9 +52061,9 @@
       "status": "partial",
       "jonlib": "Color.rgba",
       "mapping_state": "implemented",
-      "scope": "Packs four channels as 0xRRGGBBAA keeping the low eight bits of each (C unsigned-byte conversion), the unsigned bit pattern of ColorToInt.",
+      "scope": "Packs four channels as 0xRRGGBBAA keeping the low eight bits of each (C unsigned-byte conversion), the unsigned bit pattern of ColorToInt. Ownership: consumes the four channels; the packed U32 is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -52068,14 +52071,15 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
         "tools/color_words_probe.py",
-        "docs/API.md"
+        "docs/API.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -52119,9 +52123,9 @@
       "status": "partial",
       "jonlib": "Color.normalize",
       "mapping_state": "implemented",
-      "scope": "RGBA8 packed color to exact reference normalized RGBA Vector4 components.",
+      "scope": "RGBA8 packed color to exact reference normalized RGBA Vector4 components. Ownership: borrows the packed color; the Vector4 is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52130,7 +52134,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -52138,7 +52142,8 @@
       "evidence": [
         "tools/color_words_probe.py",
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -52183,10 +52188,10 @@
       "status": "partial",
       "jonlib": "Color.from_normalized",
       "mapping_state": "implemented",
-      "scope": "F32 components whose product with 255 is finite and in [0, 256), including signed zero, subnormals and values outside 0..1. Byte truncation matches the reference cast.",
+      "scope": "F32 components whose product with 255 is finite and in [0, 256), including signed zero, subnormals and values outside 0..1. Byte truncation matches the reference cast. Ownership: consumes the Vector4; the packed U32 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: a component whose product with 255 is negative, non-finite, or at least 256 is not the reference cast",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52195,7 +52200,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -52203,7 +52208,8 @@
       "evidence": [
         "tools/color_normalized_probe.py",
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -52248,9 +52254,9 @@
       "status": "partial",
       "jonlib": "Color.to_hsv",
       "mapping_state": "implemented",
-      "scope": "RGBA8 to HSV Vector3 with exact reference float bits, max-channel ties, achromatic results and ignored alpha.",
+      "scope": "RGBA8 to HSV Vector3 with exact reference float bits, max-channel ties, achromatic results and ignored alpha. Ownership: borrows the packed color; the Vector3 is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52259,7 +52265,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -52267,7 +52273,8 @@
       "evidence": [
         "tools/color_words_probe.py",
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -52312,10 +52319,10 @@
       "status": "partial",
       "jonlib": "Color.from_hsv",
       "mapping_state": "implemented",
-      "scope": "Hues and saturation/value whose three channels (value - value*saturation*k)*255 are finite and in (-1, 256). k is fmodf(offset + hue/60, 6) then the reference clamps; a non-finite fmod yields k = 1. Bytes match the cast; alpha is 255.",
+      "scope": "Hues and saturation/value whose three channels (value - value*saturation*k)*255 are finite and in (-1, 256). k is fmodf(offset + hue/60, 6) then the reference clamps; a non-finite fmod yields k = 1. Bytes match the cast; alpha is 255. Ownership: borrows hue, saturation and value; the packed U32 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: a channel whose (value - value*saturation*k)*255 lies outside (-1, 256) is not the reference cast",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52324,7 +52331,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -52333,7 +52340,8 @@
         "tools/color_hsv_probe.py",
         "docs/API.md",
         "tests/fixtures/images.json",
-        "tests/test_harness.py"
+        "tests/test_harness.py",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -52377,9 +52385,9 @@
       "status": "partial",
       "jonlib": "Color.multiply",
       "mapping_state": "implemented",
-      "scope": "Integer RGBA channel multiplication divided by 255; distinct from alpha-blending's internal tint.",
+      "scope": "Integer RGBA channel multiplication divided by 255; distinct from alpha-blending's internal tint. Ownership: consumes the color and the tint; the packed result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52388,7 +52396,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -52396,7 +52404,8 @@
       "evidence": [
         "tools/color_words_probe.py",
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -52440,9 +52449,9 @@
       "status": "partial",
       "jonlib": "Color.brightness",
       "mapping_state": "implemented",
-      "scope": "Finite factor clamped to -1..1; reference darkening/lightening formulas and byte truncation; alpha retained.",
+      "scope": "Finite factor clamped to -1..1; reference darkening/lightening formulas and byte truncation; alpha retained. Ownership: borrows the color and consumes the factor; the packed result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52451,7 +52460,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -52459,7 +52468,8 @@
       "evidence": [
         "tools/color_words_probe.py",
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -52503,9 +52513,9 @@
       "status": "partial",
       "jonlib": "Color.contrast",
       "mapping_state": "implemented",
-      "scope": "Finite factor clamped to -1..1; reference F32 arithmetic and byte truncation; alpha retained.",
+      "scope": "Finite factor clamped to -1..1; reference F32 arithmetic and byte truncation; alpha retained. Ownership: consumes the color and the factor; the packed result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52514,7 +52524,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -52522,7 +52532,8 @@
       "evidence": [
         "tools/color_words_probe.py",
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -52566,9 +52577,9 @@
       "status": "partial",
       "jonlib": "Color.with_alpha",
       "mapping_state": "implemented",
-      "scope": "Packed RGBA; finite F32 alpha clamped to 0..1 and truncated after multiplying by 255.",
+      "scope": "Packed RGBA; finite F32 alpha clamped to 0..1 and truncated after multiplying by 255. Ownership: consumes the packed color and the alpha; the packed result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52577,7 +52588,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -52585,7 +52596,8 @@
       "evidence": [
         "tools/color_words_probe.py",
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -52629,9 +52641,9 @@
       "status": "partial",
       "jonlib": "Color.alpha_blend",
       "mapping_state": "implemented",
-      "scope": "Integer ColorAlphaBlend on packed RGBA, including 256-based tint and alpha rounding.",
+      "scope": "Integer ColorAlphaBlend on packed RGBA, including 256-based tint and alpha rounding. Ownership: consumes the destination, source and tint; the packed result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -52639,14 +52651,15 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
         "tools/color_words_probe.py",
-        "docs/API.md"
+        "docs/API.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -52690,9 +52703,9 @@
       "status": "partial",
       "jonlib": "Color.lerp",
       "mapping_state": "implemented",
-      "scope": "Finite factor clamped to 0..1; independent straight RGBA interpolation and byte truncation.",
+      "scope": "Finite factor clamped to 0..1; independent straight RGBA interpolation and byte truncation. Ownership: borrows both colors and consumes the factor; the packed result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52701,7 +52714,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -52709,7 +52722,8 @@
       "evidence": [
         "tools/color_words_probe.py",
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -52753,9 +52767,9 @@
       "status": "partial",
       "jonlib": "Color.red/green/blue/alpha",
       "mapping_state": "implemented",
-      "scope": "Packed 0xRRGGBBAA U32 words in GetColor byte order; Color.red/green/blue/alpha extract 8-bit channels.",
+      "scope": "Packed 0xRRGGBBAA U32 words in GetColor byte order; Color.red/green/blue/alpha extract 8-bit channels. Ownership: consumes the packed word per channel read; the channels are owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -52763,14 +52777,15 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
         "tools/color_words_probe.py",
-        "docs/API.md"
+        "docs/API.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
