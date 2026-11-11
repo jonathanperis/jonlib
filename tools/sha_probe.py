@@ -12,8 +12,15 @@ from probekit import ROOT, ProbeFailure
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
 import ../../src/sha.bend as Sha
+# Ownership: these defs copy the library signatures (+ borrows, the rest
+# consumed) and return values the caller owns; the affine checker
+# enforces them on every compared call.
+def checksum_sha1_wide_owned(bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
+  J.Checksum.sha1_wide(bytes)
+def checksum_sha256_wide_owned(bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
+  J.Checksum.sha256_wide(bytes)
 def calculate(+bytes: +List<U32>) -> Maybe<&2, +List<U32>> & Maybe<&2, +List<U32>>:
-  (J.Checksum.sha1_wide(bytes), J.Checksum.sha256_wide(bytes))
+  (checksum_sha1_wide_owned(bytes), checksum_sha256_wide_owned(bytes))
 def shown(words: U32 & U32) -> IO(Unit):
   (high, low) = words
   IO.print(List.show(~&1, ~U32, ~U32.show, [high, low]))

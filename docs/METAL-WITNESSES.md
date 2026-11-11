@@ -227,3 +227,33 @@ Metal witness: raylib:function:ImageColorReplace a3efe8a3801f423827424227172eed9
 Metal witness: raylib:function:LoadImageColors a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:GetImageColor a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:ImageDrawTriangleGradient a3efe8a3801f423827424227172eed9802c5e6cb pass
+
+## Checksum, pixel, generator and constant batch, 2026-11-11
+
+`checksum`, `sha`, `raw-pixel`, `pixel`, `gradient-checked`, `random` and
+`math-values` (which had dropped its GPU lane and now compares it) passed
+with `--gpu` after their calls were routed through ownership defs: every
+lane, gpu included, matched.
+
+Metal witness: raylib:function:ComputeCRC32 a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ComputeMD5 a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ComputeSHA1 a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ComputeSHA256 a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GetPixelColor a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:SetPixelColor a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GetPixelDataSize a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GenImageGradientRadial a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GenImageGradientSquare a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GenImageChecked a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:SetRandomSeed a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2Zero a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2One a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3Zero a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3One a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4Zero a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4One a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3ToFloatV a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:MatrixTranspose a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:MatrixIdentity a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:MatrixToFloatV a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:QuaternionIdentity a3efe8a3801f423827424227172eed9802c5e6cb pass

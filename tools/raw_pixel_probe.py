@@ -10,6 +10,13 @@ from probekit import ProbeFailure
 
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
+# Ownership: these defs copy the library signatures (+ borrows, the rest
+# consumed) and return values the caller owns; the affine checker
+# enforces them on every compared call.
+def pixel_get_color_owned(bytes: +List<U32>, +format: U32) -> Result<&2, &2, J.Surface.Error, U32>:
+  J.Pixel.get_color(bytes, format)
+def pixel_set_color_owned(bytes: +List<U32>, color: U32, +format: U32) -> Result<&2, &2, J.Surface.Error, +List<U32>>:
+  J.Pixel.set_color(bytes, color, format)
 def read_acc(result: Result<&2, &2, J.Surface.Error, U32>, values: List<U32>) -> List<U32>:
   match result:
     case Fail{_}: Con{0, Con{0, values}}
@@ -17,7 +24,7 @@ def read_acc(result: Result<&2, &2, J.Surface.Error, U32>, values: List<U32>) ->
 def read_chunk(n: Nat, +word: U32, +format: U32, values: List<U32>) -> List<U32>:
   match n:
     case 0n: List.reverse(&1, U32, values)
-    case 1n+rest: read_chunk(rest, (word + 1 : U32), format, read_acc(J.Pixel.get_color([(word .&. 255 : U32), (word >> 8n : U32)], format), values))
+    case 1n+rest: read_chunk(rest, (word + 1 : U32), format, read_acc(pixel_get_color_owned([(word .&. 255 : U32), (word >> 8n : U32)], format), values))
 def read_blocks(n: Nat, +start: U32, +format: U32) -> IO(Unit):
   match n:
     case 0n: IO.pure(Unit, Unit{})
@@ -36,10 +43,10 @@ def write_read(bytes: +List<U32>, result: Result<&2, &2, J.Surface.Error, U32>) 
 def write_result(format: U32, result: Result<&2, &2, J.Surface.Error, +List<U32>>) -> List<U32>:
   match result:
     case Fail{_}: [0]
-    case Done{+bytes}: write_read(bytes, J.Pixel.get_color(bytes, format))
+    case Done{+bytes}: write_read(bytes, pixel_get_color_owned(bytes, format))
 def written(+value: U32, +format: U32) -> List<U32>:
   color = J.Color.rgba(value, (value * 73 % 256 : U32), (value * 151 % 256 : U32), (value * 197 % 256 : U32))
-  write_result(format, J.Pixel.set_color([17,34,51,68,85,102,119,136], color, format))
+  write_result(format, pixel_set_color_owned([17,34,51,68,85,102,119,136], color, format))
 def reversed_into(values: List<U32>, rest: List<U32>) -> List<U32>:
   match values:
     case Nil{}: rest
@@ -58,7 +65,7 @@ def write_blocks(n: Nat, +start: U32, +format: U32) -> IO(Unit):
 def float_chunk(n: Nat, +word: U32, +format: U32, values: List<U32>) -> List<U32>:
   match n:
     case 0n: List.reverse(&1, U32, values)
-    case 1n+rest: float_chunk(rest, (word + 1 : U32), format, read_acc(J.Pixel.get_color([(word .&. 255 : U32), ((word >> 8n) .&. 255 : U32), ((word >> 16n) .&. 255 : U32), (word >> 24n : U32)], format), values))
+    case 1n+rest: float_chunk(rest, (word + 1 : U32), format, read_acc(pixel_get_color_owned([(word .&. 255 : U32), ((word >> 8n) .&. 255 : U32), ((word >> 16n) .&. 255 : U32), (word >> 24n : U32)], format), values))
 def float_blocks(n: Nat, +start: U32, +format: U32) -> IO(Unit):
   match n:
     case 0n: IO.pure(Unit, Unit{})
@@ -69,7 +76,7 @@ def float_blocks(n: Nat, +start: U32, +format: U32) -> IO(Unit):
 def half_chunk(n: Nat, +word: U32, +format: U32, values: List<U32>) -> List<U32>:
   match n:
     case 0n: List.reverse(&1, U32, values)
-    case 1n+rest: half_chunk(rest, (word + 1 : U32), format, read_acc(J.Pixel.get_color([(word .&. 255 : U32), (word >> 8n : U32)], format), values))
+    case 1n+rest: half_chunk(rest, (word + 1 : U32), format, read_acc(pixel_get_color_owned([(word .&. 255 : U32), (word >> 8n : U32)], format), values))
 def half_blocks(n: Nat, +start: U32, +format: U32) -> IO(Unit):
   match n:
     case 0n: IO.pure(Unit, Unit{})
@@ -236,11 +243,11 @@ def extra_defs():
     # read_acc/noop_acc prepend; List.reverse in wide_values/noop_values restores order.
     wide = 'Nil{}'
     for fmt, values in wide_cases():
-        wide = f'read_acc(J.Pixel.get_color({bend_list(values)}, {fmt}), {wide})'
+        wide = f'read_acc(pixel_get_color_owned({bend_list(values)}, {fmt}), {wide})'
     color = 'J.Color.rgba(%d, %d, %d, %d)' % NOOP_COLOR
     noop = 'Nil{}'
     for fmt, values in noop_cases():
-        noop = f'noop_acc(J.Pixel.set_color({bend_list(values)}, {color}, {fmt}), {noop})'
+        noop = f'noop_acc(pixel_set_color_owned({bend_list(values)}, {color}, {fmt}), {noop})'
     return (
         'def wide_values() -> List<U32>:\n'
         f'  List.reverse(&1, U32, {wide})\n'

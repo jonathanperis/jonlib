@@ -69,6 +69,31 @@ def native(probe, rows):
 
 PROGRAM = '''import Base
 import ../../jonmath.bend as M
+# Ownership: these defs copy the library signatures (+ borrows, the rest
+# consumed) and return values the caller owns; the affine checker
+# enforces them on every compared call.
+def vector2_zero_owned() -> M.Vector2:
+  M.Vector2.zero()
+def vector2_one_owned() -> M.Vector2:
+  M.Vector2.one()
+def vector3_zero_owned() -> M.Vector3:
+  M.Vector3.zero()
+def vector3_one_owned() -> M.Vector3:
+  M.Vector3.one()
+def vector4_zero_owned() -> M.Vector4:
+  M.Vector4.zero()
+def vector4_one_owned() -> M.Vector4:
+  M.Vector4.one()
+def vector3_to_float_v_owned(vector: M.Vector3) -> +List<F32>:
+  M.Vector3.to_float_v(vector)
+def matrix_transpose_owned(matrix: M.Matrix) -> M.Matrix:
+  M.Matrix.transpose(matrix)
+def matrix_identity_owned() -> M.Matrix:
+  M.Matrix.identity()
+def matrix_to_float_v_owned(matrix: M.Matrix) -> +List<F32>:
+  M.Matrix.to_float_v(matrix)
+def quaternion_identity_owned() -> M.Vector4:
+  M.Quaternion.identity()
 def word(bits: U32) -> F32:
   U32{b} = bits
   F32{b}
@@ -100,17 +125,17 @@ SAMPLE = 'M.Matrix{{word({word}), word(2147483648), word(0), word(0), word(10653
 
 # Dotted Bend symbols this probe runs.
 CALLS = {
-    'zero2': 'show2(M.Vector2.zero())',
-    'one2': 'show2(M.Vector2.one())',
-    'zero3': 'show3(M.Vector3.zero())',
-    'one3': 'show3(M.Vector3.one())',
-    'zero4': 'show4(M.Vector4.zero())',
-    'one4': 'show4(M.Vector4.one())',
-    'identity': 'showm(M.Matrix.identity())',
-    'qidentity': 'show4(M.Quaternion.identity())',
-    'transpose': 'showm(M.Matrix.transpose(' + SAMPLE + '))',
-    'v3float': 'show_list(M.Vector3.to_float_v(M.Vector3{{word({word}), word(2147483648), word(1065353216)}}))',
-    'mfloat': 'show_list(M.Matrix.to_float_v(' + SAMPLE + '))',
+    'zero2': 'show2(vector2_zero_owned())',
+    'one2': 'show2(vector2_one_owned())',
+    'zero3': 'show3(vector3_zero_owned())',
+    'one3': 'show3(vector3_one_owned())',
+    'zero4': 'show4(vector4_zero_owned())',
+    'one4': 'show4(vector4_one_owned())',
+    'identity': 'showm(matrix_identity_owned())',
+    'qidentity': 'show4(quaternion_identity_owned())',
+    'transpose': 'showm(matrix_transpose_owned(' + SAMPLE + '))',
+    'v3float': 'show_list(vector3_to_float_v_owned(M.Vector3{{word({word}), word(2147483648), word(1065353216)}}))',
+    'mfloat': 'show_list(matrix_to_float_v_owned(' + SAMPLE + '))',
 }
 
 
@@ -130,7 +155,6 @@ def main():
     if len(expected) != len(rows):
         raise ProbeFailure(f'math-values: native produced {len(expected)} rows for {len(rows)}')
     lanes = probe.candidates(render, rows, batch=len(rows))
-    lanes = {lane: values for lane, values in lanes.items() if lane != 'gpu'}
     probe.compare(expected, lanes, describe=lambda i: rows[i][0])
     probe.finish(cases=len(rows))
 

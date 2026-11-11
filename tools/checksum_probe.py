@@ -12,8 +12,15 @@ from probekit import ROOT, ProbeFailure
 
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
+# Ownership: these defs copy the library signatures (+ borrows, the rest
+# consumed) and return values the caller owns; the affine checker
+# enforces them on every compared call.
+def checksum_crc32_wide_owned(+bytes: +List<U32>) -> Maybe<&2, U32>:
+  J.Checksum.crc32_wide(bytes)
+def checksum_md5_wide_owned(bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
+  J.Checksum.md5_wide(bytes)
 def calculate(+bytes: +List<U32>) -> Maybe<&2, U32> & Maybe<&2, +List<U32>>:
-  (J.Checksum.crc32_wide(bytes), J.Checksum.md5_wide(bytes))
+  (checksum_crc32_wide_owned(bytes), checksum_md5_wide_owned(bytes))
 def observed(result: Maybe<&2, U32> & Maybe<&2, +List<U32>>) -> IO(Unit):
   match result:
     case Tuple{Some{crc}, Some{words}}: IO.print(List.show(~&2, ~U32, ~U32.show, Con{crc, words}))

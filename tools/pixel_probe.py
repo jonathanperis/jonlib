@@ -10,6 +10,11 @@ from probekit import ProbeFailure
 
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
+# Ownership: these defs copy the library signatures (+ borrows, the rest
+# consumed) and return values the caller owns; the affine checker
+# enforces them on every compared call.
+def pixel_data_size_wide_owned(+width: U32, +height: U32, +format: U32) -> Maybe<&2, U32>:
+  J.Pixel.data_size_wide(width, height, format)
 type Size is Data:
   Size{width: U32, height: U32, format: U32}
 def size_value(value: Maybe<&2, U32>) -> U32:
@@ -19,7 +24,7 @@ def size_value(value: Maybe<&2, U32>) -> U32:
 def sizes(input: +List<Size>, values: List<U32>) -> List<U32>:
   match input:
     case Nil{}: List.reverse(&1, U32, values)
-    case Con{Size{w, h, format}, rest}: sizes(rest, Con{size_value(J.Pixel.data_size_wide(w, h, format)), values})
+    case Con{Size{w, h, format}, rest}: sizes(rest, Con{size_value(pixel_data_size_wide_owned(w, h, format)), values})
 def fill(values: +List<U32>, +index: U32, +width: U32, surface: J.Surface) -> J.Surface:
   match values:
     case Nil{}: surface

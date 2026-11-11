@@ -49,6 +49,15 @@ def native():
 
 HEADER = r'''import Base
 import ../../jonlib.bend as J
+# Ownership: these defs copy the library signatures (+ borrows, the rest
+# consumed) and return values the caller owns; the affine checker
+# enforces them on every compared call.
+def surface_create_gradient_radial_owned(width: U32, height: U32, density: F32, inner: U32, outer: U32) -> Maybe<J.Surface>:
+  J.Surface.create_gradient_radial(width, height, density, inner, outer)
+def surface_create_gradient_square_owned(width: U32, height: U32, density: F32, inner: U32, outer: U32) -> Maybe<J.Surface>:
+  J.Surface.create_gradient_square(width, height, density, inner, outer)
+def surface_create_checked_owned(width: U32, height: U32, tx: U32, ty: U32, first: U32, second: U32) -> Maybe<J.Surface>:
+  J.Surface.create_checked(width, height, tx, ty, first, second)
 def bytes(values: List<U32>) -> String:
   match values:
     case Nil{}: ""
@@ -66,12 +75,12 @@ def image_of(label: String, found: Maybe<J.Surface>) -> String:
 def program():
     body = [HEADER, 'def main() -> IO(Unit):', '  do IO<Unit>:']
     for w, h, tx, ty, first, second in CHECKED:
-        body.append(f'    IO.print(image_of("checked", J.Surface.create_checked({w}, {h}, {tx}, {ty}, {first}, {second})))')
+        body.append(f'    IO.print(image_of("checked", surface_create_checked_owned({w}, {h}, {tx}, {ty}, {first}, {second})))')
     for w, h in SIZES:
         for density in DENSITIES:
             factor = f32_bend(density)
-            body.append(f'    IO.print(image_of("square", J.Surface.create_gradient_square({w}, {h}, {factor}, {INNER}, {OUTER})))')
-            body.append(f'    IO.print(image_of("radial", J.Surface.create_gradient_radial({w}, {h}, {factor}, {INNER}, {OUTER})))')
+            body.append(f'    IO.print(image_of("square", surface_create_gradient_square_owned({w}, {h}, {factor}, {INNER}, {OUTER})))')
+            body.append(f'    IO.print(image_of("radial", surface_create_gradient_radial_owned({w}, {h}, {factor}, {INNER}, {OUTER})))')
     return '\n'.join(body) + '\n'
 
 

@@ -32200,9 +32200,9 @@
       "status": "partial",
       "jonlib": "Random.seed",
       "mapping_state": "implemented",
-      "scope": "U32 seed initializes an owned stream using pinned rprand SplitMix64 extraction and Xoshiro128** state, without implicit global mutation.",
+      "scope": "U32 seed initializes an owned stream using pinned rprand SplitMix64 extraction and Xoshiro128** state, without implicit global mutation. Ownership: consumes seed; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -32213,14 +32213,15 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
       },
       "evidence": [
         "tools/random_probe.py",
-        "docs/RANDOM.md"
+        "docs/RANDOM.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35929,9 +35930,9 @@
       "status": "partial",
       "jonlib": "Checksum.crc32_wide",
       "mapping_state": "implemented",
-      "scope": "Immutable byte lists of 0..2147483647 bytes; native CRC32 initial/final complements, equal to standard CRC32. Empty input is zero. Values above 255 are None.",
+      "scope": "Immutable byte lists of 0..2147483647 bytes; native CRC32 initial/final complements, equal to standard CRC32. Empty input is zero. Values above 255 are None. Ownership: borrows bytes; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -35941,7 +35942,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -35950,7 +35951,8 @@
         "tools/checksum_probe.py",
         "docs/CHECKSUMS.md",
         "src/checksum.bend",
-        "src/png_encode.bend"
+        "src/png_encode.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35991,10 +35993,10 @@
       "status": "partial",
       "jonlib": "Checksum.md5_wide",
       "mapping_state": "implemented",
-      "scope": "Lists of 0..268435455 bytes, including empty input: four native-order U32 words and a little-endian length word. Values above 255 are None.",
+      "scope": "Lists of 0..268435455 bytes, including empty input: four native-order U32 words and a little-endian length word. Values above 255 are None. Ownership: consumes bytes; the result is owned by the caller.",
       "gaps": [
         "Undefined native behavior: a dataSize whose 8*dataSize product does not fit in a signed int is not the reference length word",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -36004,7 +36006,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -36012,7 +36014,8 @@
       "evidence": [
         "tools/checksum_probe.py",
         "docs/CHECKSUMS.md",
-        "src/checksum.bend"
+        "src/checksum.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -36053,10 +36056,10 @@
       "status": "partial",
       "jonlib": "Checksum.sha1_wide",
       "mapping_state": "implemented",
-      "scope": "Lists of 0..2147483575 bytes, including empty input: five native-order words and the big-endian 64-bit length 8*length. Values above 255 are None before allocation.",
+      "scope": "Lists of 0..2147483575 bytes, including empty input: five native-order words and the big-endian 64-bit length 8*length. Values above 255 are None before allocation. Ownership: consumes bytes; the result is owned by the caller.",
       "gaps": [
         "Undefined native behavior: a dataSize past 0..2147483575 overflows the signed int newDataSize",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -36066,7 +36069,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -36074,7 +36077,8 @@
       "evidence": [
         "src/sha.bend",
         "tools/sha_probe.py",
-        "docs/SHA.md"
+        "docs/SHA.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -36115,9 +36119,9 @@
       "status": "partial",
       "jonlib": "Checksum.sha256_wide",
       "mapping_state": "implemented",
-      "scope": "Lists of 0..2147483647 bytes, including empty input: eight native-order words and the big-endian 64-bit length 8*length. Values above 255 are None before allocation.",
+      "scope": "Lists of 0..2147483647 bytes, including empty input: eight native-order words and the big-endian 64-bit length 8*length. Values above 255 are None before allocation. Ownership: consumes bytes; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -36127,7 +36131,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -36135,7 +36139,8 @@
       "evidence": [
         "src/sha.bend",
         "tools/sha_probe.py",
-        "docs/SHA.md"
+        "docs/SHA.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -45816,9 +45821,9 @@
       "status": "partial",
       "jonlib": "Surface.create_gradient_radial",
       "mapping_state": "implemented",
-      "scope": "RGBA8; dimensions 1..4096; every F32 density. A non-finite density is the inner color (raylib fmax/fmin of a NaN factor). Density one is inner at and inside the radius. Other densities, including values outside 0..1, use the clamped hypot factor. Balanced owned-array generation.",
+      "scope": "RGBA8; dimensions 1..4096; every F32 density. A non-finite density is the inner color (raylib fmax/fmin of a NaN factor). Density one is inner at and inside the radius. Other densities, including values outside 0..1, use the clamped hypot factor. Balanced owned-array generation. Ownership: consumes width, height, density, inner, outer; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -45826,7 +45831,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -45834,7 +45839,8 @@
       "evidence": [
         "tools/gradient_checked_probe.py",
         "tests/fixtures/images.json",
-        "docs/GRADIENTS.md"
+        "docs/GRADIENTS.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -45879,9 +45885,9 @@
       "status": "partial",
       "jonlib": "Surface.create_gradient_square",
       "mapping_state": "implemented",
-      "scope": "RGBA8; dimensions 1..4096; every F32 density. Density one and any non-finite density are the inner color. Other densities, including values outside 0..1, use the clamped Manhattan factor.",
+      "scope": "RGBA8; dimensions 1..4096; every F32 density. Density one and any non-finite density are the inner color. Other densities, including values outside 0..1, use the clamped Manhattan factor. Ownership: consumes width, height, density, inner, outer; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -45889,7 +45895,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -45898,7 +45904,8 @@
         "tools/gradient_checked_probe.py",
         "tests/fixtures/images.json",
         "tests/transforms.bend",
-        "docs/API.md"
+        "docs/API.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -45943,9 +45950,9 @@
       "status": "partial",
       "jonlib": "Surface.create_checked",
       "mapping_state": "implemented",
-      "scope": "RGBA8; Surface dimensions 1..4096; positive signed-int checker sizes; invalid dimensions/checker sizes return None.",
+      "scope": "RGBA8; Surface dimensions 1..4096; positive signed-int checker sizes; invalid dimensions/checker sizes return None. Ownership: consumes width, height, tx, ty, first, second; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -45953,7 +45960,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -45962,7 +45969,8 @@
         "tools/gradient_checked_probe.py",
         "tests/fixtures/images.json",
         "tests/transforms.bend",
-        "docs/API.md"
+        "docs/API.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -52874,10 +52882,10 @@
       "status": "partial",
       "jonlib": "Pixel.get_color",
       "mapping_state": "implemented",
-      "scope": "Little-endian byte lists. Formats 1..7 keep integer expansion and R5G5B5A1 blue from bits 1..5. Formats 8..13 cast each float or half channel when component*255 lies in (-1, 256); R32 and R16 replicate across RGB and a missing alpha is 255. Format 0 and codes outside 1..13 return color 0 without reading. Invalid bytes and short buffers of formats 1..13 are typed failures.",
+      "scope": "Little-endian byte lists. Formats 1..7 keep integer expansion and R5G5B5A1 blue from bits 1..5. Formats 8..13 cast each float or half channel when component*255 lies in (-1, 256); R32 and R16 replicate across RGB and a missing alpha is 255. Format 0 and codes outside 1..13 return color 0 without reading. Invalid bytes and short buffers of formats 1..13 are typed failures. Ownership: consumes bytes and borrows format; the result is owned by the caller.",
       "gaps": [
         "Undefined native behavior: a float or half channel whose component*255 lies outside (-1, 256) is OutOfDomain",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52888,7 +52896,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -52896,7 +52904,8 @@
       "evidence": [
         "tools/raw_pixel_probe.py",
         "tests/transforms.bend",
-        "docs/PIXELS.md"
+        "docs/PIXELS.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -52940,9 +52949,9 @@
       "status": "partial",
       "jonlib": "Pixel.set_color",
       "mapping_state": "implemented",
-      "scope": "Formats 1..7 keep grayscale, nearest packed quantization, the pinned alpha>50 threshold and little-endian words, replacing only the pixel prefix. Every other format leaves the byte list unchanged.",
+      "scope": "Formats 1..7 keep grayscale, nearest packed quantization, the pinned alpha>50 threshold and little-endian words, replacing only the pixel prefix. Every other format leaves the byte list unchanged. Ownership: consumes bytes, color and borrows format; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -52954,7 +52963,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -52962,7 +52971,8 @@
       "evidence": [
         "tools/raw_pixel_probe.py",
         "tests/transforms.bend",
-        "docs/PIXELS.md"
+        "docs/PIXELS.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -53006,9 +53016,9 @@
       "status": "partial",
       "jonlib": "Pixel.data_size_wide",
       "mapping_state": "implemented",
-      "scope": "Nonnegative int dimensions and format codes 0..2147483647. The unsigned 64-bit product width*height*bpp shifted by 3; a result that does not fit in a signed int is 0. An empty side is 0. Compressed formats 14..15 and 16..23 are 8 and 16 bytes when both sides are below 4. A word above the signed int is None.",
+      "scope": "Nonnegative int dimensions and format codes 0..2147483647. The unsigned 64-bit product width*height*bpp shifted by 3; a result that does not fit in a signed int is 0. An empty side is 0. Compressed formats 14..15 and 16..23 are 8 and 16 bytes when both sides are below 4. A word above the signed int is None. Ownership: borrows width, height, format; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -53017,7 +53027,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -53025,7 +53035,8 @@
       "evidence": [
         "tools/pixel_probe.py",
         "tests/transforms.bend",
-        "docs/PIXELS.md"
+        "docs/PIXELS.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -67971,9 +67982,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.zero",
       "mapping_state": "implemented",
-      "scope": "Two positive F32 zeros.",
+      "scope": "Two positive F32 zeros. Ownership: takes no arguments; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -67982,7 +67993,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -67991,7 +68002,8 @@
         "tools/math_values_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68034,9 +68046,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.one",
       "mapping_state": "implemented",
-      "scope": "Two F32 ones.",
+      "scope": "Two F32 ones. Ownership: takes no arguments; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -68045,7 +68057,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -68054,7 +68066,8 @@
         "tools/math_values_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -69983,9 +69996,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector3.zero",
       "mapping_state": "implemented",
-      "scope": "Three positive-zero F32 components.",
+      "scope": "Three positive-zero F32 components. Ownership: takes no arguments; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -69994,7 +70007,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -70003,7 +70016,8 @@
         "tools/math_values_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70046,9 +70060,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector3.one",
       "mapping_state": "implemented",
-      "scope": "Three F32 components equal to one.",
+      "scope": "Three F32 components equal to one. Ownership: takes no arguments; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -70057,7 +70071,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -70066,7 +70080,8 @@
         "tools/math_values_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -72116,9 +72131,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector3.to_float_v",
       "mapping_state": "implemented",
-      "scope": "Immutable F32 list containing exactly X, Y, Z; exact component bits and proven length.",
+      "scope": "Immutable F32 list containing exactly X, Y, Z; exact component bits and proven length. Ownership: consumes vector; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -72129,7 +72144,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -72140,7 +72155,8 @@
         "LAWS.bend",
         "PROOF.bend",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -72503,9 +72519,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.zero",
       "mapping_state": "implemented",
-      "scope": "Four positive-zero F32 components.",
+      "scope": "Four positive-zero F32 components. Ownership: takes no arguments; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -72514,7 +72530,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -72523,7 +72539,8 @@
         "tools/math_values_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -72566,9 +72583,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.one",
       "mapping_state": "implemented",
-      "scope": "Four F32 components equal to one.",
+      "scope": "Four F32 components equal to one. Ownership: takes no arguments; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -72577,7 +72594,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -72586,7 +72603,8 @@
         "tools/math_values_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -74048,9 +74066,9 @@
       "status": "partial",
       "jonlib": "jonmath.Matrix.transpose",
       "mapping_state": "implemented",
-      "scope": "Reference field permutation, including signed-zero bits; double-transpose involution has a checked structural proof.",
+      "scope": "Reference field permutation, including signed-zero bits; double-transpose involution has a checked structural proof. Ownership: consumes matrix; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -74059,7 +74077,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -74070,7 +74088,8 @@
         "LAWS.bend",
         "PROOF.bend",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -74178,9 +74197,9 @@
       "status": "partial",
       "jonlib": "jonmath.Matrix.identity",
       "mapping_state": "implemented",
-      "scope": "Reference 4x4 identity; all 16 F32 fields exact.",
+      "scope": "Reference 4x4 identity; all 16 F32 fields exact. Ownership: takes no arguments; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -74189,7 +74208,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -74198,7 +74217,8 @@
         "tools/math_values_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75263,9 +75283,9 @@
       "status": "partial",
       "jonlib": "jonmath.Matrix.to_float_v",
       "mapping_state": "implemented",
-      "scope": "Immutable F32 list containing exactly m0..m15, distinct from constructor order; exact bits and proven length.",
+      "scope": "Immutable F32 list containing exactly m0..m15, distinct from constructor order; exact bits and proven length. Ownership: consumes matrix; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -75276,7 +75296,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -75287,7 +75307,8 @@
         "LAWS.bend",
         "PROOF.bend",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75591,9 +75612,9 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.identity",
       "mapping_state": "implemented",
-      "scope": "Reference quaternion identity Vector4 with XYZ positive zero and W one.",
+      "scope": "Reference quaternion identity Vector4 with XYZ positive zero and W one. Ownership: takes no arguments; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -75602,7 +75623,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -75611,7 +75632,8 @@
         "tools/math_values_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},

@@ -1096,9 +1096,9 @@
   "SetRandomSeed": {
     "jonlib": "Random.seed",
     "status": "profile-covered",
-    "scope": "U32 seed initializes an owned stream using pinned rprand SplitMix64 extraction and Xoshiro128** state, without implicit global mutation.",
+    "scope": "U32 seed initializes an owned stream using pinned rprand SplitMix64 extraction and Xoshiro128** state, without implicit global mutation. Ownership: consumes seed; the result is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -1763,9 +1763,9 @@
   "ComputeCRC32": {
     "jonlib": "Checksum.crc32_wide",
     "status": "profile-covered",
-    "scope": "Immutable byte lists of 0..2147483647 bytes; native CRC32 initial/final complements, equal to standard CRC32. Empty input is zero. Values above 255 are None.",
+    "scope": "Immutable byte lists of 0..2147483647 bytes; native CRC32 initial/final complements, equal to standard CRC32. Empty input is zero. Values above 255 are None. Ownership: borrows bytes; the result is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ComputeCRC32",
@@ -1774,10 +1774,10 @@
   "ComputeMD5": {
     "jonlib": "Checksum.md5_wide",
     "status": "profile-covered",
-    "scope": "Lists of 0..268435455 bytes, including empty input: four native-order U32 words and a little-endian length word. Values above 255 are None.",
+    "scope": "Lists of 0..268435455 bytes, including empty input: four native-order U32 words and a little-endian length word. Values above 255 are None. Ownership: consumes bytes; the result is owned by the caller.",
     "gaps": [
       "Undefined native behavior: a dataSize whose 8*dataSize product does not fit in a signed int is not the reference length word",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ComputeMD5",
@@ -1786,10 +1786,10 @@
   "ComputeSHA1": {
     "jonlib": "Checksum.sha1_wide",
     "status": "profile-covered",
-    "scope": "Lists of 0..2147483575 bytes, including empty input: five native-order words and the big-endian 64-bit length 8*length. Values above 255 are None before allocation.",
+    "scope": "Lists of 0..2147483575 bytes, including empty input: five native-order words and the big-endian 64-bit length 8*length. Values above 255 are None before allocation. Ownership: consumes bytes; the result is owned by the caller.",
     "gaps": [
       "Undefined native behavior: a dataSize past 0..2147483575 overflows the signed int newDataSize",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ComputeSHA1",
@@ -1798,9 +1798,9 @@
   "ComputeSHA256": {
     "jonlib": "Checksum.sha256_wide",
     "status": "profile-covered",
-    "scope": "Lists of 0..2147483647 bytes, including empty input: eight native-order words and the big-endian 64-bit length 8*length. Values above 255 are None before allocation.",
+    "scope": "Lists of 0..2147483647 bytes, including empty input: eight native-order words and the big-endian 64-bit length 8*length. Values above 255 are None before allocation. Ownership: consumes bytes; the result is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ComputeSHA256",
@@ -3548,9 +3548,9 @@
   "GenImageGradientRadial": {
     "jonlib": "Surface.create_gradient_radial",
     "status": "profile-covered",
-    "scope": "RGBA8; dimensions 1..4096; every F32 density. A non-finite density is the inner color (raylib fmax/fmin of a NaN factor). Density one is inner at and inside the radius. Other densities, including values outside 0..1, use the clamped hypot factor. Balanced owned-array generation.",
+    "scope": "RGBA8; dimensions 1..4096; every F32 density. A non-finite density is the inner color (raylib fmax/fmin of a NaN factor). Density one is inner at and inside the radius. Other densities, including values outside 0..1, use the clamped hypot factor. Balanced owned-array generation. Ownership: consumes width, height, density, inner, outer; the result is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GenImageGradientRadial",
@@ -3559,9 +3559,9 @@
   "GenImageGradientSquare": {
     "jonlib": "Surface.create_gradient_square",
     "status": "profile-covered",
-    "scope": "RGBA8; dimensions 1..4096; every F32 density. Density one and any non-finite density are the inner color. Other densities, including values outside 0..1, use the clamped Manhattan factor.",
+    "scope": "RGBA8; dimensions 1..4096; every F32 density. Density one and any non-finite density are the inner color. Other densities, including values outside 0..1, use the clamped Manhattan factor. Ownership: consumes width, height, density, inner, outer; the result is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GenImageGradientSquare",
@@ -3570,9 +3570,9 @@
   "GenImageChecked": {
     "jonlib": "Surface.create_checked",
     "status": "profile-covered",
-    "scope": "RGBA8; Surface dimensions 1..4096; positive signed-int checker sizes; invalid dimensions/checker sizes return None.",
+    "scope": "RGBA8; Surface dimensions 1..4096; positive signed-int checker sizes; invalid dimensions/checker sizes return None. Ownership: consumes width, height, tx, ty, first, second; the result is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GenImageChecked",
@@ -4789,10 +4789,10 @@
   "GetPixelColor": {
     "jonlib": "Pixel.get_color",
     "status": "profile-covered",
-    "scope": "Little-endian byte lists. Formats 1..7 keep integer expansion and R5G5B5A1 blue from bits 1..5. Formats 8..13 cast each float or half channel when component*255 lies in (-1, 256); R32 and R16 replicate across RGB and a missing alpha is 255. Format 0 and codes outside 1..13 return color 0 without reading. Invalid bytes and short buffers of formats 1..13 are typed failures.",
+    "scope": "Little-endian byte lists. Formats 1..7 keep integer expansion and R5G5B5A1 blue from bits 1..5. Formats 8..13 cast each float or half channel when component*255 lies in (-1, 256); R32 and R16 replicate across RGB and a missing alpha is 255. Format 0 and codes outside 1..13 return color 0 without reading. Invalid bytes and short buffers of formats 1..13 are typed failures. Ownership: consumes bytes and borrows format; the result is owned by the caller.",
     "gaps": [
       "Undefined native behavior: a float or half channel whose component*255 lies outside (-1, 256) is OutOfDomain",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -4802,9 +4802,9 @@
   "SetPixelColor": {
     "jonlib": "Pixel.set_color",
     "status": "profile-covered",
-    "scope": "Formats 1..7 keep grayscale, nearest packed quantization, the pinned alpha>50 threshold and little-endian words, replacing only the pixel prefix. Every other format leaves the byte list unchanged.",
+    "scope": "Formats 1..7 keep grayscale, nearest packed quantization, the pinned alpha>50 threshold and little-endian words, replacing only the pixel prefix. Every other format leaves the byte list unchanged. Ownership: consumes bytes, color and borrows format; the result is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -4814,9 +4814,9 @@
   "GetPixelDataSize": {
     "jonlib": "Pixel.data_size_wide",
     "status": "profile-covered",
-    "scope": "Nonnegative int dimensions and format codes 0..2147483647. The unsigned 64-bit product width*height*bpp shifted by 3; a result that does not fit in a signed int is 0. An empty side is 0. Compressed formats 14..15 and 16..23 are 8 and 16 bytes when both sides are below 4. A word above the signed int is None.",
+    "scope": "Nonnegative int dimensions and format codes 0..2147483647. The unsigned 64-bit product width*height*bpp shifted by 3; a result that does not fit in a signed int is 0. An empty side is 0. Compressed formats 14..15 and 16..23 are 8 and 16 bytes when both sides are below 4. A word above the signed int is None. Ownership: borrows width, height, format; the result is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],

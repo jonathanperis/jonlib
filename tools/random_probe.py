@@ -9,6 +9,11 @@ from probekit import ProbeFailure
 
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
+# Ownership: these defs copy the library signatures (+ borrows, the rest
+# consumed) and return values the caller owns; the affine checker
+# enforces them on every compared call.
+def random_seed_owned(seed: U32) -> J.Random.State:
+  J.Random.seed(seed)
 type Range is Data:
   Range{lower: F32, upper: F32}
 def collected(result: J.Random.State & F32, values: List<U32>) -> J.Random.State & List<U32>:
@@ -20,7 +25,7 @@ def draws(ranges: +List<Range>, data: J.Random.State & List<U32>) -> List<U32>:
     case Con{Range{lower, upper}, rest} Tuple{state, values}:
       draws(rest, collected(J.Random.value(state, lower, upper), values))
 def stream(seed: U32, ranges: +List<Range>) -> List<U32>:
-  draws(ranges, (J.Random.seed(seed), Nil{}))
+  draws(ranges, (random_seed_owned(seed), Nil{}))
 def tail_value(result: J.Random.State & F32) -> List<U32>:
   (_, value) = result
   [F32.bits(value)]
@@ -29,9 +34,9 @@ def after_noise(result: J.Random.State & Maybe<J.Surface>) -> List<U32>:
     case Tuple{state, Some{_}}: tail_value(J.Random.value(state, F32.neg(100.0), 100.0))
     case _: Nil{}
 def noise_tail(seed: U32, width: U32, height: U32, factor: F32) -> List<U32>:
-  after_noise(J.Surface.create_white_noise(J.Random.seed(seed), width, height, factor))
+  after_noise(J.Surface.create_white_noise(random_seed_owned(seed), width, height, factor))
 def cellular_tail(seed: U32, width: U32, height: U32, tile: U32) -> List<U32>:
-  after_noise(J.Surface.create_cellular(J.Random.seed(seed), width, height, tile))
+  after_noise(J.Surface.create_cellular(random_seed_owned(seed), width, height, tile))
 def sequence_words(values: +List<F32>, tail: List<U32>) -> List<U32>:
   match values:
     case Nil{}: tail
@@ -44,7 +49,7 @@ def sequence_observed(result: J.Random.State & Result<&1, &1, J.Random.Sequence.
       Con{0, tail_value(J.Random.value(state, F32.neg(100.0), 100.0))}
     case Tuple{_, Fail{J.SequenceDrawLimit{_}}}: [2]
 def sequence_sample(seed: U32, count: U32, lower: F32, upper: F32) -> List<U32>:
-  sequence_observed(J.Random.load_sequence(J.Random.seed(seed), count, lower, upper, 4096n))
+  sequence_observed(J.Random.load_sequence(random_seed_owned(seed), count, lower, upper, 4096n))
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
