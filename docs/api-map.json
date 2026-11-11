@@ -3257,9 +3257,9 @@
   "CheckCollisionCircles": {
     "jonlib": "Collision.circles_for / Collision.circles",
     "status": "profile-covered",
-    "scope": "F32 centers and radii, including signed zero, a subnormal, infinities and one quiet NaN. Inclusive squared-distance tangency and signed radii. Uncontracted and Apple-clang FMA profiles.",
+    "scope": "F32 centers and radii, including signed zero, a subnormal, infinities and one quiet NaN. Inclusive squared-distance tangency and signed radii. Uncontracted and Apple-clang FMA profiles. Ownership: consumes both centers and radii (values); the contraction profile is borrowed and the Bool is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionCircles",
@@ -3268,9 +3268,9 @@
   "CheckCollisionCircleRec": {
     "jonlib": "Collision.circle_rec_for / Collision.circle_rec",
     "status": "profile-covered",
-    "scope": "F32 circle and rectangle, including signed zero, a subnormal, infinities and one quiet NaN. Reference side and corner tests, including tangency. Uncontracted and Apple-clang FMA profiles.",
+    "scope": "F32 circle and rectangle, including signed zero, a subnormal, infinities and one quiet NaN. Reference side and corner tests, including tangency. Uncontracted and Apple-clang FMA profiles. Ownership: consumes the center and the rectangle and borrows the radius (values); the contraction profile is borrowed and the Bool is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionCircleRec",
@@ -3279,9 +3279,9 @@
   "CheckCollisionCircleLine": {
     "jonlib": "Collision.circle_line_for / Collision.circle_line",
     "status": "profile-covered",
-    "scope": "F32 circle and segment, including signed zero, a subnormal, infinities and one quiet NaN. Reference epsilon-degenerate endpoint fallback. Uncontracted and Apple-clang FMA profiles.",
+    "scope": "F32 circle and segment, including signed zero, a subnormal, infinities and one quiet NaN. Reference epsilon-degenerate endpoint fallback. Uncontracted and Apple-clang FMA profiles. Ownership: consumes the center, radius and both line points (values); the contraction profile is borrowed and the Bool is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionCircleLine",
@@ -3301,9 +3301,9 @@
   "CheckCollisionPointCircle": {
     "jonlib": "Collision.point_circle_for / Collision.point_circle",
     "status": "profile-covered",
-    "scope": "F32 point, center and radius, including signed zero, a subnormal, infinities and one quiet NaN. Inclusive squared-distance tangency. Uncontracted and Apple-clang FMA profiles.",
+    "scope": "F32 point, center and radius, including signed zero, a subnormal, infinities and one quiet NaN. Inclusive squared-distance tangency. Uncontracted and Apple-clang FMA profiles. Ownership: consumes the point and the center and borrows the radius (values); the contraction profile is borrowed and the Bool is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionPointCircle",
@@ -3312,9 +3312,9 @@
   "CheckCollisionPointTriangle": {
     "jonlib": "Collision.point_triangle_for / Collision.point_triangle",
     "status": "profile-covered",
-    "scope": "F32 point and triangle, including signed zero, a subnormal, infinities and one quiet NaN. Strictly positive barycentric weights; edges and degenerates are false. Uncontracted and Apple-clang FMA profiles.",
+    "scope": "F32 point and triangle, including signed zero, a subnormal, infinities and one quiet NaN. Strictly positive barycentric weights; edges and degenerates are false. Uncontracted and Apple-clang FMA profiles. Ownership: consumes the point and the three vertices (values); the contraction profile is borrowed and the Bool is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionPointTriangle",
@@ -3323,10 +3323,10 @@
   "CheckCollisionPointLine": {
     "jonlib": "Collision.point_line_for / Collision.point_line",
     "status": "profile-covered",
-    "scope": "F32 point and segment, including signed zero, a subnormal, infinities and one quiet NaN, with a threshold whose truncation fits in a C int. Strict cross-product margin. Uncontracted and Apple-clang FMA profiles.",
+    "scope": "F32 point and segment, including signed zero, a subnormal, infinities and one quiet NaN, with a threshold whose truncation fits in a C int. Strict cross-product margin. Uncontracted and Apple-clang FMA profiles. Ownership: consumes the point, both line points and the threshold (values); the contraction profile is borrowed and the Bool is owned by the caller.",
     "gaps": [
       "Undefined native behavior: a non-finite threshold or one outside a C int is not the reference cast",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionPointLine",
@@ -6184,9 +6184,9 @@
   "CheckCollisionSpheres": {
     "jonlib": "Collision.spheres_for / Collision.spheres",
     "status": "profile-covered",
-    "scope": "F32 centers and radii, including signed zero, a subnormal, infinities and one quiet NaN. Inclusive squared distance and the squared sum of signed radii. Uncontracted and Apple-clang FMA profiles.",
+    "scope": "F32 centers and radii, including signed zero, a subnormal, infinities and one quiet NaN. Inclusive squared distance and the squared sum of signed radii. Uncontracted and Apple-clang FMA profiles. Ownership: consumes both centers and radii (values); the contraction profile is borrowed and the Bool is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionSpheres",
@@ -6206,9 +6206,9 @@
   "CheckCollisionBoxSphere": {
     "jonlib": "Collision.box_sphere_for / Collision.box_sphere",
     "status": "profile-covered",
-    "scope": "F32 box, center and radius, including signed zero, a subnormal, infinities and one quiet NaN. Reference Clamp ordering and inclusive closest-point test. Uncontracted and Apple-clang FMA profiles.",
+    "scope": "F32 box, center and radius, including signed zero, a subnormal, infinities and one quiet NaN. Reference Clamp ordering and inclusive closest-point test. Uncontracted and Apple-clang FMA profiles. Ownership: consumes the box and the center and borrows the radius (values); the contraction profile is borrowed and the Bool is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:CheckCollisionBoxSphere",

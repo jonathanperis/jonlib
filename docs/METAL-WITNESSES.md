@@ -60,3 +60,16 @@ Metal witness: raylib:function:CheckCollisionPointRec a3efe8a3801f42382742422717
 Metal witness: raylib:function:CheckCollisionRecs a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:CheckCollisionBoxes a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:GetCollisionRec a3efe8a3801f423827424227172eed9802c5e6cb pass
+
+`collision-finite` (1096 cases) and `collision-exceptional` (2594 cases) with
+`--gpu`, after the finite probe routed its queries through ownership defs:
+every lane, gpu included, matched.
+
+Metal witness: raylib:function:CheckCollisionCircles a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:CheckCollisionCircleRec a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:CheckCollisionCircleLine a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:CheckCollisionPointCircle a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:CheckCollisionPointTriangle a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:CheckCollisionPointLine a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:CheckCollisionSpheres a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:CheckCollisionBoxSphere a3efe8a3801f423827424227172eed9802c5e6cb pass

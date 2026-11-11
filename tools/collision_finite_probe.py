@@ -113,20 +113,20 @@ def bend_box(words):
 
 def bend_call(name, args, arithmetic):
     if name == 'circles':
-        return f'J.Collision.circles_for({arithmetic}, {bend_v2(args[:2])}, word({args[2]}), {bend_v2(args[3:5])}, word({args[5]}))'
+        return f'circles_owned({arithmetic}, {bend_v2(args[:2])}, word({args[2]}), {bend_v2(args[3:5])}, word({args[5]}))'
     if name == 'point_circle':
-        return f'J.Collision.point_circle_for({arithmetic}, {bend_v2(args[:2])}, {bend_v2(args[2:4])}, word({args[4]}))'
+        return f'point_circle_owned({arithmetic}, {bend_v2(args[:2])}, {bend_v2(args[2:4])}, word({args[4]}))'
     if name == 'circle_rec':
-        return f'J.Collision.circle_rec_for({arithmetic}, {bend_v2(args[:2])}, word({args[2]}), {bend_rect(args[3:])})'
+        return f'circle_rec_owned({arithmetic}, {bend_v2(args[:2])}, word({args[2]}), {bend_rect(args[3:])})'
     if name == 'point_triangle':
-        return f'J.Collision.point_triangle_for({arithmetic}, {bend_v2(args[:2])}, {bend_v2(args[2:4])}, {bend_v2(args[4:6])}, {bend_v2(args[6:])})'
+        return f'point_triangle_owned({arithmetic}, {bend_v2(args[:2])}, {bend_v2(args[2:4])}, {bend_v2(args[4:6])}, {bend_v2(args[6:])})'
     if name == 'point_line':
-        return f'J.Collision.point_line_for({arithmetic}, {bend_v2(args[:2])}, {bend_v2(args[2:4])}, {bend_v2(args[4:6])}, word({args[6]}))'
+        return f'point_line_owned({arithmetic}, {bend_v2(args[:2])}, {bend_v2(args[2:4])}, {bend_v2(args[4:6])}, word({args[6]}))'
     if name == 'circle_line':
-        return f'J.Collision.circle_line_for({arithmetic}, {bend_v2(args[:2])}, word({args[2]}), {bend_v2(args[3:5])}, {bend_v2(args[5:])})'
+        return f'circle_line_owned({arithmetic}, {bend_v2(args[:2])}, word({args[2]}), {bend_v2(args[3:5])}, {bend_v2(args[5:])})'
     if name == 'spheres':
-        return f'J.Collision.spheres_for({arithmetic}, {bend_v3(args[:3])}, word({args[3]}), {bend_v3(args[4:7])}, word({args[7]}))'
-    return f'J.Collision.box_sphere_for({arithmetic}, {bend_box(args[:6])}, {bend_v3(args[6:9])}, word({args[9]}))'
+        return f'spheres_owned({arithmetic}, {bend_v3(args[:3])}, word({args[3]}), {bend_v3(args[4:7])}, word({args[7]}))'
+    return f'box_sphere_owned({arithmetic}, {bend_box(args[:6])}, {bend_v3(args[6:9])}, word({args[9]}))'
 
 
 def native(rows):
@@ -141,12 +141,36 @@ def native(rows):
     return '\n'.join(lines) + '\n'
 
 
+OWNED_DEFS = '''\
+# Ownership: each query consumes its value arguments, borrows what the
+# library borrows (+), and returns a Bool the caller owns; the affine checker
+# enforces these signatures.
+def circles_owned(+arithmetic: M.Contraction, left: M.Vector2, radius: F32, right: M.Vector2, other_radius: F32) -> Bool:
+  J.Collision.circles_for(arithmetic, left, radius, right, other_radius)
+def point_circle_owned(+arithmetic: M.Contraction, point: M.Vector2, center: M.Vector2, +radius: F32) -> Bool:
+  J.Collision.point_circle_for(arithmetic, point, center, radius)
+def circle_rec_owned(+arithmetic: M.Contraction, center: M.Vector2, +radius: F32, rectangle: J.Rectangle) -> Bool:
+  J.Collision.circle_rec_for(arithmetic, center, radius, rectangle)
+def point_triangle_owned(+arithmetic: M.Contraction, point: M.Vector2, first: M.Vector2, second: M.Vector2, third: M.Vector2) -> Bool:
+  J.Collision.point_triangle_for(arithmetic, point, first, second, third)
+def point_line_owned(+arithmetic: M.Contraction, point: M.Vector2, first: M.Vector2, second: M.Vector2, threshold: F32) -> Bool:
+  J.Collision.point_line_for(arithmetic, point, first, second, threshold)
+def circle_line_owned(+arithmetic: M.Contraction, center: M.Vector2, radius: F32, first: M.Vector2, second: M.Vector2) -> Bool:
+  J.Collision.circle_line_for(arithmetic, center, radius, first, second)
+def spheres_owned(+arithmetic: M.Contraction, left: M.Vector3, radius: F32, right: M.Vector3, other_radius: F32) -> Bool:
+  J.Collision.spheres_for(arithmetic, left, radius, right, other_radius)
+def box_sphere_owned(+arithmetic: M.Contraction, box: J.BoundingBox, center: M.Vector3, +radius: F32) -> Bool:
+  J.Collision.box_sphere_for(arithmetic, box, center, radius)
+'''
+
+
 def program(rows):
     arithmetic = 'M.' + contraction() + '{}'
     body = [
         'import Base', 'import ../../jonlib.bend as J', 'import ../../jonmath.bend as M',
         'def word(bits: U32) -> F32:', '  U32{b} = bits', '  F32{b}',
         'def flag(value: Bool) -> String:', '  match value:', '    case True{}: "1"', '    case False{}: "0"',
+        *OWNED_DEFS.splitlines(),
         'def main() -> IO(Unit):', '  do IO<Unit>:',
     ]
     for name, args in rows:
