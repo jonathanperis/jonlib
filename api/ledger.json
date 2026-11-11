@@ -44131,9 +44131,9 @@
       "status": "partial",
       "jonlib": "Collision.recs",
       "mapping_state": "implemented",
-      "scope": "CheckCollisionRecs: strict overlap on both axes. The predicate is additions and comparisons, so a contracted build does not change it. Subnormal and non-finite fields are compared on the collision-domain profile.",
+      "scope": "CheckCollisionRecs: strict overlap on both axes. The predicate is additions and comparisons, so a contracted build does not change it. Subnormal and non-finite fields are compared on the collision-domain profile. Ownership: consumes both rectangles (values); the Bool is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -44141,7 +44141,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -44149,7 +44149,8 @@
       "evidence": [
         "tools/collision_domain_probe.py",
         "tests/fixtures/images.json",
-        "docs/COLLISION.md"
+        "docs/COLLISION.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44383,9 +44384,9 @@
       "status": "partial",
       "jonlib": "Collision.point_rec",
       "mapping_state": "implemented",
-      "scope": "CheckCollisionPointRec: inclusive left and top edges, exclusive right and bottom, for every F32 field including subnormals and non-finite values. A NaN comparison is false. Compared on the collision-domain profile.",
+      "scope": "CheckCollisionPointRec: inclusive left and top edges, exclusive right and bottom, for every F32 field including subnormals and non-finite values. A NaN comparison is false. Compared on the collision-domain profile. Ownership: consumes the point and the rectangle (values); the Bool is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -44393,7 +44394,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -44401,7 +44402,8 @@
       "evidence": [
         "tools/collision_domain_probe.py",
         "tests/fixtures/images.json",
-        "docs/COLLISION.md"
+        "docs/COLLISION.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44761,9 +44763,9 @@
       "status": "partial",
       "jonlib": "Collision.rectangle",
       "mapping_state": "implemented",
-      "scope": "GetCollisionRec: the overlapping rectangle, or four positive zeros when an extent is not positive. Equal fields keep the second operand, including its signed zero. Subnormal and non-finite field bits are compared on the collision-domain profile.",
+      "scope": "GetCollisionRec: the overlapping rectangle, or four positive zeros when an extent is not positive. Equal fields keep the second operand, including its signed zero. Subnormal and non-finite field bits are compared on the collision-domain profile. Ownership: consumes both rectangles (values); the overlap Rectangle is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -44771,7 +44773,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -44779,7 +44781,8 @@
       "evidence": [
         "tools/collision_domain_probe.py",
         "tests/fixtures/images.json",
-        "docs/COLLISION.md"
+        "docs/COLLISION.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -61050,9 +61053,9 @@
       "status": "partial",
       "jonlib": "Collision.boxes",
       "mapping_state": "implemented",
-      "scope": "raylib 6.2 CheckCollisionBoxes: X overlaps when max >= the other min and min <= the other max. Y and Z clear the hit only on a strict separation, so a NaN there is not a miss. Subnormal and non-finite fields are compared on the collision-domain profile.",
+      "scope": "raylib 6.2 CheckCollisionBoxes: X overlaps when max >= the other min and min <= the other max. Y and Z clear the hit only on a strict separation, so a NaN there is not a miss. Subnormal and non-finite fields are compared on the collision-domain profile. Ownership: consumes both boxes (values); the Bool is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -61060,7 +61063,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -61068,7 +61071,8 @@
       "evidence": [
         "tools/collision_domain_probe.py",
         "tests/fixtures/images.json",
-        "docs/COLLISION.md"
+        "docs/COLLISION.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},

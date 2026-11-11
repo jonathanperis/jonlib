@@ -28,10 +28,10 @@ NEG, SUB, MAXF, INF = 0xbf800000, 0x00000001, 0x7f7fffff, 0x7f800000
 
 # (raylib call shape, Bend call, result kind). Shapes: point-rect, two rects, two boxes.
 FUNCTIONS = {
-    'point_rec': ('point', 'J.Collision.point_rec({0}, {1})', 'bool'),
-    'recs': ('rects', 'J.Collision.recs({0}, {1})', 'bool'),
-    'boxes': ('boxes', 'J.Collision.boxes({0}, {1})', 'bool'),
-    'rectangle': ('rects', 'J.Collision.rectangle({0}, {1})', 'rect'),
+    'point_rec': ('point', 'point_rec_owned({0}, {1})', 'bool'),
+    'recs': ('rects', 'recs_owned({0}, {1})', 'bool'),
+    'boxes': ('boxes', 'boxes_owned({0}, {1})', 'bool'),
+    'rectangle': ('rects', 'rectangle_owned({0}, {1})', 'rect'),
 }
 
 
@@ -163,6 +163,16 @@ def flag(value: Bool) -> IO(Unit):
 def rect(value: J.Rectangle) -> IO(Unit):
   J.Rectangle{+x, +y, +w, +h} = value
   IO.print("[" ++ U32.show(F32.bits(x)) ++ "," ++ U32.show(F32.bits(y)) ++ "," ++ U32.show(F32.bits(w)) ++ "," ++ U32.show(F32.bits(h)) ++ "]")
+# Ownership: each query consumes its value arguments and returns a value the
+# caller owns. The signatures restate that and the affine checker enforces it.
+def point_rec_owned(point: M.Vector2, rectangle: J.Rectangle) -> Bool:
+  J.Collision.point_rec(point, rectangle)
+def recs_owned(left: J.Rectangle, right: J.Rectangle) -> Bool:
+  J.Collision.recs(left, right)
+def boxes_owned(left: J.BoundingBox, right: J.BoundingBox) -> Bool:
+  J.Collision.boxes(left, right)
+def rectangle_owned(left: J.Rectangle, right: J.Rectangle) -> J.Rectangle:
+  J.Collision.rectangle(left, right)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''

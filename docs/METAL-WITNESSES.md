@@ -49,3 +49,14 @@ Metal witness: raylib:function:ImageDrawTextPro a3efe8a3801f423827424227172eed98
 Metal witness: raylib:function:GetModelBoundingBox a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:GetMeshBoundingBox a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:GetRayCollisionMesh a3efe8a3801f423827424227172eed9802c5e6cb pass
+
+## Collision ownership batch, 2026-11-11
+
+`collision-domain` with `--gpu` on the same host and pins, after its queries
+were routed through ownership defs: cpu-1, cpu-2, javascript and gpu each
+matched 1572 cases.
+
+Metal witness: raylib:function:CheckCollisionPointRec a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:CheckCollisionRecs a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:CheckCollisionBoxes a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GetCollisionRec a3efe8a3801f423827424227172eed9802c5e6cb pass
