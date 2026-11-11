@@ -119,6 +119,10 @@ def flag(value: Bool) -> IO(Unit):
   match value:
     case True{}: IO.print("1")
     case False{}: IO.print("0")
+# Ownership: consumes the value arguments, borrows what the library borrows
+# (+) and returns a result the caller owns; the affine checker enforces it.
+def point_poly_owned(point: M.Vector2, +points: +List<M.Vector2>) -> Bool:
+  J.Collision.point_poly(point, points)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -128,7 +132,7 @@ def render(selected, gpu):
     body = PROGRAM
     for point, poly in selected:
         verts = ', '.join(bend_vector(vertex) for vertex in poly)
-        body += f'    flag(J.Collision.point_poly({bend_vector(point)}, [{verts}]))\n'
+        body += f'    flag(point_poly_owned({bend_vector(point)}, [{verts}]))\n'
     return body
 
 

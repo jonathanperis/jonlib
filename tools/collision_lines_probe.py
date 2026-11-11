@@ -104,6 +104,10 @@ def text(hit: Maybe<&2, M.Vector2>) -> String:
     case Some{point}:
       M.Vector2{x, y} = point
       "1," ++ U32.show(F32.bits(x)) ++ "," ++ U32.show(F32.bits(y))
+# Ownership: consumes the value arguments, borrows what the library borrows
+# (+) and returns a result the caller owns; the affine checker enforces it.
+def lines_owned(+arithmetic: M.Contraction, start: M.Vector2, end: M.Vector2, other_start: M.Vector2, other_end: M.Vector2) -> Maybe<&2, M.Vector2>:
+  J.Collision.lines_for(arithmetic, start, end, other_start, other_end)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -118,8 +122,8 @@ def render(selected, gpu):
     for args in selected:
         call = ', '.join(bend_segment(args[i:i + 2]) for i in range(0, 8, 2))
         body += (
-            '    IO.print("[" ++ text(J.Collision.lines_for(M.Uncontracted{}, '
-            + call + ')) ++ "," ++ text(J.Collision.lines_for(M.Fused{}, ' + call + ')) ++ "]")\n'
+            '    IO.print("[" ++ text(lines_owned(M.Uncontracted{}, '
+            + call + ')) ++ "," ++ text(lines_owned(M.Fused{}, ' + call + ')) ++ "]")\n'
         )
     return body
 

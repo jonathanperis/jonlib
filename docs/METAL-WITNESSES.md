@@ -73,3 +73,11 @@ Metal witness: raylib:function:CheckCollisionPointTriangle a3efe8a3801f423827424
 Metal witness: raylib:function:CheckCollisionPointLine a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:CheckCollisionSpheres a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:CheckCollisionBoxSphere a3efe8a3801f423827424227172eed9802c5e6cb pass
+
+`collision-poly` (1145 cases), `collision-lines` (363 cases) and `fused`
+(2056 samples) with `--gpu`: every lane, gpu included, matched. `ray`,
+`ray-uncontracted` and `ray-exceptional` also passed with `--gpu`, but `ray`
+compares no GPU lane, so the ray queries have no witness.
+
+Metal witness: raylib:function:CheckCollisionPointPoly a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:CheckCollisionLines a3efe8a3801f423827424227172eed9802c5e6cb pass

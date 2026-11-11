@@ -44644,9 +44644,9 @@
       "status": "partial",
       "jonlib": "Collision.point_poly",
       "mapping_state": "implemented",
-      "scope": "F32 point and vertices, including signed zero, a subnormal, infinities and one quiet NaN. Odd-even crossings; fewer than three vertices is false. The crossing test multiplies, divides, then adds, so a contracted build does not fuse it.",
+      "scope": "F32 point and vertices, including signed zero, a subnormal, infinities and one quiet NaN. Odd-even crossings; fewer than three vertices is false. The crossing test multiplies, divides, then adds, so a contracted build does not fuse it. Ownership: consumes the point and borrows the vertex list; the Bool is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -44654,7 +44654,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -44662,7 +44662,8 @@
       "evidence": [
         "tools/collision_poly_probe.py",
         "tests/fixtures/images.json",
-        "docs/COLLISION.md"
+        "docs/COLLISION.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44706,9 +44707,9 @@
       "status": "partial",
       "jonlib": "Collision.lines_for / Collision.lines",
       "mapping_state": "implemented",
-      "scope": "F32 segment endpoints, including signed zero, a subnormal, infinities and one quiet NaN. Maybe hit coordinates, inclusive endpoints and the reference epsilon determinant gate. Uncontracted and Apple-clang FMA profiles.",
+      "scope": "F32 segment endpoints, including signed zero, a subnormal, infinities and one quiet NaN. Maybe hit coordinates, inclusive endpoints and the reference epsilon determinant gate. Uncontracted and Apple-clang FMA profiles. Ownership: consumes the four endpoints (values) and borrows the contraction profile; the Maybe of the crossing point is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -44716,7 +44717,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -44725,7 +44726,8 @@
         "tools/collision_lines_probe.py",
         "tools/fused_probe.py",
         "tests/fixtures/images.json",
-        "docs/COLLISION.md"
+        "docs/COLLISION.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -61252,7 +61254,7 @@
       "status": "partial",
       "jonlib": "Collision.ray_box_for / Collision.ray_box",
       "mapping_state": "implemented",
-      "scope": "Slab intersection, including signed zero, a subnormal and infinities, with inside-ray reversal and signed-zero fmin/fmax by libm profile. NaN slabs and normals outside the int cast are None. Uncontracted and Apple-clang FMA profiles.",
+      "scope": "Slab intersection, including signed zero, a subnormal and infinities, with inside-ray reversal and signed-zero fmin/fmax by libm profile. NaN slabs and normals outside the int cast are None. Uncontracted and Apple-clang FMA profiles. Ownership: consumes the libm profile and borrows the contraction profile, the ray and the box; the Maybe<RayCollision> is owned by the caller.",
       "gaps": [
         "Undefined native behavior: naN slab distances (raylib's arm64 build and C disagree) and normals outside the int cast (undefined in C) are None",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -61263,7 +61265,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -61383,7 +61385,7 @@
       "status": "partial",
       "jonlib": "Collision.ray_triangle_for / Collision.ray_triangle",
       "mapping_state": "implemented",
-      "scope": "Moller-Trumbore with raylib's 1e-6 epsilon. F32 vertices, including signed zero, a subnormal, infinities and one quiet NaN. Parallel, outside and behind misses are the zero result. Uncontracted and Apple-clang FMA profiles.",
+      "scope": "Moller-Trumbore with raylib's 1e-6 epsilon. F32 vertices, including signed zero, a subnormal, infinities and one quiet NaN. Parallel, outside and behind misses are the zero result. Uncontracted and Apple-clang FMA profiles. Ownership: borrows the contraction profile, the ray and the first vertex and consumes the other two; the RayCollision is owned by the caller.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
@@ -61393,7 +61395,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -61446,7 +61448,7 @@
       "status": "partial",
       "jonlib": "Collision.ray_quad_for / Collision.ray_quad",
       "mapping_state": "implemented",
-      "scope": "Triangles (p1, p2, p4) then (p2, p3, p4). F32 corners, including signed zero, a subnormal, infinities and one quiet NaN. Uncontracted and Apple-clang FMA profiles.",
+      "scope": "Triangles (p1, p2, p4) then (p2, p3, p4). F32 corners, including signed zero, a subnormal, infinities and one quiet NaN. Uncontracted and Apple-clang FMA profiles. Ownership: borrows the contraction profile, the ray and the second and fourth vertices and consumes the first and third; the RayCollision is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -61457,7 +61459,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"

@@ -106,6 +106,8 @@ def cases():
     return rows
 
 
+# Bend defs that state the ownership of these queries (see PROGRAM).
+OWNED = {'triangle': 'ray_triangle_owned', 'quad': 'ray_quad_owned', 'box': 'ray_box_owned'}
 SIGNATURES = {'sphere': ('ttts', 'GetRayCollisionSphere', 'ray_sphere_for'), 'triangle': ('ttttt', 'GetRayCollisionTriangle', 'ray_triangle_for'),
               'quad': ('tttttt', 'GetRayCollisionQuad', 'ray_quad_for'), 'box': ('tttt', 'GetRayCollisionBox', 'ray_box_for')}
 
@@ -196,6 +198,15 @@ def emit_box(result: Maybe<J.RayCollision>) -> IO(Unit):
   match result:
     case None{}: IO.print("null")
     case Some{collision}: emit(collision)
+# Ownership: borrows the contraction profile, the ray and what the library
+# borrows (+), consumes the rest and returns a result the caller owns; the
+# affine checker enforces these signatures.
+def ray_triangle_owned(+arithmetic: M.Contraction, +ray: J.Ray, +p1: M.Vector3, p2: M.Vector3, p3: M.Vector3) -> J.RayCollision:
+  J.Collision.ray_triangle_for(arithmetic, ray, p1, p2, p3)
+def ray_quad_owned(+arithmetic: M.Contraction, +ray: J.Ray, p1: M.Vector3, +p2: M.Vector3, p3: M.Vector3, +p4: M.Vector3) -> J.RayCollision:
+  J.Collision.ray_quad_for(arithmetic, ray, p1, p2, p3, p4)
+def ray_box_owned(+arithmetic: M.Contraction, libm: M.Libm, +ray: J.Ray, +box: J.BoundingBox) -> Maybe<J.RayCollision>:
+  J.Collision.ray_box_for(arithmetic, libm, ray, box)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -206,7 +217,7 @@ def render(profile, libm):
         body = PROGRAM
         for kind, values in selected:
             extra = f'M.{libm}{{}}, ' if kind == 'box' else ''
-            call = f'J.Collision.{SIGNATURES[kind][2]}(M.{profile}{{}}, {extra}{bend_arguments(kind, values)})'
+            call = f'{OWNED.get(kind, "J.Collision." + SIGNATURES[kind][2])}(M.{profile}{{}}, {extra}{bend_arguments(kind, values)})'
             body += f'    {"emit_box" if kind == "box" else "emit"}({call})\n'
         return body
     return emit
