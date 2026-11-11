@@ -279,7 +279,6 @@ def main():
     if len(expected) != len(rows):
         raise ProbeFailure(f'vector4: native produced {len(expected)} rows for {len(rows)} cases')
     lanes = probe.candidates(render, rows, batch=100, source_limit=48000)
-    lanes = {lane: values for lane, values in lanes.items() if lane != 'gpu'}
     expected_n = aligned(rows, expected)
     lanes_n = {lane: aligned(rows, values) for lane, values in lanes.items()}
     fresh = sum(before != after for before, after in zip(expected, expected_n))

@@ -108,5 +108,49 @@ Metal witness: raylib:function:GenImageColor a3efe8a3801f423827424227172eed9802c
 
 `vector2` (27993 cases), `vector3` (32412), `vector4` (32466) and `scalars`
 (8260) passed with `--gpu` after their calls were routed through ownership
-defs, but these probes compare no GPU lane, so the 40 raymath functions they
-cover have no witness here.
+defs. At that point these probes dropped their GPU lane.
+
+The four probes then compared their GPU lane, which they had computed and
+dropped: `vector2` (27993 cases), `vector3` (32412), `vector4` (32466) and
+`scalars` (8260) matched on cpu-1, cpu-2, javascript and gpu.
+
+Metal witness: raymath:function:Vector2Add a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2AddValue a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2Subtract a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2SubtractValue a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2Scale a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2Multiply a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2Negate a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2Divide a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2Invert a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2Equals a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3Add a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3AddValue a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3Subtract a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3SubtractValue a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3Scale a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3Multiply a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3Negate a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3Divide a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3Invert a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3Equals a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4Add a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4AddValue a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4Subtract a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4SubtractValue a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4Scale a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4Multiply a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4Negate a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4Divide a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4Invert a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4Equals a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:QuaternionAdd a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:QuaternionAddValue a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:QuaternionSubtract a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:QuaternionSubtractValue a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:QuaternionScale a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:QuaternionDivide a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:QuaternionEquals a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Clamp a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Normalize a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:FloatEquals a3efe8a3801f423827424227172eed9802c5e6cb pass

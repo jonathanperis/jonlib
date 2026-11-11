@@ -67554,7 +67554,7 @@
       "mapping_state": "implemented",
       "scope": "Reference comparison order, including reversed bounds, signed zero, a subnormal, infinities and one quiet NaN. Every result bit of the corpus matches on CPU-1, CPU-2 and JavaScript. Ownership: borrows value, lower, upper; the F32 is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -67571,7 +67571,8 @@
         "tools/scalars_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -67677,7 +67678,7 @@
       "scope": "Uncontracted F32 normalization, including a zero range, signed zero, a subnormal, infinities and one quiet NaN. CPU-1 and CPU-2 match every result bit of the corpus. Ownership: consumes value, end and borrows start; the F32 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -67695,7 +67696,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -67862,7 +67864,7 @@
       "mapping_state": "implemented",
       "scope": "Reference relative epsilon 0.000001, including signed zero, a subnormal, infinities and one quiet NaN. The boolean matches on CPU-1, CPU-2 and JavaScript. Ownership: borrows left, right; the Bool is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -67879,7 +67881,8 @@
         "tools/scalars_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68049,7 +68052,7 @@
       "scope": "Uncontracted F32 component addition. Non-NaN bits of the vector2 corpus match. Ownership: consumes left, right; the Vector2 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -68067,7 +68070,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68113,7 +68117,7 @@
       "scope": "Uncontracted F32 scalar addition to both components. Non-NaN bits of the vector2 corpus match. Ownership: consumes vector and borrows value; the Vector2 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -68131,7 +68135,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68177,7 +68182,7 @@
       "scope": "Uncontracted F32 component subtraction. Non-NaN bits of the vector2 corpus match. Ownership: consumes left, right; the Vector2 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -68195,7 +68200,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68241,7 +68247,7 @@
       "scope": "Uncontracted F32 scalar subtraction from both components. Non-NaN bits of the vector2 corpus match. Ownership: consumes vector and borrows value; the Vector2 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -68259,7 +68265,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68835,7 +68842,7 @@
       "scope": "F32 scalar multiplication of both components. Non-NaN bits of the vector2 corpus match. Ownership: consumes vector and borrows value; the Vector2 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -68853,7 +68860,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68899,7 +68907,7 @@
       "scope": "F32 component multiplication. Non-NaN bits of the vector2 corpus match. Ownership: consumes left, right; the Vector2 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -68917,7 +68925,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68962,7 +68971,7 @@
       "mapping_state": "implemented",
       "scope": "Component negation. Every result bit of the vector2 corpus matches, including signed zero, subnormals, infinities and one quiet NaN. Ownership: consumes vector; the Vector2 is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -68979,7 +68988,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -69025,7 +69035,7 @@
       "scope": "F32 component division, including zero divisors. Non-NaN bits of the vector2 corpus match. Ownership: consumes left, right; the Vector2 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -69043,7 +69053,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -69607,7 +69618,7 @@
       "mapping_state": "implemented",
       "scope": "Component reciprocals, including zero divisors. Every result bit of the vector2 corpus matches. Ownership: consumes vector; the Vector2 is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -69624,7 +69635,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -69800,7 +69812,7 @@
       "mapping_state": "implemented",
       "scope": "Relative epsilon on both components, including subnormals, infinities and one quiet NaN. The boolean matches on CPU-1, CPU-2 and JavaScript. Ownership: consumes left, right; the Bool is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -69817,7 +69829,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70051,7 +70064,7 @@
       "scope": "Uncontracted F32 component addition. Non-NaN bits of the vector3 corpus match. Ownership: consumes left, right; the Vector3 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -70069,7 +70082,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70115,7 +70129,7 @@
       "scope": "Uncontracted F32 scalar addition to all three components. Non-NaN bits of the vector3 corpus match. Ownership: consumes vector and borrows value; the Vector3 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -70133,7 +70147,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70179,7 +70194,7 @@
       "scope": "Uncontracted F32 component subtraction. Non-NaN bits of the vector3 corpus match. Ownership: consumes left, right; the Vector3 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -70197,7 +70212,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70243,7 +70259,7 @@
       "scope": "Uncontracted F32 scalar subtraction from all three components. Non-NaN bits of the vector3 corpus match. Ownership: consumes vector and borrows value; the Vector3 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -70261,7 +70277,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70307,7 +70324,7 @@
       "scope": "F32 scalar multiplication of all three components. Non-NaN bits of the vector3 corpus match. Ownership: consumes vector and borrows scale; the Vector3 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -70325,7 +70342,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70371,7 +70389,7 @@
       "scope": "F32 component multiplication. Non-NaN bits of the vector3 corpus match. Ownership: consumes left, right; the Vector3 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -70389,7 +70407,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70952,7 +70971,7 @@
       "mapping_state": "implemented",
       "scope": "Component negation. Every result bit of the vector3 corpus matches, including signed zero, subnormals, infinities and one quiet NaN. Ownership: consumes vector; the Vector3 is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -70969,7 +70988,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -71015,7 +71035,7 @@
       "scope": "F32 component division, including zero divisors. Non-NaN bits of the vector3 corpus match. Ownership: consumes left, right; the Vector3 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -71034,7 +71054,8 @@
         "tests/test_harness.py",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -72117,7 +72138,7 @@
       "mapping_state": "implemented",
       "scope": "Component reciprocals, including zero divisors. Every result bit of the vector3 corpus matches. Ownership: consumes vector; the Vector3 is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -72134,7 +72155,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -72310,7 +72332,7 @@
       "mapping_state": "implemented",
       "scope": "Relative epsilon on all three components, including subnormals, infinities and one quiet NaN. The boolean matches on CPU-1, CPU-2 and JavaScript. Ownership: consumes left, right; the Bool is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -72327,7 +72349,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -72561,7 +72584,7 @@
       "scope": "Uncontracted F32 component addition. Non-NaN bits of the vector4 corpus match. Ownership: consumes left, right; the Vector4 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -72579,7 +72602,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -72625,7 +72649,7 @@
       "scope": "Uncontracted F32 scalar addition to all four components. Non-NaN bits of the vector4 corpus match. Ownership: consumes vector and borrows value; the Vector4 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -72643,7 +72667,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -72689,7 +72714,7 @@
       "scope": "Uncontracted F32 component subtraction. Non-NaN bits of the vector4 corpus match. Ownership: consumes left, right; the Vector4 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -72707,7 +72732,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -72753,7 +72779,7 @@
       "scope": "Uncontracted F32 scalar subtraction from all four components. Non-NaN bits of the vector4 corpus match. Ownership: consumes vector and borrows value; the Vector4 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -72771,7 +72797,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -73135,7 +73162,7 @@
       "scope": "F32 scalar multiplication of all four components. Non-NaN bits of the vector4 corpus match. Ownership: consumes vector and borrows factor; the Vector4 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -73153,7 +73180,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -73199,7 +73227,7 @@
       "scope": "F32 component multiplication. Non-NaN bits of the vector4 corpus match. Ownership: consumes left, right; the Vector4 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -73217,7 +73245,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -73262,7 +73291,7 @@
       "mapping_state": "implemented",
       "scope": "Component negation. Every result bit of the vector4 corpus matches, including signed zero, subnormals, infinities and one quiet NaN. Ownership: consumes vector; the Vector4 is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -73279,7 +73308,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -73325,7 +73355,7 @@
       "scope": "F32 component division, including zero divisors. Non-NaN bits of the vector4 corpus match. Ownership: consumes left, right; the Vector4 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -73344,7 +73374,8 @@
         "tests/test_harness.py",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -73716,7 +73747,7 @@
       "mapping_state": "implemented",
       "scope": "Component reciprocals, including zero divisors. Every result bit of the vector4 corpus matches. Ownership: consumes vector; the Vector4 is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -73734,7 +73765,8 @@
         "tests/fixtures/images.json",
         "tests/test_harness.py",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -73779,7 +73811,7 @@
       "mapping_state": "implemented",
       "scope": "Relative epsilon on all four components, including subnormals, infinities and one quiet NaN. The boolean matches on CPU-1, CPU-2 and JavaScript. Ownership: consumes left, right; the Bool is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: an invariant comparison was deleted by both compilers. Single calls and JavaScript are not measured (docs/MATH.md)"
       ],
       "adaptations": [],
@@ -73796,7 +73828,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75253,7 +75286,7 @@
       "scope": "Uncontracted F32 component addition. Non-NaN bits of the vector4 corpus match. Ownership: consumes left, right; the Vector4 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -75271,7 +75304,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75317,7 +75351,7 @@
       "scope": "Uncontracted F32 scalar addition to all four components. Non-NaN bits of the vector4 corpus match. Ownership: consumes quaternion, value; the Vector4 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -75335,7 +75369,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75381,7 +75416,7 @@
       "scope": "Uncontracted F32 component subtraction. Non-NaN bits of the vector4 corpus match. Ownership: consumes left, right; the Vector4 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -75399,7 +75434,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75445,7 +75481,7 @@
       "scope": "Uncontracted F32 scalar subtraction from all four components. Non-NaN bits of the vector4 corpus match. Ownership: consumes quaternion, value; the Vector4 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -75463,7 +75499,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75827,7 +75864,7 @@
       "scope": "F32 scalar multiplication of all four components. Non-NaN bits of the vector4 corpus match. Ownership: consumes quaternion, factor; the Vector4 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -75845,7 +75882,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75891,7 +75929,7 @@
       "scope": "F32 component division, including zero divisors; not a Hamilton inverse. Non-NaN bits of the vector4 corpus match. Ownership: consumes left, right; the Vector4 is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -75910,7 +75948,8 @@
         "tests/test_harness.py",
         "docs/MATH.md",
         "jonmath.bend",
-        "docs/API-TRACKING.md"
+        "docs/API-TRACKING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -76727,7 +76766,7 @@
       "mapping_state": "implemented",
       "scope": "Relative epsilon accepting q or -q, including subnormals, infinities and one quiet NaN. The boolean matches on CPU-1, CPU-2 and JavaScript. Ownership: borrows left, right; the Bool is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: an invariant comparison was deleted by both compilers. Single calls and JavaScript are not measured (docs/MATH.md)"
       ],
       "adaptations": [],
@@ -76744,7 +76783,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
