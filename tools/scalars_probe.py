@@ -34,12 +34,12 @@ EDGE = (
 REMAP = (0x00000000, 0x3f800000, 0xbf800000, 0x7fc00000)
 
 FUNCTIONS = {
-    'clamp': ('Clamp', 'M.Math.clamp({})', 'f'),
+    'clamp': ('Clamp', 'math_clamp_owned({})', 'f'),
     'lerp': ('Lerp', 'M.Math.lerp({})', 'f'),
-    'normalize': ('Normalize', 'M.Math.normalize({})', 'f'),
+    'normalize': ('Normalize', 'math_normalize_owned({})', 'f'),
     'remap': ('Remap', 'M.Math.remap({})', 'f'),
     'wrap': ('Wrap', 'M.Math.wrap({})', 'f'),
-    'float_equals': ('FloatEquals', 'M.Math.float_equals({})', 'b'),
+    'float_equals': ('FloatEquals', 'math_float_equals_owned({})', 'b'),
 }
 
 
@@ -110,6 +110,15 @@ def flag(value: Bool) -> IO(Unit):
   match value:
     case True{}: IO.print("true")
     case False{}: IO.print("false")
+# Ownership: these defs copy the library signatures (+ borrows, the rest
+# consumed) and return values the caller owns; the affine checker
+# enforces them on every compared call.
+def math_clamp_owned(+value: F32, +lower: F32, +upper: F32) -> F32:
+  M.Math.clamp(value, lower, upper)
+def math_normalize_owned(value: F32, +start: F32, end: F32) -> F32:
+  M.Math.normalize(value, start, end)
+def math_float_equals_owned(+left: F32, +right: F32) -> Bool:
+  M.Math.float_equals(left, right)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''

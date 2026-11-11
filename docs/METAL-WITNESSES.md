@@ -103,3 +103,10 @@ Metal witness: raylib:function:ColorLerp a3efe8a3801f423827424227172eed9802c5e6c
 Metal witness: raylib:function:ColorFromNormalized a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:ColorFromHSV a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:GenImageColor a3efe8a3801f423827424227172eed9802c5e6cb pass
+
+## Vector, quaternion and scalar ownership batch, 2026-11-11
+
+`vector2` (27993 cases), `vector3` (32412), `vector4` (32466) and `scalars`
+(8260) passed with `--gpu` after their calls were routed through ownership
+defs, but these probes compare no GPU lane, so the 40 raymath functions they
+cover have no witness here.

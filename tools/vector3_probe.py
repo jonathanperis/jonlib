@@ -39,12 +39,12 @@ AMOUNTS = (0x00000000, 0x3f800000, 0x7f800000, 0x7fc00000)
 
 # (name, C expression, Bend expression, 'v' vector / 'f' float / 'b' bool)
 PAIR = (
-    ('add', 'Vector3Add({a}, {b})', 'M.Vector3.add({a}, {b})', 'v'),
-    ('subtract', 'Vector3Subtract({a}, {b})', 'M.Vector3.subtract({a}, {b})', 'v'),
-    ('multiply', 'Vector3Multiply({a}, {b})', 'M.Vector3.multiply({a}, {b})', 'v'),
-    ('divide', 'Vector3Divide({a}, {b})', 'M.Vector3.divide({a}, {b})', 'v'),
-    ('negate', 'Vector3Negate({a})', 'M.Vector3.negate({a})', 'v'),
-    ('invert', 'Vector3Invert({a})', 'M.Vector3.invert({a})', 'v'),
+    ('add', 'Vector3Add({a}, {b})', 'vector3_add_owned({a}, {b})', 'v'),
+    ('subtract', 'Vector3Subtract({a}, {b})', 'vector3_subtract_owned({a}, {b})', 'v'),
+    ('multiply', 'Vector3Multiply({a}, {b})', 'vector3_multiply_owned({a}, {b})', 'v'),
+    ('divide', 'Vector3Divide({a}, {b})', 'vector3_divide_owned({a}, {b})', 'v'),
+    ('negate', 'Vector3Negate({a})', 'vector3_negate_owned({a})', 'v'),
+    ('invert', 'Vector3Invert({a})', 'vector3_invert_owned({a})', 'v'),
     ('reflect', 'Vector3Reflect({a}, {b})', 'M.Vector3.reflect({a}, {b})', 'v'),
     ('normalize', 'Vector3Normalize({a})', 'M.Vector3.normalize({a})', 'v'),
     ('length', 'Vector3Length({a})', 'M.Vector3.length({a})', 'f'),
@@ -53,12 +53,12 @@ PAIR = (
     ('cross', 'Vector3CrossProduct({a}, {b})', 'M.Vector3.cross_product({a}, {b})', 'v'),
     ('distance', 'Vector3Distance({a}, {b})', 'M.Vector3.distance({a}, {b})', 'f'),
     ('distance_sqr', 'Vector3DistanceSqr({a}, {b})', 'M.Vector3.distance_sqr({a}, {b})', 'f'),
-    ('equals', 'Vector3Equals({a}, {b})', 'M.Vector3.equals({a}, {b})', 'b'),
+    ('equals', 'Vector3Equals({a}, {b})', 'vector3_equals_owned({a}, {b})', 'b'),
 )
 SCALAR = (
-    ('add_value', 'Vector3AddValue({a}, {s})', 'M.Vector3.add_value({a}, word({s}))', 'v'),
-    ('subtract_value', 'Vector3SubtractValue({a}, {s})', 'M.Vector3.subtract_value({a}, word({s}))', 'v'),
-    ('scale', 'Vector3Scale({a}, {s})', 'M.Vector3.scale({a}, word({s}))', 'v'),
+    ('add_value', 'Vector3AddValue({a}, {s})', 'vector3_add_value_owned({a}, word({s}))', 'v'),
+    ('subtract_value', 'Vector3SubtractValue({a}, {s})', 'vector3_subtract_value_owned({a}, word({s}))', 'v'),
+    ('scale', 'Vector3Scale({a}, {s})', 'vector3_scale_owned({a}, word({s}))', 'v'),
 )
 
 
@@ -173,6 +173,29 @@ def flag(value: Bool) -> IO(Unit):
   match value:
     case True{}: IO.print("true")
     case False{}: IO.print("false")
+# Ownership: these defs copy the library signatures (+ borrows, the rest
+# consumed) and return values the caller owns; the affine checker
+# enforces them on every compared call.
+def vector3_add_owned(left: M.Vector3, right: M.Vector3) -> M.Vector3:
+  M.Vector3.add(left, right)
+def vector3_add_value_owned(vector: M.Vector3, +value: F32) -> M.Vector3:
+  M.Vector3.add_value(vector, value)
+def vector3_subtract_owned(left: M.Vector3, right: M.Vector3) -> M.Vector3:
+  M.Vector3.subtract(left, right)
+def vector3_subtract_value_owned(vector: M.Vector3, +value: F32) -> M.Vector3:
+  M.Vector3.subtract_value(vector, value)
+def vector3_scale_owned(vector: M.Vector3, +scale: F32) -> M.Vector3:
+  M.Vector3.scale(vector, scale)
+def vector3_multiply_owned(left: M.Vector3, right: M.Vector3) -> M.Vector3:
+  M.Vector3.multiply(left, right)
+def vector3_negate_owned(vector: M.Vector3) -> M.Vector3:
+  M.Vector3.negate(vector)
+def vector3_divide_owned(left: M.Vector3, right: M.Vector3) -> M.Vector3:
+  M.Vector3.divide(left, right)
+def vector3_invert_owned(vector: M.Vector3) -> M.Vector3:
+  M.Vector3.invert(vector)
+def vector3_equals_owned(left: M.Vector3, right: M.Vector3) -> Bool:
+  M.Vector3.equals(left, right)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''

@@ -42,12 +42,12 @@ AMOUNTS = (0x00000000, 0x3f800000, 0x7f800000, 0x7fc00000)
 
 # (name, C expression with a and b in scope, Bend expression, 'v' vector / 'f' float / 'b' bool)
 PAIR = (
-    ('add', 'Vector2Add({a}, {b})', 'M.Vector2.add({a}, {b})', 'v'),
-    ('subtract', 'Vector2Subtract({a}, {b})', 'M.Vector2.subtract({a}, {b})', 'v'),
-    ('multiply', 'Vector2Multiply({a}, {b})', 'M.Vector2.multiply({a}, {b})', 'v'),
-    ('divide', 'Vector2Divide({a}, {b})', 'M.Vector2.divide({a}, {b})', 'v'),
-    ('negate', 'Vector2Negate({a})', 'M.Vector2.negate({a})', 'v'),
-    ('invert', 'Vector2Invert({a})', 'M.Vector2.invert({a})', 'v'),
+    ('add', 'Vector2Add({a}, {b})', 'vector2_add_owned({a}, {b})', 'v'),
+    ('subtract', 'Vector2Subtract({a}, {b})', 'vector2_subtract_owned({a}, {b})', 'v'),
+    ('multiply', 'Vector2Multiply({a}, {b})', 'vector2_multiply_owned({a}, {b})', 'v'),
+    ('divide', 'Vector2Divide({a}, {b})', 'vector2_divide_owned({a}, {b})', 'v'),
+    ('negate', 'Vector2Negate({a})', 'vector2_negate_owned({a})', 'v'),
+    ('invert', 'Vector2Invert({a})', 'vector2_invert_owned({a})', 'v'),
     ('reflect', 'Vector2Reflect({a}, {b})', 'M.Vector2.reflect({a}, {b})', 'v'),
     ('normalize', 'Vector2Normalize({a})', 'M.Vector2.normalize({a})', 'v'),
     ('length', 'Vector2Length({a})', 'M.Vector2.length({a})', 'f'),
@@ -56,12 +56,12 @@ PAIR = (
     ('cross', 'Vector2CrossProduct({a}, {b})', 'M.Vector2.cross_product({a}, {b})', 'f'),
     ('distance', 'Vector2Distance({a}, {b})', 'M.Vector2.distance({a}, {b})', 'f'),
     ('distance_sqr', 'Vector2DistanceSqr({a}, {b})', 'M.Vector2.distance_sqr({a}, {b})', 'f'),
-    ('equals', 'Vector2Equals({a}, {b})', 'M.Vector2.equals({a}, {b})', 'b'),
+    ('equals', 'Vector2Equals({a}, {b})', 'vector2_equals_owned({a}, {b})', 'b'),
 )
 SCALAR = (
-    ('add_value', 'Vector2AddValue({a}, {s})', 'M.Vector2.add_value({a}, word({s}))', 'v'),
-    ('subtract_value', 'Vector2SubtractValue({a}, {s})', 'M.Vector2.subtract_value({a}, word({s}))', 'v'),
-    ('scale', 'Vector2Scale({a}, {s})', 'M.Vector2.scale({a}, word({s}))', 'v'),
+    ('add_value', 'Vector2AddValue({a}, {s})', 'vector2_add_value_owned({a}, word({s}))', 'v'),
+    ('subtract_value', 'Vector2SubtractValue({a}, {s})', 'vector2_subtract_value_owned({a}, word({s}))', 'v'),
+    ('scale', 'Vector2Scale({a}, {s})', 'vector2_scale_owned({a}, word({s}))', 'v'),
 )
 
 
@@ -185,6 +185,29 @@ def flag(value: Bool) -> IO(Unit):
   match value:
     case True{}: IO.print("true")
     case False{}: IO.print("false")
+# Ownership: these defs copy the library signatures (+ borrows, the rest
+# consumed) and return values the caller owns; the affine checker
+# enforces them on every compared call.
+def vector2_add_owned(left: M.Vector2, right: M.Vector2) -> M.Vector2:
+  M.Vector2.add(left, right)
+def vector2_add_value_owned(vector: M.Vector2, +value: F32) -> M.Vector2:
+  M.Vector2.add_value(vector, value)
+def vector2_subtract_owned(left: M.Vector2, right: M.Vector2) -> M.Vector2:
+  M.Vector2.subtract(left, right)
+def vector2_subtract_value_owned(vector: M.Vector2, +value: F32) -> M.Vector2:
+  M.Vector2.subtract_value(vector, value)
+def vector2_scale_owned(vector: M.Vector2, +value: F32) -> M.Vector2:
+  M.Vector2.scale(vector, value)
+def vector2_multiply_owned(left: M.Vector2, right: M.Vector2) -> M.Vector2:
+  M.Vector2.multiply(left, right)
+def vector2_negate_owned(vector: M.Vector2) -> M.Vector2:
+  M.Vector2.negate(vector)
+def vector2_divide_owned(left: M.Vector2, right: M.Vector2) -> M.Vector2:
+  M.Vector2.divide(left, right)
+def vector2_invert_owned(vector: M.Vector2) -> M.Vector2:
+  M.Vector2.invert(vector)
+def vector2_equals_owned(left: M.Vector2, right: M.Vector2) -> Bool:
+  M.Vector2.equals(left, right)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''

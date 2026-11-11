@@ -44,39 +44,39 @@ AMOUNTS = (0x00000000, 0x3f800000, 0x7f800000, 0x7fc00000)
 
 # (name, C expression, Bend expression, 'v' vector / 'f' float / 'b' bool)
 VPAIR = (
-    ('add', 'Vector4Add({a}, {b})', 'M.Vector4.add({a}, {b})', 'v'),
-    ('subtract', 'Vector4Subtract({a}, {b})', 'M.Vector4.subtract({a}, {b})', 'v'),
-    ('multiply', 'Vector4Multiply({a}, {b})', 'M.Vector4.multiply({a}, {b})', 'v'),
-    ('divide', 'Vector4Divide({a}, {b})', 'M.Vector4.divide({a}, {b})', 'v'),
-    ('negate', 'Vector4Negate({a})', 'M.Vector4.negate({a})', 'v'),
-    ('invert', 'Vector4Invert({a})', 'M.Vector4.invert({a})', 'v'),
+    ('add', 'Vector4Add({a}, {b})', 'vector4_add_owned({a}, {b})', 'v'),
+    ('subtract', 'Vector4Subtract({a}, {b})', 'vector4_subtract_owned({a}, {b})', 'v'),
+    ('multiply', 'Vector4Multiply({a}, {b})', 'vector4_multiply_owned({a}, {b})', 'v'),
+    ('divide', 'Vector4Divide({a}, {b})', 'vector4_divide_owned({a}, {b})', 'v'),
+    ('negate', 'Vector4Negate({a})', 'vector4_negate_owned({a})', 'v'),
+    ('invert', 'Vector4Invert({a})', 'vector4_invert_owned({a})', 'v'),
     ('normalize', 'Vector4Normalize({a})', 'M.Vector4.normalize({a})', 'v'),
     ('length', 'Vector4Length({a})', 'M.Vector4.length({a})', 'f'),
     ('length_sqr', 'Vector4LengthSqr({a})', 'M.Vector4.length_sqr({a})', 'f'),
     ('dot', 'Vector4DotProduct({a}, {b})', 'M.Vector4.dot_product({a}, {b})', 'f'),
     ('distance', 'Vector4Distance({a}, {b})', 'M.Vector4.distance({a}, {b})', 'f'),
     ('distance_sqr', 'Vector4DistanceSqr({a}, {b})', 'M.Vector4.distance_sqr({a}, {b})', 'f'),
-    ('equals', 'Vector4Equals({a}, {b})', 'M.Vector4.equals({a}, {b})', 'b'),
+    ('equals', 'Vector4Equals({a}, {b})', 'vector4_equals_owned({a}, {b})', 'b'),
 )
 QPAIR = (
-    ('q_add', 'QuaternionAdd({a}, {b})', 'M.Quaternion.add({a}, {b})', 'v'),
-    ('q_subtract', 'QuaternionSubtract({a}, {b})', 'M.Quaternion.subtract({a}, {b})', 'v'),
+    ('q_add', 'QuaternionAdd({a}, {b})', 'quaternion_add_owned({a}, {b})', 'v'),
+    ('q_subtract', 'QuaternionSubtract({a}, {b})', 'quaternion_subtract_owned({a}, {b})', 'v'),
     ('q_multiply', 'QuaternionMultiply({a}, {b})', 'M.Quaternion.multiply({a}, {b})', 'v'),
-    ('q_divide', 'QuaternionDivide({a}, {b})', 'M.Quaternion.divide({a}, {b})', 'v'),
+    ('q_divide', 'QuaternionDivide({a}, {b})', 'quaternion_divide_owned({a}, {b})', 'v'),
     ('q_invert', 'QuaternionInvert({a})', 'M.Quaternion.invert({a})', 'v'),
     ('q_normalize', 'QuaternionNormalize({a})', 'M.Quaternion.normalize({a})', 'v'),
     ('q_length', 'QuaternionLength({a})', 'M.Quaternion.length({a})', 'f'),
-    ('q_equals', 'QuaternionEquals({a}, {b})', 'M.Quaternion.equals({a}, {b})', 'b'),
+    ('q_equals', 'QuaternionEquals({a}, {b})', 'quaternion_equals_owned({a}, {b})', 'b'),
 )
 VSCALAR = (
-    ('add_value', 'Vector4AddValue({a}, {s})', 'M.Vector4.add_value({a}, word({s}))', 'v'),
-    ('subtract_value', 'Vector4SubtractValue({a}, {s})', 'M.Vector4.subtract_value({a}, word({s}))', 'v'),
-    ('scale', 'Vector4Scale({a}, {s})', 'M.Vector4.scale({a}, word({s}))', 'v'),
+    ('add_value', 'Vector4AddValue({a}, {s})', 'vector4_add_value_owned({a}, word({s}))', 'v'),
+    ('subtract_value', 'Vector4SubtractValue({a}, {s})', 'vector4_subtract_value_owned({a}, word({s}))', 'v'),
+    ('scale', 'Vector4Scale({a}, {s})', 'vector4_scale_owned({a}, word({s}))', 'v'),
 )
 QSCALAR = (
-    ('q_add_value', 'QuaternionAddValue({a}, {s})', 'M.Quaternion.add_value({a}, word({s}))', 'v'),
-    ('q_subtract_value', 'QuaternionSubtractValue({a}, {s})', 'M.Quaternion.subtract_value({a}, word({s}))', 'v'),
-    ('q_scale', 'QuaternionScale({a}, {s})', 'M.Quaternion.scale({a}, word({s}))', 'v'),
+    ('q_add_value', 'QuaternionAddValue({a}, {s})', 'quaternion_add_value_owned({a}, word({s}))', 'v'),
+    ('q_subtract_value', 'QuaternionSubtractValue({a}, {s})', 'quaternion_subtract_value_owned({a}, word({s}))', 'v'),
+    ('q_scale', 'QuaternionScale({a}, {s})', 'quaternion_scale_owned({a}, word({s}))', 'v'),
 )
 
 
@@ -195,6 +195,43 @@ def flag(value: Bool) -> IO(Unit):
   match value:
     case True{}: IO.print("true")
     case False{}: IO.print("false")
+# Ownership: these defs copy the library signatures (+ borrows, the rest
+# consumed) and return values the caller owns; the affine checker
+# enforces them on every compared call.
+def vector4_add_owned(left: M.Vector4, right: M.Vector4) -> M.Vector4:
+  M.Vector4.add(left, right)
+def vector4_add_value_owned(vector: M.Vector4, +value: F32) -> M.Vector4:
+  M.Vector4.add_value(vector, value)
+def vector4_subtract_owned(left: M.Vector4, right: M.Vector4) -> M.Vector4:
+  M.Vector4.subtract(left, right)
+def vector4_subtract_value_owned(vector: M.Vector4, +value: F32) -> M.Vector4:
+  M.Vector4.subtract_value(vector, value)
+def vector4_scale_owned(vector: M.Vector4, +factor: F32) -> M.Vector4:
+  M.Vector4.scale(vector, factor)
+def vector4_multiply_owned(left: M.Vector4, right: M.Vector4) -> M.Vector4:
+  M.Vector4.multiply(left, right)
+def vector4_negate_owned(vector: M.Vector4) -> M.Vector4:
+  M.Vector4.negate(vector)
+def vector4_divide_owned(left: M.Vector4, right: M.Vector4) -> M.Vector4:
+  M.Vector4.divide(left, right)
+def vector4_invert_owned(vector: M.Vector4) -> M.Vector4:
+  M.Vector4.invert(vector)
+def vector4_equals_owned(left: M.Vector4, right: M.Vector4) -> Bool:
+  M.Vector4.equals(left, right)
+def quaternion_add_owned(left: M.Vector4, right: M.Vector4) -> M.Vector4:
+  M.Quaternion.add(left, right)
+def quaternion_add_value_owned(quaternion: M.Vector4, value: F32) -> M.Vector4:
+  M.Quaternion.add_value(quaternion, value)
+def quaternion_subtract_owned(left: M.Vector4, right: M.Vector4) -> M.Vector4:
+  M.Quaternion.subtract(left, right)
+def quaternion_subtract_value_owned(quaternion: M.Vector4, value: F32) -> M.Vector4:
+  M.Quaternion.subtract_value(quaternion, value)
+def quaternion_scale_owned(quaternion: M.Vector4, factor: F32) -> M.Vector4:
+  M.Quaternion.scale(quaternion, factor)
+def quaternion_divide_owned(left: M.Vector4, right: M.Vector4) -> M.Vector4:
+  M.Quaternion.divide(left, right)
+def quaternion_equals_owned(+left: M.Vector4, +right: M.Vector4) -> Bool:
+  M.Quaternion.equals(left, right)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
