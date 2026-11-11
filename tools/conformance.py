@@ -1755,7 +1755,8 @@ def main():
         for name, expected, key in [('transforms','transform contracts ok','transform_contracts'),
                                     ('decoding','decode contracts ok','decode_contracts')]:
             binary = BUILD / f'verify-{name}-gpu'
-            run([*cli, ROOT / f'tests/{name}_gpu.bend', '-o', binary])
+            # The same compile budget as the CPU contracts above.
+            run([*cli, ROOT / f'tests/{name}_gpu.bend', '-o', binary], timeout=600)
             if run([binary, *bend_runtime('--gpu', 'on')]).strip() != expected:
                 raise ValueError(f'GPU {name} contract failed')
             report[key].append('gpu-forced')
