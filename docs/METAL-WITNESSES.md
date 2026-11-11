@@ -168,3 +168,42 @@ Metal witness: raylib:function:GetRayCollisionTriangle a3efe8a3801f4238274242271
 Metal witness: raylib:function:GetRayCollisionQuad a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:ImageCopy a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:IsImageValid a3efe8a3801f423827424227172eed9802c5e6cb pass
+
+## Image ownership batch, 2026-11-11
+
+`surface-format` (2605 cases, 13 formats) with `--gpu`, after 45 Surface
+operations were routed through ownership defs: every lane, gpu included,
+matched. Entries whose evidence also cites `tools/conformance.py` rely on its
+forced-GPU run above (281 scenarios). Entries that cite a probe not yet run
+with `--gpu` have no witness here.
+
+Metal witness: raylib:function:ImageAlphaCrop a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageAlphaClear a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageAlphaMask a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageAlphaPremultiply a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageFlipVertical a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageFlipHorizontal a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageRotateCW a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageRotateCCW a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:LoadImagePalette a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GetImageAlphaBorder a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageClearBackground a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawPixel a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawPixelV a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawLine a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawLineV a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawLineEx a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawLineStrip a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawTriangle a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawTriangleLines a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawTriangleFan a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawTriangleStrip a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawRectangle a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawRectangleV a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawRectangleRec a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawRectangleLines a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawRectangleLinesEx a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawCircle a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawCircleV a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawCircleLines a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawCircleLinesV a3efe8a3801f423827424227172eed9802c5e6cb pass

@@ -30,6 +30,100 @@ UNSUPPORTED = set()
 LIBM = gradient_reference()
 
 
+OWNED_DEFS = '''\
+# Ownership: these defs copy the library signatures (+ borrows, the rest
+# consumed) and return values the caller owns; the affine checker
+# enforces them on every compared call.
+def surface_to_pot_owned(surface: J.Surface, fill: U32) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.to_pot(surface, fill)
+def surface_crop_owned(surface: J.Surface, +rect: J.Rectangle) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.crop(surface, rect)
+def surface_alpha_crop_owned(surface: J.Surface, threshold: F32) -> J.Surface:
+  J.Surface.alpha_crop(surface, threshold)
+def surface_alpha_clear_owned(surface: J.Surface, +color: U32, +threshold: F32) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.alpha_clear(surface, color, threshold)
+def surface_alpha_premultiply_owned(surface: J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.alpha_premultiply(surface)
+def surface_resize_nn_owned(surface: J.Surface, width: U32, height: U32) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.resize_nn(surface, width, height)
+def surface_resize_canvas_owned(surface: J.Surface, +width: U32, +height: U32, +x: F32, +y: F32, fill: U32) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.resize_canvas(surface, width, height, x, y, fill)
+def surface_dither_owned(surface: J.Surface, +r: U32, +g: U32, +b: U32, +a: U32) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.dither(surface, r, g, b, a)
+def surface_dither_native_owned(surface: J.Surface, +r: U32, +g: U32, +b: U32, +a: U32) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.dither_native(surface, r, g, b, a)
+def surface_flip_vertical_owned(surface: J.Surface) -> J.Surface:
+  J.Surface.flip_vertical(surface)
+def surface_flip_horizontal_owned(surface: J.Surface) -> J.Surface:
+  J.Surface.flip_horizontal(surface)
+def surface_rotate_cw_owned(surface: J.Surface) -> J.Surface:
+  J.Surface.rotate_cw(surface)
+def surface_rotate_ccw_owned(surface: J.Surface) -> J.Surface:
+  J.Surface.rotate_ccw(surface)
+def surface_color_tint_owned(surface: J.Surface, color: U32) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.color_tint(surface, color)
+def surface_color_invert_owned(surface: J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.color_invert(surface)
+def surface_color_contrast_owned(surface: J.Surface, +amount: F32) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.color_contrast(surface, amount)
+def surface_color_brightness_owned(surface: J.Surface, +amount: F32) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.color_brightness(surface, amount)
+def surface_color_replace_owned(surface: J.Surface, original: U32, replacement: U32) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.color_replace(surface, original, replacement)
+def surface_colors_owned(surface: J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>:
+  J.Surface.colors(surface)
+def surface_load_palette_owned(surface: J.Surface, maximum: U32) -> J.Surface & Maybe<J.Image.Palette>:
+  J.Surface.load_palette(surface, maximum)
+def surface_alpha_border_owned(surface: J.Surface, threshold: F32) -> J.Surface & J.Rectangle:
+  J.Surface.alpha_border(surface, threshold)
+def surface_get_owned(surface: J.Surface, +x: U32, +y: U32) -> J.Surface & Maybe<&2, U32>:
+  J.Surface.get(surface, x, y)
+def surface_clear_owned(surface: J.Surface, color: U32) -> J.Surface:
+  J.Surface.clear(surface, color)
+def surface_draw_pixel_owned(surface: J.Surface, x: F32, y: F32, color: U32) -> J.Surface:
+  J.Surface.draw_pixel(surface, x, y, color)
+def surface_draw_pixel_v_owned(surface: J.Surface, position: M.Vector2, color: U32) -> J.Surface:
+  J.Surface.draw_pixel_v(surface, position, color)
+def surface_draw_line_owned(surface: J.Surface, x0: F32, y0: F32, x1: F32, y1: F32, color: U32) -> J.Surface:
+  J.Surface.draw_line(surface, x0, y0, x1, y1, color)
+def surface_draw_line_v_owned(surface: J.Surface, start: M.Vector2, end: M.Vector2, color: U32) -> J.Surface:
+  J.Surface.draw_line_v(surface, start, end, color)
+def surface_draw_line_ex_owned(surface: J.Surface, start: M.Vector2, end: M.Vector2, thickness: U32, color: U32) -> J.Surface:
+  J.Surface.draw_line_ex(surface, start, end, thickness, color)
+def surface_draw_line_strip_owned(surface: J.Surface, points: +List<M.Vector2>, color: U32) -> J.Surface:
+  J.Surface.draw_line_strip(surface, points, color)
+def surface_draw_triangle_owned(surface: J.Surface, v1: M.Vector2, v2: M.Vector2, v3: M.Vector2, color: U32) -> J.Surface:
+  J.Surface.draw_triangle(surface, v1, v2, v3, color)
+def surface_draw_triangle_gradient_owned(surface: J.Surface, v1: M.Vector2, v2: M.Vector2, v3: M.Vector2, c1: U32, c2: U32, c3: U32) -> J.Surface:
+  J.Surface.draw_triangle_gradient(surface, v1, v2, v3, c1, c2, c3)
+def surface_draw_triangle_lines_owned(surface: J.Surface, v1: M.Vector2, v2: M.Vector2, v3: M.Vector2, color: U32) -> J.Surface:
+  J.Surface.draw_triangle_lines(surface, v1, v2, v3, color)
+def surface_draw_triangle_fan_owned(surface: J.Surface, points: +List<M.Vector2>, color: U32) -> J.Surface:
+  J.Surface.draw_triangle_fan(surface, points, color)
+def surface_draw_triangle_strip_owned(surface: J.Surface, points: +List<M.Vector2>, color: U32) -> J.Surface:
+  J.Surface.draw_triangle_strip(surface, points, color)
+def surface_draw_rectangle_owned(surface: J.Surface, x: F32, y: F32, width: F32, height: F32, color: U32) -> J.Surface:
+  J.Surface.draw_rectangle(surface, x, y, width, height, color)
+def surface_draw_rectangle_v_owned(surface: J.Surface, position: M.Vector2, size: M.Vector2, color: U32) -> J.Surface:
+  J.Surface.draw_rectangle_v(surface, position, size, color)
+def surface_draw_rectangle_rec_owned(surface: J.Surface, rect: J.Rectangle, color: U32) -> J.Surface:
+  J.Surface.draw_rectangle_rec(surface, rect, color)
+def surface_draw_rectangle_lines_owned(surface: J.Surface, x: F32, y: F32, width: F32, height: F32, color: U32) -> J.Surface:
+  J.Surface.draw_rectangle_lines(surface, x, y, width, height, color)
+def surface_draw_rectangle_lines_ex_owned(surface: J.Surface, rect: J.Rectangle, thickness: U32, color: U32) -> J.Surface:
+  J.Surface.draw_rectangle_lines_ex(surface, rect, thickness, color)
+def surface_draw_circle_owned(surface: J.Surface, cx: F32, cy: F32, radius: U32, color: U32) -> J.Surface:
+  J.Surface.draw_circle(surface, cx, cy, radius, color)
+def surface_draw_circle_v_owned(surface: J.Surface, center: M.Vector2, radius: U32, color: U32) -> J.Surface:
+  J.Surface.draw_circle_v(surface, center, radius, color)
+def surface_draw_circle_lines_owned(surface: J.Surface, cx: F32, cy: F32, radius: U32, color: U32) -> J.Surface:
+  J.Surface.draw_circle_lines(surface, cx, cy, radius, color)
+def surface_draw_circle_lines_v_owned(surface: J.Surface, center: M.Vector2, radius: U32, color: U32) -> J.Surface:
+  J.Surface.draw_circle_lines_v(surface, center, radius, color)
+def surface_alpha_mask_native_owned(destination: J.Surface, source: J.Surface) -> Result<&1, &1, (J.Surface & J.Surface) & J.Surface.Error, J.Surface & J.Surface>:
+  J.Surface.alpha_mask_native(destination, source)
+'''
+
 def word(color):
     r, g, b, a = color
     return (r << 24) | (g << 16) | (b << 8) | a
@@ -72,11 +166,11 @@ GRADIENT = ((255, 0, 0, 255), (0, 255, 0, 128), (0, 0, 255, 0), (250, 250, 20, 2
 # kind: 'total' and 'image' (Result) emit a Surface; 'colors' RGBA bytes; 'color' one RGBA color;
 # 'rect' four F32 words; 'palette' the count and every padded entry.
 OPS = {
-    'flip-vertical': ('ImageFlipVertical(&im);', 'total', 'J.Surface.flip_vertical(s)'),
-    'flip-horizontal': ('ImageFlipHorizontal(&im);', 'total', 'J.Surface.flip_horizontal(s)'),
-    'rotate-cw': ('ImageRotateCW(&im);', 'total', 'J.Surface.rotate_cw(s)'),
-    'rotate-ccw': ('ImageRotateCCW(&im);', 'total', 'J.Surface.rotate_ccw(s)'),
-    'crop': ('ImageCrop(&im,(Rectangle){1,1,3,2});', 'image', 'J.Surface.crop(s, J.Rectangle{1.0, 1.0, 3.0, 2.0})'),
+    'flip-vertical': ('ImageFlipVertical(&im);', 'total', 'surface_flip_vertical_owned(s)'),
+    'flip-horizontal': ('ImageFlipHorizontal(&im);', 'total', 'surface_flip_horizontal_owned(s)'),
+    'rotate-cw': ('ImageRotateCW(&im);', 'total', 'surface_rotate_cw_owned(s)'),
+    'rotate-ccw': ('ImageRotateCCW(&im);', 'total', 'surface_rotate_ccw_owned(s)'),
+    'crop': ('ImageCrop(&im,(Rectangle){1,1,3,2});', 'image', 'surface_crop_owned(s, J.Rectangle{1.0, 1.0, 3.0, 2.0})'),
     'from-image': ('{Image r=ImageFromImage(im,(Rectangle){1,0,2,3});UnloadImage(im);im=r;}', 'image',
                    'second(J.Surface.extract(s, J.Rectangle{1.0, 0.0, 2.0, 3.0}))'),
     # raylib 6.2 truncates a fractional rectangle that passes its validation and rejects one outside.
@@ -85,49 +179,49 @@ OPS = {
     'from-image-outside': ('{Image r=ImageFromImage(im,(Rectangle){4,0,3,2});UnloadImage(im);im=r;}', 'image',
                            'second(J.Surface.extract(s, J.Rectangle{4.0, 0.0, 3.0, 2.0}))'),
     'resize-canvas': (f'ImageResizeCanvas(&im,7,3,-1,1,{c_color(FILL)});', 'image',
-                      f'J.Surface.resize_canvas(s, 7, 3, F32.neg(1.0), 1.0, {word(FILL)})'),
+                      f'surface_resize_canvas_owned(s, 7, 3, F32.neg(1.0), 1.0, {word(FILL)})'),
     'copy': ('{Image r=ImageCopy(im);UnloadImage(im);im=r;}', 'image', 'copied(J.Surface.copy(s))'),
-    'tint': ('ImageColorTint(&im,(Color){200,100,50,180});', 'image', f'J.Surface.color_tint(s, {word((200, 100, 50, 180))})'),
-    'invert': ('ImageColorInvert(&im);', 'image', 'J.Surface.color_invert(s)'),
-    'contrast': ('ImageColorContrast(&im,37.5f);', 'image', 'J.Surface.color_contrast(s, 37.5)'),
-    'brightness': ('ImageColorBrightness(&im,-40);', 'image', 'J.Surface.color_brightness(s, F32.neg(40.0))'),
+    'tint': ('ImageColorTint(&im,(Color){200,100,50,180});', 'image', f'surface_color_tint_owned(s, {word((200, 100, 50, 180))})'),
+    'invert': ('ImageColorInvert(&im);', 'image', 'surface_color_invert_owned(s)'),
+    'contrast': ('ImageColorContrast(&im,37.5f);', 'image', 'surface_color_contrast_owned(s, 37.5)'),
+    'brightness': ('ImageColorBrightness(&im,-40);', 'image', 'surface_color_brightness_owned(s, F32.neg(40.0))'),
     'replace': ('ImageColorReplace(&im,(Color){0,0,0,255},(Color){12,34,56,78});', 'image',
-                f'J.Surface.color_replace(s, 255, {word((12, 34, 56, 78))})'),
+                f'surface_color_replace_owned(s, 255, {word((12, 34, 56, 78))})'),
     'grayscale': ('ImageColorGrayscale(&im);', 'image', 'J.Surface.color_grayscale(s)'),
-    'premultiply': ('ImageAlphaPremultiply(&im);', 'image', 'J.Surface.alpha_premultiply(s)'),
+    'premultiply': ('ImageAlphaPremultiply(&im);', 'image', 'surface_alpha_premultiply_owned(s)'),
     'blur': ('ImageBlurGaussian(&im,1);', 'image', 'J.Surface.blur_gaussian(s, 1)'),
     'convolution': ('{float k[9]={0.0625f,0.125f,0.0625f,0.125f,0.25f,0.125f,0.0625f,0.125f,0.0625f};ImageKernelConvolution(&im,k,9);}',
                     'image', 'J.Surface.kernel_convolution(s, [0.0625, 0.125, 0.0625, 0.125, 0.25, 0.125, 0.0625, 0.125, 0.0625])'),
     'resize': ('ImageResize(&im,7,3);', 'image', 'J.Surface.resize(s, 7, 3)'),
-    'resize-nn': ('ImageResizeNN(&im,7,3);', 'image', 'J.Surface.resize_nn(s, 7, 3)'),
-    'dither': ('ImageDither(&im,5,6,5,0);', 'image', 'J.Surface.dither(s, 5, 6, 5, 0)'),
-    'dither-4444': ('ImageDither(&im,4,4,4,4);', 'image', 'J.Surface.dither(s, 4, 4, 4, 4)'),
+    'resize-nn': ('ImageResizeNN(&im,7,3);', 'image', 'surface_resize_nn_owned(s, 7, 3)'),
+    'dither': ('ImageDither(&im,5,6,5,0);', 'image', 'surface_dither_owned(s, 5, 6, 5, 0)'),
+    'dither-4444': ('ImageDither(&im,4,4,4,4);', 'image', 'surface_dither_owned(s, 4, 4, 4, 4)'),
     # Channel widths summing past 16: raylib warns and leaves the image unchanged.
-    'dither-over': ('ImageDither(&im,8,8,8,8);', 'image', 'J.Surface.dither_native(s, 8, 8, 8, 8)'),
-    'clear': (f'ImageClearBackground(&im,{c_color(DRAW)});', 'total', f'J.Surface.clear(s, {word(DRAW)})'),
-    'pixel': (f'ImageDrawPixel(&im,2,1,{c_color(DRAW)});', 'total', f'J.Surface.draw_pixel(s, 2.0, 1.0, {word(DRAW)})'),
+    'dither-over': ('ImageDither(&im,8,8,8,8);', 'image', 'surface_dither_native_owned(s, 8, 8, 8, 8)'),
+    'clear': (f'ImageClearBackground(&im,{c_color(DRAW)});', 'total', f'surface_clear_owned(s, {word(DRAW)})'),
+    'pixel': (f'ImageDrawPixel(&im,2,1,{c_color(DRAW)});', 'total', f'surface_draw_pixel_owned(s, 2.0, 1.0, {word(DRAW)})'),
     'rectangle': (f'ImageDrawRectangle(&im,1,1,3,2,{c_color(DRAW)});', 'total',
-                  f'J.Surface.draw_rectangle(s, 1.0, 1.0, 3.0, 2.0, {word(DRAW)})'),
-    'circle': (f'ImageDrawCircle(&im,2,2,2,{c_color(DRAW)});', 'total', f'J.Surface.draw_circle(s, 2.0, 2.0, 2, {word(DRAW)})'),
-    'line': (f'ImageDrawLine(&im,0,0,4,3,{c_color(DRAW)});', 'total', f'J.Surface.draw_line(s, 0.0, 0.0, 4.0, 3.0, {word(DRAW)})'),
+                  f'surface_draw_rectangle_owned(s, 1.0, 1.0, 3.0, 2.0, {word(DRAW)})'),
+    'circle': (f'ImageDrawCircle(&im,2,2,2,{c_color(DRAW)});', 'total', f'surface_draw_circle_owned(s, 2.0, 2.0, 2, {word(DRAW)})'),
+    'line': (f'ImageDrawLine(&im,0,0,4,3,{c_color(DRAW)});', 'total', f'surface_draw_line_owned(s, 0.0, 0.0, 4.0, 3.0, {word(DRAW)})'),
     'triangle': (f'ImageDrawTriangle(&im,(Vector2){{0,0}},(Vector2){{1,3}},(Vector2){{4,1}},{c_color(DRAW)});', 'total',
-                 f'J.Surface.draw_triangle(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{1.0, 3.0}}, M.Vector2{{4.0, 1.0}}, {word(DRAW)})'),
+                 f'surface_draw_triangle_owned(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{1.0, 3.0}}, M.Vector2{{4.0, 1.0}}, {word(DRAW)})'),
     'triangle-gradient': ('ImageDrawTriangleGradient(&im,(Vector2){0,0},(Vector2){1,3},(Vector2){4,1},(Color){255,0,0,255},(Color){0,255,0,128},(Color){0,0,255,0});',
-                          'total', f'J.Surface.draw_triangle_gradient(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{1.0, 3.0}}, M.Vector2{{4.0, 1.0}}, '
+                          'total', f'surface_draw_triangle_gradient_owned(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{1.0, 3.0}}, M.Vector2{{4.0, 1.0}}, '
                           f'{word((255, 0, 0, 255))}, {word((0, 255, 0, 128))}, {word((0, 0, 255, 0))})'),
     'from-channel': ('{Image r=ImageFromChannel(im,1);UnloadImage(im);im=r;}', 'image', 'second(J.Surface.from_channel(s, 1.0))'),
-    'alpha-crop': ('ImageAlphaCrop(&im,0.3f);', 'total', 'J.Surface.alpha_crop(s, 0.3)'),
-    'pixel-v': (f'ImageDrawPixelV(&im,(Vector2){{2.7f,1.2f}},{c_color(DRAW)});', 'total', f'J.Surface.draw_pixel_v(s, M.Vector2{{2.7, 1.2}}, {word(DRAW)})'),
+    'alpha-crop': ('ImageAlphaCrop(&im,0.3f);', 'total', 'surface_alpha_crop_owned(s, 0.3)'),
+    'pixel-v': (f'ImageDrawPixelV(&im,(Vector2){{2.7f,1.2f}},{c_color(DRAW)});', 'total', f'surface_draw_pixel_v_owned(s, M.Vector2{{2.7, 1.2}}, {word(DRAW)})'),
     'rectangle-v': (f'ImageDrawRectangleV(&im,(Vector2){{1,1}},(Vector2){{3,2}},{c_color(DRAW)});', 'total',
-                    f'J.Surface.draw_rectangle_v(s, M.Vector2{{1.0, 1.0}}, M.Vector2{{3.0, 2.0}}, {word(DRAW)})'),
+                    f'surface_draw_rectangle_v_owned(s, M.Vector2{{1.0, 1.0}}, M.Vector2{{3.0, 2.0}}, {word(DRAW)})'),
     'rectangle-rec': (f'ImageDrawRectangleRec(&im,(Rectangle){{0.5f,1,3.5f,2}},{c_color(DRAW)});', 'total',
-                      f'J.Surface.draw_rectangle_rec(s, J.Rectangle{{0.5, 1.0, 3.5, 2.0}}, {word(DRAW)})'),
+                      f'surface_draw_rectangle_rec_owned(s, J.Rectangle{{0.5, 1.0, 3.5, 2.0}}, {word(DRAW)})'),
     'rectangle-lines-ex': (f'ImageDrawRectangleLinesEx(&im,(Rectangle){{0,0,5,3}},1,{c_color(DRAW)});', 'total',
-                           f'J.Surface.draw_rectangle_lines_ex(s, J.Rectangle{{0.0, 0.0, 5.0, 3.0}}, 1, {word(DRAW)})'),
+                           f'surface_draw_rectangle_lines_ex_owned(s, J.Rectangle{{0.0, 0.0, 5.0, 3.0}}, 1, {word(DRAW)})'),
     'rectangle-lines': (f'ImageDrawRectangleLines(&im,1,0,4,3,{c_color(DRAW)});', 'total',
-                        f'J.Surface.draw_rectangle_lines(s, 1.0, 0.0, 4.0, 3.0, {word(DRAW)})'),
+                        f'surface_draw_rectangle_lines_owned(s, 1.0, 0.0, 4.0, 3.0, {word(DRAW)})'),
     'line-strip': (f'{{Vector2 p[4]={{{{0,0}},{{4,1}},{{1,3}},{{5.6f,2.4f}}}};ImageDrawLineStrip(&im,p,4,{c_color(DRAW)});}}', 'total',
-                   f'J.Surface.draw_line_strip(s, [M.Vector2{{0.0, 0.0}}, M.Vector2{{4.0, 1.0}}, M.Vector2{{1.0, 3.0}}, M.Vector2{{5.6, 2.4}}], {word(DRAW)})'),
+                   f'surface_draw_line_strip_owned(s, [M.Vector2{{0.0, 0.0}}, M.Vector2{{4.0, 1.0}}, M.Vector2{{1.0, 3.0}}, M.Vector2{{5.6, 2.4}}], {word(DRAW)})'),
     'rectangle-pro': (f'ImageDrawRectanglePro(&im,(Rectangle){{2,1.5f,3,2}},(Vector2){{1,0.5f}},30.0f,{c_color(DRAW)});', 'image',
                       f'J.Surface.draw_rectangle_pro_for(M.{LIBM}{{}}, s, J.Rectangle{{2.0, 1.5, 3.0, 2.0}}, M.Vector2{{1.0, 0.5}}, 30.0, {word(DRAW)})'),
     'rectangle-pro-flat': (f'ImageDrawRectanglePro(&im,(Rectangle){{0.5f,-0.5f,3.25f,2.5f}},(Vector2){{0,0}},0.0f,{c_color(FILL)});', 'image',
@@ -148,36 +242,36 @@ OPS = {
                              f'circle_gradient_owned(s, M.Vector2{{F32.neg(30000.0), 1.5}}, 30002.0, {word(GRADIENT[0])}, {word(GRADIENT[2])})'),
     'circle-gradient-cover': (f'ImageDrawCircleGradient(&im,(Vector2){{1.0f,1.0f}},100000.0f,{c_color(GRADIENT[0])},{c_color(GRADIENT[2])});', 'image',
                               f'circle_gradient_owned(s, M.Vector2{{1.0, 1.0}}, 100000.0, {word(GRADIENT[0])}, {word(GRADIENT[2])})'),
-    'circle-v': (f'ImageDrawCircleV(&im,(Vector2){{2,2}},2,{c_color(DRAW)});', 'total', f'J.Surface.draw_circle_v(s, M.Vector2{{2.0, 2.0}}, 2, {word(DRAW)})'),
-    'circle-lines': (f'ImageDrawCircleLines(&im,2,2,2,{c_color(DRAW)});', 'total', f'J.Surface.draw_circle_lines(s, 2.0, 2.0, 2, {word(DRAW)})'),
+    'circle-v': (f'ImageDrawCircleV(&im,(Vector2){{2,2}},2,{c_color(DRAW)});', 'total', f'surface_draw_circle_v_owned(s, M.Vector2{{2.0, 2.0}}, 2, {word(DRAW)})'),
+    'circle-lines': (f'ImageDrawCircleLines(&im,2,2,2,{c_color(DRAW)});', 'total', f'surface_draw_circle_lines_owned(s, 2.0, 2.0, 2, {word(DRAW)})'),
     'circle-lines-v': (f'ImageDrawCircleLinesV(&im,(Vector2){{2,2}},2,{c_color(DRAW)});', 'total',
-                       f'J.Surface.draw_circle_lines_v(s, M.Vector2{{2.0, 2.0}}, 2, {word(DRAW)})'),
+                       f'surface_draw_circle_lines_v_owned(s, M.Vector2{{2.0, 2.0}}, 2, {word(DRAW)})'),
     'line-v': (f'ImageDrawLineV(&im,(Vector2){{0,0}},(Vector2){{4,3}},{c_color(DRAW)});', 'total',
-               f'J.Surface.draw_line_v(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{4.0, 3.0}}, {word(DRAW)})'),
+               f'surface_draw_line_v_owned(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{4.0, 3.0}}, {word(DRAW)})'),
     'line-ex': (f'ImageDrawLineEx(&im,(Vector2){{0,0}},(Vector2){{4,3}},2,{c_color(DRAW)});', 'total',
-                f'J.Surface.draw_line_ex(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{4.0, 3.0}}, 2, {word(DRAW)})'),
+                f'surface_draw_line_ex_owned(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{4.0, 3.0}}, 2, {word(DRAW)})'),
     'line-ex-neg': (f'ImageDrawLineEx(&im,(Vector2){{0,0}},(Vector2){{4,3}},-1,{c_color(DRAW)});', 'total',
-                    f'J.Surface.draw_line_ex(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{4.0, 3.0}}, 4294967295, {word(DRAW)})'),
+                    f'surface_draw_line_ex_owned(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{4.0, 3.0}}, 4294967295, {word(DRAW)})'),
     'line-ex-quiet': (f'ImageDrawLineEx(&im,(Vector2){{0,0}},(Vector2){{4,3}},-3,{c_color(DRAW)});', 'total',
-                      f'J.Surface.draw_line_ex(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{4.0, 3.0}}, 4294967293, {word(DRAW)})'),
+                      f'surface_draw_line_ex_owned(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{4.0, 3.0}}, 4294967293, {word(DRAW)})'),
     'line-ex-vertical-neg': (f'ImageDrawLineEx(&im,(Vector2){{2,0}},(Vector2){{2,2}},-1,{c_color(DRAW)});', 'total',
-                             f'J.Surface.draw_line_ex(s, M.Vector2{{2.0, 0.0}}, M.Vector2{{2.0, 2.0}}, 4294967295, {word(DRAW)})'),
+                             f'surface_draw_line_ex_owned(s, M.Vector2{{2.0, 0.0}}, M.Vector2{{2.0, 2.0}}, 4294967295, {word(DRAW)})'),
     'line-ex-vertical-quiet': (f'ImageDrawLineEx(&im,(Vector2){{2,0}},(Vector2){{2,2}},-3,{c_color(DRAW)});', 'total',
-                               f'J.Surface.draw_line_ex(s, M.Vector2{{2.0, 0.0}}, M.Vector2{{2.0, 2.0}}, 4294967293, {word(DRAW)})'),
+                               f'surface_draw_line_ex_owned(s, M.Vector2{{2.0, 0.0}}, M.Vector2{{2.0, 2.0}}, 4294967293, {word(DRAW)})'),
     'rectangle-lines-ex-neg': (f'ImageDrawRectangleLinesEx(&im,(Rectangle){{0,0,5,3}},-2,{c_color(DRAW)});', 'total',
-                               f'J.Surface.draw_rectangle_lines_ex(s, J.Rectangle{{0.0, 0.0, 5.0, 3.0}}, 4294967294, {word(DRAW)})'),
+                               f'surface_draw_rectangle_lines_ex_owned(s, J.Rectangle{{0.0, 0.0, 5.0, 3.0}}, 4294967294, {word(DRAW)})'),
     'rectangle-lines-ex-neg1': (f'ImageDrawRectangleLinesEx(&im,(Rectangle){{0,0,5,3}},-1,{c_color(DRAW)});', 'total',
-                                f'J.Surface.draw_rectangle_lines_ex(s, J.Rectangle{{0.0, 0.0, 5.0, 3.0}}, 4294967295, {word(DRAW)})'),
+                                f'surface_draw_rectangle_lines_ex_owned(s, J.Rectangle{{0.0, 0.0, 5.0, 3.0}}, 4294967295, {word(DRAW)})'),
     'triangle-lines': (f'ImageDrawTriangleLines(&im,(Vector2){{0,0}},(Vector2){{1,3}},(Vector2){{4,1}},{c_color(DRAW)});', 'total',
-                       f'J.Surface.draw_triangle_lines(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{1.0, 3.0}}, M.Vector2{{4.0, 1.0}}, {word(DRAW)})'),
+                       f'surface_draw_triangle_lines_owned(s, M.Vector2{{0.0, 0.0}}, M.Vector2{{1.0, 3.0}}, M.Vector2{{4.0, 1.0}}, {word(DRAW)})'),
     'triangle-fan': (f'{{Vector2 p[4]={{{{2,2}},{{0,0}},{{0,3}},{{4,3}}}};ImageDrawTriangleFan(&im,p,4,{c_color(DRAW)});}}', 'total',
-                     f'J.Surface.draw_triangle_fan(s, [M.Vector2{{2.0, 2.0}}, M.Vector2{{0.0, 0.0}}, M.Vector2{{0.0, 3.0}}, M.Vector2{{4.0, 3.0}}], {word(DRAW)})'),
+                     f'surface_draw_triangle_fan_owned(s, [M.Vector2{{2.0, 2.0}}, M.Vector2{{0.0, 0.0}}, M.Vector2{{0.0, 3.0}}, M.Vector2{{4.0, 3.0}}], {word(DRAW)})'),
     'triangle-strip': (f'{{Vector2 p[4]={{{{0,0}},{{0,3}},{{3,0}},{{4,3}}}};ImageDrawTriangleStrip(&im,p,4,{c_color(DRAW)});}}', 'total',
-                       f'J.Surface.draw_triangle_strip(s, [M.Vector2{{0.0, 0.0}}, M.Vector2{{0.0, 3.0}}, M.Vector2{{3.0, 0.0}}, M.Vector2{{4.0, 3.0}}], {word(DRAW)})'),
-    'to-pot': (f'ImageToPOT(&im,{c_color(FILL)});', 'image', f'J.Surface.to_pot(s, {word(FILL)})'),
-    'alpha-clear': (f'ImageAlphaClear(&im,{c_color(DRAW)},0.3f);', 'image', f'J.Surface.alpha_clear(s, {word(DRAW)}, 0.3)'),
-    'alpha-clear-high': (f'ImageAlphaClear(&im,{c_color(FILL)},0.8f);', 'image', f'J.Surface.alpha_clear(s, {word(FILL)}, 0.8)'),
-    'alpha-clear-dark': (f'ImageAlphaClear(&im,{c_color(DARK)},0.6f);', 'image', f'J.Surface.alpha_clear(s, {word(DARK)}, 0.6)'),
+                       f'surface_draw_triangle_strip_owned(s, [M.Vector2{{0.0, 0.0}}, M.Vector2{{0.0, 3.0}}, M.Vector2{{3.0, 0.0}}, M.Vector2{{4.0, 3.0}}], {word(DRAW)})'),
+    'to-pot': (f'ImageToPOT(&im,{c_color(FILL)});', 'image', f'surface_to_pot_owned(s, {word(FILL)})'),
+    'alpha-clear': (f'ImageAlphaClear(&im,{c_color(DRAW)},0.3f);', 'image', f'surface_alpha_clear_owned(s, {word(DRAW)}, 0.3)'),
+    'alpha-clear-high': (f'ImageAlphaClear(&im,{c_color(FILL)},0.8f);', 'image', f'surface_alpha_clear_owned(s, {word(FILL)}, 0.8)'),
+    'alpha-clear-dark': (f'ImageAlphaClear(&im,{c_color(DARK)},0.6f);', 'image', f'surface_alpha_clear_owned(s, {word(DARK)}, 0.6)'),
     'rotate': ('ImageRotate(&im,30);', 'image', f'J.Surface.rotate_degrees_for(M.{LIBM}{{}}, s, 30.0)'),
     'rotate-obtuse': ('ImageRotate(&im,-135);', 'image', f'J.Surface.rotate_degrees_for(M.{LIBM}{{}}, s, F32.neg(135.0))'),
     **{f'draw-{name}': (f'{{Image m=ImageCopy(im);ImageFlipVertical(&m);{fmt_c}ImageDrawImagePro(&im,m,{src_rec},{dst_rec},(Vector2){{0,0}},0.0f,{c_color(tint)});UnloadImage(m);}}',
@@ -193,16 +287,16 @@ OPS = {
     'alpha-mask-mismatch': ('{Image m=GenImageColor(1,1,WHITE);ImageAlphaMask(&im,m);UnloadImage(m);}', 'image', 'mask_mismatch(s)'),
     'alpha-mask-rgb': ('{Image m=ImageCopy(im);ImageFlipHorizontal(&m);ImageFormat(&m,4);ImageAlphaMask(&im,m);UnloadImage(m);}', 'image',
                        'masked(4, J.Surface.copy(s))'),
-    'alpha-border': ('', 'rect', 'J.Surface.alpha_border(s, 0.3)'),
-    'palette': ('', 'palette', 'J.Surface.load_palette(s, 8)'),
-    'colors': ('', 'colors', 'J.Surface.colors(s)'),
-    'get': ('', 'color', 'J.Surface.get(s, 2, 1)'),
+    'alpha-border': ('', 'rect', 'surface_alpha_border_owned(s, 0.3)'),
+    'palette': ('', 'palette', 'surface_load_palette_owned(s, 8)'),
+    'colors': ('', 'colors', 'surface_colors_owned(s)'),
+    'get': ('', 'color', 'surface_get_owned(s, 2, 1)'),
 }
 
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
 import ../../jonmath.bend as M
-''' + SURFACE_EMITTER + '''def payload_second(+first: U32, got: Array<U32> & U32) -> List<U32>:
+'''+OWNED_DEFS+'''''' + SURFACE_EMITTER + '''def payload_second(+first: U32, got: Array<U32> & U32) -> List<U32>:
   (_, word) = got
   word_bytes(4n, word, word_bytes(4n, first, Nil{}))
 def payload_first(got: Array<U32> & U32) -> List<U32>:
@@ -254,11 +348,11 @@ def masked.result(result: Result<&1, &1, (J.Surface & J.Surface) & J.Surface.Err
 def masked.with(image: J.Surface, mask: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
   match mask:
     case Fail{Tuple{_, error}}: Fail{(image, error)}
-    case Done{alpha}: masked.result(J.Surface.alpha_mask_native(image, alpha))
+    case Done{alpha}: masked.result(surface_alpha_mask_native_owned(image, alpha))
 def mask_created(image: J.Surface, created: Maybe<J.Surface>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
   match created:
     case None{}: Fail{(image, J.InvalidRequest{})}
-    case Some{mask}: masked.result(J.Surface.alpha_mask_native(image, mask))
+    case Some{mask}: masked.result(surface_alpha_mask_native_owned(image, mask))
 def mask_mismatch(image: J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
   mask_created(image, J.Surface.create(1, 1, 4294967295))
 def masked(+format: U32, pair: J.Surface & J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
