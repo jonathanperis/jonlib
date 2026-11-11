@@ -189,6 +189,27 @@ def native_source(acts, work):
 
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
+# Ownership: these defs copy the library signatures (+ borrows, the rest
+# consumed) and return values the caller owns; the affine checker
+# enforces them on every compared call.
+def files_directory_owned(+path: String) -> Maybe<String>:
+  J.Files.directory(path)
+def files_exists_owned(path: String) -> IO(Bool):
+  J.Files.exists(path)
+def files_extension_owned(+path: String) -> Maybe<String>:
+  J.Files.extension(path)
+def files_has_extension_owned(path: String, extensions: String) -> Maybe<Bool>:
+  J.Files.has_extension(path, extensions)
+def files_name_owned(+path: String) -> String:
+  J.Files.name(path)
+def files_name_without_ext_owned(path: String) -> String:
+  J.Files.name_without_ext(path)
+def files_previous_directory_owned(+path: String) -> IO(Maybe<String>):
+  J.Files.previous_directory(path)
+def files_text_find_index_owned(path: String, +search: String) -> IO(Maybe<U32>):
+  J.Files.text_find_index(path, search)
+def files_valid_name_owned(+name: String) -> Bool:
+  J.Files.valid_name(name)
 ''' + BEND_EMITTER + '''def Files.chars(codes: List<U32>) -> String:
   match codes:
     case Nil{}: ""
@@ -258,21 +279,21 @@ def render(acts, work):
         body = PROGRAM + 'def main() -> IO(Unit):\n  do IO<Unit>:\n'
         for kind, arg in selected:
             if kind == 'extension':
-                line = f'maybe_text(J.Files.extension({bend_string(arg)}))'
+                line = f'maybe_text(files_extension_owned({bend_string(arg)}))'
             elif kind == 'name':
-                line = f'text(J.Files.name({bend_string(arg)}))'
+                line = f'text(files_name_owned({bend_string(arg)}))'
             elif kind == 'stem':
-                line = f'text(J.Files.name_without_ext({bend_string(arg)}))'
+                line = f'text(files_name_without_ext_owned({bend_string(arg)}))'
             elif kind == 'directory':
-                line = f'maybe_text(J.Files.directory({bend_string(arg)}))'
+                line = f'maybe_text(files_directory_owned({bend_string(arg)}))'
             elif kind == 'previous':
-                line = f'IO.bind(Maybe<String>, Unit, J.Files.previous_directory({bend_string(arg)}), maybe_text)'
+                line = f'IO.bind(Maybe<String>, Unit, files_previous_directory_owned({bend_string(arg)}), maybe_text)'
             elif kind == 'has-extension':
-                line = f'maybe_flag(J.Files.has_extension({bend_string(arg[0])}, {bend_string(arg[1])}))'
+                line = f'maybe_flag(files_has_extension_owned({bend_string(arg[0])}, {bend_string(arg[1])}))'
             elif kind == 'valid-name':
-                line = f'flag(J.Files.valid_name({bend_string(arg)}))'
+                line = f'flag(files_valid_name_owned({bend_string(arg)}))'
             elif kind == 'exists':
-                line = f'IO.bind(Bool, Unit, J.Files.exists({json.dumps(arg)}), flag)'
+                line = f'IO.bind(Bool, Unit, files_exists_owned({json.dumps(arg)}), flag)'
             elif kind == 'length':
                 line = f'IO.bind(U32, Unit, J.Files.length({json.dumps(arg)}), word)'
             elif kind == 'load-data':
@@ -281,7 +302,7 @@ def render(acts, work):
                 line = f'IO.bind(Result<&1, &1, J.Surface.IOError, String>, Unit, J.Files.load_text({json.dumps(arg)}), loaded_text)'
             elif kind == 'find':
                 path, search = arg
-                line = f'IO.bind(Maybe<U32>, Unit, J.Files.text_find_index({json.dumps(path)}, {bend_string(search)}), maybe_word)'
+                line = f'IO.bind(Maybe<U32>, Unit, files_text_find_index_owned({json.dumps(path)}, {bend_string(search)}), maybe_word)'
             elif kind == 'save-data':
                 name, values = arg
                 line = (f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Files.save_data({rel("bend/" + name)}, '

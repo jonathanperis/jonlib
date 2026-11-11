@@ -33792,7 +33792,7 @@
       "status": "partial",
       "jonlib": "Files.copy",
       "mapping_state": "implemented",
-      "scope": "LoadFileData, the target's directory made where DirectoryExists does not see it, then SaveFileData when there are bytes: 0 once the directory is there (whether the save succeeds or not, as raylib 6.2 has it), MakeDirectory's -1 otherwise.",
+      "scope": "LoadFileData, the target's directory made where DirectoryExists does not see it, then SaveFileData when there are bytes: 0 once the directory is there (whether the save succeeds or not, as raylib 6.2 has it), MakeDirectory's -1 otherwise. Ownership: borrows source, target; the result is owned by the caller.",
       "gaps": [
         "Undefined native behavior: getDirectoryPath overflow is None",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -33802,7 +33802,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"
@@ -33852,7 +33852,7 @@
       "status": "partial",
       "jonlib": "Files.move",
       "mapping_state": "implemented",
-      "scope": "-1 for a missing source; otherwise FileCopy's result, and when it is 0 and the target exists with the source's GetFileLength, FileRemove's result.",
+      "scope": "-1 for a missing source; otherwise FileCopy's result, and when it is 0 and the target exists with the source's GetFileLength, FileRemove's result. Ownership: borrows source, target; the result is owned by the caller.",
       "gaps": [
         "Undefined native behavior: getDirectoryPath overflow is None",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -33862,7 +33862,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"
@@ -33974,7 +33974,7 @@
       "status": "partial",
       "jonlib": "Files.text_find_index / Files.text_find_index_with",
       "mapping_state": "implemented",
-      "scope": "Byte index of the first occurrence of search in the file's text up to its first NUL; None (raylib's -1) when absent or the file is missing or empty.",
+      "scope": "Byte index of the first occurrence of search in the file's text up to its first NUL; None (raylib's -1) when absent or the file is missing or empty. Ownership: consumes path and borrows search; the result is owned by the caller.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
@@ -33986,7 +33986,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "partial"
@@ -34035,7 +34035,7 @@
       "status": "partial",
       "jonlib": "Files.exists",
       "mapping_state": "implemented",
-      "scope": "access(F_OK), as stat(2) answers it: a file that exists, readable or not, or a directory.",
+      "scope": "access(F_OK), as stat(2) answers it: a file that exists, readable or not, or a directory. Ownership: consumes path; the result is owned by the caller.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
@@ -34047,7 +34047,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "partial"
@@ -34159,7 +34159,7 @@
       "status": "partial",
       "jonlib": "Files.has_extension",
       "mapping_state": "implemented",
-      "scope": "ASCII-case-insensitive match of GetFileExtension's first 15 bytes against a ';'-separated list's first 32 entries; entries without a leading '.' compare without it. Each character is one path byte, including 128..255.",
+      "scope": "ASCII-case-insensitive match of GetFileExtension's first 15 bytes against a ';'-separated list's first 32 entries; entries without a leading '.' compare without it. Each character is one path byte, including 128..255. Ownership: consumes path, extensions; the result is owned by the caller.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
@@ -34169,7 +34169,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "partial"
@@ -34403,7 +34403,7 @@
       "status": "partial",
       "jonlib": "Files.extension",
       "mapping_state": "implemented",
-      "scope": "From the last '.' of the whole path; None when there is none or it is the first character (raylib NULL). Each character is one path byte, including 128..255.",
+      "scope": "From the last '.' of the whole path; None when there is none or it is the first character (raylib NULL). Each character is one path byte, including 128..255. Ownership: borrows path; the result is owned by the caller.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
@@ -34413,7 +34413,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "partial"
@@ -34461,7 +34461,7 @@
       "status": "partial",
       "jonlib": "Files.name",
       "mapping_state": "implemented",
-      "scope": "The text after the last '/' or '\\\\' separator, or the whole path. Each character is one path byte, including 128..255.",
+      "scope": "The text after the last '/' or '\\\\' separator, or the whole path. Each character is one path byte, including 128..255. Ownership: borrows path; the result is owned by the caller.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
@@ -34471,7 +34471,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "partial"
@@ -34519,7 +34519,7 @@
       "status": "partial",
       "jonlib": "Files.name_without_ext",
       "mapping_state": "implemented",
-      "scope": "GetFileName truncated to 255 bytes, cut at its last '.' past the first character. Each character is one path byte, including 128..255.",
+      "scope": "GetFileName truncated to 255 bytes, cut at its last '.' past the first character. Each character is one path byte, including 128..255. Ownership: consumes path; the result is owned by the caller.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
@@ -34529,7 +34529,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "partial"
@@ -34577,7 +34577,7 @@
       "status": "partial",
       "jonlib": "Files.directory",
       "mapping_state": "implemented",
-      "scope": "'./' before paths without a drive letter or leading separator, then the path up to its last separator ('/' or '\\\\' alone for a root file); paths of 1..4093 bytes, each character one byte including 128..255. None otherwise.",
+      "scope": "'./' before paths without a drive letter or leading separator, then the path up to its last separator ('/' or '\\\\' alone for a root file); paths of 1..4093 bytes, each character one byte including 128..255. None otherwise. Ownership: borrows path; the result is owned by the caller.",
       "gaps": [
         "Undefined native behavior: an empty path reads past the string and a longer path overflows the 4096-byte buffer",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -34588,7 +34588,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "partial"
@@ -34636,7 +34636,7 @@
       "status": "partial",
       "jonlib": "Files.previous_directory",
       "mapping_state": "implemented",
-      "scope": "raylib 6.2's walk back from the end: a trailing separator is passed, a file's own name is passed (IsPathFile), the root '/' or 'C:\\\\' is kept, otherwise the path up to the separator; empty without one. Files.previous_directory_given takes IsPathFile's answer for pure callers. Paths up to 4096 bytes, each character one byte including 128..255.",
+      "scope": "raylib 6.2's walk back from the end: a trailing separator is passed, a file's own name is passed (IsPathFile), the root '/' or 'C:\\\\' is kept, otherwise the path up to the separator; empty without one. Files.previous_directory_given takes IsPathFile's answer for pure callers. Paths up to 4096 bytes, each character one byte including 128..255. Ownership: borrows path; the result is owned by the caller.",
       "gaps": [
         "Undefined native behavior: a path above 4096 bytes overflows the static buffer",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -34647,7 +34647,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "partial"
@@ -34876,7 +34876,7 @@
       "status": "partial",
       "jonlib": "Files.change_directory_with",
       "mapping_state": "implemented",
-      "scope": "chdir(2)'s result as raylib 6.2 returns it: 0, or -1 where it fails. The caller's logger emits the reference INFO line on success and the WARNING line on failure.",
+      "scope": "chdir(2)'s result as raylib 6.2 returns it: 0, or -1 where it fails. The caller's logger emits the reference INFO line on success and the WARNING line on failure. Ownership: consumes logger and borrows path; the result is owned by the caller.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
@@ -34888,7 +34888,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -35002,7 +35002,7 @@
       "status": "partial",
       "jonlib": "Files.is_path_directory",
       "mapping_state": "implemented",
-      "scope": "Not IsPathFile, as raylib 6.2 has it: a missing path and anything that is not a regular file is a directory.",
+      "scope": "Not IsPathFile, as raylib 6.2 has it: a missing path and anything that is not a regular file is a directory. Ownership: consumes path; the result is owned by the caller.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
@@ -35011,7 +35011,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -35122,7 +35122,7 @@
       "status": "partial",
       "jonlib": "Files.valid_name",
       "mapping_state": "implemented",
-      "scope": "Empty names are valid; '<>:\"/\\\\|?*', control characters and all-period names are invalid. Each character is one path byte, including 128..255.",
+      "scope": "Empty names are valid; '<>:\"/\\\\|?*', control characters and all-period names are invalid. Each character is one path byte, including 128..255. Ownership: borrows name; the result is owned by the caller.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
@@ -35132,7 +35132,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "partial"
@@ -35182,7 +35182,7 @@
       "status": "partial",
       "jonlib": "Files.load_directory_files",
       "mapping_state": "implemented",
-      "scope": "LoadDirectoryFilesEx with the *.* filter and without subdirectories.",
+      "scope": "LoadDirectoryFilesEx with the *.* filter and without subdirectories. Ownership: borrows path; the result is owned by the caller.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
@@ -35191,7 +35191,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"
@@ -35555,7 +35555,7 @@
       "status": "partial",
       "jonlib": "Files.directory_file_count",
       "mapping_state": "implemented",
-      "scope": "GetDirectoryFileCountEx with the *.* filter and without subdirectories.",
+      "scope": "GetDirectoryFileCountEx with the *.* filter and without subdirectories. Ownership: borrows path; the result is owned by the caller.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
@@ -35564,7 +35564,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"

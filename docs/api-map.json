@@ -1374,7 +1374,7 @@
   "FileCopy": {
     "jonlib": "Files.copy",
     "status": "profile-covered",
-    "scope": "LoadFileData, the target's directory made where DirectoryExists does not see it, then SaveFileData when there are bytes: 0 once the directory is there (whether the save succeeds or not, as raylib 6.2 has it), MakeDirectory's -1 otherwise.",
+    "scope": "LoadFileData, the target's directory made where DirectoryExists does not see it, then SaveFileData when there are bytes: 0 once the directory is there (whether the save succeeds or not, as raylib 6.2 has it), MakeDirectory's -1 otherwise. Ownership: borrows source, target; the result is owned by the caller.",
     "gaps": [
       "Undefined native behavior: getDirectoryPath overflow is None",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -1385,7 +1385,7 @@
   "FileMove": {
     "jonlib": "Files.move",
     "status": "profile-covered",
-    "scope": "-1 for a missing source; otherwise FileCopy's result, and when it is 0 and the target exists with the source's GetFileLength, FileRemove's result.",
+    "scope": "-1 for a missing source; otherwise FileCopy's result, and when it is 0 and the target exists with the source's GetFileLength, FileRemove's result. Ownership: borrows source, target; the result is owned by the caller.",
     "gaps": [
       "Undefined native behavior: getDirectoryPath overflow is None",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -1408,7 +1408,7 @@
   "FileTextFindIndex": {
     "jonlib": "Files.text_find_index / Files.text_find_index_with",
     "status": "profile-covered",
-    "scope": "Byte index of the first occurrence of search in the file's text up to its first NUL; None (raylib's -1) when absent or the file is missing or empty.",
+    "scope": "Byte index of the first occurrence of search in the file's text up to its first NUL; None (raylib's -1) when absent or the file is missing or empty. Ownership: consumes path and borrows search; the result is owned by the caller.",
     "gaps": [
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
@@ -1419,7 +1419,7 @@
   "FileExists": {
     "jonlib": "Files.exists",
     "status": "profile-covered",
-    "scope": "access(F_OK), as stat(2) answers it: a file that exists, readable or not, or a directory.",
+    "scope": "access(F_OK), as stat(2) answers it: a file that exists, readable or not, or a directory. Ownership: consumes path; the result is owned by the caller.",
     "gaps": [
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
@@ -1441,7 +1441,7 @@
   "IsFileExtension": {
     "jonlib": "Files.has_extension",
     "status": "profile-covered",
-    "scope": "ASCII-case-insensitive match of GetFileExtension's first 15 bytes against a ';'-separated list's first 32 entries; entries without a leading '.' compare without it. Each character is one path byte, including 128..255.",
+    "scope": "ASCII-case-insensitive match of GetFileExtension's first 15 bytes against a ';'-separated list's first 32 entries; entries without a leading '.' compare without it. Each character is one path byte, including 128..255. Ownership: consumes path, extensions; the result is owned by the caller.",
     "gaps": [
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
@@ -1484,7 +1484,7 @@
   "GetFileExtension": {
     "jonlib": "Files.extension",
     "status": "profile-covered",
-    "scope": "From the last '.' of the whole path; None when there is none or it is the first character (raylib NULL). Each character is one path byte, including 128..255.",
+    "scope": "From the last '.' of the whole path; None when there is none or it is the first character (raylib NULL). Each character is one path byte, including 128..255. Ownership: borrows path; the result is owned by the caller.",
     "gaps": [
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
@@ -1495,7 +1495,7 @@
   "GetFileName": {
     "jonlib": "Files.name",
     "status": "profile-covered",
-    "scope": "The text after the last '/' or '\\\\' separator, or the whole path. Each character is one path byte, including 128..255.",
+    "scope": "The text after the last '/' or '\\\\' separator, or the whole path. Each character is one path byte, including 128..255. Ownership: borrows path; the result is owned by the caller.",
     "gaps": [
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
@@ -1506,7 +1506,7 @@
   "GetFileNameWithoutExt": {
     "jonlib": "Files.name_without_ext",
     "status": "profile-covered",
-    "scope": "GetFileName truncated to 255 bytes, cut at its last '.' past the first character. Each character is one path byte, including 128..255.",
+    "scope": "GetFileName truncated to 255 bytes, cut at its last '.' past the first character. Each character is one path byte, including 128..255. Ownership: consumes path; the result is owned by the caller.",
     "gaps": [
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
@@ -1517,7 +1517,7 @@
   "GetDirectoryPath": {
     "jonlib": "Files.directory",
     "status": "profile-covered",
-    "scope": "'./' before paths without a drive letter or leading separator, then the path up to its last separator ('/' or '\\\\' alone for a root file); paths of 1..4093 bytes, each character one byte including 128..255. None otherwise.",
+    "scope": "'./' before paths without a drive letter or leading separator, then the path up to its last separator ('/' or '\\\\' alone for a root file); paths of 1..4093 bytes, each character one byte including 128..255. None otherwise. Ownership: borrows path; the result is owned by the caller.",
     "gaps": [
       "Undefined native behavior: an empty path reads past the string and a longer path overflows the 4096-byte buffer",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -1529,7 +1529,7 @@
   "GetPrevDirectoryPath": {
     "jonlib": "Files.previous_directory",
     "status": "profile-covered",
-    "scope": "raylib 6.2's walk back from the end: a trailing separator is passed, a file's own name is passed (IsPathFile), the root '/' or 'C:\\\\' is kept, otherwise the path up to the separator; empty without one. Files.previous_directory_given takes IsPathFile's answer for pure callers. Paths up to 4096 bytes, each character one byte including 128..255.",
+    "scope": "raylib 6.2's walk back from the end: a trailing separator is passed, a file's own name is passed (IsPathFile), the root '/' or 'C:\\\\' is kept, otherwise the path up to the separator; empty without one. Files.previous_directory_given takes IsPathFile's answer for pure callers. Paths up to 4096 bytes, each character one byte including 128..255. Ownership: borrows path; the result is owned by the caller.",
     "gaps": [
       "Undefined native behavior: a path above 4096 bytes overflows the static buffer",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -1575,7 +1575,7 @@
   "ChangeDirectory": {
     "jonlib": "Files.change_directory_with",
     "status": "profile-covered",
-    "scope": "chdir(2)'s result as raylib 6.2 returns it: 0, or -1 where it fails. The caller's logger emits the reference INFO line on success and the WARNING line on failure.",
+    "scope": "chdir(2)'s result as raylib 6.2 returns it: 0, or -1 where it fails. The caller's logger emits the reference INFO line on success and the WARNING line on failure. Ownership: consumes logger and borrows path; the result is owned by the caller.",
     "gaps": [
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
@@ -1597,7 +1597,7 @@
   "IsPathDirectory": {
     "jonlib": "Files.is_path_directory",
     "status": "profile-covered",
-    "scope": "Not IsPathFile, as raylib 6.2 has it: a missing path and anything that is not a regular file is a directory.",
+    "scope": "Not IsPathFile, as raylib 6.2 has it: a missing path and anything that is not a regular file is a directory. Ownership: consumes path; the result is owned by the caller.",
     "gaps": [
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
@@ -1617,7 +1617,7 @@
   "IsFileNameValid": {
     "jonlib": "Files.valid_name",
     "status": "profile-covered",
-    "scope": "Empty names are valid; '<>:\"/\\\\|?*', control characters and all-period names are invalid. Each character is one path byte, including 128..255.",
+    "scope": "Empty names are valid; '<>:\"/\\\\|?*', control characters and all-period names are invalid. Each character is one path byte, including 128..255. Ownership: borrows name; the result is owned by the caller.",
     "gaps": [
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
@@ -1628,7 +1628,7 @@
   "LoadDirectoryFiles": {
     "jonlib": "Files.load_directory_files",
     "status": "profile-covered",
-    "scope": "LoadDirectoryFilesEx with the *.* filter and without subdirectories.",
+    "scope": "LoadDirectoryFilesEx with the *.* filter and without subdirectories. Ownership: borrows path; the result is owned by the caller.",
     "gaps": [
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
@@ -1691,7 +1691,7 @@
   "GetDirectoryFileCount": {
     "jonlib": "Files.directory_file_count",
     "status": "profile-covered",
-    "scope": "GetDirectoryFileCountEx with the *.* filter and without subdirectories.",
+    "scope": "GetDirectoryFileCountEx with the *.* filter and without subdirectories. Ownership: borrows path; the result is owned by the caller.",
     "gaps": [
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],

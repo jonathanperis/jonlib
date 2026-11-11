@@ -285,6 +285,23 @@ def native_source(ops, tree):
 
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
+# Ownership: these defs copy the library signatures (+ borrows, the rest
+# consumed) and return values the caller owns; the affine checker
+# enforces them on every compared call.
+def files_change_directory_with_owned(logger: J.Log.Logger, +path: String) -> IO(U32):
+  J.Files.change_directory_with(logger, path)
+def files_copy_owned(+source: String, +target: String) -> IO(Maybe<U32>):
+  J.Files.copy(source, target)
+def files_directory_file_count_owned(+path: String) -> IO(Maybe<U32>):
+  J.Files.directory_file_count(path)
+def files_exists_owned(path: String) -> IO(Bool):
+  J.Files.exists(path)
+def files_is_path_directory_owned(path: String) -> IO(Bool):
+  J.Files.is_path_directory(path)
+def files_load_directory_files_owned(+path: String) -> IO(Maybe<J.FilePathList>):
+  J.Files.load_directory_files(path)
+def files_move_owned(+source: String, +target: String) -> IO(Maybe<U32>):
+  J.Files.move(source, target)
 
 def chars(codes: List<U32>) -> String:
   match codes:
@@ -328,7 +345,7 @@ def text.existing(exists: Bool, path: String) -> IO(String):
     case True{}: IO.bind(Result<&1, &1, J.Surface.IOError, String>, String, J.Files.load_text(path), r => IO.pure(String, loaded(r)))
 
 def text(+path: String) -> IO(String):
-  IO.bind(Bool, String, J.Files.exists(path), exists => text.existing(exists, path))
+  IO.bind(Bool, String, files_exists_owned(path), exists => text.existing(exists, path))
 
 def ends_slash(text: String, last: U32) -> Bool:
   match text:
@@ -354,19 +371,19 @@ def bend_op(op, args):
     s = [bend_string(a) if isinstance(a, str) else a for a in args]
     b = lambda v: 'True{}' if v else 'False{}'
     shown = {
-        'exists': lambda: ('Bool', f'J.Files.exists({s[0]})', 'flag(r)'),
+        'exists': lambda: ('Bool', f'files_exists_owned({s[0]})', 'flag(r)'),
         'is_file': lambda: ('Bool', f'J.Files.is_path_file({s[0]})', 'flag(r)'),
         'dir_exists': lambda: ('Bool', f'J.Files.directory_exists({s[0]})', 'flag(r)'),
         'mod_time': lambda: ('Nat', f'J.Files.mod_time({s[0]})', 'Nat.show(r)'),
-        'count': lambda: ('Maybe<U32>', f'J.Files.directory_file_count({s[0]})', 'counted(r)'),
-        'load': lambda: ('Maybe<J.FilePathList>', f'J.Files.load_directory_files({s[0]})', 'listing(r)'),
+        'count': lambda: ('Maybe<U32>', f'files_directory_file_count_owned({s[0]})', 'counted(r)'),
+        'load': lambda: ('Maybe<J.FilePathList>', f'files_load_directory_files_owned({s[0]})', 'listing(r)'),
         'rename': lambda: ('U32', f'J.Files.rename({s[0]}, {s[1]})', 'U32.show(r)'),
         'remove': lambda: ('U32', f'J.Files.remove({s[0]})', 'U32.show(r)'),
         'make': lambda: ('U32', f'J.Files.make_directory({s[0]})', 'U32.show(r)'),
-        'copy': lambda: ('Maybe<U32>', f'J.Files.copy({s[0]}, {s[1]})', 'counted(r)'),
-        'move': lambda: ('Maybe<U32>', f'J.Files.move({s[0]}, {s[1]})', 'counted(r)'),
-        'change': lambda: ('U32', f'J.Files.change_directory_with(J.Log.level(7), {s[0]})', 'int.text(r)'),
-        'is_dir': lambda: ('Bool', f'J.Files.is_path_directory({s[0]})', 'flag(r)'),
+        'copy': lambda: ('Maybe<U32>', f'files_copy_owned({s[0]}, {s[1]})', 'counted(r)'),
+        'move': lambda: ('Maybe<U32>', f'files_move_owned({s[0]}, {s[1]})', 'counted(r)'),
+        'change': lambda: ('U32', f'files_change_directory_with_owned(J.Log.level(7), {s[0]})', 'int.text(r)'),
+        'is_dir': lambda: ('Bool', f'files_is_path_directory_owned({s[0]})', 'flag(r)'),
         'cwd': lambda: ('Maybe<String>', 'J.Files.working_directory()', 'directory(r)'),
     }
     if op in ('count_ex', 'load_ex'):
