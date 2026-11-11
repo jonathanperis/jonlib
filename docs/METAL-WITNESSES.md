@@ -207,3 +207,23 @@ Metal witness: raylib:function:ImageDrawCircle a3efe8a3801f423827424227172eed980
 Metal witness: raylib:function:ImageDrawCircleV a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:ImageDrawCircleLines a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:ImageDrawCircleLinesV a3efe8a3801f423827424227172eed9802c5e6cb pass
+
+The other probes those image entries cite ran with `--gpu` on the same tree
+and every lane, gpu included, matched: `triangle-gradient` (241 cases),
+`pixel`, `image-format`, `r32-image` (whose GPU lane has its own expected
+rows), `float-rgb-crop`, `float-rgb-resize`, `float-rgb-resize-filtered`,
+`float-rgb-canvas`, `float-rgb-color` and `image-colors`.
+
+Metal witness: raylib:function:ImageToPOT a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageCrop a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageResizeNN a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageResizeCanvas a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDither a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageColorTint a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageColorInvert a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageColorContrast a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageColorBrightness a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageColorReplace a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:LoadImageColors a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GetImageColor a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:ImageDrawTriangleGradient a3efe8a3801f423827424227172eed9802c5e6cb pass

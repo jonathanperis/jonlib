@@ -3709,7 +3709,7 @@
     "status": "profile-covered",
     "scope": "Every Surface format, dimensions 1..4096; canvas expansion to next power-of-two dimensions with SetPixelColor fill (R32 and R32G32B32 stay zero) and the native no-op for POT sizes. Stored words, including NaN payloads, are copied. A Surface is one level. Every format 1..13 is compared with raylib on the surface-format profile. Ownership: consumes surface, fill; the result, image included, is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageToPOT",
@@ -3720,7 +3720,7 @@
     "status": "profile-covered",
     "scope": "Every Surface format; integral crops with positive clipped results or native strictly-outside-origin no-ops; exact samples and returned owners on rejection. Every format 1..13 is compared with raylib on the surface-format profile. Ownership: consumes surface and borrows rect; the result, image included, is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageCrop",
@@ -3816,7 +3816,7 @@
     "status": "profile-covered",
     "scope": "Any Surface format via LoadImageColors, the plus-one fixed-point mapping and ImageFormat back, dimensions 1..4096; unsafe mappings return the original owner. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile. Ownership: consumes surface, width, height; the result, image included, is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageResizeNN",
@@ -3828,7 +3828,7 @@
     "scope": "Every Surface format, dimensions 1..4096; bounded integral offsets. An empty copied span is that fill alone (SetPixelColor; R32 and R32G32B32 stay zero). A negative source width with a positive height is undefined. Exact sample movement, including NaN words, and same-size no-ops. A Surface is one level. Rejected requests retain original owners. Every format 1..13 is compared with raylib on the surface-format profile. Ownership: consumes surface, fill and borrows width, height, x, y; the result, image included, is owned by the caller.",
     "gaps": [
       "Undefined native behavior: a negative source width and a positive height make ImageResizeCanvas memcpy a negative length",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageResizeCanvas",
@@ -3852,7 +3852,7 @@
     "status": "profile-covered",
     "scope": "Any Surface format via LoadImageColors to Floyd-Steinberg R5G6B5 (5,6,5,0), R5G5B5A1 (5,5,5,1) or R4G4B4A4 (4,4,4,4). Preserves raster order, truncation, neighbor saturation and alpha handling; other bit counts (native format 0) return the original with InvalidDitherBits. dither_native leaves a compressed image and a channel sum above 16 unchanged. A Surface is one level. Every format 1..13 is compared with raylib on the surface-format profile. Ownership: consumes surface and borrows r, g, b, a; the result, image included, is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -3922,7 +3922,7 @@
     "status": "profile-covered",
     "scope": "Any Surface format via LoadImageColors, integer tint multiplication and ImageFormat back (alpha discarded by formats without alpha). R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile. Ownership: consumes surface, color; the result, image included, is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageColorTint",
@@ -3933,7 +3933,7 @@
     "status": "profile-covered",
     "scope": "Any Surface format via LoadImageColors, RGB inversion and ImageFormat back. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile. Ownership: consumes surface; the result, image included, is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageColorInvert",
@@ -3956,7 +3956,7 @@
     "status": "profile-covered",
     "scope": "Any Surface format via LoadImageColors and ImageFormat back; finite contrast clamped to -100..100 with native F32 arithmetic/truncation; non-finite amounts are InvalidRequest. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile. Ownership: consumes surface and borrows amount; the result, image included, is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageColorContrast",
@@ -3967,7 +3967,7 @@
     "status": "profile-covered",
     "scope": "Any Surface format via LoadImageColors and ImageFormat back; finite amounts below 2^31 in magnitude truncated toward zero (C int) then clamped to -255..255, native underflow-to-one; other amounts are InvalidRequest. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile. Ownership: consumes surface and borrows amount; the result, image included, is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageColorBrightness",
@@ -3978,7 +3978,7 @@
     "status": "profile-covered",
     "scope": "Any Surface format via LoadImageColors and exact four-byte matching; GRAYSCALE, R5G6B5, R8G8B8 and R32G32B32 convert back with ImageFormat, other formats stay R8G8B8A8 as in raylib. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile. Ownership: consumes surface, original, replacement; the result, image included, is owned by the caller.",
     "gaps": [
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageColorReplace",
@@ -3990,7 +3990,7 @@
     "scope": "Every Surface format to complete row-major RGBA color lists: native packed integer expansion, red-only R32, and R32 channels whose component*255 lies in (-1, 256). A product outside that interval is OutOfDomain with the owner. Formats 1..13 are compared with raylib on the surface-format profile. Ownership: consumes surface; the result, image included, is owned by the caller.",
     "gaps": [
       "Undefined native behavior: an R32 channel whose component*255 lies outside (-1, 256) is OutOfDomain",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:LoadImageColors",
@@ -4045,7 +4045,7 @@
     "scope": "Every Surface format; U32 coordinates are checked before access; out-of-bounds pixels return None with the owner. An R32 channel whose component*255 lies in (-1, 256) matches the defined cast; a product outside that interval is None. Red-only R32 colors stay distinct from GetPixelColor. Formats 1..13 are compared on the surface-format profile. Ownership: consumes surface and borrows x, y; the result, image included, is owned by the caller.",
     "gaps": [
       "Undefined native behavior: an R32 channel whose component*255 lies outside (-1, 256) is None",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetImageColor",
@@ -4145,7 +4145,7 @@
     "scope": "Every Surface format; covered pixels use ImageDrawPixel. Finite vertices whose (int) bounds, steps, seeds and increments fit in a C int, including magnitudes above 32767. Formats 1..13 are on the surface-format profile; wider coordinates are compared on format 7. Ownership: consumes surface, v1, v2, v3, c1, c2, c3; the result, image included, is owned by the caller.",
     "gaps": [
       "Undefined native behavior: a zero weight sum, a signed overflow of an edge word, or a byte weight outside the unsigned-char cast is not the reference result",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawTriangleGradient",
