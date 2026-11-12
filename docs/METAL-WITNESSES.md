@@ -257,3 +257,11 @@ Metal witness: raymath:function:MatrixTranspose a3efe8a3801f423827424227172eed98
 Metal witness: raymath:function:MatrixIdentity a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raymath:function:MatrixToFloatV a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raymath:function:QuaternionIdentity a3efe8a3801f423827424227172eed9802c5e6cb pass
+
+## Base64 ownership batch, 2026-11-12
+
+`base64` (47 native cases) with `--gpu`, after both calls were routed through
+ownership defs dispatched with `!`: every lane, gpu included, matched.
+
+Metal witness: raylib:function:EncodeDataBase64 a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:DecodeDataBase64 a3efe8a3801f423827424227172eed9802c5e6cb pass

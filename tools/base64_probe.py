@@ -13,6 +13,13 @@ from probekit import ROOT, ProbeFailure
 
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
+# Ownership: the defs copy the library signatures (the byte list borrowed,
+# the text consumed) and return a value the caller owns; the library call
+# dispatch moves to the wrapper call (BANG).
+def base64_encode_wide_owned(bytes: +List<U32>) -> Maybe<&2, J.Base64.Encoded>:
+  J.Base64.encode_wide(bytes)
+def base64_decode_wide_owned(text: String) -> Maybe<&2, J.Base64.Decoded>:
+  J.Base64.decode_wide(text)
 def word_bytes(n: Nat, +word: U32, values: List<U32>) -> List<U32>:
   match n:
     case 0n: values
@@ -41,8 +48,8 @@ def decoded(result: Maybe<&2, J.Base64.Decoded>) -> IO(Unit):
 def observed(encode: Bool, result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Unit):
   match encode result:
     case _ Fail{_}: IO.die(Unit, 1, "Base64 fixture read failed")
-    case True{} Done{bytes}: encoded(J.Base64.encode_wideBANG(bytes))
-    case False{} Done{bytes}: decoded(J.Base64.decode_wideBANG(input_text(bytes, "")))
+    case True{} Done{bytes}: encoded(base64_encode_wide_ownedBANG(bytes))
+    case False{} Done{bytes}: decoded(base64_decode_wide_ownedBANG(input_text(bytes, "")))
 def main() -> IO(Unit):
   do IO<Unit>:
 '''

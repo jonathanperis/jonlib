@@ -1739,10 +1739,10 @@
   "EncodeDataBase64": {
     "jonlib": "Base64.encode_wide / Base64.Encoded",
     "status": "profile-covered",
-    "scope": "Lists of 0..1610612733 bytes, including empty input. Native RFC 4648 text and the NUL-inclusive size. Values above 255 are None.",
+    "scope": "Lists of 0..1610612733 bytes, including empty input. Native RFC 4648 text and the NUL-inclusive size. Values above 255 are None. Ownership: borrows bytes; the encoded text and size are owned by the caller.",
     "gaps": [
       "Undefined native behavior: a dataSize whose 4*(paddedSize/3)+1 does not fit in a signed int",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:EncodeDataBase64",
@@ -1751,10 +1751,10 @@
   "DecodeDataBase64": {
     "jonlib": "Base64.decode_wide",
     "status": "profile-covered",
-    "scope": "C strings of 1..2147483647 bytes that contain a byte other than '='. Unknown bytes are sextet 0. The size is 3*(length/4) minus trailing padding and may be negative; the bytes are the positive prefix. Empty input, only '=', or a code unit above 255 is None.",
+    "scope": "C strings of 1..2147483647 bytes that contain a byte other than '='. Unknown bytes are sextet 0. The size is 3*(length/4) minus trailing padding and may be negative; the bytes are the positive prefix. Empty input, only '=', or a code unit above 255 is None. Ownership: consumes text; the decoded bytes and size are owned by the caller.",
     "gaps": [
       "Undefined native behavior: empty input and a string of only '=' read before the buffer",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:DecodeDataBase64",
