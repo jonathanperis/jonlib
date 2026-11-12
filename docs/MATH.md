@@ -539,10 +539,24 @@ stores every NaN as the canonical positive quiet NaN.
 
 ## Floating-point contract and evidence
 
-The initial profile is **uncontracted F32**, matching the primitive arithmetic
+The default profile is **uncontracted F32**, matching the primitive arithmetic
 contract of the pinned Bend compiler. The independent C reference includes the
-unmodified pinned `raymath.h` with `FP_CONTRACT OFF`. This choice is explicit:
-fused multiply-add/contracted build variants are separate, unverified contracts.
+unmodified pinned `raymath.h` with `FP_CONTRACT OFF`.
+
+The contracted build is a second profile, `M.Fused{}`. Each raymath function
+whose arm64 build fuses an operation has a `_for(arithmetic, ...)` form
+(`Vector2.length_for`, `Matrix.invert_for`, `Math.lerp_for`, ...); the plain
+name stays the uncontracted form. Clang's `-ffp-contract=on` fuses within one
+expression: `L + R` becomes `fma(L.a, L.b, R)` when `L` is a product, otherwise
+`fma(R.a, R.b, L)` when `R` is one, and `L - R` negates the addend or `R`'s
+first factor. The `_for` forms follow that tree with `src/fma.bend`'s exact
+binary32 `fmaf` (one rounding, no host FMA). Gates `vector2`, `vector3`,
+`vector4`, `scalars`, `matrix-arith` and `shape` compare them on arm64 against
+the pinned raymath built with `-ffp-contract=on` (`tools/fused_rows.py`), on
+the exceptional corpus and on seeded finite inputs whose roundings differ when
+fused; the contracted reference must print the same bits at `-O1`, `-O2` and
+`-O3`. `QuaternionFromMatrix` fuses nothing and is compared with its plain
+form there. Other hosts have no contracted reference and skip those rows.
 
 Upstream's default build does contract on arm64 and does not on generic
 x86-64. The desktop Makefile release flags are `-O1 -std=c99` with no
@@ -553,7 +567,22 @@ same `-O1 -std=c99` flags on aarch64 emit `fmadd` (clang `-target
 aarch64-linux-gnu`). CMake's top-level default is Debug; its Release flags
 are `-O3 -DNDEBUG` plus that same contraction default. A program built with
 `-mfma -ffp-contract=fast` changes `x*y + x*x` bits relative to
-`-ffp-contract=off`. `Contracted builds` stays a gap.
+`-ffp-contract=off`.
+
+Upstream's builds therefore take one of the two profiles. x86-64 (no `-mfma`)
+does not contract: `M.Uncontracted`. Clang on arm64 contracts at every level:
+`M.Fused`. GCC on arm64 (Ubuntu 24.04, GCC 13.3, `-ffp-contract=fast`) forms
+no fused operation at `-O1`, the Makefile's level, so it prints the
+uncontracted bits; at `-O3`, CMake Release, it prints the `M.Fused` bits
+except the sign of a fresh NaN (unspecified, folded as in the probes) for
+every function but six. GCC's `-ffp-contract=fast` may fuse across
+statements and picks other products in `MatrixDecompose`,
+`QuaternionToMatrix`, `QuaternionMultiply`, `Vector3RotateByQuaternion`,
+`Vector3Unproject` and `Vector4DotProduct`; that build stays a
+`Contracted builds` gap on those six. Measured locally on
+every fused reference above (`tools/gcc_arm64_check.py`, 2026-11-12). A build
+that adds `-mfma` on x86-64 is outside upstream's build systems and is not
+compared.
 
 The `conformance` gate (`tools/conformance.py` over `tests/fixtures/images.json`)
 compares exact returned F32 bit patterns and Boolean values with the linked
@@ -564,8 +593,8 @@ Bend literals. There is no tolerance added to make mismatches pass.
 
 The conformance gate uses finite inputs, nonzero normalized ranges, and nonzero
 component divisors. Gate `scalars` is the exceptional/subnormal corpus for the
-six scalar functions; the same domain for the remaining raymath functions,
-contracted builds and the full target/performance matrix remain open. These
+six scalar functions; the same domain for the remaining raymath functions
+and the full target/performance matrix remain open. These
 are partial mappings, not completed raymath APIs. See the
 [progress dashboard](PROGRESS.md) and [VERIFICATION.md](VERIFICATION.md).
 

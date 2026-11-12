@@ -326,3 +326,60 @@ with `--gpu` every lane matched.
 Metal witness: raylib:function:IsFileHidden a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:IsPathAbsolute a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:UnloadDirectoryFiles a3efe8a3801f423827424227172eed9802c5e6cb pass
+
+## Fused raymath profile, 2026-11-12
+
+The `M.Fused{}` forms of 46 raymath functions (and `QuaternionFromMatrix`,
+which fuses nothing) were compared with `--gpu` in gates `vector2` (50493
+cases), `vector3` (57720), `vector4` (59778), `scalars` (17420), `shape`
+(2656) and `matrix-arith` (784): every case matched on CPU-1, CPU-2,
+JavaScript and forced Metal, uncontracted and fused rows alike. `shape` and
+`matrix-arith` had dropped their GPU lane; they now compare it.
+
+Metal witness: raymath:function:MatrixDecompose a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:QuaternionFromVector3ToVector3 a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3Unproject a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:QuaternionFromMatrix a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:QuaternionToMatrix a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3RotateByQuaternion a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:QuaternionLength a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:QuaternionNormalize a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:QuaternionInvert a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:QuaternionLerp a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:QuaternionNlerp a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:QuaternionMultiply a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4Length a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4LengthSqr a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4DotProduct a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4Distance a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4DistanceSqr a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4Normalize a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector4Lerp a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:MatrixLookAt a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:MatrixMultiply a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:MatrixDeterminant a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:MatrixInvert a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3OrthoNormalize a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3Project a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3Reject a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3Lerp a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3Reflect a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3Length a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3LengthSqr a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3Distance a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3Normalize a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3CrossProduct a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3DotProduct a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector3DistanceSqr a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2Distance a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2Length a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2Normalize a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Lerp a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Remap a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Wrap a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2LengthSqr a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2DistanceSqr a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2DotProduct a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2CrossProduct a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2Lerp a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raymath:function:Vector2Reflect a3efe8a3801f423827424227172eed9802c5e6cb pass

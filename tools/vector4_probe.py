@@ -14,11 +14,17 @@ payload change or a NaN where raylib returned a number fails on every lane.
 Slerp and the axis/Euler conversions stay out:
 they call libm functions whose host profiles are not this corpus. Vector4 min
 and max stay on the signed-zero profiles.
+
+On arm64 the reductions, Normalize, Hamilton Multiply, Invert, Lerp and
+Nlerp are also compared under M.Fused{} against the same raymath compiled
+with clang's default `-ffp-contract=on` (tools/fused_rows.py), on the
+exceptional pairs and on seeded finite ones whose roundings differ when fused.
 """
 import hashlib
 import json
 from itertools import product
 
+import fused_rows
 import probekit
 import quiet_nan
 from probekit import ProbeFailure, run
@@ -67,6 +73,24 @@ QPAIR = (
     ('q_normalize', 'QuaternionNormalize({a})', 'M.Quaternion.normalize({a})', 'v'),
     ('q_length', 'QuaternionLength({a})', 'M.Quaternion.length({a})', 'f'),
     ('q_equals', 'QuaternionEquals({a}, {b})', 'quaternion_equals_owned({a}, {b})', 'b'),
+)
+# (name, C expression, Bend _for def, shape, operand count)
+FUSED = (
+    ('normalize', 'Vector4Normalize({a})', 'vector4_normalize_for_owned', 'v', 1),
+    ('length', 'Vector4Length({a})', 'vector4_length_for_owned', 'f', 1),
+    ('length_sqr', 'Vector4LengthSqr({a})', 'vector4_length_sqr_for_owned', 'f', 1),
+    ('dot', 'Vector4DotProduct({a}, {b})', 'vector4_dot_product_for_owned', 'f', 2),
+    ('distance', 'Vector4Distance({a}, {b})', 'vector4_distance_for_owned', 'f', 2),
+    ('distance_sqr', 'Vector4DistanceSqr({a}, {b})', 'vector4_distance_sqr_for_owned', 'f', 2),
+    ('q_multiply', 'QuaternionMultiply({a}, {b})', 'quaternion_multiply_for_owned', 'v', 2),
+    ('q_invert', 'QuaternionInvert({a})', 'quaternion_invert_for_owned', 'v', 1),
+    ('q_normalize', 'QuaternionNormalize({a})', 'quaternion_normalize_for_owned', 'v', 1),
+    ('q_length', 'QuaternionLength({a})', 'quaternion_length_for_owned', 'f', 1),
+)
+FUSED_LERP = (
+    ('lerp', 'Vector4Lerp', 'vector4_lerp_for_owned'),
+    ('q_lerp', 'QuaternionLerp', 'quaternion_lerp_for_owned'),
+    ('q_nlerp', 'QuaternionNlerp', 'quaternion_nlerp_for_owned'),
 )
 VSCALAR = (
     ('add_value', 'Vector4AddValue({a}, {s})', 'vector4_add_value_owned({a}, word({s}))', 'v'),
@@ -232,6 +256,32 @@ def quaternion_divide_owned(left: M.Vector4, right: M.Vector4) -> M.Vector4:
   M.Quaternion.divide(left, right)
 def quaternion_equals_owned(+left: M.Vector4, +right: M.Vector4) -> Bool:
   M.Quaternion.equals(left, right)
+def vector4_normalize_for_owned(+arithmetic: M.Contraction, +vector: M.Vector4) -> M.Vector4:
+  M.Vector4.normalize_for(arithmetic, vector)
+def vector4_length_for_owned(+arithmetic: M.Contraction, vector: M.Vector4) -> F32:
+  M.Vector4.length_for(arithmetic, vector)
+def vector4_length_sqr_for_owned(+arithmetic: M.Contraction, +vector: M.Vector4) -> F32:
+  M.Vector4.length_sqr_for(arithmetic, vector)
+def vector4_dot_product_for_owned(+arithmetic: M.Contraction, left: M.Vector4, right: M.Vector4) -> F32:
+  M.Vector4.dot_product_for(arithmetic, left, right)
+def vector4_distance_for_owned(+arithmetic: M.Contraction, left: M.Vector4, right: M.Vector4) -> F32:
+  M.Vector4.distance_for(arithmetic, left, right)
+def vector4_distance_sqr_for_owned(+arithmetic: M.Contraction, left: M.Vector4, right: M.Vector4) -> F32:
+  M.Vector4.distance_sqr_for(arithmetic, left, right)
+def vector4_lerp_for_owned(+arithmetic: M.Contraction, left: M.Vector4, right: M.Vector4, +amount: F32) -> M.Vector4:
+  M.Vector4.lerp_for(arithmetic, left, right, amount)
+def quaternion_multiply_for_owned(+arithmetic: M.Contraction, left: M.Vector4, right: M.Vector4) -> M.Vector4:
+  M.Quaternion.multiply_for(arithmetic, left, right)
+def quaternion_invert_for_owned(+arithmetic: M.Contraction, +quaternion: M.Vector4) -> M.Vector4:
+  M.Quaternion.invert_for(arithmetic, quaternion)
+def quaternion_normalize_for_owned(+arithmetic: M.Contraction, +quaternion: M.Vector4) -> M.Vector4:
+  M.Quaternion.normalize_for(arithmetic, quaternion)
+def quaternion_length_for_owned(+arithmetic: M.Contraction, quaternion: M.Vector4) -> F32:
+  M.Quaternion.length_for(arithmetic, quaternion)
+def quaternion_lerp_for_owned(+arithmetic: M.Contraction, left: M.Vector4, right: M.Vector4, amount: F32) -> M.Vector4:
+  M.Quaternion.lerp_for(arithmetic, left, right, amount)
+def quaternion_nlerp_for_owned(+arithmetic: M.Contraction, left: M.Vector4, right: M.Vector4, amount: F32) -> M.Vector4:
+  M.Quaternion.nlerp_for(arithmetic, left, right, amount)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -253,6 +303,10 @@ def render(selected, gpu):
     emitter = {'v': 'show4', 'f': 'show', 'b': 'flag'}
     body = PROGRAM
     for name, args in selected:
+        fused = fused_rows.call(name, args, FUSED, FUSED_LERP, 4, vec)
+        if fused:
+            body += f'    {emitter[fused_rows.shape(name, FUSED, FUSED_LERP)]}({fused})\n'
+            continue
         if name in ('lerp', 'q_lerp', 'q_nlerp'):
             *components, amount = args
             call = bend[name].format(a=vec(*components[:4]), b=vec(*components[4:8]), s=amount)
@@ -266,18 +320,28 @@ def render(selected, gpu):
 
 
 def aligned(rows, values):
-    return [quiet_nan.canonical(name, args, value) for (name, args), value in zip(rows, values)]
+    return [quiet_nan.canonical(name.removeprefix('fused_'), args, value) for (name, args), value in zip(rows, values)]
 
 
 def main():
     probe = probekit.Probe('vector4', probekit.arguments(__doc__))
     rows = cases()
-    if len(rows) > 40000:
-        raise ProbeFailure(f'vector4: {len(rows)} cases is more than the probe budget')
     text = native(probe, rows)
     expected = [json.loads(line) for line in text.splitlines() if line.strip()]
     if len(expected) != len(rows):
         raise ProbeFailure(f'vector4: native produced {len(expected)} rows for {len(rows)} cases')
+    if fused_rows.available():
+        table = fused_rows.pairs(pairs(), 4, 500, 0xF05ED4)
+        extra = fused_rows.cases(table, FUSED, FUSED_LERP, AMOUNTS)
+        fused_text = fused_rows.native(probe, 'Vector4', 4, table, FUSED, FUSED_LERP, AMOUNTS)
+        fused_expected = [json.loads(line) for line in fused_text.splitlines() if line.strip()]
+        if len(fused_expected) != len(extra):
+            raise ProbeFailure(f'vector4: fused native produced {len(fused_expected)} rows for {len(extra)} cases')
+        rows, expected, text = rows + extra, expected + fused_expected, text + fused_text
+    else:
+        probe.report['fused'] = 'no contracted reference on this host'
+    if len(rows) > 80000:
+        raise ProbeFailure(f'vector4: {len(rows)} cases is more than the probe budget')
     lanes = probe.candidates(render, rows, batch=100, source_limit=48000)
     expected_n = aligned(rows, expected)
     lanes_n = {lane: aligned(rows, values) for lane, values in lanes.items()}

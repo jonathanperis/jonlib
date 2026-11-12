@@ -12,10 +12,20 @@ positive payload before an exact comparison: its sign is not fixed by IEEE
 754. Every other bit, including a propagated NaN payload, is exact on CPU-1,
 CPU-2 and JavaScript. A payload change or a NaN where raylib returned a
 number fails on every lane.
+
+On arm64 the reductions, Reflect and Lerp are also compared under M.Fused{}
+against the same raymath compiled with clang's default `-ffp-contract=on`
+(the upstream arm64 build fuses each a*b + c of one expression), on the
+exceptional grid and on seeded finite inputs whose roundings differ when
+fused. Other hosts have no contracted reference and skip those rows.
 """
 import hashlib
 import json
+import platform
+import random
+import struct
 
+import fused_rows
 import probekit
 import quiet_nan
 from probekit import ProbeFailure, run
@@ -58,6 +68,18 @@ PAIR = (
     ('distance_sqr', 'Vector2DistanceSqr({a}, {b})', 'M.Vector2.distance_sqr({a}, {b})', 'f'),
     ('equals', 'Vector2Equals({a}, {b})', 'vector2_equals_owned({a}, {b})', 'b'),
 )
+# Operations whose arm64 build contracts: (name, C expression, Bend _for def, shape)
+FUSED = (
+    ('reflect', 'Vector2Reflect({a}, {b})', 'vector2_reflect_for_owned', 'v'),
+    ('normalize', 'Vector2Normalize({a})', 'vector2_normalize_for_owned', 'v'),
+    ('length', 'Vector2Length({a})', 'vector2_length_for_owned', 'f'),
+    ('length_sqr', 'Vector2LengthSqr({a})', 'vector2_length_sqr_for_owned', 'f'),
+    ('dot', 'Vector2DotProduct({a}, {b})', 'vector2_dot_product_for_owned', 'f'),
+    ('cross', 'Vector2CrossProduct({a}, {b})', 'vector2_cross_product_for_owned', 'f'),
+    ('distance', 'Vector2Distance({a}, {b})', 'vector2_distance_for_owned', 'f'),
+    ('distance_sqr', 'Vector2DistanceSqr({a}, {b})', 'vector2_distance_sqr_for_owned', 'f'),
+)
+UNARY = {'normalize', 'length', 'length_sqr'}
 SCALAR = (
     ('add_value', 'Vector2AddValue({a}, {s})', 'vector2_add_value_owned({a}, word({s}))', 'v'),
     ('subtract_value', 'Vector2SubtractValue({a}, {s})', 'vector2_subtract_value_owned({a}, word({s}))', 'v'),
@@ -105,6 +127,69 @@ def triples():
                     seen.add(key)
                     rows.append(key)
     return rows
+
+
+def finite(rng):
+    """A finite normal float with a moderate exponent (no overflow in a product)."""
+    sign = rng.getrandbits(1) << 31
+    return sign | (rng.randrange(97, 158) << 23) | rng.getrandbits(23)
+
+
+def fused_pairs():
+    """The exceptional grid plus seeded finite pairs, with a finite lerp amount each."""
+    rng = random.Random(0xF05ED)
+    rows = [args + (None,) for args in pairs()]
+    for _ in range(600):
+        amount = struct.unpack('<I', struct.pack('<f', rng.random()))[0]
+        rows.append((finite(rng), finite(rng), finite(rng), finite(rng), amount))
+    return rows
+
+
+def fused_cases():
+    rows = []
+    for row in fused_pairs():
+        args, amount = row[:4], row[4]
+        for name, _, _, _ in FUSED:
+            rows.append(('fused_' + name, args))
+        for value in (AMOUNTS if amount is None else (amount,)):
+            rows.append(('fused_lerp', args + (value,)))
+    return rows
+
+
+def native_fused(probe):
+    """raymath with clang's default contraction, in the order of fused_cases."""
+    rows = fused_pairs()
+    lines = [
+        '#include <stdio.h>', '#include <string.h>',
+        '#define RAYMATH_STATIC_INLINE', '#include "raymath.h"',
+        'static unsigned sink;',
+        'static float load(unsigned bits){volatile unsigned u=bits; float x; memcpy(&x,(void*)&u,4); sink+=u; return x;}',
+        'static unsigned bits(float x){unsigned b; memcpy(&b,&x,4); return b;}',
+        'static Vector2 V(unsigned x,unsigned y){return (Vector2){load(x),load(y)};}',
+        'static void emit2(Vector2 v){printf("[%u,%u]\\n", bits(v.x), bits(v.y));}',
+        'static void emit1(float x){printf("%u\\n", bits(x));}',
+        'static const unsigned rows[][6] = {',
+    ]
+    for row in rows:
+        amount = row[4]
+        lines.append('  {' + ','.join(f'0x{word:08x}u' for word in row[:4]) + f',{int(amount is None)}u,0x{amount or 0:08x}u}},')
+    lines.append('};')
+    lines.append('static const unsigned amounts[] = {' + ','.join(f'0x{word:08x}u' for word in AMOUNTS) + '};')
+    lines.append('int main(void){')
+    lines.append('  for (unsigned i = 0; i < sizeof rows / sizeof rows[0]; i++) {')
+    lines.append('    Vector2 a = V(rows[i][0], rows[i][1]);')
+    lines.append('    Vector2 b = V(rows[i][2], rows[i][3]);')
+    for name, expr, _, shape in FUSED:
+        emit = {'v': 'emit2', 'f': 'emit1'}[shape]
+        lines.append(f'    {emit}({expr.format(a="a", b="b")});')
+    lines.append('    if (rows[i][4]) for (unsigned k = 0; k < sizeof amounts / sizeof amounts[0]; k++)')
+    lines.append('      emit2(Vector2Lerp(a, b, load(amounts[k])));')
+    lines.append('    else emit2(Vector2Lerp(a, b, load(rows[i][5])));')
+    lines.append('  }')
+    lines.append('  (void)sink; return 0;}')
+    source = probe.work / 'reference-fused.c'
+    source.write_text('\n'.join(lines) + '\n')
+    return fused_rows.levels(probe, source)
 
 
 def cases():
@@ -208,6 +293,24 @@ def vector2_invert_owned(vector: M.Vector2) -> M.Vector2:
   M.Vector2.invert(vector)
 def vector2_equals_owned(left: M.Vector2, right: M.Vector2) -> Bool:
   M.Vector2.equals(left, right)
+def vector2_reflect_for_owned(+arithmetic: M.Contraction, vector: M.Vector2, normal: M.Vector2) -> M.Vector2:
+  M.Vector2.reflect_for(arithmetic, vector, normal)
+def vector2_normalize_for_owned(+arithmetic: M.Contraction, vector: M.Vector2) -> M.Vector2:
+  M.Vector2.normalize_for(arithmetic, vector)
+def vector2_length_for_owned(+arithmetic: M.Contraction, vector: M.Vector2) -> F32:
+  M.Vector2.length_for(arithmetic, vector)
+def vector2_length_sqr_for_owned(+arithmetic: M.Contraction, vector: M.Vector2) -> F32:
+  M.Vector2.length_sqr_for(arithmetic, vector)
+def vector2_dot_product_for_owned(+arithmetic: M.Contraction, left: M.Vector2, right: M.Vector2) -> F32:
+  M.Vector2.dot_product_for(arithmetic, left, right)
+def vector2_cross_product_for_owned(+arithmetic: M.Contraction, left: M.Vector2, right: M.Vector2) -> F32:
+  M.Vector2.cross_product_for(arithmetic, left, right)
+def vector2_distance_for_owned(+arithmetic: M.Contraction, left: M.Vector2, right: M.Vector2) -> F32:
+  M.Vector2.distance_for(arithmetic, left, right)
+def vector2_distance_sqr_for_owned(+arithmetic: M.Contraction, left: M.Vector2, right: M.Vector2) -> F32:
+  M.Vector2.distance_sqr_for(arithmetic, left, right)
+def vector2_lerp_for_owned(+arithmetic: M.Contraction, left: M.Vector2, right: M.Vector2, +amount: F32) -> M.Vector2:
+  M.Vector2.lerp_for(arithmetic, left, right, amount)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -222,10 +325,20 @@ def render(selected, gpu):
     scalar = {name: expr for name, _, expr, _ in SCALAR}
     shape = {name: kind for name, _, _, kind in PAIR + SCALAR}
     shape['lerp'] = 'v'
+    shape.update({'fused_' + name: kind for name, _, _, kind in FUSED})
+    shape['fused_lerp'] = 'v'
+    fused = {'fused_' + name: wrapper for name, _, wrapper, _ in FUSED}
     emitter = {'v': 'show2', 'f': 'show', 'b': 'flag'}
     body = PROGRAM
     for name, args in selected:
-        if name == 'lerp':
+        if name == 'fused_lerp':
+            ax, ay, bx, by, amount = args
+            call = f'vector2_lerp_for_owned(M.Fused{{}}, {vec(ax, ay)}, {vec(bx, by)}, word({amount}))'
+        elif name in fused:
+            ax, ay, bx, by = args
+            operands = vec(ax, ay) if name[len('fused_'):] in UNARY else f'{vec(ax, ay)}, {vec(bx, by)}'
+            call = f'{fused[name]}(M.Fused{{}}, {operands})'
+        elif name == 'lerp':
             ax, ay, bx, by, amount = args
             call = f'M.Vector2.lerp({vec(ax, ay)}, {vec(bx, by)}, word({amount}))'
         elif name in scalar:
@@ -239,18 +352,27 @@ def render(selected, gpu):
 
 
 def aligned(rows, values):
-    return [quiet_nan.canonical(name, args, value) for (name, args), value in zip(rows, values)]
+    return [quiet_nan.canonical(name.removeprefix('fused_'), args, value) for (name, args), value in zip(rows, values)]
 
 
 def main():
     probe = probekit.Probe('vector2', probekit.arguments(__doc__))
     rows = cases()
-    if len(rows) > 40000:
-        raise ProbeFailure(f'vector2: {len(rows)} cases is more than the probe budget')
     text = native(probe, rows)
     expected = [json.loads(line) for line in text.splitlines() if line.strip()]
     if len(expected) != len(rows):
         raise ProbeFailure(f'vector2: native produced {len(expected)} rows for {len(rows)} cases')
+    if fused_rows.available():
+        extra = fused_cases()
+        fused_text = native_fused(probe)
+        fused_expected = [json.loads(line) for line in fused_text.splitlines() if line.strip()]
+        if len(fused_expected) != len(extra):
+            raise ProbeFailure(f'vector2: fused native produced {len(fused_expected)} rows for {len(extra)} cases')
+        rows, expected, text = rows + extra, expected + fused_expected, text + fused_text
+    else:
+        probe.report['fused'] = f'not on {platform.machine()}: no contracted reference'
+    if len(rows) > 60000:
+        raise ProbeFailure(f'vector2: {len(rows)} cases is more than the probe budget')
     lanes = probe.candidates(render, rows, batch=160, source_limit=48000)
     expected_n = aligned(rows, expected)
     lanes_n = {lane: aligned(rows, values) for lane, values in lanes.items()}

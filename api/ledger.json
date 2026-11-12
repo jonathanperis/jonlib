@@ -67710,21 +67710,20 @@
       "phase": 1,
       "sequence": 1,
       "status": "partial",
-      "jonlib": "jonmath.Math.lerp",
+      "jonlib": "jonmath.Math.lerp_for / jonmath.Math.lerp",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 interpolation and extrapolation, including signed zero, a subnormal, infinities, one quiet NaN and equal endpoints. CPU-1 and CPU-2 match every result bit of the corpus.",
+      "scope": "Uncontracted F32 interpolation and extrapolation, including signed zero, a subnormal, infinities, one quiet NaN and equal endpoints. CPU-1 and CPU-2 match every result bit of the corpus. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes end, amount; borrows start; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -67733,7 +67732,8 @@
         "tools/scalars_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -67835,21 +67835,20 @@
       "phase": 1,
       "sequence": 1,
       "status": "partial",
-      "jonlib": "jonmath.Math.remap",
+      "jonlib": "jonmath.Math.remap_for / jonmath.Math.remap",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 remapping, including a zero input range, signed zero, a subnormal, infinities and one quiet NaN. CPU-1 and CPU-2 match every result bit of the corpus.",
+      "scope": "Uncontracted F32 remapping, including a zero input range, signed zero, a subnormal, infinities and one quiet NaN. CPU-1 and CPU-2 match every result bit of the corpus. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes value, input_end, output_end; borrows input_start, output_start; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -67858,7 +67857,8 @@
         "tools/scalars_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -67897,21 +67897,20 @@
       "phase": 1,
       "sequence": 1,
       "status": "partial",
-      "jonlib": "jonmath.Math.wrap",
+      "jonlib": "jonmath.Math.wrap_for / jonmath.Math.wrap",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 wrapping with reference floor, including a zero range, signed zero, a subnormal, infinities and one quiet NaN. CPU-1 and CPU-2 match every result bit of the corpus.",
+      "scope": "Uncontracted F32 wrapping with reference floor, including a zero range, signed zero, a subnormal, infinities and one quiet NaN. CPU-1 and CPU-2 match every result bit of the corpus. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: borrows value, lower, upper; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -67920,7 +67919,8 @@
         "tools/scalars_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68408,20 +68408,19 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector2.length",
+      "jonlib": "jonmath.Vector2.length_for / jonmath.Vector2.length",
       "mapping_state": "implemented",
-      "scope": "F32 length, including a zero vector, subnormals, infinities and one quiet NaN. Every result bit of the corpus matches.",
+      "scope": "F32 length, including a zero vector, subnormals, infinities and one quiet NaN. Every result bit of the corpus matches. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes vector; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -68430,7 +68429,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68471,20 +68471,19 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector2.length_sqr",
+      "jonlib": "jonmath.Vector2.length_sqr_for / jonmath.Vector2.length_sqr",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 squared length. Every result bit of the vector2 corpus matches.",
+      "scope": "Uncontracted F32 squared length. Every result bit of the vector2 corpus matches. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes vector; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -68493,7 +68492,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68534,21 +68534,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector2.dot_product",
+      "jonlib": "jonmath.Vector2.dot_product_for / jonmath.Vector2.dot_product",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 dot product. Non-NaN bits of the vector2 corpus match.",
+      "scope": "Uncontracted F32 dot product. Non-NaN bits of the vector2 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -68557,7 +68556,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68598,21 +68598,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector2.cross_product",
+      "jonlib": "jonmath.Vector2.cross_product_for / jonmath.Vector2.cross_product",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 two-dimensional cross product. Non-NaN bits of the vector2 corpus match.",
+      "scope": "Uncontracted F32 two-dimensional cross product. Non-NaN bits of the vector2 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -68621,7 +68620,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68662,21 +68662,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector2.distance",
+      "jonlib": "jonmath.Vector2.distance_for / jonmath.Vector2.distance",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 distance. Non-NaN bits of the vector2 corpus match.",
+      "scope": "Uncontracted F32 distance. Non-NaN bits of the vector2 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -68685,7 +68684,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68726,21 +68726,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector2.distance_sqr",
+      "jonlib": "jonmath.Vector2.distance_sqr_for / jonmath.Vector2.distance_sqr",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 squared distance. Non-NaN bits of the vector2 corpus match.",
+      "scope": "Uncontracted F32 squared distance. Non-NaN bits of the vector2 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -68749,7 +68748,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -69196,20 +69196,19 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector2.normalize",
+      "jonlib": "jonmath.Vector2.normalize_for / jonmath.Vector2.normalize",
       "mapping_state": "implemented",
-      "scope": "Uncontracted normalization; a zero length returns positive-zero components. Every result bit of the vector2 corpus matches.",
+      "scope": "Uncontracted normalization; a zero length returns positive-zero components. Every result bit of the vector2 corpus matches. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes vector; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -69218,7 +69217,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -69322,21 +69322,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector2.lerp",
+      "jonlib": "jonmath.Vector2.lerp_for / jonmath.Vector2.lerp",
       "mapping_state": "implemented",
-      "scope": "Uncontracted component interpolation. Non-NaN bits match for amounts +0, 1, +inf and one quiet NaN.",
+      "scope": "Uncontracted component interpolation. Non-NaN bits match for amounts +0, 1, +inf and one quiet NaN. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right; borrows amount; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -69345,7 +69344,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -69386,21 +69386,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector2.reflect",
+      "jonlib": "jonmath.Vector2.reflect_for / jonmath.Vector2.reflect",
       "mapping_state": "implemented",
-      "scope": "Uncontracted reflection by the supplied normal. Non-NaN bits of the vector2 corpus match.",
+      "scope": "Uncontracted reflection by the supplied normal. Non-NaN bits of the vector2 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes vector, normal; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -69409,7 +69408,8 @@
         "tools/vector2_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70552,21 +70552,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector3.cross_product",
+      "jonlib": "jonmath.Vector3.cross_product_for / jonmath.Vector3.cross_product",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 cross product with reference handedness. Non-NaN bits of the vector3 corpus match.",
+      "scope": "Uncontracted F32 cross product with reference handedness. Non-NaN bits of the vector3 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -70575,7 +70574,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70678,20 +70678,19 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector3.length",
+      "jonlib": "jonmath.Vector3.length_for / jonmath.Vector3.length",
       "mapping_state": "implemented",
-      "scope": "F32 length, including a zero vector, subnormals, infinities and one quiet NaN. Every result bit of the corpus matches.",
+      "scope": "F32 length, including a zero vector, subnormals, infinities and one quiet NaN. Every result bit of the corpus matches. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes vector; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -70700,7 +70699,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70741,20 +70741,19 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector3.length_sqr",
+      "jonlib": "jonmath.Vector3.length_sqr_for / jonmath.Vector3.length_sqr",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 squared length. Every result bit of the vector3 corpus matches.",
+      "scope": "Uncontracted F32 squared length. Every result bit of the vector3 corpus matches. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: borrows vector; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -70763,7 +70762,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70804,21 +70804,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector3.dot_product",
+      "jonlib": "jonmath.Vector3.dot_product_for / jonmath.Vector3.dot_product",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 dot product. Non-NaN bits of the vector3 corpus match.",
+      "scope": "Uncontracted F32 dot product. Non-NaN bits of the vector3 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -70827,7 +70826,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70868,21 +70868,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector3.distance",
+      "jonlib": "jonmath.Vector3.distance_for / jonmath.Vector3.distance",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 distance. Non-NaN bits of the vector3 corpus match.",
+      "scope": "Uncontracted F32 distance. Non-NaN bits of the vector3 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -70891,7 +70890,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70932,21 +70932,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector3.distance_sqr",
+      "jonlib": "jonmath.Vector3.distance_sqr_for / jonmath.Vector3.distance_sqr",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 squared distance. Non-NaN bits of the vector3 corpus match.",
+      "scope": "Uncontracted F32 squared distance. Non-NaN bits of the vector3 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -70955,7 +70954,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -71199,20 +71199,19 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector3.normalize",
+      "jonlib": "jonmath.Vector3.normalize_for / jonmath.Vector3.normalize",
       "mapping_state": "implemented",
-      "scope": "Uncontracted normalization; a zero length retains the input, including signed zeros. Non-NaN bits of the vector3 corpus match.",
+      "scope": "Uncontracted normalization; a zero length retains the input, including signed zeros. Non-NaN bits of the vector3 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: borrows vector; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "partial",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -71221,7 +71220,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -71262,21 +71262,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector3.project",
+      "jonlib": "jonmath.Vector3.project_for / jonmath.Vector3.project",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 projection with nonzero reference squared target length.",
+      "scope": "Uncontracted finite F32 projection with nonzero reference squared target length. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes vector; borrows onto; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -71286,7 +71285,8 @@
         "tests/fixtures/images.json",
         "tests/test_harness.py",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -71327,21 +71327,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector3.reject",
+      "jonlib": "jonmath.Vector3.reject_for / jonmath.Vector3.reject",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 rejection with nonzero reference squared target length and reference subtraction order.",
+      "scope": "Uncontracted finite F32 rejection with nonzero reference squared target length and reference subtraction order. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes onto; borrows vector; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -71351,7 +71350,8 @@
         "tests/fixtures/images.json",
         "tests/test_harness.py",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -71392,13 +71392,12 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector3.ortho_normalize",
+      "jonlib": "jonmath.Vector3.ortho_normalize_for / jonmath.Vector3.ortho_normalize",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 paired-result orthonormalization, adapting two distinct pointer outputs and retaining zero/parallel behavior.",
+      "scope": "Uncontracted finite F32 paired-result orthonormalization, adapting two distinct pointer outputs and retaining zero/parallel behavior. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes first, second; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -71407,8 +71406,8 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -71417,7 +71416,8 @@
         "tools/shape_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -71521,13 +71521,13 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector3.rotate_by_quaternion",
+      "jonlib": "jonmath.Vector3.rotate_by_quaternion_for / jonmath.Vector3.rotate_by_quaternion",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 direct quaternion rotation formula, retaining non-unit and zero-quaternion behavior.",
+      "scope": "Uncontracted finite F32 direct quaternion rotation formula, retaining non-unit and zero-quaternion behavior. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes vector, quaternion; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
+        "Contracted builds: GCC -O3 on arm64 (CMake Release, -ffp-contract=fast) fuses this formula differently from clang; M.Fused is clang's contraction",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -71536,7 +71536,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "partial",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -71545,7 +71545,8 @@
         "tools/shape_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -71711,21 +71712,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector3.lerp",
+      "jonlib": "jonmath.Vector3.lerp_for / jonmath.Vector3.lerp",
       "mapping_state": "implemented",
-      "scope": "Uncontracted component interpolation. Non-NaN bits match for amounts +0, 1, +inf and one quiet NaN.",
+      "scope": "Uncontracted component interpolation. Non-NaN bits match for amounts +0, 1, +inf and one quiet NaN. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right; borrows amount; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -71734,7 +71734,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -71837,21 +71838,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector3.reflect",
+      "jonlib": "jonmath.Vector3.reflect_for / jonmath.Vector3.reflect",
       "mapping_state": "implemented",
-      "scope": "Uncontracted reflection by the supplied normal. Non-NaN bits of the vector3 corpus match.",
+      "scope": "Uncontracted reflection by the supplied normal. Non-NaN bits of the vector3 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: borrows vector, normal; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -71860,7 +71860,8 @@
         "tools/vector3_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -72102,13 +72103,13 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector3.unproject",
+      "jonlib": "jonmath.Vector3.unproject_for / jonmath.Vector3.unproject",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 inverse projection/view transform retaining both reference constructor transpositions. Requires finite supported intermediates/results and nonzero homogeneous W; native oracle domain controls fail closed.",
+      "scope": "Uncontracted F32 inverse projection/view transform retaining both reference constructor transpositions. Requires finite supported intermediates/results and nonzero homogeneous W; native oracle domain controls fail closed. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes source, projection, view; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
+        "Contracted builds: GCC -O3 on arm64 (CMake Release, -ffp-contract=fast) fuses this formula differently from clang; M.Fused is clang's contraction",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -72117,7 +72118,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "partial",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -72127,7 +72128,8 @@
         "tests/fixtures/images.json",
         "tools/conformance.py",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -72945,20 +72947,19 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector4.length",
+      "jonlib": "jonmath.Vector4.length_for / jonmath.Vector4.length",
       "mapping_state": "implemented",
-      "scope": "F32 length, including a zero vector, subnormals, infinities and one quiet NaN. Every result bit of the corpus matches.",
+      "scope": "F32 length, including a zero vector, subnormals, infinities and one quiet NaN. Every result bit of the corpus matches. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes vector; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -72967,7 +72968,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -73008,20 +73010,19 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector4.length_sqr",
+      "jonlib": "jonmath.Vector4.length_sqr_for / jonmath.Vector4.length_sqr",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 squared length. Every result bit of the vector4 corpus matches.",
+      "scope": "Uncontracted F32 squared length. Every result bit of the vector4 corpus matches. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: borrows vector; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -73030,7 +73031,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -73071,13 +73073,13 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector4.dot_product",
+      "jonlib": "jonmath.Vector4.dot_product_for / jonmath.Vector4.dot_product",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 dot product. Non-NaN bits of the vector4 corpus match.",
+      "scope": "Uncontracted F32 dot product. Non-NaN bits of the vector4 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
+        "Contracted builds: GCC -O3 on arm64 (CMake Release, -ffp-contract=fast) fuses this formula differently from clang; M.Fused is clang's contraction",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -73085,7 +73087,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "partial",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -73094,7 +73096,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -73135,21 +73138,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector4.distance",
+      "jonlib": "jonmath.Vector4.distance_for / jonmath.Vector4.distance",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 distance. Non-NaN bits of the vector4 corpus match.",
+      "scope": "Uncontracted F32 distance. Non-NaN bits of the vector4 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -73158,7 +73160,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -73199,21 +73202,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector4.distance_sqr",
+      "jonlib": "jonmath.Vector4.distance_sqr_for / jonmath.Vector4.distance_sqr",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 squared distance. Non-NaN bits of the vector4 corpus match.",
+      "scope": "Uncontracted F32 squared distance. Non-NaN bits of the vector4 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -73222,7 +73224,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -73522,20 +73525,19 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector4.normalize",
+      "jonlib": "jonmath.Vector4.normalize_for / jonmath.Vector4.normalize",
       "mapping_state": "implemented",
-      "scope": "Uncontracted normalization; a length that is not greater than zero returns four positive zeros. Every result bit of the vector4 corpus matches.",
+      "scope": "Uncontracted normalization; a length that is not greater than zero returns four positive zeros. Every result bit of the vector4 corpus matches. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: borrows vector; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -73544,7 +73546,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -73723,21 +73726,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector4.lerp",
+      "jonlib": "jonmath.Vector4.lerp_for / jonmath.Vector4.lerp",
       "mapping_state": "implemented",
-      "scope": "Uncontracted component interpolation. Non-NaN bits match for amounts +0, 1, +inf and one quiet NaN.",
+      "scope": "Uncontracted component interpolation. Non-NaN bits match for amounts +0, 1, +inf and one quiet NaN. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right; borrows amount; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -73746,7 +73748,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -73976,21 +73979,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Matrix.determinant",
+      "jonlib": "jonmath.Matrix.determinant_for / jonmath.Matrix.determinant",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 reference Laplace expansion, including singular and negative determinants.",
+      "scope": "Uncontracted finite F32 reference Laplace expansion, including singular and negative determinants. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes matrix; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -73999,7 +74001,8 @@
         "tools/shape_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -74170,21 +74173,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Matrix.invert",
+      "jonlib": "jonmath.Matrix.invert_for / jonmath.Matrix.invert",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 inversion using the reference minors and reciprocal denominator; nonzero inversion denominator and finite supported intermediates/results.",
+      "scope": "Uncontracted F32 inversion using the reference minors and reciprocal denominator; nonzero inversion denominator and finite supported intermediates/results. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes matrix; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -74194,7 +74196,8 @@
         "tests/fixtures/images.json",
         "tests/test_harness.py",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -74427,14 +74430,13 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Matrix.multiply",
+      "jonlib": "jonmath.Matrix.multiply_for / jonmath.Matrix.multiply",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 four-term products in reference operand/field order (noncommutative).",
+      "scope": "Uncontracted F32 four-term products in reference operand/field order (noncommutative). Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "JavaScript stores every NaN as the canonical positive quiet NaN",
-        "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -74442,7 +74444,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "partial",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -74451,7 +74453,8 @@
         "tests/fixtures/images.json",
         "docs/MATH.md",
         "jonmath.bend",
-        "tools/matrix_arith_probe.py"
+        "tools/matrix_arith_probe.py",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75255,13 +75258,12 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Matrix.look_at",
+      "jonlib": "jonmath.Matrix.look_at_for / jonmath.Matrix.look_at",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 view basis and translation with reference normalization, zero-distance and parallel-up behavior.",
+      "scope": "Uncontracted finite F32 view basis and translation with reference normalization, zero-distance and parallel-up behavior. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes target, up; borrows eye; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -75269,8 +75271,8 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -75279,7 +75281,8 @@
         "tools/shape_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75714,20 +75717,19 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Quaternion.length",
+      "jonlib": "jonmath.Quaternion.length_for / jonmath.Quaternion.length",
       "mapping_state": "implemented",
-      "scope": "F32 length, including a zero quaternion, subnormals, infinities and one quiet NaN. Every result bit of the corpus matches.",
+      "scope": "F32 length, including a zero quaternion, subnormals, infinities and one quiet NaN. Every result bit of the corpus matches. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes quaternion; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -75736,7 +75738,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75777,20 +75780,19 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Quaternion.normalize",
+      "jonlib": "jonmath.Quaternion.normalize_for / jonmath.Quaternion.normalize",
       "mapping_state": "implemented",
-      "scope": "Uncontracted normalization; a zero length is replaced by one, retaining the input signs. Non-NaN bits of the vector4 corpus match.",
+      "scope": "Uncontracted normalization; a zero length is replaced by one, retaining the input signs. Non-NaN bits of the vector4 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: borrows quaternion; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -75799,7 +75801,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75840,21 +75843,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Quaternion.invert",
+      "jonlib": "jonmath.Quaternion.invert_for / jonmath.Quaternion.invert",
       "mapping_state": "implemented",
-      "scope": "Conjugate divided by squared length; a zero square returns the input. Non-NaN bits of the vector4 corpus match.",
+      "scope": "Conjugate divided by squared length; a zero square returns the input. Non-NaN bits of the vector4 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: borrows quaternion; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -75863,7 +75865,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -75904,13 +75907,13 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Quaternion.multiply",
+      "jonlib": "jonmath.Quaternion.multiply_for / jonmath.Quaternion.multiply",
       "mapping_state": "implemented",
-      "scope": "Uncontracted Hamilton product in reference order. Non-NaN bits of the vector4 corpus match.",
+      "scope": "Uncontracted Hamilton product in reference order. Non-NaN bits of the vector4 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
+        "Contracted builds: GCC -O3 on arm64 (CMake Release, -ffp-contract=fast) fuses this formula differently from clang; M.Fused is clang's contraction",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured",
         "Integration: not exercised beyond its gate"
       ],
@@ -75919,7 +75922,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "partial",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -75928,7 +75931,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -76100,21 +76104,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Quaternion.lerp",
+      "jonlib": "jonmath.Quaternion.lerp_for / jonmath.Quaternion.lerp",
       "mapping_state": "implemented",
-      "scope": "Uncontracted component interpolation. Non-NaN bits match for amounts +0, 1, +inf and one quiet NaN.",
+      "scope": "Uncontracted component interpolation. Non-NaN bits match for amounts +0, 1, +inf and one quiet NaN. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right, amount; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -76123,7 +76126,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -76164,21 +76168,20 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Quaternion.nlerp",
+      "jonlib": "jonmath.Quaternion.nlerp_for / jonmath.Quaternion.nlerp",
       "mapping_state": "implemented",
-      "scope": "Component lerp followed by quaternion normalization, with no hemisphere correction. Non-NaN bits of the vector4 corpus match.",
+      "scope": "Component lerp followed by quaternion normalization, with no hemisphere correction. Non-NaN bits of the vector4 corpus match. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes left, right, amount; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "partial"
@@ -76187,7 +76190,8 @@
         "tools/vector4_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -76354,13 +76358,12 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Quaternion.from_vector3_to_vector3",
+      "jonlib": "jonmath.Quaternion.from_vector3_to_vector3_for / jonmath.Quaternion.from_vector3_to_vector3",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 cross/dot construction followed by reference normalization, including scaled, zero and opposite vectors.",
+      "scope": "Uncontracted finite F32 cross/dot construction followed by reference normalization, including scaled, zero and opposite vectors. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: borrows first, second; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -76368,8 +76371,8 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -76378,7 +76381,8 @@
         "tools/shape_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -76422,11 +76426,10 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.from_matrix",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 matrix conversion with strict largest-component W/X/Y/Z tie order and unchanged reference off-diagonal formulas.",
+      "scope": "Uncontracted finite F32 matrix conversion with strict largest-component W/X/Y/Z tie order and unchanged reference off-diagonal formulas. The arm64 contracted build (-ffp-contract=on) fuses nothing here; its result is compared with this form too. Ownership: consumes matrix; the result is owned by the caller.",
       "gaps": [
-        "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -76434,8 +76437,8 @@
       "blocker": null,
       "gates": {
         "availability": "partial",
-        "behavior": "partial",
-        "ownership": "unverified",
+        "behavior": "verified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -76444,7 +76447,8 @@
         "tools/shape_probe.py",
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -76486,13 +76490,13 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Quaternion.to_matrix",
+      "jonlib": "jonmath.Quaternion.to_matrix_for / jonmath.Quaternion.to_matrix",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 reference matrix formula with all 16 fields checked, including non-unit and zero quaternions without normalization.",
+      "scope": "Uncontracted finite F32 reference matrix formula with all 16 fields checked, including non-unit and zero quaternions without normalization. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes quaternion; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
+        "Contracted builds: GCC -O3 on arm64 (CMake Release, -ffp-contract=fast) fuses this formula differently from clang; M.Fused is clang's contraction",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -76501,7 +76505,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "partial",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -76511,7 +76515,8 @@
         "tests/fixtures/images.json",
         "tests/test_harness.py",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -77000,13 +77005,13 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Matrix.decompose -> jonmath.Matrix.Decomposition",
+      "jonlib": "jonmath.Matrix.decompose_for / jonmath.Matrix.decompose -> jonmath.Matrix.Decomposition",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 decomposition into translation, quaternion and scale; all ten fields checked. Preserves max-stabilization, epsilon guards, shear-removal order, reflections and zero-matrix results.",
+      "scope": "Uncontracted finite F32 decomposition into translation, quaternion and scale; all ten fields checked. Preserves max-stabilization, epsilon guards, shear-removal order, reflections and zero-matrix results. Uncontracted and arm64 clang FMA (M.Fused) profiles; the fused form matches raymath built with -ffp-contract=on at -O1, -O2 and -O3. Ownership: consumes matrix; the contraction profile is borrowed and the result is owned by the caller.",
       "gaps": [
-        "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
+        "Contracted builds: GCC -O3 on arm64 (CMake Release, -ffp-contract=fast) fuses this formula differently from clang; M.Fused is clang's contraction",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -77017,7 +77022,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "partial",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "partial",
         "targets": "partial",
         "performance": "partial"
@@ -77027,7 +77032,8 @@
         "tests/fixtures/images.json",
         "tests/test_harness.py",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},

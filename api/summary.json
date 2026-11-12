@@ -572,13 +572,13 @@
   "phase1_exit": {
     "total": 327,
     "implemented": 327,
-    "behavior_ownership_verified": 190,
-    "only_allowed_gaps": 190,
-    "forced_metal_witnesses": 167,
+    "behavior_ownership_verified": 230,
+    "only_allowed_gaps": 230,
+    "forced_metal_witnesses": 214,
     "metal_not_applicable": 23,
-    "meeting": 190
+    "meeting": 230
   },
-  "open_gaps": 2712,
+  "open_gaps": 2671,
   "language_adaptations": {
     "entries": 1021,
     "items": 1046
@@ -705,7 +705,7 @@
       "name": "Lerp",
       "milestone": "numerics",
       "status": "partial",
-      "jonlib": "jonmath.Math.lerp",
+      "jonlib": "jonmath.Math.lerp_for / jonmath.Math.lerp",
       "next_step": "Close documented gaps and unverified gates for Lerp.",
       "milestone_dependencies": [
         "types"
@@ -729,7 +729,7 @@
       "name": "Remap",
       "milestone": "numerics",
       "status": "partial",
-      "jonlib": "jonmath.Math.remap",
+      "jonlib": "jonmath.Math.remap_for / jonmath.Math.remap",
       "next_step": "Close documented gaps and unverified gates for Remap.",
       "milestone_dependencies": [
         "types"
@@ -741,7 +741,7 @@
       "name": "Wrap",
       "milestone": "numerics",
       "status": "partial",
-      "jonlib": "jonmath.Math.wrap",
+      "jonlib": "jonmath.Math.wrap_for / jonmath.Math.wrap",
       "next_step": "Close documented gaps and unverified gates for Wrap.",
       "milestone_dependencies": [
         "types"

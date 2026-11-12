@@ -27,6 +27,7 @@ import ./src/float64.bend as Float64Numeric
 import ./src/angle.bend as LegacyAngle
 import ./src/checked_angle.bend as CheckedAngle
 import ./src/binary64_fma.bend as Binary64Fma
+import ./src/fma.bend as Fma
 import ./src/binary64_scaled.bend as Binary64Scaled
 import ./src/binary64_narrow.bend as Binary64Narrow
 import ./src/lgpl/tan.bend as GlibcTan
@@ -167,6 +168,25 @@ def Math.remap(value: F32, +input_start: F32, input_end: F32, +output_start: F32
 def Math.wrap(+value: F32, +lower: F32, +upper: F32) -> F32:
   (value - (upper - lower) * F32.floor(((value - lower) / (upper - lower) : F32)) : F32)
 
+# Fused (arm64 clang -ffp-contract=on) forms: each a*b + c of one expression is
+# one rounding, in the operand order clang's llvm.fmuladd gives it.
+def Math.lerp_for(+arithmetic: Contraction, +start: F32, end: F32, amount: F32) -> F32:
+  match arithmetic:
+    case Uncontracted{}: Math.lerp(start, end, amount)
+    case Fused{}: Fma.multiply_add(amount, (end - start : F32), start)
+
+def Math.remap_for(+arithmetic: Contraction, value: F32, +input_start: F32, input_end: F32, +output_start: F32, output_end: F32) -> F32:
+  match arithmetic:
+    case Uncontracted{}: Math.remap(value, input_start, input_end, output_start, output_end)
+    case Fused{}:
+      Fma.multiply_add(((value - input_start) / (input_end - input_start) : F32), (output_end - output_start : F32), output_start)
+
+def Math.wrap_for(+arithmetic: Contraction, +value: F32, +lower: F32, +upper: F32) -> F32:
+  match arithmetic:
+    case Uncontracted{}: Math.wrap(value, lower, upper)
+    case Fused{}:
+      Fma.multiply_add(F32.neg((upper - lower : F32)), F32.floor(((value - lower) / (upper - lower) : F32)), value)
+
 def Math.float_equals(+left: F32, +right: F32) -> Bool:
   (F32.abs((left - right : F32)) <= 0.000001 * F32.max(1.0, F32.max(F32.abs(left), F32.abs(right))) : F32)
 
@@ -233,6 +253,16 @@ def Vector2.length_sqr(vector: Vector2) -> F32:
 def Vector2.length(vector: Vector2) -> F32:
   F32.sqrt(Vector2.length_sqr(vector))
 
+def Vector2.length_sqr_for(+arithmetic: Contraction, vector: Vector2) -> F32:
+  match arithmetic:
+    case Uncontracted{}: Vector2.length_sqr(vector)
+    case Fused{}:
+      Vector2{+x, +y} = vector
+      Fma.multiply_add(x, x, (y * y : F32))
+
+def Vector2.length_for(+arithmetic: Contraction, vector: Vector2) -> F32:
+  F32.sqrt(Vector2.length_sqr_for(arithmetic, vector))
+
 def Vector2.normalized(nonzero: Bool, x: F32, y: F32, length: F32) -> Vector2:
   match nonzero:
     case False{}: Vector2.zero()
@@ -245,11 +275,22 @@ def Vector2.normalize(vector: Vector2) -> Vector2:
   +length = F32.sqrt((x * x + y * y : F32))
   Vector2.normalized((length > 0.0 : F32), x, y, length)
 
+def Vector2.normalize_for(+arithmetic: Contraction, vector: Vector2) -> Vector2:
+  Vector2{+x, +y} = vector
+  +length = F32.sqrt(Vector2.length_sqr_for(arithmetic, Vector2{x, y}))
+  Vector2.normalized((length > 0.0 : F32), x, y, length)
+
 def Vector2.distance_sqr(left: Vector2, right: Vector2) -> F32:
   Vector2.length_sqr(Vector2.subtract(left, right))
 
 def Vector2.distance(left: Vector2, right: Vector2) -> F32:
   F32.sqrt(Vector2.distance_sqr(left, right))
+
+def Vector2.distance_sqr_for(+arithmetic: Contraction, left: Vector2, right: Vector2) -> F32:
+  Vector2.length_sqr_for(arithmetic, Vector2.subtract(left, right))
+
+def Vector2.distance_for(+arithmetic: Contraction, left: Vector2, right: Vector2) -> F32:
+  F32.sqrt(Vector2.distance_sqr_for(arithmetic, left, right))
 
 def Vector2.move.route(snap: Bool, x: F32, y: F32, dx: F32, dy: F32, square: F32, +distance: F32, target: Vector2) -> Vector2:
   match snap:
@@ -276,6 +317,22 @@ def Vector2.cross_product(left: Vector2, right: Vector2) -> F32:
   Vector2{x, y} = left
   Vector2{u, v} = right
   (x * v - y * u : F32)
+
+def Vector2.dot_product_for(+arithmetic: Contraction, left: Vector2, right: Vector2) -> F32:
+  match arithmetic:
+    case Uncontracted{}: Vector2.dot_product(left, right)
+    case Fused{}:
+      Vector2{x, y} = left
+      Vector2{u, v} = right
+      Fma.multiply_add(x, u, (y * v : F32))
+
+def Vector2.cross_product_for(+arithmetic: Contraction, left: Vector2, right: Vector2) -> F32:
+  match arithmetic:
+    case Uncontracted{}: Vector2.cross_product(left, right)
+    case Fused{}:
+      Vector2{x, y} = left
+      Vector2{u, v} = right
+      Fma.multiply_add(x, v, (y * F32.neg(u) : F32))
 
 # Convenience angles keep the unchecked Apple (macOS libm) behavior.
 def Vector2.angle(+left: Vector2, +right: Vector2) -> F32:
@@ -308,6 +365,20 @@ def Vector2.reflect(vector: Vector2, normal: Vector2) -> Vector2:
   Vector2{+u, +v} = normal
   +dot = (x * u + y * v : F32)
   Vector2{(x - (2.0 * u) * dot : F32), (y - (2.0 * v) * dot : F32)}
+
+def Vector2.lerp_for(+arithmetic: Contraction, left: Vector2, right: Vector2, +amount: F32) -> Vector2:
+  Vector2{x, y} = left
+  Vector2{u, v} = right
+  Vector2{Math.lerp_for(arithmetic, x, u, amount), Math.lerp_for(arithmetic, y, v, amount)}
+
+def Vector2.reflect_for(+arithmetic: Contraction, vector: Vector2, normal: Vector2) -> Vector2:
+  match arithmetic:
+    case Uncontracted{}: Vector2.reflect(vector, normal)
+    case Fused{}:
+      Vector2{+x, +y} = vector
+      Vector2{+u, +v} = normal
+      +dot = Fma.multiply_add(x, u, (y * v : F32))
+      Vector2{Fma.multiply_add((u * F32.neg(2.0) : F32), dot, x), Fma.multiply_add((v * F32.neg(2.0) : F32), dot, y)}
 
 def Vector2.equals(left: Vector2, right: Vector2) -> Bool:
   Vector2{x, y} = left
@@ -505,6 +576,76 @@ def Matrix.invert(matrix: Matrix) -> Matrix:
     ((a20 * b05 - a22 * b02 + a23 * b01) * inverse : F32),
     ((F32.neg(a20) * b04 + a21 * b02 - a23 * b00) * inverse : F32),
     ((a20 * b03 - a21 * b01 + a22 * b00) * inverse : F32)}
+# Fused (arm64 clang -ffp-contract=on) Matrix forms; see Math.lerp_for.
+def Matrix.product.cell_for(+arithmetic: Contraction, +a: F32, +b: F32, +c: F32, +d: F32, +e: F32, +f: F32, +g: F32, +h: F32) -> F32:
+  match arithmetic:
+    case Uncontracted{}: Matrix.product.cell(a, b, c, d, e, f, g, h)
+    case Fused{}: Fma.multiply_add(d, h, Fma.multiply_add(c, g, Fma.multiply_add(a, e, (b * f : F32))))
+
+def Matrix.multiply_for(+arithmetic: Contraction, left: Matrix, right: Matrix) -> Matrix:
+  Matrix{+a0, +a4, +a8, +a12, +a1, +a5, +a9, +a13, +a2, +a6, +a10, +a14, +a3, +a7, +a11, +a15} = left
+  Matrix{+b0, +b4, +b8, +b12, +b1, +b5, +b9, +b13, +b2, +b6, +b10, +b14, +b3, +b7, +b11, +b15} = right
+  Matrix{
+    Matrix.product.cell_for(arithmetic, a0, a1, a2, a3, b0, b4, b8, b12),
+    Matrix.product.cell_for(arithmetic, a4, a5, a6, a7, b0, b4, b8, b12),
+    Matrix.product.cell_for(arithmetic, a8, a9, a10, a11, b0, b4, b8, b12),
+    Matrix.product.cell_for(arithmetic, a12, a13, a14, a15, b0, b4, b8, b12),
+    Matrix.product.cell_for(arithmetic, a0, a1, a2, a3, b1, b5, b9, b13),
+    Matrix.product.cell_for(arithmetic, a4, a5, a6, a7, b1, b5, b9, b13),
+    Matrix.product.cell_for(arithmetic, a8, a9, a10, a11, b1, b5, b9, b13),
+    Matrix.product.cell_for(arithmetic, a12, a13, a14, a15, b1, b5, b9, b13),
+    Matrix.product.cell_for(arithmetic, a0, a1, a2, a3, b2, b6, b10, b14),
+    Matrix.product.cell_for(arithmetic, a4, a5, a6, a7, b2, b6, b10, b14),
+    Matrix.product.cell_for(arithmetic, a8, a9, a10, a11, b2, b6, b10, b14),
+    Matrix.product.cell_for(arithmetic, a12, a13, a14, a15, b2, b6, b10, b14),
+    Matrix.product.cell_for(arithmetic, a0, a1, a2, a3, b3, b7, b11, b15),
+    Matrix.product.cell_for(arithmetic, a4, a5, a6, a7, b3, b7, b11, b15),
+    Matrix.product.cell_for(arithmetic, a8, a9, a10, a11, b3, b7, b11, b15),
+    Matrix.product.cell_for(arithmetic, a12, a13, a14, a15, b3, b7, b11, b15)}
+
+def Matrix.determinant_for(+arithmetic: Contraction, matrix: Matrix) -> F32:
+  match arithmetic:
+    case Uncontracted{}: Matrix.determinant(matrix)
+    case Fused{}:
+      Matrix{+m0, +m4, +m8, +m12, +m1, +m5, +m9, +m13, +m2, +m6, +m10, +m14, +m3, +m7, +m11, +m15} = matrix
+      Fma.multiply_add(F32.neg(m12), Fma.multiply_add(m9, Fma.multiply_add(m2, m7, (m3 * F32.neg(m6) : F32)), Fma.multiply_add(m1, Fma.multiply_add(m6, m11, (m7 * F32.neg(m10) : F32)), (m5 * F32.neg(Fma.multiply_add(m2, m11, (m3 * F32.neg(m10) : F32))) : F32))), Fma.multiply_add(m8, Fma.multiply_add(m13, Fma.multiply_add(m2, m7, (m3 * F32.neg(m6) : F32)), Fma.multiply_add(m1, Fma.multiply_add(m6, m15, (m7 * F32.neg(m14) : F32)), (m5 * F32.neg(Fma.multiply_add(m2, m15, (m3 * F32.neg(m14) : F32))) : F32))), Fma.multiply_add(m0, Fma.multiply_add(m13, Fma.multiply_add(m6, m11, (m7 * F32.neg(m10) : F32)), Fma.multiply_add(m5, Fma.multiply_add(m10, m15, (m11 * F32.neg(m14) : F32)), (m9 * F32.neg(Fma.multiply_add(m6, m15, (m7 * F32.neg(m14) : F32))) : F32))), (m4 * F32.neg(Fma.multiply_add(m13, Fma.multiply_add(m2, m11, (m3 * F32.neg(m10) : F32)), Fma.multiply_add(m1, Fma.multiply_add(m10, m15, (m11 * F32.neg(m14) : F32)), (m9 * F32.neg(Fma.multiply_add(m2, m15, (m3 * F32.neg(m14) : F32))) : F32)))) : F32))))
+
+def Matrix.invert_for(+arithmetic: Contraction, matrix: Matrix) -> Matrix:
+  match arithmetic:
+    case Uncontracted{}: Matrix.invert(matrix)
+    case Fused{}:
+      Matrix{+a00, +a10, +a20, +a30, +a01, +a11, +a21, +a31, +a02, +a12, +a22, +a32, +a03, +a13, +a23, +a33} = matrix
+      +b00 = Fma.multiply_add(a00, a11, (a01 * F32.neg(a10) : F32))
+      +b01 = Fma.multiply_add(a00, a12, (a02 * F32.neg(a10) : F32))
+      +b02 = Fma.multiply_add(a00, a13, (a03 * F32.neg(a10) : F32))
+      +b03 = Fma.multiply_add(a01, a12, (a02 * F32.neg(a11) : F32))
+      +b04 = Fma.multiply_add(a01, a13, (a03 * F32.neg(a11) : F32))
+      +b05 = Fma.multiply_add(a02, a13, (a03 * F32.neg(a12) : F32))
+      +b06 = Fma.multiply_add(a20, a31, (a21 * F32.neg(a30) : F32))
+      +b07 = Fma.multiply_add(a20, a32, (a22 * F32.neg(a30) : F32))
+      +b08 = Fma.multiply_add(a20, a33, (a23 * F32.neg(a30) : F32))
+      +b09 = Fma.multiply_add(a21, a32, (a22 * F32.neg(a31) : F32))
+      +b10 = Fma.multiply_add(a21, a33, (a23 * F32.neg(a31) : F32))
+      +b11 = Fma.multiply_add(a22, a33, (a23 * F32.neg(a32) : F32))
+      +inverse = (1.0 / Fma.multiply_add(b05, b06, Fma.multiply_add(F32.neg(b04), b07, Fma.multiply_add(b03, b08, Fma.multiply_add(b02, b09, Fma.multiply_add(b00, b11, (b01 * F32.neg(b10) : F32)))))) : F32)
+      Matrix{
+        (Fma.multiply_add(a13, b09, Fma.multiply_add(a11, b11, (a12 * F32.neg(b10) : F32))) * inverse : F32),
+        (Fma.multiply_add(F32.neg(a13), b07, Fma.multiply_add(F32.neg(a10), b11, (a12 * b08 : F32))) * inverse : F32),
+        (Fma.multiply_add(a13, b06, Fma.multiply_add(a10, b10, (a11 * F32.neg(b08) : F32))) * inverse : F32),
+        (Fma.multiply_add(F32.neg(a12), b06, Fma.multiply_add(F32.neg(a10), b09, (a11 * b07 : F32))) * inverse : F32),
+        (Fma.multiply_add(F32.neg(a03), b09, Fma.multiply_add(F32.neg(a01), b11, (a02 * b10 : F32))) * inverse : F32),
+        (Fma.multiply_add(a03, b07, Fma.multiply_add(a00, b11, (a02 * F32.neg(b08) : F32))) * inverse : F32),
+        (Fma.multiply_add(F32.neg(a03), b06, Fma.multiply_add(F32.neg(a00), b10, (a01 * b08 : F32))) * inverse : F32),
+        (Fma.multiply_add(a02, b06, Fma.multiply_add(a00, b09, (a01 * F32.neg(b07) : F32))) * inverse : F32),
+        (Fma.multiply_add(a33, b03, Fma.multiply_add(a31, b05, (a32 * F32.neg(b04) : F32))) * inverse : F32),
+        (Fma.multiply_add(F32.neg(a33), b01, Fma.multiply_add(F32.neg(a30), b05, (a32 * b02 : F32))) * inverse : F32),
+        (Fma.multiply_add(a33, b00, Fma.multiply_add(a30, b04, (a31 * F32.neg(b02) : F32))) * inverse : F32),
+        (Fma.multiply_add(F32.neg(a32), b00, Fma.multiply_add(F32.neg(a30), b03, (a31 * b01 : F32))) * inverse : F32),
+        (Fma.multiply_add(F32.neg(a23), b03, Fma.multiply_add(F32.neg(a21), b05, (a22 * b04 : F32))) * inverse : F32),
+        (Fma.multiply_add(a23, b01, Fma.multiply_add(a20, b05, (a22 * F32.neg(b02) : F32))) * inverse : F32),
+        (Fma.multiply_add(F32.neg(a23), b00, Fma.multiply_add(F32.neg(a20), b04, (a21 * b02 : F32))) * inverse : F32),
+        (Fma.multiply_add(a22, b00, Fma.multiply_add(a20, b03, (a21 * F32.neg(b01) : F32))) * inverse : F32)}
+
 
 def Matrix.translate(x: F32, y: F32, z: F32) -> Matrix:
   Matrix{1.0, 0.0, 0.0, x, 0.0, 1.0, 0.0, y, 0.0, 0.0, 1.0, z, 0.0, 0.0, 0.0, 1.0}
@@ -813,6 +954,77 @@ def Vector3.reflect(+vector: Vector3, +normal: Vector3) -> Vector3:
   dot = Vector3.dot_product(vector, normal)
   Vector3.subtract(vector, Vector3.scale(Vector3.scale(normal, 2.0), dot))
 
+# Fused (arm64 clang -ffp-contract=on) Vector3 forms; see Math.lerp_for.
+def Vector3.dot_product_for(+arithmetic: Contraction, left: Vector3, right: Vector3) -> F32:
+  match arithmetic:
+    case Uncontracted{}: Vector3.dot_product(left, right)
+    case Fused{}:
+      Vector3{x, y, z} = left
+      Vector3{u, v, w} = right
+      Fma.multiply_add(z, w, Fma.multiply_add(x, u, (y * v : F32)))
+
+def Vector3.length_sqr_for(+arithmetic: Contraction, +vector: Vector3) -> F32:
+  Vector3.dot_product_for(arithmetic, vector, vector)
+
+def Vector3.length_for(+arithmetic: Contraction, vector: Vector3) -> F32:
+  F32.sqrt(Vector3.length_sqr_for(arithmetic, vector))
+
+def Vector3.distance_sqr_for(+arithmetic: Contraction, left: Vector3, right: Vector3) -> F32:
+  match arithmetic:
+    case Uncontracted{}: Vector3.distance_sqr(left, right)
+    case Fused{}:
+      Vector3{x, y, z} = left
+      Vector3{u, v, w} = right
+      +dx = (u - x : F32)
+      +dy = (v - y : F32)
+      +dz = (w - z : F32)
+      Fma.multiply_add(dz, dz, Fma.multiply_add(dx, dx, (dy * dy : F32)))
+
+def Vector3.distance_for(+arithmetic: Contraction, left: Vector3, right: Vector3) -> F32:
+  F32.sqrt(Vector3.distance_sqr_for(arithmetic, left, right))
+
+def Vector3.normalize_for(+arithmetic: Contraction, +vector: Vector3) -> Vector3:
+  +length = Vector3.length_for(arithmetic, vector)
+  Vector3.normalized(F32.is_ne(length, 0.0), vector, length)
+
+def Vector3.cross_product_for(+arithmetic: Contraction, left: Vector3, right: Vector3) -> Vector3:
+  match arithmetic:
+    case Uncontracted{}: Vector3.cross_product(left, right)
+    case Fused{}:
+      Vector3{+x, +y, +z} = left
+      Vector3{+u, +v, +w} = right
+      Vector3{Fma.multiply_add(y, w, (z * F32.neg(v) : F32)), Fma.multiply_add(z, u, (x * F32.neg(w) : F32)),
+        Fma.multiply_add(x, v, (y * F32.neg(u) : F32))}
+
+def Vector3.lerp_for(+arithmetic: Contraction, left: Vector3, right: Vector3, +amount: F32) -> Vector3:
+  Vector3{x, y, z} = left
+  Vector3{u, v, w} = right
+  Vector3{Math.lerp_for(arithmetic, x, u, amount), Math.lerp_for(arithmetic, y, v, amount), Math.lerp_for(arithmetic, z, w, amount)}
+
+def Vector3.reflect_for(+arithmetic: Contraction, +vector: Vector3, +normal: Vector3) -> Vector3:
+  match arithmetic:
+    case Uncontracted{}: Vector3.reflect(vector, normal)
+    case Fused{}:
+      Vector3{+x, +y, +z} = vector
+      Vector3{+u, +v, +w} = normal
+      +dot = Fma.multiply_add(z, w, Fma.multiply_add(x, u, (y * v : F32)))
+      +twice = F32.neg(2.0)
+      Vector3{Fma.multiply_add((u * twice : F32), dot, x), Fma.multiply_add((v * twice : F32), dot, y),
+        Fma.multiply_add((w * twice : F32), dot, z)}
+def Vector3.project_for(+arithmetic: Contraction, vector: Vector3, +onto: Vector3) -> Vector3:
+  factor = (Vector3.dot_product_for(arithmetic, vector, onto) / Vector3.dot_product_for(arithmetic, onto, onto) : F32)
+  Vector3.scale(onto, factor)
+
+def Vector3.reject_for(+arithmetic: Contraction, +vector: Vector3, onto: Vector3) -> Vector3:
+  match arithmetic:
+    case Uncontracted{}: Vector3.reject(vector, onto)
+    case Fused{}:
+      Vector3{+x, +y, +z} = vector
+      Vector3{+u, +v, +w} = onto
+      +factor = (Vector3.dot_product_for(arithmetic, Vector3{x, y, z}, Vector3{u, v, w}) / Vector3.dot_product_for(arithmetic, Vector3{u, v, w}, Vector3{u, v, w}) : F32)
+      Vector3{Fma.multiply_add(F32.neg(u), factor, x), Fma.multiply_add(F32.neg(v), factor, y), Fma.multiply_add(F32.neg(w), factor, z)}
+
+
 def Vector3.invert(vector: Vector3) -> Vector3:
   Vector3{x, y, z} = vector
   Vector3{(1.0 / x : F32), (1.0 / y : F32), (1.0 / z : F32)}
@@ -919,6 +1131,11 @@ def Vector3.ortho_normalize(first: Vector3, second: Vector3) -> Vector3 & Vector
   perpendicular = Vector3.normalize(Vector3.cross_product(normalized, second))
   (normalized, Vector3.cross_product(perpendicular, normalized))
 
+def Vector3.ortho_normalize_for(+arithmetic: Contraction, first: Vector3, second: Vector3) -> Vector3 & Vector3:
+  +normalized = Vector3.normalize_for(arithmetic, first)
+  perpendicular = Vector3.normalize_for(arithmetic, Vector3.cross_product_for(arithmetic, normalized, second))
+  (normalized, Vector3.cross_product_for(arithmetic, perpendicular, normalized))
+
 def Vector3.transform(vector: Vector3, matrix: Matrix) -> Vector3:
   Vector3{+x, +y, +z} = vector
   Matrix{m0, m4, m8, m12, m1, m5, m9, m13, m2, m6, m10, m14, _, _, _, _} = matrix
@@ -939,6 +1156,23 @@ def Matrix.look_at(+eye: Vector3, target: Vector3, up: Vector3) -> Matrix:
   +right = Vector3.normalize(Vector3.cross_product(up, forward))
   vertical = Vector3.cross_product(forward, right)
   Matrix.view.basis(eye, right, vertical, forward)
+
+def Matrix.view.basis_for(+arithmetic: Contraction, +eye: Vector3, +right: Vector3, +vertical: Vector3, +forward: Vector3) -> Matrix:
+  Vector3{+xx, +xy, +xz} = right
+  Vector3{+yx, +yy, +yz} = vertical
+  Vector3{+zx, +zy, +zz} = forward
+  Matrix{xx, xy, xz, F32.neg(Vector3.dot_product_for(arithmetic, right, eye)),
+    yx, yy, yz, F32.neg(Vector3.dot_product_for(arithmetic, vertical, eye)),
+    zx, zy, zz, F32.neg(Vector3.dot_product_for(arithmetic, forward, eye)), 0.0, 0.0, 0.0, 1.0}
+
+def Matrix.look_at_for(+arithmetic: Contraction, +eye: Vector3, target: Vector3, up: Vector3) -> Matrix:
+  match arithmetic:
+    case Uncontracted{}: Matrix.look_at(eye, target, up)
+    case Fused{}:
+      +forward = Vector3.normalize_for(arithmetic, Vector3.subtract(eye, target))
+      +right = Vector3.normalize_for(arithmetic, Vector3.cross_product_for(arithmetic, up, forward))
+      +vertical = Vector3.cross_product_for(arithmetic, forward, right)
+      Matrix.view.basis_for(arithmetic, eye, right, vertical, forward)
 
 def Matrix.rotation.x(values: F32 & F32) -> Matrix:
   (+cosine, +sine) = values
@@ -1145,6 +1379,46 @@ def Vector4.lerp(left: Vector4, right: Vector4, +amount: F32) -> Vector4:
   Vector4{a, b, c, d} = right
   Vector4{Math.lerp(x, a, amount), Math.lerp(y, b, amount), Math.lerp(z, c, amount), Math.lerp(w, d, amount)}
 
+# Fused (arm64 clang -ffp-contract=on) Vector4 forms; see Math.lerp_for.
+def Vector4.dot_product_for(+arithmetic: Contraction, left: Vector4, right: Vector4) -> F32:
+  match arithmetic:
+    case Uncontracted{}: Vector4.dot_product(left, right)
+    case Fused{}:
+      Vector4{x, y, z, w} = left
+      Vector4{a, b, c, d} = right
+      Fma.multiply_add(w, d, Fma.multiply_add(z, c, Fma.multiply_add(x, a, (y * b : F32))))
+
+def Vector4.length_sqr_for(+arithmetic: Contraction, +vector: Vector4) -> F32:
+  Vector4.dot_product_for(arithmetic, vector, vector)
+
+def Vector4.length_for(+arithmetic: Contraction, vector: Vector4) -> F32:
+  F32.sqrt(Vector4.length_sqr_for(arithmetic, vector))
+
+def Vector4.distance_sqr_for(+arithmetic: Contraction, left: Vector4, right: Vector4) -> F32:
+  match arithmetic:
+    case Uncontracted{}: Vector4.distance_sqr(left, right)
+    case Fused{}:
+      Vector4{a, b, c, d} = left
+      Vector4{x, y, z, w} = right
+      +dx = (a - x : F32)
+      +dy = (b - y : F32)
+      +dz = (c - z : F32)
+      +dw = (d - w : F32)
+      Fma.multiply_add(dw, dw, Fma.multiply_add(dz, dz, Fma.multiply_add(dx, dx, (dy * dy : F32))))
+
+def Vector4.distance_for(+arithmetic: Contraction, left: Vector4, right: Vector4) -> F32:
+  F32.sqrt(Vector4.distance_sqr_for(arithmetic, left, right))
+
+def Vector4.normalize_for(+arithmetic: Contraction, +vector: Vector4) -> Vector4:
+  +length = Vector4.length_for(arithmetic, vector)
+  Vector4.normalized((length > 0.0 : F32), vector, length)
+
+def Vector4.lerp_for(+arithmetic: Contraction, left: Vector4, right: Vector4, +amount: F32) -> Vector4:
+  Vector4{x, y, z, w} = left
+  Vector4{a, b, c, d} = right
+  Vector4{Math.lerp_for(arithmetic, x, a, amount), Math.lerp_for(arithmetic, y, b, amount),
+    Math.lerp_for(arithmetic, z, c, amount), Math.lerp_for(arithmetic, w, d, amount)}
+
 def Vector4.move.route(snap: Bool, vector: Vector4, target: Vector4, delta: Vector4, square: F32, +distance: F32) -> Vector4:
   match snap:
     case True{}: target
@@ -1221,6 +1495,36 @@ def Quaternion.lerp(left: Vector4, right: Vector4, amount: F32) -> Vector4:
 def Quaternion.nlerp(left: Vector4, right: Vector4, amount: F32) -> Vector4:
   Quaternion.normalize(Quaternion.lerp(left, right, amount))
 
+# Fused (arm64 clang -ffp-contract=on) Quaternion forms; see Math.lerp_for.
+def Quaternion.multiply_for(+arithmetic: Contraction, left: Vector4, right: Vector4) -> Vector4:
+  match arithmetic:
+    case Uncontracted{}: Quaternion.multiply(left, right)
+    case Fused{}:
+      Vector4{+x, +y, +z, +w} = left
+      Vector4{+a, +b, +c, +d} = right
+      Vector4{Fma.multiply_add(F32.neg(z), b, Fma.multiply_add(y, c, Fma.multiply_add(x, d, (w * a : F32)))),
+        Fma.multiply_add(F32.neg(x), c, Fma.multiply_add(z, a, Fma.multiply_add(y, d, (w * b : F32)))),
+        Fma.multiply_add(F32.neg(y), a, Fma.multiply_add(x, b, Fma.multiply_add(z, d, (w * c : F32)))),
+        Fma.multiply_add(F32.neg(z), c, Fma.multiply_add(F32.neg(y), b, Fma.multiply_add(w, d, (x * F32.neg(a) : F32))))}
+
+def Quaternion.length_for(+arithmetic: Contraction, quaternion: Vector4) -> F32:
+  Vector4.length_for(arithmetic, quaternion)
+
+def Quaternion.normalize_for(+arithmetic: Contraction, +quaternion: Vector4) -> Vector4:
+  +length = Quaternion.length_for(arithmetic, quaternion)
+  inverse = (1.0 / Bool.pick(F32, F32.is_eq(length, 0.0), 1.0, length) : F32)
+  Vector4.scale(quaternion, inverse)
+
+def Quaternion.invert_for(+arithmetic: Contraction, +quaternion: Vector4) -> Vector4:
+  +square = Vector4.length_sqr_for(arithmetic, quaternion)
+  Quaternion.inverted(F32.is_ne(square, 0.0), quaternion, square)
+
+def Quaternion.lerp_for(+arithmetic: Contraction, left: Vector4, right: Vector4, amount: F32) -> Vector4:
+  Vector4.lerp_for(arithmetic, left, right, amount)
+
+def Quaternion.nlerp_for(+arithmetic: Contraction, left: Vector4, right: Vector4, amount: F32) -> Vector4:
+  Quaternion.normalize_for(arithmetic, Quaternion.lerp_for(arithmetic, left, right, amount))
+
 def Quaternion.equals(+left: Vector4, +right: Vector4) -> Bool:
   Vector4.equals(left, right) || Vector4.equals(left, Vector4.negate(right))
 
@@ -1272,6 +1576,34 @@ def Quaternion.transform(quaternion: Vector4, matrix: Matrix) -> Vector4:
   Vector4{(m0 * x + m4 * y + m8 * z + m12 * w : F32), (m1 * x + m5 * y + m9 * z + m13 * w : F32),
     (m2 * x + m6 * y + m10 * z + m14 * w : F32), (m3 * x + m7 * y + m11 * z + m15 * w : F32)}
 
+def Quaternion.to_matrix_for(+arithmetic: Contraction, quaternion: Vector4) -> Matrix:
+  match arithmetic:
+    case Uncontracted{}: Quaternion.to_matrix(quaternion)
+    case Fused{}:
+      Vector4{+x, +y, +z, +w} = quaternion
+      +a2 = (x * x : F32)
+      +b2 = (y * y : F32)
+      +c2 = (z * z : F32)
+      +ac = (x * z : F32)
+      +ab = (x * y : F32)
+      +bc = (y * z : F32)
+      +ad = (w * x : F32)
+      +bd = (w * y : F32)
+      +cd = (w * z : F32)
+      Matrix{Fma.multiply_add(F32.neg(2.0), (b2 + c2 : F32), 1.0), (2.0 * (ab - cd) : F32), (2.0 * (ac + bd) : F32), 0.0,
+        (2.0 * (ab + cd) : F32), Fma.multiply_add(F32.neg(2.0), (a2 + c2 : F32), 1.0), (2.0 * (bc - ad) : F32), 0.0,
+        (2.0 * (ac - bd) : F32), (2.0 * (bc + ad) : F32), Fma.multiply_add(F32.neg(2.0), (a2 + b2 : F32), 1.0), 0.0,
+        0.0, 0.0, 0.0, 1.0}
+
+def Quaternion.transform_for(+arithmetic: Contraction, quaternion: Vector4, matrix: Matrix) -> Vector4:
+  match arithmetic:
+    case Uncontracted{}: Quaternion.transform(quaternion, matrix)
+    case Fused{}:
+      Vector4{+x, +y, +z, +w} = quaternion
+      Matrix{m0, m4, m8, m12, m1, m5, m9, m13, m2, m6, m10, m14, m3, m7, m11, m15} = matrix
+      Vector4{Fma.multiply_add(m12, w, Fma.multiply_add(m8, z, Fma.multiply_add(m0, x, (m4 * y : F32)))), Fma.multiply_add(m13, w, Fma.multiply_add(m9, z, Fma.multiply_add(m1, x, (m5 * y : F32)))),
+        Fma.multiply_add(m14, w, Fma.multiply_add(m10, z, Fma.multiply_add(m2, x, (m6 * y : F32)))), Fma.multiply_add(m15, w, Fma.multiply_add(m11, z, Fma.multiply_add(m3, x, (m7 * y : F32))))}
+
 def Vector3.rotate_by_quaternion(vector: Vector3, quaternion: Vector4) -> Vector3:
   Vector3{+vx, +vy, +vz} = vector
   Vector4{+x, +y, +z, +w} = quaternion
@@ -1279,6 +1611,16 @@ def Vector3.rotate_by_quaternion(vector: Vector3, quaternion: Vector4) -> Vector
     (vx * (x * x + w * w - y * y - z * z) + vy * (2.0 * x * y - 2.0 * w * z) + vz * (2.0 * x * z + 2.0 * w * y) : F32),
     (vx * (2.0 * w * z + 2.0 * x * y) + vy * (w * w - x * x + y * y - z * z) + vz * (F32.neg(2.0) * w * x + 2.0 * y * z) : F32),
     (vx * (F32.neg(2.0) * w * y + 2.0 * x * z) + vy * (2.0 * w * x + 2.0 * y * z) + vz * (w * w - x * x - y * y + z * z) : F32)}
+
+def Vector3.rotate_by_quaternion_for(+arithmetic: Contraction, vector: Vector3, quaternion: Vector4) -> Vector3:
+  match arithmetic:
+    case Uncontracted{}: Vector3.rotate_by_quaternion(vector, quaternion)
+    case Fused{}:
+      Vector3{+vx, +vy, +vz} = vector
+      Vector4{+x, +y, +z, +w} = quaternion
+      Vector3{Fma.multiply_add(vz, Fma.multiply_add((2.0 * x : F32), z, ((2.0 * w : F32) * y : F32)), Fma.multiply_add(vx, Fma.multiply_add(F32.neg(z), z, Fma.multiply_add(F32.neg(y), y, Fma.multiply_add(x, x, (w * w : F32)))), (vy * Fma.multiply_add((2.0 * x : F32), y, ((2.0 * w : F32) * F32.neg(z) : F32)) : F32))),
+        Fma.multiply_add(vz, Fma.multiply_add((F32.neg(2.0) * w : F32), x, ((2.0 * y : F32) * z : F32)), Fma.multiply_add(vx, Fma.multiply_add((2.0 * w : F32), z, ((2.0 * x : F32) * y : F32)), (vy * Fma.multiply_add(F32.neg(z), z, Fma.multiply_add(y, y, Fma.multiply_add(w, w, (x * F32.neg(x) : F32)))) : F32))),
+        Fma.multiply_add(vz, Fma.multiply_add(z, z, Fma.multiply_add(F32.neg(y), y, Fma.multiply_add(w, w, (x * F32.neg(x) : F32)))), Fma.multiply_add(vx, Fma.multiply_add((F32.neg(2.0) * w : F32), y, ((2.0 * x : F32) * z : F32)), (vy * Fma.multiply_add((2.0 * w : F32), x, ((2.0 * y : F32) * z : F32)) : F32)))}
 
 def Matrix.composed(translation: Vector3, right: Vector3, up: Vector3, forward: Vector3) -> Matrix:
   Vector3{tx, ty, tz} = translation
@@ -1335,6 +1677,40 @@ def Matrix.decompose(matrix: Matrix) -> Matrix.Decomposition:
   z = Vector3.normalized((sz > 0.000000001 : F32), z2, sz)
   Matrix.decomposition.finish(Vector3{tx, ty, tz}, x, y, z, Vector3{sx, sy, sz}, stabilizer)
 
+def Matrix.decomposition.finish_for(+arithmetic: Contraction, translation: Vector3, +x: Vector3, +y: Vector3, +z: Vector3, +scale: Vector3, stabilizer: F32) -> Matrix.Decomposition:
+  +reflected = (Vector3.dot_product_for(arithmetic, x, Vector3.cross_product_for(arithmetic, y, z)) < 0.0 : F32)
+  rx = Bool.pick(Vector3, reflected, Vector3.negate(x), x)
+  ry = Bool.pick(Vector3, reflected, Vector3.negate(y), y)
+  rz = Bool.pick(Vector3, reflected, Vector3.negate(z), z)
+  signed_scale = Bool.pick(Vector3, reflected, Vector3.negate(scale), scale)
+  Decomposed{translation, Quaternion.from_matrix(Matrix.decomposition.rows(rx, ry, rz)), Vector3.scale(signed_scale, stabilizer)}
+
+# Fused: Vector3Length, Vector3DotProduct and Vector3CrossProduct each contract;
+# the scale and subtract calls are separate expressions and stay unfused.
+def Matrix.decompose_for(+arithmetic: Contraction, matrix: Matrix) -> Matrix.Decomposition:
+  match arithmetic:
+    case Uncontracted{}: Matrix.decompose(matrix)
+    case Fused{}:
+      Matrix{m0, m4, m8, tx, m1, m5, m9, ty, m2, m6, m10, tz, _, _, _, _} = matrix
+      +first = {Vector3{m0, m1, m2} : Vector3}
+      +second = {Vector3{m4, m5, m6} : Vector3}
+      +third = {Vector3{m8, m9, m10} : Vector3}
+      +stabilizer = Matrix.decomposition.maximum(Matrix.decomposition.maximum(Matrix.decomposition.maximum(0.000000001, first), second), third)
+      +inverse = (1.0 / stabilizer : F32)
+      +x0 = Vector3.scale(first, inverse)
+      +y0 = Vector3.scale(second, inverse)
+      +z0 = Vector3.scale(third, inverse)
+      +sx = Vector3.length_for(arithmetic, x0)
+      +x = Vector3.normalized((sx > 0.000000001 : F32), x0, sx)
+      +y1 = Vector3.subtract(y0, Vector3.scale(x, Vector3.dot_product_for(arithmetic, x, y0)))
+      +sy = Vector3.length_for(arithmetic, y1)
+      +y = Vector3.normalized((sy > 0.000000001 : F32), y1, sy)
+      +z1 = Vector3.subtract(z0, Vector3.scale(x, Vector3.dot_product_for(arithmetic, x, z0)))
+      +z2 = Vector3.subtract(z1, Vector3.scale(y, Vector3.dot_product_for(arithmetic, y, z1)))
+      +sz = Vector3.length_for(arithmetic, z2)
+      z = Vector3.normalized((sz > 0.000000001 : F32), z2, sz)
+      Matrix.decomposition.finish_for(arithmetic, Vector3{tx, ty, tz}, x, y, z, Vector3{sx, sy, sz}, stabilizer)
+
 # The half-way quaternion (cross, |from||to| + dot); for opposite vectors
 # (raylib 6.2: lengths > 0 and w <= lengths*EPSILON) a 180-degree turn about
 # an axis perpendicular to `from`; normalized.
@@ -1351,6 +1727,23 @@ def Quaternion.vectors.result(+from: Vector3, cross: Vector3, +dot: F32) -> Vect
 
 def Quaternion.from_vector3_to_vector3(+first: Vector3, +second: Vector3) -> Vector4:
   Quaternion.vectors.result(first, Vector3.cross_product(first, second), Vector3.dot_product(first, second))
+
+def Quaternion.vectors.result_for(+arithmetic: Contraction, +from: Vector3, cross: Vector3, +dot: F32) -> Vector4:
+  Vector3{+fx, +fy, +fz} = from
+  Vector3{+x, +y, +z} = cross
+  +lengths = F32.sqrt(Vector4.length_sqr_for(arithmetic, Vector4{x, y, z, dot}))
+  +w = (lengths + dot : F32)
+  +opposite = (lengths > 0.0 : F32) && (w <= (lengths * 0.000001 : F32) : F32)
+  +wide = (F32.abs(fx) > F32.abs(fz) : F32)
+  Quaternion.normalize_for(arithmetic, Bool.pick(Vector4, opposite,
+    Bool.pick(Vector4, wide, Vector4{F32.neg(fy), fx, 0.0, 0.0}, Vector4{0.0, F32.neg(fz), fy, 0.0}),
+    Vector4{x, y, z, w}))
+
+def Quaternion.from_vector3_to_vector3_for(+arithmetic: Contraction, +first: Vector3, +second: Vector3) -> Vector4:
+  match arithmetic:
+    case Uncontracted{}: Quaternion.from_vector3_to_vector3(first, second)
+    case Fused{}:
+      Quaternion.vectors.result_for(arithmetic, first, Vector3.cross_product_for(arithmetic, first, second), Vector3.dot_product_for(arithmetic, first, second))
 
 def Quaternion.axis.values(axis: Vector3, values: F32 & F32) -> Vector4:
   Vector3{x, y, z} = axis
@@ -1690,6 +2083,11 @@ def Vector3.unproject(source: Vector3, projection: Matrix, view: Matrix) -> Vect
   # Preserve the two transposed Matrix initializers in raymath's inlined path.
   inverse = Matrix.transpose(Matrix.invert(Matrix.transpose(Matrix.multiply(view, projection))))
   Vector3.unproject.result(Quaternion.transform(Vector4{x, y, z, 1.0}, inverse))
+
+def Vector3.unproject_for(+arithmetic: Contraction, source: Vector3, projection: Matrix, view: Matrix) -> Vector3:
+  Vector3{x, y, z} = source
+  inverse = Matrix.transpose(Matrix.invert_for(arithmetic, Matrix.transpose(Matrix.multiply_for(arithmetic, view, projection))))
+  Vector3.unproject.result(Quaternion.transform_for(arithmetic, Vector4{x, y, z, 1.0}, inverse))
 
 # -----------------------------------------------------------------------------
 # Operator sugar (raymath's optional C++ operators)

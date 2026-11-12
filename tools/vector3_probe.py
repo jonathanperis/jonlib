@@ -11,11 +11,17 @@ before an exact comparison. Every other bit stays exact on CPU-1, CPU-2 and
 JavaScript. A payload change or a NaN where raylib returned a number fails
 on every lane. Min, max and clamp stay on the signed-zero profiles. Angle
 stays on atan2.
+
+On arm64 the reductions, Cross, Reflect and Lerp are also compared under
+M.Fused{} against the same raymath compiled with clang's default
+`-ffp-contract=on` (tools/fused_rows.py), on the exceptional pairs and on
+seeded finite ones whose roundings differ when fused.
 """
 import hashlib
 import json
 from itertools import product
 
+import fused_rows
 import probekit
 import quiet_nan
 from probekit import ProbeFailure, run
@@ -55,6 +61,18 @@ PAIR = (
     ('distance_sqr', 'Vector3DistanceSqr({a}, {b})', 'M.Vector3.distance_sqr({a}, {b})', 'f'),
     ('equals', 'Vector3Equals({a}, {b})', 'vector3_equals_owned({a}, {b})', 'b'),
 )
+# (name, C expression, Bend _for def, shape, operand count)
+FUSED = (
+    ('reflect', 'Vector3Reflect({a}, {b})', 'vector3_reflect_for_owned', 'v', 2),
+    ('normalize', 'Vector3Normalize({a})', 'vector3_normalize_for_owned', 'v', 1),
+    ('length', 'Vector3Length({a})', 'vector3_length_for_owned', 'f', 1),
+    ('length_sqr', 'Vector3LengthSqr({a})', 'vector3_length_sqr_for_owned', 'f', 1),
+    ('dot', 'Vector3DotProduct({a}, {b})', 'vector3_dot_product_for_owned', 'f', 2),
+    ('cross', 'Vector3CrossProduct({a}, {b})', 'vector3_cross_product_for_owned', 'v', 2),
+    ('distance', 'Vector3Distance({a}, {b})', 'vector3_distance_for_owned', 'f', 2),
+    ('distance_sqr', 'Vector3DistanceSqr({a}, {b})', 'vector3_distance_sqr_for_owned', 'f', 2),
+)
+FUSED_LERP = (('lerp', 'Vector3Lerp', 'vector3_lerp_for_owned'),)
 SCALAR = (
     ('add_value', 'Vector3AddValue({a}, {s})', 'vector3_add_value_owned({a}, word({s}))', 'v'),
     ('subtract_value', 'Vector3SubtractValue({a}, {s})', 'vector3_subtract_value_owned({a}, word({s}))', 'v'),
@@ -196,6 +214,24 @@ def vector3_invert_owned(vector: M.Vector3) -> M.Vector3:
   M.Vector3.invert(vector)
 def vector3_equals_owned(left: M.Vector3, right: M.Vector3) -> Bool:
   M.Vector3.equals(left, right)
+def vector3_reflect_for_owned(+arithmetic: M.Contraction, +vector: M.Vector3, +normal: M.Vector3) -> M.Vector3:
+  M.Vector3.reflect_for(arithmetic, vector, normal)
+def vector3_normalize_for_owned(+arithmetic: M.Contraction, +vector: M.Vector3) -> M.Vector3:
+  M.Vector3.normalize_for(arithmetic, vector)
+def vector3_length_for_owned(+arithmetic: M.Contraction, vector: M.Vector3) -> F32:
+  M.Vector3.length_for(arithmetic, vector)
+def vector3_length_sqr_for_owned(+arithmetic: M.Contraction, +vector: M.Vector3) -> F32:
+  M.Vector3.length_sqr_for(arithmetic, vector)
+def vector3_dot_product_for_owned(+arithmetic: M.Contraction, left: M.Vector3, right: M.Vector3) -> F32:
+  M.Vector3.dot_product_for(arithmetic, left, right)
+def vector3_cross_product_for_owned(+arithmetic: M.Contraction, left: M.Vector3, right: M.Vector3) -> M.Vector3:
+  M.Vector3.cross_product_for(arithmetic, left, right)
+def vector3_distance_for_owned(+arithmetic: M.Contraction, left: M.Vector3, right: M.Vector3) -> F32:
+  M.Vector3.distance_for(arithmetic, left, right)
+def vector3_distance_sqr_for_owned(+arithmetic: M.Contraction, left: M.Vector3, right: M.Vector3) -> F32:
+  M.Vector3.distance_sqr_for(arithmetic, left, right)
+def vector3_lerp_for_owned(+arithmetic: M.Contraction, left: M.Vector3, right: M.Vector3, +amount: F32) -> M.Vector3:
+  M.Vector3.lerp_for(arithmetic, left, right, amount)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -213,6 +249,10 @@ def render(selected, gpu):
     emitter = {'v': 'show3', 'f': 'show', 'b': 'flag'}
     body = PROGRAM
     for name, args in selected:
+        fused = fused_rows.call(name, args, FUSED, FUSED_LERP, 3, vec)
+        if fused:
+            body += f'    {emitter[fused_rows.shape(name, FUSED, FUSED_LERP)]}({fused})\n'
+            continue
         if name == 'lerp':
             ax, ay, az, bx, by, bz, amount = args
             call = f'M.Vector3.lerp({vec(ax, ay, az)}, {vec(bx, by, bz)}, word({amount}))'
@@ -227,18 +267,28 @@ def render(selected, gpu):
 
 
 def aligned(rows, values):
-    return [quiet_nan.canonical(name, args, value) for (name, args), value in zip(rows, values)]
+    return [quiet_nan.canonical(name.removeprefix('fused_'), args, value) for (name, args), value in zip(rows, values)]
 
 
 def main():
     probe = probekit.Probe('vector3', probekit.arguments(__doc__))
     rows = cases()
-    if len(rows) > 40000:
-        raise ProbeFailure(f'vector3: {len(rows)} cases is more than the probe budget')
     text = native(probe, rows)
     expected = [json.loads(line) for line in text.splitlines() if line.strip()]
     if len(expected) != len(rows):
         raise ProbeFailure(f'vector3: native produced {len(expected)} rows for {len(rows)} cases')
+    if fused_rows.available():
+        table = fused_rows.pairs(pairs(), 3, 600, 0xF05ED3)
+        extra = fused_rows.cases(table, FUSED, FUSED_LERP, AMOUNTS)
+        fused_text = fused_rows.native(probe, 'Vector3', 3, table, FUSED, FUSED_LERP, AMOUNTS)
+        fused_expected = [json.loads(line) for line in fused_text.splitlines() if line.strip()]
+        if len(fused_expected) != len(extra):
+            raise ProbeFailure(f'vector3: fused native produced {len(fused_expected)} rows for {len(extra)} cases')
+        rows, expected, text = rows + extra, expected + fused_expected, text + fused_text
+    else:
+        probe.report['fused'] = 'no contracted reference on this host'
+    if len(rows) > 60000:
+        raise ProbeFailure(f'vector3: {len(rows)} cases is more than the probe budget')
     lanes = probe.candidates(render, rows, batch=140, source_limit=48000)
     expected_n = aligned(rows, expected)
     lanes_n = {lane: aligned(rows, values) for lane, values in lanes.items()}
