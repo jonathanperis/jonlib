@@ -924,7 +924,7 @@
       "Orthographic fovy beyond the checked binary64 multiplier (about 2^97) and nonfinite fovy",
       "Cull distances set by rlSetClipPlanes",
       "Other compilers' contraction and optimization choices; naN sign and payload are not reproduced",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetScreenToWorldRayEx",
@@ -950,7 +950,7 @@
       "Orthographic fovy beyond the checked binary64 multiplier (about 2^97) and nonfinite fovy",
       "Cull distances set by rlSetClipPlanes",
       "Other compilers' contraction and optimization choices; naN sign and payload are not reproduced",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetWorldToScreenEx",
@@ -965,7 +965,7 @@
       "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
       "Other compilers' contraction and optimization choices",
       "NaN sign and payload are not reproduced",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetWorldToScreen2D",
@@ -980,7 +980,7 @@
       "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
       "Other compilers' contraction and optimization choices",
       "NaN sign and payload are not reproduced",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetScreenToWorld2D",
@@ -993,7 +993,7 @@
     "gaps": [
       "Other compilers' contraction and optimization choices",
       "NaN sign and payload are not reproduced",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetCameraMatrix",
@@ -1008,7 +1008,7 @@
       "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
       "Other compilers' contraction and optimization choices",
       "NaN sign and payload are not reproduced",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetCameraMatrix2D",
@@ -1111,7 +1111,7 @@
     "scope": "Owned state plus integral F32 result for finite bounds -32767..32767, truncated toward zero like the C int parameters; inclusive/swapped bounds and exactly one draw for equal bounds match native rprand.",
     "gaps": [
       "Wider integer domains, implicit globals and libc fallback",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -1124,7 +1124,7 @@
     "scope": "Owned rprand duplicate-rejection sequence with exact acceptance order and following-stream position. Integral F32 bounds -32767..32767; reversed bounds preserve the reference's unswapped minimum offset. Explicit Nat draw budget returns partial values and advanced state on exhaustion; invalid requests preserve the original stream.",
     "gaps": [
       "Unbounded retry/global-state/allocator correspondence",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:LoadRandomSequence",
@@ -1172,7 +1172,7 @@
     "scope": "The reference platform (rcore_memory.c): system with explorer and the quoted URL through /bin/sh; nothing for a URL with a single quote.",
     "gaps": [
       "Desktop platforms run xdg-open, open or start instead",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:OpenURL",
     "milestone": "window"
@@ -1355,7 +1355,7 @@
     "scope": "rename(2)'s result, -1 for a source FileExists does not see.",
     "gaps": [
       "Paths are Base strings (UTF-8 at the edge)",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:FileRename",
     "milestone": "files"
@@ -1366,7 +1366,7 @@
     "scope": "remove(3)'s result (a file, or an empty directory), -1 for a path FileExists does not see.",
     "gaps": [
       "Paths are Base strings (UTF-8 at the edge)",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:FileRemove",
     "milestone": "files"
@@ -1433,7 +1433,7 @@
     "scope": "opendir succeeds (Dir.read).",
     "gaps": [
       "Paths are Base strings (UTF-8 at the edge)",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:DirectoryExists",
     "milestone": "files"
@@ -1476,7 +1476,7 @@
     "scope": "st_mtime in seconds, 0 where stat fails.",
     "gaps": [
       "A modification before 1970 is 0 (raylib's long is negative)",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetFileModTime",
     "milestone": "files"
@@ -1544,7 +1544,7 @@
     "scope": "getcwd(3) into raylib 6.2's 4096-byte buffer, None where it fails or the path does not fit.",
     "gaps": [
       "Paths are Base strings (UTF-8 at the edge)",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetWorkingDirectory",
     "milestone": "files"
@@ -1556,7 +1556,7 @@
     "gaps": [
       "Each program answers its own directory: compared for its trailing slash and for being a directory",
       "macOS resolves links in _NSGetExecutablePath where raylib does not",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetApplicationDirectory",
     "milestone": "files"
@@ -1567,7 +1567,7 @@
     "scope": "Every prefix before a slash or backslash made where it is missing (a colon passes the next character), then the path; 0 when it is a directory then, -1 otherwise or for an empty path.",
     "gaps": [
       "Paths are Base strings (UTF-8 at the edge)",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:MakeDirectory",
     "milestone": "files"
@@ -1589,7 +1589,7 @@
     "scope": "stat(2), links followed: a regular file.",
     "gaps": [
       "Paths are Base strings (UTF-8 at the edge)",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsPathFile",
     "milestone": "files"
@@ -1715,7 +1715,7 @@
     "gaps": [
       "Larger input domains and native sequence-overflow domains",
       "Public decompression of compressed results larger than 1 MiB",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -1729,7 +1729,7 @@
     "gaps": [
       "Larger compressed inputs",
       "Other permissive malformed/partial-output recovery",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -2429,7 +2429,7 @@
       "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
       "Other compilers' contraction and optimization choices",
       "NaN sign and payload are not reproduced",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:UpdateCameraPro",
@@ -3186,7 +3186,7 @@
     "scope": "Original start*(1-t)+end*t with explicit fused and uncontracted profiles, including exceptional, subnormal and extrapolated t. CPU quiet-NaN signs differ; JavaScript matches every bit.",
     "gaps": [
       "Quiet-NaN signs of a CPU point are not reproduced; JavaScript matches every bit",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -3199,7 +3199,7 @@
     "scope": "Reference B-spline coefficients, division by six and Horner order with explicit fused and uncontracted profiles, including exceptional, subnormal and extrapolated t. A fused CPU quiet-NaN sign can differ. A quiet-NaN sign that every lane shows on the same basis cell is that gap; JavaScript and an uncontracted point match every other bit.",
     "gaps": [
       "Quiet-NaN signs of a fused CPU point are not reproduced. A basis quiet-NaN sign is uncompared when every lane shows it; JavaScript matches every other bit",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -3224,7 +3224,7 @@
     "scope": "Reference quadratic weights, with squares as products, and three-term accumulation under explicit fused and uncontracted profiles, including exceptional, subnormal and extrapolated t. CPU quiet-NaN signs differ; JavaScript matches every bit.",
     "gaps": [
       "Quiet-NaN signs of a CPU point are not reproduced; JavaScript matches every bit",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -3386,7 +3386,7 @@
     "scope": "Ordinary unchanging files, dimensions 1..4096, formats 1..13: R32 and R16 finite [0,1] (both zero signs, positive subnormals) and non-NaN R32G32B32 words. Native fitting-header/fallback-to-zero selection, exact payload words and signed-int bounds; handles close before decoding. DataError{OutOfDomain} for unsupported samples follows closure; invalid requests fail before opening.",
     "gaps": [
       "Other formats, broader R32 domains, format-9 NaN payload parity, signed/out-of-range parameters and concurrent/special files",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -3401,7 +3401,7 @@
       "Disposal 3 and remaining image-codec/profile gaps",
       "Original pixel formats",
       "Concurrent/special files, larger inputs",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:LoadImageAnim",
@@ -3415,7 +3415,7 @@
       "Undefined native behavior: Disposal 3: pinned native two_back points before its allocated frame buffer",
       "Remaining image-codec/profile gaps",
       "Permissive malformed recovery, original metadata",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:LoadImageAnimFromMemory",
@@ -3482,7 +3482,7 @@
       "JPEG quality is fixed at 90",
       "KTX mip chains, non-Surface owners, other formats, failing writes, close errors, NaN and out-of-range casts",
       "R32 samples outside finite [0,1]",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured; KTX is a byte copy and the scalar float DCT is the tuning target",
       "Integration: not exercised beyond its gate"
     ],
@@ -3497,7 +3497,7 @@
       "Packed/other float source formats, NaN parity, configured flags and generic dispatch",
       "Ownership correspondence",
       "R32 samples outside finite [0,1]",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -3512,7 +3512,7 @@
       "NaN payload parity, wider payload/path/Unicode/truncation domains, native long-name buffer overflow and other source formats",
       "Configured line widths",
       "R32 samples outside finite [0,1]",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -3584,7 +3584,7 @@
     "scope": "Owned random stream and RGBA8 image generation for dimensions 1..4096 and factor 0..1; one draw per pixel, reference threshold truncation, retained stream on rejected requests.",
     "gaps": [
       "Implicit-global/libc random profiles and broader generation domains",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -3597,7 +3597,7 @@
     "scope": "RGBA8 six-octave stb_perlin generation with original tables, seeded octaves, aspect compensation and byte quantization. Explicit fused/uncontracted profiles; dimensions 1..4096, integral offsets -32767..32767, scale zero or magnitude 2^-16..256.",
     "gaps": [
       "Broader numerical/size domains and other compiler contraction patterns",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GenImagePerlinNoise",
@@ -3609,7 +3609,7 @@
     "scope": "Owned-stream RGBA8 cellular generation with dimensions/tile size 1..4096; reference floor seed grids, Y-before-X draws, adjacent-tile clipping and opaque intensity order. Integer-distance reduction reproduces native hypot for every in-domain pair; invalid requests preserve the stream.",
     "gaps": [
       "Implicit-global/libc random profiles and broader generation domains",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -3646,7 +3646,7 @@
     "scope": "Every Surface format; raylib 6.2's validation (x, y >= 0, width, height > 0, (int)x + (int)width <= image width and likewise for y) with fractional fields truncated, otherwise None (raylib's empty image); original owner retained and extracted storage independent with exact samples. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "A width or height in (0, 1) passes raylib's check and yields a 0-sized image; Jonlib answers None (no 0-sized Surface)",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageFromImage",
@@ -3659,7 +3659,7 @@
     "gaps": [
       "Other selector/source domains, formats and mipmaps",
       "R32 samples outside finite [0,1]",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageFromChannel",
@@ -3698,7 +3698,7 @@
       "Mipmap chains are not regenerated",
       "Big-endian layouts, non-default alpha thresholds, NaN payloads and out-of-domain float casts",
       "R32 samples outside finite [0,1]",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageFormat",
@@ -3778,7 +3778,7 @@
     "gaps": [
       "Other source formats/mipmaps and configured iteration counts",
       "Negative/excessive native blur sizes",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageBlurGaussian",
@@ -3791,7 +3791,7 @@
     "gaps": [
       "Wider kernels/coefficient domains (NaN/infinite sums stay undefined natively)",
       "Other source formats/mipmaps",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageKernelConvolution",
@@ -3804,7 +3804,7 @@
     "gaps": [
       "Pixel formats 10+ and mipmap chains",
       "Dimensions beyond the initial Surface domain",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib",
       "Integration: not exercised beyond its gate"
     ],
@@ -3841,7 +3841,7 @@
     "gaps": [
       "Existing partial/full native chains and pixel formats 10+",
       "Texture integration",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageMipmaps",
@@ -3889,7 +3889,7 @@
       "Wider-angle reference behavior",
       "Pixel formats 10+ and mipmaps",
       "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageRotate",
@@ -3945,7 +3945,7 @@
     "scope": "ImageFormat to GRAYSCALE from any Surface format, with native F32 luminance order and truncation; R32G32B32 converts directly from finite [0,1] samples. Rejected requests return the original owner. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other source domains/mipmaps and remaining metadata",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageColorGrayscale",
@@ -4324,7 +4324,7 @@
     "gaps": [
       "Mipmaps, empty/undefined rectangles",
       "A wide float source outside 0..1 is OutOfDomain",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawImage",
@@ -4350,7 +4350,7 @@
     "gaps": [
       "Mipmaps, empty/undefined rectangles",
       "Bounded finite rectangles and positions (|v| <= 32767)",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawImageRec",
@@ -4363,7 +4363,7 @@
     "gaps": [
       "Mipmaps, empty or undefined source rectangles",
       "Bounded finite rectangles (|v| <= 32767)",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:ImageDrawImagePro",
@@ -6220,7 +6220,7 @@
     "scope": "F32 ray, center and radius, including signed zero, a subnormal, infinities and one quiet NaN. Inside rays, misses and hits behind the origin are the zero collision. Uncontracted and Apple-clang FMA profiles; a non-finite fused multiply-add uses the total fma.",
     "gaps": [
       "NaN sign and payload are not reproduced",
-      "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
       "Performance: not measured against raylib"
     ],
     "api_id": "raylib:function:GetRayCollisionSphere",

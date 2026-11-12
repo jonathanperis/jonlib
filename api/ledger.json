@@ -3814,7 +3814,7 @@
       "scope": "One owned Surface per image: dimensions 1..4096, one mip level and raylib PixelFormat 1..13 (R8G8B8A8 as canonical Color words, other byte formats, R32 and R16 as native sample words, formats 9, 10, 12 and 13 as Quads of sample bits). Image.Mipmaps owns complete base-to-1x1 levels in any of those formats. Image.Stored keeps raylib's fields for compressed blocks (DXT, ETC, PVRTC, ASTC). DDS stores every chain level. KTX and PVR report the header mip count and keep the first level's bytes.",
       "gaps": [
         "Operations on compressed or mipmapped images beyond loading, copy, export and level splitting; full dimension domain; KTX/PVR data is the first level only",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -5221,7 +5221,7 @@
       "mapping_state": "implemented",
       "scope": "Immutable position and direction Vector3 values; directions are not normalized.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -5286,7 +5286,7 @@
       "mapping_state": "implemented",
       "scope": "Immutable hit flag, F32 distance and Vector3 point and normal, compared field by field with raylib.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -31299,7 +31299,7 @@
         "Orthographic fovy beyond the checked binary64 multiplier (about 2^97) and nonfinite fovy",
         "Cull distances set by rlSetClipPlanes",
         "Other compilers' contraction and optimization choices; naN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -31435,7 +31435,7 @@
         "Orthographic fovy beyond the checked binary64 multiplier (about 2^97) and nonfinite fovy",
         "Cull distances set by rlSetClipPlanes",
         "Other compilers' contraction and optimization choices; naN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -31504,7 +31504,7 @@
         "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -31571,7 +31571,7 @@
         "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -31636,7 +31636,7 @@
       "gaps": [
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -31703,7 +31703,7 @@
         "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -32266,7 +32266,7 @@
       "scope": "Owned state plus integral F32 result for finite bounds -32767..32767, truncated toward zero like the C int parameters; inclusive/swapped bounds and exactly one draw for equal bounds match native rprand.",
       "gaps": [
         "Wider integer domains, implicit globals and libc fallback",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -32327,7 +32327,7 @@
       "scope": "Owned rprand duplicate-rejection sequence with exact acceptance order and following-stream position. Integral F32 bounds -32767..32767; reversed bounds preserve the reference's unswapped minimum offset. Explicit Nat draw budget returns partial values and advanced state on exhaustion; invalid requests preserve the original stream.",
       "gaps": [
         "Unbounded retry/global-state/allocator correspondence",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -32579,7 +32579,7 @@
       "scope": "The reference platform (rcore_memory.c): system with explorer and the quoted URL through /bin/sh; nothing for a URL with a single quote.",
       "gaps": [
         "Desktop platforms run xdg-open, open or start instead",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
@@ -33675,7 +33675,7 @@
       "scope": "rename(2)'s result, -1 for a source FileExists does not see.",
       "gaps": [
         "Paths are Base strings (UTF-8 at the edge)",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
@@ -33735,7 +33735,7 @@
       "scope": "remove(3)'s result (a file, or an empty directory), -1 for a path FileExists does not see.",
       "gaps": [
         "Paths are Base strings (UTF-8 at the edge)",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
@@ -34100,7 +34100,7 @@
       "scope": "opendir succeeds (Dir.read).",
       "gaps": [
         "Paths are Base strings (UTF-8 at the edge)",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
@@ -34346,7 +34346,7 @@
       "scope": "st_mtime in seconds, 0 where stat fails.",
       "gaps": [
         "A modification before 1970 is 0 (raylib's long is negative)",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
@@ -34698,7 +34698,7 @@
       "scope": "getcwd(3) into raylib 6.2's 4096-byte buffer, None where it fails or the path does not fit.",
       "gaps": [
         "Paths are Base strings (UTF-8 at the edge)",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
@@ -34759,7 +34759,7 @@
       "gaps": [
         "Each program answers its own directory: compared for its trailing slash and for being a directory",
         "macOS resolves links in _NSGetExecutablePath where raylib does not",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
@@ -34819,7 +34819,7 @@
       "scope": "Every prefix before a slash or backslash made where it is missing (a colon passes the next character), then the path; 0 when it is a directory then, -1 otherwise or for an empty path.",
       "gaps": [
         "Paths are Base strings (UTF-8 at the edge)",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
@@ -34943,7 +34943,7 @@
       "scope": "stat(2), links followed: a regular file.",
       "gaps": [
         "Paths are Base strings (UTF-8 at the edge)",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "adaptations": [],
       "blocker": null,
@@ -35679,7 +35679,7 @@
       "gaps": [
         "Larger input domains and native sequence-overflow domains",
         "Public decompression of compressed results larger than 1 MiB",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -35747,7 +35747,7 @@
       "gaps": [
         "Larger compressed inputs",
         "Other permissive malformed/partial-output recovery",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -39758,7 +39758,7 @@
         "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -43807,7 +43807,7 @@
       "scope": "Original start*(1-t)+end*t with explicit fused and uncontracted profiles, including exceptional, subnormal and extrapolated t. CPU quiet-NaN signs differ; JavaScript matches every bit.",
       "gaps": [
         "Quiet-NaN signs of a CPU point are not reproduced; JavaScript matches every bit",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -43874,7 +43874,7 @@
       "scope": "Reference B-spline coefficients, division by six and Horner order with explicit fused and uncontracted profiles, including exceptional, subnormal and extrapolated t. A fused CPU quiet-NaN sign can differ. A quiet-NaN sign that every lane shows on the same basis cell is that gap; JavaScript and an uncontracted point match every other bit.",
       "gaps": [
         "Quiet-NaN signs of a fused CPU point are not reproduced. A basis quiet-NaN sign is uncompared when every lane shows it; JavaScript matches every other bit",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -44007,7 +44007,7 @@
       "scope": "Reference quadratic weights, with squares as products, and three-term accumulation under explicit fused and uncontracted profiles, including exceptional, subnormal and extrapolated t. CPU quiet-NaN signs differ; JavaScript matches every bit.",
       "gaps": [
         "Quiet-NaN signs of a CPU point are not reproduced; JavaScript matches every bit",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -44917,7 +44917,7 @@
       "scope": "Ordinary unchanging files, dimensions 1..4096, formats 1..13: R32 and R16 finite [0,1] (both zero signs, positive subnormals) and non-NaN R32G32B32 words. Native fitting-header/fallback-to-zero selection, exact payload words and signed-int bounds; handles close before decoding. DataError{OutOfDomain} for unsupported samples follows closure; invalid requests fail before opening.",
       "gaps": [
         "Other formats, broader R32 domains, format-9 NaN payload parity, signed/out-of-range parameters and concurrent/special files",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -44993,7 +44993,7 @@
         "Disposal 3 and remaining image-codec/profile gaps",
         "Original pixel formats",
         "Concurrent/special files, larger inputs",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -45064,7 +45064,7 @@
         "Undefined native behavior: Disposal 3: pinned native two_back points before its allocated frame buffer",
         "Remaining image-codec/profile gaps",
         "Permissive malformed recovery, original metadata",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -45468,7 +45468,7 @@
         "JPEG quality is fixed at 90",
         "KTX mip chains, non-Surface owners, other formats, failing writes, close errors, NaN and out-of-range casts",
         "R32 samples outside finite [0,1]",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured; KTX is a byte copy and the scalar float DCT is the tuning target",
         "Integration: not exercised beyond its gate"
       ],
@@ -45547,7 +45547,7 @@
         "Packed/other float source formats, NaN parity, configured flags and generic dispatch",
         "Ownership correspondence",
         "R32 samples outside finite [0,1]",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -45621,7 +45621,7 @@
         "NaN payload parity, wider payload/path/Unicode/truncation domains, native long-name buffer overflow and other source formats",
         "Configured line widths",
         "R32 samples outside finite [0,1]",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -46018,7 +46018,7 @@
       "scope": "Owned random stream and RGBA8 image generation for dimensions 1..4096 and factor 0..1; one draw per pixel, reference threshold truncation, retained stream on rejected requests.",
       "gaps": [
         "Implicit-global/libc random profiles and broader generation domains",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -46083,7 +46083,7 @@
       "scope": "RGBA8 six-octave stb_perlin generation with original tables, seeded octaves, aspect compensation and byte quantization. Explicit fused/uncontracted profiles; dimensions 1..4096, integral offsets -32767..32767, scale zero or magnitude 2^-16..256.",
       "gaps": [
         "Broader numerical/size domains and other compiler contraction patterns",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -46147,7 +46147,7 @@
       "scope": "Owned-stream RGBA8 cellular generation with dimensions/tile size 1..4096; reference floor seed grids, Y-before-X draws, adjacent-tile clipping and opaque intensity order. Integer-distance reduction reproduces native hypot for every in-domain pair; invalid requests preserve the stream.",
       "gaps": [
         "Implicit-global/libc random profiles and broader generation domains",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -46343,7 +46343,7 @@
       "scope": "Every Surface format; raylib 6.2's validation (x, y >= 0, width, height > 0, (int)x + (int)width <= image width and likewise for y) with fractional fields truncated, otherwise None (raylib's empty image); original owner retained and extracted storage independent with exact samples. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
         "A width or height in (0, 1) passes raylib's check and yields a 0-sized image; Jonlib answers None (no 0-sized Surface)",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -46409,7 +46409,7 @@
       "gaps": [
         "Other selector/source domains, formats and mipmaps",
         "R32 samples outside finite [0,1]",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -46619,7 +46619,7 @@
         "Mipmap chains are not regenerated",
         "Big-endian layouts, non-default alpha thresholds, NaN payloads and out-of-domain float casts",
         "R32 samples outside finite [0,1]",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -47080,7 +47080,7 @@
       "gaps": [
         "Other source formats/mipmaps and configured iteration counts",
         "Negative/excessive native blur sizes",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -47147,7 +47147,7 @@
       "gaps": [
         "Wider kernels/coefficient domains (NaN/infinite sums stay undefined natively)",
         "Other source formats/mipmaps",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -47215,7 +47215,7 @@
       "gaps": [
         "Pixel formats 10+ and mipmap chains",
         "Dimensions beyond the initial Surface domain",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -47418,7 +47418,7 @@
       "gaps": [
         "Existing partial/full native chains and pixel formats 10+",
         "Texture integration",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -47681,7 +47681,7 @@
         "Wider-angle reference behavior",
         "Pixel formats 10+ and mipmaps",
         "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -48008,7 +48008,7 @@
       "scope": "ImageFormat to GRAYSCALE from any Surface format, with native F32 luminance order and truncation; R32G32B32 converts directly from finite [0,1] samples. Rejected requests return the original owner. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Other source domains/mipmaps and remaining metadata",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -50219,7 +50219,7 @@
       "gaps": [
         "Mipmaps, empty/undefined rectangles",
         "A wide float source outside 0..1 is OutOfDomain",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -50351,7 +50351,7 @@
       "gaps": [
         "Mipmaps, empty/undefined rectangles",
         "Bounded finite rectangles and positions (|v| <= 32767)",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -50418,7 +50418,7 @@
       "gaps": [
         "Mipmaps, empty or undefined source rectangles",
         "Bounded finite rectangles (|v| <= 32767)",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -61264,7 +61264,7 @@
       "scope": "F32 ray, center and radius, including signed zero, a subnormal, infinities and one quiet NaN. Inside rays, misses and hits behind the origin are the zero collision. Uncontracted and Apple-clang FMA profiles; a non-finite fused multiply-add uses the total fma.",
       "gaps": [
         "NaN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -67676,7 +67676,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -67801,7 +67801,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -67863,7 +67863,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -68373,7 +68373,7 @@
       "scope": "F32 length, including a zero vector, subnormals, infinities and one quiet NaN. Every result bit of the corpus matches.",
       "gaps": [
         "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -68436,7 +68436,7 @@
       "scope": "Uncontracted F32 squared length. Every result bit of the vector2 corpus matches.",
       "gaps": [
         "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -68500,7 +68500,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -68564,7 +68564,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -68628,7 +68628,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -68692,7 +68692,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -69161,7 +69161,7 @@
       "scope": "Uncontracted normalization; a zero length returns positive-zero components. Every result bit of the vector2 corpus matches.",
       "gaps": [
         "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -69288,7 +69288,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -69352,7 +69352,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -70518,7 +70518,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -70643,7 +70643,7 @@
       "scope": "F32 length, including a zero vector, subnormals, infinities and one quiet NaN. Every result bit of the corpus matches.",
       "gaps": [
         "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -70706,7 +70706,7 @@
       "scope": "Uncontracted F32 squared length. Every result bit of the vector3 corpus matches.",
       "gaps": [
         "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -70770,7 +70770,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -70834,7 +70834,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -70898,7 +70898,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -71164,7 +71164,7 @@
       "scope": "Uncontracted normalization; a zero length retains the input, including signed zeros. Non-NaN bits of the vector3 corpus match.",
       "gaps": [
         "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -71228,7 +71228,7 @@
       "gaps": [
         "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -71293,7 +71293,7 @@
       "gaps": [
         "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -71358,7 +71358,7 @@
       "gaps": [
         "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -71487,7 +71487,7 @@
       "gaps": [
         "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -71677,7 +71677,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -71803,7 +71803,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -72068,7 +72068,7 @@
       "gaps": [
         "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -72910,7 +72910,7 @@
       "scope": "F32 length, including a zero vector, subnormals, infinities and one quiet NaN. Every result bit of the corpus matches.",
       "gaps": [
         "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -72973,7 +72973,7 @@
       "scope": "Uncontracted F32 squared length. Every result bit of the vector4 corpus matches.",
       "gaps": [
         "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -73037,7 +73037,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -73101,7 +73101,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -73165,7 +73165,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -73487,7 +73487,7 @@
       "scope": "Uncontracted normalization; a length that is not greater than zero returns four positive zeros. Every result bit of the vector4 corpus matches.",
       "gaps": [
         "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -73689,7 +73689,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -73942,7 +73942,7 @@
       "gaps": [
         "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -74006,7 +74006,7 @@
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "JavaScript stores every NaN as the canonical positive quiet NaN",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -74136,7 +74136,7 @@
       "gaps": [
         "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -74265,7 +74265,7 @@
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "JavaScript stores every NaN as the canonical positive quiet NaN",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -74329,7 +74329,7 @@
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "JavaScript stores every NaN as the canonical positive quiet NaN",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -74394,7 +74394,7 @@
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "JavaScript stores every NaN as the canonical positive quiet NaN",
         "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -74458,7 +74458,7 @@
       "gaps": [
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
         "JavaScript stores every NaN as the canonical positive quiet NaN",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -74521,7 +74521,7 @@
       "scope": "F32 translation matrix in reference field order. Signed zero, subnormals, infinities and NaN payloads are stored as bits, except that JavaScript stores every NaN as the canonical positive quiet NaN.",
       "gaps": [
         "JavaScript stores every NaN as the canonical positive quiet NaN",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -74960,7 +74960,7 @@
       "scope": "F32 diagonal scaling matrix. Axis scales are stored as bits, including signed zero, subnormals, infinities and NaN payloads, except that JavaScript stores every NaN as the canonical positive quiet NaN.",
       "gaps": [
         "JavaScript stores every NaN as the canonical positive quiet NaN",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -75024,7 +75024,7 @@
       "scope": "Six binary64 Float64 inputs retained through interval subtraction before reference F32 casts/arithmetic, including intervals below an F32 ULP; normal/zero intermediate/result profile with nonzero spans.",
       "gaps": [
         "Exceptional/subnormal arithmetic profiles",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -75155,7 +75155,7 @@
       "scope": "Six binary64 Float64 inputs with exact reference interval precision, cast order and F32 orthographic fields. Normal/zero intermediate/result profile with nonzero spans.",
       "gaps": [
         "Exceptional/subnormal arithmetic profiles",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -75221,7 +75221,7 @@
       "gaps": [
         "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -75679,7 +75679,7 @@
       "scope": "F32 length, including a zero quaternion, subnormals, infinities and one quiet NaN. Every result bit of the corpus matches.",
       "gaps": [
         "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -75742,7 +75742,7 @@
       "scope": "Uncontracted normalization; a zero length is replaced by one, retaining the input signs. Non-NaN bits of the vector4 corpus match.",
       "gaps": [
         "Contracted builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -75806,7 +75806,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -75870,7 +75870,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured",
         "Integration: not exercised beyond its gate"
       ],
@@ -76066,7 +76066,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -76130,7 +76130,7 @@
       "gaps": [
         "Contracted builds",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: dependent-chain throughput on one CPU thread is at or under clang -O2 (docs/MATH.md). Single calls and JavaScript are not measured"
       ],
       "adaptations": [],
@@ -76320,7 +76320,7 @@
       "gaps": [
         "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -76386,7 +76386,7 @@
       "gaps": [
         "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -76452,7 +76452,7 @@
       "gaps": [
         "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -76966,7 +76966,7 @@
       "gaps": [
         "Contracted builds: arm64 default Makefile (-O1) and CMake Release (-O3) emit fmadd; generic x86-64 without -mfma does not",
         "Undefined native behavior: sign of a NaN from an invalid operation is unspecified (IEEE 754 6.3) and varies in upstream builds",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib",
         "Integration: not exercised beyond its gate"
       ],
@@ -108092,7 +108092,7 @@
       "gaps": [
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -108157,7 +108157,7 @@
       "gaps": [
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -108222,7 +108222,7 @@
       "gaps": [
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -108287,7 +108287,7 @@
       "gaps": [
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -108352,7 +108352,7 @@
       "gaps": [
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -108416,7 +108416,7 @@
       "gaps": [
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -108481,7 +108481,7 @@
       "gaps": [
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -108547,7 +108547,7 @@
         "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -108614,7 +108614,7 @@
         "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
         "lockView angles outside the checked atan2f contract (subnormal intermediates or results)",
         "Other compilers' contraction and optimization choices; naN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -108681,7 +108681,7 @@
         "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -108745,7 +108745,7 @@
       "gaps": [
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -108811,7 +108811,7 @@
         "CAMERA_PERSPECTIVE is None under AppleLibm (the profile-free form) and for a nonfinite fovy*DEG2RAD or aspect (docs/PERSPECTIVE.md)",
         "Cull distances set by rlSetClipPlanes",
         "NaN sign and payload are not reproduced",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes on Linux; macOS is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],

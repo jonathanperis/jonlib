@@ -65,6 +65,20 @@ probes' `--gpu`) are separate local evidence; hosted runners have no GPU.
 
 ## 3. Verified state
 
+A full shard on 2026-11-11 (tree `f8bee06`, Bend 2.0.39 `a3efe8a3` with the
+declared overlay, raylib 6.2 `02566453`, Bun 1.3.12, Apple clang 21.0.0,
+Apple M1 arm64, macOS 27.2, `run_gates.py --os macos`, lanes cpu-1, cpu-2 and
+javascript) ran all 232 gates. 231 passed. `text` timed out on one
+AddressSanitizer reference binary (its 120 s budget) while the Mac also ran a
+Linux container and forced-Metal runs; rerun alone it passed (4397 cases,
+`linked_profile=Fused`). The three gates the `main` nightly had failed on
+macOS since 2026-10-28 (`file-length`, `files`, `triangle-gradient`) passed.
+The probes changed after `f8bee06` (the ownership defs and the GPU-lane
+comparisons of `feature/ownership-collisions`) passed on this Mac with
+`--gpu`, every lane compared; the Metal records are in
+[METAL-WITNESSES.md](METAL-WITNESSES.md). Entries whose every cited gate
+passed no longer carry `macOS is not verified`. `MERGE_HOSTS` is unchanged.
+
 A full shard on 2026-10-25 (`b5fb204`, Bend 2.0.39 with the declared overlay,
 raylib 6.2, Apple clang 21.0.0, arm64, macOS 27.0.1, `--shard 1/1 --jobs 1`,
 lanes cpu-1, cpu-2 and javascript) ran all 210 gates in 11h 23m 47s. 209
