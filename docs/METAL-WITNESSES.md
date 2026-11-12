@@ -319,3 +319,10 @@ Metal witness: raylib:function:IsFileNameValid a3efe8a3801f423827424227172eed980
 Metal witness: raylib:function:IsFileDropped a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:LoadDroppedFiles a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:UnloadDroppedFiles a3efe8a3801f423827424227172eed9802c5e6cb pass
+
+`files-os` (234 operations) had dropped its GPU lane; it now compares it, and
+with `--gpu` every lane matched.
+
+Metal witness: raylib:function:IsFileHidden a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:IsPathAbsolute a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:UnloadDirectoryFiles a3efe8a3801f423827424227172eed9802c5e6cb pass

@@ -448,7 +448,6 @@ def main():
 
     build(tree)
     lanes = probe.candidates(lambda chosen, gpu: render(chosen), ops, batch=len(ops), parse_lane=rebuilt, timeout=1800)
-    lanes = {name: rows for name, rows in lanes.items() if name != 'gpu'}
     probe.compare(expected, lanes, describe=lambda i: f'{ops[i][0]} {json.dumps(ops[i][1])[:120]}')
     unlock(tree)
     probe.finish(operations=len(ops), contracts=sum(not d for _, _, d in ops),

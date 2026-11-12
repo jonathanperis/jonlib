@@ -34240,7 +34240,7 @@
       "mapping_state": "implemented",
       "scope": "The POSIX rule: the name after the last '/' starts with '.' and is neither '.' nor '..'. Ownership: borrows path; the Bool is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host"
       ],
       "adaptations": [],
       "blocker": null,
@@ -34255,7 +34255,8 @@
       "evidence": [
         "tools/files_os_probe.py",
         "docs/FILES.md",
-        "jonlib.bend"
+        "jonlib.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35091,7 +35092,7 @@
       "mapping_state": "implemented",
       "scope": "The POSIX rule: the path starts with '/'. Ownership: consumes path; the Bool is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host"
       ],
       "adaptations": [],
       "blocker": null,
@@ -35106,7 +35107,8 @@
       "evidence": [
         "tools/files_os_probe.py",
         "docs/FILES.md",
-        "jonlib.bend"
+        "jonlib.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35337,7 +35339,7 @@
       "mapping_state": "implemented",
       "scope": "Consuming the list frees it. Ownership: consumes the listing and returns Unit.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host"
       ],
       "adaptations": [
         "Pointer/allocator ABI"
@@ -35356,7 +35358,8 @@
         "tools/files_os_probe.py",
         "docs/FILES.md",
         "jonlib.bend",
-        "patches/bend-os-effects.md"
+        "patches/bend-os-effects.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
