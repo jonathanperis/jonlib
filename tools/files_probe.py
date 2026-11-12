@@ -348,7 +348,6 @@ def main():
     if next(observed, 'done') != 'done':
         raise ProbeFailure('files: unexpected native rows')
     lanes = probe.candidates(render(acts, work), acts, batch=len(acts), parse=lambda text, selected: parse_results(text))
-    lanes = {name: rows for name, rows in lanes.items() if name != 'gpu'}
     probe.compare(expected, lanes, describe=lambda i: f'{acts[i][0]} {str(acts[i][1])[:60]!r}')
     probe.finish(cases=len(acts), contracts=sum(not defined(k, a) for k, a in acts),
                  inputs_sha256=hashlib.sha256(json.dumps(acts).encode()).hexdigest())

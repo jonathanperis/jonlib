@@ -62,7 +62,7 @@ def main():
     probe = probekit.Probe('log', probekit.arguments(__doc__))
     expected = native_log(probe)
     lanes = probe.candidates(render_log, ['all messages'], batch=1, parse=lambda text, selected: [text.rstrip('\n') + '\n'])
-    probe.compare([expected.rstrip('\n') + '\n'], {k: v for k, v in lanes.items() if k != 'gpu'}, describe=lambda i: 'trace log output')
+    probe.compare([expected.rstrip('\n') + '\n'], lanes, describe=lambda i: 'trace log output')
     # LOG_FATAL: native prints and exits 1; the candidate must do the same.
     fatal_c = probe.work / 'fatal.c'
     fatal_c.write_text('#include "raylib.h"\nint main(void){TraceLog(LOG_FATAL,"stop here");TraceLog(LOG_INFO,"unreached");return 0;}\n')

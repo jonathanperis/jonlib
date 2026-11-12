@@ -300,3 +300,22 @@ Metal not applicable: raylib:function:SetLoadFileDataCallback a3efe8a3801f423827
 Metal not applicable: raylib:function:SetSaveFileDataCallback a3efe8a3801f423827424227172eed9802c5e6cb host effect
 Metal not applicable: raylib:function:SetLoadFileTextCallback a3efe8a3801f423827424227172eed9802c5e6cb host effect
 Metal not applicable: raylib:function:SetSaveFileTextCallback a3efe8a3801f423827424227172eed9802c5e6cb host effect
+
+## Path, log and window GPU lanes, 2026-11-12
+
+`files` (304 cases), `log` (67 messages) and `window` (156 operations) had
+dropped their GPU lane; they now compare it, and with `--gpu` every lane
+matched. The pure entries they cover get witnesses.
+
+Metal witness: raylib:function:SetTraceLogLevel a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:UnloadFileData a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:UnloadFileText a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:IsFileExtension a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GetFileExtension a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GetFileName a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GetFileNameWithoutExt a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:GetDirectoryPath a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:IsFileNameValid a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:IsFileDropped a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:LoadDroppedFiles a3efe8a3801f423827424227172eed9802c5e6cb pass
+Metal witness: raylib:function:UnloadDroppedFiles a3efe8a3801f423827424227172eed9802c5e6cb pass

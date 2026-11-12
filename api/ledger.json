@@ -32653,7 +32653,8 @@
       },
       "evidence": [
         "tools/log_probe.py",
-        "docs/LOGGING.md"
+        "docs/LOGGING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33055,7 +33056,7 @@
       "mapping_state": "implemented",
       "scope": "Consumes the byte list returned by Files.load_data.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -33073,7 +33074,8 @@
       "evidence": [
         "tools/color_words_probe.py",
         "tools/files_probe.py",
-        "docs/FILES.md"
+        "docs/FILES.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33307,7 +33309,7 @@
       "mapping_state": "implemented",
       "scope": "Consumes the text returned by Files.load_text.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [
@@ -33325,7 +33327,8 @@
       "evidence": [
         "tools/color_words_probe.py",
         "tools/files_probe.py",
-        "docs/FILES.md"
+        "docs/FILES.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -34176,7 +34179,7 @@
       "mapping_state": "implemented",
       "scope": "ASCII-case-insensitive match of GetFileExtension's first 15 bytes against a ';'-separated list's first 32 entries; entries without a leading '.' compare without it. Each character is one path byte, including 128..255. Ownership: consumes path, extensions; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -34191,7 +34194,8 @@
       },
       "evidence": [
         "tools/files_probe.py",
-        "docs/FILES.md"
+        "docs/FILES.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -34421,7 +34425,7 @@
       "mapping_state": "implemented",
       "scope": "From the last '.' of the whole path; None when there is none or it is the first character (raylib NULL). Each character is one path byte, including 128..255. Ownership: borrows path; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -34436,7 +34440,8 @@
       },
       "evidence": [
         "tools/files_probe.py",
-        "docs/FILES.md"
+        "docs/FILES.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -34479,7 +34484,7 @@
       "mapping_state": "implemented",
       "scope": "The text after the last '/' or '\\\\' separator, or the whole path. Each character is one path byte, including 128..255. Ownership: borrows path; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -34494,7 +34499,8 @@
       },
       "evidence": [
         "tools/files_probe.py",
-        "docs/FILES.md"
+        "docs/FILES.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -34537,7 +34543,7 @@
       "mapping_state": "implemented",
       "scope": "GetFileName truncated to 255 bytes, cut at its last '.' past the first character. Each character is one path byte, including 128..255. Ownership: consumes path; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -34552,7 +34558,8 @@
       },
       "evidence": [
         "tools/files_probe.py",
-        "docs/FILES.md"
+        "docs/FILES.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -34596,7 +34603,7 @@
       "scope": "'./' before paths without a drive letter or leading separator, then the path up to its last separator ('/' or '\\\\' alone for a root file); paths of 1..4093 bytes, each character one byte including 128..255. None otherwise. Ownership: borrows path; the result is owned by the caller.",
       "gaps": [
         "Undefined native behavior: an empty path reads past the string and a longer path overflows the 4096-byte buffer",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -34611,7 +34618,8 @@
       },
       "evidence": [
         "tools/files_probe.py",
-        "docs/FILES.md"
+        "docs/FILES.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35143,7 +35151,7 @@
       "mapping_state": "implemented",
       "scope": "Empty names are valid; '<>:\"/\\\\|?*', control characters and all-period names are invalid. Each character is one path byte, including 128..255. Ownership: borrows name; the result is owned by the caller.",
       "gaps": [
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host",
         "Performance: not measured against raylib"
       ],
       "adaptations": [],
@@ -35158,7 +35166,8 @@
       },
       "evidence": [
         "tools/files_probe.py",
-        "docs/FILES.md"
+        "docs/FILES.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35393,7 +35402,7 @@
       "scope": "False: no platform Jonlib runs on delivers dropped files (the memory platform has no events, Base no drop event). The Core is retained.",
       "gaps": [
         "Integration: Base has no drop event (docs/DRIVER.md)",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host"
       ],
       "adaptations": [],
       "blocker": null,
@@ -35409,7 +35418,8 @@
         "tools/window_probe.py",
         "docs/FILES.md",
         "docs/DRIVER.md",
-        "jonlib.bend"
+        "jonlib.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35455,7 +35465,7 @@
       "scope": "Returns an owned empty path list (FilePathList{0, []}); the Core is retained.",
       "gaps": [
         "Integration: Base has no drop event (docs/DRIVER.md)",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host"
       ],
       "adaptations": [],
       "blocker": null,
@@ -35471,7 +35481,8 @@
         "tools/window_probe.py",
         "docs/FILES.md",
         "docs/DRIVER.md",
-        "jonlib.bend"
+        "jonlib.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35517,7 +35528,7 @@
       "scope": "Consumes the empty path list and returns the Core owner; nothing is freed.",
       "gaps": [
         "Integration: Base has no drop event (docs/DRIVER.md)",
-        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+        "Targets: CPU-1, CPU-2 and JavaScript lanes on the CI hosts; forced Metal is a local witness, and macOS is not a CI merge host"
       ],
       "adaptations": [],
       "blocker": null,
@@ -35533,7 +35544,8 @@
         "tools/window_probe.py",
         "docs/FILES.md",
         "docs/DRIVER.md",
-        "jonlib.bend"
+        "jonlib.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},

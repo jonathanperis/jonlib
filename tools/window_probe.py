@@ -723,7 +723,6 @@ def main():
             lanes.setdefault(lane, [None] * len(items))
             for index, value in zip(group, values):
                 lanes[lane][index] = value
-    lanes = {lane: rows for lane, rows in lanes.items() if lane != 'gpu'}
 
     def describe(index):
         rows = next(iter(lanes.values()))[index]
