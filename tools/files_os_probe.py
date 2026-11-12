@@ -288,6 +288,14 @@ import ../../jonlib.bend as J
 # Ownership: these defs copy the library signatures (+ borrows, the rest
 # consumed) and return values the caller owns; the affine checker
 # enforces them on every compared call.
+def files_directory_file_count_ex_owned(+path: String, filter: Maybe<String>, +subdirs: Bool) -> IO(Maybe<U32>):
+  J.Files.directory_file_count_ex(path, filter, subdirs)
+def files_load_directory_files_ex_owned(+path: String, filter: Maybe<String>, +subdirs: Bool) -> IO(Maybe<J.FilePathList>):
+  J.Files.load_directory_files_ex(path, filter, subdirs)
+def files_is_path_absolute_owned(path: String) -> Bool:
+  J.Files.is_path_absolute(path)
+def files_is_file_hidden_owned(+path: String) -> Bool:
+  J.Files.is_file_hidden(path)
 def files_change_directory_with_owned(logger: J.Log.Logger, +path: String) -> IO(U32):
   J.Files.change_directory_with(logger, path)
 def files_copy_owned(+source: String, +target: String) -> IO(Maybe<U32>):
@@ -387,11 +395,11 @@ def bend_op(op, args):
         'cwd': lambda: ('Maybe<String>', 'J.Files.working_directory()', 'directory(r)'),
     }
     if op in ('count_ex', 'load_ex'):
-        kind, call, show = (('Maybe<U32>', 'J.Files.directory_file_count_ex', 'counted(r)') if op == 'count_ex'
-                            else ('Maybe<J.FilePathList>', 'J.Files.load_directory_files_ex', 'listing(r)'))
+        kind, call, show = (('Maybe<U32>', 'files_directory_file_count_ex_owned', 'counted(r)') if op == 'count_ex'
+                            else ('Maybe<J.FilePathList>', 'files_load_directory_files_ex_owned', 'listing(r)'))
         return f'Unit <- IO.bind({kind}, Unit, {call}({s[0]}, {bend_maybe(args[1])}, {b(args[2])}), r => said({show}))'
     if op in ('absolute', 'hidden'):
-        call = 'J.Files.is_path_absolute' if op == 'absolute' else 'J.Files.is_file_hidden'
+        call = 'files_is_path_absolute_owned' if op == 'absolute' else 'files_is_file_hidden_owned'
         return f'Unit <- said(flag({call}({s[0]})))'
     if op == 'text':
         return f'Unit <- IO.bind(String, Unit, text({s[0]}), said)'

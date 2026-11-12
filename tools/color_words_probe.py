@@ -100,6 +100,11 @@ def bend_factor(value):
 HEADER = r'''import Base
 import ../../jonlib.bend as J
 import ../../jonmath.bend as M
+# Ownership: these defs copy the library signatures (+ borrows, the rest
+# consumed) and return values the caller owns; the affine checker
+# enforces them on every compared call.
+def files_unload_directory_files_owned(files: J.FilePathList) -> Unit:
+  J.Files.unload_directory_files(files)
 def flag(value: Bool) -> String:
   match value:
     case True{}: "1"
@@ -128,7 +133,7 @@ def released_data() -> Unit:
 def released_text() -> Unit:
   J.Files.unload_text("hi")
 def released_directory() -> Unit:
-  J.Files.unload_directory_files(J.FilePathList{0, Nil{}})
+  files_unload_directory_files_owned(J.FilePathList{0, Nil{}})
 def palette_drop(colors: +List<U32>, +text: String) -> String:
   text
 def palette_text(colors: +List<U32>) -> String:

@@ -192,6 +192,11 @@ import ../../jonlib.bend as J
 # Ownership: these defs copy the library signatures (+ borrows, the rest
 # consumed) and return values the caller owns; the affine checker
 # enforces them on every compared call.
+def files_export_data_as_code_wide_owned(bytes: +List<U32>, +path: String) -> IO(Result<&1, &1, J.Surface.IOError, Unit>):
+  J.Files.export_data_as_code_wide(bytes, path)
+# Ownership: these defs copy the library signatures (+ borrows, the rest
+# consumed) and return values the caller owns; the affine checker
+# enforces them on every compared call.
 def files_directory_owned(+path: String) -> Maybe<String>:
   J.Files.directory(path)
 def files_exists_owned(path: String) -> IO(Bool):
@@ -313,7 +318,7 @@ def render(acts, work):
                         f'{bend_string(value)}), readback({rel("bend/" + name)}))')
             elif kind == 'export-ramp':
                 path = bend_string(str((work / 'bend' / arg).relative_to(ROOT)))
-                line = (f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Files.export_data_as_code_wide(Files.ramp(1048577n, Nil{{}}), '
+                line = (f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, files_export_data_as_code_wide_owned(Files.ramp(1048577n, Nil{{}}), '
                         f'{path}), readback({path}))')
             elif kind == 'replace':
                 name, fixture, search, replacement = arg
@@ -325,7 +330,7 @@ def render(acts, work):
             else:
                 name, values = arg
                 path = bend_string(str((work / 'bend' / name).relative_to(ROOT)))
-                line = (f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Files.export_data_as_code_wide([{",".join(map(str, values))}], '
+                line = (f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, files_export_data_as_code_wide_owned([{",".join(map(str, values))}], '
                         f'{path}), readback({path}))')
             body += '    ' + line + '\n'
         return body

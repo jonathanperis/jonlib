@@ -61,6 +61,11 @@ def native(probe, rows):
 
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
+# Ownership: these defs copy the library signatures (+ borrows, the rest
+# consumed) and return values the caller owns; the affine checker
+# enforces them on every compared call.
+def files_length_with_owned(logger: J.Log.Logger, +path: String) -> IO(U32):
+  J.Files.length_with(logger, path)
 def int.text(+value: U32) -> String:
   Bool.pick(String, (value >= 2147483648 : U32), "-" ++ U32.show((0 - value : U32)), U32.show(value))
 def main() -> IO(Unit):
@@ -72,7 +77,7 @@ def render(rows):
     def draw(selected, gpu):
         body = PROGRAM
         for level, path in rows:
-            body += (f'    Unit <- IO.bind(U32, Unit, J.Files.length_with(J.Log.level({level}), {json.dumps(path)}), '
+            body += (f'    Unit <- IO.bind(U32, Unit, files_length_with_owned(J.Log.level({level}), {json.dumps(path)}), '
                      f'r => IO.print(int.text(r)))\n')
         return body + '    IO.pure(Unit, Unit{})\n'
     return draw

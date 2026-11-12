@@ -33175,7 +33175,7 @@
       "status": "partial",
       "jonlib": "Files.data_as_code_wide / Files.export_data_as_code_wide",
       "mapping_state": "implemented",
-      "scope": "Header text for 1..357913607 bytes. The basename stops at the first NUL, keeps bytes 1..255, drops the last extension and bytes past 255, upper-cases a-z and maps .-?!+ to _. Empty data is None. A code unit above 255 is None.",
+      "scope": "Header text for 1..357913607 bytes. The basename stops at the first NUL, keeps bytes 1..255, drops the last extension and bytes past 255, upper-cases a-z and maps .-?!+ to _. Empty data is None. A code unit above 255 is None. Ownership: borrows bytes and path; the IO result is owned by the caller.",
       "gaps": [
         "Undefined native behavior: empty data reads before the buffer",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -33188,7 +33188,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "partial"
@@ -34219,7 +34219,7 @@
       "status": "partial",
       "jonlib": "Files.is_file_hidden",
       "mapping_state": "implemented",
-      "scope": "The POSIX rule: the name after the last '/' starts with '.' and is neither '.' nor '..'.",
+      "scope": "The POSIX rule: the name after the last '/' starts with '.' and is neither '.' nor '..'. Ownership: borrows path; the Bool is owned by the caller.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
@@ -34228,7 +34228,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -34279,7 +34279,7 @@
       "status": "partial",
       "jonlib": "Files.length_with",
       "mapping_state": "implemented",
-      "scope": "fopen/ftell size when it fits in a signed int; 0 when open fails. A size past INT_MAX or File.size EOVERFLOW is 0 and the caller's WARNING. A directory that opens overflows on Linux and is its size on macOS.",
+      "scope": "fopen/ftell size when it fits in a signed int; 0 when open fails. A size past INT_MAX or File.size EOVERFLOW is 0 and the caller's WARNING. A directory that opens overflows on Linux and is its size on macOS. Ownership: consumes the logger and borrows path; the length is owned by the caller.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured against raylib"
@@ -34292,7 +34292,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "partial"
@@ -35062,7 +35062,7 @@
       "status": "partial",
       "jonlib": "Files.is_path_absolute",
       "mapping_state": "implemented",
-      "scope": "The POSIX rule: the path starts with '/'.",
+      "scope": "The POSIX rule: the path starts with '/'. Ownership: consumes path; the Bool is owned by the caller.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
@@ -35071,7 +35071,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
@@ -35243,7 +35243,7 @@
       "status": "partial",
       "jonlib": "Files.load_directory_files_ex",
       "mapping_state": "implemented",
-      "scope": "Each entry's path/name in readdir order, a subdirectory's entries right after it; the NULL or empty filter, the *.*, FILES* and DIRS* tags and extension lists as ScanDirectoryFiles applies them; paths from 4096 bytes skipped.",
+      "scope": "Each entry's path/name in readdir order, a subdirectory's entries right after it; the NULL or empty filter, the *.*, FILES* and DIRS* tags and extension lists as ScanDirectoryFiles applies them; paths from 4096 bytes skipped. Ownership: borrows path and subdirs and consumes filter; the listing is owned by the caller.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
@@ -35252,7 +35252,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"
@@ -35305,7 +35305,7 @@
       "status": "partial",
       "jonlib": "Files.unload_directory_files",
       "mapping_state": "implemented",
-      "scope": "Consuming the list frees it.",
+      "scope": "Consuming the list frees it. Ownership: consumes the listing and returns Unit.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
@@ -35316,7 +35316,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "partial",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"
@@ -35614,7 +35614,7 @@
       "status": "partial",
       "jonlib": "Files.directory_file_count_ex",
       "mapping_state": "implemented",
-      "scope": "What the listing would hold, counted, the filter as given (an empty one counts nothing).",
+      "scope": "What the listing would hold, counted, the filter as given (an empty one counts nothing). Ownership: borrows path and subdirs and consumes filter; the count is owned by the caller.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
@@ -35623,7 +35623,7 @@
       "gates": {
         "availability": "partial",
         "behavior": "verified",
-        "ownership": "unverified",
+        "ownership": "verified",
         "integration": "unverified",
         "targets": "partial",
         "performance": "unverified"
