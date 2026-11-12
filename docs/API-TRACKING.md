@@ -225,7 +225,10 @@ exit measure is reported alongside it by `tools/api_plan.py` (dashboard,
 `partial` or `complete`, its `behavior` and `ownership` gates are `verified`
 under the rules above, every remaining gap starts with `Targets:`,
 `Integration:`, `Performance:` or `Undefined native behavior:`, and its
-evidence contains a forced-Metal witness for the current Bend pin. Untagged
+evidence contains a forced-Metal witness for the current Bend pin, or, for a
+host-effect entry (its Jonlib call returns `IO`, or acts only inside such a
+call), a `Metal not applicable:` line for that pin
+([METAL-WITNESSES.md](METAL-WITNESSES.md)), counted apart. Untagged
 gaps, including `Libm:` gaps, count as open behavior work. A CPU or JavaScript
 pass does not satisfy the Metal witness.
 

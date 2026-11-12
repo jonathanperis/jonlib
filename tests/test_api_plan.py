@@ -148,8 +148,12 @@ inline Vec operator + (const Vec& lhs, const float& rhs) { return lhs; }
                 row(gaps=['Exceptional inputs']), row(behavior='partial'), row(status='not-started'),
                 row(phase=2), row(kind='type')]
         self.assertEqual(plan.phase1_exit(rows), dict(total=5, implemented=4, behavior_ownership_verified=3,
-                                                      only_allowed_gaps=3, forced_metal_witnesses=2, meeting=2))
+                                                      only_allowed_gaps=3, forced_metal_witnesses=2,
+                                                      metal_not_applicable=0, meeting=2))
         self.assertEqual(plan.phase1_exit([row()])['meeting'], 0)
+        exempt = dict(row(), metal_exempt=True)
+        report = plan.phase1_exit([exempt, dict(row(behavior='partial'), metal_exempt=True)])
+        self.assertEqual((report['meeting'], report['forced_metal_witnesses'], report['metal_not_applicable']), (1, 0, 2))
 
     def test_dashboard_links_the_exit_measure_definition(self):
         outputs, report = plan.generated(self.reference, self.policy, self.progress)

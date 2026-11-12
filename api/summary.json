@@ -575,7 +575,8 @@
     "behavior_ownership_verified": 190,
     "only_allowed_gaps": 190,
     "forced_metal_witnesses": 152,
-    "meeting": 152
+    "metal_not_applicable": 23,
+    "meeting": 175
   },
   "open_gaps": 2712,
   "language_adaptations": {

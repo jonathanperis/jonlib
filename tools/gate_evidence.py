@@ -33,6 +33,9 @@ DOTTED = re.compile(r'\b[A-Za-z_][\w]*(?:\.[A-Za-z_][\w]*)+\b')
 BEND_COMMENT = re.compile(r'#[^\n]*')
 VERB = re.compile(r'\b((?:[A-Za-z_][\w]*\.)*)(unload_colors|unload|free)\s*\(')
 METAL_LINE = 'Metal witness: {api_id} {revision} pass'
+# A host-effect entry (its Jonlib call returns IO, or acts only inside such a
+# call) has nothing for the GPU to run; this line records that, not a witness.
+METAL_EXEMPT_LINE = 'Metal not applicable: {api_id} {revision} host effect'
 GATES_OBJECT = re.compile(r'"gates"\s*:\s*\{[^{}]*\}')
 ENTRY_KEY = re.compile(r'(?m)^    ("(?:[^"\\]|\\.)*")\s*:\s*\{')
 EXAMPLES_PROBE = 'tools/examples_probe.py'
@@ -407,18 +410,30 @@ def blockers(index, api_id, update):
     return behavior, ownership
 
 
-def metal_proven(row):
-    """Phase 1 exit witness. A row may carry `metal_witness` in a unit test;
-    repository rows are decided by an evidence line for the current Bend pin."""
-    if 'metal_witness' in row:
-        return bool(row['metal_witness'])
-    revision = bend_revision()
-    marker = METAL_LINE.format(api_id=row.get('id', ''), revision=revision)
+def evidence_line(row, template):
+    marker = template.format(api_id=row.get('id', ''), revision=bend_revision())
     for item in row.get('evidence') or []:
         text = file_text(item.split('#')[0])
         if text and any(line.strip() == marker for line in text.splitlines()):
             return True
     return False
+
+
+def metal_proven(row):
+    """Phase 1 exit witness. A row may carry `metal_witness` in a unit test;
+    repository rows are decided by an evidence line for the current Bend pin."""
+    if 'metal_witness' in row:
+        return bool(row['metal_witness'])
+    return evidence_line(row, METAL_LINE)
+
+
+def metal_exempt(row):
+    """A host-effect entry for which a forced-Metal lane does not apply. A row
+    may carry `metal_exempt` in a unit test; repository rows need an evidence
+    line for the current Bend pin. It is never counted as a witness."""
+    if 'metal_exempt' in row:
+        return bool(row['metal_exempt'])
+    return evidence_line(row, METAL_EXEMPT_LINE)
 
 
 def assessments(index, progress):

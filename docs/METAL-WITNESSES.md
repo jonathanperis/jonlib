@@ -265,3 +265,38 @@ ownership defs dispatched with `!`: every lane, gpu included, matched.
 
 Metal witness: raylib:function:EncodeDataBase64 a3efe8a3801f423827424227172eed9802c5e6cb pass
 Metal witness: raylib:function:DecodeDataBase64 a3efe8a3801f423827424227172eed9802c5e6cb pass
+
+## Host-effect entries without a Metal lane, 2026-11-12
+
+A forced-Metal lane does not apply to an entry whose Jonlib call returns
+`IO(...)` (file data and text, copy and move, existence and length, the
+working and listed directories, the trace callback) or that acts only inside
+such a call (the four file callbacks): the GPU runs pure terms, and these
+calls are host effects. The lines below record that; they are not witnesses
+and are counted apart (`metal_not_applicable`). Entries whose call is pure
+(path strings, the log level, unload calls, dropped files) are not listed:
+they need a compared GPU lane. Decided by the maintainer on 2026-11-12.
+
+Metal not applicable: raylib:function:SetTraceLogCallback a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:LoadFileData a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:SaveFileData a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:ExportDataAsCode a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:LoadFileText a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:SaveFileText a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:FileCopy a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:FileMove a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:FileTextReplace a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:FileTextFindIndex a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:FileExists a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:GetFileLength a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:GetPrevDirectoryPath a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:ChangeDirectory a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:IsPathDirectory a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:LoadDirectoryFiles a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:LoadDirectoryFilesEx a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:GetDirectoryFileCount a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:GetDirectoryFileCountEx a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:SetLoadFileDataCallback a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:SetSaveFileDataCallback a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:SetLoadFileTextCallback a3efe8a3801f423827424227172eed9802c5e6cb host effect
+Metal not applicable: raylib:function:SetSaveFileTextCallback a3efe8a3801f423827424227172eed9802c5e6cb host effect

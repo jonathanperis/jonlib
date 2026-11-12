@@ -32770,7 +32770,8 @@
       },
       "evidence": [
         "tools/log_probe.py",
-        "docs/LOGGING.md"
+        "docs/LOGGING.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33010,7 +33011,8 @@
       "evidence": [
         "tools/files_probe.py",
         "docs/FILES.md",
-        "tools/loaders_probe.py"
+        "tools/loaders_probe.py",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33132,7 +33134,8 @@
       "evidence": [
         "tools/files_probe.py",
         "docs/FILES.md",
-        "tools/loaders_probe.py"
+        "tools/loaders_probe.py",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33196,7 +33199,8 @@
       "evidence": [
         "tools/files_probe.py",
         "docs/FILES.md",
-        "tools/loaders_probe.py"
+        "tools/loaders_probe.py",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33259,7 +33263,8 @@
       "evidence": [
         "tools/files_probe.py",
         "docs/FILES.md",
-        "tools/loaders_probe.py"
+        "tools/loaders_probe.py",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33381,7 +33386,8 @@
       "evidence": [
         "tools/files_probe.py",
         "docs/FILES.md",
-        "tools/loaders_probe.py"
+        "tools/loaders_probe.py",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33443,7 +33449,8 @@
       },
       "evidence": [
         "tools/loaders_probe.py",
-        "docs/FILES.md"
+        "docs/FILES.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33505,7 +33512,8 @@
       },
       "evidence": [
         "tools/loaders_probe.py",
-        "docs/FILES.md"
+        "docs/FILES.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33567,7 +33575,8 @@
       },
       "evidence": [
         "tools/loaders_probe.py",
-        "docs/FILES.md"
+        "docs/FILES.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33629,7 +33638,8 @@
       },
       "evidence": [
         "tools/loaders_probe.py",
-        "docs/FILES.md"
+        "docs/FILES.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33811,7 +33821,8 @@
         "tools/files_os_probe.py",
         "docs/FILES.md",
         "jonlib.bend",
-        "patches/bend-os-effects.md"
+        "patches/bend-os-effects.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33871,7 +33882,8 @@
         "tools/files_os_probe.py",
         "docs/FILES.md",
         "jonlib.bend",
-        "patches/bend-os-effects.md"
+        "patches/bend-os-effects.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33933,7 +33945,8 @@
       "evidence": [
         "tools/files_probe.py",
         "docs/FILES.md",
-        "jonlib.bend"
+        "jonlib.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33994,7 +34007,8 @@
       "evidence": [
         "tools/files_probe.py",
         "docs/FILES.md",
-        "tools/loaders_probe.py"
+        "tools/loaders_probe.py",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -34054,7 +34068,8 @@
       },
       "evidence": [
         "tools/files_probe.py",
-        "docs/FILES.md"
+        "docs/FILES.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -34302,7 +34317,8 @@
         "docs/FILES.md",
         "tools/files_probe.py",
         "docs/LOGGING.md",
-        "jonlib.bend"
+        "jonlib.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -34654,7 +34670,8 @@
       },
       "evidence": [
         "tools/files_probe.py",
-        "docs/FILES.md"
+        "docs/FILES.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -34899,7 +34916,8 @@
         "docs/FILES.md",
         "docs/LOGGING.md",
         "jonlib.bend",
-        "patches/bend-os-effects.md"
+        "patches/bend-os-effects.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35019,7 +35037,8 @@
       "evidence": [
         "tools/files_os_probe.py",
         "docs/FILES.md",
-        "jonlib.bend"
+        "jonlib.bend",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35200,7 +35219,8 @@
         "tools/files_os_probe.py",
         "docs/FILES.md",
         "jonlib.bend",
-        "patches/bend-os-effects.md"
+        "patches/bend-os-effects.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35261,7 +35281,8 @@
         "tools/files_os_probe.py",
         "docs/FILES.md",
         "jonlib.bend",
-        "patches/bend-os-effects.md"
+        "patches/bend-os-effects.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35573,7 +35594,8 @@
         "tools/files_os_probe.py",
         "docs/FILES.md",
         "jonlib.bend",
-        "patches/bend-os-effects.md"
+        "patches/bend-os-effects.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35632,7 +35654,8 @@
         "tools/files_os_probe.py",
         "docs/FILES.md",
         "jonlib.bend",
-        "patches/bend-os-effects.md"
+        "patches/bend-os-effects.md",
+        "docs/METAL-WITNESSES.md"
       ],
       "gate_evidence": {},
       "target_results": {},

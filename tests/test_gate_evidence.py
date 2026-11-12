@@ -118,6 +118,12 @@ class DerivationTests(unittest.TestCase):
         self.assertTrue(gate_evidence.metal_proven(dict(metal_witness=True)))
         self.assertFalse(gate_evidence.metal_proven(dict(metal_witness=False)))
 
+    def test_metal_not_applicable_is_not_a_witness(self):
+        row = dict(id='raylib:function:FileExists', evidence=['docs/API.md'])
+        self.assertFalse(gate_evidence.metal_exempt(row))
+        self.assertTrue(gate_evidence.metal_exempt(dict(metal_exempt=True)))
+        self.assertFalse(gate_evidence.metal_proven(dict(metal_exempt=True, metal_witness=False)))
+
 
 if __name__ == '__main__':
     unittest.main()
