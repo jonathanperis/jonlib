@@ -39,7 +39,8 @@ passing gate does and does not establish is in
 ## What remains
 
 1. **The macOS validation** ([MACOS-VALIDATION.md](MACOS-VALIDATION.md)):
-   turn macOS back on in CI and run every gate on a Mac against raylib 6.2.
+   every gate passed in a full local run on a Mac on 2026-11-11; what
+   remains is turning macOS back on as a CI merge host (`MERGE_HOSTS`).
 2. **Wider domains and gaps** recorded per API in
    [`api/progress.json`](../api/progress.json): 2753 open gap lines on 1309
    entries. C-to-Bend mappings with no observable difference (enums as U32
@@ -78,18 +79,21 @@ passing gate does and does not establish is in
    ([METAL-INVESTIGATION.md](METAL-INVESTIGATION.md),
    [patches/README.md](../patches/README.md)).
 5. **Performance** ([PERFORMANCE.md](PERFORMANCE.md)): the renderer and
-   decoders are correctness-first and single-threaded. Eleven representative
-   examples, measured against raylib on native CPU (one thread), take 1.6-3x
-   raylib's frame time for simple shapes and text, 10-23x for textures,
-   sprite fonts and raygui, and 32-53x for 3D models. They use 50-690 MiB
-   against raylib's 5-12 MiB. Mixing a 10 ms MP3 music period costs about
-   5 ms (about 370x raylib's). Device audio latency cannot be measured
-   headless. No budget is set or met yet: the item stays open until budgets
-   are agreed and reached (for example by parallel rendering of rows or tiles,
-   flat stores, byte buffers in the decoders, or the Metal lane).
-   Vector2/3/4 min, max and clamp run 2.36x–3.95x clang's packed `minps`/`maxps`
-   on a dependent chain ([MATH.md](MATH.md)). That slowdown is a candidate for
-   a packed min/max lowering in the Jonlib Bend overlay.
+   decoders are correctness-first and single-threaded. On an Apple M1
+   (2026-11-12 baseline, native CPU, one thread) the measured examples take
+   1.3-38x raylib's frame time (simple shapes and text near raylib, textures
+   and sprite fonts about 9-10x, raygui 30x), and use 49-636 MiB against
+   raylib's 5-12 MiB. The rendering-only frame benchmark is 11-15x rlsw.
+   PERFORMANCE.md's profile names where the time goes (software binary64
+   `sinf`/`cosf`, the span loops, shared-list traffic in audio) and its
+   Optimizations table records each measured change: so far audio buffer
+   reads in chunks (2.54 -> 2.06 ms a 10 ms period) and constant-time
+   binary64 products and scaling (frame 46.3 -> 36.8 ms). A parallel
+   rendering experiment (rows split across CPU threads and Metal, bit-exact)
+   is the open question. Device audio latency cannot be measured headless.
+   No budget is set or met yet: the item stays open until budgets are agreed
+   and reached. Vector2/3/4 min, max and clamp run 2.36x-3.95x clang's packed
+   `minps`/`maxps` on a dependent chain ([MATH.md](MATH.md)).
 
 ## Delivery phases
 
