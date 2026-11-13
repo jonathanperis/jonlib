@@ -467,6 +467,12 @@ def measure_example(ctx, example, script, libm, extra, runs, js):
         lanes['javascript'] = ['bun', javascript]
     lane_runs = {lane: [] for lane in lanes}
     native_output = None
+    # One untimed reference run first: a cold first process made the first
+    # measured base run slower than its steady run (a negative difference).
+    warm = ctx.work / f'script-{example}-0.txt'
+    warm.write_text(ep.script_text(base))
+    ep.scratch_reset(ctx, items, native=True)
+    measure([reference], cwd=native_cwd(ctx, example, 0), env=dict(probekit.ENV, JONLIB_EXAMPLE_SCRIPT=str(warm)))
     for repeat in range(runs):
         measured = {}
         for index, item in enumerate((base, steady)):

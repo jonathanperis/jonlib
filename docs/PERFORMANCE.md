@@ -70,7 +70,74 @@ small C launcher and reads the launcher's child.
 **Runs.** Each program runs three times. The tables give medians, and peak
 memory is the maximum across runs.
 
-## Machine and toolchain
+## Baseline: Apple M1, 2026-11-12
+
+The reference point for the optimization work. Every later change in
+[Optimizations](#optimizations) is measured against these numbers on the same
+machine, with the same command:
+
+```sh
+python3 tools/perf_examples.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --js
+```
+
+| | |
+|---|---|
+| Machine | Apple M1, 8 cores, 16 GB, macOS 27.2 (arm64) |
+| C compiler | Apple clang 21.0.0 |
+| Bend | 2.0.39 `a3efe8a3` with the declared overlay, Bun 1.3.12 |
+| raylib | 6.2, `02566453` |
+| Jonlib | `main` at `80582c9` |
+| Host profiles | `AppleLibm`, `Fused` |
+
+| Example | Frames (base + extra) | raylib ms/frame (median, p95) | raylib ms/frame (diff) | Jonlib ms/frame (diff) | Ratio | raylib base script ms (process) | Jonlib base script ms (first, repeated) | raylib peak MiB | Jonlib peak MiB | Output equal |
+|---|---|---|---|---|---|---|---|---|---|---|
+| shapes_basic_shapes | no script Jonlib answers on every frame under AppleLibm | | | | | | | | | |
+| shapes_bouncing_ball | 13 + 30 | 0.8030, 1.08 | 0.7771 | 3.60 | 4.6x | 17.49 | 457, 1.27 | 8 | 96 | yes |
+| textures_bunnymark | 12 + 30 | 5.14, 5.89 | 4.90 | 44.91 | 9.2x | 39.02 | 306, 296 | 8 | 609 | yes |
+| textures_sprite_animation | 12 + 30 | 3.31, 3.40 | 3.27 | 31.28 | 9.6x | 48.46 | 524, 496 | 9 | 636 | yes |
+| text_font_spritefont | 2 + 30 | 2.56, 3.36 | 2.53 | 22.28 | 8.8x | 15.86 | 120, 109 | 12 | 394 | yes |
+| text_format_text | 4 + 30 | 0.7652, 1.39 | 0.7449 | 0.9366 | 1.3x | 10.42 | 258, 0.3387 | 8 | 49 | yes |
+| models_loading_gltf | no script Jonlib answers on every frame under AppleLibm | | | | | | | | | |
+| models_animation_timing | no script Jonlib answers on every frame under AppleLibm | | | | | | | | | |
+| core_2d_camera | 13 + 30 | 3.92, 3.98 | 3.92 | 15.48 | 3.9x | 57.25 | 2026, 3.72 | 8 | 285 | yes |
+| gui_style | 9 + 30 | 0.7235, 1.16 | 0.6908 | 20.81 | 30x | 13.55 | 211, 206 | 5 | 133 | yes |
+| audio_music_stream | 14 + 30 | 1.07, 1.28 | 0.4749 | 17.90 | 38x | 40.68 | 486, 498 | 8 | 235 | yes |
+
+| Example | JavaScript ms/frame (diff) | Ratio to raylib | JavaScript wall ms | JavaScript peak MiB |
+|---|---|---|---|---|
+| shapes_bouncing_ball | 44.93 | 58x | 3202 | 811 |
+| textures_bunnymark | 539 | 110x | 34374 | 3220 |
+| textures_sprite_animation | 316 | 97x | 21456 | 3401 |
+| text_font_spritefont | 179 | 71x | 7178 | 2395 |
+| text_format_text | 37.29 | 50x | 1629 | 555 |
+| core_2d_camera | 560 | 143x | 40058 | 1676 |
+| gui_style | 85.20 | 123x | 5055 | 896 |
+| audio_music_stream | 139 | 293x | 11174 | 1871 |
+
+| Audio (country.mp3 music stream) | raylib | Jonlib CPU-1 | Ratio |
+|---|---|---|---|
+| ms per 10 ms period (callback + UpdateMusicStream) | 0.0085 | 2.54 | 298x |
+| share of real time | 0.1% | 25.4% | |
+| peak MiB (30000 / 300 periods) | 2 | 44 | |
+| time played equal | yes | | |
+
+Every measured output was equal to raylib's. Three examples have no probe
+script that Jonlib answers on every frame under the Apple libm profile
+(their scripts reach a `sinf`/`cosf` argument Jonlib refuses there), so they
+are measured only on Linux, below. The first of each example's three runs
+showed a negative raylib per-frame difference: that process starts cold, so
+its base run is slower than the steady run of the next. The medians are not
+affected; `perf_examples.py` runs each program once before measuring from
+now on.
+
+Compared with the Linux measurement below, the M1 is faster in absolute
+terms on both sides and the ratios are close: textured and text scenes are
+9-10x raylib, raygui 30x, and the audio period is the largest gap, 298x
+raylib (2.54 ms of every 10 ms period on one thread).
+
+## Earlier measurement: Linux x86-64, 2026-10-20
+
+### Machine and toolchain
 
 Measured on 2026-10-20. The current pin is Bend 2.0.39 (`a3efe8a3`). The Bend
 row is the compiler this table was measured with, the previous pin:
@@ -88,7 +155,7 @@ The machine is shared with other workloads, so expect a few percent of noise
 between runs. One raylib run of `textures_bunnymark` was 50% slower than the
 other two.
 
-## Results
+### Results
 
 Times are in milliseconds and memory is in MiB. "diff" is the differential
 time per frame described above.
@@ -122,7 +189,7 @@ Jonlib's per-frame times varied most between runs in
 `text_format_text`, a few milliseconds each), where one millisecond is a
 large share.
 
-### Audio
+#### Audio
 
 Without a device, latency cannot be measured: the device period, host
 scheduling and the output buffer are all missing. What can be measured is
@@ -224,3 +291,8 @@ time (each 1-6 min). On this 8 GiB machine, the `models_loading_gltf` compile
 was killed by the OOM killer twice and passed on the third try; an exit code
 of -9 means "run it again". With every candidate cached, a run of the default
 set takes about 11 minutes.
+
+## Optimizations
+
+Each change is listed with its before/after numbers against the M1 baseline.
+None yet.
