@@ -1,8 +1,11 @@
 # Contributing to Jonlib
 
 Jonlib is a Bend 2 library inspired by raylib's API, with its algorithms written
-in Bend and its behavior verified against a pinned raylib. Read the [API](docs/API.md), [compatibility ledger](docs/COMPATIBILITY.md), and
-[roadmap](docs/ROADMAP.md) before proposing a change.
+in Bend and its behavior verified against a pinned raylib. Read
+[ARCHITECTURE.md](docs/ARCHITECTURE.md), the [API](docs/API.md), the
+[compatibility ledger](docs/COMPATIBILITY.md) and the
+[roadmap](docs/ROADMAP.md) before proposing a change; [docs/INDEX.md](docs/INDEX.md)
+maps every other page.
 
 ## Local setup
 
@@ -33,6 +36,53 @@ clang version. `--gpu` forces device execution; it must fail rather than silentl
 use CPU results. Run both `tools/conformance.py --gpu` and `tools/verify_bend.py --gpu` for changes
 affecting the device path. See [the investigation](docs/METAL-INVESTIGATION.md)
 for the historical failure, rejected candidates and remaining verification limits.
+
+## One batch of work, end to end
+
+[ARCHITECTURE.md](docs/ARCHITECTURE.md) explains the pieces; this is the order
+they are used in.
+
+1. **Pick stable IDs** from the [dashboard](docs/PROGRESS.md):
+   `python3 tools/api_plan.py show raylib:function:ImageResize`.
+2. **Read the pinned raylib source** for the exact contract: evaluation
+   order, edge cases, what C leaves undefined.
+3. **Write or extend the probe** (`tools/*_probe.py` on `probekit`): the
+   cases (exceptional values, boundaries, seeded random inputs), the C
+   reference and the Bend program. Route the calls through `*_owned` defs
+   that copy the library signature so the affine checker restates ownership.
+4. **Implement in Bend**, then run the probe on every lane, plus `--gpu` on a
+   Mac. A mismatch is diagnosed, never tolerated away.
+5. **Record it**: in `api/progress.json`, the mapping, scope (with an
+   `Ownership:` sentence), gaps and evidence; then
+   `python3 tools/gate_evidence.py --apply` and
+   `python3 tools/api_plan.py build`. A forced-Metal pass is recorded as a
+   `Metal witness:` line in [METAL-WITNESSES.md](docs/METAL-WITNESSES.md).
+6. **Check**: `tools/check_project.py`, the unit tests and
+   `PROOF.bend --check-only`.
+7. **Run the affected gates on both hosts** (below), commit, and land.
+
+## Running gates on both hosts locally
+
+- **macOS** runs the gates directly. A full shard takes about 11 hours on an
+  M1; detach long runs (`screen -dmS ...`) so a closed terminal does not stop
+  them.
+- **Linux** runs in an amd64 `ubuntu:24.04` container with clang 18, CMake,
+  Python 3 and the pinned Bun (add `libjpeg-turbo-progs` and
+  `libclang-rt-18-dev` for the JPEG and sanitizer gates). Copy the working
+  tree into a Docker volume instead of bind-mounting it: a macOS bind mount
+  changes `ftell` on directories and fails `file-length`.
+- Under Rosetta on Apple silicon the container produces ARM's default NaN
+  (`0x7fc00000`) where x86 gives `0xffc00000`. Gates that compare a fresh
+  NaN's sign, and `files-os`, cannot be settled there: run those few on CI
+  with a [Conformance pick](docs/CI.md).
+
+## When to use CI
+
+Prefer local runs; CI minutes are shared. Use a `Conformance pick` for the
+gates the local machines cannot settle, not a full matrix. Pushing a
+`feature/**` branch starts the full Conformance workflow, so a branch pushed
+only for a pick can use another prefix (for example `pick/<name>`). The
+nightly scheduled run covers `main`.
 
 ## Changes and evidence
 

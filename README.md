@@ -26,7 +26,26 @@ The [roadmap](docs/ROADMAP.md) states the current coverage and what remains;
 [PERFORMANCE.md](docs/PERFORMANCE.md) measures examples against raylib.
 The [API dashboard](docs/PROGRESS.md) maps every public declaration of
 raylib 6.2's headers to its Bend counterpart, work package and verification
-status.
+status. New here? [ARCHITECTURE.md](docs/ARCHITECTURE.md) explains how the
+library and its evidence fit together, and [docs/INDEX.md](docs/INDEX.md)
+maps every page.
+
+## Status
+
+As of 2026-11-12 (the [dashboard](docs/PROGRESS.md) always has the current counts):
+
+| | |
+|---|---|
+| raylib 6.2 declarations tracked | 1,906, every one mapped; 619 of 619 core functions partial, none complete |
+| Phase 1 exit measure | 230 of 327 functions: behavior and ownership verified, forced-Metal witness |
+| Gates | 232, every one passing on Linux and on macOS (full local macOS shard, 2026-11-11) |
+| raylib examples | 223 of 223 ported, replayed frame by frame against the native examples |
+| Execution | native CPU (one and two threads), JavaScript, forced Metal |
+| Performance | correctness first, one thread; rendering is about 23x slower than raylib ([PERFORMANCE.md](docs/PERFORMANCE.md)) |
+
+"Partial" means a scoped, verified profile with its remaining gaps recorded;
+"complete" needs every gate, including performance and both target
+platforms in CI ([API-TRACKING.md](docs/API-TRACKING.md)).
 
 ## Modules
 
@@ -116,8 +135,8 @@ examples run as Bend programs ([EXAMPLES.md](docs/EXAMPLES.md)).
 
 Not yet there: music and waves from FLAC files (raylib's default build
 leaves FLAC out; WAV, QOA, MP3, XM, MOD and Ogg Vorbis music plays); a host window, input devices and audio output
-(everything runs headless); images beyond 4096 pixels on a side. macOS is
-off the merge path for now and owes a full validation
+(everything runs headless); images beyond 4096 pixels on a side. macOS
+passes every gate in a full local run but is not yet a CI merge host
 ([MACOS-VALIDATION.md](docs/MACOS-VALIDATION.md)).
 
 ## Requirements

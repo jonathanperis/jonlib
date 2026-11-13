@@ -37,6 +37,10 @@ def main():
                 continue
             if not (document.parent / target.split('#')[0]).exists():
                 raise ValueError(f'{document.relative_to(ROOT)}: broken link {target}')
+    index = (ROOT / 'docs/INDEX.md').read_text()
+    for page in sorted((ROOT / 'docs').glob('*.md')):
+        if page.name != 'INDEX.md' and f']({page.name})' not in index:
+            raise ValueError(f'docs/INDEX.md does not list docs/{page.name}')
     tracked = subprocess.check_output(['git', 'ls-files'], cwd=ROOT, text=True).splitlines()
     if any(path.startswith(('.build/', '.specs/')) for path in tracked):
         raise ValueError('Local build/spec artifacts must not be tracked')
