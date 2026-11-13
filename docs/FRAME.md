@@ -229,7 +229,9 @@ macOS arm64), October 2026, with other jobs running on the machine:
 | Jonlib CPU-2 | 96.5 ms | 4.8 ms | about 92 ms |
 | Jonlib JavaScript | 4580 ms | 62 ms | about 4.5 s |
 
-The Bend renderer is about 23 times slower than rlsw and single-threaded
+(October 2026; on the same M1 in November, after the arithmetic changes in
+[PERFORMANCE.md](PERFORMANCE.md#optimizations), CPU-1 takes 36.8 ms against
+rlsw's 3.1 ms.) The Bend renderer was about 23 times slower than rlsw and single-threaded
 (two CPU threads gain nothing): every pixel is an `Array` read and write on a
 balanced tree of depth 19, and the rasterizers are sequential recursions.
 That is about 10 frames per second for this scene, short of interactive rates
