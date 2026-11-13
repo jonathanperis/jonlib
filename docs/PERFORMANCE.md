@@ -220,6 +220,75 @@ period spent on mixing and decoding, leaving the other half for a frame. A
 program that draws a frame each period cannot fit both on one thread. Jonlib
 has no audio thread: `AudioClock.advance` mixes inside the program's update.
 
+## Profile, 2026-11-12
+
+Where the time goes, measured on the M1 baseline build with macOS `sample`
+(1 ms interval) on the native CPU-1 binaries. A Bend def that compiles to a
+flat loop appears as a `spin_N` C function; everything else runs through the
+runtime's evaluator (`WL_FID_*`). Shares below exclude idle runtime threads.
+
+**What it is not: pixel storage.** An `Array<U32>` is a flat buffer in the
+native runtime: 8.4 million sequential `Array.get`/`Array.set` pairs on a
+2^19-slot array take about 20 ms (2.4 ns a pair), as fast as C. The
+balanced-tree view in Base is the program's model, not the machine's. A
+native process also has about 0.18 s of fixed startup, part of every
+"first script" and setup time above.
+
+**Renderer** (`tools/frame_probe.py --benchmark`, the 640x480 frame of 100
+rectangles and circles, 40 frames in one process):
+
+| | Time per frame |
+|---|---|
+| native rlsw (`-O2`) | 3.2 ms |
+| Jonlib CPU-1 | 46.3 ms (an empty frame: 9.7 ms) |
+| Jonlib CPU-2 | 47.4 ms |
+| Jonlib JavaScript | 714 ms |
+
+About 45% of the samples are emulated binary64 arithmetic
+(`src/resize_numeric.bend` `Double.*`, called by `src/trig.bend`): the Apple
+libm profile's correctly rounded `sinf`/`cosf` for every circle vertex, in
+software extended precision because Bend has no F64. About 50% are the
+per-pixel span loops of `src/frame.bend` (`cols` and `pixel.*` compiled to
+flat loops): arithmetic-bound, with 30-40 values threaded through each
+iteration. Evaluator and allocation are under 5%. Two threads gain nothing:
+the rasterizer is one sequential recursion.
+
+**Examples** (`textures_bunnymark`): 54% raster loops, 38% writing each
+frame's output as a Bend `String` (a list of characters) in the probe's
+replay program, 8% evaluator and allocation. The serialization is the
+measurement harness (`tools/examples_probe.py`), not the library, but it is
+in every example's frame time: the frame benchmark above is the library-only
+number.
+
+**Audio** (`country.mp3` music stream, 3000 periods): about 55% of the
+samples are the runtime dropping and reference-counting shared terms
+(`term_drop`, `span_fade`), not arithmetic:
+
+- `src/mixer.bend` `read` (18%): every read takes the buffer's frames with
+  `List.drop(data, cursor * channels)` from the head of a shared
+  `+List<U32>`, so each read costs the cursor's position in list steps, each
+  step a reference-count bump on a shared cons cell.
+- `src/mp3_layer3.bend` `synth.call` (16%): the synthesis filterbank builds
+  and drops short-lived lists per granule.
+- `List.append` in the mixer and stream paths (4%).
+
+**Codecs**: PNG decoding of the 512x384 RGB `parrots.png` takes under 80 ms
+for the whole Jonlib process (decode plus startup) against 4.9 ms for
+stb_image (`-O2`): at most about 16x.
+
+**Memory** (50-690 MiB peaks) has not been broken down yet.
+
+### What to change first
+
+1. The mixer's buffer reads: read from where the last read ended instead of
+   walking from the head (the shared-list walk is the largest single cost in
+   audio, and audio is the largest ratio: 298x).
+2. The MP3 synthesis filterbank's per-granule list churn.
+3. The Apple-profile `sinf`/`cosf`: the same correctly rounded results with
+   cheaper extended-precision arithmetic, checked against the current
+   implementation on every input it accepts.
+4. The span loops, by parallel rendering (the experiment below).
+
 ## Observations
 
 - **Simple scenes are close; textured, text and model scenes are 10-50x
