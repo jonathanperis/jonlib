@@ -7965,7 +7965,7 @@ type AudioDevice.Buffer is Data:
   AudioBuffer{id: U32, block: U32, frames: U32, volume: F32, pitch: F32, pan: F32, playing: Bool, paused: Bool, head: Mixer.Head}
 
 type AudioDevice.Block is Data:
-  AudioBlock{id: U32, data: +List<U32>}
+  AudioBlock{id: U32, data: +List<U32>, chunks: +List<+List<U32>>}
 
 type AudioDevice is Data:
   AudioDevice{ready: Bool, master: F32, next: U32, buffers: +List<AudioDevice.Buffer>, blocks: +List<AudioDevice.Block>, stream_size: U32}
@@ -8036,8 +8036,19 @@ def AudioDevice.block.find(blocks: +List<AudioDevice.Block>, +id: U32) -> Maybe<
   match blocks:
     case Nil{}: None{}
     case Con{+block, rest}:
-      AudioBlock{+found, +data} = block
+      AudioBlock{+found, +data, _} = block
       Bool.pick(Maybe<&2, +List<U32>>, U32.is_eq(found, id), Some{data}, AudioDevice.block.find(rest, id))
+
+# A block with its samples in the mixer's chunks (src/mixer.bend chunks.of).
+def AudioDevice.block.new(+id: U32, +data: +List<U32>) -> AudioDevice.Block:
+  AudioBlock{id, data, Mixer.chunks.of(data)}
+
+def AudioDevice.block.entry(blocks: +List<AudioDevice.Block>, +id: U32) -> Maybe<&2, AudioDevice.Block>:
+  match blocks:
+    case Nil{}: None{}
+    case Con{+block, rest}:
+      AudioBlock{+found, _, _} = block
+      Bool.pick(Maybe<&2, AudioDevice.Block>, U32.is_eq(found, id), Some{block}, AudioDevice.block.entry(rest, id))
 
 def AudioDevice.buffer.remove(buffers: +List<AudioDevice.Buffer>, +id: U32) -> +List<AudioDevice.Buffer>:
   match buffers:
@@ -8050,15 +8061,15 @@ def AudioDevice.block.remove(blocks: +List<AudioDevice.Block>, +id: U32) -> +Lis
   match blocks:
     case Nil{}: Nil{}
     case Con{+block, +rest}:
-      AudioBlock{+found, _} = block
+      AudioBlock{+found, _, _} = block
       Bool.pick(+List<AudioDevice.Block>, U32.is_eq(found, id), rest, Con{block, AudioDevice.block.remove(rest, id)})
 
 def AudioDevice.block.put(blocks: +List<AudioDevice.Block>, +id: U32, +data: +List<U32>) -> +List<AudioDevice.Block>:
   match blocks:
     case Nil{}: Nil{}
     case Con{+block, +rest}:
-      AudioBlock{+found, _} = block
-      Bool.pick(+List<AudioDevice.Block>, U32.is_eq(found, id), Con{AudioBlock{id, data}, rest}, Con{block, AudioDevice.block.put(rest, id, data)})
+      AudioBlock{+found, _, _} = block
+      Bool.pick(+List<AudioDevice.Block>, U32.is_eq(found, id), Con{AudioDevice.block.new(id, data), rest}, Con{block, AudioDevice.block.put(rest, id, data)})
 
 # The tracked buffer a handle names on a ready device.
 def AudioDevice.buffer.tracked(audio: AudioDevice, +id: U32) -> Maybe<&2, AudioDevice.Buffer>:
@@ -8130,7 +8141,7 @@ def Sound.tracked(audio: AudioDevice, +frames: U32, samples: +List<U32>) -> Audi
   +held = (frames > 0 : U32)
   (AudioDevice{ready, master, (next + 1 : U32),
      List.append(&2, AudioDevice.Buffer, buffers, [AudioBuffer{next, Bool.pick(U32, held, next, 0), frames, 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.new()}]),
-     Bool.pick(+List<AudioDevice.Block>, held, Con{AudioBlock{next, samples}, blocks}, blocks), stream},
+     Bool.pick(+List<AudioDevice.Block>, held, Con{AudioDevice.block.new(next, samples), blocks}, blocks), stream},
    Done{Sound{AudioStream{next, 48000, 32, 2}, frames}})
 
 def Sound.converted(outcome: WaveConvert.Outcome, audio: AudioDevice) -> AudioDevice & Result<&1, &1, Sound.Error, Sound>:
@@ -8343,7 +8354,7 @@ def AudioStream.tracked(audio: AudioDevice, +rate: U32, +size: U32, +channels: U
   AudioDevice{ready, master, +next, buffers, blocks, stream} = audio
   (AudioDevice{ready, master, (next + 1 : U32),
      List.append(&2, AudioDevice.Buffer, buffers, [AudioBuffer{next, next, (2 * sub : U32), 1.0, 1.0, 0.0, False{}, False{}, Mixer.Head.stream(rate, size, channels)}]),
-     Con{AudioBlock{next, Memory.zeros(U32.to_nat(((2 * sub) * channels : U32)), Nil{})}, blocks}, stream},
+     Con{AudioDevice.block.new(next, Memory.zeros(U32.to_nat(((2 * sub) * channels : U32)), Nil{})), blocks}, stream},
    AudioStream{next, rate, size, channels})
 
 def AudioStream.loaded(valid: Bool, +audio: AudioDevice, +rate: U32, +size: U32, +channels: U32) -> AudioDevice & AudioStream:
@@ -8575,12 +8586,13 @@ def AudioDevice.mix.source(called: Bool, +answers: +List<U32>, +data: +List<U32>
     case True{}: answers
     case False{}: data
 
-def AudioDevice.mix.block(+flush: Bool, found: Maybe<&2, +List<U32>>, +buffer: AudioDevice.Buffer, +n: U32, out: +List<U32>, +fine: Bool, +answers: +List<U32>) -> AudioDevice.Turn:
+def AudioDevice.mix.block(+flush: Bool, found: Maybe<&2, AudioDevice.Block>, +buffer: AudioDevice.Buffer, +n: U32, out: +List<U32>, +fine: Bool, +answers: +List<U32>) -> AudioDevice.Turn:
   match found:
     case None{}: AudioTurn{buffer, out, False{}, Nil{}}
-    case Some{+data}:
+    case Some{+entry}:
+      AudioBlock{_, +data, +chunks} = entry
       AudioBuffer{+id, +block, +frames, +volume, +pitch, +pan, _, _, +head} = buffer
-      AudioDevice.mix.leveled(flush, AudioDevice.levels.of(flush, volume, pan), Mixer.turn.for(flush, head, frames, AudioDevice.mix.source(Mixer.Feed.called(Mixer.Head.kind(head)), answers, data), n),
+      AudioDevice.mix.leveled(flush, AudioDevice.levels.of(flush, volume, pan), Mixer.turn.for(flush, head, frames, AudioDevice.mix.source(Mixer.Feed.called(Mixer.Head.kind(head)), answers, data), chunks, n),
         id, block, frames, volume, pitch, pan, out, fine)
 
 # What a stream's callback is asked for: the stream's buffer and the frames
@@ -8628,7 +8640,7 @@ def AudioDevice.mix.active(+flush: Bool, active: Bool, +buffer: AudioDevice.Buff
     case False{}: AudioPass{Con{buffer, done}, out, fine, answers, asks, starved}
     case True{}:
       AudioBuffer{_, +block, _, _, _, _, _, _, _} = buffer
-      AudioDevice.mix.passed(AudioDevice.mix.block(flush, AudioDevice.block.find(blocks, block), buffer, n, out, fine, answers), done, answers, asks, starved)
+      AudioDevice.mix.passed(AudioDevice.mix.block(flush, AudioDevice.block.entry(blocks, block), buffer, n, out, fine, answers), done, answers, asks, starved)
 
 # Buffers that are playing and not paused are mixed, in tracked order.
 def AudioDevice.mix.one(+flush: Bool, pass: AudioDevice.Pass, +buffer: AudioDevice.Buffer, +blocks: +List<AudioDevice.Block>, +n: U32) -> AudioDevice.Pass:
@@ -8881,12 +8893,13 @@ def AudioDevice.made.leveled(levels: AudioDevice.Levels, turn: Mixer.Turn, +id: 
   Mixer.Turn{+head, +playing, +made, +turn_fine, +asked} = turn
   AudioMade{AudioBuffer{id, block, frames, volume, pitch, pan, playing, False{}, head}, made, left, right, level_fine && turn_fine, asked}
 
-def AudioDevice.made.block(+flush: Bool, found: Maybe<&2, +List<U32>>, +buffer: AudioDevice.Buffer, +n: U32, +answers: +List<U32>) -> AudioDevice.Made:
+def AudioDevice.made.block(+flush: Bool, found: Maybe<&2, AudioDevice.Block>, +buffer: AudioDevice.Buffer, +n: U32, +answers: +List<U32>) -> AudioDevice.Made:
   match found:
     case None{}: AudioMade{buffer, Nil{}, 0.0, 0.0, False{}, Nil{}}
-    case Some{+data}:
+    case Some{+entry}:
+      AudioBlock{_, +data, +chunks} = entry
       AudioBuffer{+id, +block, +frames, +volume, +pitch, +pan, _, _, +head} = buffer
-      AudioDevice.made.leveled(AudioDevice.levels.of(flush, volume, pan), Mixer.turn.for(flush, head, frames, AudioDevice.mix.source(Mixer.Feed.called(Mixer.Head.kind(head)), answers, data), n),
+      AudioDevice.made.leveled(AudioDevice.levels.of(flush, volume, pan), Mixer.turn.for(flush, head, frames, AudioDevice.mix.source(Mixer.Feed.called(Mixer.Head.kind(head)), answers, data), chunks, n),
         id, block, frames, volume, pitch, pan)
 
 # The buffer's processed frames at its levels, added to the mix.
@@ -8912,7 +8925,7 @@ def AudioDevice.process.active(~P: Type, ~process: U32 -> +List<U32> -> P -> P &
     case False{}: (AudioPass{Con{buffer, done}, out, fine, answers, asks, starved}, state)
     case True{}:
       AudioBuffer{+id, +block, _, _, _, _, _, _, _} = buffer
-      AudioDevice.process.made(~P, ~process, flush, AudioDevice.made.block(flush, AudioDevice.block.find(blocks, block), buffer, n, answers), AudioProcessors.tags(attached, id, Nil{}), done, out, fine,
+      AudioDevice.process.made(~P, ~process, flush, AudioDevice.made.block(flush, AudioDevice.block.entry(blocks, block), buffer, n, answers), AudioProcessors.tags(attached, id, Nil{}), done, out, fine,
         answers, asks, starved, state)
 
 # Every buffer's turn, its processors and its place in the mix. `last` is the

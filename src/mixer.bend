@@ -355,13 +355,57 @@ def zeros.rev(n: Nat, acc: +List<U32>) -> +List<U32>:
 def splice(+block: +List<U32>, +offset: U32, data: +List<U32>, +pad: U32, +skip: U32) -> +List<U32>:
   List.reverse.go(&2, U32, zeros.rev(U32.to_nat(pad), push.rev(data, take.rev(U32.to_nat(offset), block, Nil{}))), List.drop(&2, U32, block, U32.to_nat((offset + skip : U32))))
 
+# A buffer's samples in chunks of 256 (the last one may be shorter), made
+# when its samples are set. A read reaches its cursor in cursor/256 steps
+# instead of cursor steps down one shared list; it reads the same values.
+def chunks.close(chunk: +List<U32>, acc: +List<+List<U32>>) -> +List<+List<U32>>:
+  match chunk:
+    case Nil{}: acc
+    case Con{+x, rest}: Con{List.reverse(&2, U32, Con{x, rest}), acc}
+
+def chunks.cut(xs: +List<U32>, chunk: +List<U32>, acc: +List<+List<U32>>, n: Nat) -> +List<+List<U32>>:
+  match xs:
+    case Nil{}: List.reverse(&2, +List<U32>, chunks.close(chunk, acc))
+    case Con{+x, rest}:
+      match n:
+        case 0n: chunks.cut(rest, [x], chunks.close(chunk, acc), 255n)
+        case 1n+m: chunks.cut(rest, Con{x, chunk}, acc, m)
+
+def chunks.of(xs: +List<U32>) -> +List<+List<U32>>:
+  chunks.cut(xs, Nil{}, Nil{}, 256n)
+
+# take.rev(n, List.drop(samples, skip), acc) over the chunks, the first of
+# them already dropped to the skip.
+def chunks.take.rev(n: Nat, chunks: +List<+List<U32>>, acc: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: acc
+    case 1n+k:
+      match chunks:
+        case Nil{}: acc
+        case Con{+chunk, rest}:
+          match chunk:
+            case Nil{}: chunks.take.rev(1n+k, rest, acc)
+            case Con{+x, more}: chunks.take.rev(k, Con{more, rest}, Con{x, acc})
+
+# `past`: the skip passes the first chunk (chunks before the last hold 256).
+def chunks.skip(chunks: +List<+List<U32>>, past: Bool, +skip: U32, +n: Nat, acc: +List<U32>) -> +List<U32>:
+  match chunks:
+    case Nil{}: acc
+    case Con{+chunk, rest}:
+      match past:
+        case True{}: chunks.skip(rest, Bool.not(((skip - 256) < 256 : U32)), (skip - 256 : U32), n, acc)
+        case False{}: chunks.take.rev(n, Con{List.drop(&2, U32, chunk, U32.to_nat(skip)), rest}, acc)
+
+def chunks.take(chunks: +List<+List<U32>>, +skip: U32, +n: Nat, acc: +List<U32>) -> +List<U32>:
+  chunks.skip(chunks, Bool.not((skip < 256 : U32)), skip, n, acc)
+
 # -----------------------------------------------------------------------------
 # What does not change in a buffer's turn: its frames and samples, its
 # converter's rates, whether they are 1:1, the resampler's parameters and the
 # filter's coefficient, and its format: the bits of a sample, the channels,
 # and whether it is a stream.
 type K is Data:
-  K{size: U32, data: +List<U32>, source: U32, rate: U32, plain: Bool, p: R.Params, a: U32, bits: U32, channels: U32, stream: Bool, called: Bool, flush: Bool}
+  K{size: U32, data: +List<U32>, chunks: +List<+List<U32>>, source: U32, rate: U32, plain: Bool, p: R.Params, a: U32, bits: U32, channels: U32, stream: Bool, called: Bool, flush: Bool}
 
 # ReadAudioBufferFramesInInternalFormat for a static buffer of `size` frames
 # (not 0) asked for `est` frames: nothing when it is not playing, or when its
@@ -383,10 +427,10 @@ type Read is Data:
   Read{frames: +List<+List<U32>>, cursor: U32, playing: Bool, first: Bool, second: Bool, short: Bool}
 
 def read.static(+k: K, +cursor: U32, +playing: Bool, +est: U32) -> Read:
-  K{+size, +data, _, _, _, _, _, _, _, _, _, _} = k
+  K{+size, _, +chunks, _, _, _, _, _, _, _, _, _, _} = k
   +count = read.count(size, cursor, playing, est)
   +ends = read.ends(size, cursor, playing, est)
-  Read{C.split(U32.to_nat(count), 2n, List.take(&2, U32, List.drop(&2, U32, data, U32.to_nat((2 * cursor : U32))), U32.to_nat((2 * count : U32)))),
+  Read{C.split(U32.to_nat(count), 2n, List.reverse(&2, U32, chunks.take(chunks, (2 * cursor : U32), U32.to_nat((2 * count : U32)), Nil{}))),
     Bool.pick(U32, ends, 0, (cursor + count : U32)), playing && Bool.not(ends), True{}, True{}, (count < est : U32)}
 
 # Bool.pick(Bool, c, a, b) as its own def: the pinned compiler's native
@@ -416,7 +460,7 @@ def read.there(+size: U32, +cursor: U32, +first: Bool, +second: Bool, +est: U32)
   Bool.pick(U32, ended && Bool.not(either((cursor >= sub : U32), first, second)), U32.min((est - a : U32), sub), 0)
 
 def read.stream(+k: K, +cursor: U32, +first: Bool, +second: Bool, +est: U32) -> Read:
-  K{+size, +data, _, _, _, _, _, _, +channels, _, _, _} = k
+  K{+size, _, +chunks, _, _, _, _, _, _, +channels, _, _, _} = k
   +sub = U32.max((size / 2 : U32), 1)
   +upper = (cursor >= sub : U32)
   +a = read.here(size, cursor, first, second, est)
@@ -424,8 +468,8 @@ def read.stream(+k: K, +cursor: U32, +first: Bool, +second: Bool, +est: U32) -> 
   +b = read.there(size, cursor, first, second, est)
   +whole = (b > 0 : U32) && U32.is_eq(b, sub)
   Read{C.split(U32.to_nat(est), U32.to_nat(channels), List.reverse(&2, U32, zeros.rev(U32.to_nat((((est - a) - b) * channels : U32)),
-      take.rev(U32.to_nat((b * channels : U32)), List.drop(&2, U32, data, U32.to_nat((Bool.pick(U32, upper, 0, sub) * channels : U32))),
-        take.rev(U32.to_nat((a * channels : U32)), List.drop(&2, U32, data, U32.to_nat((cursor * channels : U32))), Nil{}))))),
+      chunks.take(chunks, (Bool.pick(U32, upper, 0, sub) * channels : U32), U32.to_nat((b * channels : U32)),
+        chunks.take(chunks, (cursor * channels : U32), U32.to_nat((a * channels : U32)), Nil{}))))),
     (((cursor + a) + b) % U32.max(size, 1) : U32), True{}, first || either(upper, whole, ended), second || either(upper, ended, whole), False{}}
 
 def take.padded(n: Nat, xs: +List<U32>, acc: +List<U32>) -> +List<U32>:
@@ -443,7 +487,7 @@ def take.padded(n: Nat, xs: +List<U32>, acc: +List<U32>) -> +List<U32>:
 # where the answers end the frames are zeros (a turn made to learn what the
 # callback will be asked for).
 def read.called(+k: K, +cursor: U32, +first: Bool, +second: Bool, +est: U32, +taken: U32) -> Read:
-  K{_, +data, _, _, _, _, _, _, +channels, _, _, _} = k
+  K{_, +data, _, _, _, _, _, _, _, +channels, _, _, _} = k
   Read{C.split(U32.to_nat(est), U32.to_nat(channels), take.padded(U32.to_nat((est * channels : U32)), List.drop(&2, U32, data, U32.to_nat((taken * channels : U32))), Nil{})),
     cursor, True{}, first, second, False{}}
 
@@ -454,15 +498,15 @@ def read.kind(called: Bool, streams: Bool, +k: K, +cursor: U32, +playing: Bool, 
     case False{} False{}: read.static(k, cursor, playing, est)
 
 def K.stream(+k: K) -> Bool:
-  K{_, _, _, _, _, _, _, _, _, stream, _, _} = k
+  K{_, _, _, _, _, _, _, _, _, _, stream, _, _} = k
   stream
 
 def K.called(+k: K) -> Bool:
-  K{_, _, _, _, _, _, _, _, _, _, called, _} = k
+  K{_, _, _, _, _, _, _, _, _, _, _, called, _} = k
   called
 
 def K.flush(+k: K) -> Bool:
-  K{_, _, _, _, _, _, _, _, _, _, _, flush} = k
+  K{_, _, _, _, _, _, _, _, _, _, _, _, flush} = k
   flush
 
 # A stream that does not play gives nothing, as a sound.
@@ -513,11 +557,11 @@ def mixdown(frames: +List<+List<U32>>, +flush: Bool, +table: +List<+List<U32>>, 
 
 # The f32 samples of raw frames, flat.
 def floats(+k: K, raw: +List<+List<U32>>) -> +List<U32>:
-  K{_, _, _, _, _, _, _, +bits, _, _, _, _} = k
+  K{_, _, _, _, _, _, _, _, +bits, _, _, _, _} = k
   C.map.sample(C.map.decode(C.flat(raw), U32.is_eq(bits, 16)), (3 * C.format(bits) + 2 : U32))
 
 def K.channels(+k: K) -> U32:
-  K{_, _, _, _, _, _, _, _, channels, _, _, _} = k
+  K{_, _, _, _, _, _, _, _, _, channels, _, _, _} = k
   channels
 
 def converted.mixed(+flush: Bool, many: Bool, +frames: +List<+List<U32>>, +channels: U32) -> +List<+List<U32>>:
@@ -531,7 +575,7 @@ def converted(+k: K, +raw: +List<+List<U32>>) -> +List<+List<U32>>:
   converted.mixed(K.flush(k), (K.channels(k) > 2 : U32), frames, K.channels(k))
 
 def in.cap(+k: K) -> U32:
-  K{_, _, _, _, _, _, _, +bits, +channels, _, _, _} = k
+  K{_, _, _, _, _, _, _, _, +bits, +channels, _, _, _} = k
   +formatted = U32.is_ne(bits, 32)
   Bool.pick(U32, U32.is_eq(channels, 2), Bool.pick(U32, formatted, 512, 4294967295),
     Bool.pick(U32, U32.is_eq(channels, 1), Bool.pick(U32, formatted, 1024, 4294967295), Bool.pick(U32, formatted, U32.min(512, (1024 / U32.max(channels, 1) : U32)), 512)))
@@ -568,7 +612,7 @@ def pass.flowed(flow: Flow, +rest: +List<+List<U32>>, +taken: U32, +count: U32) 
 
 def pass(fed: Fed, +want: U32, +k: K) -> Fed:
   Fed{+st, +acc, +rest, +count, +fine, _} = fed
-  K{_, _, _, _, +plain, +p, +a, _, +channels, _, _, +flush} = k
+  K{_, _, _, _, _, +plain, +p, +a, _, +channels, _, _, +flush} = k
   +out = U32.min((want - count : U32), out.cap(k))
   +taken = U32.min(U32.min(count.frames(rest, 0), in.cap(k)), Bool.pick(U32, U32.is_eq(channels, 2), 4294967295, required(st, out, p)))
   +raw = List.take(&2, +List<U32>, rest, U32.to_nat(taken))
@@ -634,7 +678,7 @@ def step.read(read: Read, +st: R.St, +acc: +List<+List<U32>>, +need: U32, +now: 
 
 # The frames one pass reads: raudio's guess for what is left of the run.
 def step.estimate(+k: K, +want: U32) -> U32:
-  K{_, _, +source, +rate, _, _, _, +bits, +channels, _, _, _} = k
+  K{_, _, _, +source, +rate, _, _, _, +bits, +channels, _, _, _} = k
   estimate(source, rate, want, read.cap(bits, channels))
 
 # One pass of ReadAudioBufferFramesInMixingFormat's loop: the residual goes
@@ -724,14 +768,14 @@ def Feed.second(feed: Feed) -> Bool:
 # rate Jonlib does not resample (mode 2), a buffer without frames (raudio
 # divides by its size) and a stream of more than 1024 channels (raudio's
 # input buffer or miniaudio's temporary holds no frame of it).
-def turn.for(+flush: Bool, head: Head, +size: U32, +data: +List<U32>, +n: U32) -> Turn:
+def turn.for(+flush: Bool, head: Head, +size: U32, +data: +List<U32>, +chunks: +List<+List<U32>>, +n: U32) -> Turn:
   Head{+source, +rate, +mode, +coef, cursor, st, residual, +kind} = head
   +g = C.gcd(64n, source, rate)
   +wide = (Feed.channels(kind) > 1024 : U32)
   turn.done(runs(U32.to_nat((n + 2 : U32)), False{},
     S{n, 0, 0, cursor, True{}, Feed.first(kind), Feed.second(kind), st, residual, Nil{}, U32.is_ne(mode, 2) && (size > 0 : U32) && Bool.not(wide), False{}, Nil{}},
-    K{size, data, source, rate, U32.is_eq(mode, 0), R.params(True{}, False{}, Nil{}, (source / g : U32), (rate / g : U32)), coef, Feed.bits(kind), Feed.channels(kind), Bool.not(Feed.static(kind)), Feed.called(kind), flush}),
+    K{size, data, chunks, source, rate, U32.is_eq(mode, 0), R.params(True{}, False{}, Nil{}, (source / g : U32), (rate / g : U32)), coef, Feed.bits(kind), Feed.channels(kind), Bool.not(Feed.static(kind)), Feed.called(kind), flush}),
     source, rate, mode, coef, kind)
 
 def turn(head: Head, +size: U32, +data: +List<U32>, +n: U32) -> Turn:
-  turn.for(True{}, head, size, data, n)
+  turn.for(True{}, head, size, data, chunks.of(data), n)
