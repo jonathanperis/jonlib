@@ -1446,24 +1446,30 @@ def onto.back(mono: Bool, +left: U32, +right: U32, acc: +List<U32>) -> +List<U32
     case True{}: Con{left, acc}
     case False{}: Con{right, Con{left, acc}}
 
+# One window row: the lanes' four lists are read once each (destructured,
+# not copied through accessors), then the rest of the rows go on.
+def window.rows.sums(+nearest: Bool, +w: +List<U32>, +mono: Bool, +l0: +List<U32>, +l1: +List<U32>, +l2: +List<U32>, +l3: +List<U32>, blocks: Blocks) -> Blocks:
+  Blocks{ax, bx, ay, by} = blocks
+  +s0 = window(nearest, List.reverse(&2, U32, l0), l0, w)
+  +s1 = window(nearest, List.reverse(&2, U32, l1), l1, w)
+  +s2 = window(nearest, List.reverse(&2, U32, l2), l2, w)
+  +s3 = window(nearest, List.reverse(&2, U32, l3), l3, w)
+  Blocks{onto(mono, (s0 >> 16n : U32), (s1 >> 16n : U32), ax), onto.back(mono, (s0 .&. 65535 : U32), (s1 .&. 65535 : U32), bx),
+    onto(mono, (s2 >> 16n : U32), (s3 >> 16n : U32), ay), onto.back(mono, (s2 .&. 65535 : U32), (s3 .&. 65535 : U32), by)}
+
 # The window over the rows, four entries at a time: entry 4i's sums are
 # samples 15 - i and 17 + i, with g_win's row 14 - i (`wins` is g_win the
 # last row first).
-def window.rows(+nearest: Bool, n: Nat, wins: +List<+List<U32>>, +rows: +List<+List<U32>>, +mono: Bool, blocks: Blocks) -> Blocks:
+# `now`: the next four entries of every row (lanes) and the rows after them.
+def window.rows(+nearest: Bool, n: Nat, wins: +List<+List<U32>>, now: Lanes, +mono: Bool, blocks: Blocks) -> Blocks:
   match n:
     case 0n: blocks
     case 1n+k:
       match wins:
         case Nil{}: blocks
         case Con{+w, more}:
-          Blocks{ax, bx, ay, by} = blocks
-          +now = lanes(rows, Nil{}, Nil{}, Nil{}, Nil{}, Nil{})
-          +s0 = window(nearest, List.reverse(&2, U32, Lanes.l0(now)), Lanes.l0(now), w)
-          +s1 = window(nearest, List.reverse(&2, U32, Lanes.l1(now)), Lanes.l1(now), w)
-          +s2 = window(nearest, List.reverse(&2, U32, Lanes.l2(now)), Lanes.l2(now), w)
-          +s3 = window(nearest, List.reverse(&2, U32, Lanes.l3(now)), Lanes.l3(now), w)
-          window.rows(nearest, k, more, Lanes.rows(now), mono, Blocks{onto(mono, (s0 >> 16n : U32), (s1 >> 16n : U32), ax), onto.back(mono, (s0 .&. 65535 : U32), (s1 .&. 65535 : U32), bx),
-            onto(mono, (s2 >> 16n : U32), (s3 >> 16n : U32), ay), onto.back(mono, (s2 .&. 65535 : U32), (s3 .&. 65535 : U32), by)})
+          Lanes{+l0, +l1, +l2, +l3, rest} = now
+          window.rows(nearest, k, more, lanes(rest, Nil{}, Nil{}, Nil{}, Nil{}, Nil{}), mono, window.rows.sums(nearest, w, mono, l0, l1, l2, l3, blocks))
 
 # Fifteen groups of four entries from four lists walked together (a missing
 # entry is 0), onto `acc` the last first.
@@ -1531,7 +1537,7 @@ def call.samples(blocks: Blocks, +e: Lanes, +mono: Bool) -> +List<U32>:
         onto(mono, sample.scaled(pair.second(e2)), sample.scaled(pair.second(e3)), List.reverse(&2, U32, by))))))))
 
 def call.rows(+nearest: Bool, +rows: +List<+List<U32>>, +ly: +List<U32>, +ry: +List<U32>, +mono: Bool, +wins: +List<+List<U32>>) -> Call:
-  Call{call.samples(window.rows(nearest, 15n, wins, rows, mono, Blocks{Nil{}, Nil{}, Nil{}, Nil{}}), rows.ends(rows, Nil{}, Nil{}, Nil{}, Nil{}), mono),
+  Call{call.samples(window.rows(nearest, 15n, wins, lanes(rows, Nil{}, Nil{}, Nil{}, Nil{}, Nil{}), mono, Blocks{Nil{}, Nil{}, Nil{}, Nil{}}), rows.ends(rows, Nil{}, Nil{}, Nil{}, Nil{}), mono),
     Con{row.made(tail(ly), tail(ry), Nil{}, Nil{}, H.nth(ly, 16), H.nth(ry, 16), H.first(ly), H.first(ry)), rows.newest(14n, rows, Nil{})}}
 
 # drmp3d_synth for two time slots: `lx`, `rx` are the first slot's 32 values

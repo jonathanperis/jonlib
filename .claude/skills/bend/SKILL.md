@@ -62,8 +62,10 @@ files under a running probe.
    list fails; reorder parameters.
 3. **`match` only a parameter or a pattern-bound name**, never a computed
    value: `match (x < 3 : U32):` and `match f(y):` are refused (`a parameter
-   or field scrutinee`). Pass the value to a helper def that matches its
-   parameter.
+   or field scrutinee`). A destructuring let of a call's result,
+   `K{a, b} = f(x)`, is the same refused match. Pass the value to a helper
+   def that matches its parameter (and avoid making that helper call back
+   into its caller: no mutual recursion).
 4. **Scrutinee/binder order**: parameters are destructured in declaration
    order, a matched scalar last; no `let` before a destructuring of a
    parameter (`'x' can't be matched in this position`). Destructure first,

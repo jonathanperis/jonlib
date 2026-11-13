@@ -363,5 +363,28 @@ set takes about 11 minutes.
 
 ## Optimizations
 
-Each change is listed with its before/after numbers against the M1 baseline.
-None yet.
+Each change is listed with its before/after numbers against the M1 baseline
+(same machine, same commands). Every one keeps the exact results: the gates
+compare them as before.
+
+| Change | Measured on | Before | After |
+|---|---|---|---|
+| Buffer reads through 256-sample chunks (`src/mixer.bend` `chunks.*`, `AudioBlock.chunks`): a read skips whole chunks instead of walking the shared sample list from its head | `perf_examples.py --audio-only`, ms per 10 ms period | 2.54 | 2.06 |
+| Exact 24x53-bit product from eight partial products (`Product.mul24`) and power-of-two scaling in at most two exact products when the result is normal (`scale.exact`), in `src/resize_numeric.bend` and `src/trig.bend`'s Apple-profile `sinf`/`cosf` | 100,000 `sincos_for(AppleLibm)` calls | 6.9 us a call | 3.4 us a call |
+| (same) | `frame_probe.py --benchmark`, CPU-1 ms per frame | 46.3 | 36.8 |
+| (same) | `frame_probe.py --benchmark`, JavaScript ms per frame | 714 | 748 |
+| MP3 synthesis reads each window row's lanes once instead of through five shared accessors (`src/mp3_layer3.bend` `window.rows.sums`) | ms per 10 ms period | 2.06 | 2.01 |
+
+The arithmetic change was compared with the previous implementation in one
+Bend program before any gate: 300,000 products, 300,000 scalings (including
+results that go subnormal or overflow, where the step-by-step path still
+runs) and 400,000 `sinf`/`cosf` arguments, with no difference. The chunked
+reads were compared with `take.rev`/`List.drop` at every chunk edge, native
+and JavaScript. The JavaScript frame is a little slower after the arithmetic
+change (bit-level float construction is not free there); native is the
+measured lane of the goal.
+
+The MP3 filterbank's remaining cost is structural: each synthesis call
+transposes sixteen 64-entry history rows into lanes fifteen times, building
+and freeing about 2,400 list cells. A layout that keeps the history as lanes
+is the next step there.

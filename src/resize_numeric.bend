@@ -186,6 +186,45 @@ def Product.mul(n: Nat, +bits: U32, +multiplicand: Product, +acc: Product) -> Pr
       Product.mul(k, (bits >> 1n : U32), Product.shl(multiplicand),
         Bool.pick(Product, U32.is_ne((bits .&. 1 : U32), 0), Product.add(acc, multiplicand), acc))
 
+# Product.mul(24n, s, Product{0, h, l}, Product{0, 0, 0}) for s below 2^24
+# without its 24 shift-and-add steps: the exact s*(h*2^32 + l) as the sum of
+# eight 12x16-bit partial products, each below 2^28, at their bit offsets.
+def Product.at0(+v: U32) -> Product:
+  Product{0, 0, v}
+
+def Product.at12(+v: U32) -> Product:
+  Product{0, (v >> 20n : U32), (v << 12n : U32)}
+
+def Product.at16(+v: U32) -> Product:
+  Product{0, (v >> 16n : U32), (v << 16n : U32)}
+
+def Product.at28(+v: U32) -> Product:
+  Product{0, (v >> 4n : U32), (v << 28n : U32)}
+
+def Product.at32(+v: U32) -> Product:
+  Product{0, v, 0}
+
+def Product.at44(+v: U32) -> Product:
+  Product{(v >> 20n : U32), (v << 12n : U32), 0}
+
+def Product.at48(+v: U32) -> Product:
+  Product{(v >> 16n : U32), (v << 16n : U32), 0}
+
+def Product.at60(+v: U32) -> Product:
+  Product{(v >> 4n : U32), (v << 28n : U32), 0}
+
+def Product.mul24(+s: U32, +h: U32, +l: U32) -> Product:
+  +s0 = (s .&. 4095 : U32)
+  +s1 = ((s >> 12n) .&. 4095 : U32)
+  +l0 = (l .&. 65535 : U32)
+  +l1 = (l >> 16n : U32)
+  +h0 = (h .&. 65535 : U32)
+  +h1 = (h >> 16n : U32)
+  Product.add(Product.add(Product.add(Product.at0((s0 * l0 : U32)), Product.at12((s1 * l0 : U32))),
+      Product.add(Product.at16((s0 * l1 : U32)), Product.at28((s1 * l1 : U32)))),
+    Product.add(Product.add(Product.at32((s0 * h0 : U32)), Product.at44((s1 * h0 : U32))),
+      Product.add(Product.at48((s0 * h1 : U32)), Product.at60((s1 * h1 : U32)))))
+
 def Double.product(sign: Bool, +exponent: F32, product: Product) -> Double:
   Product{+h, +m, +l} = product
   +shift = (32n + U32.log2(h) - 23n : Nat)
@@ -205,7 +244,7 @@ def Double.mul.nonzero(zero: Bool, +value: F32, multiplier: Double) -> Double:
       significand = ((bits .&. 8388607) .|. 8388608 : U32)
       Double.product(Bool.xor(sign, (bits >= 2147483648 : U32)),
         (exponent + U32.to_f32(((bits >> 23n) .&. 255 : U32)) - 127.0 : F32),
-        Product.mul(24n, significand, Product{0, h, l}, Product{0, 0, 0}))
+        Product.mul24(significand, h, l))
 
 def Double.mul_f32(+value: F32, multiplier: Double) -> Double:
   Double.mul.nonzero(F32.is_eq(value, 0.0), value, multiplier)
@@ -215,6 +254,32 @@ def scale2(n: Nat, +factor: F32, value: F32) -> F32:
     case 0n: value
     case 1n+k: scale2(k, factor, (value * factor : F32))
 
+def float(word: U32) -> F32:
+  U32{bits} = word
+  F32{bits}
+
+# 2^p for an integral p in [-126, 127].
+def pow2(+p: F32) -> F32:
+  float((F32.to_u32((p + 127.0 : F32)) << 23n : U32))
+
+def scale.split(normal: Bool, +power: F32, +value: F32) -> F32:
+  match normal:
+    case True{}:
+      +first = F32.trunc((power * 0.5 : F32))
+      ((value * pow2(first) : F32) * pow2((power - first : F32)) : F32)
+    case False{}: scale2(F32.to_nat(F32.abs(power)), Bool.pick(F32, (power < 0.0 : F32), 0.5, 2.0), value)
+
+# scale2 by 2^power (power integral) of a value that is 0 or a whole number
+# below 2^26. Each x2 or x0.5 of scale2 is exact while the value stays a
+# normal float, which it does from start to end when the result is normal
+# (or 0); then two products by powers of two (each in range, and each
+# result between the start and the end) give the same bits. Otherwise the
+# step-by-step scale2 rounds as it always did.
+def scale.exact(+power: F32, +value: F32) -> F32:
+  +top = (U32.to_f32((F32.bits(value) >> 23n : U32)) - 127.0 : F32)
+  +end = (top + power : F32)
+  scale.split(F32.is_eq(value, 0.0) || ((end >= F32.neg(126.0) : F32) && (end <= 127.0 : F32)), power, value)
+
 def Double.to_f32(value: Double) -> F32:
   Double{sign, exponent, mantissa} = value
   Wide{h, +l} = mantissa
@@ -222,8 +287,7 @@ def Double.to_f32(value: Double) -> F32:
   +rest = (l .&. 536870911 : U32)
   up = ((rest > 268435456) || (U32.is_eq(rest, 268435456) && U32.is_ne((significand .&. 1 : U32), 0)) : U32)
   +power = (exponent - 23.0 : F32)
-  +result = scale2(F32.to_nat(F32.abs(power)), Bool.pick(F32, (power < 0.0 : F32), 0.5, 2.0),
-    U32.to_f32((significand + Bool.to_u32(up) : U32)))
+  +result = scale.exact(power, U32.to_f32((significand + Bool.to_u32(up) : U32)))
   Bool.pick(F32, sign, F32.neg(result), result)
 
 def normalize.map(values: +List<F32>, +scale: Double, acc: +List<F32>) -> +List<F32>:

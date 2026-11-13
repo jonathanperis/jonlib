@@ -13,7 +13,7 @@ def negate(value: N.Double) -> N.Double:
   N.Double{Bool.not(sign), exponent, mantissa}
 
 def piece(sign: Bool, +power: F32, value: U32) -> F32:
-  +scaled = N.scale2(F32.to_nat(F32.abs(power)), Bool.pick(F32, (power < 0.0 : F32), 0.5, 2.0), U32.to_f32(value))
+  +scaled = N.scale.exact(power, U32.to_f32(value))
   Bool.pick(F32, sign, F32.neg(scaled), scaled)
 
 def multiply.nonzero(zero: Bool, +a: N.Double, b: N.Double) -> N.Double:
