@@ -62,6 +62,10 @@ Base naming: `Type.verb` (`U32.add`, `F32.to_u32`, `U32.to_nat`,
 | `an open Array element type` | An Array op without its element type argument resolved. |
 | `expected : a pattern (a binder or a constructor)` in a `do` | A `+x = v` after a bind; move the rest into a helper def. |
 | `Error: ... an arity over 247` | Too many words in one def/continuation: wrap records. |
+| `an annotated term (cannot infer)` at a call `f(x)` | A parameter or local named `f` shadows the def `f`; rename it. |
+| `expected : Maybe<&1, U32>` / `observed : Maybe<&2, U32>` | Quantity mismatch: `U32.read` answers `Maybe<&2, U32>`; spell the quantity in the parameter type. |
+| `x (consumed more than once)` | An affine value used twice (often a `do`-bound `Nat` like a timestamp, or a match variable reused by both sides of a parallel let): make it `+x` or pass it to a helper with a `+` parameter. |
+| `a fresh name (duplicate declaration: f)` | The name exists already in this file (or the program it is spliced into). |
 
 ## Performance model (GUIDE "Under the Hood" + SHADERS)
 
