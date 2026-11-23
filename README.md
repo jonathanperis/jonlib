@@ -41,7 +41,7 @@ As of 2026-11-12 (the [dashboard](docs/PROGRESS.md) always has the current count
 | Gates | 232, every one passing on Linux and on macOS (full local macOS shard, 2026-11-11) |
 | raylib examples | 223 of 223 ported, replayed frame by frame against the native examples |
 | Execution | native CPU (one and two threads), JavaScript, forced Metal |
-| Performance | correctness first, one thread; rendering alone is about 12x slower than raylib's software renderer on an Apple M1 ([PERFORMANCE.md](docs/PERFORMANCE.md)) |
+| Performance | correctness first, one thread; rendering alone is about 7x slower than raylib's software renderer on an Apple M1 ([PERFORMANCE.md](docs/PERFORMANCE.md)) |
 
 "Partial" means a scoped, verified profile with its remaining gaps recorded;
 "complete" needs every gate, including performance and both target

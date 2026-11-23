@@ -375,6 +375,10 @@ compare them as before.
 | (same) | `frame_probe.py --benchmark`, CPU-1 ms per frame | 46.3 | 36.8 |
 | (same) | `frame_probe.py --benchmark`, JavaScript ms per frame | 714 | 748 |
 | MP3 synthesis reads each window row's lanes once instead of through five shared accessors (`src/mp3_layer3.bend` `window.rows.sums`) | ms per 10 ms period | 2.06 | 2.01 |
+| Rows of shapes-atlas pixels without the depth test run a loop over the color buffer and the atlas alone (`src/frame.bend` `atlas.cols`); other rows keep the per-pixel dispatch of `pixel` | the benchmark scene drawn 200 times in one process, CPU-1 ms per frame | 32.4 | 22.5 |
+| Each circle-sector quad takes its first rim point from the previous quad's last (`src/shapes.bend` `sector.quads`): 37 `sinf`/`cosf` pairs a circle instead of 54 | (same) | 22.4 | 19.8 |
+| (both, 2026-11-23) | `frame_probe.py --benchmark`, CPU-1 ms per frame | 36.2 | 22.7 |
+| (both) | `frame_probe.py --benchmark`, JavaScript ms per frame | 747 | 668 |
 
 The arithmetic change was compared with the previous implementation in one
 Bend program before any gate: 300,000 products, 300,000 scalings (including
@@ -384,6 +388,24 @@ reads were compared with `take.rev`/`List.drop` at every chunk edge, native
 and JavaScript. The JavaScript frame is a little slower after the arithmetic
 change (bit-level float construction is not free there); native is the
 measured lane of the goal.
+
+The two renderer changes keep every step of the general path: the atlas
+loop runs the same `sample`, `pack` and `mix` computations in the same
+order (the `ok` flag is the same conjunction), and a shared rim point is
+the same `Pt.at` of the same F32 angle. The 200-frame program printed the
+reference checksum on every frame before and after each change. After
+them, the frame's profile is the atlas loop's blend arithmetic (about 29%),
+the Apple-profile binary64 `sinf`/`cosf` (about 25%), triangle setup and
+span blocks (about 20%).
+
+**Tried and not landed: MP3 window weights as floats.** Converting `g_win`
+from its bits once a granule, instead of at every step of every window sum,
+measured 2.10 ms a period against 2.01 (no gain; the bit-to-float step is
+cheap natively). The synthesis cost is reference counting on the shared
+row lists (`term_drop`, `span_fade` under `synth.call` and the window sums:
+about a third of the active audio time). Holding the history as floats or
+in an `Array` would change the types that `LAWS.bend` states for
+`row.completed`, `row.merged` and `rows.newest`, so it was not attempted.
 
 The MP3 filterbank's remaining cost is structural: each synthesis call
 transposes sixteen 64-entry history rows into lanes fifteen times, building
