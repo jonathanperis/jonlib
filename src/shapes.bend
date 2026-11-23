@@ -439,32 +439,36 @@ def segments.resolve(+lm: U32, +radius: F32, +span: F32, +segments: F32) -> Mayb
 # -----------------------------------------------------------------------------
 # Circles, sectors, rings, ellipses and polygons (sinf/cosf)
 
-def sector.quad(+gnu: Bool, +cx: F32, +cy: F32, +r: F32, +angle: F32, +step: F32, +color: U32, plan: Plan) -> Plan:
-  +p2 = Pt.at(gnu, cx, cy, r, r, (deg2rad() * (angle + step * 2.0 : F32) : F32))
+# The quad from angle to angle + 2*step; p0 and p2 are its first and last
+# rim points, each computed once and shared with the neighbouring quads.
+def sector.quad(+gnu: Bool, +cx: F32, +cy: F32, +r: F32, +angle: F32, +step: F32, +color: U32, +p0: Pt, +p2: Pt, plan: Plan) -> Plan:
   +p1 = Pt.at(gnu, cx, cy, r, r, (deg2rad() * (angle + step : F32) : F32))
-  +p0 = Pt.at(gnu, cx, cy, r, r, (deg2rad() * angle : F32))
   Plan.with(Pt.ok(p2) && Pt.ok(p1) && Pt.ok(p0), [F.Color{color}, F.ShapeUV{0}, F.Point{cx, cy}, F.ShapeUV{1}, Pt.point(p2),
     F.ShapeUV{3}, Pt.point(p1), F.ShapeUV{2}, Pt.point(p0)], plan)
 
-def sector.odd(odd: Bool, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +angle: F32, +step: F32, +color: U32) -> Plan:
+def sector.odd(odd: Bool, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +angle: F32, +step: F32, +color: U32, +p0: Pt) -> Plan:
   match odd:
     case False{}: Plan.empty()
     case True{}:
       +p1 = Pt.at(gnu, cx, cy, r, r, (deg2rad() * (angle + step : F32) : F32))
-      +p0 = Pt.at(gnu, cx, cy, r, r, (deg2rad() * angle : F32))
       Plan.only(Pt.ok(p1) && Pt.ok(p0), [F.Color{color}, F.ShapeUV{0}, F.Point{cx, cy}, F.ShapeUV{3}, Pt.point(p1),
         F.ShapeUV{2}, Pt.point(p0), F.ShapeUV{1}, F.Point{cx, cy}])
 
 # Quads of two segments, then the odd last piece (DrawCircleSector and the
-# rounded rectangle corners).
-def sector.quads(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +angle: F32, +step: F32, +color: U32, +odd: Bool) -> Plan:
+# rounded rectangle corners). p0 is the rim point at angle: the previous
+# quad's last point, the same sinf/cosf of the same argument.
+def sector.quads(n: Nat, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +angle: F32, +step: F32, +color: U32, +odd: Bool, +p0: Pt) -> Plan:
   match n:
-    case 0n: sector.odd(odd, gnu, cx, cy, r, angle, step, color)
-    case 1n+k: sector.quad(gnu, cx, cy, r, angle, step, color, sector.quads(k, gnu, cx, cy, r, (angle + step * 2.0 : F32), step, color, odd))
+    case 0n: sector.odd(odd, gnu, cx, cy, r, angle, step, color, p0)
+    case 1n+k:
+      +next = (angle + step * 2.0 : F32)
+      +p2 = Pt.at(gnu, cx, cy, r, r, (deg2rad() * next : F32))
+      sector.quad(gnu, cx, cy, r, angle, step, color, p0, p2, sector.quads(k, gnu, cx, cy, r, next, step, color, odd, p2))
 
 def sector.pieces(+gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +step: F32, +segments: F32, +color: U32) -> Plan:
   +count = F32.to_u32(segments)
-  sector.quads(U32.to_nat((count / 2 : U32)), gnu, cx, cy, r, start, step, color, U32.is_eq((count % 2 : U32), 1))
+  sector.quads(U32.to_nat((count / 2 : U32)), gnu, cx, cy, r, start, step, color, U32.is_eq((count % 2 : U32), 1),
+    Pt.at(gnu, cx, cy, r, r, (deg2rad() * start : F32)))
 
 def sector.drawn(count: Maybe<F32>, +gnu: Bool, +cx: F32, +cy: F32, +r: F32, +start: F32, +end: F32, +color: U32) -> Plan:
   match count:

@@ -719,10 +719,71 @@ def tex.with_interp(vary: Bool, +tex: U32) -> U32:
 
 # Consecutive pixels of a row, attributes stepped after each one; the
 # attributes after the last pixel come back with the raster.
-def cols(n: Nat, +tex: U32, +blend: Bool, +offset: U32, +at: Attr, +step: Attr, raster: Raster) -> Raster & Attr:
+def cols.each(n: Nat, +tex: U32, +blend: Bool, +offset: U32, +at: Attr, +step: Attr, raster: Raster) -> Raster & Attr:
   match n:
     case 0n: (raster, at)
-    case 1n+rest: cols(rest, tex, blend, (offset + 1 : U32), Attr.add(at, step), step, pixel(tex, blend, offset, at, raster))
+    case 1n+rest: cols.each(rest, tex, blend, (offset + 1 : U32), Attr.add(at, step), step, pixel(tex, blend, offset, at, raster))
+
+# `put` on the color buffer alone, the rest of the raster held aside: the
+# word and its validity are the same `pack`/`mix` results.
+def plain.store(+offset: U32, packed: U32 & Bool, pixels: Array<U32>) -> Array<U32> & Bool:
+  (word, valid) = packed
+  (Array.set(U32, pixels, offset, word), valid)
+
+def plain.read(+offset: U32, +r: F32, +g: F32, +b: F32, +a: F32, read: Array<U32> & U32) -> Array<U32> & Bool:
+  (pixels, +old) = read
+  plain.store(offset, mix(r, g, b, a, old), pixels)
+
+def plain.put(blend: Bool, +offset: U32, +r: F32, +g: F32, +b: F32, +a: F32, pixels: Array<U32>) -> Array<U32> & Bool:
+  match blend:
+    case False{}: plain.store(offset, pack(r, g, b, a), pixels)
+    case True{}: plain.read(offset, r, g, b, a, Array.get(U32, pixels, offset))
+
+# A shapes-atlas pixel without the depth test (tex & 15 = 1): `sample` and
+# `pixel.textured` on the color buffer and the atlas alone.
+def atlas.done(inside: Bool, atlas: Array<U32>, written: Array<U32> & Bool) -> (Array<U32> & Array<U32>) & Bool:
+  (pixels, valid) = written
+  ((pixels, atlas), inside && valid)
+
+def atlas.read(+bit: U32, inside: Bool, +blend: Bool, +offset: U32, +r: F32, +g: F32, +b: F32, +a: F32, pixels: Array<U32>, read: Array<U32> & U32) -> (Array<U32> & Array<U32>) & Bool:
+  (atlas, +word) = read
+  +alpha = lut((((word >> U32.to_nat(bit)) .&. 1) * 255 : U32))
+  +gray = lut(255)
+  atlas.done(inside, atlas, plain.put(blend, offset, (r * gray : F32), (g * gray : F32), (b * gray : F32), (a * alpha : F32), pixels))
+
+def atlas.pixel(+blend: Bool, +offset: U32, +at: Attr, pixels: Array<U32>, atlas: Array<U32>) -> (Array<U32> & Array<U32>) & Bool:
+  Attr{r, g, b, a, u, v, _} = at
+  +x = (fract(u) * 128.0 : F32)
+  +y = (fract(v) * 128.0 : F32)
+  +index = (F32.trunc(y) * 128.0 + F32.trunc(x) : F32)
+  +inside = raster_int.valid(x) && raster_int.valid(y) && (index >= 0.0 : F32) && (index < 16384.0 : F32)
+  +slot = Bool.pick(U32, inside, F32.to_u32(index), 0)
+  atlas.read((slot .&. 31 : U32), inside, blend, offset, r, g, b, a, pixels, Array.get(U32, atlas, (slot >> 5n : U32)))
+
+def atlas.cols(n: Nat, +blend: Bool, +offset: U32, +at: Attr, +step: Attr, +ok: Bool, state: (Array<U32> & Array<U32>) & Bool) -> ((Array<U32> & Array<U32>) & Bool) & Attr:
+  match n state:
+    case 0n Tuple{buffers, valid}: ((buffers, ok && valid), at)
+    case 1n+rest Tuple{Tuple{pixels, atlas}, valid}: atlas.cols(rest, blend, (offset + 1 : U32), Attr.add(at, step), step, ok && valid, atlas.pixel(blend, offset, at, pixels, atlas))
+
+def atlas.raster(sampler: Sampler, extra: Extra, result: ((Array<U32> & Array<U32>) & Bool) & Attr) -> Raster & Attr:
+  (written, at) = result
+  (buffers, ok) = written
+  (pixels, atlas) = buffers
+  (Raster{pixels, atlas, sampler, ok, extra}, at)
+
+def cols.atlas(n: Nat, +blend: Bool, +offset: U32, +at: Attr, +step: Attr, raster: Raster) -> Raster & Attr:
+  Raster{pixels, atlas, sampler, ok, extra} = raster
+  atlas.raster(sampler, extra, atlas.cols(n, blend, offset, at, step, ok, ((pixels, atlas), True{})))
+
+def cols.sampled(atlas: Bool, n: Nat, +tex: U32, +blend: Bool, +offset: U32, +at: Attr, +step: Attr, raster: Raster) -> Raster & Attr:
+  match atlas:
+    case True{}: cols.atlas(n, blend, offset, at, step, raster)
+    case False{}: cols.each(n, tex, blend, offset, at, step, raster)
+
+# A row of shapes-atlas pixels without the depth test takes the loop above;
+# every other row takes pixel() for each pixel.
+def cols(n: Nat, +tex: U32, +blend: Bool, +offset: U32, +at: Attr, +step: Attr, raster: Raster) -> Raster & Attr:
+  cols.sampled(U32.is_eq((tex .&. 15 : U32), 1), n, tex, blend, offset, at, step, raster)
 
 def cols.raster(result: Raster & Attr) -> Raster:
   (raster, _) = result
