@@ -235,10 +235,12 @@ rlsw's 3.1 ms.) The Bend renderer was about 23 times slower than rlsw and single
 (two CPU threads gain nothing): every pixel is an `Array` read and write on a
 balanced tree of depth 19, and the rasterizers are sequential recursions.
 That is about 10 frames per second for this scene, short of interactive rates
-for heavier examples. The levers remain: rows
-or tiles rendered in parallel (balanced fork-join over independent row
-ranges), a flat row-major store per tile, and the Metal lane; none is
-assumed before it is measured. Whole examples (frames, setup, memory, audio
+for heavier examples. Rendering row bands in parallel was measured in November
+([PERFORMANCE.md](PERFORMANCE.md#parallel-rendering-experiment-2026-11-23)):
+bit-exact and 1.7x faster on four threads, but each band replays the whole
+scene, and Apple's Metal compiler cannot build the rasterizer. The remaining
+levers (shared scene setup, a flat row-major store per tile) are not assumed
+before they are measured. Whole examples (frames, setup, memory, audio
 mixing) are compared with raylib in [PERFORMANCE.md](PERFORMANCE.md).
 
 ## Gaps

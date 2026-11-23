@@ -287,7 +287,8 @@ stb_image (`-O2`): at most about 16x.
 3. The Apple-profile `sinf`/`cosf`: the same correctly rounded results with
    cheaper extended-precision arithmetic, checked against the current
    implementation on every input it accepts.
-4. The span loops, by parallel rendering (the experiment below).
+4. The span loops, by parallel rendering (measured below: 1.7x on four
+   threads, bit-exact, but the per-band scene replay limits it).
 
 ## Observations
 
@@ -318,9 +319,10 @@ stb_image (`-O2`): at most about 16x.
 - **JavaScript** was not part of this run. In FRAME.md's rendering benchmark
   it was about 47x slower than the native lane
   ([FRAME.md](FRAME.md#performance)).
-- **Untried levers**, none assumed before it is measured: rows or tiles
-  rendered in parallel, a flat store per tile, byte buffers instead of lists
-  in the decoders, and the Metal lane.
+- **Untried levers**, none assumed before it is measured: a flat store per
+  tile, byte buffers instead of lists in the decoders. Row bands in parallel
+  and the Metal lane were measured on 2026-11-23
+  ([below](#parallel-rendering-experiment-2026-11-23)).
 
 ## Status against the roadmap
 
@@ -333,7 +335,6 @@ harness's serialization included; their first script still pays the one-time
 work above. Not measured:
 
 - device latency;
-- multi-threaded lanes (CPU-2) and the GPU lane;
 - macOS;
 - examples other than the eleven above.
 
@@ -388,3 +389,61 @@ The MP3 filterbank's remaining cost is structural: each synthesis call
 transposes sixteen 64-entry history rows into lanes fifteen times, building
 and freeing about 2,400 list cells. A layout that keeps the history as lanes
 is the next step there.
+
+## Parallel rendering experiment, 2026-11-23
+
+**Question:** does Bend's parallelism close the renderer gap, if the frame
+is split into independent row bands that run on CPU threads or on Metal?
+
+**Setup.** The same 640x480 frame as the renderer benchmark (one clear, 50
+rectangles, 50 circles, Apple libm profile), Apple M1 (4 performance and 4
+efficiency cores), Bend 2.0.39 with the overlay, `main` at 6b02935 plus an
+experimental band field in the rasterizer. A band is a range of raster rows.
+Quad rows and triangle spans outside the band are stepped over but not
+written. The program forks `2^k` bands with a balanced parallel let
+(`a b = part(...) part(...)`). Each band builds its own frame, replays the
+whole scene and sums its own rows of the read-back framebuffer. The bands'
+integer sums add up to the whole frame's checksum, so no floating-point
+reduction is reordered. Times are the second of two frames in one process
+(`IO.now`, ms resolution), 5 runs each, `+RTS --gpu off --threads T -RTS`.
+
+**Exactness.** Every split (k = 0 to 4) on every thread count gave the
+reference checksum `1914661742`. Dumping the framebuffers showed each band
+bit-identical to the same rows of the unsplit frame. Raster rows run
+bottom-up, so a band of raster rows is read back as the mirrored screen rows.
+
+**CPU threads** (median ms per frame; native rlsw draws this frame in 3.2 ms):
+
+| Bands (2^k) | 1 thread | 2 threads | 4 threads | 8 threads |
+|---|---|---|---|---|
+| 1 (k=0) | 35 | 35 | 34 | 35 |
+| 2 (k=1) | 47 | 26 | 26 | 26 |
+| 4 (k=2) | 73 | 39 | 21 | 22 |
+| 8 (k=3) | 124 | 65 | 34 | 28 |
+| 16 (k=4) | 228 | 117 | 61 | 46 |
+
+The best split, 4 bands on 4 threads, takes 21 ms against 35 ms unsplit
+(1.7x), still about 6.6x rlsw. The single-thread column shows why it stops
+there: each band costs about 12-14 ms whatever its height, because it
+replays the whole scene, including the correctly rounded `sinf`/`cosf` of
+every circle vertex and the triangle setup. Only the span loops divide
+across bands. The fork itself is cheap and balanced (the 2- and 4-thread
+times are the 1-thread time divided by the thread count). Beyond the four
+performance cores, extra bands add replay faster than the efficiency cores
+take it away.
+
+**Metal.** Apple's Metal compiler (MTLCompilerService, macOS 27.2) aborts
+with an LLVM fatal error while compiling the GPU program of any frame that
+draws rectangles. A rectangle-only scene on `main` without the band code
+fails the same way, so the crash predates this experiment. A frame that
+only clears builds and is bit-exact on Metal, but takes 249-284 ms against
+1-6 ms on the CPU. Making the rasterizer compile for Metal would need
+compiler work (an overlay patch) and was not attempted.
+
+**Verdict: no.** Bend's CPU parallelism makes this frame 1.7x faster and
+keeps it bit-exact, but it does not close the gap to raylib (6.6x remains).
+Metal cannot run the rasterizer with the pinned toolchain. The band code was
+not merged. The levers that remain are single-thread ones: sharing one scene
+setup across bands (the per-band replay is the limit above), cheaper span
+loops, and the trigonometry. Splitting would pay off only after the scene
+setup can be computed once and shared between bands.

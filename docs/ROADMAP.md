@@ -88,9 +88,10 @@ passing gate does and does not establish is in
    `sinf`/`cosf`, the span loops, shared-list traffic in audio) and its
    Optimizations table records each measured change: so far audio buffer
    reads in chunks (2.54 -> 2.06 ms a 10 ms period) and constant-time
-   binary64 products and scaling (frame 46.3 -> 36.8 ms). A parallel
-   rendering experiment (rows split across CPU threads and Metal, bit-exact)
-   is the open question. Device audio latency cannot be measured headless.
+   binary64 products and scaling (frame 46.3 -> 36.8 ms). The parallel
+   rendering experiment answered no: row bands are bit-exact and 1.7x faster
+   on four threads (35 -> 21 ms), but each band replays the scene, and
+   Apple's Metal compiler aborts on the rasterizer. Device audio latency cannot be measured headless.
    No budget is set or met yet: the item stays open until budgets are agreed
    and reached. Vector2/3/4 min, max and clamp run 2.36x-3.95x clang's packed
    `minps`/`maxps` on a dependent chain ([MATH.md](MATH.md)).
